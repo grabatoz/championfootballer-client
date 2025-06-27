@@ -1,0 +1,647 @@
+import React from 'react';
+import Image from 'next/image';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Avatar,
+  Divider,
+} from '@mui/material';
+import vector from '@/Components/images/Vector.svg';
+import Foot from '@/Components/images/foot.png'
+import imgicon from '@/Components/images/imgicon.png'
+
+interface PlayerCardProps {
+  name: string;
+  number: string;
+  level: string;
+  stats: {
+    DRI: string;
+    SHO: string;
+    PAS: string;
+    PAC: string;
+    DEF: string;
+    PHY: string;
+  };
+  foot: string;
+  shirtIcon: string;
+  profileImage?: string;
+  children?: React.ReactNode;
+  width?: number | string;
+  height?: number | string;
+}
+
+const PlayerCard = ({
+  name,
+  number,
+  level,
+  foot,
+  stats,
+  profileImage,
+  children,
+  width,
+  height,
+}: PlayerCardProps) => {
+  return (
+    <Box
+      sx={{
+        width: width || 260,
+        height: height || 430,
+        position: 'relative',
+        fontWeight: 'bold',
+        color: 'white',
+      }}
+    >
+      {/* Background Image */}
+      <Image
+        src={vector}
+        alt="Card Background"
+        layout="fill"
+        objectFit="contain"
+        className="z-0"
+      />
+
+      {/* Overlay Content */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 10,
+          px: 2,
+          py: 2,
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Top: Shirt Number */}
+        <Box sx={{ mt: 1 }}>
+          <Typography fontWeight={'bold'} fontSize="15px">NO. <span className='font-bold text-[22px]'> {number} </span></Typography>
+        </Box>
+
+<Box
+  display="flex"
+  justifyContent="space-between"
+  alignItems="flex-start"
+  px={2}
+  mt={5}
+>
+  {/* Left: Number, XXX, Foot */}
+  <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
+    <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'}>{number}</Typography>
+    <Divider sx={{ bgcolor: 'white'}}/>
+    <Typography fontSize="17px" fontWeight={'bold'}>XXX</Typography>
+    <Divider sx={{ bgcolor: 'white'}}/>
+    <Box
+      display="flex"
+      alignItems="center"
+      gap={0.5}
+      mt={0.5}
+    >
+      <Image src={Foot} alt="Shoe" width={22} height={10} />
+      <Typography fontSize="16px" fontWeight={'bold'}>{foot}</Typography>
+    </Box>
+  </Box>
+
+  {/* Right: Avatar with edit icon */}
+  <Box
+    sx={{
+      position: 'relative',
+      width: 100,
+      height: 100,
+      border: '2px solid white',
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <Avatar
+      src={typeof profileImage === 'string' ? profileImage : undefined}
+      sx={{ width: 80, height: 80 }}
+      alt="Profile"
+    >
+      {(!profileImage || typeof profileImage !== 'string') && (
+        <Image height={0} width={0} src={imgicon.src} alt="Profile" style={{ width: '100%', height: '100%' }} />
+      )}
+    </Avatar>
+    <IconButton
+      size="small"
+      sx={{
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        // bgcolor: 'white',
+        p: '2px',
+        // '&:hover': { bgcolor: '#eee' },
+      }}
+    >
+    </IconButton>
+  </Box>
+</Box>
+
+
+        {/* Name and Level */}
+        <Box sx={{ mt: 2 }}>
+          <Typography
+            fontSize="18px"
+            fontWeight="bold"
+            sx={{ textTransform: 'uppercase' }}
+          >
+            {name}
+          </Typography>
+          <Typography fontSize="12px" fontWeight={'bold'}>Level {level}</Typography>
+        </Box>
+
+        {/* Divider */}
+        <Divider
+          sx={{
+            bgcolor: 'white',
+            width: '50%',
+            mx: 'auto',
+            my: 1,
+            height: '1px',
+          }}
+        />
+
+        {/* Stats */}
+        {/* <Grid container spacing={1} justifyContent="center">
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 DRI
+            </Typography>
+          </Grid>
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 PAC
+            </Typography>
+          </Grid>
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 SHO
+            </Typography>
+          </Grid>
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 DEF
+            </Typography>
+          </Grid>
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 PAS
+            </Typography>
+          </Grid>
+          <Grid item xs={6} component="div">
+            <Typography fontSize="14px">
+              00 PHY
+            </Typography>
+          </Grid>
+        </Grid> */}
+<Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+  {/* Left Side Stats */}
+  <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+    <Typography fontSize="14px">{stats?.DRI} DRI</Typography>
+    <Typography fontSize="14px">{stats?.SHO} SHO</Typography>
+    <Typography fontSize="14px">{stats?.PAS} PAS</Typography>
+  </Box>
+
+  {/* Vertical Line */}
+  <Box
+    sx={{
+      width: '1px',
+      height: '80px',
+      bgcolor: 'white',
+      mx: 1,
+    }}
+  />
+
+  {/* Right Side Stats */}
+  <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
+    <Typography fontSize="14px">{stats?.PAC} PAC</Typography>
+    <Typography fontSize="14px">{stats?.DEF} DEF</Typography>
+    <Typography fontSize="14px">{stats?.PHY} PHY</Typography>
+  </Box>
+</Box>
+
+        {/* Bottom Divider */}
+        <Divider
+          sx={{
+            bgcolor: 'white',
+            width: '30%',
+            mx: 'auto',
+            mt: 2,
+            height: '1px',
+          }}
+        />
+        {/* Render children (e.g. vote button) at the bottom */}
+        {children && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+            {children}
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+export default PlayerCard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React from 'react';
+// import Image from 'next/image';
+// import { Box, Typography, IconButton, Grid, Avatar } from '@mui/material';
+// import vector from '@/Components/images/Vector.svg';
+// import EditIcon from '@mui/icons-material/Edit';
+
+// interface PlayerCardProps {
+//   name: string;
+//   number: string;
+//   level: string;
+//   stats: {
+//     DRI: string;
+//     SHO: string;
+//     PAS: string;
+//     PAC: string;
+//     DEF: string;
+//     PHY: string;
+//   };
+//   foot: string;
+//   shirtIcon: string;
+//   profileImage?: string;
+// }
+
+// const PlayerCard = ({
+//   name,
+//   number,
+//   level,
+//   stats,
+//   foot,
+//   shirtIcon,
+//   profileImage,
+// }: PlayerCardProps) => {
+//   return (
+//     <Box
+//       sx={{
+//         width: 260,
+//         height: 430,
+//         position: 'relative',
+//         fontWeight: 'bold',
+//         color: 'white',
+//       }}
+//     >
+//       {/* Background */}
+//       <Image
+//         src={vector}
+//         alt="Card Background"
+//         layout="fill"
+//         objectFit="contain"
+//         className="z-0"
+//       />
+
+//       {/* Overlay Content */}
+//       <Box
+//         sx={{
+//           position: 'absolute',
+//           inset: 0,
+//           zIndex: 10,
+//           px: 2,
+//           py: 2,
+//           textAlign: 'center',
+//           display: 'flex',
+//           flexDirection: 'column',
+//           justifyContent: 'space-between',
+//         }}
+//       >
+//         {/* Shirt Number */}
+//         <Box>
+//           <Typography variant="body2">NO. {number}</Typography>
+//           <Typography variant="h5" fontWeight="bold" mt={1}>
+//             {number}
+//           </Typography>
+//         </Box>
+
+//         {/* XXX + Foot */}
+//         <Box>
+//           <Typography variant="caption" display="block">
+//             XXX
+//           </Typography>
+//           <Box display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+//             <Image src={shirtIcon} alt="Foot icon" width={16} height={16} />
+//             <Typography variant="caption">{foot}</Typography>
+//           </Box>
+//         </Box>
+
+//         {/* Profile Picture + Edit */}
+//         <Box sx={{ position: 'relative', width: 80, height: 80, mx: 'auto' }}>
+//           <Avatar
+//             src={profileImage || shirtIcon}
+//             alt="Profile"
+//             sx={{
+//               width: 80,
+//               height: 80,
+//               border: '2px solid white',
+//             }}
+//           />
+//           <IconButton
+//             size="small"
+//             sx={{
+//               position: 'absolute',
+//               top: 0,
+//               right: 0,
+//               bgcolor: 'white',
+//               p: '2px',
+//               '&:hover': { bgcolor: '#f0f0f0' },
+//             }}
+//           >
+//             <EditIcon fontSize="small" sx={{ color: 'black' }} />
+//           </IconButton>
+//         </Box>
+
+//         {/* Name & Level */}
+//         <Box>
+//           <Typography variant="body1" sx={{ textTransform: 'uppercase' }}>
+//             {name}
+//           </Typography>
+//           <Typography variant="caption">{level}</Typography>
+//         </Box>
+
+//         {/* Stats Grid */}
+//         <Grid container spacing={0.5} justifyContent="center" mt={1}>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">DRI {stats.DRI}</Typography>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">PAC {stats.PAC}</Typography>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">SHO {stats.SHO}</Typography>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">DEF {stats.DEF}</Typography>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">PAS {stats.PAS}</Typography>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Typography variant="caption">PHY {stats.PHY}</Typography>
+//           </Grid>
+//         </Grid>
+//       </Box>
+//     </Box>
+//   );
+// };
+
+// export default PlayerCard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import Image from 'next/image'
+// import React from 'react'
+// import vector from '@/Components/images/Vector.svg'
+// import { IconButton } from '@mui/material';
+
+// interface PlayerCardProps {
+//   name: string;
+//   number: string;
+//   level: string;
+//   stats: {
+//     DRI: string;
+//     SHO: string;
+//     PAS: string;
+//     PAC: string;
+//     DEF: string;
+//     PHY: string;
+//   };
+//   foot: string;
+//   shirtIcon: string;
+//   profileImage?: string;
+// }
+
+// const PlayerCard = ({
+//   name,
+//   number,
+//   level,
+//   stats,
+//   foot,
+//   shirtIcon,
+//   profileImage
+// }: PlayerCardProps) => {
+//   return (
+//     <div className="relative w-[260px] h-[430px] font-bold text-white">
+//       {/* Background Image */}
+//       <Image
+//         src={vector}
+//         alt="Card background"
+//         layout="fill"
+//         objectFit="contain"
+//         className="z-0"
+//       />
+
+//       {/* Overlay Content */}
+//       <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-4 py-4 text-center">
+        
+//         {/* Top: Shirt Number */}
+//         <div>
+//           <p className="text-sm">NO. {number}</p>
+//           <p className="text-2xl font-bold mt-1">{number}</p>
+//         </div>
+
+//         {/* Middle Top: XXX + Foot */}
+//         <div className="flex flex-col items-center gap-1 text-xs mt-1">
+//           <p>XXX</p>
+//           <div className="flex items-center gap-1">
+//             <Image src={shirtIcon} alt="shoe" width={16} height={16} />
+//             <p>{foot}</p>
+//           </div>
+//         </div>
+
+//         {/* Profile Image + Edit Icon */}
+//         <div className="relative w-20 h-20 mt-2 mb-1">
+//           <Image
+//             src={profileImage || shirtIcon}
+//             alt="Profile"
+//             layout="fill"
+//             objectFit="cover"
+//             className="rounded-full border-2 border-white"
+//           />
+//           {/* Edit Icon */}
+//           <div className="absolute top-1 right-1 bg-white rounded-full p-1">
+//           <IconButton
+//               sx={{bgcolor: "white", p: 0.5 }}
+//               component="label"
+//             >
+//           </div>
+//         </div>
+
+//         {/* Name & Level */}
+//         <div>
+//           <p className="text-lg uppercase">{name}</p>
+//           <p className="text-xs tracking-wider">{level}</p>
+//         </div>
+
+//         {/* Attributes */}
+//         <div className="grid grid-cols-2 gap-y-1 text-xs mt-2">
+//           <p>DRI {stats.DRI}</p>
+//           <p>PAC {stats.PAC}</p>
+//           <p>SHO {stats.SHO}</p>
+//           <p>DEF {stats.DEF}</p>
+//           <p>PAS {stats.PAS}</p>
+//           <p>PHY {stats.PHY}</p>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default PlayerCard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import Image from 'next/image'
+// import React from 'react'
+// import vector from '@/Components/images/Vector.svg'
+
+// interface PlayerCardProps {
+//   name: string;
+//   number: string;
+//   level: string;
+//   stats: {
+//     DRI: string;
+//     SHO: string;
+//     PAS: string;
+//     PAC: string;
+//     DEF: string;
+//     PHY: string;
+//   };
+//   foot: string;
+//   shirtIcon: string;
+//   profileImage?: string;
+// }
+
+// const PlayerCard = ({
+//   name,
+//   number,
+//   level,
+//   stats,
+//   foot,
+//   shirtIcon,
+//   profileImage
+// }: PlayerCardProps) => {
+//   return (
+//     <div className="relative w-[260px] h-[430px]">
+//         <Image
+//         src={vector}
+//         alt='group img'
+//         width={210}
+//         height={210}
+//         // layout="fill"
+//         objectFit="contain"
+//         className="z-0"
+//         />
+//           <div className="absolute inset-0 flex flex-col items-center text-white px-2 py-4 z-10 font-bold text-center">
+
+// <p className="text-sm">NO. {number}</p>
+// <div className="mt-2 text-xl">{number}</div>
+
+// <div className="text-xs">XXX</div>
+// <div className="text-xs">{foot}</div>
+
+// <div className="w-20 h-20 rounded-full overflow-hidden mt-2 mb-1">
+//   <Image
+//     src={profileImage || shirtIcon}
+//     alt="Profile"
+//     width={80}
+//     height={80}
+//   />
+// </div>
+
+// <div className="text-md">{name}</div>
+// <div className="text-xs mb-2">{level}</div>
+
+// <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mt-2">
+//   <p>DRI {stats.DRI}</p>
+//   <p>PAC {stats.PAC}</p>
+//   <p>SHO {stats.SHO}</p>
+//   <p>DEF {stats.DEF}</p>
+//   <p>PAS {stats.PAS}</p>
+//   <p>PHY {stats.PHY}</p>
+// </div>
+// </div>
+//     </div>
+//   )
+// }
+
+// export default PlayerCard
