@@ -2,10 +2,10 @@
 
 import { useAuth } from "@/lib/hooks";
 import Image from "next/image";
-import Frame from '@/Components/images/Frame.png'
 import Group from '@/Components/images/group451.png';
 import { useState, useEffect } from "react";
 import { Edit } from "@mui/icons-material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
   Box,
   Paper,
@@ -23,11 +23,12 @@ import {
   Alert,
   IconButton,
   Divider,
+  InputAdornment,
 } from "@mui/material";
 import { updateProfile, deleteProfile } from '@/lib/api';
-import { User } from "@/types/user";
+// import { User } from "@/types/user";
 import { useRouter } from "next/navigation";
-import { da } from "date-fns/locale";
+// import { da } from "date-fns/locale";
 
 
 const PlayerProfileCard = () => {
@@ -47,13 +48,14 @@ const PlayerProfileCard = () => {
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [age, setAge] = useState(user?.age || "");
   const [gender, setGender] = useState(user?.gender || "");
-  const [positionType, setPositionType] = useState(user?.position || "");
+  const [positionType, setPositionType] = useState(user?.positionType || '');
   const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)");
   const [style, setStyle] = useState(user?.style || "Axe");
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left");
   const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "");
   const [password, setPassword] = useState(user?.password || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [showPassword, setShowPassword] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imgSrc, setImgSrc] = useState(
@@ -67,6 +69,49 @@ const PlayerProfileCard = () => {
   useEffect(() => {
     setImgSrc(user?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : Group);
   }, [user?.profilePicture]);
+
+  // Initialize positionType and position based on user's current position
+  useEffect(() => {
+    console.log('🔍 Initializing position from user data:', user?.position);
+    if (user?.position) {
+      const currentPosition = user.position;
+      if (currentPosition.includes("Goalkeeper")) {
+        setPositionType("Goalkeeper");
+        setPosition(currentPosition);
+      } else if (currentPosition.includes("Back") || currentPosition.includes("Wing-back")) {
+        setPositionType("Defender");
+        setPosition(currentPosition);
+      } else if (currentPosition.includes("Midfielder")) {
+        setPositionType("Midfielder");
+        setPosition(currentPosition);
+      } else if (currentPosition.includes("Forward") || currentPosition.includes("Striker") || currentPosition.includes("Winger")) {
+        setPositionType("Forward");
+        setPosition(currentPosition);
+      } else {
+        // Default fallback
+        setPositionType("Goalkeeper");
+        setPosition("Goalkeeper (GK)");
+      }
+    } else {
+      // Default values for new users
+      setPositionType("Goalkeeper");
+      setPosition("Goalkeeper (GK)");
+    }
+  }, [user?.position]);
+
+  // Reset position when positionType changes
+  useEffect(() => {
+    console.log('🔄 Position type changed to:', positionType);
+    if (positionType === "Goalkeeper") {
+      setPosition("Goalkeeper (GK)");
+    } else if (positionType === "Defender") {
+      setPosition("Center-Back (CB)");
+    } else if (positionType === "Midfielder") {
+      setPosition("Central Midfielder (CM)");
+    } else if (positionType === "Forward") {
+      setPosition("Striker (ST)");
+    }
+  }, [positionType]);
 
   const handleNext = () => {
     setStep((prev) => prev + 1);
@@ -84,6 +129,13 @@ const PlayerProfileCard = () => {
       if (!isAuthenticated || !token) {
         throw new Error("Not authenticated. Please login again.");
       }
+      
+      // Debug: log the current state values
+      console.log('🔍 Current state values:');
+      console.log('  positionType:', positionType);
+      console.log('  position:', position);
+      console.log('  user.positionType:', user?.positionType);
+      
       const updateData = {
         firstName,
         lastName,
@@ -91,6 +143,7 @@ const PlayerProfileCard = () => {
         age: age && age !== "" ? Number(age) : undefined,
         gender,
         position,
+        positionType: positionType || "Goalkeeper",
         style,
         preferredFoot,
         shirtNumber,
@@ -106,7 +159,8 @@ const PlayerProfileCard = () => {
       };
 
       // Debug: log what you are sending
-      console.log("Sending updateData:", updateData);
+      console.log("🔍 Sending updateData:", updateData);
+      console.log("🔍 positionType in updateData:", updateData.positionType);
 
       const { ok, data } = await updateProfile(token, updateData);
       if (!ok) {
@@ -176,6 +230,14 @@ const PlayerProfileCard = () => {
     }
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // const handlePositionTypeChange = (newPositionType: string) => {
+  //   setPositionType(newPositionType);
+  // };
+
   if (step === 1) {
     return (
       <Box
@@ -183,7 +245,7 @@ const PlayerProfileCard = () => {
           maxWidth: "100%",
           mx: "auto",
           p: 4,
-          backgroundImage: `url(${Frame.src})`,
+          // backgroundImage: `url(${Frame.src})`,
           backgroundAttachment: 'fixed',
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
@@ -266,7 +328,7 @@ const PlayerProfileCard = () => {
               </Typography>
               <TextField
                 name="positionType"
-                defaultValue="Goalkeeper (GK)"
+                defaultValue={positionType}
                 InputProps={{ readOnly: true }}
                 size="small"
                 sx={{ flex: 1 }}
@@ -402,7 +464,7 @@ const PlayerProfileCard = () => {
           maxWidth: "100%",
           mx: "auto",
           p: 4,
-          backgroundImage: "url('/assets/SplashScreen.png')",
+          // backgroundImage: "url('/assets/SplashScreen.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           minHeight: "100vh",
@@ -453,35 +515,65 @@ const PlayerProfileCard = () => {
               size="small"
               fullWidth
             />
-            <FormControl>
-              <FormLabel>Position Type</FormLabel>
-              <RadioGroup name="positionType" value={positionType} onChange={e => setPositionType(e.target.value)}>
-                {["Goalkeeper", "Defender", "Midfielder", "Forward"].map((type) => (
-                  <FormControlLabel key={type} value={type} control={<Radio />} label={type} />
-                ))}
-              </RadioGroup>
-            </FormControl>
-            <FormControl>
-              <FormLabel>Position</FormLabel>
-              <RadioGroup name="position" value={position} onChange={e => setPosition(e.target.value)}>
-                <FormControlLabel value="Goalkeeper (GK)" control={<Radio />} label="Goalkeeper (GK)" />
-              </RadioGroup>
-            </FormControl>
-            <FormControl>
-              <FormLabel>Your Style of Playing</FormLabel>
-              <RadioGroup name="style" value={style} onChange={e => setStyle(e.target.value)}>
-                {["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Sweeper Keeper"].map((s) => (
-                  <FormControlLabel key={s} value={s} control={<Radio />} label={s} />
-                ))}
-              </RadioGroup>
-            </FormControl>
-            <FormControl>
-              <FormLabel>Preferred Foot</FormLabel>
-              <RadioGroup name="preferredFoot" value={preferredFoot} onChange={e => setPreferredFoot(e.target.value)} row>
-                <FormControlLabel value="Left" control={<Radio />} label="Left" />
-                <FormControlLabel value="Right" control={<Radio />} label="Right" />
-              </RadioGroup>
-            </FormControl>
+              <FormControl>
+                <FormLabel>Position Type</FormLabel>
+                <RadioGroup name="positionType" value={positionType} onChange={e => setPositionType(e.target.value)}>
+                  {["Goalkeeper", "Defender", "Midfielder", "Forward"].map((type) => (
+                    <FormControlLabel key={type} value={type} control={<Radio color="success" />} label={type} />
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Position</FormLabel>
+                <RadioGroup name="position" value={position} onChange={e => setPosition(e.target.value)}>
+                  {positionType === "Goalkeeper" && (
+                    <FormControlLabel value="Goalkeeper (GK)" control={<Radio color="success" />} label="Goalkeeper (GK)" />
+                  )}
+                  {positionType === "Defender" && (
+                    <>
+                      <FormControlLabel value="Center-Back (CB)" control={<Radio color="success" />} label="Center-Back (CB)" />
+                      <FormControlLabel value="Right-Back (RB)" control={<Radio color="success" />} label="Right-Back (RB)" />
+                      <FormControlLabel value="Left-Back (LB)" control={<Radio color="success" />} label="Left-Back (LB)" />
+                      <FormControlLabel value="Right Wing-back (RWB)" control={<Radio color="success" />} label="Right Wing-back (RWB)" />
+                      <FormControlLabel value="Left Wing-back (LWB)" control={<Radio color="success" />} label="Left Wing-back (LWB)" />
+                    </>
+                  )}
+                  {positionType === "Midfielder" && (
+                    <>
+                      <FormControlLabel value="Central Midfielder (CM)" control={<Radio color="success" />} label="Central Midfielder (CM)" />
+                      <FormControlLabel value="Defensive Midfielder (CDM)" control={<Radio color="success" />} label="Defensive Midfielder (CDM)" />
+                      <FormControlLabel value="Attacking Midfielder (CAM)" control={<Radio color="success" />} label="Attacking Midfielder (CAM)" />
+                      <FormControlLabel value="Right Midfielder (RM)" control={<Radio color="success" />} label="Right Midfielder (RM)" />
+                      <FormControlLabel value="Left Midfielder (LM)" control={<Radio color="success" />} label="Left Midfielder (LM)" />
+                    </>
+                  )}
+                  {positionType === "Forward" && (
+                    <>
+                      <FormControlLabel value="Striker (ST)" control={<Radio color="success" />} label="Striker (ST)" />
+                      <FormControlLabel value="Central Forward (CF)" control={<Radio color="success" />} label="Central Forward (CF)" />
+                      <FormControlLabel value="Right Forward (RF)" control={<Radio color="success" />} label="Right Forward (RF)" />
+                      <FormControlLabel value="Left Forward (LF)" control={<Radio color="success" />} label="Left Forward (LF)" />
+                      <FormControlLabel value="Right Winger (RW)" control={<Radio color="success" />} label="Right Winger (RW)" />
+                      <FormControlLabel value="Left Winger (LW)" control={<Radio color="success" />} label="Left Winger (LW)" />
+                    </>
+                  )}
+                </RadioGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Your Style of Playing</FormLabel>
+                <RadioGroup name="style" value={style} onChange={e => setStyle(e.target.value)}>
+                  {["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Sweeper Keeper"].map((s) => (
+                    <FormControlLabel key={s} value={s} control={<Radio color="success" />} label={s} />
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Preferred Foot</FormLabel>
+                <RadioGroup name="preferredFoot" value={preferredFoot} onChange={e => setPreferredFoot(e.target.value)} row>
+                  <FormControlLabel value="Left" control={<Radio color="success" />} label="Left" />
+                  <FormControlLabel value="Right" control={<Radio color="success" />} label="Right" />
+                </RadioGroup>
+              </FormControl>
             <Button variant="contained" color="primary" onClick={handleNext} fullWidth>
               Next
             </Button>
@@ -498,7 +590,7 @@ const PlayerProfileCard = () => {
           maxWidth: "100%",
           mx: "auto",
           p: 4,
-          backgroundImage: "url('/assets/SplashScreen.png')",
+          // backgroundImage: "url('/assets/SplashScreen.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           minHeight: "100vh",
@@ -649,7 +741,7 @@ const PlayerProfileCard = () => {
           maxWidth: "100%",
           mx: "auto",
           p: 4,
-          backgroundImage: "url('/assets/SplashScreen.png')",
+          // backgroundImage: "url('/assets/SplashScreen.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           minHeight: "100vh",
@@ -684,12 +776,22 @@ const PlayerProfileCard = () => {
               <TextField
                 label="Change Password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Leave blank to keep current password"
                 size="small"
                 fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
               />
               <TextField
                 label="First Name"

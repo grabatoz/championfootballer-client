@@ -55,22 +55,39 @@ export default function AuthTabs() {
     setLoginError('');
     setLoginLoading(true);
     console.log('Login attempt:', loginData);
+    
     if (!loginData.email || !loginData.password) {
       setLoginError('Please fill in all fields');
       setLoginLoading(false);
       return;
     }
+
+    // Check if user is entering email in password field
+    if (loginData.password === loginData.email) {
+      setLoginError('It looks like you entered your email in the password field. Please enter your actual password.');
+      setLoginLoading(false);
+      return;
+    }
+
+    // Check if password looks like an email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(loginData.password)) {
+      setLoginError('It looks like you entered an email address in the password field. Please enter your actual password.');
+      setLoginLoading(false);
+      return;
+    }
+
     try {
       const result = await authDispatch(login(loginData)).unwrap();
       console.log('Login result:', result);
       if (result.success) router.push('/dashboard');
       else setLoginError(result.error || 'Login failed');
     } catch (err: unknown) {
-      console.error('Register error:', err);
+      console.error('Login error:', err);
       if (err instanceof Error) {
-        setRegisterError(err.message);
+        setLoginError(err.message);
       } else {
-        setRegisterError('Registration failed');
+        setLoginError('Login failed');
       }
     }
     finally {
@@ -186,7 +203,7 @@ export default function AuthTabs() {
               InputLabelProps={{
                 sx: { color: '#ccc' },
               }} />
-            <TextField fullWidth label="Password" name="password" type="password" value={loginData.password} onChange={handleLoginChange} size="small" required sx={{
+            <TextField fullWidth label="Password" name="password" type="password" value={loginData.password} onChange={handleLoginChange} size="small" required placeholder="Enter your password (not your email)" sx={{
               input: {
                 color: 'black',
                 backgroundColor: 'rgba(255,255,255,0.05)',

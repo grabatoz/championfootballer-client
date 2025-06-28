@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import Cookies from 'js-cookie';
 
 export function useAuth() {
   const [user, setUser] = useState<any>(null);
-  const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? Cookies.get('token') || null : null);
   const [loading, setLoading] = useState(true);
 
   // Fetch user info from backend using JWT
@@ -15,11 +16,11 @@ export function useAuth() {
       if (data.success) setUser(data.user);
       else {
         setUser(null);
-        localStorage.removeItem('token');
+        Cookies.remove('token');
       }
     } catch {
       setUser(null);
-      localStorage.removeItem('token');
+      Cookies.remove('token');
     } finally {
       setLoading(false);
     }
@@ -38,14 +39,14 @@ export function useAuth() {
   const login = (jwt: string, userObj: any) => {
     setToken(jwt);
     setUser(userObj);
-    localStorage.setItem('token', jwt);
+    Cookies.set('token', jwt, { expires: 7, path: '/' });
   };
 
   // Logout: clear everything
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
+    Cookies.remove('token', { path: '/' });
   };
 
   return { user, token, login, logout, loading };

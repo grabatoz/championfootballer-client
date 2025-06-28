@@ -28,6 +28,7 @@ export interface User {
   preferredFoot?: string;
   shirtNumber?: string;
   profilePicture?: string | null;
+  positionType: string;
   skills?: Skills;
 }
 

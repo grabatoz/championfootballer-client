@@ -20,6 +20,8 @@ export interface RegisterCredentials {
   lastName: string;
   age: string;
   gender: string;
+  position?: string;
+  positionType?: string;
   confirmPassword?: string;
 }
 

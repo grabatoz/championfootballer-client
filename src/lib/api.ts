@@ -523,6 +523,7 @@ interface UpdateProfileData {
   age?: number;
   gender: string;
   position: string;
+  positionType: string;
   style: string;
   preferredFoot: string;
   password?: string;
@@ -532,6 +533,12 @@ interface UpdateProfileData {
 
 export const updateProfile = async ( token: string , updateData: UpdateProfileData) => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  
+  // Debug logging
+  console.log('🔍 updateProfile called with data:', updateData);
+  console.log('🔍 positionType value:', updateData.positionType);
+  console.log('🔍 Full updateData object:', JSON.stringify(updateData, null, 2));
+  
   const response = await fetch(`${apiUrl}/profile`, {
     method: "PUT",
     headers: {
@@ -543,7 +550,7 @@ export const updateProfile = async ( token: string , updateData: UpdateProfileDa
   let data;
   try {
     data = await response.json();
-    console.log('first',data)
+    console.log('🔍 Backend response:', data);
   } catch {
     data = { message: 'Invalid server response' };
   }
