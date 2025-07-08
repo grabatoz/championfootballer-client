@@ -22,7 +22,7 @@ export default function Footer() {
   };
 
   return (
-    <Box component="footer" sx={{ backgroundColor: 'white', py: 6, mt: 10 }}>
+    <Box component="footer" sx={{py: 6, mt: 10 , backgroundColor: '#0a3e1e' }}>
       <Container maxWidth="md">
         <Stack spacing={3} alignItems="center">
           {/* Social Icons */}

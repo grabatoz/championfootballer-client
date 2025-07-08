@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../api';
 import Cookies from 'js-cookie';
 import { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from '@/types/api';
-import { User } from '@/types/user';
+import { User} from '@/types/user';
 
 // Cookie options for 7 days
 const COOKIE_OPTIONS = {

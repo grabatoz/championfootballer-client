@@ -23,7 +23,6 @@ import {
   Alert,
   IconButton,
   Divider,
-  InputAdornment,
 } from "@mui/material";
 import { updateProfile, deleteProfile } from '@/lib/api';
 // import { User } from "@/types/user";

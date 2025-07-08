@@ -1,68 +1,50 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks';
-import { X } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Paper, TextField, Typography, Container, CircularProgress } from '@mui/material'
+import { Delete, ExitToApp, People, X } from '@mui/icons-material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, CircularProgress, TableContainer, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material'
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, SettingsIcon } from 'lucide-react';
+import { ArrowLeft, HandshakeIcon, SettingsIcon, ShieldIcon, ThumbsDownIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
+import { Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
+import { User, League, Match } from '@/types/user';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import HandshakeIcon from '@mui/icons-material/Handshake';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
-import ShieldIcon from '@mui/icons-material/Shield';
-import { Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-
-interface League {
-    id: string;
-    name: string;
-    inviteCode: string;
-    createdAt: string;
-    members: User[];
-    administrators: User[];
-    matches: Match[];
-    active: boolean;
-    maxGames: number;
-    showPoints: boolean;
-    adminId?: string;
-}
-
-interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    profilePicture?: string | null;
-}
-
-interface Match {
-    id: string;
-    date: string;
-    location: string;
-    status: string;
-    homeTeamName: string;
-    awayTeamName: string;
-    homeTeamGoals?: number;
-    awayTeamGoals?: number;
-    availableUsers: User[];
-    homeTeamUsers: User[];
-    awayTeamUsers: User[];
-    end: string;
-    active: boolean;
-}
+import { useDispatch } from 'react-redux';
+import { joinLeague } from '@/lib/features/leagueSlice';
+import { AppDispatch } from '@/lib/store';
 
 interface TableData {
-    position?: number;
-    teamName?: string;
-    points?: number;
+    id: string;
+    name: string;
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    winPercentage: string;
+    isAdmin?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function LeagueTableDialog({ open, onClose, data, isLoading }: any) {
+interface LeagueMembersDialogProps {
+    open: boolean;
+    onClose: () => void;
+    league: League | null;
+    currentUserId: string;
+    onRemoveMember: (memberId: string) => void;
+    onLeaveLeague: () => void;
+}
+
+interface LeagueTableDialogProps {
+    open: boolean;
+    onClose: () => void;
+    data: TableData[];
+    isLoading: boolean;
+}
+
+function LeagueTableDialog({ open, onClose, data, isLoading }: LeagueTableDialogProps) {
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ bgcolor: '#10b981', color: 'white' }}>League Table</DialogTitle>
@@ -72,7 +54,7 @@ function LeagueTableDialog({ open, onClose, data, isLoading }: any) {
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Box sx={{ overflowX: 'auto' }}>
+                    <TableContainer sx={{ overflowX: 'auto' }}>
                         <Table>
                             <TableHead>
                                 <TableRow sx={{ bgcolor: '#10b981' }}>
@@ -81,22 +63,23 @@ function LeagueTableDialog({ open, onClose, data, isLoading }: any) {
                                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>P</TableCell>
                                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><EmojiEventsIcon fontSize="small" /></TableCell>
                                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><HandshakeIcon fontSize="small" /></TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><ThumbDownIcon fontSize="small" /></TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><ThumbsDownIcon fontSize="small" /></TableCell>
                                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>W%</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {data.map((row: any, idx: any) => (
-                                    <TableRow key={row.name}>
-                                        <TableCell>{idx + 1}</TableCell>
+                                {data.map((row, index) => (
+                                    <TableRow key={row.id}>
+                                          <TableCell>{index + 1}</TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <SportsSoccerIcon sx={{ color: '#10b981' }} />
                                                 <Typography>{row.name}</Typography>
-                                                {idx === 0 && row.played > 0 && <ShieldIcon sx={{ color: '#10b981' }} />}
+                                                {row.isAdmin && <ShieldIcon className={' stroke-[#10b981]'}  />}
                                             </Box>
                                         </TableCell>
+                                        {/* <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{row.name}</TableCell> */}
                                         <TableCell>{row.played}</TableCell>
                                         <TableCell>{row.wins}</TableCell>
                                         <TableCell>{row.draws}</TableCell>
@@ -106,52 +89,76 @@ function LeagueTableDialog({ open, onClose, data, isLoading }: any) {
                                 ))}
                             </TableBody>
                         </Table>
-                    </Box>
+                    </TableContainer>
                 )}
             </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>Close</Button>
+            </DialogActions>
         </Dialog>
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function LeagueMembersDialog({ open, onClose, league, currentUserId, onRemoveMember, onLeaveLeague }: any) {
+function LeagueMembersDialog({ open, onClose, league, currentUserId, onRemoveMember, onLeaveLeague }: LeagueMembersDialogProps) {
     if (!league) return null;
+
     const isAdmin = league.adminId === currentUserId;
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', fontSize: 28, mt: 2 }}>League Players</DialogTitle>
-            <DialogContent sx={{ bgcolor: '#f0fdfa', pb: 2 }}>
-                <Box sx={{ border: '2px solid #10b981', borderRadius: 2, bgcolor: 'white', mb: 4 }}>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {league.members.map((member: any, idx: any) => (
-                        <Box key={member.id} sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1.5, borderBottom: idx !== league.members.length - 1 ? '1px solid #e0e0e0' : 'none' }}>
-                            <Typography sx={{ fontWeight: member.id === league.adminId ? 'bold' : 'normal', flex: 1 }}>
-                                {member.name} {member.fullName && <span style={{ color: '#888' }}>({member.fullName})</span>}
-                            </Typography>
-                            {member.id === league.adminId && (
-                                <Typography sx={{ color: '#10b981', fontWeight: 500, fontSize: 14, ml: 1 }}>
-                                    League Admin
-                                </Typography>
-                            )}
-                            {isAdmin && member.id !== league.adminId && (
-                                <IconButton color="error" onClick={() => onRemoveMember(member.id)}>
-                                    <DeleteIcon />
-                                </IconButton>
-                            )}
-                        </Box>
-                    ))}
+            <DialogTitle>
+                <Box display="flex" alignItems="center" gap={2}>
+                    <People />
+                    <Typography variant="h6">{league.name} - Members</Typography>
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Leave this league</Typography>
-                <Button
-                    variant="contained"
+            </DialogTitle>
+            <DialogContent>
+                <List>
+                    {league.members.map((member) => {
+                        const memberName = `${member.firstName} ${member.lastName}`;
+                        return (
+                            <React.Fragment key={member.id}>
+                                <ListItem>
+                                    <ListItemAvatar>
+                                        <Avatar>
+                                            {member.profilePicture ? (
+                                                <Image src={member.profilePicture} alt={memberName} width={40} height={40} />
+                                            ) : (
+                                                `${member.firstName[0]}${member.lastName[0] || ''}`
+                                            )}
+                                        </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        primary={memberName}
+                                        secondary={member.id === league.adminId ? 'Admin' : 'Member'}
+                                    />
+                                    {isAdmin && member.id !== currentUserId && (
+                                        <IconButton
                     color="error"
-                    fullWidth
-                    sx={{ fontWeight: 'bold', fontSize: 18, py: 1.5 }}
-                    onClick={onLeaveLeague}
+                                            onClick={() => onRemoveMember(member.id)}
                 >
-                    Leave {league.name}
-                </Button>
+                                            <Delete />
+                                        </IconButton>
+                                    )}
+                                </ListItem>
+                                <Divider />
+                            </React.Fragment>
+                        );
+                    })}
+                </List>
             </DialogContent>
+            <DialogActions>
+                {!isAdmin && (
+                    <Button
+                        color="error"
+                        startIcon={<ExitToApp />}
+                        onClick={onLeaveLeague}
+                    >
+                        Leave League
+                    </Button>
+                )}
+                <Button onClick={onClose}>Close</Button>
+            </DialogActions>
         </Dialog>
     );
 }
@@ -160,6 +167,7 @@ function AllLeagues() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [leagues, setLeagues] = useState<League[]>([]);
+    const [, setLoading] = useState(false);
     const router = useRouter();
     const [leagueName, setLeagueName] = useState('');
     const [inviteCode, setInviteCode] = useState('');
@@ -171,95 +179,89 @@ function AllLeagues() {
     const [selectedTableData, setSelectedTableData] = useState<TableData[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
     const [, setLoadingMembers] = useState(false);
+    const dispatch = useDispatch<AppDispatch>();
+    const [leagueImage, setLeagueImage] = useState<File | null>(null);
 
     const handleJoinLeague = async () => {
-        if (!inviteCode.trim()) return;
+        if (!inviteCode.trim()) {
+            toast.error('Please enter an invite code');
+            return;
+        }
 
-        setIsJoining(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/join`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ inviteCode: inviteCode.trim() })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                setInviteCode('');
-                toast.success('Successfully joined league!');
-            } else {
-                toast.error(data.message || 'Failed to join league');
-            }
-        } catch (error) {
-            console.error('Error joining league:', error);
-            toast.error('Failed to join league');
-        } finally {
+            await dispatch(joinLeague(inviteCode.trim())).unwrap();
+            toast.success('Successfully joined the league!');
             setIsJoining(false);
+            setInviteCode('');
+            fetchUserLeagues();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
+            toast.error(errorMessage);
         }
     };
 
-    const fetchUserLeagues = async () => {
+    const fetchUserLeagues = useCallback(async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
-            if (data.success && data.user) {
-                // Combine joined and managed leagues
-                const userLeagues = [
-                    ...(data.user.leagues || []),
-                    ...(data.user.administeredLeagues || [])
-                ];
 
-                // Remove duplicates
-                const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
-
-                setLeagues(uniqueLeagues);
+            if (data.success) {
+                setLeagues(data.leagues || []);
+            } else {
+                toast.error(data.message || 'Failed to fetch leagues');
             }
-        } catch (error) {
-            console.error('Error fetching leagues:', error);
+        } catch {
+            toast.error('An error occurred while fetching leagues');
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [token]);
+
     useEffect(() => {
         if (token) {
             fetchUserLeagues();
         }
-    }, [token]);
-
+    }, [token, fetchUserLeagues]);
 
     const handleCreateLeague = async () => {
-        if (!leagueName.trim()) return;
-
+        if (!leagueName.trim()) {
+            toast.error('Please enter a league name');
+            return;
+        }
         setIsCreating(true);
         try {
+            const formData = new FormData();
+            formData.append('name', leagueName.trim());
+            if (leagueImage) formData.append('image', leagueImage);
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
+                    // 'Content-Type' mat lagayen, FormData khud set karega
                 },
-                body: JSON.stringify({ name: leagueName })
+                body: formData
             });
 
             const data = await response.json();
+
             if (data.success) {
+                toast.success('League created successfully!');
                 setIsDialogOpen(false);
                 setLeagueName('');
-                fetchUserLeagues(); // Refresh leagues list
-                toast.success('League created successfully!');
+                setLeagueImage(null);
+                fetchUserLeagues();
+                setLoading(true)
             } else {
                 toast.error(data.message || 'Failed to create league');
             }
-        } catch (error) {
-            console.error('Error creating league:', error);
-            toast.error('Failed to create league');
+        } catch {
+            toast.error('An error occurred while creating the league');
         } finally {
             setIsCreating(false);
+            setLoading(false);
         }
     };
 
@@ -283,9 +285,9 @@ function AllLeagues() {
 
             if (data.success && data.league) {
                 const leagueDetails = data.league;
-                const playerStats = new Map();
+                const playerStats = new Map<string, TableData>();
 
-                leagueDetails.members.forEach((member: any) => {
+                leagueDetails.members.forEach((member: User) => {
                     playerStats.set(member.id, {
                         id: member.id,
                         name: `${member.firstName} ${member.lastName}`,
@@ -293,20 +295,21 @@ function AllLeagues() {
                         wins: 0,
                         draws: 0,
                         losses: 0,
+                        winPercentage: '0%',
+                        isAdmin: member.id === (leagueDetails.adminId || leagueDetails.administrators[0]?.id),
                     });
                 });
 
                 leagueDetails.matches
-                    .filter((match: any) => match.status === 'completed' && match.homeTeamGoals != null && match.awayTeamGoals != null)
-                    .forEach((match: any) => {
-                        const homeWon = match.homeTeamGoals > match.awayTeamGoals;
-                        const awayWon = match.awayTeamGoals > match.homeTeamGoals;
+                    .filter((match: Match) => match.status === 'completed' && match.homeTeamGoals != null && match.awayTeamGoals != null)
+                    .forEach((match: Match) => {
+                        const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
+                        const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
                         const isDraw = match.homeTeamGoals === match.awayTeamGoals;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const processPlayer = (player: any, isHome: boolean) => {
+                        const processPlayer = (player: User, isHome: boolean) => {
                              if (playerStats.has(player.id)) {
-                                const stats = playerStats.get(player.id);
+                                const stats = playerStats.get(player.id)!;
                                 stats.played++;
                                 if ((isHome && homeWon) || (!isHome && awayWon)) {
                                     stats.wins++;
@@ -318,12 +321,11 @@ function AllLeagues() {
                             }
                         };
                         
-                        match.homeTeamUsers.forEach((player: any) => processPlayer(player, true));
-                        match.awayTeamUsers.forEach((player: any) => processPlayer(player, false));
+                        match.homeTeamUsers.forEach((player: User) => processPlayer(player, true));
+                        match.awayTeamUsers.forEach((player: User) => processPlayer(player, false));
                     });
                 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const tableData = Array.from(playerStats.values()).map((stats: any) => ({
+                const tableData = Array.from(playerStats.values()).map((stats: TableData) => ({
                     ...stats,
                     winPercentage: stats.played > 0 ? `${Math.round((stats.wins / stats.played) * 100)}%` : '0%',
                 }));
@@ -357,11 +359,12 @@ function AllLeagues() {
                 setSelectedLeague({
                     ...league,
                     adminId: admin?.id,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    members: data.league.members.map((m: any) => ({
+                    members: data.league.members.map((m: User) => ({
                         id: m.id,
-                        name: `${m.firstName} ${m.lastName}`,
-                        fullName: m.email // or any other info you want to show
+                        firstName: m.firstName,
+                        lastName: m.lastName,
+                        profilePicture: m.profilePicture,
+                        email: m.email
                     })),
                 });
                 setOpenMembers(true);
@@ -398,7 +401,7 @@ function AllLeagues() {
             });
             setOpenMembers(false);
             fetchUserLeagues();
-        } catch (err) {
+        } catch {
             toast.error('Failed to leave league');
         }
     };
@@ -418,7 +421,9 @@ function AllLeagues() {
                 <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToAllLeagues}
-                    sx={{ mb: 2, color: 'black' }}
+                    sx={{ mb: 2, color: 'white' , backgroundColor:'#1f673b' ,
+                        '&:hover': { backgroundColor: '#388e3c' },
+                     }}
                 >
                     Back to Dashboard
                 </Button>
@@ -442,15 +447,16 @@ function AllLeagues() {
                         Manage and join football leagues. Create your own or join with an invite code.
                     </Typography>
                 </Box>
-                <Grid item xs={12} md={5}>
+                <Box sx={{ flexDirection: { xs: 'column', md: 'row' }, gap: 4, mb: 4 }}>
+                    <Box sx={{ width: '100%' }}>
                     <Paper
                         elevation={6}
                         sx={{
-                            background: 'rgba(255,255,255,0.08)',
+                            background: '#1f673b',
                             backdropFilter: 'blur(10px)',
                             borderRadius: 3,
                             p: { xs: 2, sm: 3 },
-                            color: 'black',
+                            color: 'white',
                             boxShadow: '0 8px 32px 0 rgba(31,38,135,0.37)',
                             border: '1px solid rgba(255,255,255,0.18)',
                             mb: 4,
@@ -461,7 +467,7 @@ function AllLeagues() {
                             <Typography variant="h5" fontWeight="bold">Create or Join League</Typography>
                         </Box>
 
-                        {/* Create Button */}
+                            
                         <Button
                             variant="contained"
                             fullWidth
@@ -507,16 +513,15 @@ function AllLeagues() {
                             </Button>
                         </Box>
                     </Paper>
-                </Grid>
-                <Grid container spacing={4} justifyContent="center">
-                    <Grid item xs={12} md={7}>
-                        <Grid container spacing={3}>
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
                             {leagues.length === 0 ? (
-                                <Grid item xs={12}>
+                                <Box sx={{ gridColumn: '1 / -1' }}>
                                     <Paper
                                         elevation={0}
                                         sx={{
-                                            background: 'rgba(255,255,255,0.06)',
+                                            background: '#1f673b',
                                             borderRadius: 3,
                                             p: 4,
                                             textAlign: 'center',
@@ -526,18 +531,18 @@ function AllLeagues() {
                                         <Typography variant="h6">No leagues found.</Typography>
                                         <Typography variant="body2">Create a new league to get started!</Typography>
                                     </Paper>
-                                </Grid>
+                                </Box>
                             ) : (
                                 leagues.map((league) => (
-                                    <Grid item xs={12} sm={6} key={league.id}>
                                         <Paper
+                                        key={league.id}
                                             elevation={4}
                                             sx={{
                                                 borderRadius: 3,
                                                 p: 3,
-                                                color: 'black',
-                                                background: 'rgba(255,255,255,0.08)',
-                                                boxShadow: '0 8px 32px 0 rgba(31,38,135,0.37)',
+                                                color: 'white',
+                                                background: '#1f673b',
+                                                // boxShadow: '0 8px 32px 0 rgba(31,38,135,0.37)',
                                                 border: '1px solid rgba(255,255,255,0.18)',
                                                 transition: 'transform 0.2s, box-shadow 0.2s',
                                                 '&:hover': {
@@ -551,12 +556,12 @@ function AllLeagues() {
                                         >
                                             <Box display="flex" position={'relative'} alignItems="center" gap={2} mb={1}>
                                                 <Image src={leagueIcon} alt="League" width={32} height={32} />
-                                                <Typography variant="h6" fontWeight="bold">{league.name}</Typography>
+                                                <Typography  textTransform="uppercase" variant="h6" fontWeight="bold">{league.name}</Typography>
                                                 <IconButton
                                                     sx={{
                                                         position:'absolute',
-                                                        color: 'black',
-                                                        border: '2px solid black',
+                                                        color: 'white',
+                                                        border: '2px solid white',
                                                         borderRadius: 2,
                                                         right:'0',
                                                         p: 1.2,
@@ -566,10 +571,10 @@ function AllLeagues() {
                                                     <SettingsIcon />
                                                 </IconButton>
                                             </Box>
-                                            <Typography variant="body2" color="black" mb={1}>
+                                            <Typography variant="body2" color="white" mb={1}>
                                                 Invite Code: <span style={{ color: '#43a047', fontWeight: 600 }}>{league.inviteCode}</span>
                                             </Typography>
-                                            <Typography variant="caption" color="black" mb={2}>
+                                            <Typography variant="caption" color="white" mb={2}>
                                                 Created: {new Date(league.createdAt).toLocaleString()}
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, flexWrap: 'wrap' }}>
@@ -583,7 +588,13 @@ function AllLeagues() {
                                                         px: 4,
                                                         '&:hover': { bgcolor: '#388e3c' },
                                                     }}
-                                                    onClick={() => handleOpenTable(league)}
+                                                    onClick={() => {
+                                                        if (league.showPoints === false) {
+                                                            toast.error('Points are hidden for this league.');
+                                                            return;
+                                                        }
+                                                        handleOpenTable(league);
+                                                    }}
                                                 >
                                                     Table
                                                 </Button>
@@ -618,12 +629,11 @@ function AllLeagues() {
                                                 </Button>
                                             </Box>
                                         </Paper>
-                                    </Grid>
                                 ))
                             )}
-                        </Grid>
-                    </Grid>
-                </Grid>
+                        </Box>
+                    </Box>
+                </Box>
 
                 {/* Create League Dialog */}
                 <Dialog
@@ -655,7 +665,11 @@ function AllLeagues() {
                             variant="outlined"
                             value={leagueName}
                             onChange={(e) => setLeagueName(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleCreateLeague()}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleCreateLeague();
+                                }
+                            }}
                             sx={{
                                 input: {
                                     color: '#263238',
@@ -697,7 +711,7 @@ function AllLeagues() {
                 open={openMembers}
                 onClose={() => setOpenMembers(false)}
                 league={selectedLeague}
-                currentUserId={user?.id}
+                currentUserId={user?.id || ''}
                 onRemoveMember={handleRemoveMember}
                 onLeaveLeague={handleLeaveLeague}
             />

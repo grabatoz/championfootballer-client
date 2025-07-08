@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { profileAPI } from '../api';
-import { User } from '@/types/user';
+import { User, League, Match } from '@/types/user';
 
 interface Statistics {
   matchesPlayed: number;
@@ -11,33 +11,11 @@ interface Statistics {
   draws: number;
 }
 
-interface League {
-  id: number;
-  name: string;
-  country: string;
-}
-
-interface Match {
-  id: number;
-  opponent: string;
-  date: string;
-  location: string;
-  score: string;
-}
-
-
 interface ProfileState {
   user: User | null;
   statistics: Statistics | null;
-  leagues: {
-    joined: League[];
-    managed: League[];
-  };
-  matches: {
-    home: Match[];
-    away: Match[];
-    available: Match[];
-  };
+  leagues: League[];
+  matches: Match[];
   loading: boolean;
   error: string | null;
 }
@@ -46,15 +24,8 @@ interface ProfileState {
 const initialState: ProfileState = {
   user: null,
   statistics: null,
-  leagues: {
-    joined: [],
-    managed: []
-  },
-  matches: {
-    home: [],
-    away: [],
-    available: []
-  },
+  leagues: [],
+  matches: [],
   loading: false,
   error: null
 };
@@ -190,7 +161,7 @@ const profileSlice = createSlice({
       })
       .addCase(fetchLeagues.fulfilled, (state, action) => {
         state.loading = false;
-        state.leagues = action.payload;
+        state.leagues = action.payload || [];
       })
       .addCase(fetchLeagues.rejected, (state, action) => {
         state.loading = false;
@@ -203,7 +174,7 @@ const profileSlice = createSlice({
       })
       .addCase(fetchMatches.fulfilled, (state, action) => {
         state.loading = false;
-        state.matches = action.payload;
+        state.matches = action.payload || [];
       })
       .addCase(fetchMatches.rejected, (state, action) => {
         state.loading = false;

@@ -1,8 +1,15 @@
-import { ApiResponse, LoginCredentials, RegisterCredentials, League as LeagueType, Match as MatchType, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
-import { User } from '@/types/user';
+import { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
+import { User, League, Match } from '@/types/user';
 import Cookies from 'js-cookie';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+interface Player {
+  id: string;
+  name: string;
+  profilePicture: string | null;
+  rating: number;
+}
 
 // Auth API Functions
 export const authAPI = {
@@ -172,7 +179,7 @@ export const authAPI = {
 
 // Leagues API Functions
 export const leagueAPI = {
-  getLeagues: async (): Promise<ApiResponse<LeagueType[]>> => {
+  getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
       const token = Cookies.get('token');
       const response = await fetch(`${API_BASE_URL}/leagues`, {
@@ -222,7 +229,7 @@ export const leagueAPI = {
 
 // Matches API Functions
 export const matchAPI = {
-  getMatches: async (): Promise<ApiResponse<MatchType[]>> => {
+  getMatches: async (): Promise<ApiResponse<Match[]>> => {
     try {
       const token = Cookies.get('token');
       const response = await fetch(`${API_BASE_URL}/matches`, {
@@ -275,6 +282,80 @@ export const matchAPI = {
     });
     return response.json();
   },
+
+  getLeagues: async (): Promise<ApiResponse<League[]>> => {
+    try {
+      const token = Cookies.get('token');
+      const response = await fetch(`${API_BASE_URL}/profile/leagues`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return {
+        success: response.ok,
+        data: data.leagues,
+        error: data.error
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch leagues'
+      };
+    }
+  },
+
+  // getMatches: async (): Promise<ApiResponse<Match[]>> => {
+  //   try {
+  //     const token = Cookies.get('token');
+  //     const response = await fetch(`${API_BASE_URL}/profile/matches`, {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     });
+
+  //     const data = await response.json();
+  //     return {
+  //       success: response.ok,
+  //       data: data.matches,
+  //       error: data.error
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       error: error instanceof Error ? error.message : 'Failed to fetch matches'
+  //     };
+  //   }
+  // },
+
+  updateProfilePicture: async (imageFile: File): Promise<ApiResponse<User>> => {
+    try {
+      const token = Cookies.get('token');
+      const formData = new FormData();
+      formData.append('profilePicture', imageFile);
+
+      const response = await fetch(`${API_BASE_URL}/profile/picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      return {
+        success: response.ok,
+        data: data.user,
+        error: data.error
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update profile picture'
+      };
+    }
+  }
 };
 
 // Users API Functions
@@ -432,7 +513,7 @@ export const profileAPI = {
     }
   },
 
-  getLeagues: async (): Promise<ApiResponse<LeagueType[]>> => {
+  getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
       const token = Cookies.get('token');
       const response = await fetch(`${API_BASE_URL}/profile/leagues`, {
@@ -455,7 +536,7 @@ export const profileAPI = {
     }
   },
 
-  getMatches: async (): Promise<ApiResponse<MatchType[]>> => {
+  getMatches: async (): Promise<ApiResponse<Match[]>> => {
     try {
       const token = Cookies.get('token');
       const response = await fetch(`${API_BASE_URL}/profile/matches`, {
@@ -565,4 +646,66 @@ export async function deleteProfile(token: string) {
     },
   });
   return res.ok;
-} 
+}
+
+interface PlayerStatsData {
+  player: PlayerDetails;
+  leagues: LeagueInfo[];
+  years: number[];
+  currentStats: Record<string, number>;
+  accumulativeStats: Record<string, number>;
+  trophies: Record<string, number>;
+}
+interface LeagueInfo {
+  id: string;
+  name: string;
+}
+interface PlayerDetails {
+  name: string;
+  position: string;
+  rating: number;
+  avatar: string | null;
+}
+export const playerAPI = {
+  getPlayedWith: async (token: string): Promise<ApiResponse<Player[]>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/players/played-with`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { success: false, error: errorData.message || 'Failed to fetch players' };
+      }
+
+      const data = await response.json();
+      return { success: true, data: data.players };
+
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' };
+    }
+  },
+
+  getPlayerStats: async (playerId: string, leagueId: string, year: string): Promise<ApiResponse<PlayerStatsData>> => {
+    try {
+        const token = Cookies.get('token');
+        const response = await fetch(`${API_BASE_URL}/players/${playerId}/stats?leagueId=${leagueId}&year=${year}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            return { success: false, error: errorData.message || 'Failed to fetch player stats' };
+        }
+
+        const data = await response.json();
+        return { success: true, data: data.data };
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' };
+    }
+  },
+}

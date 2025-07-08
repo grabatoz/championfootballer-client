@@ -1,14 +1,14 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, Chip } from '@mui/material';
+import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, Chip, SelectChangeEvent } from '@mui/material';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
-import Grid from '@mui/material/Grid';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
+import { User } from '@/types/user';
 
 interface Match {
     id: string;
@@ -28,9 +28,9 @@ interface Match {
     };
     homeTeamName?: string;
     awayTeamName?: string;
-    homeTeamUsers?: any[];
-    awayTeamUsers?: any[];
-    availableUsers?: any[];
+    homeTeamUsers?: User[];
+    awayTeamUsers?: User[];
+    availableUsers?: User[];
     homeTeamGoals?: number;
     awayTeamGoals?: number;
 }
@@ -38,7 +38,7 @@ interface Match {
 interface League {
     id: string;
     name: string;
-    members?: any[];
+    members?: User[];
 }
 
 interface PlayerCardProps {
@@ -70,8 +70,7 @@ export default function AllMatches() {
     console.log('selectedMatch',selectedMatch)
     const { token } = useAuth();
   
-
-    const fetchLeagues = async () => {
+    const fetchLeagues = useCallback(async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
                 headers: {
@@ -96,9 +95,9 @@ export default function AllMatches() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
 
-    const fetchMatchesByLeague = async (leagueId: string) => {
+    const fetchMatchesByLeague = useCallback(async (leagueId: string) => {
         setLoading(true);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
@@ -132,13 +131,20 @@ export default function AllMatches() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
     
     useEffect(() => {
         if (token) {
             fetchLeagues();
         }
-    }, [token]);
+    }, [token, fetchLeagues]);
+
+    // Add this effect for auto-select
+    useEffect(() => {
+        if (leagues.length > 0 && selectedLeague === 'all') {
+            setSelectedLeague(leagues[0].id);
+        }
+    }, [leagues, selectedLeague]);
 
     // Fetch matches whenever selected league changes
    
@@ -149,13 +155,14 @@ export default function AllMatches() {
             setMatches([]); // Clear matches when "All Leagues" is selected
             setLoading(false);
         }
-    }, [selectedLeague, token]);
+    }, [selectedLeague, token, fetchMatchesByLeague]);
+
     const handleBackToDashboard = () => {
         router.push('/dashboard');
     };
 
-    const handleLeagueChange = (event: any) => {
-        const newLeagueId = event.target.value;
+    const handleLeagueChange = (event: SelectChangeEvent<string>) => {
+        const newLeagueId = event.target.value as string;
         console.log('League selection changed to:', newLeagueId);
         console.log('Available leagues:', leagues);
         const selectedLeagueInfo = leagues.find(l => l.id === newLeagueId);
@@ -179,7 +186,7 @@ export default function AllMatches() {
     };
 
     // Helper to map player object to PlayerCardProps
-    const mapPlayerToCardProps = (player: any): PlayerCardProps => {
+    const mapPlayerToCardProps = (player: User): PlayerCardProps => {
         const props: PlayerCardProps = {
             id: player.id,
             name: (player.firstName || '') + ' ' + (player.lastName || ''),
@@ -194,7 +201,7 @@ export default function AllMatches() {
                 PHY: player?.skills?.physical?.toString() || ''
             },
             foot: player?.preferredFoot === 'right' ? 'R' : 'L',
-            profileImage: player?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture}` : undefined,
+            profileImage: player?.profilePicture ? (player.profilePicture.startsWith('http') ? player.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : `/${player.profilePicture}`}`) : undefined,
             shirtIcon: ''
         };
         console.log('mapPlayerToCardProps input:', player);
@@ -208,7 +215,7 @@ export default function AllMatches() {
         const leagueMembers = leagueForMatch?.members || [];
         // Count how many league members are in availableUsers
         const availableCount = leagueMembers.filter(member =>
-            match.availableUsers?.some((u: any) => u.id === member.id)
+            match.availableUsers?.some((u: User) => u.id === member.id)
         ).length;
         const pendingCount = leagueMembers.length - availableCount;
         return { availableCount, pendingCount };
@@ -219,7 +226,7 @@ export default function AllMatches() {
             sx={{
                 minHeight: '100vh',
                 // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
-                backgroundColor:'white',
+                // backgroundColor:'white',
                 py: 6,
             }}
         >
@@ -338,10 +345,11 @@ export default function AllMatches() {
                     ) : (
                         matches.map((match) => {
                             const { availableCount, pendingCount } = getAvailabilityCounts(match);
-                            return(
+                            return (
                             <Paper
                                 key={match.id}
                                 elevation={4}
+                                    onClick={() => router.push(`/match/${match.id}`)}
                                 sx={{
                                     background: 'rgba(255,255,255,0.1)',
                                     borderRadius: 3,
@@ -350,23 +358,15 @@ export default function AllMatches() {
                                     boxShadow: '0 4px 24px 0 rgba(31,38,135,0.17)',
                                     border: '1px solid rgba(255,255,255,0.10)',
                                     position: 'relative',
-                                }}
-                            >
-                                 <Button
-                                    variant="outlined"
-                                    onClick={() => handleOpenTeamModal(match)}
-                                    sx={{ 
-                                        position: 'absolute', 
-                                        top: 16, 
-                                        right: 16, 
-                                        color: 'black', 
-                                        borderColor: 'black', 
-                                        '&:hover': { backgroundColor: 'rgba(0,0,0,0.08)' } 
+                                        cursor: 'pointer',
+                                        transition: 'box-shadow 0.2s, transform 0.2s',
+                                        '&:hover': {
+                                            boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)',
+                                            transform: 'translateY(-2px) scale(1.01)',
+                                            background: 'rgba(255,255,255,0.18)',
+                                        },
                                     }}
                                 >
-                                    See Teams
-                                </Button>
-
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 4 }, textAlign: 'center', p: 2 }}>
                                     {/* Home Team */}
                                     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -410,24 +410,23 @@ export default function AllMatches() {
                                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                     
                                     {( () => {
-                                        let displayStatus = match.status;
-
-                                        if (displayStatus === 'scheduled' as any) displayStatus = 'upcoming';
+                                            const displayStatus = match.status;
 
                                         const statusInfo = {
-                                            upcoming: { label: 'Upcoming', color: 'primary' },
-                                            completed: { label: 'Completed', color: 'success' },
-                                            cancelled: { label: 'Cancelled', color: 'error' },
-                                        };
+                                                upcoming: { label: 'Upcoming', color: 'primary' as const },
+                                                completed: { label: 'Completed', color: 'success' as const },
+                                                cancelled: { label: 'Cancelled', color: 'error' as const },
+                                            };
 
-                                        const currentStatus = statusInfo[displayStatus as keyof typeof statusInfo] || { label: displayStatus, color: 'default'};
+                                            const currentStatus = statusInfo[displayStatus as keyof typeof statusInfo] || { label: displayStatus, color: 'default' as const};
 
-                                        return <Chip label={currentStatus.label} color={currentStatus.color as any} />;
+                                            return <Chip label={currentStatus.label} color={currentStatus.color} />;
                                     })()}
 
                                 </Box>
                             </Paper>
-                        )})
+                            );
+                        })
                     )}
                 </Box>
 
@@ -439,26 +438,26 @@ export default function AllMatches() {
                             <Box>
                                 <Typography variant="h6" gutterBottom>{selectedMatch.homeTeamName || selectedMatch.homeTeam}</Typography>
                                 <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-                                <Grid columns={12} spacing={2}>
-                                    {(selectedMatch.homeTeamUsers || []).map((player: any, idx: number) => (
-                                        <Grid xs={12} sm={6} md={4} key={player.id || idx}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                                    {(selectedMatch.homeTeamUsers || []).map((player: User, idx: number) => (
+                                        <Box key={player.id || idx}>
                                             <PlayerCard {...mapPlayerToCardProps(player)} width={240} height={400} />
-                                        </Grid>
+                                        </Box>
                                     ))}
-                                </Grid>
+                                </Box>
                             </Box>
                         )}
                         {selectedMatch && (
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="h6" gutterBottom>{selectedMatch.awayTeamName || selectedMatch.awayTeam}</Typography>
                                 <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-                                <Grid columns={12} spacing={2}>
-                                    {(selectedMatch.awayTeamUsers || []).map((player: any, idx: number) => (
-                                        <Grid xs={12} sm={6} md={4} key={player.id || idx}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                                    {(selectedMatch.awayTeamUsers || []).map((player: User, idx: number) => (
+                                        <Box key={player.id || idx}>
                                             <PlayerCard {...mapPlayerToCardProps(player)} width={240} height={400} />
-                                        </Grid>
+                                        </Box>
                                     ))}
-                                </Grid>
+                                </Box>
                             </Box>
                         )}
                     </DialogContent>

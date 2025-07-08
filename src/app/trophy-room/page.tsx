@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Grid } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
 import BaloonDImg from '@/Components/images/baloond.png';
@@ -59,10 +59,11 @@ interface TrophyType {
   winner?: string | null;
   winnerId?: string | null;
   leagueId?: string;
+  leagueName?: string;
 }
 
 // --- Static Trophy Data ---
-const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId'>[] = [
+const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
     { title: 'Champion Footballer', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
     { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
     { title: 'Ballon D\'or', description: 'Player With The Most MOTM Awards', image: BaloonDImg, color: '#FFC107' },
@@ -74,7 +75,7 @@ const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId'>[] = [
 ];
 
 // --- Reusable Trophy Card Component ---
-const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
+const TrophyCard = ({ title, description, image, color, leagueName, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
     <Paper
       elevation={4}
       sx={{
@@ -85,7 +86,6 @@ const TrophyCard = ({ title, description, image, color, winner, onButtonClick }:
         textAlign: 'center',
         borderRadius: '16px',
         border: `2px solid ${color}`,
-        background: 'white',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -104,7 +104,7 @@ const TrophyCard = ({ title, description, image, color, winner, onButtonClick }:
         onClick={onButtonClick}
         disabled={!onButtonClick}
       >
-        {winner || 'TBC'}
+        {leagueName || 'TBC'}
       </Button>
     </Paper>
 );
@@ -201,6 +201,7 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
             winnerId: winnerId || null,
             winner: winnerId ? getPlayerName(winnerId) : 'No Winner',
             leagueId: league.id,
+            leagueName: league.name,
         };
     });
 };
@@ -228,7 +229,7 @@ export default function GlobalTrophyRoom() {
                 } else {
                     setError(data.message || 'Failed to fetch leagues.');
                 }
-            } catch (err) {
+            } catch {
                 setError('An error occurred while fetching league data.');
             } finally {
                 setLoading(false);
@@ -267,7 +268,7 @@ export default function GlobalTrophyRoom() {
     }, [leagues, user]);
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#fff' }}><CircularProgress /></Box>;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
 
     if (error) {
@@ -275,11 +276,11 @@ export default function GlobalTrophyRoom() {
     }
 
     const trophiesToDisplay: TrophyType[] = filter === 'all' 
-        ? trophies.map(t => ({...t, winner: 'TBC'}))
+        ? trophies.map(t => ({...t, winner: 'TBC', leagueName: 'TBC'}))
         : myAchievements;
 
     return (
-        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', mb: 4, gap: 2 }}>
                 <Chip 
                     label="All Trophies" 
@@ -296,20 +297,20 @@ export default function GlobalTrophyRoom() {
                 />
             </Box>
 
-            <Grid container spacing={3} justifyContent="center">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3, justifyContent: 'center' }}>
                 {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (
-                    <Grid item key={`${trophy.title}-${index}`} xs={12} sm={6} md={4} lg={3}>
+                    <Box key={`${trophy.title}-${index}`}>
                         <TrophyCard 
                             {...trophy}
                             onButtonClick={trophy.leagueId ? () => router.push(`/league/${trophy.leagueId}`) : undefined}
                         />
-                    </Grid>
+                    </Box>
                 )) : (
-                    <Typography sx={{ mt: 4 }}>
+                    <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
                         {filter === 'my' ? 'You have not won any achievements yet, or the leagues are not finished.' : 'No trophies to display.'}
                     </Typography>
                 )}
-            </Grid>
+            </Box>
         </Box>
     );
 } 

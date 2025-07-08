@@ -15,12 +15,13 @@ export interface User {
   age?: number | string;
   password?: string;
   gender?: string;
-  joinedLeagues?: any[];
-  managedLeagues?: any[];
-  homeTeamMatches?: any[];
-  awayTeamMatches?: any[];
-  availableMatches?: any[];
-  guestMatch?: any | null;
+  level?:string;
+  joinedLeagues?: League[];
+  managedLeagues?: League[];
+  homeTeamMatches?: Match[];
+  awayTeamMatches?: Match[];
+  availableMatches?: Match[];
+  guestMatch?: Match | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   position?: string;
@@ -42,4 +43,35 @@ export interface AuthResponse {
 export interface ApiError {
   message: string;
   status?: number;
+}
+
+// Add these interfaces to avoid 'any' types
+export interface League {
+  id: string;
+  name: string;
+  inviteCode: string;
+  createdAt: string;
+  members: User[];
+  administrators: User[];
+  matches: Match[];
+  active: boolean;
+  maxGames: number;
+  showPoints: boolean;
+  adminId?: string;
+}
+
+export interface Match {
+  id: string;
+  date: string;
+  location: string;
+  status: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeTeamGoals?: number;
+  awayTeamGoals?: number;
+  availableUsers: User[];
+  homeTeamUsers: User[];
+  awayTeamUsers: User[];
+  end: string;
+  active: boolean;
 } 

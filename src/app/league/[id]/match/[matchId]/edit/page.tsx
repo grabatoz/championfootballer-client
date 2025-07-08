@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -66,16 +66,10 @@ export default function EditMatchPage() {
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
-    const leagueId = params.id as string;
-    const matchId = params.matchId as string;
+    const leagueId = params?.id ? String(params.id) : '';
+    const matchId = params?.matchId ? String(params.matchId) : '';
 
-    useEffect(() => {
-        if (leagueId && matchId && token) {
-            fetchLeagueAndMatchDetails();
-        }
-    }, [leagueId, matchId, token]);
-
-    const fetchLeagueAndMatchDetails = async () => {
+    const fetchLeagueAndMatchDetails = useCallback(async () => {
         try {
             setLoading(true);
             const [leagueRes, matchRes] = await Promise.all([
@@ -109,12 +103,19 @@ export default function EditMatchPage() {
                 throw new Error(matchData.message || 'Failed to fetch match details');
             }
 
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
-    };
+    }, [leagueId, matchId, token]);
+
+    useEffect(() => {
+        if (leagueId && matchId && token) {
+            fetchLeagueAndMatchDetails();
+        }
+    }, [leagueId, matchId, token, fetchLeagueAndMatchDetails]);
 
     const handleUpdateMatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -154,8 +155,9 @@ export default function EditMatchPage() {
             } else {
                 throw new Error(result.message || 'Failed to update match.');
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

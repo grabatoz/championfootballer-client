@@ -1,4 +1,4 @@
-import { User } from './user';
+import { User, League, Match } from './user';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -25,21 +25,6 @@ export interface RegisterCredentials {
   confirmPassword?: string;
 }
 
-export interface League {
-  id: number;
-  name: string;
-  country: string;
-}
-
-export interface Match {
-  id: number;
-  opponent: string;
-  date: string;
-  location: string;
-  score: string;
-}
-
-
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -54,28 +39,6 @@ export interface AuthState {
     availableMatches: Match[];
     guestMatch: Match | null;
   };
-}
-
-
-export interface League {
-  id: number;
-  name: string;
-  country: string;
-  season: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Match {
-  id: number;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
-  date: string;
-  leagueId: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ApiError {

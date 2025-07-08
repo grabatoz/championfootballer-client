@@ -1,7 +1,6 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import Trophy from '@/Components/images/awardtrophy.png';
 import RunnerUp from '@/Components/images/runnerup.png';
 import BaloonD from '@/Components/images/baloond.png';
@@ -19,6 +18,17 @@ interface User {
     firstName: string;
     lastName: string;
     position?: 'Defender' | 'Goalkeeper' | 'Midfielder' | 'Forward';
+}
+
+interface PlayerStats {
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals: number;
+    assists: number;
+    motmVotes: number;
+    teamGoalsConceded: number;
 }
 
 interface Match {
@@ -114,7 +124,6 @@ const TrophyCard = ({ title, description, image, color, winner }: TrophyType) =>
         textAlign: 'center',
         borderRadius: '16px',
         border: `2px solid ${color}`,
-        background: 'white',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -147,7 +156,7 @@ export default function TrophyRoom() {
     
     const { user, token } = useAuth();
     const params = useParams();
-    const leagueId = params.id as string;
+    const leagueId =  params?.id ? String(params.id) : '';
 
     const playerStats = useMemo(() => {
         const stats: Record<string, PlayerStats> = {};
@@ -200,19 +209,7 @@ export default function TrophyRoom() {
         return stats;
     }, [league]);
 
-    useEffect(() => {
-        if (leagueId && token) {
-            fetchLeagueData();
-        }
-    }, [leagueId, token]);
-
-    useEffect(() => {
-        if (league && league.matches.filter(m => m.status === 'completed').length >= league.maxGames) {
-            calculateWinners();
-        }
-    }, [league, playerStats]);
-
-    const fetchLeagueData = async () => {
+    const fetchLeagueData = useCallback(async () => {
         setLoading(true);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
@@ -224,19 +221,19 @@ export default function TrophyRoom() {
             } else {
                 setError(data.message || 'Failed to fetch league data.');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred while fetching league data.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [leagueId, token]);
 
-    const getPlayerName = (playerId: string) => {
+    const getPlayerName = useCallback((playerId: string) => {
         const player = league?.members.find(p => p.id === playerId);
         return player ? `${player.firstName} ${player.lastName}` : 'Unknown';
-    }
+    }, [league]);
 
-    const calculateWinners = () => {
+    const calculateWinners = useCallback(() => {
         if (!league || !Object.keys(playerStats).length) return;
         
         const allPlayerIds = Object.keys(playerStats);
@@ -278,7 +275,7 @@ export default function TrophyRoom() {
         const darkHorseCandidates = sortedLeagueTable.slice(3);
         const darkHorseId = darkHorseCandidates.length > 0 ? darkHorseCandidates.sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] : null;
         
-        const awards = {
+        const awards: Record<string, string | null> = {
             'Champion Footballer': championId,
             'Runner-Up': runnerUpId,
             'Ballon D\'or': ballonDorId,
@@ -290,7 +287,7 @@ export default function TrophyRoom() {
         };
 
         const updatedTrophies = trophies.map(trophy => {
-            const winnerId = awards[trophy.title] as string | null;
+            const winnerId = awards[trophy.title];
             return {
                 ...trophy,
                 winnerId: winnerId,
@@ -298,7 +295,19 @@ export default function TrophyRoom() {
             };
         });
         setCalculatedTrophies(updatedTrophies);
-    };
+    }, [league, playerStats, getPlayerName]);
+
+    useEffect(() => {
+        if (leagueId && token) {
+            fetchLeagueData();
+        }
+    }, [leagueId, token, fetchLeagueData]);
+
+    useEffect(() => {
+        if (league && league.matches.filter(m => m.status === 'completed').length >= league.maxGames) {
+            calculateWinners();
+        }
+    }, [league, playerStats, calculateWinners]);
 
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
@@ -317,7 +326,7 @@ export default function TrophyRoom() {
         : calculatedTrophies.filter(t => t.winnerId && user && t.winnerId === user.id);
 
     return (
-        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', mb: 4, gap: 2 }}>
                 <Chip 
                     label="All Trophies" 
@@ -340,13 +349,13 @@ export default function TrophyRoom() {
                 </Alert>
             )}
 
-            <Grid container spacing={3}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
                 {displayedTrophies.map((trophy, index) => (
-                    <Grid item key={index} xs={12} sm={6} md={4} lg={3}>
+                    <Box key={index}>
                         <TrophyCard {...trophy} />
-                    </Grid>
+                    </Box>
                 ))}
-            </Grid>
+            </Box>
         </Box>
     );
 } 

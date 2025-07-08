@@ -79,10 +79,10 @@ export default function NavigationBar() {
     <>
       <AppBar
         position="static"
-        sx={{ backgroundColor: '#222222', boxShadow: 3, px: { xs: 2, md: 6 } }}
+        sx={{ backgroundColor: '#0a3e1e', boxShadow: 3, px: { xs: 2, md: 6 } }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
             <Image
               src={cflogo}
               alt="Champion Footballer Logo"

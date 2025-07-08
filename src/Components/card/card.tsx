@@ -3,7 +3,6 @@ import Image from 'next/image';
 import {
     Box,
     Typography,
-    IconButton,
     Avatar,
     Divider,
 } from '@mui/material';

@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Card, CardContent, Avatar, Chip, Stack, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import Grid from '@mui/material/Grid';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Avatar, Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
 import { useAuth } from '@/lib/useAuth';
 import fieldImg from '@/Components/images/ground.png'; // Place your field image in public/assets/field.png
 import PersonIcon from '@mui/icons-material/Person';
 import Image from 'next/image';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import dreamteam from '@/Components/images/dream.png'
+
 
 interface Player {
   id: string;
@@ -40,7 +43,8 @@ interface League {
 }
 
 const DreamTeamPage = () => {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
+  const router = useRouter();
   const [dreamTeam, setDreamTeam] = useState<DreamTeam>({
     goalkeeper: [],
     defenders: [],
@@ -51,34 +55,7 @@ const DreamTeamPage = () => {
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    console.log('🔍 useEffect triggered - token:', token ? 'Present' : 'Missing');
-    if (token) {
-      console.log('✅ Token found, calling fetchLeagues');
-      fetchLeagues();
-    } else {
-      console.log('❌ No token found, skipping fetchLeagues');
-    }
-  }, [token]);
-
-  useEffect(() => {
-    console.log('🔍 useEffect triggered - selectedLeague:', selectedLeague);
-    if (token && selectedLeague) {
-      console.log('✅ Token and selectedLeague found, calling fetchDreamTeam');
-      fetchDreamTeam(selectedLeague);
-    } else {
-      console.log('❌ Missing token or selectedLeague, skipping fetchDreamTeam');
-    }
-  }, [token, selectedLeague]);
-
-  useEffect(() => {
-    console.log('Leagues:', leagues);
-    console.log('Selected League:', selectedLeague);
-    console.log('Dream Team:', dreamTeam);
-    console.log('Loading:', loading);
-  }, [leagues, selectedLeague, dreamTeam, loading]);
-
-  const fetchLeagues = async () => {
+  const fetchLeagues = useCallback(async () => {
     console.log('🔍 Fetching leagues...');
     console.log('Token:', token ? 'Present' : 'Missing');
     console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
@@ -105,9 +82,9 @@ const DreamTeamPage = () => {
     } catch (error) {
       console.error('Error fetching leagues:', error);
     }
-  };
+  }, [token]);
 
-  const fetchDreamTeam = async (leagueId: string) => {
+  const fetchDreamTeam = useCallback(async (leagueId: string) => {
     setLoading(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dream-team?leagueId=${leagueId}`, {
@@ -122,35 +99,62 @@ const DreamTeamPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const getPositionType = (position: string) => {
-    if (position.includes('Goalkeeper')) return 'goalkeeper';
-    if (position.includes('Back') || position.includes('Wing-back')) return 'defenders';
-    if (position.includes('Midfielder')) return 'midfielders';
-    if (position.includes('Forward') || position.includes('Striker') || position.includes('Winger')) return 'forwards';
-    return 'midfielders'; // default fallback
-  };
-
-  const getPositionColor = (positionType: string) => {
-    switch (positionType) {
-      case 'goalkeeper': return 'error';
-      case 'defenders': return 'primary';
-      case 'midfielders': return 'success';
-      case 'forwards': return 'warning';
-      default: return 'default';
+  useEffect(() => {
+    console.log('🔍 useEffect triggered - token:', token ? 'Present' : 'Missing');
+    if (token) {
+      console.log('✅ Token found, calling fetchLeagues');
+      fetchLeagues();
+    } else {
+      console.log('❌ No token found, skipping fetchLeagues');
     }
-  };
+  }, [token, fetchLeagues]);
 
-  const getPositionIcon = (positionType: string) => {
-    switch (positionType) {
-      case 'goalkeeper': return '🥅';
-      case 'defenders': return '🛡️';
-      case 'midfielders': return '⚽';
-      case 'forwards': return '🎯';
-      default: return '👤';
+  useEffect(() => {
+    console.log('🔍 useEffect triggered - selectedLeague:', selectedLeague);
+    if (token && selectedLeague) {
+      console.log('✅ Token and selectedLeague found, calling fetchDreamTeam');
+      fetchDreamTeam(selectedLeague);
+    } else {
+      console.log('❌ Missing token or selectedLeague, skipping fetchDreamTeam');
     }
-  };
+  }, [token, selectedLeague, fetchDreamTeam]);
+
+  useEffect(() => {
+    console.log('Leagues:', leagues);
+    console.log('Selected League:', selectedLeague);
+    console.log('Dream Team:', dreamTeam);
+    console.log('Loading:', loading);
+  }, [leagues, selectedLeague, dreamTeam, loading]);
+
+  // const getPositionType = (position: string) => {
+  //   if (position.includes('Goalkeeper')) return 'goalkeeper';
+  //   if (position.includes('Back') || position.includes('Wing-back')) return 'defenders';
+  //   if (position.includes('Midfielder')) return 'midfielders';
+  //   if (position.includes('Forward') || position.includes('Striker') || position.includes('Winger')) return 'forwards';
+  //   return 'midfielders'; // default fallback
+  // };
+
+  // const getPositionColor = (positionType: string) => {
+  //   switch (positionType) {
+  //     case 'goalkeeper': return 'error';
+  //     case 'defenders': return 'primary';
+  //     case 'midfielders': return 'success';
+  //     case 'forwards': return 'warning';
+  //     default: return 'default';
+  //   }
+  // };
+
+  // const getPositionIcon = (positionType: string) => {
+  //   switch (positionType) {
+  //     case 'goalkeeper': return '🥅';
+  //     case 'defenders': return '🛡️';
+  //     case 'midfielders': return '⚽';
+  //     case 'forwards': return '🎯';
+  //     default: return '👤';
+  //   }
+  // };
 
   // Field positions for 1 GK, 2 DEF, 1 MID, 1 FWD
   const fieldPositions = [
@@ -163,9 +167,17 @@ const DreamTeamPage = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h3" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
-        🏆 Dream Team
-      </Typography>
+         <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/dashboard`)} sx={{ mb: 2, color: 'black' }}>Back to Dashboard</Button>
+      <Typography
+  variant="h3"
+  component="h1"
+  gutterBottom
+  align="center"
+  sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}
+>
+  <Image src={dreamteam} alt="img" height={80} width={80} style={{ marginRight: 8 }} />
+  Dream Team
+</Typography>
       <FormControl sx={{ minWidth: 240, mb: 3 }}>
         <InputLabel id="league-select-label">Select League</InputLabel>
         <Select

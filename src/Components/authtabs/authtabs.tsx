@@ -1,23 +1,25 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAuth } from '@/lib/hooks';
-import { login, register } from '@/lib/features/authSlice';
+import { login, register, clearError } from '@/lib/features/authSlice';
 import { LoginCredentials, RegisterCredentials } from '@/types/api';
 import { authAPI } from '@/lib/api';
 import {
   Tabs, Tab, Box, TextField, Button, Typography, CircularProgress,
   Alert, FormControl, FormLabel, RadioGroup, FormControlLabel,
-  Radio, Checkbox, Stack
-} from '@mui/material';
+  Radio, Checkbox, Stack} from '@mui/material';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store';
+import toast from 'react-hot-toast';
 
-export default function AuthTabs() {
+const AuthTabs = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { dispatch: authDispatch } = useAuth();
-
   const [tabValue, setTabValue] = useState(0);
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   const [loginData, setLoginData] = useState<LoginCredentials>({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
@@ -46,16 +48,31 @@ export default function AuthTabs() {
     checkServerConnection();
   }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => setTabValue(newValue);
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => setLoginData({ ...loginData, [e.target.name]: e.target.value });
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => setRegisterData({ ...registerData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
+    setTabValue(newValue);
+    authDispatch(clearError());
+  };
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginData({ ...loginData, [e.target.name]: e.target.value });
+  };
+
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRegisterData({ ...registerData, [e.target.name]: e.target.value });
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[AuthTabs] Attempting login with:', loginData);
     setLoginError('');
     setLoginLoading(true);
-    console.log('Login attempt:', loginData);
-    
+
     if (!loginData.email || !loginData.password) {
       setLoginError('Please fill in all fields');
       setLoginLoading(false);
@@ -79,18 +96,18 @@ export default function AuthTabs() {
 
     try {
       const result = await authDispatch(login(loginData)).unwrap();
-      console.log('Login result:', result);
-      if (result.success) router.push('/dashboard');
-      else setLoginError(result.error || 'Login failed');
-    } catch (err: unknown) {
-      console.error('Login error:', err);
-      if (err instanceof Error) {
-        setLoginError(err.message);
+      console.log('[AuthTabs] Login result from server:', result);
+      if (result.success) {
+        toast.success('Login successful!');
+        router.push('/dashboard');
       } else {
-        setLoginError('Login failed');
+        toast.error(result.error || 'Login failed.');
       }
-    }
-    finally {
+    } catch (err: unknown) {
+      console.error('[AuthTabs] Login submission error:', err);
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred during login.';
+      toast.error(message);
+    } finally {
       setLoginLoading(false);
     }
   };
@@ -114,30 +131,28 @@ export default function AuthTabs() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[AuthTabs] Attempting registration with:', registerData);
     setRegisterError('');
     setRegisterLoading(true);
-    console.log('Register attempt:', registerData);
     if (!validateRegisterForm()) {
       setRegisterLoading(false);
       return;
     }
     try {
       const result = await dispatch(register(registerData)).unwrap();
-      console.log('Register result:', result);
+      console.log('[AuthTabs] Register result from server:', result);
       if (result.success && result.data) {
         if (result.token) {
           localStorage.setItem('token', result.token);
         }
         localStorage.setItem('user', JSON.stringify(result.data));
+        toast.success('Registration successful!');
         router.push('/dashboard');
       }
     } catch (err: unknown) {
-      console.error('Register error:', err);
-      if (err instanceof Error) {
-        setRegisterError(err.message);
-      } else {
-        setRegisterError('Registration failed');
-      }
+      console.error('[AuthTabs] Register submission error:', err);
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred during registration.';
+      toast.error(message);
     } finally {
       setRegisterLoading(false);
     }
@@ -203,7 +218,7 @@ export default function AuthTabs() {
               InputLabelProps={{
                 sx: { color: '#ccc' },
               }} />
-            <TextField fullWidth label="Password" name="password" type="password" value={loginData.password} onChange={handleLoginChange} size="small" required placeholder="Enter your password (not your email)" sx={{
+            <TextField fullWidth label="Password" name="password" type="password" value={loginData.password} onChange={handleLoginChange} size="small" required sx={{
               input: {
                 color: 'black',
                 backgroundColor: 'rgba(255,255,255,0.05)',
@@ -399,4 +414,6 @@ export default function AuthTabs() {
       )}
     </>
   );
-}
+};
+
+export default AuthTabs;

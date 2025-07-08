@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie';
+import { User } from '@/types/user';
 
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? Cookies.get('token') || null : null);
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +37,7 @@ export function useAuth() {
   }, [token, fetchUser]);
 
   // Login: save token and user
-  const login = (jwt: string, userObj: any) => {
+  const login = (jwt: string, userObj: User) => {
     setToken(jwt);
     setUser(userObj);
     Cookies.set('token', jwt, { expires: 7, path: '/' });

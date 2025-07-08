@@ -5,6 +5,7 @@ import Navbar from "@/Components/Navbar/navbar";
 import Footer from "@/Components/footer/footer";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
+import Mainbg from '@/Components/images/mainbg.png'
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -27,15 +28,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body style={{ backgroundColor: 'white'}}
+    <html lang="en">
+      <body style={{
+        backgroundImage: `url(${Mainbg.src})`,
+        backgroundPosition: 'center',
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }}
+        // style={{ backgroundColor: '#d5ffd1'}}
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           <AuthCheck />
-          <Navbar/>
+          <Navbar />
           {children}
-          <Footer/>
+          <Footer />
         </Providers>
       </body>
     </html>

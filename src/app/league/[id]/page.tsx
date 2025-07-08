@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -34,7 +34,7 @@ import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings } from 'lucide
 import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Img from '@/Components/images/group451.png'
 
 
@@ -186,7 +186,7 @@ export default function LeagueDetailPage() {
     const { user, token } = useAuth();
     const params = useParams();
     const router = useRouter();
-    const leagueId = params.id as string;
+    const leagueId = params?.id ? String(params.id) : '';
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
@@ -194,10 +194,10 @@ export default function LeagueDetailPage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
-    const handleOpenTeamModal = (match: Match) => {
-        setSelectedMatch(match);
-        setTeamModalOpen(true);
-    };
+    // const handleOpenTeamModal = (match: Match) => {
+    //     setSelectedMatch(match);
+    //     setTeamModalOpen(true);
+    // };
 
     const handleCloseTeamModal = () => {
         setTeamModalOpen(false);
@@ -206,13 +206,7 @@ export default function LeagueDetailPage() {
 
     console.log('league', league)
 
-    useEffect(() => {
-        if (leagueId && token) {
-            fetchLeagueDetails();
-        }
-    }, [leagueId, token]);
-
-    const fetchLeagueDetails = async () => {
+    const fetchLeagueDetails = useCallback(async () => {
         try {
             setLoading(true);
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
@@ -240,7 +234,13 @@ export default function LeagueDetailPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [leagueId, token]);
+    useEffect(() => {
+        if (leagueId && token) {
+            fetchLeagueDetails();
+        }
+    }, [leagueId, token, fetchLeagueDetails]);
+
 
     const handleBackToAllLeagues = () => {
         router.push('/all-leagues');
@@ -287,9 +287,10 @@ export default function LeagueDetailPage() {
             } else {
                 throw new Error(data.message || 'Failed to update availability');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
             console.error('Error updating availability:', err);
-            setError(err.message || 'Failed to connect to server');
+            setError(errorMessage || 'Failed to connect to server');
         } finally {
             setAvailabilityLoading(prev => ({ ...prev, [matchId]: false }));
         }
@@ -303,7 +304,7 @@ export default function LeagueDetailPage() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ league: updatedData })
+                body: JSON.stringify(updatedData)
             });
             const data = await response.json();
             if (data.success) {
@@ -347,7 +348,6 @@ export default function LeagueDetailPage() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 minHeight: '100vh',
-                backgroundColor: '#ffff'
             }}>
                 <CircularProgress />
             </Box>
@@ -358,7 +358,6 @@ export default function LeagueDetailPage() {
         return (
             <Box sx={{
                 p: 4,
-                backgroundColor: '#000000',
                 minHeight: '100vh',
                 color: 'black'
             }}>
@@ -379,7 +378,7 @@ export default function LeagueDetailPage() {
     const isAdmin = league.administrators?.some(admin => admin.id === user?.id);
 
     return (
-        <Box sx={{ p: 4, backgroundColor: 'white', minHeight: '100vh' }}>
+        <Box sx={{ p: 4, minHeight: '100vh' }}>
             {!league.active && (
                 <Alert severity="warning" sx={{ mb: 2 }}>
                     This league is currently inactive. All actions are disabled until an admin reactivates it.
@@ -390,49 +389,69 @@ export default function LeagueDetailPage() {
                 <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToAllLeagues}
-                    sx={{ mb: 2, color: 'black' }}
+                    sx={{ mb: 2, color: 'white' , backgroundColor:'#1f673b' ,
+                        '&:hover': { backgroundColor: '#388e3c' },
+                     }}
                 >
                     Back to All Leagues
                 </Button>
 
-                <Paper sx={{ p: 3, backgroundColor: 'rgba(255,255,255,0.1)', color: 'black' }}>
+                <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                         <Trophy size={32} />
-                        <Typography variant="h4" component="h1">
+                        <Typography textTransform="uppercase" variant="h4" component="h1">
                             {league.name}
                         </Typography>
                     </Box>
 
                     <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                         <Chip
-                            icon={<Users />}
+                            icon={<Users className='stroke-white' />}
                             label={`${league.members?.length || 0} Members`}
-                            sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'black' }}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' }, color: 'white'
+                            }}
                         />
                         <Link href={'/all-matches'}>
                             <Chip
-                                icon={<Calendar />}
+                                icon={<Calendar className='stroke-white' />}
                                 label={`${league.matches?.length || 0} Matches`}
-                                sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'black' }}
+                                sx={{
+                                    backgroundColor: '#43a047',
+                                    '&:hover': { backgroundColor: '#388e3c' }, color: 'white'
+                                }}
                             />
                         </Link>
                         <Chip
                             label={`Invite Code: ${league.inviteCode}`}
-                            sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'black' }}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' }, color: 'white'
+                            }}
                         />
                         <Chip
-                            label={<Copy className='hover:stroke-black' />}
+                            label={<Copy className='stroke-white' />}
                             onClick={() => navigator.clipboard.writeText(league.inviteCode)}
-                            sx={{ mr: 1, backgroundColor: 'rgba(255,255,255,0.2)', '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' } }}
+                            sx={{
+                                mr: 1, backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' }
+                            }}
                         />
                         <Link href={`/league/${leagueId}/trophy-room`} passHref>
-                            <Button variant="contained" color="primary">
+                            <Button
+                                variant="contained"
+                                sx={{
+                                    backgroundColor: '#43a047',
+                                    '&:hover': { backgroundColor: '#388e3c' },
+                                }}
+                            >
                                 Trophy Room
                             </Button>
                         </Link>
                         {isAdmin && (
                             <IconButton onClick={() => setIsSettingsOpen(true)} sx={{ ml: 1 }}>
-                                <Settings />
+                                <Settings style={{ color: 'white' }} />
                             </IconButton>
                         )}
                     </Box>
@@ -442,8 +461,8 @@ export default function LeagueDetailPage() {
             <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
                 {/* Members Section */}
                 <Box sx={{ flex: 1 }}>
-                    <Paper sx={{ p: 3, backgroundColor: 'rgba(255,255,255,0.1)', color: 'black', height: '100%' }}>
-                        <Typography variant="h6" gutterBottom>
+                    <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'black', height: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                        <Typography variant="h6" sx={{ backgroundColor: '#1f673b', padding: '10px', color: 'white' }} gutterBottom>
                             League Members
                         </Typography>
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
@@ -452,26 +471,29 @@ export default function LeagueDetailPage() {
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {league.members.map((member) => (
                                     <Card key={member.id} sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                                        <CardContent sx={{ p: 2 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Box
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        borderRadius: '50%',
-                                                        backgroundColor: 'rgba(255,255,255,0.2)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    {member.profilePicture ? (
-                                                        <img
-                                                            src={`${process.env.NEXT_PUBLIC_API_URL}${member.profilePicture}`}
-                                                            alt="Profile"
-                                                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                                                        />
-                                                    ) : (
+                                        <Link href={`/player/${member?.id}`}>
+                                            <CardContent sx={{ p: 2 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: '50%',
+                                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    >
+                                                        {member.profilePicture ? (
+                                                            <Image
+                                                                src={`${process.env.NEXT_PUBLIC_API_URL}${member.profilePicture}`}
+                                                                alt="Profile"
+                                                                style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                                                                width={40}
+                                                                height={40}
+                                                            />
+                                                        ) : (
                                                             <Image
                                                                 src={Img}
                                                                 alt="Profile"
@@ -479,18 +501,20 @@ export default function LeagueDetailPage() {
                                                                 width={20}
                                                                 height={20}
                                                             />
-                                                    )}
+                                                        )}
+                                                    </Box>
+                                                    <Box>
+                                                        <Typography variant="body1" sx={{ color: 'white' }}>
+                                                            {member.firstName} {member.lastName}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: 'white' }}>
+                                                            {member.email}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
-                                                <Box>
-                                                    <Typography variant="body1" sx={{ color: 'black' }}>
-                                                        {member.firstName} {member.lastName}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                                        {member.email}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        </CardContent>
+                                            </CardContent>
+                                        </Link>
+
                                     </Card>
                                 ))}
                             </Box>
@@ -504,7 +528,7 @@ export default function LeagueDetailPage() {
 
                 {/* Matches Section */}
                 <Box sx={{ flex: 1 }}>
-                    <Paper sx={{ p: 3, backgroundColor: 'rgba(255,255,255,0.1)', color: 'black', height: '100%' }}>
+                    <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white', height: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Matches
                         </Typography>
@@ -522,54 +546,55 @@ export default function LeagueDetailPage() {
                                                     <Link href={`/league/${leagueId}/match/${match.id}/edit`} passHref>
                                                         <IconButton
                                                             size="small"
-                                                            sx={{ position: 'absolute', top: 8, right: 8, color: 'black', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                            sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
                                                             disabled={!league.active}
                                                         >
                                                             <Edit size={16} />
                                                         </IconButton>
                                                     </Link>
                                                 )}
+                                                <Link href={`/match/${match?.id}`} >
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 4 }, textAlign: 'center', p: 2 }}>
+                                                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                                            <Image src={leagueIcon} alt={match.homeTeamName} width={48} height={48} />
+                                                            <Typography textTransform="uppercase" variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                                {match.homeTeamName}
+                                                            </Typography>
+                                                        </Box>
 
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 4 }, textAlign: 'center', p: 2 }}>
-                                                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                                        <Image src={leagueIcon} alt={match.homeTeamName} width={48} height={48} />
-                                                        <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                                                            {match.homeTeamName}
+                                                        <Typography variant="h5" sx={{ color: 'white' }}>
+                                                            VS
                                                         </Typography>
-                                                    </Box>
 
-                                                    <Typography variant="h5" sx={{ color: 'black' }}>
-                                                        VS
-                                                    </Typography>
-
-                                                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                                        <Image src={leagueIcon} alt={match.awayTeamName} width={48} height={48} />
-                                                        <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                                                            {match.awayTeamName}
-                                                        </Typography>
+                                                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                                            <Image src={leagueIcon} alt={match.awayTeamName} width={48} height={48} />
+                                                            <Typography textTransform="uppercase" variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                                {match.awayTeamName}
+                                                            </Typography>
+                                                        </Box>
                                                     </Box>
-                                                </Box>
+                                                </Link>
                                                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', textAlign: 'center', mt: 1 }}>
                                                     {new Date(match.date).toLocaleString()}
                                                 </Typography>
                                                 <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     {match.status === 'scheduled' && (
-                                                    <Button
-                                                        variant="contained"
-                                                        onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
+                                                        <Button
+                                                            variant="contained"
+                                                            onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
                                                             disabled={availabilityLoading[match.id] || !league.active}
-                                                        sx={{
-                                                            backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
-                                                            '&:hover': {
-                                                                backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
-                                                            },
-                                                            '&.Mui-disabled': {
-                                                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                                                color: 'rgba(255,255,255,0.5)'
-                                                            }
-                                                        }}
-                                                    >
+                                                            sx={{
+                                                                backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
+                                                                '&:hover': {
+                                                                    backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
+                                                                },
+                                                                '&.Mui-disabled': {
+                                                                    backgroundColor: 'rgba(255,255,255,0.3)',
+                                                                    color: 'rgba(255,255,255,0.5)'
+                                                                }
+                                                            }}
+                                                        >
                                                             {availabilityLoading[match.id] ? <CircularProgress size={20} color="inherit" /> : (isUserAvailable ? 'Unavailable' : 'Available')}
                                                         </Button>
                                                     )}
@@ -580,12 +605,13 @@ export default function LeagueDetailPage() {
                                                             sx={{
                                                                 '&.Mui-disabled': {
                                                                     backgroundColor: '#43a047',
-                                                                    color: 'white'
+                                                                    color: 'white',
+                                                                    '&:hover': { bgcolor: '#388e3c' },
                                                                 }
                                                             }}
                                                         >
                                                             Match Ended
-                                                    </Button>
+                                                        </Button>
                                                     )}
                                                     {/* <Button
                                                         variant="outlined"
@@ -595,22 +621,22 @@ export default function LeagueDetailPage() {
                                                     >
                                                         View Teams
                                                     </Button> */}
-                                                     {(match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
-                                                    <Link href={`/league/${leagueId}/match/${match.id}/play`} passHref>
-                                                        <Button
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: '#43a047',
-                                                                color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
-                                                            }}
-                                                            disabled={!league.active}
-                                                        >
-                                                            View Team & update score card
-                                                        </Button>
-                                                    </Link>
-                                                )}
+                                                    {(match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
+                                                        <Link href={`/league/${leagueId}/match/${match.id}/play`} passHref>
+                                                            <Button
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: '#43a047',
+                                                                    color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
+                                                                }}
+                                                                disabled={!league.active}
+                                                            >
+                                                                {isAdmin ? 'Update Score Card' : 'View Team'}
+                                                            </Button>
+                                                        </Link>
+                                                    )}
                                                 </Box>
-                                               
+
                                             </CardContent>
                                         </Card>
                                     );
@@ -624,8 +650,13 @@ export default function LeagueDetailPage() {
                         {isAdmin && (
                             <Link href={`/league/${leagueId}/match`} passHref>
                                 <Button
-                                    variant="contained"
-                                    sx={{ mt: 2 }}
+                                    // variant="contained"
+                                    sx={{
+                                        mt: 2,
+                                        backgroundColor: '#43a047',
+                                        color: 'white',
+                                        '&:hover': { bgcolor: '#388e3c' },
+                                    }}
                                     fullWidth
                                     disabled={!league.active}
                                 >
@@ -645,7 +676,7 @@ export default function LeagueDetailPage() {
                             <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                             <Grid container spacing={1}>
                                 {selectedMatch.homeTeamUsers.map(player => (
-                                    <Grid size={6} key={player.id}>
+                                    <Grid xs={6} key={player.id}>
                                         <Chip label={`${player.firstName} ${player.lastName}`} sx={{ m: 0.5, color: 'black' }} />
                                     </Grid>
                                 ))}
@@ -658,7 +689,7 @@ export default function LeagueDetailPage() {
                             <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                             <Grid container spacing={1}>
                                 {selectedMatch.awayTeamUsers.map(player => (
-                                    <Grid size={6} key={player.id}>
+                                    <Grid xs={6} key={player.id}>
                                         <Chip label={`${player.firstName} ${player.lastName}`} sx={{ m: 0.5, color: 'black' }} />
                                     </Grid>
                                 ))}

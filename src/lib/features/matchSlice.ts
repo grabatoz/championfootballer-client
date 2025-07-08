@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { matchAPI } from '../api';
-import { CreateMatchDTO, Match } from '@/types/api';
+import { CreateMatchDTO } from '@/types/api';
+import { Match } from '@/types/user';
 
 interface MatchState {
   matches: Match[];
