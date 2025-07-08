@@ -2,6 +2,14 @@
 
 # dependencies
 /node_modules
+node_modules
+.history
+server/node_modules
+/server/node_modules
+dist
+dist-ssr
+*.local
+.env
 /.pnp
 .pnp.*
 .yarn/*
