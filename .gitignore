@@ -2,14 +2,7 @@
 
 # dependencies
 /node_modules
-node_modules
-.history
-api/node_modules
-/api/node_modules
-dist
-dist-ssr
-*.local
-.env
+/api
 /.pnp
 .pnp.*
 .yarn/*
