@@ -167,30 +167,54 @@ const DreamTeamPage = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-         <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/dashboard`)} sx={{ mb: 2, color: 'black' }}>Back to Dashboard</Button>
-      <Typography
-  variant="h3"
-  component="h1"
-  gutterBottom
-  align="center"
-  sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}
->
-  <Image src={dreamteam} alt="img" height={80} width={80} style={{ marginRight: 8 }} />
-  Dream Team
-</Typography>
-      <FormControl sx={{ minWidth: 240, mb: 3 }}>
-        <InputLabel id="league-select-label">Select League</InputLabel>
-        <Select
-          labelId="league-select-label"
-          value={selectedLeague}
-          label="Select League"
-          onChange={e => setSelectedLeague(e.target.value as string)}
-        >
-          {leagues.map(league => (
-            <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+         {/* Header with Back button on left, title in center, and league select on right */}
+         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+           {/* Back button on left */}
+           <Button 
+             startIcon={<ArrowLeft />} 
+             onClick={() => router.push(`/dashboard`)}  
+             sx={{ 
+               color: 'white', 
+               backgroundColor: '#1f673b',
+               '&:hover': { backgroundColor: '#388e3c' },
+               minWidth: 'fit-content'
+             }}
+           >
+             Back to Dashboard
+           </Button>
+           
+           {/* Title in center */}
+           <Typography
+             variant="h3"
+             component="h1"
+             sx={{ 
+               display: 'flex', 
+               alignItems: 'center', 
+               justifyContent: 'center', 
+               gap: 2,
+               flex: 1,
+               textAlign: 'center'
+             }}
+           >
+             <Image src={dreamteam} alt="img" height={80} width={80}/>
+             Dream Team
+           </Typography>
+           
+           {/* League select on right */}
+           <FormControl sx={{ minWidth: 240 }}>
+             <InputLabel id="league-select-label">Select League</InputLabel>
+             <Select
+               labelId="league-select-label"
+               value={selectedLeague}
+               label="Select League"
+               onChange={e => setSelectedLeague(e.target.value as string)}
+             >
+               {leagues.map(league => (
+                 <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
+               ))}
+             </Select>
+           </FormControl>
+         </Box>
       {loading ? (
         <Box sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h6">Loading Dream Team...</Typography>

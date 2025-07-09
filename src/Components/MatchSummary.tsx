@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import LinearProgress from '@mui/material/LinearProgress';
 import Link from 'next/link';
 
 interface MatchSummaryProps {
@@ -46,14 +45,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   currentMatch,
   totalMatches,
   matchStartTime,
-  possessionLeft,
-  possessionRight,
   winPercentLeft,
   winPercentRight,
   matchStatus,
   matchEndTime,
 }) => {
-  const [elapsed, setElapsed] = useState('00:00');
+  const [, setElapsed] = useState('00:00');
   const isDraw = matchStatus === 'completed' && homeGoals === awayGoals;
 
   useEffect(() => {
@@ -84,7 +81,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           p: { xs: 2, md: 3 },
-          background: 'white',
+          background: '#1f673b',
           boxShadow: '0 4px 24px 0 rgba(0,0,0,0.06)',
           borderRadius: 3,
           minHeight: { xs: 200, md: 160 },
@@ -97,8 +94,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
       >
         {/* League name and game info at the very top of the box */}
        <Link href={`/league/${leagueId}`}>
-        <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22 }, color: 'black', fontWeight: 600, textAlign: 'center', width: '100%'}}>
-        League Name : {leagueName} &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
+        <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22 }, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%'}}>
+        League Name : <span className='underline'>{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
         </Typography>
         </Link>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
@@ -115,25 +112,26 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 maxWidth: { xs: 90, md: 140 },
                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
                 p: 1,
+                color:'white',
                 borderRadius: 2,
               }}
             />
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: '#222' }}>{homeTeamName}</Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#1976d2', lineHeight: 1 }}>{homeGoals}</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: 'white' }}>{homeTeamName}</Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#14c38e', lineHeight: 1 }}>{homeGoals}</Typography>
             </Box>
           </Box>
           {/* Center VS */}
           <Box sx={{ flex: 2, textAlign: 'center', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="h3" fontWeight={700} sx={{ fontSize: { xs: 28, md: 48 }, color: '#1976d2', letterSpacing: 2, mb: 0.5 }}>
+            <Typography variant="h3" fontWeight={700} sx={{ fontSize: { xs: 28, md: 48 }, color: 'white', letterSpacing: 2, mb: 0.5 }}>
               VS
             </Typography>
           </Box>
           {/* Away Team */}
           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
             <Box sx={{ textAlign: 'right', minWidth: 0 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: '#222' }}>{awayTeamName}</Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#1976d2', lineHeight: 1 }}>{awayGoals}</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: 'white' }}>{awayTeamName}</Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#14c38e', lineHeight: 1 }}>{awayGoals}</Typography>
             </Box>
             <Box
               component="img"
@@ -152,7 +150,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           </Box>
         </Box>
         {/* Match start/end info at the very bottom of the box */}
-        <Box sx={{ width: '100%', pt: 2, display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 15 }}>
+        <Box sx={{ width: '100%', pt: 2, display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: 15 }}>
           <Typography>
             Start: {new Date(matchStartTime).toLocaleString()}
           </Typography>

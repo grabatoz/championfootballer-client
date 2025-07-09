@@ -49,7 +49,7 @@ const PlayerProfileCard = () => {
   const [gender, setGender] = useState(user?.gender || "");
   const [positionType, setPositionType] = useState(user?.positionType || '');
   const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)");
-  const [style, setStyle] = useState(user?.style || "Axe");
+  const [style, setStyle] = useState(user?.style || "");
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left");
   const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "");
   const [password, setPassword] = useState(user?.password || "");
@@ -139,14 +139,13 @@ const PlayerProfileCard = () => {
         firstName,
         lastName,
         email,
-        age: age && age !== "" ? Number(age) : undefined,
+        age: age ? Number(age) : undefined,
         gender,
         position,
-        positionType: positionType || "Goalkeeper",
+        positionType,
         style,
         preferredFoot,
         shirtNumber,
-        ...(password && password !== "" && { password }),
         skills: {
           dribbling,
           shooting,
@@ -155,6 +154,7 @@ const PlayerProfileCard = () => {
           defending,
           physical,
         },
+        ...(password && { password }),
       };
 
       // Debug: log what you are sending
@@ -441,15 +441,6 @@ const PlayerProfileCard = () => {
                 sx={{ flex: 1 }}
               />
             </Stack>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Typography variant="body2" sx={{ width: "33%", fontWeight: "medium", color: "text.primary" }}>
-                Card Color
-              </Typography>
-              <Stack direction="row" alignItems="center">
-                <Radio value="green" checked disabled />
-                <Box sx={{ width: 16, height: 16, bgcolor: "green.500", borderRadius: "50%" }} />
-              </Stack>
-            </Stack>
           </Stack>
         </Paper>
       </Box>
@@ -712,13 +703,6 @@ const PlayerProfileCard = () => {
                 {getSkillLabel(physical).text}
               </Typography>
             </Box>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight="medium">
-                Card Color
-              </Typography>
-              <Radio value="green" checked disabled />
-              <Box sx={{ width: 16, height: 16, bgcolor: "green.500", borderRadius: "50%" }} />
-            </Stack>
             <Stack direction="row" justifyContent="space-between">
               <Button variant="contained" color="secondary" onClick={handlePrevious}>
                 Previous

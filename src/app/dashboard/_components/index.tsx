@@ -59,17 +59,17 @@ export default function PlayerDashboard() {
     <Box sx={{ px: 3, py: 4,  minHeight: '100vh' }}>
       <Toaster position="top-center" reverseOrder={false} />
       <Paper
-  elevation={3}
-  sx={{
-    backgroundImage: `url(${dash.src})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    borderRadius: 2,
-    overflow: 'hidden',
-    p: 3,
-    mb: 4,
-  }}
->
+        elevation={3}
+        sx={{
+          backgroundImage: `url(${dash.src})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: 2,
+          overflow: 'hidden',
+          p: 3,
+          mb: 4,
+        }}
+      >
   <Box sx={{ 
     display: 'flex', 
     alignItems: { xs: 'stretch', md: 'center' }, // Changed alignment for mobile
@@ -82,23 +82,23 @@ export default function PlayerDashboard() {
       display: 'flex',
       justifyContent: { xs: 'center', md: 'flex-start' } // Center on mobile
     }}>
-      <PlayerCard
-        name={user?.firstName || ''}
-        number={user?.shirtNumber || '00'}
-        level={''}
-        stats={{
-          DRI: user?.skills?.dribbling?.toString() || '',
-          SHO: user?.skills?.shooting?.toString() || '',
-          PAS: user?.skills?.passing?.toString() || '',
-          PAC: user?.skills?.pace?.toString() || '',
-          DEF: user?.skills?.defending?.toString() || '',
-          PHY: user?.skills?.physical?.toString() || ''
-        }}
-        foot={user?.preferredFoot === "right" ? "R" : "L"}
+            <PlayerCard
+              name={user?.firstName || ''}
+              number={user?.shirtNumber || '00'}
+              level={''}
+              stats={{
+                DRI: user?.skills?.dribbling?.toString() || '',
+                SHO: user?.skills?.shooting?.toString() || '',
+                PAS: user?.skills?.passing?.toString() || '',
+                PAC: user?.skills?.pace?.toString() || '',
+                DEF: user?.skills?.defending?.toString() || '',
+                PHY: user?.skills?.physical?.toString() || ''
+              }}
+              foot={user?.preferredFoot === "right" ? "R" : "L"}
         profileImage={user?.profilePicture ? (user.profilePicture.startsWith('http') ? user.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture.startsWith('/') ? user.profilePicture : `/${user.profilePicture}`}`) : undefined}
-        shirtIcon={''}
-      />
-    </Box>
+              shirtIcon={''}
+            />
+          </Box>
 
     <Box 
       sx={{ 
@@ -110,13 +110,13 @@ export default function PlayerDashboard() {
         width: { xs: '100%', md: 'auto' } // Ensure full width on mobile
       }}
     >
-      <Typography variant="h6" gutterBottom>
-        Welcome, {user?.firstName}
-      </Typography>
-      <Typography variant="body1" gutterBottom>
-        {`You haven't setup your Player Card yet. Let's change that!`}
-      </Typography>
-      <Link href="/profile" passHref>
+            <Typography variant="h6" gutterBottom>
+              Welcome, {user?.firstName}
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              {`You haven't setup your Player Card yet. Let's change that!`}
+            </Typography>
+            <Link href="/profile" passHref>
         <Button 
           variant="outlined" 
           sx={{ 
@@ -124,11 +124,11 @@ export default function PlayerDashboard() {
             width: { xs: '100%', sm: 'auto' } // Full width button on mobile
           }}
         >
-          Edit Profile & Player Card
-        </Button>
-      </Link>
-    </Box>
-  </Box>
+                Edit Profile & Player Card
+              </Button>
+            </Link>
+          </Box>
+        </Box>
 </Paper>
         {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <TextField
@@ -212,10 +212,10 @@ export default function PlayerDashboard() {
         </Paper>
       </Link>
     ))}
-  </Box>
-</Paper>
+        </Box>
+      </Paper>
 {/* 
-<Paper
+      <Paper
       elevation={6}
       sx={{
         backgroundImage: `url(${Dashbg.src})`,

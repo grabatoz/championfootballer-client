@@ -153,7 +153,7 @@ export default function PlayMatchPage() {
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
     const matchId = params?.matchId ? String(params.matchId) : '';
-    
+
     const fetchLeagueAndMatchDetails = useCallback(async () => {
         try {
             setLoading(true);
@@ -279,15 +279,15 @@ export default function PlayMatchPage() {
                 setIsStatsModalOpen(false);
                 // Optionally show a success message
             }
-        } catch (err : unknown) {
-           toast.error(err instanceof Error ? err.message : String(err));
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : String(err));
         } finally {
             setIsSubmittingStats(false);
         }
     };
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#ffff' }}><CircularProgress /></Box>;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
 
     if (error || !league || !match) {
@@ -335,14 +335,19 @@ export default function PlayMatchPage() {
     return (
         <Box sx={{ p: 4, minHeight: '100vh', color: 'black' }}>
             {!league.active && <Alert severity="warning" sx={{ mb: 2 }}>This league is currently inactive. All actions are disabled.</Alert>}
-            <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'black' }}>Back to League</Button>
+            <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
+                color: 'white', backgroundColor: '#1f673b',
+                fontWeight: 'bold',
+                mb: 2,
+                '&:hover': { backgroundColor: '#388e3c' },
+            }}>Back to League</Button>
 
-            <Paper sx={{ p: 3, backgroundColor: 'white', color: 'black' }}>
+            <Paper sx={{ p: 3, backgroundColor: '#0a3e1e', color: 'black' }}>
                 <Box>
                     <Box>
                         <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, p: 1 }}>
-                                <Typography variant="h5" gutterBottom>{match.homeTeamName} - <span className='text-green-700'> {typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}</span> </Typography>
+                                <Typography variant="h5" color={'white'} gutterBottom>{match.homeTeamName} - <span className='text-green-700'> {typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}</span> </Typography>
                                 {user && match.status === 'completed' && league.active && match.homeTeamUsers.some(p => p.id === user.id) && (
                                     <Button
                                         // variant="contained"
@@ -360,7 +365,7 @@ export default function PlayMatchPage() {
                                     </Button>
                                 )}
                             </Box>
-                            <Divider sx={{ mb: 1.5, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                            <Divider sx={{ mb: 1.5, backgroundColor: '#0a3e1e' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.homeTeamUsers.length > 0 ? (
                                     <Box
@@ -374,7 +379,7 @@ export default function PlayMatchPage() {
                                         }}
                                     >
                                         {match.homeTeamUsers.map((player) => (
-                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: 'white', ml: '-5', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#235235', ml: '-5', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                                                 <ResponsiveCard {...mapPlayerToCardProps(player)} />
                                                 {user && user.id !== player.id && (
                                                     (() => {
@@ -403,7 +408,7 @@ export default function PlayMatchPage() {
                     <Box>
                         <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, mt: 1, p: 1 }}>
-                                <Typography variant="h5" gutterBottom>{match.awayTeamName} - <span className='text-green-700'>{typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0} </span></Typography>
+                                <Typography variant="h5" color={'white'} gutterBottom>{match.awayTeamName} - <span className='text-green-700'>{typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0} </span></Typography>
                                 {user && match.status === 'completed' && league.active && match.awayTeamUsers.some(p => p.id === user.id) && (
                                     <Button
                                         // variant="contained"
@@ -420,7 +425,7 @@ export default function PlayMatchPage() {
                                     </Button>
                                 )}
                             </Box>
-                            <Divider sx={{ mb: 1.5, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                            <Divider sx={{ mb: 1.5, backgroundColor: '#235235' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.awayTeamUsers.length > 0 ? (
                                     <Box
@@ -434,7 +439,7 @@ export default function PlayMatchPage() {
                                         }}
                                     >
                                         {match.awayTeamUsers.map((player) => (
-                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#235235', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                                                 <ResponsiveCard {...mapPlayerToCardProps(player)} />
                                                 {user && user.id !== player.id && (
                                                     (() => {
@@ -467,7 +472,7 @@ export default function PlayMatchPage() {
                 sx={{
                     p: { xs: 1, sm: 2 },
                     my: 2,
-                    background: '#f9f9f9',
+                    background: '#0a3e1e',
                     borderLeft: '4px solid #1976d2',
                     maxWidth: '100%',
                     overflowWrap: 'break-word',
@@ -477,21 +482,21 @@ export default function PlayMatchPage() {
                 <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 1 }}>
                     Match Note
                 </Typography>
-                <Typography variant="body1" sx={{ color: '#333', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                     {match.notes}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
                         Start Time:
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#333' }}>
+                    <Typography variant="body1" sx={{ color: '#fff' }}>
                         {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
                     </Typography>
                 </Box>
             </Paper>
 
             {(Object.keys(playerVotes).length > 0) && (
-                <Paper sx={{ p: 3, mt: 4, backgroundColor: 'rgba(255,255,255,0.1)', color: 'black' }}>
+                <Paper sx={{ p: 3, mt: 4, backgroundColor: '#0a3e1e', color: 'white' }}>
                     <Typography variant="h5" component="h2" gutterBottom>MOTM Votes</Typography>
                     <Divider sx={{ mb: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                     <Box
@@ -525,7 +530,7 @@ export default function PlayMatchPage() {
                                             }}
                                         />
                                     </Box>
-                                    <ResponsiveCard {...mapPlayerToCardProps(player)} />
+                                    <ResponsiveCard {...mapPlayerToCardProps(player)} backgroundColor="#0a3e1e" />
                                 </Box>
                             ))}
                     </Box>
@@ -533,28 +538,109 @@ export default function PlayMatchPage() {
             )}
 
             {isAdmin && (
-                <Box sx={{ mt: 4 }}>
+                <Box sx={{
+                    mt: 4,
+                    mb: 4, // margin below
+                    backgroundColor: '#0a3e1e',
+                    color: 'white',
+                    p: { xs: 2, sm: 3 }, // padding
+                    borderRadius: 3,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                    border: '1px solid #235235',
+                    maxWidth: 700,
+                    mx: 'auto',
+                }}>
                     <Typography variant="h6" gutterBottom>Admin Controls</Typography>
-                    <Divider sx={{ mb: 2 }} />
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
+                    <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
+                    <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => setHomeGoals(p => Math.max(0, p - 1))} size="small" disabled={!league.active}><Remove /></IconButton>
-                            <TextField label={`${match.homeTeamName} Goals`} type="number" value={homeGoals} onChange={e => setHomeGoals(Number(e.target.value))} variant="outlined" sx={{ width: '150px' }} inputProps={{ style: { textAlign: 'center' } }} disabled={!league.active} />
-                            <IconButton onClick={() => setHomeGoals(p => p + 1)} size="small" disabled={!league.active}><Add /></IconButton>
+                            <IconButton onClick={() => setHomeGoals(p => Math.max(0, p - 1))} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
+                            <TextField
+                                label={`${match.homeTeamName} Goals`}
+                                type="number"
+                                value={homeGoals}
+                                onChange={e => setHomeGoals(Number(e.target.value))}
+                                variant="outlined"
+                                sx={{
+                                    width: '150px',
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': { borderColor: 'white' },
+                                        '&:hover fieldset': { borderColor: 'white' },
+                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                    },
+                                    '& .MuiInputLabel-root': { color: 'white' },
+                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                }}
+                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                                disabled={!league.active}
+                            />
+                            <IconButton onClick={() => setHomeGoals(p => p + 1)} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => setAwayGoals(p => Math.max(0, p - 1))} size="small" disabled={!league.active}><Remove /></IconButton>
-                            <TextField label={`${match.awayTeamName} Goals`} type="number" value={awayGoals} onChange={e => setAwayGoals(Number(e.target.value))} variant="outlined" sx={{ width: '150px' }} inputProps={{ style: { textAlign: 'center' } }} disabled={!league.active} />
-                            <IconButton onClick={() => setAwayGoals(p => p + 1)} size="small" disabled={!league.active}><Add /></IconButton>
+                            <IconButton onClick={() => setAwayGoals(p => Math.max(0, p - 1))} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
+                            <TextField
+                                label={`${match.awayTeamName} Goals`}
+                                type="number"
+                                value={awayGoals}
+                                onChange={e => setAwayGoals(Number(e.target.value))}
+                                variant="outlined"
+                                sx={{
+                                    width: '150px',
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': { borderColor: 'white' },
+                                        '&:hover fieldset': { borderColor: 'white' },
+                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                    },
+                                    '& .MuiInputLabel-root': { color: 'white' },
+                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                }}
+                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                                disabled={!league.active}
+                            />
+                            <IconButton onClick={() => setAwayGoals(p => p + 1)} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
                         </Box>
                     </Box>
                     <Box sx={{ mb: 2 }}>
-                        <TextField label="Match Note" multiline rows={3} value={note} onChange={e => setNote(e.target.value)} fullWidth variant="outlined" disabled={!league.active} />
+                        <TextField
+                            label="Match Note"
+                            multiline
+                            rows={3}
+                            value={note}
+                            onChange={e => setNote(e.target.value)}
+                            fullWidth
+                            variant="outlined"
+                            disabled={!league.active}
+                            sx={{
+                                input: { color: 'white' },
+                                textarea: { color: 'white' },
+                                label: { color: 'white' },
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': { borderColor: 'white' },
+                                    '&:hover fieldset': { borderColor: 'white' },
+                                    '&.Mui-focused fieldset': { borderColor: 'white' },
+                                },
+                                '& .MuiInputLabel-root': { color: 'white' },
+                                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                            }}
+                            InputLabelProps={{ style: { color: 'white' } }}
+                        />
                     </Box>
-                    <Button variant="contained" color="primary" onClick={handleSaveDetails} disabled={!league.active}>Save Match Details</Button>
+                    <Button sx={{
+                        bgcolor: '#43a047',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        '&:hover': { bgcolor: '#388e3c' },
+                    }}
+                        variant="contained" color="primary" onClick={handleSaveDetails} disabled={!league.active}>Save Match Details</Button>
                 </Box>
             )}
-            
+
             <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Your Stats for the Match</DialogTitle>
                 <DialogContent>

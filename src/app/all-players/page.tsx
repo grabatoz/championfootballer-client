@@ -57,9 +57,9 @@ const AllPlayersPage = () => {
   );
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, backgroundColor: '#E0F2F1', minHeight: '100vh' }}>
+    <Container maxWidth="md" sx={{ py: 4, backgroundColor: '#0a3e1e', minHeight: '100vh' , color:'white' }}>
       <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: 'transparent' }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#004D40' }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff' }}>
           All Players
         </Typography>
         <TextField
@@ -77,10 +77,10 @@ const AllPlayersPage = () => {
         />
         
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, mb: 1 }}>
-          <Typography sx={{ color: '#00796B', fontWeight: 'bold' }}>Name</Typography>
+          <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: 5 }}>
-             <Typography sx={{ color: '#00796B', fontWeight: 'bold' }}>Stats</Typography>
-             <Typography sx={{ color: '#00796B', fontWeight: 'bold' }}>XP Points</Typography>
+             <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Stats</Typography>
+             <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>XP Points</Typography>
           </Box>
         </Box>
 
@@ -111,7 +111,7 @@ const AllPlayersPage = () => {
                   }}
                 >
                   <ListItemAvatar>
-                    <Avatar src={player.profilePicture || undefined} />
+                    <Avatar src={player?.profilePicture ? (player.profilePicture.startsWith('http') ? player.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : `/${player.profilePicture}`}`) : undefined} />
                   </ListItemAvatar>
                   <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium' }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 8, ml: 'auto' }}>

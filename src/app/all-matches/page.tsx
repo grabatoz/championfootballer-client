@@ -175,10 +175,10 @@ export default function AllMatches() {
         ? 'All Leagues' 
         : leagues.find(league => league.id === selectedLeague)?.name || '';
 
-    const handleOpenTeamModal = (match: Match) => {
-        setSelectedMatch(match);
-        setTeamModalOpen(true);
-    };
+    // const handleOpenTeamModal = (match: Match) => {
+    //     setSelectedMatch(match);
+    //     setTeamModalOpen(true);
+    // };
 
     const handleCloseTeamModal = () => {
         setTeamModalOpen(false);
@@ -234,7 +234,9 @@ export default function AllMatches() {
                 <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToDashboard}
-                    sx={{ mb: 2, color: 'black' }}
+                    sx={{ mb: 2, color: 'white' , backgroundColor:'#1f673b' ,
+                        '&:hover': { backgroundColor: '#388e3c' },
+                     }}
                 >
                     Back to Dashboard
                 </Button>
@@ -307,9 +309,13 @@ export default function AllMatches() {
                 </Box>
 
                 {/* Match Cards */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
+                  gap: 3,
+                }}>
                     {loading ? (
-                        <Typography color="white" align="center">Loading matches...</Typography>
+                        <Typography color="black" align="center">Loading matches...</Typography>
                     ) : selectedLeague === 'all' ? (
                         <Paper
                             elevation={0}
@@ -330,7 +336,7 @@ export default function AllMatches() {
                         <Paper
                             elevation={0}
                             sx={{
-                                background: 'rgba(255,255,255,0.06)',
+                                background: '#1f673b',
                                 borderRadius: 3,
                                 p: 4,
                                 textAlign: 'center',
@@ -349,80 +355,96 @@ export default function AllMatches() {
                             <Paper
                                 key={match.id}
                                 elevation={4}
-                                    onClick={() => router.push(`/match/${match.id}`)}
+                                onClick={() => router.push(`/match/${match.id}`)}
                                 sx={{
-                                    background: 'rgba(255,255,255,0.1)',
+                                    background: '#1f673b',
                                     borderRadius: 3,
                                     p: 3,
                                     color: 'black',
                                     boxShadow: '0 4px 24px 0 rgba(31,38,135,0.17)',
                                     border: '1px solid rgba(255,255,255,0.10)',
                                     position: 'relative',
-                                        cursor: 'pointer',
-                                        transition: 'box-shadow 0.2s, transform 0.2s',
-                                        '&:hover': {
-                                            boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)',
-                                            transform: 'translateY(-2px) scale(1.01)',
-                                            background: 'rgba(255,255,255,0.18)',
-                                        },
-                                    }}
-                                >
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 4 }, textAlign: 'center', p: 2 }}>
-                                    {/* Home Team */}
-                                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                    cursor: 'pointer',
+                                    transition: 'box-shadow 0.2s, transform 0.2s',
+                                    '&:hover': {
+                                        boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)',
+                                        transform: 'translateY(-2px) scale(1.01)',
+                                        background: '#388e3c',
+                                    },
+                                    minHeight: 260,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                {/* Top Row: Team Images */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                                         <Image src={leagueIcon} alt={match.homeTeamName || 'Home Team'} width={48} height={48} style={{ borderRadius: '50%' }} />
-                                        <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
+                                    </Box>
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                                        <Image src={leagueIcon} alt={match.awayTeamName || 'Away Team'} width={48} height={48} style={{ borderRadius: '50%' }} />
+                                    </Box>
+                                </Box>
+
+                                {/* Second Row: Team Names */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                                        <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {match.homeTeamName || match.homeTeam}
                                         </Typography>
-                                        <Typography variant="h5" sx={{ color: 'black', fontWeight: 'bold' }}>
+                                    </Box>
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                                        <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {match.awayTeamName || match.awayTeam}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Third Row: Goals with Center Line */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', pr: 2 }}>
+                                        <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'right', minWidth: 32 }}>
                                             {match.homeTeamGoals ?? '-'}
                                         </Typography>
                                     </Box>
-
-                                    {/* Separator */}
-                                    <Typography variant="h5" sx={{ color: 'rgba(0,0,0,0.6)' }}>
-                                        VS
-                                    </Typography>
-
-                                    {/* Away Team */}
-                                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                        <Image src={leagueIcon} alt={match.awayTeamName || 'Away Team'} width={48} height={48} style={{ borderRadius: '50%' }} />
-                                        <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                                            {match.awayTeamName || match.awayTeam}
-                                        </Typography>
-                                        <Typography variant="h5" sx={{ color: 'black', fontWeight: 'bold' }}>
+                                    <Box sx={{ width: 2, height: 32, bgcolor: 'white', borderRadius: 1, mx: 2 }} />
+                                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', pl: 2 }}>
+                                        <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'left', minWidth: 32 }}>
                                             {match.awayTeamGoals ?? '-'}
                                         </Typography>
                                     </Box>
                                 </Box>
+                                {/* Goals Scored Label */}
+                                <Typography variant="caption" sx={{ color: 'white', display: 'block', textAlign: 'center', mb: 2, fontWeight: 'bold', letterSpacing: 1 }}>
+                                    Goals Scored
+                                </Typography>
 
-                                <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.7)', display: 'block', textAlign: 'center' }}>
+                                {/* Date */}
+                                <Typography variant="body2" sx={{ color: 'white', display: 'block', textAlign: 'center' }}>
                                     {new Date(match.date).toLocaleString()}
                                 </Typography>
-                                
+
+                                {/* Availability */}
                                 <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'center' }}>
                                     <Typography color="success.main">Available: {availableCount}</Typography>
                                     <Typography color="warning.main">Pending: {pendingCount}</Typography>
                                 </Box>
-                                
+
                                 <Divider sx={{ my: 2, backgroundColor: 'rgba(0,0,0,0.1)' }} />
-                                
+
+                                {/* Status */}
                                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    
-                                    {( () => {
-                                            const displayStatus = match.status;
-
+                                    {(() => {
+                                        const displayStatus = match.status;
                                         const statusInfo = {
-                                                upcoming: { label: 'Upcoming', color: 'primary' as const },
-                                                completed: { label: 'Completed', color: 'success' as const },
-                                                cancelled: { label: 'Cancelled', color: 'error' as const },
-                                            };
-
-                                            const currentStatus = statusInfo[displayStatus as keyof typeof statusInfo] || { label: displayStatus, color: 'default' as const};
-
-                                            return <Chip label={currentStatus.label} color={currentStatus.color} />;
+                                            upcoming: { label: 'Upcoming', color: 'primary' as const },
+                                            completed: { label: 'Completed', color: 'success' as const },
+                                            cancelled: { label: 'Cancelled', color: 'error' as const },
+                                        };
+                                        const currentStatus = statusInfo[displayStatus as keyof typeof statusInfo] || { label: displayStatus, color: 'default' as const };
+                                        return <Chip label={currentStatus.label} color={currentStatus.color} />;
                                     })()}
-
                                 </Box>
                             </Paper>
                             );

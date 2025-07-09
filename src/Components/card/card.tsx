@@ -29,6 +29,7 @@ interface PlayerCardProps {
     width?: number | string;
     height?: number | string;
     isCaptain?: boolean;
+    backgroundColor?: string; // <-- add this
 }
 
 const ResponsiveCard = ({
@@ -42,6 +43,7 @@ const ResponsiveCard = ({
     width,
     height,
     isCaptain,
+    backgroundColor, // <-- add this
 }: PlayerCardProps) => {
     const getShortName = (fullName: string) => {
         const parts = fullName.trim().split(' ');
@@ -62,6 +64,7 @@ const ResponsiveCard = ({
                 fontWeight: 'bold',
                 color: 'white',
                 overflow: 'hidden',
+                backgroundColor: backgroundColor || '#235235', // <-- use prop or default
             }}
         >
             {/* Keep SVG image same */}

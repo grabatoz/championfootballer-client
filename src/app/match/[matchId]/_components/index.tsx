@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Paper, Button, Divider, CircularProgress, Avatar,  CardContent } from "@mui/material";
+import { Box, Typography, Paper, Button, CircularProgress, Avatar } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -194,7 +194,7 @@ export default function MatchDetailsPage() {
               Match starts at: {match.start ? new Date(match.start).toLocaleString() : new Date(match.date).toLocaleString()}
             </Typography>
           )}
-          <Divider sx={{ mb: 3 }} />
+          {/* <Divider sx={{ mb: 3 }} /> */}
           {/* Responsive player stats tables */}
           {isLargeScreen ? (
             <Box sx={{ width: '100%', overflowX: 'auto', mt: 4, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>

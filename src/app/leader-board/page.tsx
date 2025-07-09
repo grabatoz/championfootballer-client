@@ -9,7 +9,6 @@ import Assist from '@/Components/images/Assist.png'
 import Defence from '@/Components/images/defence.png'
 import MOTM from '@/Components/images/MOTM.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
-import Group from '@/Components/images/group451.png'
 
 
 interface Player {
@@ -105,7 +104,7 @@ export default function LeaderBoardPage() {
           gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
           gap: 2,
           mb: 3,
-          background: 'white',
+          background: '#0a3e1e',
           borderRadius: 2,
           boxShadow: 1,
           p: 2,
@@ -144,7 +143,7 @@ export default function LeaderBoardPage() {
         <CircularProgress />
       ) : (
         players.map((player) => (
-          <Paper key={player.id} sx={{ p: 2, mb: 2, display: 'flex', alignItems: 'center', borderRadius: 4, background: 'white' }}>
+          <Paper key={player.id} sx={{ p: 2, mb: 2, display: 'flex', color:'white' , alignItems: 'center', borderRadius: 4, background: '#0a3e1e' }}>
             <Avatar
               src={
                 player?.profilePicture
@@ -156,7 +155,7 @@ export default function LeaderBoardPage() {
               sx={{ width: 64, height: 64, mr: 2 }}
             />
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{player.name}</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' , color:'white' }}>{player.name}</Typography>
               <Typography variant="body2">Position: {player.position}</Typography>
               <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
             </Box>

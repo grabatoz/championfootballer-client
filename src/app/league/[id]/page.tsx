@@ -507,9 +507,6 @@ export default function LeagueDetailPage() {
                                                         <Typography variant="body1" sx={{ color: 'white' }}>
                                                             {member.firstName} {member.lastName}
                                                         </Typography>
-                                                        <Typography variant="caption" sx={{ color: 'white' }}>
-                                                            {member.email}
-                                                        </Typography>
                                                     </Box>
                                                 </Box>
                                             </CardContent>

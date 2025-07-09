@@ -665,6 +665,7 @@ interface PlayerDetails {
   position: string;
   rating: number;
   avatar: string | null;
+  profilePicture: string | null;
 }
 export const playerAPI = {
   getPlayedWith: async (token: string): Promise<ApiResponse<Player[]>> => {

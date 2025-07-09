@@ -282,18 +282,32 @@ export default function GlobalTrophyRoom() {
     return (
         <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', mb: 4, gap: 2 }}>
-                <Chip 
-                    label="All Trophies" 
-                    color={filter === 'all' ? 'primary' : 'default'} 
+                <Chip
+                    label="All Trophies"
+                    color={filter === 'all' ? 'primary' : 'default'}
                     onClick={() => setFilter('all')}
-                    sx={{ fontSize: '1rem', py: 2, px: 3, fontWeight: 'bold', cursor: 'pointer' }} 
+                    sx={{
+                        fontSize: '1rem',
+                        py: 2,
+                        px: 3,
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        ...(filter === 'all' && { backgroundColor: '#0a3e1e', color: 'white' }),
+                    }}
                 />
-                <Chip 
-                    label="My Achievements" 
+                <Chip
+                    label="My Achievements"
                     color={filter === 'my' ? 'primary' : 'default'}
-                    variant="outlined" 
+                    variant="outlined"
                     onClick={() => setFilter('my')}
-                    sx={{ fontSize: '1rem', py: 2, px: 3, fontWeight: 'bold', cursor: 'pointer' }} 
+                    sx={{
+                        fontSize: '1rem',
+                        py: 2,
+                        px: 3,
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        ...(filter === 'my' && { backgroundColor: '#0a3e1e', color: 'white' }),
+                    }}
                 />
             </Box>
 
