@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Paper, Button, CircularProgress, Avatar } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Avatar } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -222,10 +222,9 @@ export default function MatchDetailsPage() {
           )}
           {/* <Divider sx={{ mb: 3 }} /> */}
           {/* Responsive player stats tables */}
-          {isLargeScreen ? (
+          {/* {isLargeScreen ? (
             <Box sx={{ width: '100%', overflowX: 'auto', mt: 4, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
               <Box sx={{ display: 'flex', gap: 4, minWidth: 900 }}>
-                {/* Away Team Table (left) */}
                 <Box sx={{ flex: 1, scrollbarWidth: 'none', maxWidth: 610, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: 'center', fontSize: 17 }}>{match.awayTeamName} Players</Typography>
                   <Box sx={{ width: '100%', maxHeight: 420, overflowY: 'auto', boxShadow: 1, background: '#fff', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
@@ -267,7 +266,6 @@ export default function MatchDetailsPage() {
                     </table>
                   </Box>
                 </Box>
-                {/* Home Team Table (right) */}
                 <Box sx={{ flex: 1, maxWidth: 610, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: 'center', fontSize: 17 }}>{match.homeTeamName} Players</Typography>
                   <Box sx={{ width: '100%', maxHeight: 420, overflowY: 'auto', boxShadow: 1, background: '#fff', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
@@ -371,7 +369,342 @@ export default function MatchDetailsPage() {
                 </Box>
               </Paper>
             </>
-          )}
+          )} */}
+           <Box sx={{ width: "100%" }}>
+      {/* Player Statistics Tables */}
+      <Box sx={{ width: "100%" }}>
+        {isLargeScreen ? (
+          <Box
+            sx={{
+              width: "100%",
+              overflowX: "auto",
+              mt: 4,
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 4, minWidth: 900 }}>
+              {/* Away Team Table (left) */}
+              <Box
+                sx={{
+                  flex: 1,
+                  maxWidth: 610,
+                  minWidth: 320,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 }}>
+                  {match.awayTeamName} Players
+                </Typography>
+                <Box
+                  sx={{
+                    width: "100%",
+                    maxHeight: 420,
+                    overflowY: "auto",
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
+                  }}
+                >
+                  {/* Header */}
+                  <Box
+                    sx={{
+                      bgcolor: "#43a047",
+                      borderRadius: 3,
+                      px: 2,
+                      py: 1,
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                    <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
+                      <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Plt</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>FK</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Df</Box>
+                      <Box sx={{ minWidth: 35, textAlign: "center" }}>Imp</Box>
+                    </Box>
+                  </Box>
+
+                  {/* Player Cards */}
+                  <Box>
+                    {match.awayTeamUsers.map((player) => {
+                      const stats = player.statistics?.[0] || {}
+                      return (
+                        <Box
+                          key={player.id}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                            p: 2,
+                            borderRadius: 4,
+                            background: "#0a3e1e",
+                            color: "white",
+                            boxShadow: 3,
+                            minHeight: 70,
+                            gap: 2,
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                            <Box sx={{ mr: 2 }}>
+                              <Avatar
+                                src={
+                                  player.profilePicture
+                                    ? player.profilePicture.startsWith("http")
+                                      ? player.profilePicture
+                                      : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                    : undefined
+                                }
+                                sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                              />
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
+                              {player.firstName} {player.lastName}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                            <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
+                              {player.shirtNumber || "0"}
+                            </Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
+                            <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                          </Box>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Home Team Table (right) */}
+              <Box
+                sx={{
+                  flex: 1,
+                  maxWidth: 610,
+                  minWidth: 320,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 }}>
+                  {match.homeTeamName} Players
+                </Typography>
+                <Box
+                  sx={{
+                    width: "100%",
+                    maxHeight: 420,
+                    overflowY: "auto",
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
+                  }}
+                >
+                  {/* Header */}
+                  <Box
+                    sx={{
+                      bgcolor: "#43a047",
+                      borderRadius: 3,
+                      px: 2,
+                      py: 1,
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                    <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
+                      <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Plt</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>FK</Box>
+                      <Box sx={{ minWidth: 30, textAlign: "center" }}>Df</Box>
+                      <Box sx={{ minWidth: 35, textAlign: "center" }}>Imp</Box>
+                    </Box>
+                  </Box>
+
+                  {/* Player Cards */}
+                  <Box>
+                    {match.homeTeamUsers.map((player) => {
+                      const stats = player.statistics?.[0] || {}
+                      return (
+                        <Box
+                          key={player.id}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                            p: 2,
+                            borderRadius: 4,
+                            background: "#0a3e1e",
+                            color: "white",
+                            boxShadow: 3,
+                            minHeight: 70,
+                            gap: 2,
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                            <Box sx={{ mr: 2 }}>
+                              <Avatar
+                                src={
+                                  player.profilePicture
+                                    ? player.profilePicture.startsWith("http")
+                                      ? player.profilePicture
+                                      : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                    : undefined
+                                }
+                                sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                              />
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
+                              {player.firstName} {player.lastName}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                            <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
+                              {player.shirtNumber || "0"}
+                            </Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
+                            <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
+                            <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                          </Box>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: "flex", gap: 2, mb: 3, justifyContent: "center", mt: 4 }}>
+              <Button
+                variant={selectedTeam === "home" ? "contained" : "outlined"}
+                onClick={() => setSelectedTeam("home")}
+                sx={{
+                  minWidth: 120,
+                  fontWeight: "bold",
+                  bgcolor: selectedTeam === "home" ? "#43a047" : "white",
+                  color: selectedTeam === "home" ? "white" : "black",
+                  "&:hover": {
+                    bgcolor: selectedTeam === "home" ? "#388e3c" : "#f5f5f5",
+                  },
+                }}
+              >
+                {match.homeTeamName}
+              </Button>
+              <Button
+                variant={selectedTeam === "away" ? "contained" : "outlined"}
+                onClick={() => setSelectedTeam("away")}
+                sx={{
+                  minWidth: 120,
+                  fontWeight: "bold",
+                  bgcolor: selectedTeam === "away" ? "#43a047" : "white",
+                  color: selectedTeam === "away" ? "white" : "black",
+                  "&:hover": {
+                    bgcolor: selectedTeam === "away" ? "#388e3c" : "#f5f5f5",
+                  },
+                }}
+              >
+                {match.awayTeamName}
+              </Button>
+            </Box>
+            <Box sx={{ p: 3, borderRadius: 3, background: "white", boxShadow: 2 }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                {selectedTeam === "home" ? match.homeTeamName : match.awayTeamName} Players
+              </Typography>
+
+              {/* Header */}
+              <Box
+                sx={{ bgcolor: "#43a047", borderRadius: 3, px: 2, py: 1, mb: 2, display: "flex", alignItems: "center" }}
+              >
+                <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
+                  <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>Plt</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>FK</Box>
+                  <Box sx={{ minWidth: 30, textAlign: "center" }}>Df</Box>
+                  <Box sx={{ minWidth: 35, textAlign: "center" }}>Imp</Box>
+                </Box>
+              </Box>
+
+              {/* Player Cards */}
+              <Box>
+                {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player) => {
+                  const stats = player.statistics?.[0] || {}
+                  return (
+                    <Box
+                      key={player.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: 2,
+                        p: 2,
+                        borderRadius: 4,
+                        background: "#0a3e1e",
+                        color: "white",
+                        boxShadow: 3,
+                        minHeight: 70,
+                        gap: 2,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                        <Box sx={{ mr: 2 }}>
+                          <Avatar
+                            src={
+                              player.profilePicture
+                                ? player.profilePicture.startsWith("http")
+                                  ? player.profilePicture
+                                  : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                : undefined
+                            }
+                            sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                          />
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
+                          {player.firstName} {player.lastName}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                        <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>{player.shirtNumber || "0"}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
+                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
+                        <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                      </Box>
+                    </Box>
+                  )
+                })}
+              </Box>
+            </Box>
+          </>
+        )}
+      </Box>
+    </Box>
         </>
       )}
     </Box>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, Chip, SelectChangeEvent, CircularProgress, IconButton } from '@mui/material';
+import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, CircularProgress, IconButton } from '@mui/material';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
@@ -227,9 +227,9 @@ export default function AllMatches() {
         const pendingCount = leagueMembers.length - availableCount;
         return { availableCount, pendingCount };
     };
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
     const [league, setLeague] = useState<League | null>(null);
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [, setToastMessage] = useState<string | null>(null);
 
     const fetchLeagueDetails = useCallback(async () => {
         try {

@@ -27,14 +27,6 @@ import {
     Switch,
     TextField,
     Alert,
-    Tabs,
-    Tab,
-    Table,
-    TableHead,
-    TableBody,
-    TableRow,
-    TableCell,
-    TableContainer
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
@@ -823,7 +815,7 @@ export default function LeagueDetailPage() {
                             </Box>
                         </Box>
                         <Box>
-                            {tableData.length > 0 ? tableData.map((row, index) => (
+                            {tableData.length > 0 ? tableData.map((row) => (
                                 <Paper
                                     key={row.id}
                                     elevation={3}
