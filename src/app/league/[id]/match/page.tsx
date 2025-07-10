@@ -560,7 +560,7 @@ export default function ScheduleMatchPage() {
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
                     <Paper sx={{ p: 2, backgroundColor: '#1f673b', color: 'white', position: 'sticky', top: '20px' }}>
-                        <Typography variant="h5" gutterBottom>Live Preview</Typography>
+                            <Typography variant="h5" gutterBottom>Live Preview</Typography>
                         <Divider sx={{ mb: 2, borderColor: 'white' }} />
                         <Box sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: 4, minHeight: 250, width: '100%' }}>
                             {/* Home Team Preview */}
@@ -614,7 +614,7 @@ export default function ScheduleMatchPage() {
                             </Box>
                             {/* Center Line */}
                             <Box sx={{ width: 2, bgcolor: 'white', minHeight: 180, borderRadius: 1, mx: 2, display: { xs: 'none', md: 'block' } }} />
-                            {/* Away Team Preview */}
+                             {/* Away Team Preview */}
                             <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
                                 <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>{awayTeamName || 'Away Team'}</Typography>
                                 {awayTeamUsers.length > 0 ? (
@@ -663,9 +663,9 @@ export default function ScheduleMatchPage() {
                                     </Box>
                                 ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
                             </Box>
-                        </Box>
-                    </Paper>
-                </Box>
+                            </Box>
+                        </Paper>
+                    </Box>
                 </Box>
             </Box>
         </LocalizationProvider>

@@ -49,6 +49,7 @@ interface Match {
   start?: string;
   end?: string;
   leagueId?: string;
+  availableUsers?: { id: string }[];
 }
 
 interface League {
@@ -60,11 +61,12 @@ interface League {
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = params?.matchId as string;
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away' | null>(null);
   const [league, setLeague] = useState<League | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
 
   useEffect(() => {
     if (!matchId || !token) return;
@@ -159,6 +161,26 @@ export default function MatchDetailsPage() {
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
 
+  const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
+    if (!user) return;
+    setAvailabilityLoading(prev => ({ ...prev, [matchId]: true }));
+    const action = isAvailable ? 'unavailable' : 'available';
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/matches/${matchId}/availability?action=${action}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      if (data.success && data.match) {
+        setMatch(prev => prev && prev.id === matchId ? { ...prev, availableUsers: data.match.availableUsers } : prev);
+      }
+    } finally {
+      setAvailabilityLoading(prev => ({ ...prev, [matchId]: false }));
+    }
+  };
+
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
       {loading ? (
@@ -188,6 +210,10 @@ export default function MatchDetailsPage() {
             matchStatus={match.status}
             matchEndTime={match.end || undefined}
             leagueId={match.leagueId || ""}
+            matchId={match.id}
+            isUserAvailable={!!match.availableUsers?.some(u => u?.id === user?.id)}
+            availabilityLoading={availabilityLoading}
+            handleToggleAvailability={handleToggleAvailability}
           />
           {!showGoals && (
             <Typography align="center" sx={{ mb: 3, color: 'gray' }}>

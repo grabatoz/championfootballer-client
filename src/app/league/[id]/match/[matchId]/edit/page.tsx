@@ -61,7 +61,7 @@ export default function EditMatchPage() {
     const [match, setMatch] = useState<Match | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    
     // Form state
     const [homeTeamName, setHomeTeamName] = useState('');
     const [awayTeamName, setAwayTeamName] = useState('');
@@ -182,7 +182,7 @@ export default function EditMatchPage() {
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
-
+    
     if (error || !league || !match) {
         return (
             <Box sx={{ p: 4, minHeight: '100vh', color: 'white' }}>
@@ -193,51 +193,51 @@ export default function EditMatchPage() {
             </Box>
         );
     }
-
+    
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, p: 4, minHeight: '100vh', color: 'white' }}>
                 {/* Edit Form Section - right on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
                     <Paper component="form" onSubmit={handleUpdateMatch} sx={{ p: 3, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', border: '1px solid #235235', maxWidth: 700, mx: 'auto' }}>
-                        <Typography variant="h4" component="h1" gutterBottom>
-                            Edit Match for {league.name}
-                        </Typography>
-                        <TextField
-                            label="Home Team Name"
-                            value={homeTeamName}
-                            onChange={(e) => setHomeTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
+                    <Typography variant="h4" component="h1" gutterBottom>
+                        Edit Match for {league.name}
+                    </Typography>
+                    <TextField
+                        label="Home Team Name"
+                        value={homeTeamName}
+                        onChange={(e) => setHomeTeamName(e.target.value)}
+                        required
+                        fullWidth
+                        margin="normal"
                             InputLabelProps={{ style: { color: 'white' } }}
                             sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
-                        />
-                        <Autocomplete
-                            multiple
-                            options={league.members.filter(m => !awayTeamUsers.find(p => p.id === m.id))}
-                            disableCloseOnSelect
-                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                            value={homeTeamUsers}
-                            onChange={(event, newValue) => { setHomeTeamUsers(newValue); }}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip
-                                        {...getTagProps({ index })}
-                                        key={option.id}
-                                        label={`${option.firstName} ${option.lastName}`}
+                    />
+                    <Autocomplete
+                        multiple
+                        options={league.members.filter(m => !awayTeamUsers.find(p => p.id === m.id))}
+                        disableCloseOnSelect
+                        getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        value={homeTeamUsers}
+                        onChange={(event, newValue) => { setHomeTeamUsers(newValue); }}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    {...getTagProps({ index })}
+                                    key={option.id}
+                                    label={`${option.firstName} ${option.lastName}`}
                                         sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
-                                    />
-                                ))
-                            }
-                            renderOption={(props, option, { selected }) => (
-                                <li {...props} style={{ color: 'black' }}>
-                                    <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
-                                    {`${option.firstName} ${option.lastName}`}
-                                </li>
-                            )}
-                            renderInput={(params) => (
+                                />
+                            ))
+                        }
+                        renderOption={(props, option, { selected }) => (
+                            <li {...props} style={{ color: 'black' }}>
+                                <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
+                                {`${option.firstName} ${option.lastName}`}
+                            </li>
+                        )}
+                        renderInput={(params) => (
                                 <TextField {...params} label="Select Home Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
                             )}
                         />
@@ -252,41 +252,41 @@ export default function EditMatchPage() {
                                 )}
                             />
                         )}
-                        <TextField
-                            label="Away Team Name"
-                            value={awayTeamName}
-                            onChange={(e) => setAwayTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
+                    <TextField
+                        label="Away Team Name"
+                        value={awayTeamName}
+                        onChange={(e) => setAwayTeamName(e.target.value)}
+                        required
+                        fullWidth
+                        margin="normal"
                             InputLabelProps={{ style: { color: 'white' } }}
                             sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
-                        />
-                        <Autocomplete
-                            multiple
-                            options={league.members.filter(m => !homeTeamUsers.find(p => p.id === m.id))}
-                            disableCloseOnSelect
-                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                            value={awayTeamUsers}
-                            onChange={(event, newValue) => { setAwayTeamUsers(newValue); }}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip
-                                        {...getTagProps({ index })}
-                                        key={option.id}
-                                        label={`${option.firstName} ${option.lastName}`}
+                    />
+                    <Autocomplete
+                        multiple
+                        options={league.members.filter(m => !homeTeamUsers.find(p => p.id === m.id))}
+                        disableCloseOnSelect
+                        getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        value={awayTeamUsers}
+                        onChange={(event, newValue) => { setAwayTeamUsers(newValue); }}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    {...getTagProps({ index })}
+                                    key={option.id}
+                                    label={`${option.firstName} ${option.lastName}`}
                                         sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
-                                    />
-                                ))
-                            }
-                            renderOption={(props, option, { selected }) => (
-                                <li {...props} style={{ color: 'black' }}>
-                                    <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
-                                    {`${option.firstName} ${option.lastName}`}
-                                </li>
-                            )}
-                            renderInput={(params) => (
+                                />
+                            ))
+                        }
+                        renderOption={(props, option, { selected }) => (
+                            <li {...props} style={{ color: 'black' }}>
+                                <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
+                                {`${option.firstName} ${option.lastName}`}
+                            </li>
+                        )}
+                        renderInput={(params) => (
                                 <TextField {...params} label="Select Away Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
                             )}
                         />
@@ -301,34 +301,34 @@ export default function EditMatchPage() {
                                 )}
                             />
                         )}
-                        <DateTimePicker
-                            label="Match Date & Time"
-                            value={matchDate}
-                            onChange={setMatchDate}
-                            slotProps={{
-                                textField: {
-                                    fullWidth: true,
-                                    margin: "normal",
-                                    required: true,
+                    <DateTimePicker
+                        label="Match Date & Time"
+                        value={matchDate}
+                        onChange={setMatchDate}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                margin: "normal",
+                                required: true,
                                     sx: { svg: { color: 'white' }, input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }
-                                }
-                            }}
-                        />
-                        <TextField
-                            label="Location"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
+                            }
+                        }}
+                    />
+                    <TextField
+                        label="Location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        required
+                        fullWidth
+                        margin="normal"
                             InputLabelProps={{ style: { color: 'white' } }}
                             sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
-                        />
-                        {error && <Typography color="error" sx={{ my: 2 }}>{error}</Typography>}
+                    />
+                    {error && <Typography color="error" sx={{ my: 2 }}>{error}</Typography>}
                         <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2, bgcolor: '#43a047', color: 'white', fontWeight: 'bold', '&:hover': { bgcolor: '#388e3c' } }} disabled={isSubmitting}>
-                            {isSubmitting ? <CircularProgress size={24} /> : 'Update Match'}
-                        </Button>
-                    </Paper>
+                        {isSubmitting ? <CircularProgress size={24} /> : 'Update Match'}
+                    </Button>
+                </Paper>
                 </Box>
                 {/* Live Preview Section - left on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>

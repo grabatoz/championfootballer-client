@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import { Add } from '@mui/icons-material';
 
 interface MatchSummaryProps {
   homeTeamName: string;
@@ -21,6 +24,10 @@ interface MatchSummaryProps {
   winPercentRight: number; // 0-100
   matchStatus: string; // 'not_started' | 'started' | 'completed'
   matchEndTime?: string; // ISO string, only for completed
+  matchId: string;
+  isUserAvailable: boolean;
+  availabilityLoading: { [matchId: string]: boolean };
+  handleToggleAvailability: (matchId: string, isAvailable: boolean) => void;
 }
 
 const getElapsedTime = (startTime: string, endTime?: string) => {
@@ -49,6 +56,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   winPercentRight,
   matchStatus,
   matchEndTime,
+  matchId,
+  isUserAvailable,
+  availabilityLoading,
+  handleToggleAvailability,
 }) => {
   const [, setElapsed] = useState('00:00');
   const isDraw = matchStatus === 'completed' && homeGoals === awayGoals;
@@ -73,7 +84,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   return (
     <Box>
       {/* League name and game info at the top */}
-     
+
       <Box
         sx={{
           display: 'flex',
@@ -93,12 +104,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         }}
       >
         {/* League name and game info at the very top of the box */}
-       <Link href={`/league/${leagueId}`}>
-        <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22 }, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%'}}>
-        League Name : <span className='underline'>{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
-        </Typography>
+        <Link href={`/league/${leagueId}`}>
+          <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22 }, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%' }}>
+            League Name : <span className='underline'>{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
+          </Typography>
         </Link>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Home Team */}
           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
             <Box
@@ -112,7 +123,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 maxWidth: { xs: 90, md: 140 },
                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
                 p: 1,
-                color:'white',
+                color: 'white',
                 borderRadius: 2,
               }}
             />
@@ -150,15 +161,84 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           </Box>
         </Box>
         {/* Match start/end info at the very bottom of the box */}
-        <Box sx={{ width: '100%', pt: 2, display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: 15 }}>
-          <Typography>
-            Start: {new Date(matchStartTime).toLocaleString()}
-          </Typography>
-          {matchStatus === 'completed' && matchEndTime && (
+        <Box
+          sx={{
+            width: '100%',
+            pt: 2,
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'stretch', md: 'center' },
+            color: '#fff',
+            fontSize: 15,
+            gap: { xs: 2, md: 0 },
+          }}
+        >
+          {/* Buttons: on top for xs, center for md+ */}
+          <Box sx={{ display: 'flex', flex: 1, justifyContent: { xs: 'center', md: 'flex-end' }, gap: 2, order: { xs: 1, md: 2 } }}>
+            <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<Add />}
+                sx={{
+                  bgcolor: '#43a047',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  '&:hover': { bgcolor: '#388e3c' },
+                }}
+              >
+                Your Stats
+              </Button>
+            </Link>
+            {matchStatus !== 'completed' ? (
+              <Button
+                variant="contained"
+                onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
+                disabled={availabilityLoading[matchId]}
+                sx={{
+                  backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
+                  '&:hover': {
+                    backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                    color: 'rgba(255,255,255,0.5)'
+                  },
+                  minWidth: 140
+                }}
+              >
+                {availabilityLoading[matchId]
+                  ? <CircularProgress size={20} color="inherit" />
+                  : (isUserAvailable ? 'Unavailable' : 'Available')}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                disabled
+                sx={{
+                  '&.Mui-disabled': {
+                    backgroundColor: '#43a047',
+                    color: 'white',
+                    '&:hover': { bgcolor: '#388e3c' },
+                  }
+                }}
+              >
+                Match Ended
+              </Button>
+            )}
+          </Box>
+          {/* Start/End date: below buttons for xs, left for md+ */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, order: { xs: 2, md: 1 }, width: { xs: '100%', md: 'auto' } }}>
             <Typography>
-              End: {new Date(matchEndTime).toLocaleString()}
+              Start: {new Date(matchStartTime).toLocaleString()}
             </Typography>
-          )}
+            {matchStatus === 'completed' && matchEndTime && (
+              <Typography>
+                End: {new Date(matchEndTime).toLocaleString()}
+              </Typography>
+            )}
+          </Box>
         </Box>
       </Box>
       {/* Prediction bar only if not completed */}
@@ -215,7 +295,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         </Box>
       )}
       {/* Match start/end info at the bottom */}
-    
+
     </Box>
   );
 };

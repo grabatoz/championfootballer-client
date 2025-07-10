@@ -368,9 +368,9 @@ export default function PlayMatchPage() {
                             <Divider sx={{ mb: 1.5, backgroundColor: '#0a3e1e' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.homeTeamUsers.length > 0 ? (
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
                                             flexDirection: { xs: 'row', sm: 'row', md: 'row' },
                                             flexWrap: { xs: 'nowrap', sm: 'wrap' },
                                             gap: 1,
@@ -388,12 +388,12 @@ export default function PlayMatchPage() {
                                                         const motmDisabled = loadingVote || isVotedPlayer || match.status !== 'completed' || !league.active;
                                                         return (
                                                             <Box sx={{ mt: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                                <MotmButton
-                                                                    voted={isVotedPlayer}
-                                                                    onClick={() => handleVote(player.id)}
-                                                                    disabled={motmDisabled}
-                                                                    color={motmColor}
-                                                                />
+                                                            <MotmButton
+                                                                voted={isVotedPlayer}
+                                                                onClick={() => handleVote(player.id)}
+                                                                disabled={motmDisabled}
+                                                                color={motmColor}
+                                                            />
                                                             </Box>
                                                         );
                                                     })()
@@ -428,9 +428,9 @@ export default function PlayMatchPage() {
                             <Divider sx={{ mb: 1.5, backgroundColor: '#235235' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.awayTeamUsers.length > 0 ? (
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
                                             flexDirection: { xs: 'row', sm: 'row', md: 'row' },
                                             flexWrap: { xs: 'nowrap', sm: 'wrap' },
                                             gap: 1,
@@ -448,12 +448,12 @@ export default function PlayMatchPage() {
                                                         const motmDisabled = loadingVote || isVotedPlayer || match.status !== 'completed' || !league.active;
                                                         return (
                                                             <Box sx={{ mt: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                                <MotmButton
-                                                                    voted={isVotedPlayer}
-                                                                    onClick={() => handleVote(player.id)}
-                                                                    disabled={motmDisabled}
-                                                                    color={motmColor}
-                                                                />
+                                                            <MotmButton
+                                                                voted={isVotedPlayer}
+                                                                onClick={() => handleVote(player.id)}
+                                                                disabled={motmDisabled}
+                                                                color={motmColor}
+                                                            />
                                                             </Box>
                                                         );
                                                     })()
@@ -479,21 +479,21 @@ export default function PlayMatchPage() {
                     wordBreak: 'break-word',
                 }}
             >
-                <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 1 }}>
-                    Match Note
-                </Typography>
+                    <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 1 }}>
+                        Match Note
+                    </Typography>
                 <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                    {match.notes}
-                </Typography>
+                        {match.notes}
+                    </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                    <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                        Start Time:
-                    </Typography>
+                        <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                            Start Time:
+                        </Typography>
                     <Typography variant="body1" sx={{ color: '#fff' }}>
-                        {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
-                    </Typography>
-                </Box>
-            </Paper>
+                            {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
+                        </Typography>
+                    </Box>
+                </Paper>
 
             {(Object.keys(playerVotes).length > 0) && (
                 <Paper sx={{ p: 3, mt: 4, backgroundColor: '#0a3e1e', color: 'white' }}>

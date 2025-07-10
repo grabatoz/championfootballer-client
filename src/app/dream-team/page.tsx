@@ -198,22 +198,22 @@ const DreamTeamPage = () => {
            >
              <Image src={dreamteam} alt="img" height={80} width={80}/>
              Dream Team
-           </Typography>
+      </Typography>
            
            {/* League select on right */}
            <FormControl sx={{ minWidth: 240 }}>
-             <InputLabel id="league-select-label">Select League</InputLabel>
-             <Select
-               labelId="league-select-label"
-               value={selectedLeague}
-               label="Select League"
-               onChange={e => setSelectedLeague(e.target.value as string)}
-             >
-               {leagues.map(league => (
-                 <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
-               ))}
-             </Select>
-           </FormControl>
+        <InputLabel id="league-select-label">Select League</InputLabel>
+        <Select
+          labelId="league-select-label"
+          value={selectedLeague}
+          label="Select League"
+          onChange={e => setSelectedLeague(e.target.value as string)}
+        >
+          {leagues.map(league => (
+            <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
          </Box>
       {loading ? (
         <Box sx={{ p: 3, textAlign: 'center' }}>
