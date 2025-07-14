@@ -1,10 +1,14 @@
 import React from 'react'
 import PlayerProfileCard from './_components'
+import AuthCheck from '@/Components/AuthCheck';
 
 function Page() {
   return (
-        <PlayerProfileCard/>
-)
+    <>
+      <AuthCheck />
+      <PlayerProfileCard/>
+    </>
+  )
 }
 
 export default Page

@@ -1,9 +1,13 @@
 import React from 'react';
 import PlayerDashboard from './_components';
+import AuthCheck from '@/Components/AuthCheck';
 
 const PlayerCardSection: React.FC = () => {  
   return (
-    <PlayerDashboard/>
+    <>
+      <AuthCheck />
+      <PlayerDashboard/>
+    </>
   );
 };
 
