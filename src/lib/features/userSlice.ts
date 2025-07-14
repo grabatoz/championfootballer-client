@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI, playerAPI } from '../api';
-import User from '../../../api/src/models/User';
+import { User } from '@/types/user';
 
 interface Player {
   id: string;
@@ -10,7 +10,7 @@ interface Player {
 }
 
 interface UserState {
-  data: Partial<InstanceType<typeof User>> | null;
+  data: Partial<User> | null;
   playedWithPlayers: Player[];
   loading: boolean;
   error: string | null;
