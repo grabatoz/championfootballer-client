@@ -152,155 +152,74 @@ export default function PlayerDashboard() {
         </Box> */}
     
     <Paper
-  elevation={3}
-  sx={{
-    backgroundImage: `url(${Dashbg.src})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    borderRadius: 2,
-    overflow: 'hidden',
-    p: 3,
-  }}
->
-  <Box
-    sx={{
-      display: 'grid',
-      gridTemplateColumns: {
-        xs: 'repeat(2, 1fr)',
-        sm: 'repeat(auto-fit, minmax(165px, 1fr))',
-      },
-      gap: 2,
-      padding: 2,
-      whiteSpace: 'nowrap',
-    }}
-  >
-    {items.map((item, index) => (
-      <Link key={index} href={item?.url} style={{ textDecoration: 'none' }}>
-        <Paper
-          sx={{
-            height: 150,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '2px solid #4CAF50',
-            borderRadius: 8,
-            backgroundColor: 'rgba(224, 247, 250, 0.8)',
-            textAlign: 'center',
-            transition: 'transform 0.3s',
-            '&:hover': {
-              transform: 'scale(1.05)',
-            },
-            p: 2,
-          }}
-        >
-          {/* Image inside the card, above the label */}
-          <Image
-            src={item.icon}
-            alt="img"
-            style={{
-              width: '110px',
-              height: '110px',
-              objectFit: 'contain',
-              marginBottom: 8,
-            }}
-            width={100}
-            height={100}
-          />
-          <Typography variant="h6" sx={{ color: '#004d40' }}>
-            {item.label}
-          </Typography>
-        </Paper>
-      </Link>
-    ))}
-        </Box>
-      </Paper>
-{/* 
-      <Paper
-      elevation={6}
+      elevation={3}
       sx={{
         backgroundImage: `url(${Dashbg.src})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        borderRadius: 3,
-        mt:'40px',
+        borderRadius: 2,
         overflow: 'hidden',
-        p: 4,
-        minHeight: 220,
+        p: { xs: 0.5, sm: 3 }, // Less padding on mobile
+        width: '100%', // Always full width
+        boxShadow: { xs: 0, sm: 3 }, // Remove shadow on mobile for flush look
       }}
     >
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: {
-          xs: 'repeat(2, 1fr)',    
-          sm: 'repeat(3, 1fr)',      
-          lg: 'repeat(6, 1fr)'    
-        },
-        gap: 2,
-        padding: 2,
-      }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(2, 1fr)',
+            sm: 'repeat(auto-fit, minmax(165px, 1fr))',
+          },
+          gap: { xs: 1, sm: 2 }, // Less gap on mobile
+          padding: { xs: 0.5, sm: 2 }, // Less padding on mobile
+          whiteSpace: 'nowrap',
+        }}
+      >
         {items.map((item, index) => (
           <Link key={index} href={item?.url} style={{ textDecoration: 'none' }}>
             <Paper
-              elevation={3}
               sx={{
-                height: 145,
+                height: 150,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '2px solid #4CAF50',
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, rgba(232, 245, 233, 0.9) 0%, rgba(224, 247, 250, 0.9) 100%)',
-                backdropFilter: 'blur(4px)',
+                borderRadius: 8,
+                backgroundColor: 'rgba(224, 247, 250, 0.8)',
                 textAlign: 'center',
-                transition: 'all 0.3s ease-in-out',
-                cursor: 'pointer',
+                transition: 'transform 0.3s',
                 '&:hover': {
                   transform: 'scale(1.05)',
-                  boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
-                  borderColor: '#388E3C',
                 },
                 p: 2,
+                m: { xs: 0, sm: 1 }, // Remove margin on mobile
+                width: '100%', // Make sure card is full width in its grid cell
+                boxSizing: 'border-box',
               }}
             >
-              <Box
-                sx={{
-                  mb: 2,
-                  p: 1.5,
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+              {/* Image inside the card, above the label */}
+              <Image
+                src={item.icon}
+                alt="img"
+                style={{
+                  width: '110px',
+                  height: '110px',
+                  objectFit: 'contain',
+                  marginBottom: 8,
                 }}
-              >
-                <Image 
-                  src={item.icon || "/placeholder.svg"} 
-                  width={60} 
-                  height={60} 
-                  alt={item.label}
-                  style={{ objectFit: 'contain' }}
-                />
-              </Box>
-              
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  color: '#1B5E20',
-                  fontWeight: 'bold',
-                  fontSize: '0.875rem',
-                  lineHeight: 1.2,
-                }}
-              >
+                width={100}
+                height={100}
+              />
+              <Typography variant="h6" sx={{ color: '#004d40' }}>
                 {item.label}
               </Typography>
             </Paper>
           </Link>
         ))}
       </Box>
-    </Paper> */}
+    </Paper>
     </Box>
   );
 }
