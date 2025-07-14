@@ -3,11 +3,20 @@ import { playerAPI } from '../api';
 
 // --- Interfaces ---
 interface PlayerDetails {
+  id:string;
   name: string;
   position: string;
   rating: number;
   avatar: string | null;
   profilePicture: string | null;
+  // Added fields for player profile page compatibility
+  age?: number;
+  style?: string;
+  positionType?: string;
+  preferredFoot?: string;
+  careerStart?: string | number;
+  careerEnd?: string | number;
+  shirtNo?: string; // Added for shirt number display
 }
 
 interface LeagueInfo {
@@ -81,9 +90,9 @@ const playerStatsSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPlayerStats.fulfilled, (state, action: PayloadAction<PlayerStatsData | undefined>) => {
+      .addCase(fetchPlayerStats.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload ?? null;
+        state.data = action.payload as PlayerStatsData ?? null;
       })
       .addCase(fetchPlayerStats.rejected, (state, action) => {
         state.loading = false;

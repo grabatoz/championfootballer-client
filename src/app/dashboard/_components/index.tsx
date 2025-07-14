@@ -95,7 +95,8 @@ export default function PlayerDashboard() {
                 PHY: user?.skills?.physical?.toString() || ''
               }}
               foot={user?.preferredFoot === "right" ? "R" : "L"}
-        profileImage={user?.profilePicture ? (user.profilePicture.startsWith('http') ? user.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture.startsWith('/') ? user.profilePicture : `/${user.profilePicture}`}`) : undefined}
+        // profileImage={user?.profilePicture ? (user.profilePicture.startsWith('http') ? user.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture.startsWith('/') ? user.profilePicture : `/${user.profilePicture}`}`) : undefined}
+        profileImage={user?.profilePicture || undefined}
               shirtIcon={''}
             />
           </Box>

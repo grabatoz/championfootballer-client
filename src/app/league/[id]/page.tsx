@@ -29,13 +29,14 @@ import {
     Alert,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, ShieldIcon, Table2Icon } from 'lucide-react';
 import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import Img from '@/Components/images/group451.png';
+import Group from '@/Components/images/group451.png';
 import TrophyRoom from '@/Components/TrophyRoom';
 
 
@@ -207,7 +208,14 @@ export default function LeagueDetailPage() {
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [section, setSection] = useState<'members' | 'matches' | 'table' | 'awards'>('members');
+    const searchParams = useSearchParams();
+    const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
+    const [hasCommonLeague, setHasCommonLeague] = useState(false);
+    const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
 
+    // Declare isMember and isAdmin here so they are available for useEffect and logic below
+    const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
+    const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
     // const handleOpenTeamModal = (match: Match) => {
     //     setSelectedMatch(match);
@@ -251,10 +259,38 @@ export default function LeagueDetailPage() {
         }
     }, [leagueId, token]);
     useEffect(() => {
-        if (leagueId && token) {
-            fetchLeagueDetails();
-        }
+        if (!leagueId && !token) return;
+        fetchLeagueDetails();
     }, [leagueId, token, fetchLeagueDetails]);
+
+    // Professional access logic: allow if user and profile player have ever shared ANY league
+    useEffect(() => {
+        if (!user || !profilePlayerId) {
+            setCheckedCommonLeague(true);
+            setHasCommonLeague(false);
+            return;
+        }
+        Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).then(res => res.json()),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${profilePlayerId}/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).then(res => res.json())
+        ]).then(([userData, playerData]) => {
+            const userLeagues = [
+                ...(userData.user.leagues || []),
+                ...(userData.user.administeredLeagues || [])
+            ].map(l => l.id);
+            const profilePlayerLeagues = (playerData.data?.leagues || []).map((l: User) => l.id);
+            const hasOverlap = userLeagues.some((id: string) => profilePlayerLeagues.includes(id));
+            setHasCommonLeague(hasOverlap);
+            setCheckedCommonLeague(true);
+        }).catch(() => {
+            setHasCommonLeague(false);
+            setCheckedCommonLeague(true);
+        });
+    }, [user, profilePlayerId, token]);
 
 
     const handleBackToAllLeagues = () => {
@@ -416,7 +452,8 @@ export default function LeagueDetailPage() {
         return { availableCount, pendingCount };
     };
 
-    if (loading) {
+
+    if (loading || !checkedCommonLeague) {
         return (
             <Box sx={{
                 display: 'flex',
@@ -450,7 +487,16 @@ export default function LeagueDetailPage() {
         );
     }
 
-    const isAdmin = league.administrators?.some(admin => admin.id === user?.id);
+    // Access control for non-members
+    if (!isMember && !hasCommonLeague) {
+        return (
+            <Box sx={{ p: 4, minHeight: '100vh' }}>
+                <Typography color="error" variant="h6">
+                    You don&apos;t have access to this league.
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ p: 4, minHeight: '100vh' }}>
@@ -480,6 +526,8 @@ export default function LeagueDetailPage() {
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {isMember && (
+                          <>
                             <Chip
                                 label={`Invite Code: ${league.inviteCode}`}
                                 sx={{
@@ -495,6 +543,8 @@ export default function LeagueDetailPage() {
                                     '&:hover': { backgroundColor: '#388e3c' }
                                 }}
                             />
+                          </>
+                        )}
                             {isAdmin && (
                                 <IconButton onClick={() => setIsSettingsOpen(true)} sx={{ ml: 1 }}>
                                     <Settings style={{ color: 'white' }} />
@@ -570,7 +620,6 @@ export default function LeagueDetailPage() {
                     </Box>
                 </Paper>
             </Box>
-
             {/* Section Content */}
             <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white', minHeight: 400 }}>
                 {section === 'members' && (
@@ -600,7 +649,7 @@ export default function LeagueDetailPage() {
                                                 >
                                                     {member.profilePicture ? (
                                                             <Image
-                                                            src={`${process.env.NEXT_PUBLIC_API_URL}${member.profilePicture}`}
+                                                            src={member.profilePicture || Group}
                                                             alt="Profile"
                                                             style={{ width: '100%', height: '100%', borderRadius: '50%' }}
                                                                 width={40}
@@ -736,7 +785,7 @@ export default function LeagueDetailPage() {
                                                 </Typography>
                                                 <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    {match.status === 'scheduled' && (
+                                                    {isMember && match.status === 'scheduled' && (
                                                     <Button
                                                         variant="contained"
                                                         onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
@@ -835,7 +884,7 @@ export default function LeagueDetailPage() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                                         <Box sx={{ mr: 2 }}>
                                             <img
-                                                src={row.profilePicture ? (row.profilePicture.startsWith('http') ? row.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${row.profilePicture.startsWith('/') ? row.profilePicture : `/${row.profilePicture}`}`) : Img.src}
+                                                src={row.profilePicture || '/assets/group.svg'}
                                                 alt={row.name}
                                                 width={48}
                                                 height={48}

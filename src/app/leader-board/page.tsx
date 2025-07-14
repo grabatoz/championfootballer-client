@@ -147,7 +147,7 @@ export default function LeaderBoardPage() {
             <Avatar
               src={
                 player?.profilePicture
-                  ? (player.profilePicture.startsWith('http')
+                  ? (player.profilePicture || '/assets/group.svg'
                       ? player.profilePicture
                       : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
                   : '/assets/group451.png'

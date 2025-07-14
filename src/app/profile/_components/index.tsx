@@ -56,7 +56,7 @@ const PlayerProfileCard = () => {
   const [email, setEmail] = useState(user?.email || "");
   const [showPassword, setShowPassword] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [, setImagePreview] = useState<string | null>(null);
   const [imgSrc, setImgSrc] = useState(
     user?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : Group
   );
@@ -475,7 +475,7 @@ const PlayerProfileCard = () => {
           </Typography>
           <Box sx={{ position: "relative", display: "flex", justifyContent: "center", mb: 2 }}>
             <Image 
-              src={imagePreview || (user?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : Group)} 
+              src={user?.profilePicture || Group} 
               alt="Profile" 
               width={64} 
               height={64} 

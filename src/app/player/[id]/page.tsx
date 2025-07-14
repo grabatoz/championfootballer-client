@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -15,9 +15,13 @@ import {
   FormControl,
   InputLabel,
   SelectChangeEvent,
+  Tabs,
+  Tab,
+  Divider,
+    Card,
+    CardContent,
 } from '@mui/material';
-import { useParams } from 'next/navigation';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter, clearPlayerStats } from '@/lib/features/playerStatsSlice';
@@ -32,35 +36,185 @@ import DarkHorseImg from '@/Components/images/darkhourse.png';
 import Image, { StaticImageData } from 'next/image';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
+import flag from '@/Components/images/league.png';
+import Goals from '@/Components/images/goal.png';
+import Imapct from '@/Components/images/imapct.png';
+import Assist from '@/Components/images/Assist.png';
+import Defence from '@/Components/images/defence.png';
+import MOTM from '@/Components/images/MOTM.png';
+import CleanSheet from '@/Components/images/cleansheet.png';
+import { useAuth } from '@/lib/hooks';
 import Link from 'next/link';
-// import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
-// import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-// import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
-const trophyDetails: Record<string, { image: StaticImageData }> = {
-    'Titles': { image: TrophyImg },
-    'Runner Up': { image: RunnerUpImg },
-    "Ballon d'Or": { image: BaloonDImg },
-    'GOAT': { image: GoatImg },
-    'Golden Boot': { image: GoldenBootImg },
-    'King Playmaker': { image: KingPlayMakerImg },
-    'Legendary Shield': { image: ShieldImg },
-    'The Dark Horse': { image: DarkHorseImg },
+type LeagueInfo = { id: string; name: string; matches?: LeagueMatch[]; createdAt?: string };
+type LeagueWithMatchesTyped = LeagueInfo & {
+  matches?: LeagueMatch[];
+  members?: { id: string }[];
+};
+
+type TrophyAward = {
+  leagueName: string;
+  winnerId: string;
+  winnerName?: string;
+  winner?: string;
+  winner_id?: string;
+};
+
+type AllTrophyAward = {
+  key: string;
+  leagueName: string;
+  winnerId: string;
+  winnerName: string;
+};
+
+const trophyDetails: Record<string, { image: StaticImageData; description: string }> = {
+    'Champion Footballer': {
+        image: TrophyImg,
+        description: 'First Place Player In The League Table',
+    },
+    'Runner Up': {
+        image: RunnerUpImg,
+        description: 'Second Place Player In The League Table',
+    },
+    "Ballon d'Or": {
+        image: BaloonDImg,
+        description: 'Player With The Most MOTM Awards',
+    },
+    'GOAT': {
+        image: GoatImg,
+        description: 'Player With The Highest Win Ratio & Total MOTM Votes',
+    },
+    'Golden Boot': {
+        image: GoldenBootImg,
+        description: 'Player With The Highest Number Of Goals Scored',
+    },
+    'King Playmaker': {
+        image: KingPlayMakerImg,
+        description: 'Player With The Highest Number Of Goals Assisted'
+        ,
+    },
+    'Legendary Shield': {
+        image: ShieldImg,
+        description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded',
+    },
+    'The Dark Horse': {
+        image: DarkHorseImg,
+        description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes',
+    },
+};
+
+const metrics = [
+    { key: 'goals', label: 'Goals', icon: Goals },
+    { key: 'assists', label: 'Assists', icon: Assist },
+    { key: 'defence', label: 'Defence', icon: Defence },
+    { key: 'motm', label: 'MOTM', icon: MOTM },
+    { key: 'impact', label: 'Impact', icon: Imapct },
+    { key: 'cleanSheet', label: 'Clean Sheet', icon: CleanSheet },
+];
+
+interface LeaderboardPlayer {
+    id: string;
+    name: string;
+    position: string;
+    profilePicture?: string;
+    value: number;
+}
+
+interface League {
+    id: string;
+    name: string;
+}
+
+type LeagueMatch = {
+  id: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  date: string;
+  end?: string;
+  location?: string;
+  playerStats?: {
+    goals?: number;
+    assists?: number;
+    cleanSheets?: number;
+    motmVotes?: number;
+  };
+  homeTeamUsers?: { id: string }[];
+  awayTeamUsers?: { id: string }[];
 };
 
 const PlayerStatsPage = () => {
     const params = useParams();
+    const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
     const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+    const { token } = useAuth();
+
+    // Move useState to the top, before any early returns or effects
+    const [expandedLeagueId, setExpandedLeagueId] = useState<string | null>(null);
 
     const { data, loading, error, filters } = useSelector((state: RootState) => state.playerStats);
     const { leagueId, year } = filters;
+
+    const [tab, setTab] = React.useState(0);
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => setTab(newValue);
+
+    // Leaderboard states
+    const [selectedMetric, setSelectedMetric] = useState('goals');
+    const [leaderboardPlayers, setLeaderboardPlayers] = useState<LeaderboardPlayer[]>([]);
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [leagues, setLeagues] = useState<League[]>([]);
+    const [selectedLeaderboardLeague, setSelectedLeaderboardLeague] = useState<string>('');
+
+    // Fetch leagues for leaderboard
+    useEffect(() => {
+        if (!token) return;
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.user) {
+                    const userLeagues = [
+                        ...(data.user.leagues || []),
+                        ...(data.user.administeredLeagues || [])
+                    ];
+                    // Remove duplicates
+                    const uniqueLeagues = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
+                    setLeagues(uniqueLeagues);
+                    if (uniqueLeagues.length > 0) {
+                        setSelectedLeaderboardLeague(uniqueLeagues[0].id);
+                    }
+                }
+            });
+    }, [token]);
+
+    // Fetch leaderboard when metric or league changes
+    useEffect(() => {
+        if (!selectedLeaderboardLeague || !token) return;
+        setLeaderboardLoading(true);
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${selectedLeaderboardLeague}`, {
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                setLeaderboardPlayers(data.players || []);
+                setLeaderboardLoading(false);
+            })
+            .catch(() => {
+                setLeaderboardLoading(false);
+            });
+    }, [selectedMetric, selectedLeaderboardLeague, token]);
 
     useEffect(() => {
         if (playerId) {
             dispatch(fetchPlayerStats({ playerId, leagueId, year }));
         }
-        // Clear data on component unmount
         return () => {
             dispatch(clearPlayerStats());
         };
@@ -75,184 +229,676 @@ const PlayerStatsPage = () => {
     const handleLeagueChange = (event: SelectChangeEvent<string>) => {
         dispatch(setLeagueFilter(event.target.value));
     };
-
     const handleYearChange = (value: dayjs.Dayjs | null) => {
         dispatch(setYearFilter(value ? value.format('YYYY') : 'all'));
+        dispatch(setLeagueFilter('all'));
     };    
     const handleShowAllYears = () => {
         dispatch(setYearFilter('all'));
     };
 
+    const handlePlayerClick = async (playerId: string) => {
+        router.push(`/player/${playerId}`)
+        // setSelectedPlayerLoading(true);
+        // try {
+        //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/stats`, {
+        //         credentials: 'include',
+        //         headers: {
+        //             'Authorization': `Bearer ${token}`
+        //         }
+        //     });
+        //     const data = await response.json();
+        //     if (data.success) {
+        //         setSelectedPlayerDetails(data.data.player);
+        //     }
+        // } catch (error) {
+        //     console.error('Error fetching player details:', error);
+        // } finally {
+        //     setSelectedPlayerLoading(false);
+        // }
+    };
+
+    // --- Trophy Room Calculation Logic ---
+    const allTrophyAwards = React.useMemo(() => {
+        if (!data || !data.trophies) return [];
+        const awards: AllTrophyAward[] = [];
+        Object.entries(data.trophies).forEach(([trophyKey, winners]) => {
+            if (Array.isArray(winners)) {
+                (winners as TrophyAward[]).forEach((award: TrophyAward) => {
+                    awards.push({
+                        key: trophyKey,
+                        leagueName: award.leagueName,
+                        winnerId: award.winnerId,
+                        winnerName: award.winnerName || award.winner || award.winner_id || '',
+                    });
+                });
+            }
+        });
+        return awards;
+    }, [data]);
 
     if (loading && !data) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
-
     if (error) {
         return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
     }
-    
     if (!data) {
         return <Typography sx={{ textAlign: 'center', mt: 4 }}>No data available for this player.</Typography>;
     }
-
-    const { player, leagues, currentStats, accumulativeStats, trophies } = data;
+    const { player, leagues: playerLeagues, trophies } = data;
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Trophies:', trophies);
+    }
 
     return (
-        <Container maxWidth="md" sx={{ py: 4, backgroundColor: '#0a3e1e', minHeight: '100vh' }}>
-            <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, backgroundColor: 'transparent' }}>
-                <Typography variant="h4" component="h1" align="center" sx={{ fontWeight: 'bold', color: 'white', mb: 4, letterSpacing: 1 }}>
-                    Career Stats
-                </Typography>
-                {/* Filters */}
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', gap: 2, mb: 4 }}>
-                    <FormControl size="small" sx={{ minWidth: 140, flex: 1, backgroundColor: 'white', borderRadius: '8px', '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' } }}>
-                        {/* <InputLabel>Year</InputLabel> */}
-                        <DatePicker
-                            label={'Year'}
-                            views={['year']}
-                            value={year && year !== 'all' ? dayjs(year, 'YYYY') : null}
-                            onChange={handleYearChange}
-                            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            sx={{ backgroundColor: 'white', borderRadius: '8px', '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' } }}
-                        />
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 180, flex: 2, backgroundColor: 'white', borderRadius: '8px', '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' } }}>
-                        <InputLabel>League</InputLabel>
-                        <Select
-                            value={leagueId || 'all'}
-                            label="League"
-                            onChange={handleLeagueChange}
-                            renderValue={(selected) => {
-                                if (selected === 'all') {
-                                    return 'All Leagues';
-                                }
-                                const league = leagues.find((l: { id: string; name: string }) => l.id === selected);
-                                return league ? league.name : '';
+        <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh' }}>
+            <Paper elevation={3} sx={{ mb: 4, backgroundColor: '#1f673b', borderRadius: 3, overflow: 'hidden' }}>
+                <Tabs 
+                    value={tab} 
+                    onChange={handleTabChange} 
+                    centered 
+                    sx={{ 
+                        background: '#1f673b',
+                        '& .MuiTab-root': {
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: { xs: '14px', md: '16px' },
+                            minHeight: 60,
+                            textTransform: 'none',
+                            '&.Mui-selected': {
+                                color: '#4caf50',
+                                backgroundColor: '#1f673b'
+                            }
+                        },
+                        '& .MuiTabs-indicator': {
+                            backgroundColor: '#4caf50',
+                            height: 3
+                        }
+                    }}
+                >
+                    <Tab label="Overview" />
+                    <Tab label="Stats" />
+                    <Tab label="Awards" />
+                    <Tab label="Leagues Overview" />
+                </Tabs>
+
+                {/* Metric Buttons - Show for all tabs */}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
+                        gap: 2,
+                        background: '#1f673b',
+                        boxShadow: 1,
+                        p: 2,
+                        mt: 2,
+                        color:'#fff',
+                    }}
+                >
+                    {metrics.map(m => (
+                        <Button
+                            key={m.key}
+                            onClick={() => setSelectedMetric(m.key)}
+                            variant={selectedMetric === m.key ? 'contained' : 'outlined'}
+                            sx={{
+                                bgcolor: selectedMetric === m.key ? '#43a047' : 'transparent',
+                                color: selectedMetric === m.key ? 'white' : '#fff',
+                                borderColor: '#4caf50',
+                                fontWeight: 'bold',
+                                flexDirection: 'column',
+                                borderRadius: 2,
+                                boxShadow: selectedMetric === m.key ? 2 : 0,
+                                minHeight: 80,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    background: selectedMetric === m.key
+                                        ? '#388e3c'
+                                        : 'rgba(76, 175, 80, 0.1)',
+                                },
                             }}
                         >
-                            <MenuItem value="all">All Leagues</MenuItem>
-                            {leagues.map((l: { id: string; name: string }) => (
-                                <MenuItem key={l.id} value={l.id}>
-                                    {l.name}
-                                </MenuItem>
+                            <Image src={m.icon} alt={m.label} width={32} height={32} />
+                            <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
+                        </Button>
+                    ))}
+                </Box>
+
+                {/* League Selector - Show for all tabs */}
+                <Box sx={{ p: 2, background: '#1f673b' }}>
+                    <FormControl fullWidth>
+                        <InputLabel sx={{ color: 'white' }}>Select League</InputLabel>
+                        <Select
+                            value={selectedLeaderboardLeague}
+                            label="Select League"
+                            onChange={(e) => setSelectedLeaderboardLeague(e.target.value as string)}
+                            sx={{
+                                color: 'white',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: '#4caf50'
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: '#4caf50'
+                                },
+                                '& .MuiSvgIcon-root': {
+                                    color: 'white'
+                                }
+                            }}
+                        >
+                            {leagues.map(league => (
+                                <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
-                    <Button
-                        onClick={handleShowAllYears}
-                        variant='outlined'
-                        size='medium'
-                        sx={{
-                            height: 40,
-                            minWidth: 100,
-                            textTransform: 'none',
-                            fontWeight: 'bold',
-                            borderRadius: '8px',
-                            alignSelf: { xs: 'stretch', sm: 'center' },
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        All Years
-                    </Button>
                 </Box>
-                {/* Player Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 4, mb: 4, flexWrap: 'wrap' }}>
-                    <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'white', mb: 0.5 }}>{player.name}</Typography>
-                        <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>{player.rating}</Typography>
+            </Paper>
+            <Paper elevation={4} sx={{ 
+                p: { xs: 3, md: 4 }, 
+                backgroundColor: '#1f673b',
+                borderRadius: 4,
+                position: 'relative',
+                overflow: 'visible',
+            }}>
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', lg: 'row' },
+                    alignItems: { xs: 'center', lg: 'flex-start' },
+                    gap: 4,
+                    mb: 4
+                }}>
+                    <Box sx={{ width: { xs: '100%', md: 320 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <Box sx={{
+                        width: 180,
+                        minWidth: 140,
+                        maxWidth: 220,
+                        background: 'linear-gradient(135deg, #263238 80%, #174d3c 100%)',
+                        borderRadius: 4,
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 2,
+                        position: 'relative',
+                        overflow: 'hidden',
+                    }}>
+                        <Avatar
+                            src={player?.avatar ? (player.avatar.startsWith('http') ? player.avatar : `${process.env.NEXT_PUBLIC_API_URL}${player.avatar}`) : undefined}
+                            alt={player.name}
+                            sx={{
+                                width: 110,
+                                height: 110,
+                                borderRadius: 3,
+                                boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                                mb: 2,
+                                border: '3px solid #fff',
+                                objectFit: 'cover',
+                                background: '#eee',
+                            }}
+                        />
+                        <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center', mb: 0.5 }}>{player.name}</Typography>
+                        <Typography variant="body2" sx={{ color: '#B2DFDB', textAlign: 'center', mb: 1 }}>Shirt No{player.shirtNo}</Typography>
+                        </Box>
+                        <Paper
+                            elevation={4}
+                            sx={{
+                                p: 3,
+                                backgroundColor: '#1f673b',
+                                borderRadius: 4,
+                                height: 270,
+                                overflowY: 'auto',
+                                width: '100%',
+                                maxWidth: 400,
+                                // Hide scrollbar for Webkit browsers (Chrome, Safari, Edge)
+                                '&::-webkit-scrollbar': { display: 'none' },
+                                // Hide scrollbar for Firefox
+                                scrollbarWidth: 'none',
+                                // Hide scrollbar for IE/Edge
+                                msOverflowStyle: 'none',
+                            }}
+                        >
+                            <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 'bold' }}>Leaderboard - Top Players</Typography>
+                            {leaderboardLoading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                    <CircularProgress sx={{ color: '#4caf50' }} />
+                                </Box>
+                            ) : leaderboardPlayers.length === 0 ? (
+                                <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic', textAlign: 'center', py: 4 }}>
+                                    No players found for the selected criteria.
+                                </Typography>
+                            ) : (
+                                <Box sx={{ display: 'grid', gap: 2 }}>
+                                    {leaderboardPlayers.map((player) => (
+                                        <Paper
+                                            key={player.id}
+                                            sx={{
+                                                p: 2,
+                                                display: 'flex',
+                                                color: 'white',
+                                                alignItems: 'center',
+                                                borderRadius: 4,
+                                                background: '#0a3e1e',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    background: '#0a3e1e',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: 3
+                                                }
+                                            }}
+                                            onClick={() => handlePlayerClick(player.id)}
+                                        >
+                                            <Avatar
+                                                src={
+                                                    player?.profilePicture
+                                                        ? (player.profilePicture || '/assets/group.svg'
+                                                            ? player.profilePicture
+                                                            : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
+                                                        : '/assets/group451.png'
+                                                }
+                                                sx={{ width: 64, height: 64, mr: 2 }}
+                                            />
+                                            <Box>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>{player.name}</Typography>
+                                                <Typography variant="body2" sx={{ color: '#B2DFDB' }}>Position: {player.position}</Typography>
+                                                <Typography variant="body2" sx={{ color: '#B2DFDB' }}>
+                                                    {metrics.find(m => m.key === selectedMetric)?.label}: <b style={{ color: '#4caf50' }}>{player.value}</b>
+                                                </Typography>
+                                            </Box>
+                                        </Paper>
+                                    ))}
+                                </Box>
+                            )}
+                        </Paper>
                     </Box>
-                    <Avatar sx={{ width: 90, height: 90, bgcolor: 'teal', border: '3px solid #B2DFDB', mx: 2 }} src={player?.profilePicture ? (player.profilePicture.startsWith('http') ? player.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : `/${player.profilePicture}`}`) : undefined} />
-                    <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', mb: 0.5 }}>{player.position}</Typography>
-                        <Link href={'/all-players'}>
-                        <Button startIcon={<BarChartIcon />} size="small" variant="contained" sx={{ textTransform: 'none', borderRadius: '16px', mt: 0.5, bgcolor: 'teal', color: 'white', fontWeight: 'bold' }}>
-                            View Chart
-                        </Button>
-                        </Link>
+
+
+                    <Box sx={{ flex: 1, width: '100%', maxWidth: '1400px' }}>
+                        {tab === 0 && (
+                            <Box>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: { xs: 'column', sm: 'row' }, 
+                                    gap: 4, 
+                                    mb: 4, 
+                                    alignItems: 'center'
+                                }}>
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{player.name}</Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {player.age || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Style: {player.style || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position: {player.position || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position Type: {player.positionType || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Preferred Foot: {player.preferredFoot || '-'}</Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                                <Paper elevation={2} sx={{ 
+                                    p: 3, 
+                                    background: '#0a3e1e', 
+                                    borderRadius: 3,
+                                    border: '1px solid #2e7d32'
+                                }}>
+                                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>Leagues Played</Typography>
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, // 3 columns per row on sm+
+                                        }}
+                                    >
+                                        {playerLeagues.map((l: League) => (
+                                            <Box
+                                                key={l.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1.5,
+                                                    px: 2,
+                                                    py: 1,
+                                                    minHeight: 48,
+                                                }}
+                                            >
+                                                <Avatar
+                                                    src={flag.src || '/assets/default-flag.png'}
+                                                    alt={l.name}
+                                                    sx={{ width: 50, height: 30 }}
+                                                    variant="rounded"
+                                                />
+                                                <Link href={`/league/${l.id}?profilePlayerId=${player.id}`}>
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    sx={{ fontWeight: 'bold', color: 'white', textDecoration: 'underline' }}
+                                                >
+                                                    {l.name}
+                                                </Typography>
+                                                </Link>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </Paper>
+                            </Box>
+                        )}
+                        {tab === 1 && (
+                            <Box>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: { xs: 'column', sm: 'row' }, 
+                                    alignItems: 'center', 
+                                    gap: 3, 
+                                    mb: 4,
+                                    flexWrap: 'wrap'
+                                }}>
+                                    <FormControl size="small" sx={{ 
+                                        minWidth: 140, 
+                                        flex: 1, 
+                                        backgroundColor: '#1f673b',
+                                        borderRadius: '8px',
+                                        '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' }
+                                    }}>
+                                        <DatePicker
+                                            label={'Year'}
+                                            views={['year']}
+                                            value={year && year !== 'all' ? dayjs(year, 'YYYY') : null}
+                                            onChange={handleYearChange}
+                                            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                        />
+                                    </FormControl>
+                                    <FormControl size="small" sx={{ 
+                                        minWidth: 180, 
+                                        flex: 2, 
+                                        backgroundColor: '#1f673b',
+                                        borderRadius: '8px',
+                                        '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' }
+                                    }}>
+                                        <InputLabel>League</InputLabel>
+                                        <Select
+                                            value={leagueId || 'all'}
+                                            label="League"
+                                            onChange={handleLeagueChange}
+                                            renderValue={(selected) => {
+                                                if (selected === 'all') {
+                                                    return 'All Leagues';
+                                                }
+                                                const league = data.leagues.find((l: League) => l.id === selected);
+                                                return league ? league.name : '';
+                                            }}
+                                        >
+                                            <MenuItem value="all">All Leagues</MenuItem>
+                                            {data.leagues.map((l: LeagueWithMatchesTyped) => (
+                                                <MenuItem key={l.id} value={l.id}>
+                                                    {l.name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <Button
+                                        onClick={handleShowAllYears}
+                                        variant='outlined'
+                                        size='medium'
+                                        sx={{
+                                            height: 40,
+                                            minWidth: 100,
+                                            textTransform: 'none',
+                                            fontWeight: 'bold',
+                                            borderRadius: '8px',
+                                            alignSelf: { xs: 'stretch', sm: 'center' },
+                                            whiteSpace: 'nowrap',
+                                            borderColor: '#4caf50',
+                                            color: '#4caf50',
+                                            '&:hover': {
+                                                borderColor: '#2e7d32',
+                                                backgroundColor: 'rgba(76, 175, 80, 0.1)'
+                                            }
+                                        }}
+                                    >
+                                        All Years
+                                    </Button>
+                                </Box>
+                                <Divider sx={{ my: 4, borderColor: '#2e7d32' }} />
+                                {data.leagues.length === 0 ? (
+                                    <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>
+                                        No leagues found.
+                                    </Typography>
+                                ) : (
+                                    data.leagues
+                                        .filter((league: LeagueWithMatchesTyped) => leagueId === 'all' || league.id === leagueId)
+                                        .map((league: LeagueWithMatchesTyped) => (
+                                            <Box key={league.id} sx={{ mb: 2 }}>
+                                                <Link href={`/league/${league.id}?profilePlayerId=${player.id}`}>
+                                                <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>{league.name}</Typography>
+                                                </Link>
+                                                {(league.matches?.length ?? 0) === 0 ? (
+                                                    <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>
+                                                        You haven&apos;t played any matches in this league yet.
+                                                    </Typography>
+                                                ) : (
+                                                    (league.matches || []).map((match: LeagueMatch) => {
+                                                        const playerStats = match.playerStats;
+                                                        return (
+                                                            <Paper key={match.id} sx={{ p: 2, mb: 1, background: '#174d3c', color: 'white', borderRadius: 2 }}>
+                                                               <Link href={`/match/${match.id}`}>
+                                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#fff', mb: 1 }}>
+                                                                  {`This Match: ${match.homeTeamName} Against ${match.awayTeamName}` +
+                                                                    (match.date ? ` | Start: ${dayjs(match.date).format('DD MMM YYYY, h:mm A')}` : '') +
+                                                                    (match.end ? ` | End: ${dayjs(match.end).format('DD MMM YYYY, h:mm A')}` : '') +
+                                                                    (match.location ? ` | Location: ${match.location}` : '')
+                                                                  }
+                                                                </Typography>
+                                                               </Link>
+                                                                {playerStats ? (
+                                                                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                                                                        <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
+                                                                        <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
+                                                                        <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
+                                                                        <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                                                    </Box>
+                                                                ) : (
+                                                                    <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>No stats available for this match.</Typography>
+                                                                )}
+                                                            </Paper>
+                                                        );
+                                                    })
+                                                )}
+                                            </Box>
+                                        ))
+                                )}
+
+
+                            </Box>
+                        )}
+                        {tab === 2 && (
+                            <Box>
+                                {allTrophyAwards.length === 0 ? (
+                                    <Paper elevation={2} sx={{
+                                        p: 4,
+                                        background: '#0a3e1e',
+                                        color: 'white', 
+                                        borderRadius: 3,
+                                        border: '1px solid #2e7d32',
+                                        textAlign: 'center'
+                                    }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>No Awards Yet</Typography>
+                                        <Typography variant="body1" sx={{ color: '#B2DFDB' }}>
+                                            No awards have been given yet.
+                                        </Typography>
+                                    </Paper>
+                                ) : (
+                                    <Box sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                                        gap: 4,
+                                        justifyContent: 'center',
+                                    }}>
+                                        {allTrophyAwards.map((trophy, idx) => {
+                                            const detail = trophyDetails[trophy.key];
+                                            if (!detail) return null;
+                                            return (
+                                                <Card
+                                                    key={trophy.key + trophy.leagueName + trophy.winnerId + idx}
+                                                    sx={{
+                                                        width: 260,
+                                                        height: 250,
+                                                        mx: 'auto',
+                                                        my: 2,
+                                                        borderRadius: 3,
+                                                        boxShadow: 3,
+                                                        border: '2px solid #43a047',
+                                                        background: '#fff',
+                                                        textAlign: 'center',
+                                                        p: 0,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+                                                    }}
+                                                >
+                                                    <CardContent sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'flex-end',
+                                                        height: '100%',
+                                                        width: '100%',
+                                                        p: 2,
+                                                        gap: 1.2,
+                                                        mt: 2,
+                                                    }}>
+                                                        <Box sx={{ width: '100%' }}>
+                                                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, color: '#333', textAlign: 'center' }}>
+                                                                {trophy.key}
+                                                            </Typography>
+                                                            <Typography variant="subtitle2" sx={{ color: '#757575', mb: 1, fontSize: 14, textAlign: 'center' }}>
+                                                                {detail.description}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ mb: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                                                            <Box sx={{
+                                                                width: 68,
+                                                                height: 68,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                mx: 'auto',
+                                                            }}>
+                                                                <Image
+                                                                    src={detail.image}
+                                                                    alt={trophy.key}
+                                                                    height={56}
+                                                                    width={56}
+                                                                    style={{ objectFit: 'contain', display: 'block' }}
+                                                                />
+                                </Box>
+                                                        </Box>
+                                                        <Button
+                                                            variant="contained"
+                                                            sx={{
+                                                                background: '#43a047',
+                                                                color: '#fff',
+                                                                fontWeight: 'bold',
+                                                                borderRadius: 2,
+                                                                boxShadow: 2,
+                                                                width: '100%',
+                                                                fontSize: 16,
+                                                                letterSpacing: 1,
+                                                                py: 1,
+                                                                // mb: 2,
+                                                                mt: 'auto',
+                                                                '&:hover': { background: '#43a047' },
+                                                            }}
+                                                            disableElevation
+                                                        >
+                                                            {trophy.leagueName}
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
+                            </Box>
+                        )}
+                            </Box>
+                        )}
+                        {tab === 3 && (
+                            <Box>
+                                <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 3 }}>Leagues Overview</Typography>
+                                {playerLeagues.length === 0 ? (
+                                    <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>
+                                        No leagues found.
+                                    </Typography>
+                                ) : (
+                                    playerLeagues.map((league: LeagueWithMatchesTyped) => {
+                                        // Only show leagues where the user is a member
+                                        const isMember = league.members && league.members.some((m: { id: string }) => m.id === player.id);
+                                        if (!isMember) return null;
+                                        return (
+                                            <Paper key={league.id} sx={{ mb: 3, p: 2, background: '#174d3c', color: 'white', borderRadius: 2 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>{league.name}</Typography>
+                                    <Button
+                                                        variant="contained"
+                                                        sx={{ background: '#43a047', color: '#fff', fontWeight: 'bold', borderRadius: 2, ml: 2, '&:hover': { background: '#43a047' } }}
+                                                        onClick={() => setExpandedLeagueId(expandedLeagueId === league.id ? null : league.id)}
+                                                    >
+                                                        {expandedLeagueId === league.id ? 'Hide Matches' : 'View Matches'}
+                                    </Button>
+                                </Box>
+
+                                                {/* Show message if no matches played in this league */}
+                                                {(!league.matches || league.matches.length === 0) && (
+                                                    <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
+                                                        {player.name} hasn&apos;t played any matches in this league yet.
+                                                    </Typography>
+                                                )}
+
+                                                {expandedLeagueId === league.id && (
+                                                    <Box sx={{ mt: 2 }}>
+                                                        {league.matches && league.matches.length > 0 ? (
+                                                            league.matches.filter((match: LeagueMatch) => {
+                                                                // Only show matches where the user played
+                                                                const played = (match.homeTeamUsers?.some((u: { id: string }) => u.id === player.id)) ||
+                                                                    (match.awayTeamUsers?.some((u: { id: string }) => u.id === player.id));
+                                                                return played;
+                                                            }).map((match: LeagueMatch) => {
+                                                                // The backend now provides playerStats directly for each match
+                                                                const playerStats = match.playerStats;
+                                                                return (
+                                                                    <Paper key={match.id} sx={{ p: 2, mb: 2, background: '#0a3e1e', color: 'white', borderRadius: 2 }}>
+                                                                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#fff' }}>
+                                                                        {`This Match: ${match.homeTeamName} Against ${match.awayTeamName}` +
+                                                                    (match.date ? ` | Start: ${dayjs(match.date).format('DD MMM YYYY, h:mm A')}` : '') +
+                                                                    (match.end ? ` | End: ${dayjs(match.end).format('DD MMM YYYY, h:mm A')}` : '') +
+                                                                    (match.location ? ` | Location: ${match.location}` : '')
+                                                                  }
+                                                                        </Typography>
+                                                                        {playerStats ? (
+                                                                            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mt: 1 }}>
+                                                                                <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
+                                                                                <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
+                                                                                <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
+                                                                                <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                        </Box>
+                                                                        ) : (
+                                                                            <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>No stats available for this match.</Typography>
+                                                                        )}
+                                                </Paper>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                                                You haven&apos;t played any matches in this league yet.
+                                                            </Typography>
+                                            )}
+                                        </Box>
+                                                )}
+                                            </Paper>
+                                        );
+                                    })
+                                )}
+                            </Box>
+                        )}
                     </Box>
                 </Box>
-                {/* Stats Side by Side on Desktop, Stacked on Mobile */}
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, mb: 4 }}>
-                    <Paper elevation={3} sx={{ flex: 1, p: 3, backgroundColor: '#174d3c', color: 'white', borderRadius: 4, minWidth: 0 }}>
-                        <StatsCard title="Current League Stats" stats={currentStats} />
-                    </Paper>
-                    <Paper elevation={3} sx={{ flex: 1, p: 3, backgroundColor: '#174d3c', color: 'white', borderRadius: 4, minWidth: 0 }}>
-                        <StatsCard title="All Leagues Stats" stats={accumulativeStats} />
-                    </Paper>
-                </Box>
-                <TrophiesCard title="All Leagues Trophies" trophies={trophies} />
             </Paper>
         </Container>
     );
 };
-
-
-const StatsCard = ({ title, stats }: { title: string, stats: Record<string, number> }) => (
-    <Paper elevation={1} sx={{ p: 2, borderRadius: 3, mb: 3, border: '1px solid #E0E0E0' }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, textAlign: 'center' }}>{title}</Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
-            {Object.entries(stats).map(([key, value]) => (
-                <Box key={key} sx={{ textAlign: 'center', minWidth: '80px' }}>
-                    <Avatar sx={{ bgcolor: 'teal', mb: 1, mx: 'auto' }}>
-                        <Typography sx={{ color: 'white', fontWeight: 'bold' }}>{value}</Typography>
-                    </Avatar>
-                    <Typography variant="caption" sx={{ fontWeight: 'medium' }}>{key}</Typography>
-                </Box>
-            ))}
-        </Box>
-    </Paper>
-);
-
-// const TrophyIcon = ({ name }: { name: string }) => {
-//     if (name === 'Titles') return <EmojiEventsIcon color="primary" sx={{ fontSize: 40 }} />;
-//     if (name === 'Runner Up') return <WorkspacePremiumIcon color="disabled" sx={{ fontSize: 40 }} />;
-//     if (name === "Ballon d'Or") return <SportsSoccerIcon color="warning" sx={{ fontSize: 40 }} />;
-//     return null;
-// };
-
-const TrophiesCard = ({ title, trophies }: { title: string, trophies: Record<string, number> }) => {
-    const wonTrophies = Object.entries(trophies).filter(([, value]) => value > 0);
-
-    if (wonTrophies.length === 0) {
-        return null;
-    }
-
-    return (
-        <Paper elevation={1} sx={{ p: 2, borderRadius: 3, mb: 3, border: '1px solid #E0E0E0' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, textAlign: 'center' }}>{title}</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 3 }}>
-                {wonTrophies.map(([key, value]) => {
-                    const detail = trophyDetails[key];
-                    if (!detail) return null;
-
-                    return (
-                        <Box key={key} sx={{ textAlign: 'center', minWidth: '90px' }}>
-                            <Image src={detail.image} alt={key} height={80} width={80} style={{ margin: '0 auto' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>{key}</Typography>
-                            <Box
-                                sx={{
-                                    backgroundColor: 'teal',
-                                    color: 'white',
-                                    borderRadius: '50%',
-                                    height: 28,
-                                    width: 28,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: 'bold',
-                                    mt: 0.5,
-                                    mx: 'auto'
-                                }}
-                            >
-                                {value}
-                            </Box>
-                        </Box>
-                    );
-                })}
-            </Box>
-        </Paper>
-    );
-};
-
 export default PlayerStatsPage; 

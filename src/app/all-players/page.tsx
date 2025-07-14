@@ -111,7 +111,7 @@ const AllPlayersPage = () => {
                   }}
                 >
                   <ListItemAvatar>
-                    <Avatar src={player?.profilePicture ? (player.profilePicture.startsWith('http') ? player.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : `/${player.profilePicture}`}`) : undefined} />
+                    <Avatar src={player?.profilePicture || '/assets/group.svg'} />
                   </ListItemAvatar>
                   <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium' }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 8, ml: 'auto' }}>

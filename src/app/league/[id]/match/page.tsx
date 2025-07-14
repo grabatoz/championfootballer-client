@@ -573,7 +573,7 @@ export default function ScheduleMatchPage() {
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
                                                     <Image
-                                                        src={homeCaptain.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${homeCaptain.profilePicture}` : '/assets/group.svg'}
+                                                        src={homeCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={homeCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
                                                         width={56} height={56}
@@ -591,7 +591,7 @@ export default function ScheduleMatchPage() {
                                                 <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
                                                     <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                                         <img
-                                                            src={user.profilePicture ? user.profilePicture : "/assets/group.svg"}
+                                                            src={user.profilePicture || '/assets/group.svg'}
                                                             alt={user.firstName}
                                                             style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === homeCaptain?.id ? '2px solid gold' : 'none' }}
                                                         />
@@ -624,7 +624,7 @@ export default function ScheduleMatchPage() {
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
                                                     <Image
-                                                        src={awayCaptain.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${awayCaptain.profilePicture}` : '/assets/group.svg'}
+                                                        src={awayCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={awayCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
                                                         width={56} height={56}
@@ -642,7 +642,7 @@ export default function ScheduleMatchPage() {
                                                 <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
                                                     <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                                         <img
-                                                            src={user.profilePicture ? user.profilePicture : "/assets/group.svg"}
+                                                            src={user.profilePicture || '/assets/group.svg'}
                                                             alt={user.firstName}
                                                             style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === awayCaptain?.id ? '2px solid gold' : 'none' }}
                                                         />

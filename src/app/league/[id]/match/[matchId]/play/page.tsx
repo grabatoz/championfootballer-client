@@ -25,8 +25,15 @@ import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import ResponsiveCard from '@/Components/card/card';
-import { Add, Remove, SportsSoccer, EmojiEvents, PanTool, FitnessCenter, Security, Bolt } from '@mui/icons-material';
+import { Add, Remove} from '@mui/icons-material';
 import toast from 'react-hot-toast';
+import Goals from '@/Components/images/goal.png'
+import Imapct from '@/Components/images/imapct.png'
+import Assist from '@/Components/images/Assist.png'
+import Defence from '@/Components/images/defence.png'
+import CleanSheet from '@/Components/images/cleansheet.png'
+import FreeKick from '@/Components/images/cleansheet.png'
+import penalty from '@/Components/images/cleansheet.png'
 
 interface User {
     id: string;
@@ -323,7 +330,7 @@ export default function PlayMatchPage() {
                 PHY: player.skills?.physical?.toString() || '50'
             },
             foot: player.preferredFoot === 'right' ? 'R' : 'L',
-            profileImage: player.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture}` : undefined,
+            profileImage: player.profilePicture || '/assets/group.svg',
             isCaptain: player.id === match.homeCaptainId || player.id === match.awayCaptainId,
             shirtIcon: ''
         };
@@ -644,14 +651,15 @@ export default function PlayMatchPage() {
             <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Your Stats for the Match</DialogTitle>
                 <DialogContent>
-                    <StatCounter icon={<SportsSoccer />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoals)} onDecrement={() => handleStatChange('goals', -1, teamGoals)} />
-                    <StatCounter icon={<EmojiEvents />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoals)} onDecrement={() => handleStatChange('assists', -1, teamGoals)} />
-                    <StatCounter icon={<PanTool />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
-                    <StatCounter icon={<FitnessCenter />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoals)} onDecrement={() => handleStatChange('penalties', -1, teamGoals)} />
-                    <StatCounter icon={<SportsSoccer />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoals)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoals)} />
-                    <StatCounter icon={<Security />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} />
-                    <StatCounter icon={<Bolt />} label="Impact" value={stats.impact} onIncrement={() => handleStatChange('impact', 1, 1)} onDecrement={() => handleStatChange('impact', -1, 1)} />
+                    <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoals)} onDecrement={() => handleStatChange('goals', -1, teamGoals)} />
+                    <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoals)} onDecrement={() => handleStatChange('assists', -1, teamGoals)} />
+                    <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
+                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />}label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoals)} onDecrement={() => handleStatChange('penalties', -1, teamGoals)} />
+                    <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoals)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoals)} />
+                    <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} />
+                    <StatCounter icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />} label="Impact" value={stats.impact} onIncrement={() => handleStatChange('impact', 1, 1)} onDecrement={() => handleStatChange('impact', -1, 1)} />
                 </DialogContent>
+                {/* FreeKick */}
                 <DialogActions>
                     <Button onClick={handleCloseStatsModal}>Cancel</Button>
                     <Button onClick={handleSaveStats} variant="contained" disabled={isSubmittingStats}>{isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}</Button>
