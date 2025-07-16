@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
             port: '5000',
             pathname: '/uploads/**', // allow images under /uploads
           },
+          {
+            protocol: 'https',
+            hostname: 'res.cloudinary.com',
+            pathname: '/**', // allow all images from cloudinary
+          },
         ],
       },    
 };

@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Avatar } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Avatar, Divider } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import FirstBadge from '@/Components/images/1st.png';
+import SecondBadge from '@/Components/images/2nd.png';
+import ThirdBadge from '@/Components/images/3rd.png';
 
 interface User {
   id: string;
@@ -195,8 +198,8 @@ export default function MatchDetailsPage() {
           <MatchSummary
             homeTeamName={match.homeTeamName}
             awayTeamName={match.awayTeamName}
-            homeTeamImg={match.homeTeamUsers[0]?.profilePicture ? (match.homeTeamUsers[0].profilePicture.startsWith('http') ? match.homeTeamUsers[0].profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${match.homeTeamUsers[0].profilePicture.startsWith('/') ? match.homeTeamUsers[0].profilePicture : '/' + match.homeTeamUsers[0].profilePicture}`) : '/assets/matches.png'}
-            awayTeamImg={match.awayTeamUsers[0]?.profilePicture ? (match.awayTeamUsers[0].profilePicture.startsWith('http') ? match.awayTeamUsers[0].profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${match.awayTeamUsers[0].profilePicture.startsWith('/') ? match.awayTeamUsers[0].profilePicture : '/' + match.awayTeamUsers[0].profilePicture}`) : '/assets/matches.png'}
+            homeTeamImg={'/assets/matches.png'}
+            awayTeamImg={'/assets/matches.png'}
             homeGoals={typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}
             awayGoals={typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0}
             leagueName={league?.name || 'League'}
@@ -246,9 +249,7 @@ export default function MatchDetailsPage() {
                         alignItems: "center",
                       }}
                     >
-                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 }}>
-                        {match.awayTeamName} Players
-                      </Typography>
+                    
                       <Box
                         sx={{
                           width: "100%",
@@ -256,8 +257,15 @@ export default function MatchDetailsPage() {
                           overflowY: "auto",
                           scrollbarWidth: "none",
                           "&::-webkit-scrollbar": { display: "none" },
+                          background: '#185c34', // Add a distinct table background color
+                          borderRadius: 3,
+                          p: 1,
                         }}
                       >
+                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 , color:'#fff' , mt:2 }}>
+                        {match.awayTeamName} Players
+                      </Typography>
+                      <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {/* Header */}
                         <Box
                           sx={{
@@ -270,7 +278,8 @@ export default function MatchDetailsPage() {
                             alignItems: "center",
                           }}
                         >
-                          <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                          <Box sx={{  ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                           <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                             <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                             <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -285,8 +294,12 @@ export default function MatchDetailsPage() {
 
                         {/* Player Cards */}
                         <Box>
-                        {match.awayTeamUsers.map((player) => {
+                        {match.awayTeamUsers.map((player, idx) => {
                             const stats = player.statistics?.[0] || {}
+                          let badgeImg = null;
+                          if (idx === 0) badgeImg = FirstBadge;
+                          else if (idx === 1) badgeImg = SecondBadge;
+                          else if (idx === 2) badgeImg = ThirdBadge;
                           return (
                               <Box
                                 key={player.id}
@@ -296,26 +309,39 @@ export default function MatchDetailsPage() {
                                   mb: 2,
                                   p: 2,
                                   borderRadius: 4,
-                                  background: "#0a3e1e",
+                                  background: "#1f673b",
                                   color: "white",
                                   boxShadow: 3,
                                   minHeight: 70,
                                   gap: 2,
                                 }}
                               >
-                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                  <Box sx={{ mr: 2 }}>
-                                    <Avatar
-                                      src={
-                                        player.profilePicture
-                                          ? player.profilePicture.startsWith("http")
-                                            ? player.profilePicture
-                                            : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                          : undefined
-                                      }
-                                      sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                    />
+                                {/* Position badge above player image */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                  {/* Badge on the left */}
+                                  <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {badgeImg ? (
+                                      <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                    ) : (
+                                      <Box sx={{
+                                        width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                      }}>{`${idx + 1}th`}</Box>
+                                    )}
                                   </Box>
+                                  {/* Player image */}
+                                  <Avatar
+                                    src={
+                                      player.profilePicture
+                                        ? player.profilePicture.startsWith("http")
+                                          ? player.profilePicture
+                                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                        : undefined
+                                    }
+                                    sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                                  />
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
                                   <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
                                     {player.firstName} {player.lastName}
                                   </Typography>
@@ -350,9 +376,7 @@ export default function MatchDetailsPage() {
                         alignItems: "center",
                       }}
                     >
-                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 }}>
-                        {match.homeTeamName} Players
-                      </Typography>
+                    
                       <Box
                         sx={{
                           width: "100%",
@@ -360,8 +384,15 @@ export default function MatchDetailsPage() {
                           overflowY: "auto",
                           scrollbarWidth: "none",
                           "&::-webkit-scrollbar": { display: "none" },
+                          background: '#185c34', // Add a distinct table background color
+                          borderRadius: 3,
+                          p: 1,
                         }}
                       >
+                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 , color:'#fff' , mt:2}}>
+                        {match.homeTeamName} Players
+                      </Typography>
+                      <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {/* Header */}
                         <Box
                           sx={{
@@ -374,7 +405,8 @@ export default function MatchDetailsPage() {
                             alignItems: "center",
                           }}
                         >
-                          <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                          <Box sx={{ ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                           <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                             <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                             <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -389,8 +421,12 @@ export default function MatchDetailsPage() {
 
                         {/* Player Cards */}
                         <Box>
-                        {match.homeTeamUsers.map((player) => {
+                        {match.homeTeamUsers.map((player, idx) => {
                             const stats = player.statistics?.[0] || {}
+                          let badgeImg = null;
+                          if (idx === 0) badgeImg = FirstBadge;
+                          else if (idx === 1) badgeImg = SecondBadge;
+                          else if (idx === 2) badgeImg = ThirdBadge;
                           return (
                               <Box
                                 key={player.id}
@@ -400,26 +436,39 @@ export default function MatchDetailsPage() {
                                   mb: 2,
                                   p: 2,
                                   borderRadius: 4,
-                                  background: "#0a3e1e",
+                                  background: "#1f673b",
                                   color: "white",
                                   boxShadow: 3,
                                   minHeight: 70,
                                   gap: 2,
                                 }}
                               >
-                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                  <Box sx={{ mr: 2 }}>
-                                    <Avatar
-                                      src={
-                                        player.profilePicture
-                                          ? player.profilePicture.startsWith("http")
-                                            ? player.profilePicture
-                                            : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                          : undefined
-                                      }
-                                      sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                    />
+                                {/* Position badge above player image */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                  {/* Badge on the left */}
+                                  <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {badgeImg ? (
+                                      <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                    ) : (
+                                      <Box sx={{
+                                        width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                      }}>{`${idx + 1}th`}</Box>
+                                    )}
                                   </Box>
+                                  {/* Player image */}
+                                  <Avatar
+                                    src={
+                                      player.profilePicture
+                                        ? player.profilePicture.startsWith("http")
+                                          ? player.profilePicture
+                                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                        : undefined
+                                    }
+                                    sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                                  />
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
                                   <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
                                     {player.firstName} {player.lastName}
                                   </Typography>
@@ -482,7 +531,7 @@ export default function MatchDetailsPage() {
                     sx={{
                       p: 3,
                       borderRadius: 3,
-                      background: "#1f673b",
+                      background: "#185c34", // Add a distinct table background color
                       boxShadow: 2,
                       overflowX: 'hidden', // Prevent horizontal scroll
                       maxWidth: { xs: '100%', sm: 600 }, // Responsive max width
@@ -505,7 +554,8 @@ export default function MatchDetailsPage() {
                         fontSize: { xs: 10, sm: 14 }, // Even smaller font on mobile
                       }}
                     >
-                      <Box sx={{ flex: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Player</Box>
+                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                      <Box sx={{ ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Player</Box>
                       <Box sx={{ display: "flex", gap: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 } }}>
                         <Box sx={{ minWidth: 32, textAlign: "center" }}>Shirt No</Box>
                         <Box sx={{ minWidth: 20, textAlign: "center" }}>Gs</Box>
@@ -519,8 +569,12 @@ export default function MatchDetailsPage() {
                     </Box>
                     {/* Player Cards */}
                     <Box>
-                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player) => {
+                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx) => {
                         const stats = player.statistics?.[0] || {};
+                        let badgeImg = null;
+                        if (idx === 0) badgeImg = FirstBadge;
+                        else if (idx === 1) badgeImg = SecondBadge;
+                        else if (idx === 2) badgeImg = ThirdBadge;
                         return (
                           <Box
                             key={player.id}
@@ -530,7 +584,7 @@ export default function MatchDetailsPage() {
                               mb: 1,
                               p: 1,
                               borderRadius: 3,
-                              background: "#0a3e1e",
+                              background: "#1f673b",
                               color: "white",
                               boxShadow: 1,
                               minHeight: 40,
@@ -538,23 +592,34 @@ export default function MatchDetailsPage() {
                               fontSize: { xs: 10, sm: 14 }, // Even smaller font on mobile
                             }}
                           >
-                            <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
-                              <Box sx={{ mr: 1 }}>
-                                <Avatar
-                                  src={
-                                    player.profilePicture
-                                      ? player.profilePicture.startsWith("http")
-                                        ? player.profilePicture
-                                        : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                      : undefined
-                                  }
-                                  sx={{ width: 24, height: 24, bgcolor: "#174d2c" }}
-                                />
+                            {/* Position badge above player image */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                              {/* Badge on the left */}
+                              <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {badgeImg ? (
+                                  <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                ) : (
+                                  <Box sx={{
+                                    width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                  }}>{`${idx + 1}th`}</Box>
+                                )}
                               </Box>
-                              <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {player.firstName} {player.lastName}
-                              </Typography>
+                              {/* Player image */}
+                              <Avatar
+                                src={
+                                  player.profilePicture
+                                    ? player.profilePicture.startsWith("http")
+                                      ? player.profilePicture
+                                      : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                    : undefined
+                                }
+                                sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                              />
                             </Box>
+                            <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {player.firstName} {player.lastName}
+                            </Typography>
                             <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
                               <Box sx={{ minWidth: 32, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{player.shirtNumber || "0"}</Box>
                               <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.goals ?? 0}</Box>

@@ -38,7 +38,9 @@ import toast from 'react-hot-toast';
 import Img from '@/Components/images/group451.png';
 import Group from '@/Components/images/group451.png';
 import TrophyRoom from '@/Components/TrophyRoom';
-
+import FirstBadge from '@/Components/images/1st.png';
+import SecondBadge from '@/Components/images/2nd.png';
+import ThirdBadge from '@/Components/images/3rd.png';
 
 interface League {
     id: string;
@@ -632,30 +634,31 @@ export default function LeagueDetailPage() {
                         {league.members && league.members.length > 0 ? (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {league.members.map((member) => (
-                                    <Card key={member.id} sx={{ backgroundColor: '#0a3e1e' , borderRadius: 3}}>
+                                    <Card key={member.id} sx={{ backgroundColor: '#0a3e1e', borderRadius: 3 }}>
                                         <Link href={`/player/${member?.id}`}>
-                                        <CardContent sx={{ p: 2 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Box
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        borderRadius: '50%',
-                                                        backgroundColor: 'rgba(255,255,255,0.2)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    {member.profilePicture ? (
+                                            <CardContent sx={{ p: 2 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    {/* Profile image */}
+                                                    <Box
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: '50%',
+                                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    >
+                                                        {member.profilePicture ? (
                                                             <Image
-                                                            src={member.profilePicture || Group}
-                                                            alt="Profile"
-                                                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                                                                src={member.profilePicture}
+                                                                alt="Profile"
+                                                                style={{ width: '100%', height: '100%', borderRadius: '50%' }}
                                                                 width={40}
                                                                 height={40}
-                                                        />
-                                                    ) : (
+                                                            />
+                                                        ) : (
                                                             <Image
                                                                 src={Img}
                                                                 alt="Profile"
@@ -663,15 +666,15 @@ export default function LeagueDetailPage() {
                                                                 width={20}
                                                                 height={20}
                                                             />
-                                                    )}
-                                                </Box>
-                                                <Box>
+                                                        )}
+                                                    </Box>
+                                                    <Box>
                                                         <Typography variant="body1" sx={{ color: 'white' }}>
-                                                        {member.firstName} {member.lastName}
-                                                    </Typography>
+                                                            {member.firstName} {member.lastName}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                        </CardContent>
+                                            </CardContent>
                                         </Link>
                                     </Card>
                                 ))}
@@ -681,7 +684,7 @@ export default function LeagueDetailPage() {
                                 No members yet
                             </Typography>
                         )}
-                </Box>
+                    </Box>
                 )}
                 {section === 'matches' && (
                     // Matches Section
@@ -848,13 +851,21 @@ export default function LeagueDetailPage() {
                 )}
                 {section === 'table' && (
                     // Table Section
-                    <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                    <Box sx={{
+                        maxHeight: 350,
+                        overflowY: 'auto',
+                        scrollbarWidth: 'none',
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        maxWidth: '800px',
+                        mx: 'auto'
+                    }}>
                         <Typography variant="h6" gutterBottom>
                             League Table
                         </Typography>
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         <Box sx={{ bgcolor: '#43a047', borderRadius: 3, px: 2, py: 1, mb: 2, display: 'flex', alignItems: 'center' }}>
-                            <Box sx={{ flex: 1, color: 'white', fontWeight: 'bold' }}>Player</Box>
+                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                            <Box sx={{ ml:4,flex: 1, color: 'white', fontWeight: 'bold' }}>Player</Box>
                             <Box sx={{ display: 'flex', gap: 4, color: 'white', fontWeight: 'bold' }}>
                                 <Box sx={{ minWidth: 32, textAlign: 'center' }}>P</Box>
                                 <Box sx={{ minWidth: 32, textAlign: 'center' }}>W</Box>
@@ -864,49 +875,89 @@ export default function LeagueDetailPage() {
                             </Box>
                         </Box>
                         <Box>
-                            {tableData.length > 0 ? tableData.map((row) => (
-                                <Paper
+                            {tableData.length > 0 ? tableData.map((row, idx) => {
+                                // Row background and text color logic
+                                let rowBg = '#0a4822';
+                                let textColor = '#fff';
+                                let subTextColor = '#fff';
+                                let fontWeight = 500;
+                                let badgeImg = null;
+                                let rowGradient = null;
+                                if (idx === 0) {
+                                  rowGradient = '#0a3e1e'; // gold/orange
+                                  textColor = '#fff';
+                                  fontWeight = 700;
+                                  badgeImg = FirstBadge;
+                                } else if (idx === 1) {
+                                  rowBg = '#0a4822'; // silver
+                                  badgeImg = SecondBadge;
+                                } else if (idx === 2) {
+                                  rowBg = '#094420'; // bronze
+                                  badgeImg = ThirdBadge;
+                                } else {
+                                  rowBg = '#0a4822';
+                                }
+                                return (
+                                  <Box
                                     key={row.id}
-                                    elevation={3}
                                     sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 2,
-                                        p: 2,
-                                        borderRadius: 4,
-                                        background: '#0a3e1e',
-                                        color: 'white',
-                                        boxShadow: 3,
-                                        minHeight: 90,
-                                        gap: 2
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      px: 2,
+                                      py: 1.5,
+                                    //   borderRadius: idx < 3 ? 2 : 0,
+                                      background: rowGradient ? rowGradient : rowBg,
+                                    //   background: "#fff",
+                                      color: textColor,
+                                      fontWeight,
+                                    //   mb: idx === tableData.length - 1 ? 0 : 1,
+                                      boxShadow: 'none',
+                                      minHeight: 60,
                                     }}
-                                >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                                        <Box sx={{ mr: 2 }}>
-                                            <img
-                                                src={row.profilePicture || '/assets/group.svg'}
-                                                alt={row.name}
-                                                width={48}
-                                                height={48}
-                                                style={{ borderRadius: '50%', objectFit: 'cover', background: '#174d2c', width: 48, height: 48, display: 'block' }}
-                                            />
-                                        </Box>
-                                        <Typography variant="body1" sx={{ fontWeight: 'medium', color: 'white', display: 'flex', alignItems: 'center' }}>
-                                            {row.name}
-                                            {row.isAdmin && <ShieldIcon className={'stroke-[#10b981]'} style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
-                                        </Typography>
+                                  >
+                                    {/* Position badge */}
+                                    <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
+                                      {badgeImg ? (
+                                        <Image src={badgeImg} alt={`${idx + 1}st`} width={32} height={32} />
+                                      ) : (
+                                        <Box sx={{
+                                          width: 28, height: 28, display: 'flex',
+                                          alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
+                                        }}>{`${idx + 1}th`}</Box>
+                                      )}
                                     </Box>
+                                    {/* Team logo/profile */}
+                                    <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <img
+                                        src={row.profilePicture || '/assets/group.svg'}
+                                        alt={row.name}
+                                        width={40}
+                                        height={40}
+                                        style={{ borderRadius: '50%', objectFit: 'cover', width: 40, height: 40, display: 'block' }}
+                                      />
+                                    </Box>
+                                    {/* Team name and player name */}
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                      <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: 16, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {row.name.split(' ')[0]}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 400, fontSize: 13, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {row.name.split(' ').slice(1).join(' ')}
+                                      </Typography>
+                                    </Box>
+                                    {/* Stats */}
                                     <Box sx={{ display: 'flex', gap: 4, ml: 'auto' }}>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center' }}>{row.played}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center' }}>{row.wins}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center' }}>{row.draws}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center' }}>{row.losses}</Box>
-                                        <Box sx={{ minWidth: 48, textAlign: 'center' }}>{row.winPercentage}</Box>
+                                      <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.played}</Box>
+                                      <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.wins}</Box>
+                                      <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.draws}</Box>
+                                      <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.losses}</Box>
+                                      <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor }}>{row.winPercentage}</Box>
                                     </Box>
-                                </Paper>
-                            )) : (
+                                  </Box>
+                                );
+                              }) : (
                                 <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 3 }}>No data</Paper>
-                            )}
+                              )}
                         </Box>
                     </Box>
                 )}

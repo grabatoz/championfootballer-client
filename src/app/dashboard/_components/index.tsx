@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import PlayerCard from '@/Components/playercard/playercard';
 import Link from 'next/link';
-import dash from '@/Components/images/dash.png'
+import dash from '@/Components/images/dash.webp'
 import { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
 import league from '@/Components/images/league.png'
@@ -18,7 +18,7 @@ import leaderboard from '@/Components/images/leaderboard.png'
 import dreamteam from '@/Components/images/dream.png'
 import players from '@/Components/images/players.png'
 import trophy from '@/Components/images/trophy.png'
-import Dashbg from '@/Components/images/dashbg.jpg'
+import Dashbg from '@/Components/images/dashbg.webp'
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage } from '@/lib/features/authSlice';

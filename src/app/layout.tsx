@@ -5,7 +5,7 @@ import Navbar from "@/Components/Navbar/navbar";
 import Footer from "@/Components/footer/footer";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
-import Mainbg from '@/Components/images/mainbg.png'
+import Mainbg from '@/Components/images/mainbg.webp'
 
 const geistSans = Geist({
   subsets: ["latin"],
