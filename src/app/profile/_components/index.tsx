@@ -58,7 +58,7 @@ const PlayerProfileCard = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [, setImagePreview] = useState<string | null>(null);
   const [imgSrc, setImgSrc] = useState(
-    user?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : Group
+    user?.profilePicture || Group
   );
 
   const router = useRouter();
@@ -66,7 +66,7 @@ const PlayerProfileCard = () => {
   console.log('imgSrc', imgSrc);
 
   useEffect(() => {
-    setImgSrc(user?.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : Group);
+    setImgSrc(user?.profilePicture || Group);
   }, [user?.profilePicture]);
 
   // Initialize positionType and position based on user's current position

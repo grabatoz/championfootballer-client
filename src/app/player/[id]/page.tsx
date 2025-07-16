@@ -411,7 +411,7 @@ const PlayerStatsPage = () => {
                         width: 180,
                         minWidth: 140,
                         maxWidth: 220,
-                        background: 'linear-gradient(135deg, #263238 80%, #174d3c 100%)',
+                        background: '#0a3e1e',
                         borderRadius: 4,
                         boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
                         display: 'flex',

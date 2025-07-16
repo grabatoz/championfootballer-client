@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Avatar, CircularProgress, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Paper, Button, Avatar, CircularProgress, MenuItem, Select, FormControl, InputLabel, Divider } from '@mui/material';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import Goals from '@/Components/images/goal.png'
@@ -9,6 +9,10 @@ import Assist from '@/Components/images/Assist.png'
 import Defence from '@/Components/images/defence.png'
 import MOTM from '@/Components/images/MOTM.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
+import FirstBadge from '@/Components/images/1st.png';
+import SecondBadge from '@/Components/images/2nd.png';
+import ThirdBadge from '@/Components/images/3rd.png';
+import React from 'react';
 
 
 interface Player {
@@ -85,26 +89,14 @@ export default function LeaderBoardPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel id="league-select-label">Select League</InputLabel>
-        <Select
-          labelId="league-select-label"
-          value={selectedLeague}
-          label="Select League"
-          onChange={e => setSelectedLeague(e.target.value)}
-        >
-          {leagues.map(league => (
-            <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
           gap: 2,
           mb: 3,
-          background: '#0a3e1e',
+          background: '#1f673b',
           borderRadius: 2,
           boxShadow: 1,
           p: 2,
@@ -137,30 +129,84 @@ export default function LeaderBoardPage() {
             <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
           </Button>
         ))}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel
+            id="league-select-label"
+            sx={{
+              color: 'white',
+              '&.Mui-focused': { color: 'white' },
+              '&.MuiInputLabel-shrink': { color: 'white' },
+            }}
+          >
+            Select League
+          </InputLabel>
+          <Select
+            labelId="league-select-label"
+            value={selectedLeague}
+            label="Select League"
+            onChange={e => setSelectedLeague(e.target.value)}
+            sx={{
+              color: 'white',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#43a047',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#43a047',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#43a047',
+              },
+            }}
+          >
+            {leagues.map(league => (
+              <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Top Players</Typography>
       {loading ? (
         <CircularProgress />
       ) : (
-        players.map((player) => (
-          <Paper key={player.id} sx={{ p: 2, mb: 2, display: 'flex', color:'white' , alignItems: 'center', borderRadius: 4, background: '#0a3e1e' }}>
-            <Avatar
-              src={
-                player?.profilePicture
-                  ? (player.profilePicture || '/assets/group.svg'
-                      ? player.profilePicture
-                      : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
-                  : '/assets/group451.png'
-              }
-              sx={{ width: 64, height: 64, mr: 2 }}
-            />
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' , color:'white' }}>{player.name}</Typography>
-              <Typography variant="body2">Position: {player.position}</Typography>
-              <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
-            </Box>
-          </Paper>
-        ))
+        players.map((player, idx) => {
+          let badgeImg = null;
+          if (idx === 0) badgeImg = FirstBadge;
+          else if (idx === 1) badgeImg = SecondBadge;
+          else if (idx === 2) badgeImg = ThirdBadge;
+          return (
+            <React.Fragment key={player.id}>
+              <Paper sx={{ p: 2, display: 'flex', color:'white' , alignItems: 'center', background: '#0a3e1e', borderRadius: 0 }}>
+                {/* Ranking badge or number */}
+                <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                  {badgeImg ? (
+                    <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
+                  ) : (
+                    <Box sx={{
+                      width: 28, height: 28, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
+                    }}>{`${idx + 1}th`}</Box>
+                  )}
+                </Box>
+                <Avatar
+                  src={
+                    player?.profilePicture
+                      ? (player.profilePicture || '/assets/group.svg'
+                          ? player.profilePicture
+                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
+                      : '/assets/group451.png'
+                  }
+                  sx={{ width: 64, height: 64, mr: 2 }}
+                />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' , color:'white' }}>{player.name}</Typography>
+                  <Typography variant="body2">Position: {player.position}</Typography>
+                  <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
+                </Box>
+              </Paper>
+              <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+            </React.Fragment>
+          );
+        })
       )}
     </Box>
   );

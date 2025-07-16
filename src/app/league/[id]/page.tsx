@@ -896,59 +896,61 @@ export default function LeagueDetailPage() {
                                     rowBg = '#0a4822';
                                   }
                                   return (
-                                    <Box
-                                      key={row.id}
-                                      sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        px: 2, // padding x = 2
-                                        py: 1.5,
-                                        background: rowGradient ? rowGradient : rowBg,
-                                        color: textColor,
-                                        fontWeight,
-                                        boxShadow: 'none',
-                                        minHeight: 60,
-                                      }}
-                                    >
-                                      {/* Position badge */}
-                                      <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
-                                        {badgeImg ? (
-                                          <Image src={badgeImg} alt={`${idx + 1}st`} width={32} height={32} />
-                                        ) : (
-                                          <Box sx={{
-                                            width: 28, height: 28, display: 'flex',
-                                            alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
-                                          }}>{`${idx + 1}th`}</Box>
-                                        )}
+                                    <React.Fragment key={row.id}>
+                                      <Box
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          px: 2, // padding x = 2
+                                          py: 1.5,
+                                          background: rowGradient ? rowGradient : rowBg,
+                                          color: textColor,
+                                          fontWeight,
+                                          boxShadow: 'none',
+                                          minHeight: 60,
+                                        }}
+                                      >
+                                        {/* Position badge */}
+                                        <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
+                                          {badgeImg ? (
+                                            <Image src={badgeImg} alt={`${idx + 1}st`} width={32} height={32} />
+                                          ) : (
+                                            <Box sx={{
+                                              width: 28, height: 28, display: 'flex',
+                                              alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
+                                            }}>{`${idx + 1}th`}</Box>
+                                          )}
+                                        </Box>
+                                        {/* Team logo/profile */}
+                                        <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          <img
+                                            src={row.profilePicture || '/assets/group.svg'}
+                                            alt={row.name}
+                                            width={40}
+                                            height={40}
+                                            style={{ borderRadius: '50%', objectFit: 'cover', width: 40, height: 40, display: 'block' }}
+                                          />
+                                        </Box>
+                                        {/* Team name and player name */}
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                          <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: 16, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {row.name.split(' ')[0]}
+                                          </Typography>
+                                          <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 400, fontSize: 13, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {row.name.split(' ').slice(1).join(' ')}
+                                          </Typography>
+                                        </Box>
+                                        {/* Stats */}
+                                        <Box sx={{ display: 'flex', gap: 4, ml: 'auto' }}>
+                                          <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.played}</Box>
+                                          <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.wins}</Box>
+                                          <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.draws}</Box>
+                                          <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.losses}</Box>
+                                          <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor }}>{row.winPercentage}</Box>
+                                        </Box>
                                       </Box>
-                                      {/* Team logo/profile */}
-                                      <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <img
-                                          src={row.profilePicture || '/assets/group.svg'}
-                                          alt={row.name}
-                                          width={40}
-                                          height={40}
-                                          style={{ borderRadius: '50%', objectFit: 'cover', width: 40, height: 40, display: 'block' }}
-                                        />
-                                      </Box>
-                                      {/* Team name and player name */}
-                                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                                        <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: 16, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                          {row.name.split(' ')[0]}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 400, fontSize: 13, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                          {row.name.split(' ').slice(1).join(' ')}
-                                        </Typography>
-                                      </Box>
-                                      {/* Stats */}
-                                      <Box sx={{ display: 'flex', gap: 4, ml: 'auto' }}>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.played}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.wins}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.draws}</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.losses}</Box>
-                                        <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor }}>{row.winPercentage}</Box>
-                                      </Box>
-                                    </Box>
+                                      <Divider sx={{     backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                                    </React.Fragment>
                                   );
                                 }) : (
                                   <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 3 }}>No data</Paper>

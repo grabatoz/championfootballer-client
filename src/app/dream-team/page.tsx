@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Avatar, Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
 import { useAuth } from '@/lib/useAuth';
-import fieldImg from '@/Components/images/ground.png'; // Place your field image in public/assets/field.png
+import fieldImg from '@/Components/images/ground.webp'; // Place your field image in public/assets/field.png
 import PersonIcon from '@mui/icons-material/Person';
 import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';

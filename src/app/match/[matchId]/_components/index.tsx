@@ -10,6 +10,7 @@ import { useTheme } from '@mui/material/styles';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
+import React from "react";
 
 interface User {
   id: string;
@@ -316,63 +317,65 @@ export default function MatchDetailsPage() {
                               rowBg = '#0a4822';
                             }
                             return (
-                              <Box
-                                key={player.id}
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  p: 2,
-                                  background: rowGradient ? rowGradient : rowBg,
-                                  color: textColor,
-                                  fontWeight,
-                                  boxShadow: 3,
-                                  minHeight: 70,
-                                  gap: 2,
-                                }}
-                              >
-                                {/* Position badge above player image */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                  {/* Badge on the left */}
-                                  <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {badgeImg ? (
-                                      <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
-                                    ) : (
-                                      <Box sx={{
-                                        width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
-                                      }}>{`${idx + 1}th`}</Box>
-                                    )}
+                              <React.Fragment key={player.id}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    p: 2,
+                                    background: rowGradient ? rowGradient : rowBg,
+                                    color: textColor,
+                                    fontWeight,
+                                    boxShadow: 3,
+                                    minHeight: 70,
+                                    gap: 2,
+                                  }}
+                                >
+                                  {/* Position badge above player image */}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                    {/* Badge on the left */}
+                                    <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      {badgeImg ? (
+                                        <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                      ) : (
+                                        <Box sx={{
+                                          width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                          alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                        }}>{`${idx + 1}th`}</Box>
+                                      )}
+                                    </Box>
+                                    {/* Player image */}
+                                    <Avatar
+                                      src={
+                                        player.profilePicture
+                                          ? player.profilePicture.startsWith("http")
+                                            ? player.profilePicture
+                                            : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                          : undefined
+                                      }
+                                      sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                                    />
                                   </Box>
-                                  {/* Player image */}
-                                  <Avatar
-                                    src={
-                                      player.profilePicture
-                                        ? player.profilePicture.startsWith("http")
-                                          ? player.profilePicture
-                                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                        : undefined
-                                    }
-                                    sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                  />
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                  <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
-                                    {player.firstName} {player.lastName}
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                  <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
-                                    {player.shirtNumber || "0"}
+                                  <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
+                                      {player.firstName} {player.lastName}
+                                    </Typography>
                                   </Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
-                                  <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                  <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                                    <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
+                                      {player.shirtNumber || "0"}
+                                    </Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
+                                    <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                  </Box>
                                 </Box>
-                              </Box>
+                                  <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                              </React.Fragment>
                             )
                           })}
                         </Box>
@@ -457,63 +460,65 @@ export default function MatchDetailsPage() {
                               rowBg = '#0a4822';
                             }
                             return (
-                              <Box
-                                key={player.id}
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  p: 2,
-                                  background: rowGradient ? rowGradient : rowBg,
-                                  color: textColor,
-                                  fontWeight,
-                                  boxShadow: 3,
-                                  minHeight: 70,
-                                  gap: 2,
-                                }}
-                              >
-                                {/* Position badge above player image */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                  {/* Badge on the left */}
-                                  <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {badgeImg ? (
-                                      <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
-                                    ) : (
-                                      <Box sx={{
-                                        width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
-                                      }}>{`${idx + 1}th`}</Box>
-                                    )}
+                              <React.Fragment key={player.id}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    p: 2,
+                                    background: rowGradient ? rowGradient : rowBg,
+                                    color: textColor,
+                                    fontWeight,
+                                    boxShadow: 3,
+                                    minHeight: 70,
+                                    gap: 2,
+                                  }}
+                                >
+                                  {/* Position badge above player image */}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                    {/* Badge on the left */}
+                                    <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      {badgeImg ? (
+                                        <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                      ) : (
+                                        <Box sx={{
+                                          width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                          alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                        }}>{`${idx + 1}th`}</Box>
+                                      )}
+                                    </Box>
+                                    {/* Player image */}
+                                    <Avatar
+                                      src={
+                                        player.profilePicture
+                                          ? player.profilePicture.startsWith("http")
+                                            ? player.profilePicture
+                                            : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                          : undefined
+                                      }
+                                      sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                                    />
                                   </Box>
-                                  {/* Player image */}
-                                  <Avatar
-                                    src={
-                                      player.profilePicture
-                                        ? player.profilePicture.startsWith("http")
-                                          ? player.profilePicture
-                                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                        : undefined
-                                    }
-                                    sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                  />
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                  <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
-                                    {player.firstName} {player.lastName}
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                  <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
-                                    {player.shirtNumber || "0"}
+                                  <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
+                                      {player.firstName} {player.lastName}
+                                    </Typography>
                                   </Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
-                                  <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
-                                  <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                  <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                                    <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
+                                      {player.shirtNumber || "0"}
+                                    </Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
+                                    <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
+                                    <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                  </Box>
                                 </Box>
-                              </Box>
+                                  <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                              </React.Fragment>
                             )
                           })}
                         </Box>
@@ -597,7 +602,7 @@ export default function MatchDetailsPage() {
                     </Box>
                     {/* Player Cards */}
                     <Box>
-                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx) => {
+                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx, arr) => {
                         const stats = player.statistics?.[0] || {};
                         let badgeImg = null;
                         let rowBg = '#0a4822';
@@ -619,60 +624,62 @@ export default function MatchDetailsPage() {
                           rowBg = '#0a4822';
                         }
                         return (
-                          <Box
-                            key={player.id}
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              p: 1,
-                              background: rowGradient ? rowGradient : rowBg,
-                              color: textColor,
-                              fontWeight,
-                              boxShadow: 1,
-                              minHeight: 40,
-                              gap: 1,
-                              fontSize: { xs: 10, sm: 14 },
-                            }}
-                          >
-                            {/* Position badge above player image */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                              {/* Badge on the left */}
-                              <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {badgeImg ? (
-                                  <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
-                                ) : (
-                                  <Box sx={{
-                                    width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
-                                    alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
-                                  }}>{`${idx + 1}th`}</Box>
-                                )}
+                          <React.Fragment key={player.id}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                p: 1,
+                                background: rowGradient ? rowGradient : rowBg,
+                                color: textColor,
+                                fontWeight,
+                                boxShadow: 1,
+                                minHeight: 40,
+                                gap: 1,
+                                fontSize: { xs: 10, sm: 14 },
+                              }}
+                            >
+                              {/* Position badge above player image */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                {/* Badge on the left */}
+                                <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {badgeImg ? (
+                                    <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
+                                  ) : (
+                                    <Box sx={{
+                                      width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
+                                      alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
+                                    }}>{`${idx + 1}th`}</Box>
+                                  )}
+                                </Box>
+                                {/* Player image */}
+                                <Avatar
+                                  src={
+                                    player.profilePicture
+                                      ? player.profilePicture.startsWith("http")
+                                        ? player.profilePicture
+                                        : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
+                                      : undefined
+                                  }
+                                  sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
+                                />
                               </Box>
-                              {/* Player image */}
-                              <Avatar
-                                src={
-                                  player.profilePicture
-                                    ? player.profilePicture.startsWith("http")
-                                      ? player.profilePicture
-                                      : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                    : undefined
-                                }
-                                sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                              />
+                              <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {player.firstName} {player.lastName}
+                              </Typography>
+                              <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+                                <Box sx={{ minWidth: 32, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{player.shirtNumber || "0"}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.goals ?? 0}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.assists ?? 0}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.cleanSheets ?? 0}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.penalties ?? 0}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.freeKicks ?? 0}</Box>
+                                <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.defence ?? 0}</Box>
+                                <Box sx={{ minWidth: 22, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.impact ?? 0}</Box>
+                              </Box>
                             </Box>
-                            <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {player.firstName} {player.lastName}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
-                              <Box sx={{ minWidth: 32, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{player.shirtNumber || "0"}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.goals ?? 0}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.assists ?? 0}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.cleanSheets ?? 0}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.penalties ?? 0}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.freeKicks ?? 0}</Box>
-                              <Box sx={{ minWidth: 20, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.defence ?? 0}</Box>
-                              <Box sx={{ minWidth: 22, textAlign: "center", fontSize: { xs: 10, sm: 14 } }}>{stats.impact ?? 0}</Box>
-                            </Box>
-                          </Box>
+                              <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                          </React.Fragment>
                         );
                       })}
                     </Box>
