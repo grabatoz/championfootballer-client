@@ -561,7 +561,7 @@ const PlayerStatsPage = () => {
                                 </Typography>
                             ) : (
                                 <Box sx={{ display: 'grid', gap: 2 }}>
-                                    {leaderboardPlayers.map((player, idx) => (
+                                    {leaderboardPlayers.map((player) => (
                                         <React.Fragment key={player.id}>
                                             <Paper
                                                 sx={{
