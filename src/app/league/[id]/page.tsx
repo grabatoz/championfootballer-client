@@ -30,13 +30,12 @@ import {
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, ShieldIcon, Table2Icon } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, Table2Icon } from 'lucide-react';
 import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import Img from '@/Components/images/group451.png';
-import Group from '@/Components/images/group451.png';
 import TrophyRoom from '@/Components/TrophyRoom';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
@@ -879,7 +878,7 @@ export default function LeagueDetailPage() {
                                 // Row background and text color logic
                                 let rowBg = '#0a4822';
                                 let textColor = '#fff';
-                                let subTextColor = '#fff';
+                                const subTextColor = '#fff';
                                 let fontWeight = 500;
                                 let badgeImg = null;
                                 let rowGradient = null;
