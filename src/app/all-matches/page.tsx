@@ -438,7 +438,7 @@ export default function AllMatches() {
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
                             return (
-                                <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative' }}>
+                                <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative' , border:'3px solid green' }}>
                                     <CardContent sx={{ p: 2 }}>
                                     {isAdmin && (
                                                     <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/edit`} passHref>

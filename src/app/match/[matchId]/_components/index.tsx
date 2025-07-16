@@ -227,7 +227,7 @@ export default function MatchDetailsPage() {
           <Box sx={{ width: "100%" }}>
             {/* Player Statistics Tables */}
             <Box sx={{ width: "100%" }}>
-          {isLargeScreen ? (
+              {isLargeScreen ? (
                 <Box
                   sx={{
                     width: "100%",
@@ -238,7 +238,7 @@ export default function MatchDetailsPage() {
                   }}
                 >
                   <Box sx={{ display: "flex", gap: 4, minWidth: 900 }}>
-                {/* Away Team Table (left) */}
+                    {/* Away Team Table (left) */}
                     <Box
                       sx={{
                         flex: 1,
@@ -249,7 +249,7 @@ export default function MatchDetailsPage() {
                         alignItems: "center",
                       }}
                     >
-                    
+
                       <Box
                         sx={{
                           width: "100%",
@@ -262,10 +262,10 @@ export default function MatchDetailsPage() {
                           p: 1,
                         }}
                       >
-                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 , color:'#fff' , mt:2 }}>
-                        {match.awayTeamName} Players
-                      </Typography>
-                      <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
+                          {match.awayTeamName} Players
+                        </Typography>
+                        <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {/* Header */}
                         <Box
                           sx={{
@@ -278,8 +278,8 @@ export default function MatchDetailsPage() {
                             alignItems: "center",
                           }}
                         >
-                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
-                          <Box sx={{  ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                          <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                          <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                           <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                             <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                             <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -294,23 +294,37 @@ export default function MatchDetailsPage() {
 
                         {/* Player Cards */}
                         <Box>
-                        {match.awayTeamUsers.map((player, idx) => {
+                          {match.awayTeamUsers.map((player, idx) => {
                             const stats = player.statistics?.[0] || {}
-                          let badgeImg = null;
-                          if (idx === 0) badgeImg = FirstBadge;
-                          else if (idx === 1) badgeImg = SecondBadge;
-                          else if (idx === 2) badgeImg = ThirdBadge;
-                          return (
+                            let badgeImg = null;
+                            let rowBg = '#0a4822';
+                            let rowGradient = null;
+                            let textColor = '#fff';
+                            let fontWeight = 500;
+                            if (idx === 0) {
+                              rowGradient = '#0a3e1e'; // gold/orange
+                              textColor = '#fff';
+                              fontWeight = 700;
+                              badgeImg = FirstBadge;
+                            } else if (idx === 1) {
+                              rowBg = '#0a4822'; // silver
+                              badgeImg = SecondBadge;
+                            } else if (idx === 2) {
+                              rowBg = '#094420'; // bronze
+                              badgeImg = ThirdBadge;
+                            } else {
+                              rowBg = '#0a4822';
+                            }
+                            return (
                               <Box
                                 key={player.id}
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  mb: 2,
                                   p: 2,
-                                  borderRadius: 4,
-                                  background: "#1f673b",
-                                  color: "white",
+                                  background: rowGradient ? rowGradient : rowBg,
+                                  color: textColor,
+                                  fontWeight,
                                   boxShadow: 3,
                                   minHeight: 70,
                                   gap: 2,
@@ -362,10 +376,10 @@ export default function MatchDetailsPage() {
                             )
                           })}
                         </Box>
-                  </Box>
-                </Box>
+                      </Box>
+                    </Box>
 
-                {/* Home Team Table (right) */}
+                    {/* Home Team Table (right) */}
                     <Box
                       sx={{
                         flex: 1,
@@ -376,7 +390,7 @@ export default function MatchDetailsPage() {
                         alignItems: "center",
                       }}
                     >
-                    
+
                       <Box
                         sx={{
                           width: "100%",
@@ -389,10 +403,10 @@ export default function MatchDetailsPage() {
                           p: 1,
                         }}
                       >
-                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17 , color:'#fff' , mt:2}}>
-                        {match.homeTeamName} Players
-                      </Typography>
-                      <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
+                          {match.homeTeamName} Players
+                        </Typography>
+                        <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {/* Header */}
                         <Box
                           sx={{
@@ -405,8 +419,8 @@ export default function MatchDetailsPage() {
                             alignItems: "center",
                           }}
                         >
-                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
-                          <Box sx={{ ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
+                          <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                          <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                           <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                             <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                             <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -421,23 +435,37 @@ export default function MatchDetailsPage() {
 
                         {/* Player Cards */}
                         <Box>
-                        {match.homeTeamUsers.map((player, idx) => {
+                          {match.homeTeamUsers.map((player, idx) => {
                             const stats = player.statistics?.[0] || {}
-                          let badgeImg = null;
-                          if (idx === 0) badgeImg = FirstBadge;
-                          else if (idx === 1) badgeImg = SecondBadge;
-                          else if (idx === 2) badgeImg = ThirdBadge;
-                          return (
+                            let badgeImg = null;
+                            let rowBg = '#0a4822';
+                            let rowGradient = null;
+                            let textColor = '#fff';
+                            let fontWeight = 500;
+                            if (idx === 0) {
+                              rowGradient = '#0a3e1e'; // gold/orange
+                              textColor = '#fff';
+                              fontWeight = 700;
+                              badgeImg = FirstBadge;
+                            } else if (idx === 1) {
+                              rowBg = '#0a4822'; // silver
+                              badgeImg = SecondBadge;
+                            } else if (idx === 2) {
+                              rowBg = '#094420'; // bronze
+                              badgeImg = ThirdBadge;
+                            } else {
+                              rowBg = '#0a4822';
+                            }
+                            return (
                               <Box
                                 key={player.id}
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  mb: 2,
                                   p: 2,
-                                  borderRadius: 4,
-                                  background: "#1f673b",
-                                  color: "white",
+                                  background: rowGradient ? rowGradient : rowBg,
+                                  color: textColor,
+                                  fontWeight,
                                   boxShadow: 3,
                                   minHeight: 70,
                                   gap: 2,
@@ -489,14 +517,14 @@ export default function MatchDetailsPage() {
                             )
                           })}
                         </Box>
+                      </Box>
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            </Box>
-          ) : (
-            <>
+              ) : (
+                <>
                   <Box sx={{ display: "flex", gap: 2, mb: 3, justifyContent: "center", mt: 4 }}>
-                <Button
+                    <Button
                       variant={selectedTeam === "home" ? "contained" : "outlined"}
                       onClick={() => setSelectedTeam("home")}
                       sx={{
@@ -508,10 +536,10 @@ export default function MatchDetailsPage() {
                           bgcolor: selectedTeam === "home" ? "#388e3c" : "#f5f5f5",
                         },
                       }}
-                >
-                  {match.homeTeamName}
-                </Button>
-                <Button
+                    >
+                      {match.homeTeamName}
+                    </Button>
+                    <Button
                       variant={selectedTeam === "away" ? "contained" : "outlined"}
                       onClick={() => setSelectedTeam("away")}
                       sx={{
@@ -523,10 +551,10 @@ export default function MatchDetailsPage() {
                           bgcolor: selectedTeam === "away" ? "#388e3c" : "#f5f5f5",
                         },
                       }}
-                >
-                  {match.awayTeamName}
-                </Button>
-              </Box>
+                    >
+                      {match.awayTeamName}
+                    </Button>
+                  </Box>
                   <Box
                     sx={{
                       p: 3,
@@ -554,8 +582,8 @@ export default function MatchDetailsPage() {
                         fontSize: { xs: 10, sm: 14 }, // Even smaller font on mobile
                       }}
                     >
-                            <Box sx={{color: 'white', fontWeight: 'bold' }}>Pos</Box>
-                      <Box sx={{ ml:4 , flex: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Player</Box>
+                      <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
+                      <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Player</Box>
                       <Box sx={{ display: "flex", gap: 1, color: "white", fontWeight: "bold", fontSize: { xs: 10, sm: 14 } }}>
                         <Box sx={{ minWidth: 32, textAlign: "center" }}>Shirt No</Box>
                         <Box sx={{ minWidth: 20, textAlign: "center" }}>Gs</Box>
@@ -572,24 +600,38 @@ export default function MatchDetailsPage() {
                       {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx) => {
                         const stats = player.statistics?.[0] || {};
                         let badgeImg = null;
-                        if (idx === 0) badgeImg = FirstBadge;
-                        else if (idx === 1) badgeImg = SecondBadge;
-                        else if (idx === 2) badgeImg = ThirdBadge;
+                        let rowBg = '#0a4822';
+                        let rowGradient = null;
+                        let textColor = '#fff';
+                        let fontWeight = 500;
+                        if (idx === 0) {
+                          rowGradient = '#0a3e1e'; // gold/orange
+                          textColor = '#fff';
+                          fontWeight = 700;
+                          badgeImg = FirstBadge;
+                        } else if (idx === 1) {
+                          rowBg = '#0a4822'; // silver
+                          badgeImg = SecondBadge;
+                        } else if (idx === 2) {
+                          rowBg = '#094420'; // bronze
+                          badgeImg = ThirdBadge;
+                        } else {
+                          rowBg = '#0a4822';
+                        }
                         return (
                           <Box
                             key={player.id}
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              mb: 1,
                               p: 1,
-                              borderRadius: 3,
-                              background: "#1f673b",
-                              color: "white",
+                              background: rowGradient ? rowGradient : rowBg,
+                              color: textColor,
+                              fontWeight,
                               boxShadow: 1,
                               minHeight: 40,
                               gap: 1,
-                              fontSize: { xs: 10, sm: 14 }, // Even smaller font on mobile
+                              fontSize: { xs: 10, sm: 14 },
                             }}
                           >
                             {/* Position badge above player image */}
@@ -634,9 +676,9 @@ export default function MatchDetailsPage() {
                         );
                       })}
                     </Box>
-                </Box>
-            </>
-          )}
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
         </>
