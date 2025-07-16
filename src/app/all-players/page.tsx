@@ -122,6 +122,7 @@ const AllPlayersPage = () => {
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, mb: 1 }}>
+          {/* <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Pos</Typography> */}
           <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: 5 }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Stats</Typography>

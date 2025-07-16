@@ -118,7 +118,7 @@ export default function NavigationBar() {
               color="inherit"
               aria-label="menu"
               onClick={() => setDrawerOpen(true)}
-              sx={{ display: { md: 'none' }, color: '#333' }}
+              sx={{ display: { md: 'none' }, color: '#fff' }}
             >
               <MenuIcon />
             </IconButton>
@@ -133,7 +133,7 @@ export default function NavigationBar() {
         sx={{
           '& .MuiDrawer-paper': {
             width: 260,
-            backgroundColor: '#fafafa',
+            backgroundColor: '#0a3e1e',
             boxShadow: 3,
           },
         }}

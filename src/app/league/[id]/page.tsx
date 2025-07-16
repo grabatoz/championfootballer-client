@@ -233,6 +233,7 @@ export default function LeagueDetailPage() {
     const fetchLeagueDetails = useCallback(async () => {
         try {
             setLoading(true);
+            console.log("Token before fetch:", token); // Debug log
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -949,7 +950,7 @@ export default function LeagueDetailPage() {
                                           <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor }}>{row.winPercentage}</Box>
                                         </Box>
                                       </Box>
-                                      <Divider sx={{     backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                                      <Divider sx={{backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                     </React.Fragment>
                                   );
                                 }) : (
