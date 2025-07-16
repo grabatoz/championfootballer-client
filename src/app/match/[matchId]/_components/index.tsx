@@ -602,7 +602,7 @@ export default function MatchDetailsPage() {
                     </Box>
                     {/* Player Cards */}
                     <Box>
-                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx, arr) => {
+                      {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, idx) => {
                         const stats = player.statistics?.[0] || {};
                         let badgeImg = null;
                         let rowBg = '#0a4822';
