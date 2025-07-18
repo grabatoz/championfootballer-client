@@ -723,7 +723,7 @@ const PlayerProfileCard = () => {
               </Grid>
 
               <Grid container spacing={3} sx={{ mt: 2 }}>
-                {skills.map((skill, index) => (
+                {skills.map((skill) => (
                   <Grid item xs={12} sm={6} key={skill.name}>
                     <SkillCard>
                       <CardContent>
