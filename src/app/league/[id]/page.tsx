@@ -35,11 +35,13 @@ import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import Img from '@/Components/images/group451.png';
 import TrophyRoom from '@/Components/TrophyRoom';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
+import PlayerCard from '@/Components/league player card/leaguememberplayercard';
+import Group from '@/Components/images/group451.png'
+
 
 interface League {
     id: string;
@@ -55,6 +57,8 @@ interface League {
 }
 
 interface User {
+    shirtNumber: undefined;
+    positionType: undefined;
     id: string;
     firstName: string;
     lastName: string;
@@ -632,51 +636,20 @@ export default function LeagueDetailPage() {
                         </Typography>
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {league.members && league.members.length > 0 ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Box sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                                gap: 2
+                            }}>
                                 {league.members.map((member) => (
-                                    <Card key={member.id} sx={{ backgroundColor: '#0a3e1e', borderRadius: 3 }}>
-                                        <Link href={`/player/${member?.id}`}>
-                                            <CardContent sx={{ p: 2 }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                    {/* Profile image */}
-                                                    <Box
-                                                        sx={{
-                                                            width: 40,
-                                                            height: 40,
-                                                            borderRadius: '50%',
-                                                            backgroundColor: 'rgba(255,255,255,0.2)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    >
-                                                        {member.profilePicture ? (
-                                                            <Image
-                                                                src={member.profilePicture}
-                                                                alt="Profile"
-                                                                style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                                                                width={40}
-                                                                height={40}
-                                                            />
-                                                        ) : (
-                                                            <Image
-                                                                src={Img}
-                                                                alt="Profile"
-                                                                style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                                                                width={20}
-                                                                height={20}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant="body1" sx={{ color: 'white' }}>
-                                                            {member.firstName} {member.lastName}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </CardContent>
-                                        </Link>
-                                    </Card>
+                                    <PlayerCard key={member.id} member={{
+                                        id: member.id || '',
+                                        firstName: member.firstName || '',
+                                        lastName: member.lastName || '',
+                                        profilePicture: member.profilePicture || Group.src,
+                                        position: member.positionType || undefined,
+                                        shirtNumber: member.shirtNumber || 22,
+                                    }} />
                                 ))}
                             </Box>
                         ) : (

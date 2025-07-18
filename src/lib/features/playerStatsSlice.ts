@@ -31,6 +31,16 @@ interface PlayerStatsData {
     currentStats: Record<string, number>;
     accumulativeStats: Record<string, number>;
     trophies: Record<string, number>;
+    // Add these for UI compatibility:
+    id: string;
+    name: string;
+    profilePicture?: string | null;
+    shirtNo?: string;
+    age?: number;
+    style?: string;
+    position?: string;
+    positionType?: string;
+    preferredFoot?: string;
 }
 
 interface PlayerStatsState {

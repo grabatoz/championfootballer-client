@@ -11,7 +11,6 @@ import {
     MenuItem,
     Button,
     CircularProgress,
-    Alert,
     FormControl,
     InputLabel,
     SelectChangeEvent,
@@ -118,6 +117,11 @@ interface LeaderboardPlayer {
     position: string;
     profilePicture?: string;
     value: number;
+    shirtNo?: string;
+    age?: number;
+    style?: string;
+    positionType?: string;
+    preferredFoot?: string;
 }
 
 interface League {
@@ -152,7 +156,7 @@ const PlayerStatsPage = () => {
     // Move useState to the top, before any early returns or effects
     const [expandedLeagueId, setExpandedLeagueId] = useState<string | null>(null);
 
-    const { data, loading, error, filters } = useSelector((state: RootState) => state.playerStats);
+    const { data, filters } = useSelector((state: RootState) => state.playerStats);
     const { leagueId, year } = filters;
 
     const [tab, setTab] = React.useState(0);
@@ -161,6 +165,7 @@ const PlayerStatsPage = () => {
     // Leaderboard states
     const [selectedMetric, setSelectedMetric] = useState('goals');
     const [leaderboardPlayers, setLeaderboardPlayers] = useState<LeaderboardPlayer[]>([]);
+    // Use playerId from URL for selection and highlighting
     const [leaderboardLoading, setLeaderboardLoading] = useState(false);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeaderboardLeague, setSelectedLeaderboardLeague] = useState<string>('');
@@ -197,6 +202,22 @@ const PlayerStatsPage = () => {
                 }
             });
     }, [token]);
+
+    // Fetch all leaderboard players once
+    useEffect(() => {
+        if (!selectedLeaderboardLeague || !token) return;
+        setLeaderboardLoading(true);
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?leagueId=${selectedLeaderboardLeague}`)
+            .then(res => res.json())
+            .then(data => {
+                setLeaderboardPlayers(data.players || []);
+                setLeaderboardLoading(false);
+                // Remove setSelectedPlayerId from leaderboard fetch effect
+            })
+            .catch(() => {
+                setLeaderboardLoading(false);
+            });
+    }, [selectedLeaderboardLeague, token]);
 
     // Fetch leaderboard when metric or league changes
     useEffect(() => {
@@ -254,26 +275,16 @@ const PlayerStatsPage = () => {
         dispatch(setYearFilter('all'));
     };
 
-    const handlePlayerClick = async (playerId: string) => {
-        router.push(`/player/${playerId}`)
-        // setSelectedPlayerLoading(true);
-        // try {
-        //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/stats`, {
-        //         credentials: 'include',
-        //         headers: {
-        //             'Authorization': `Bearer ${token}`
-        //         }
-        //     });
-        //     const data = await response.json();
-        //     if (data.success) {
-        //         setSelectedPlayerDetails(data.data.player);
-        //     }
-        // } catch (error) {
-        //     console.error('Error fetching player details:', error);
-        // } finally {
-        //     setSelectedPlayerLoading(false);
-        // }
+    const handleLeaderboardPlayerClick = (clickedId: string) => {
+        if (clickedId !== playerId) {
+            router.push(`/player/${clickedId}`);
+        }
     };
+
+    // Use playerId from URL for highlighting and selection
+    // const selectedPlayer = leaderboardPlayers.find(p => p.id === playerId);
+
+    const { data: fullPlayerData } = useSelector((state: RootState) => state.playerStats);
 
     // --- Trophy Room Calculation Logic ---
     const allTrophyAwards = React.useMemo(() => {
@@ -294,19 +305,8 @@ const PlayerStatsPage = () => {
         return awards;
     }, [data]);
 
-    if (loading && !data) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
-    }
-    if (error) {
-        return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
-    }
-    if (!data) {
-        return <Typography sx={{ textAlign: 'center', mt: 4 }}>No data available for this player.</Typography>;
-    }
-    const { player, leagues: playerLeagues, trophies } = data;
-    if (process.env.NODE_ENV === 'development') {
-        console.log('Trophies:', trophies);
-    }
+    // Remove main content area loading spinner and loading state check
+    // Only show leaderboardLoading spinner in the leaderboard box
 
     return (
         <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh' }}>
@@ -425,46 +425,76 @@ const PlayerStatsPage = () => {
                 backgroundColor: '#1f673b',
                 borderRadius: 4,
                 position: 'relative',
-                overflow: 'visible',
+                overflow: 'auto', // enable scrolling
+                height: '100vh', // fixed height (adjust as needed)
+                // Hide scrollbar for Webkit browsers (Chrome, Safari, Edge)
+                '&::-webkit-scrollbar': { display: 'none' },
+                // Hide scrollbar for Firefox
+                scrollbarWidth: 'none',
+                // Hide scrollbar for IE/Edge
+                msOverflowStyle: 'none',
             }}>
-                <Box sx={{
+                {/* Update the main flex layout to allow the right content to scroll independently */}
+                <Box
+                    sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', lg: 'row' },
                     alignItems: { xs: 'center', lg: 'flex-start' },
                     gap: 4,
-                    mb: 4
-                }}>
-                    <Box sx={{ width: { xs: '100%', md: 320 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Box sx={{
-                            width: 180,
-                            minWidth: 140,
+                        mb: 4,
+                        height: '100vh', // Ensure full viewport height for scrolling
+                        overflow: 'hidden',
+                    }}
+                >
+                    {/* Left column: sticky player info and leaderboard */}
+                    <Box sx={{ width: { xs: '90%', md: 280 }, display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+                        <Box
+                            sx={{
+                                width: '100%',
                             maxWidth: '100%',
-                            background: '#0a3e1e',
+                                background: '#1f673b',
                             borderRadius: 4,
                             boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
                             display: 'flex',
-                            flexDirection: 'column',
+                                flexDirection: { xs: 'column', sm: 'row' },
                             alignItems: 'center',
-                            p: 2,
-                            position: 'relative',
-                            overflow: 'hidden',
-                        }}>
+                                justifyContent: 'center',
+                                p: 2,
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 2,
+                                gap: 2,
+                                height: 150,
+                                overflow: 'auto',
+                                '&::-webkit-scrollbar': { display: 'none' },
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
+                                border:'2px solid green'
+                            }}
+                        >
                             <Avatar
-                                src={player?.avatar ? (player.avatar.startsWith('http') ? player.avatar : `${process.env.NEXT_PUBLIC_API_URL}${player.avatar}`) : undefined}
-                                alt={player.name}
+                                src={fullPlayerData?.player?.profilePicture ? (
+                                    fullPlayerData.player.profilePicture.startsWith('http')
+                                        ? fullPlayerData.player.profilePicture
+                                        : `${process.env.NEXT_PUBLIC_API_URL}${fullPlayerData.player.profilePicture}`
+                                ) : undefined}
+                                alt={fullPlayerData?.player?.name}
                                 sx={{
-                                    width: 110,
-                                    height: 110,
+                                    width: 90,
+                                    height: 90,
                                     borderRadius: 3,
                                     boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                                    mb: 2,
                                     border: '3px solid #fff',
                                     objectFit: 'cover',
                                     background: '#eee',
+                                    // mr: { sm: 3, xs: 0 },
+                                    // mb: { xs: 2, sm: 0 },
                                 }}
                             />
-                            <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center', mb: 0.5 }}>{player.name}</Typography>
-                            <Typography variant="body2" sx={{ color: '#B2DFDB', textAlign: 'center', mb: 1 }}>Shirt No{player.shirtNo}</Typography>
+                            <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                                <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>{fullPlayerData?.player?.name}</Typography>
+                                <Typography variant="body2" sx={{ color: '#B2DFDB', mb: 1 }}>Shirt No {fullPlayerData?.player?.shirtNo || '00'}</Typography>
+                            </Box>
                         </Box>
                         <Paper
                             elevation={4}
@@ -472,45 +502,126 @@ const PlayerStatsPage = () => {
                                 p: 3,
                                 backgroundColor: '#1f673b',
                                 borderRadius: 4,
-                                height: 270,
+                                height: 370,
                                 overflowY: 'auto',
                                 width: '100%',
                                 maxWidth: '100%',
                                 mx: 'auto',
-                                // Hide scrollbar for Webkit browsers (Chrome, Safari, Edge)
+                                position: 'sticky',
+                                top: 230,
+                                zIndex: 1,
                                 '&::-webkit-scrollbar': { display: 'none' },
-                                // Hide scrollbar for Firefox
                                 scrollbarWidth: 'none',
-                                // Hide scrollbar for IE/Edge
                                 msOverflowStyle: 'none',
+                                border:'2px solid green'
+
                             }}
                         >
-                            <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 'bold' }}>Leaderboard - Top Players</Typography>
+                            <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 'bold' }}>Top Players</Typography>
                             {/* League and Metric Selects */}
                             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                                <FormControl size="small" sx={{ minWidth: 140, background: 'white', borderRadius: 1 }}>
-                                    <InputLabel>League</InputLabel>
+                                <FormControl size="small" sx={{ minWidth: '100%', background: 'white', borderRadius: 1 }}>
+                                    <InputLabel sx={{ color: '#fff' }}>League</InputLabel>
                                     <Select
                                         value={selectedLeaderboardLeague}
                                         label="League"
                                         onChange={e => setSelectedLeaderboardLeague(e.target.value)}
-                                        sx={{background:'#0a3e1e' , colot:'#fff'}}
+                                        sx={{
+                                            background: '#0a3e1e',
+                                            color: '#fff',
+                                            '& .MuiSelect-icon': { color: '#fff' },
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#4caf50',
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#388e3c',
+                                            },
+                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#43a047',
+                                            },
+                                        }}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    background: '#0a3e1e',
+                                                    color: '#fff',
+                                                }
+                                            }
+                                        }}
                                    >
                                         {leagues.map((l) => (
-                                            <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+                                            <MenuItem key={l.id} value={l.id} sx={{ color: '#fff' }}>{l.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
-                                <FormControl size="small" sx={{ minWidth: 140, background: 'white', borderRadius: 1 }}>
-                                    <InputLabel>Metric</InputLabel>
+                                <FormControl size="small" sx={{ minWidth: '100%', background: 'white', borderRadius: 1 }}>
+                                    <InputLabel sx={{ color: '#fff' }}>Metric</InputLabel>
                                     <Select
                                         value={selectedMetric}
                                         label="Metric"
                                         onChange={e => setSelectedMetric(e.target.value)}
+                                        sx={{
+                                            background: '#0a3e1e',
+                                            color: '#fff',
+                                            '& .MuiSelect-icon': { color: '#fff' },
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#4caf50',
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#388e3c',
+                                            },
+                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#43a047',
+                                            },
+                                        }}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    background: '#0a3e1e',
+                                                    color: '#fff',
+                                                }
+                                            }
+                                        }}
                                     >
                                         {metrics.map((m) => (
                                             <MenuItem key={m.key} value={m.key}>{m.label}</MenuItem>
                                         ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" sx={{ minWidth: '100%', background: 'white', borderRadius: 1 }}>
+                                    <InputLabel sx={{ color: '#fff' }}>Position Type</InputLabel>
+                                    <Select
+                                        value={positionFilter || ''}
+                                        label="Position Type"
+                                        onChange={e => setPositionFilter(e.target.value)}
+                                        sx={{
+                                            background: '#0a3e1e',
+                                            color: '#fff',
+                                            '& .MuiSelect-icon': { color: '#fff' },
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#4caf50',
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#388e3c',
+                                            },
+                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#43a047',
+                                            },
+                                        }}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    background: '#0a3e1e',
+                                                    color: '#fff',
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <MenuItem value="">All</MenuItem>
+                                        <MenuItem value="Forward">Forward</MenuItem>
+                                        <MenuItem value="Midfielder">Midfielder</MenuItem>
+                                        <MenuItem value="Defender">Defender</MenuItem>
+                                        <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Box>
@@ -532,21 +643,7 @@ const PlayerStatsPage = () => {
                                     onChange={e => setStyleFilter(e.target.value)}
                                     sx={{ background: 'white', borderRadius: 1 }}
                                 /> */}
-                                <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
-                                    <InputLabel>Position Type</InputLabel>
-                                    <Select
-                                        value={positionFilter || ''}
-                                        label="Position Type"
-                                        onChange={e => setPositionFilter(e.target.value)}
-                                    
-                                    >
-                                        <MenuItem value="">All</MenuItem>
-                                        <MenuItem value="Forward">Forward</MenuItem>
-                                        <MenuItem value="Midfielder">Midfielder</MenuItem>
-                                        <MenuItem value="Defender">Defender</MenuItem>
-                                        <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
-                                    </Select>
-                                </FormControl>
+
 
 
                             </Box>
@@ -572,7 +669,7 @@ const PlayerStatsPage = () => {
                                                     cursor: 'pointer',
                                                     boxShadow: 'none',
                                                 }}
-                                                onClick={() => handlePlayerClick(player.id)}
+                                                onClick={() => handleLeaderboardPlayerClick(player.id)}
                                             >
                                                 <Avatar
                                                     src={
@@ -600,7 +697,8 @@ const PlayerStatsPage = () => {
                     </Box>
 
 
-                    <Box sx={{ flex: 1, width: '100%', maxWidth: '1400px' }}>
+                    {/* Right column: main content, scrollable */}
+                    <Box sx={{ flex: 1, width: '100%', maxWidth: '1400px', height: '100vh', overflowY: 'auto' }}>
                         {tab === 0 && (
                             <Box>
                                 <Box sx={{
@@ -611,13 +709,13 @@ const PlayerStatsPage = () => {
                                     alignItems: 'center'
                                 }}>
                                     <Box sx={{ flex: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{player.name}</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{fullPlayerData?.player?.name}</Typography>
                                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {player.age || '-'}</Typography>
-                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Style: {player.style || '-'}</Typography>
-                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position: {player.position || '-'}</Typography>
-                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position Type: {player.positionType || '-'}</Typography>
-                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Preferred Foot: {player.preferredFoot || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {fullPlayerData?.player?.age || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Style: {fullPlayerData?.player?.style || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position: {fullPlayerData?.player?.position || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position Type: {fullPlayerData?.player?.positionType || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Preferred Foot: {fullPlayerData?.player?.preferredFoot || '-'}</Typography>
                                         </Box>
                                     </Box>
                                 </Box>
@@ -633,7 +731,7 @@ const PlayerStatsPage = () => {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, // 3 columns per row on sm+
                                         }}
                                     >
-                                        {playerLeagues.map((l: League) => (
+                                        {data?.leagues.map((l: LeagueWithMatchesTyped) => (
                                             <Box
                                                 key={l.id}
                                                 sx={{
@@ -651,7 +749,7 @@ const PlayerStatsPage = () => {
                                                     sx={{ width: 50, height: 30 }}
                                                     variant="rounded"
                                                 />
-                                                <Link href={`/league/${l.id}?profilePlayerId=${player.id}`}>
+                                                <Link href={`/league/${l.id}?profilePlayerId=${fullPlayerData?.player?.id}`}>
                                                     <Typography
                                                         variant="subtitle1"
                                                         sx={{ fontWeight: 'bold', color: 'white', textDecoration: 'underline' }}
@@ -706,12 +804,12 @@ const PlayerStatsPage = () => {
                                                 if (selected === 'all') {
                                                     return 'All Leagues';
                                                 }
-                                                const league = data.leagues.find((l: League) => l.id === selected);
+                                                const league = data?.leagues.find((l: League) => l.id === selected);
                                                 return league ? league.name : '';
                                             }}
                                         >
                                             <MenuItem value="all">All Leagues</MenuItem>
-                                            {data.leagues.map((l: LeagueWithMatchesTyped) => (
+                                            {data?.leagues.map((l: LeagueWithMatchesTyped) => (
                                                 <MenuItem key={l.id} value={l.id}>
                                                     {l.name}
                                                 </MenuItem>
@@ -742,16 +840,16 @@ const PlayerStatsPage = () => {
                                     </Button>
                                 </Box>
                                 <Divider sx={{ my: 4, borderColor: '#2e7d32' }} />
-                                {data.leagues.length === 0 ? (
+                                {data?.leagues.length === 0 ? (
                                     <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>
                                         No leagues found.
                                     </Typography>
                                 ) : (
-                                    data.leagues
+                                    data?.leagues
                                         .filter((league: LeagueWithMatchesTyped) => leagueId === 'all' || league.id === leagueId)
                                         .map((league: LeagueWithMatchesTyped) => (
                                             <Box key={league.id} sx={{ mb: 2 }}>
-                                                <Link href={`/league/${league.id}?profilePlayerId=${player.id}`}>
+                                                <Link href={`/league/${league.id}?profilePlayerId=${fullPlayerData?.player?.id}`}>
                                                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>{league.name}</Typography>
                                                 </Link>
                                                 {(league.matches?.length ?? 0) === 0 ? (
@@ -907,14 +1005,14 @@ const PlayerStatsPage = () => {
                         {tab === 3 && (
                             <Box>
                                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 3 }}>Leagues Overview</Typography>
-                                {playerLeagues.length === 0 ? (
+                                {data?.leagues.length === 0 ? (
                                     <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>
                                         No leagues found.
                                     </Typography>
                                 ) : (
-                                    playerLeagues.map((league: LeagueWithMatchesTyped) => {
+                                    data?.leagues.map((league: LeagueWithMatchesTyped) => {
                                         // Only show leagues where the user is a member
-                                        const isMember = league.members && league.members.some((m: { id: string }) => m.id === player.id);
+                                        const isMember = league.members && league.members.some((m: { id: string }) => m.id === fullPlayerData?.player?.id);
                                         if (!isMember) return null;
                                         return (
                                             <Paper key={league.id} sx={{ mb: 3, p: 2, background: '#174d3c', color: 'white', borderRadius: 2 }}>
@@ -932,7 +1030,7 @@ const PlayerStatsPage = () => {
                                                 {/* Show message if no matches played in this league */}
                                                 {(!league.matches || league.matches.length === 0) && (
                                                     <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
-                                                        {player.name} hasn&apos;t played any matches in this league yet.
+                                                        {fullPlayerData?.player?.name} hasn&apos;t played any matches in this league yet.
                                                     </Typography>
                                                 )}
 
@@ -941,8 +1039,8 @@ const PlayerStatsPage = () => {
                                                         {league.matches && league.matches.length > 0 ? (
                                                             league.matches.filter((match: LeagueMatch) => {
                                                                 // Only show matches where the user played
-                                                                const played = (match.homeTeamUsers?.some((u: { id: string }) => u.id === player.id)) ||
-                                                                    (match.awayTeamUsers?.some((u: { id: string }) => u.id === player.id));
+                                                                const played = (match.homeTeamUsers?.some((u: { id: string }) => u.id === fullPlayerData?.player?.id)) ||
+                                                                    (match.awayTeamUsers?.some((u: { id: string }) => u.id === fullPlayerData?.player?.id));
                                                                 return played;
                                                             }).map((match: LeagueMatch) => {
                                                                 // The backend now provides playerStats directly for each match
