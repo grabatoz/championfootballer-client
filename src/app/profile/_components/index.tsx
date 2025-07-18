@@ -114,6 +114,9 @@ const StyledTextField = styled(TextField)(({}) => ({
   '& .MuiInputLabel-root': {
     color: '#fff',
   },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#fff',
+  },
 }))
 
 // Styled Radio for green accent and white label
@@ -334,13 +337,13 @@ const PlayerProfileCard = () => {
                   </ProfileAvatar>
                 </Zoom>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 3 }}>
-                  <Typography variant="h4" fontWeight="bold" sx={{ mt: 0, mb: 1, color: '#fff' }}>
+                  <Typography variant="h4" fontWeight="bold" sx={{ mt: 0, mb: 1, color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
                   </Typography>
                   <Chip
                     label={positionType || "Position"}
                     color="primary"
-                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700 }}
+                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700, boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)', border: '1.5px solid #fff' }}
                   />
                 </Box>
               </Box>
@@ -371,8 +374,8 @@ const PlayerProfileCard = () => {
                           </Typography>
                         </Box>
                         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Typography sx={{ color: '#fff' }}>Shirt #:</Typography>
-                          <Typography fontWeight="bold" sx={{ color: '#fff' }}>{user?.shirtNumber || "N/A"}</Typography>
+                          <Typography sx={{ color: '#fff' }}>Shirt No:</Typography>
+                          <Typography fontWeight="bold" sx={{ color: '#fff' }}>{user?.shirtNumber || "00"}</Typography>
                         </Box>
                         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                           <Typography sx={{ color: '#fff' }}>Preferred Foot:</Typography>
@@ -681,7 +684,7 @@ const PlayerProfileCard = () => {
                 variant="h5"
                 fontWeight="bold"
                 align="center"
-                sx={{ mb: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: '#fff' }}
+                sx={{ mb: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
               >
                 <Sports color="primary" /> Skills & Attributes
               </Typography>
@@ -702,11 +705,24 @@ const PlayerProfileCard = () => {
               <Grid container spacing={3} sx={{ mt: 2 }}>
                 {skills.map((skill) => (
                   <Grid item xs={12} sm={6} key={skill.name}>
-                    <SkillCard sx={{ background: 'linear-gradient(135deg, #388e3c 0%, #1f673b 100%)', color: '#fff' }}>
+                    <SkillCard
+                      sx={{
+                        background: 'linear-gradient(135deg, #388e3c 0%, #1f673b 100%)',
+                        color: '#fff',
+                        borderRadius: 4,
+                        boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
+                        border: '1.5px solid rgba(67,160,71,0.3)',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.025)',
+                          boxShadow: '0 12px 40px 0 rgba(67,160,71,0.28)',
+                        }
+                      }}
+                    >
                       <CardContent>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                          <Typography variant="h6" sx={{ color: '#fff' }}>{skill.icon}</Typography>
-                          <Typography variant="h6" fontWeight="bold" sx={{ color: '#fff' }}>
+                          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold', letterSpacing: 0.5, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>{skill.icon}</Typography>
+                          <Typography variant="h6" fontWeight="bold" sx={{ color: '#fff', letterSpacing: 0.5, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
                             {skill.name}
                           </Typography>
                         </Box>
@@ -732,6 +748,10 @@ const PlayerProfileCard = () => {
                               backgroundColor: getSkillLabel(skill.value).color,
                               color: "white",
                               fontWeight: "bold",
+                              fontSize: '1rem',
+                              px: 2,
+                              boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                              border: '1.5px solid #fff',
                             }}
                           />
                         </Box>
@@ -746,7 +766,7 @@ const PlayerProfileCard = () => {
                   variant="outlined"
                   onClick={handlePrevious}
                   startIcon={<ArrowBack />}
-                  sx={{ borderRadius: 20, px: 3, color: '#fff', borderColor: '#43a047', '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' } }}
+                  sx={{ borderRadius: 20, px: 3, color: '#fff', borderColor: '#43a047', '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' }, boxShadow: '0 2px 8px 0 rgba(67,160,71,0.12)' }}
                 >
                   Previous
                 </Button>
@@ -754,7 +774,7 @@ const PlayerProfileCard = () => {
                   variant="contained"
                   onClick={handleNext}
                   endIcon={<ArrowForward />}
-                  sx={{ borderRadius: 20, px: 3, bgcolor: '#43a047', color: '#fff', '&:hover': { bgcolor: '#388e3c' } }}
+                  sx={{ borderRadius: 20, px: 3, bgcolor: '#43a047', color: '#fff', boxShadow: '0 4px 24px 0 rgba(67,160,71,0.25)', '&:hover': { bgcolor: '#388e3c', boxShadow: '0 8px 32px 0 rgba(67,160,71,0.32)' } }}
                 >
                   Next
                 </Button>

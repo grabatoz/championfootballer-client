@@ -100,7 +100,7 @@ export default function PlayerCard({ member }: PlayerCardProps) {
                 alt="Profile"
                 width={64}
                 height={64}
-                style={{ objectFit: 'cover', borderRadius: '50%' }}
+                style={{ objectFit: 'cover', borderRadius: '50%' , height: '70px' , width: '70px' }}
               />
             ) : (
               <Image
