@@ -89,7 +89,7 @@ const StyledSlider = styled(Slider)(({  }) => ({
 }))
 
 // Styled TextField for green bg and white text
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(({}) => ({
   '& .MuiOutlinedInput-root': {
     background: '#1f673b',
     color: '#fff',
@@ -117,7 +117,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }))
 
 // Styled Radio for green accent and white label
-const StyledRadio = styled(Radio)(({ theme }) => ({
+const StyledRadio = styled(Radio)(({}) => ({
   color: '#43a047',
   '&.Mui-checked': {
     color: '#43a047',
