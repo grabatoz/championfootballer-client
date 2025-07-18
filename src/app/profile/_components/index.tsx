@@ -310,6 +310,9 @@ const PlayerProfileCard = () => {
                       height: "100%",
                       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                       color: "white",
+                      // background: "#0a3e1e",
+                      // color: "white",
+                      // border:'2px solid green'
                     }}
                   >
                     <CardContent>
