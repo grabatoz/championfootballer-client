@@ -871,7 +871,7 @@ export default function LeagueDetailPage() {
                                   }
                                   return (
                                     <React.Fragment key={row.id}>
-                                        <Link href={`/profile/${row.id}`} passHref> 
+                                        <Link href={`/player/${row.id}`} passHref> 
                                       <Box
                                         sx={{
                                           display: 'flex',
