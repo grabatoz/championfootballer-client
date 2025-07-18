@@ -283,7 +283,7 @@ const PlayerProfileCard = () => {
               ))}
             </Stepper>
 
-            <StyledPaper elevation={4} sx={{ p: 4, border: `2px solid #4CAF50` }}>
+            <StyledPaper elevation={4} sx={{ p: 4, border: `2px solid #4CAF50` , background:'#1f673b' }}>
               {/* Avatar, Name, PositionType in a row */}
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4, gap: 4 }}>
                 <Zoom in timeout={600}>
@@ -292,13 +292,13 @@ const PlayerProfileCard = () => {
                   </ProfileAvatar>
                 </Zoom>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 3 }}>
-                  <Typography variant="h4" fontWeight="bold" sx={{ mt: 0, mb: 1, color: '#4CAF50' }}>
+                  <Typography variant="h4" fontWeight="bold" sx={{ mt: 0, mb: 1, color: '#fff' }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
                   </Typography>
                   <Chip
                     label={positionType || "Position"}
                     color="primary"
-                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#81C784', color: 'white', fontWeight: 700 }}
+                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700 }}
                   />
                 </Box>
               </Box>
@@ -395,13 +395,15 @@ const PlayerProfileCard = () => {
                   onClick={handleNext}
                   endIcon={<ArrowForward />}
                   sx={{
-                    background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
+                    // background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
+                    background: "#43a047",
                     borderRadius: 25,
                     px: 4,
                     py: 1.5,
                     fontSize: "1.1rem",
                     textTransform: "none",
-                    boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
+                    '&:hover': { bgcolor: '#388e3c' },
+                    // boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
                   }}
                 >
                   Edit Profile
