@@ -13,6 +13,7 @@ import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import React from 'react';
+import Link from 'next/link';
 
 
 interface Player {
@@ -175,6 +176,7 @@ export default function LeaderBoardPage() {
           else if (idx === 2) badgeImg = ThirdBadge;
           return (
             <React.Fragment key={player.id}>
+              <Link href={`/player/${player.id}`} passHref> 
               <Paper sx={{ p: 2, display: 'flex', color:'white' , alignItems: 'center', background: '#0a3e1e', borderRadius: 0 }}>
                 {/* Ranking badge or number */}
                 <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
@@ -204,6 +206,7 @@ export default function LeaderBoardPage() {
                 </Box>
               </Paper>
               <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+              </Link>
             </React.Fragment>
           );
         })
