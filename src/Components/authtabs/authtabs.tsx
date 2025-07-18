@@ -8,10 +8,11 @@ import { authAPI } from '@/lib/api';
 import {
   Tabs, Tab, Box, TextField, Button, Typography, CircularProgress,
   Alert, FormControl, FormLabel, RadioGroup, FormControlLabel,
-  Radio, Checkbox, Stack} from '@mui/material';
+  Radio, Checkbox, Stack, IconButton} from '@mui/material';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import toast from 'react-hot-toast';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const AuthTabs = () => {
   const router = useRouter();
@@ -35,6 +36,10 @@ const AuthTabs = () => {
 
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState(false);
+
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   useEffect(() => {
     const checkServerConnection = async () => {
@@ -218,7 +223,7 @@ const AuthTabs = () => {
               InputLabelProps={{
                 sx: { color: '#ccc' },
               }} />
-            <TextField fullWidth label="Password" name="password" type="password" value={loginData.password} onChange={handleLoginChange} size="small" required sx={{
+            <TextField fullWidth label="Password" name="password" type={showLoginPassword ? "text" : "password"} value={loginData.password} onChange={handleLoginChange} size="small" required sx={{
               input: {
                 color: 'black',
                 backgroundColor: 'rgba(255,255,255,0.05)',
@@ -237,10 +242,22 @@ const AuthTabs = () => {
                 WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
                 WebkitTextFillColor: 'black',
               },
+            }}InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowLoginPassword((show) => !show)}
+                  edge="end"
+                  size="small"
+                  tabIndex={-1}
+                >
+                  {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              ),
             }}
               InputLabelProps={{
                 sx: { color: '#ccc' },
-              }} />
+              }}
+               />
             <Button type="submit" variant="contained" color="success" fullWidth disabled={loginLoading || serverStatus === 'offline'}>
               {loginLoading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
             </Button>
@@ -280,7 +297,7 @@ const AuthTabs = () => {
               InputLabelProps={{
                 sx: { color: '#ccc' },
               }} />
-            <TextField fullWidth label="Password" name="password" type="password" value={registerData.password} onChange={handleRegisterChange} size="small" required sx={{
+            <TextField fullWidth label="Password" name="password" type={showRegisterPassword ? "text" : "password"} value={registerData.password} onChange={handleRegisterChange} size="small" required sx={{
               input: {
                 color: 'black',
                 backgroundColor: 'rgba(255,255,255,0.05)',
@@ -302,8 +319,20 @@ const AuthTabs = () => {
             }}
               InputLabelProps={{
                 sx: { color: '#ccc' },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <IconButton
+                    onClick={() => setShowRegisterPassword((show) => !show)}
+                    edge="end"
+                    size="small"
+                    tabIndex={-1}
+                  >
+                    {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                ),
               }} />
-            <TextField fullWidth label="Confirm Password" name="confirmPassword" type="password" value={registerData.confirmPassword} onChange={handleRegisterChange} size="small" required sx={{
+            <TextField fullWidth label="Confirm Password" name="confirmPassword" type={showRegisterConfirmPassword ? "text" : "password"} value={registerData.confirmPassword} onChange={handleRegisterChange} size="small" required sx={{
               input: {
                 color: 'black',
                 backgroundColor: 'rgba(255,255,255,0.05)',
@@ -325,6 +354,18 @@ const AuthTabs = () => {
             }}
               InputLabelProps={{
                 sx: { color: '#ccc' },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <IconButton
+                    onClick={() => setShowRegisterConfirmPassword((show) => !show)}
+                    edge="end"
+                    size="small"
+                    tabIndex={-1}
+                  >
+                    {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                ),
               }} />
             <TextField fullWidth label="First Name" name="firstName" value={registerData.firstName} onChange={handleRegisterChange} size="small" required sx={{
               input: {

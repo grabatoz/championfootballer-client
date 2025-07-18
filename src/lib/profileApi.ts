@@ -32,7 +32,7 @@ export const profileAPI = {
     try {
       const token = Cookies.get('token');
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

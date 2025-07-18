@@ -36,6 +36,7 @@ import {
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { useRouter } from "next/navigation"
+import Group from "@/Components/images/group451.png"
 
 // Styled components for better design
 const StyledPaper = styled(Paper)(({}) => ({
@@ -136,12 +137,12 @@ const StyledFormLabel = styled(FormLabel)(() => ({
 const PlayerProfileCard = () => {
   const { user, token, isAuthenticated } = useAuth()
   const [step, setStep] = useState(1)
-  const [dribbling, setDribbling] = useState(user?.skills?.dribbling ?? 50)
-  const [shooting, setShooting] = useState(user?.skills?.shooting ?? 50)
-  const [passing, setPassing] = useState(user?.skills?.passing ?? 50)
-  const [pace, setPace] = useState(user?.skills?.pace ?? 50)
-  const [defending, setDefending] = useState(user?.skills?.defending ?? 50)
-  const [physical, setPhysical] = useState(user?.skills?.physical ?? 50)
+  const [dribbling, setDribbling] = useState(user?.skills?.dribbling )
+  const [shooting, setShooting] = useState(user?.skills?.shooting )
+  const [passing, setPassing] = useState(user?.skills?.passing )
+  const [pace, setPace] = useState(user?.skills?.pace )
+  const [defending, setDefending] = useState(user?.skills?.defending )
+  const [physical, setPhysical] = useState(user?.skills?.physical)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string>("")
   const [firstName, setFirstName] = useState(user?.firstName || "")
@@ -153,19 +154,19 @@ const PlayerProfileCard = () => {
   const [style, setStyle] = useState(user?.style || "")
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
   const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "")
-  const [password, setPassword] = useState("")
+  const [password, setPassword] = useState(user?.password || "")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imgSrc, setImgSrc] = useState(user?.profilePicture || "/placeholder.svg?height=120&width=120")
+  const [imgSrc, setImgSrc] = useState(user?.profilePicture || "/assets/group451.png?height=120&width=120")
 
   const router = useRouter()
 
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats", "Account Settings"]
 
   useEffect(() => {
-    setImgSrc(user?.profilePicture || "/placeholder.svg?height=120&width=120")
+    setImgSrc(user?.profilePicture || "/assets/group451.png?height=120&width=120")
   }, [user?.profilePicture])
 
   useEffect(() => {
@@ -238,12 +239,12 @@ const PlayerProfileCard = () => {
         preferredFoot,
         shirtNumber,
         skills: {
-          dribbling,
-          shooting,
-          passing,
-          pace,
-          defending,
-          physical,
+          dribbling: dribbling ?? 50,
+          shooting: shooting ?? 50,
+          passing: passing ?? 50,
+          pace: pace ?? 50,
+          defending: defending ?? 50,
+          physical: physical ?? 50,
         },
         ...(password && { password }),
       }
@@ -727,25 +728,25 @@ const PlayerProfileCard = () => {
                           </Typography>
                         </Box>
                         <StyledSlider
-                          value={skill.value}
+                          value={skill.value ?? 50}
                           onChange={(e, value) => skill.setter(value as number)}
                           min={50}
                           max={99}
                           step={1}
                           sx={{
                             "& .MuiSlider-thumb": {
-                              backgroundColor: getSkillColor(skill.value),
+                              backgroundColor: getSkillColor(skill.value ?? 50),
                             },
                             "& .MuiSlider-track": {
-                              backgroundColor: getSkillColor(skill.value),
+                              backgroundColor: getSkillColor(skill.value ?? 50),
                             },
                           }}
                         />
                         <Box sx={{ textAlign: "center", mt: 1 }}>
                           <Chip
-                            label={getSkillLabel(skill.value).text}
+                            label={getSkillLabel(skill.value ?? 50).text}
                             sx={{
-                              backgroundColor: getSkillLabel(skill.value).color,
+                              backgroundColor: getSkillLabel(skill.value ?? 50).color,
                               color: "white",
                               fontWeight: "bold",
                               fontSize: '1rem',

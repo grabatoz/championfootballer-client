@@ -621,7 +621,7 @@ export const updateProfile = async ( token: string , updateData: UpdateProfileDa
   console.log('🔍 Full updateData object:', JSON.stringify(updateData, null, 2));
   
   const response = await fetch(`${apiUrl}/profile`, {
-    method: "PUT",
+    method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
