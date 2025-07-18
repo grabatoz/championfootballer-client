@@ -36,7 +36,6 @@ import {
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { useRouter } from "next/navigation"
-import Group from "@/Components/images/group451.png"
 
 // Styled components for better design
 const StyledPaper = styled(Paper)(({}) => ({
