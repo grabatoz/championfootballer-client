@@ -352,8 +352,8 @@ const PlayerStatsPage = () => {
                 </Box>
             </Box>
 
-                {/* Metric Buttons - Show for all tabs */}
-                {/* <Box
+            {/* Metric Buttons - Show for all tabs */}
+            {/* <Box
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
@@ -393,8 +393,8 @@ const PlayerStatsPage = () => {
                     ))}
                 </Box> */}
 
-                {/* League Selector - Show for all tabs */}
-                {/* <Box sx={{ p: 2, background: '#1f673b' }}>
+            {/* League Selector - Show for all tabs */}
+            {/* <Box sx={{ p: 2, background: '#1f673b' }}>
                     <FormControl fullWidth>
                         <InputLabel sx={{ color: 'white' }}>Select League</InputLabel>
                         <Select
@@ -437,10 +437,10 @@ const PlayerStatsPage = () => {
                 {/* Update the main flex layout to allow the right content to scroll independently */}
                 <Box
                     sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', lg: 'row' },
-                    alignItems: { xs: 'center', lg: 'flex-start' },
-                    gap: 4,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', lg: 'row' },
+                        alignItems: { xs: 'center', lg: 'flex-start' },
+                        gap: 4,
                         mb: 4,
                         height: '100vh', // Ensure full viewport height for scrolling
                         overflow: 'hidden',
@@ -451,13 +451,13 @@ const PlayerStatsPage = () => {
                         <Box
                             sx={{
                                 width: '100%',
-                            maxWidth: '100%',
+                                maxWidth: '100%',
                                 background: '#1f673b',
-                            borderRadius: 4,
-                            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-                            display: 'flex',
+                                borderRadius: 4,
+                                boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                                display: 'flex',
                                 flexDirection: { xs: 'column', sm: 'row' },
-                            alignItems: 'center',
+                                alignItems: 'center',
                                 justifyContent: 'center',
                                 p: 2,
                                 position: 'sticky',
@@ -469,7 +469,7 @@ const PlayerStatsPage = () => {
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
-                                border:'2px solid green'
+                                border: '2px solid green'
                             }}
                         >
                             <Avatar
@@ -513,7 +513,7 @@ const PlayerStatsPage = () => {
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
-                                border:'2px solid green'
+                                border: '2px solid green'
 
                             }}
                         >
@@ -548,7 +548,7 @@ const PlayerStatsPage = () => {
                                                 }
                                             }
                                         }}
-                                   >
+                                    >
                                         {leagues.map((l) => (
                                             <MenuItem key={l.id} value={l.id} sx={{ color: '#fff' }}>{l.name}</MenuItem>
                                         ))}
@@ -688,7 +688,7 @@ const PlayerStatsPage = () => {
                                             {/* {idx < leaderboardPlayers.length - 1 && (
                                                 <Divider sx={{ backgroundColor: '#fff', height: 1, my: 1 }} />
                                             )} */}
-                                             <Divider sx={{ borderColor: '#fff' }} />
+                                            <Divider sx={{ borderColor: '#fff' }} />
                                         </React.Fragment>
                                     ))}
                                 </Box>
@@ -771,21 +771,25 @@ const PlayerStatsPage = () => {
                                     alignItems: 'center',
                                     gap: 3,
                                     mb: 4,
-                                    flexWrap: 'wrap'
+                                    flexWrap: 'wrap',
+                                    mt:1
                                 }}>
                                     <FormControl size="small" sx={{
                                         minWidth: 140,
                                         flex: 1,
                                         backgroundColor: '#1f673b',
                                         borderRadius: '8px',
-                                        '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' }
+                                        '.MuiOutlinedInput-notchedOutline': { border: '1.5px solid #43a047 !important' },
+                                        '& .MuiInputBase-input': { color: '#fff' },
+                                        '& .MuiInputLabel-root': { color: '#fff !important' },
+                                        '& .MuiSvgIcon-root': { color: '#fff !important' },
                                     }}>
                                         <DatePicker
                                             label={'Year'}
                                             views={['year']}
                                             value={year && year !== 'all' ? dayjs(year, 'YYYY') : null}
                                             onChange={handleYearChange}
-                                            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                            slotProps={{ textField: { size: 'small', fullWidth: true, InputLabelProps: { sx: { color: '#fff' } }, sx: { '& .MuiOutlinedInput-root': { color: '#fff', background: 'transparent', borderRadius: 2, '& fieldset': { borderColor: '#43a047 !important' }, '&:hover fieldset': { borderColor: '#43a047 !important' }, '&.Mui-focused fieldset': { borderColor: '#43a047 !important' } }, '& .MuiInputLabel-root': { color: '#fff !important' }, '& .MuiInputBase-input': { color: '#fff' } } } }}
                                         />
                                     </FormControl>
                                     <FormControl size="small" sx={{
@@ -793,13 +797,17 @@ const PlayerStatsPage = () => {
                                         flex: 2,
                                         backgroundColor: '#1f673b',
                                         borderRadius: '8px',
-                                        '.MuiOutlinedInput-notchedOutline': { border: '1px solid #B2DFDB' }
+                                        '.MuiOutlinedInput-notchedOutline': { border: '1.5px solid #43a047 !important' },
+                                        '& .MuiInputBase-input': { color: '#fff' },
+                                        '& .MuiInputLabel-root': { color: '#fff !important' },
+                                        '& .MuiSelect-icon': { color: '#fff' },
                                     }}>
-                                        <InputLabel>League</InputLabel>
+                                        <InputLabel sx={{ color: '#fff !important' }}>League</InputLabel>
                                         <Select
                                             value={leagueId || 'all'}
                                             label="League"
                                             onChange={handleLeagueChange}
+                                            sx={{ color: '#fff', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' } }}
                                             renderValue={(selected) => {
                                                 if (selected === 'all') {
                                                     return 'All Leagues';
@@ -808,9 +816,9 @@ const PlayerStatsPage = () => {
                                                 return league ? league.name : '';
                                             }}
                                         >
-                                            <MenuItem value="all">All Leagues</MenuItem>
+                                            <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
                                             {data?.leagues.map((l: LeagueWithMatchesTyped) => (
-                                                <MenuItem key={l.id} value={l.id}>
+                                                <MenuItem key={l.id} value={l.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
                                                     {l.name}
                                                 </MenuItem>
                                             ))}

@@ -322,71 +322,80 @@ export default function AllMatches() {
                 </Button>
 
                 {/* Header */}
-                <Box sx={{ mb: 4 }}>
-                    <Typography
-                        variant="h3"
-                        fontWeight="bold"
-                        align="center"
-                        color="black"
-                        sx={{ border:'black' }}
-                    >
-                        {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
-                    </Typography>
-                    <Typography
-                        variant="subtitle1"
-                        align="center"
-                        color="black"
-                        sx={{ mt: 1 }}
-                    >
-                        {selectedLeague === 'all' 
-                            ? 'Select a league to view its matches' 
-                            : `Viewing matches for ${selectedLeagueName}`}
-                    </Typography>
-                </Box>
-                {/* League Dropdown */}
-                <Box sx={{ mb: 4 }}>
-                    <FormControl 
-                        fullWidth
-                        sx={{ 
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            borderRadius: 1,
-                            '& .MuiOutlinedInput-root': {
-                                color: 'black',
-                                '& fieldset': {
-                                    borderColor: 'black',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'black',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'black',
-                                },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'black',
-                            },
-                            '& .MuiSelect-icon': {
-                                color: 'black',
-                            },
-                        }}
-                    >
-                        <InputLabel id="league-select-label">Select League</InputLabel>
-                        <Select
-                            labelId="league-select-label"
-                            id="league-select"
-                            value={selectedLeague}
-                            label="Select League"
-                            onChange={handleLeagueChange}
-                        >
-                            <MenuItem value="all">All Leagues</MenuItem>
-                            {leagues.map((league) => (
-                                <MenuItem key={league.id} value={league.id}>
-                                    {league.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Box>
+                <Box sx={{
+  mb: 4,
+  background: 'linear-gradient(135deg, #1f673b 0%, #43a047 100%)',
+  borderRadius: 4,
+  boxShadow: '0 4px 24px 0 rgba(67,160,71,0.18)',
+  p: 4,
+}}>
+  <Typography
+    variant="h3"
+    fontWeight="bold"
+    align="center"
+    sx={{ color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+  >
+    {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
+  </Typography>
+  <Typography
+    variant="subtitle1"
+    align="center"
+    sx={{ mt: 1, color: '#e0f2f1', fontWeight: 500 }}
+  >
+    {selectedLeague === 'all'
+      ? 'Select a league to view its matches'
+      : `Viewing matches for ${selectedLeagueName}`}
+  </Typography>
+</Box>
+{/* League Dropdown */}
+<Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+  <FormControl
+    fullWidth
+    sx={{
+      maxWidth: 400,
+      background: 'linear-gradient(90deg, #1f673b 0%, #43a047 100%)',
+      borderRadius: 3,
+      boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
+      '& .MuiOutlinedInput-root': {
+        color: '#fff',
+        background: 'transparent',
+        borderRadius: 3,
+        '& fieldset': {
+          borderColor: '#43a047',
+        },
+        '&:hover fieldset': {
+          borderColor: '#388e3c',
+        },
+        '&.Mui-focused fieldset': {
+          borderColor: '#43a047',
+        },
+      },
+      '& .MuiInputLabel-root': {
+        color: '#fff',
+      },
+      '& .MuiSelect-icon': {
+        color: '#fff',
+      },
+    }}
+  >
+    <InputLabel id="league-select-label" sx={{ color: '#fff' }}>Select League</InputLabel>
+    <Select
+      labelId="league-select-label"
+      id="league-select"
+      value={selectedLeague}
+      label="Select League"
+      onChange={handleLeagueChange}
+      sx={{ color: '#fff' }}
+    >
+      <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
+      {leagues.map((league) => (
+        <MenuItem key={league.id} value={league.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
+          {league.name}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+</Box>
 
                 {/* Match Cards */}
                 <Box sx={{
