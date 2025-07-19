@@ -85,8 +85,23 @@ const AllPlayersPage = () => {
   });
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, backgroundColor: '#1f673b', minHeight: '100vh', color: 'white' }}>
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: 'transparent' }}>
+    <Container maxWidth="md" sx={{ 
+      py: 4, 
+      backgroundColor: '#1f673b', 
+      height: '100vh', 
+      color: 'white',
+      borderRadius: 5,
+      overflow: 'hidden',
+      mt:3
+    }}>
+      <Paper elevation={0} sx={{ 
+        p: 3, 
+        borderRadius: 3, 
+        backgroundColor: 'transparent',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff' }}>
           All Players
         </Typography>
@@ -137,76 +152,87 @@ const AllPlayersPage = () => {
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
         ) : (
-          <List>
-            {sortedPlayers.map((player: Player, idx: number) => {
-              const isSelected = selectedPlayerId === player.id;
-              // Gold, silver, bronze backgrounds
-              let rowBg = '#0a4822';
-              let textColor = '#fff';
-              let fontWeight = 500;
-              let badgeImg = null;
-              let rowGradient = null;
-              if (idx === 0) {
-                rowGradient = '#0a3e1e'; // gold/orange
-                textColor = '#fff';
-                fontWeight = 700;
-                badgeImg = FirstBadge;
-              } else if (idx === 1) {
-                rowBg = '#0a4822'; // silver
-                badgeImg = SecondBadge;
-              } else if (idx === 2) {
-                rowBg = '#094420'; // bronze
-                badgeImg = ThirdBadge;
-              } else {
-                rowBg = '#0a4822';
-              }
-              return (
-                <React.Fragment key={player.id}>
-                  <ListItem
-                    onClick={() => {
-                      setSelectedPlayerId(player.id);
-                      router.push(`/player/${player.id}`);
-                    }}
-                    sx={{
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                      background: rowGradient ? rowGradient : rowBg,
-                      color: textColor,
-                      fontWeight,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {/* Ranking badge or number */}
-                    <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
-                      {badgeImg ? (
-                        <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
-                      ) : (
-                        <Box sx={{
-                          width: 28, height: 28, display: 'flex',
-                          alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14,
-                          borderRadius: '50%', background: 'rgba(255,255,255,0.15)'
-                        }}>{`${idx + 1}th`}</Box>
-                      )}
-                    </Box>
-                    <ListItemAvatar>
-                      <Avatar src={player?.profilePicture || '/assets/group.svg'} />
-                    </ListItemAvatar>
-                    <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium' }} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 8, ml: 'auto' }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
-                        <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : '#00C853' }} />
+          <Box sx={{ 
+            flex: 1, 
+            overflow: 'auto', 
+            borderRadius: 3,
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}>
+            <List>
+              {sortedPlayers.map((player: Player, idx: number) => {
+                const isSelected = selectedPlayerId === player.id;
+                // Gold, silver, bronze backgrounds
+                let rowBg = '#0a4822';
+                let textColor = '#fff';
+                let fontWeight = 500;
+                let badgeImg = null;
+                let rowGradient = null;
+                if (idx === 0) {
+                  rowGradient = '#0a3e1e'; // gold/orange
+                  textColor = '#fff';
+                  fontWeight = 700;
+                  badgeImg = FirstBadge;
+                } else if (idx === 1) {
+                  rowBg = '#0a4822'; // silver
+                  badgeImg = SecondBadge;
+                } else if (idx === 2) {
+                  rowBg = '#094420'; // bronze
+                  badgeImg = ThirdBadge;
+                } else {
+                  rowBg = '#0a4822';
+                }
+                return (
+                  <React.Fragment key={player.id}>
+                    <ListItem
+                      onClick={() => {
+                        setSelectedPlayerId(player.id);
+                        router.push(`/player/${player.id}`);
+                      }}
+                      sx={{
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                        background: rowGradient ? rowGradient : rowBg,
+                        color: textColor,
+                        fontWeight,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {/* Ranking badge or number */}
+                      <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                        {badgeImg ? (
+                          <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
+                        ) : (
+                          <Box sx={{
+                            width: 28, height: 28, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14,
+                            borderRadius: '50%', background: 'rgba(255,255,255,0.15)'
+                          }}>{`${idx + 1}th`}</Box>
+                        )}
                       </Box>
-                      <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: 60, textAlign: 'center' }}>
-                        {player.rating}
-                      </Typography>
-                    </Box>
-                  </ListItem>
-                  {/* {idx !== sortedPlayers.length - 1 && ( */}
-                    <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
-                  {/* )} */}
-                </React.Fragment>
-              );
-            })}
-          </List>
+                      <ListItemAvatar>
+                        <Avatar src={player?.profilePicture || '/assets/group.svg'} />
+                      </ListItemAvatar>
+                      <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium' }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 8, ml: 'auto' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
+                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : '#00C853' }} />
+                        </Box>
+                        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: 60, textAlign: 'center' }}>
+                          {player.rating}
+                        </Typography>
+                      </Box>
+                    </ListItem>
+                    {/* {idx !== sortedPlayers.length - 1 && ( */}
+                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                    {/* )} */}
+                  </React.Fragment>
+                );
+              })}
+            </List>
+          </Box>
         )}
       </Paper>
     </Container>
