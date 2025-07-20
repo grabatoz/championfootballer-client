@@ -805,34 +805,35 @@ const PlayerProfileCard = () => {
               </Grid>
 
               {/* Update & Delete Account Buttons */}
-              <Stack direction="row" justifyContent="center" spacing={3} sx={{ mt: 5 }}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleDeleteProfile}
-                  sx={{ borderRadius: 20, px: 4, color: '#fff', borderColor: '#f44336', '&:hover': { bgcolor: '#b71c1c', borderColor: '#b71c1c' }, fontWeight: 600 }}
-                >
-                  Delete Account
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isUpdating}
-                  startIcon={isUpdating ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
-                  onClick={handleUpdateProfile}
-                  sx={{
-                    borderRadius: 20,
-                    px: 5,
-                    bgcolor: '#43a047',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#388e3c' },
-                    fontWeight: 600,
-                    boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
-                  }}
-                >
-                  {isUpdating ? "Updating..." : "Update Profile"}
-                </Button>
-              </Stack>
+              <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
+                <Stack direction="row" justifyContent="center" spacing={3} sx={{ mt: 5 }}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleDeleteProfile}
+                    sx={{ borderRadius: 20, px: 4, color: '#fff', borderColor: '#f44336', '&:hover': { bgcolor: '#b71c1c', borderColor: '#b71c1c' }, fontWeight: 600 }}
+                  >
+                    Delete Account
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isUpdating}
+                    startIcon={isUpdating ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
+                    sx={{
+                      borderRadius: 20,
+                      px: 5,
+                      bgcolor: '#43a047',
+                      color: '#fff',
+                      '&:hover': { bgcolor: '#388e3c' },
+                      fontWeight: 600,
+                      boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
+                    }}
+                  >
+                    {isUpdating ? "Updating..." : "Update Profile"}
+                  </Button>
+                </Stack>
+              </form>
 
               <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
                 <Button
