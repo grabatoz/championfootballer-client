@@ -329,64 +329,49 @@ const PlayerProfileCard = () => {
             </Stepper>
 
             <StyledPaper elevation={4} sx={{ p: 4, border: `2px solid #4CAF50` , background:'#1f673b' }}>
-              {/* Avatar, Name, PositionType in a row */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4, gap: 4 }}>
+              {/* Image + Personal Info side by side */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'flex-start', mb: 4 }}>
                 <Zoom in timeout={600}>
                   <ProfileAvatar src={imgSrc} alt="Profile">
                     <Person sx={{ fontSize: 60 }} />
                   </ProfileAvatar>
                 </Zoom>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 3 }}>
-                  <Typography variant="h4" fontWeight="bold" sx={{ mt: 0, mb: 1, color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                <Box sx={{
+                  background: 'rgba(255,255,255,0.08)',
+                  borderRadius: 3,
+                  p: 2.5,
+                  minWidth: 220,
+                  color: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  boxShadow: '0 2px 8px 0 rgba(67,160,71,0.10)'
+                }}>
+                  <Typography variant="h5" fontWeight="bold" sx={{ mb: 1, color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                    <b>Age:</b> {user?.age || "18"}
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                    <b>Email:</b> {user?.email || "email@example.com"}
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                    <b>Shirt No:</b> {user?.shirtNumber || "00"}
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                    <b>Preferred Foot:</b> {user?.preferredFoot || "Right"}
                   </Typography>
                   <Chip
                     label={positionType || "Position"}
                     color="primary"
-                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700, boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)', border: '1.5px solid #fff' }}
+                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700, boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)', border: '1.5px solid #fff', mt: 1 }}
                   />
                 </Box>
               </Box>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      height: "100%",
-                      background: 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                      borderRadius: 3,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1, color: '#fff' }}>
-                        <Person /> Personal Info
-                      </Typography>
-                      <Stack spacing={2}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Typography sx={{ color: '#fff' }}>Age:</Typography>
-                          <Typography fontWeight="bold" sx={{ color: '#fff' }}>{user?.age || "18"}</Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Typography sx={{ color: '#fff' }}>Email:</Typography>
-                          <Typography fontWeight="bold" sx={{ fontSize: "0.9rem", color: '#fff' }}>
-                            {user?.email || "email@example.com"}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Typography sx={{ color: '#fff' }}>Shirt No:</Typography>
-                          <Typography fontWeight="bold" sx={{ color: '#fff' }}>{user?.shirtNumber || "00"}</Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Typography sx={{ color: '#fff' }}>Preferred Foot:</Typography>
-                          <Typography fontWeight="bold" sx={{ color: '#fff' }}>{user?.preferredFoot || "Right"}</Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={12}>
                   <Card
                     sx={{
                       height: "100%",
@@ -486,53 +471,99 @@ const PlayerProfileCard = () => {
                 <AccountCircle color="primary" /> Basic Information
               </Typography>
 
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Box sx={{ position: "relative", display: "inline-block" }}>
-                  <ProfileAvatar src={imagePreview || imgSrc} alt="Profile">
-                    <Person sx={{ fontSize: 60 }} />
-                  </ProfileAvatar>
-                  <IconButton
-                    component="label"
-                    sx={{
-                      position: "absolute",
-                      bottom: 0,
-                      right: 0,
-                      bgcolor: "#43a047",
-                      color: "white",
-                      '&:hover': { bgcolor: '#388e3c' },
-                      boxShadow: 3,
-                    }}
-                  >
-                    <Edit />
-                    <input type="file" accept="image/*" hidden onChange={handleImageChange} />
-                  </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 4, mb: 4 }}>
+                {/* Profile Image Left */}
+                <Box sx={{ minWidth: 140, textAlign: 'center' }}>
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <ProfileAvatar src={imagePreview || imgSrc} alt="Profile">
+                      <Person sx={{ fontSize: 60 }} />
+                    </ProfileAvatar>
+                    <IconButton
+                      component="label"
+                      sx={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        bgcolor: "#43a047",
+                        color: "white",
+                        '&:hover': { bgcolor: '#388e3c' },
+                        boxShadow: 3,
+                      }}
+                    >
+                      <Edit />
+                      <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+                    </IconButton>
+                  </Box>
+                  {imageFile && (
+                    <Button variant="contained" onClick={handleUploadImage} sx={{ mt: 2, borderRadius: 20, bgcolor: '#43a047', color: '#fff', '&:hover': { bgcolor: '#388e3c' } }}>
+                      Upload Image
+                    </Button>
+                  )}
                 </Box>
-                {imageFile && (
-                  <Button variant="contained" onClick={handleUploadImage} sx={{ mt: 2, borderRadius: 20, bgcolor: '#43a047', color: '#fff', '&:hover': { bgcolor: '#388e3c' } }}>
-                    Upload Image
-                  </Button>
-                )}
+                {/* Fields Right */}
+                <Box sx={{ flex: 1 }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <StyledTextField
+                        label="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <StyledTextField
+                        label="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <StyledTextField
+                        label="Email Address"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <StyledTextField
+                        label="Age"
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <StyledTextField
+                        label="Change Password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Leave blank to keep current password"
+                        fullWidth
+                        variant="outlined"
+                        InputProps={{
+                          endAdornment: (
+                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                              {showPassword ? <VisibilityOff sx={{ color: '#fff' }} /> : <Visibility sx={{ color: '#fff' }} />}
+                            </IconButton>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
               </Box>
+              {/* Rest of Step 2 fields (Position, Style, etc.) */}
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <StyledTextField
-                    label="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <StyledTextField
-                    label="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-
                 <Grid item xs={12}>
                   <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                     <FormControl component="fieldset">
@@ -628,6 +659,19 @@ const PlayerProfileCard = () => {
                       </RadioGroup>
                     </FormControl>
                   </Card>
+                <Grid item xs={12}>
+                      <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
+                        <FormControl component="fieldset">
+                          <StyledFormLabel sx={{ mb: 1 }}>
+                            Gender
+                          </StyledFormLabel>
+                          <RadioGroup value={gender} onChange={(e) => setGender(e.target.value)} row>
+                            <FormControlLabel value="male" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Male</span>} />
+                            <FormControlLabel value="female" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Female</span>} />
+                          </RadioGroup>
+                        </FormControl>
+                      </Card>
+                    </Grid>
                 </Grid>
               </Grid>
 
@@ -761,6 +805,36 @@ const PlayerProfileCard = () => {
                 ))}
               </Grid>
 
+              {/* Update & Delete Account Buttons */}
+              <Stack direction="row" justifyContent="center" spacing={3} sx={{ mt: 5 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleDeleteProfile}
+                  sx={{ borderRadius: 20, px: 4, color: '#fff', borderColor: '#f44336', '&:hover': { bgcolor: '#b71c1c', borderColor: '#b71c1c' }, fontWeight: 600 }}
+                >
+                  Delete Account
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isUpdating}
+                  startIcon={isUpdating ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
+                  onClick={handleUpdateProfile}
+                  sx={{
+                    borderRadius: 20,
+                    px: 5,
+                    bgcolor: '#43a047',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#388e3c' },
+                    fontWeight: 600,
+                    boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
+                  }}
+                >
+                  {isUpdating ? "Updating..." : "Update Profile"}
+                </Button>
+              </Stack>
+
               <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
                 <Button
                   variant="outlined"
@@ -770,162 +844,7 @@ const PlayerProfileCard = () => {
                 >
                   Previous
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                  endIcon={<ArrowForward />}
-                  sx={{ borderRadius: 20, px: 3, bgcolor: '#43a047', color: '#fff', boxShadow: '0 4px 24px 0 rgba(67,160,71,0.25)', '&:hover': { bgcolor: '#388e3c', boxShadow: '0 8px 32px 0 rgba(67,160,71,0.32)' } }}
-                >
-                  Next
-                </Button>
               </Stack>
-            </StyledPaper>
-          </Box>
-        </Fade>
-      </Container>
-    )
-  }
-
-  // Step 4: Account Settings
-  if (step === 4) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Fade in timeout={800}>
-          <Box>
-            <Stepper activeStep={step - 1} sx={{ mb: 4 }}>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-
-            <StyledPaper elevation={0} sx={{ p: 4 , background:'#1f673b' , color:'white' }}>
-              <Typography
-                variant="h5"
-                fontWeight="bold"
-                align="center"
-                sx={{ mb: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: '#fff' }}
-              >
-                <Settings color="primary" /> Account Settings
-              </Typography>
-
-              {error && (
-                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                  {error}
-                </Alert>
-              )}
-
-              <Box component="form" onSubmit={handleUpdateProfile}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <StyledTextField
-                      label="First Name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <StyledTextField
-                      label="Last Name"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <StyledTextField
-                      label="Email Address"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <StyledTextField
-                      label="Age"
-                      type="number"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <StyledTextField
-                      label="Change Password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Leave blank to keep current password"
-                      fullWidth
-                      variant="outlined"
-                      InputProps={{
-                        endAdornment: (
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                            {showPassword ? <VisibilityOff sx={{ color: '#fff' }} /> : <Visibility sx={{ color: '#fff' }} />}
-                          </IconButton>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
-                      <FormControl component="fieldset">
-                        <StyledFormLabel sx={{ mb: 1 }}>
-                          Gender
-                        </StyledFormLabel>
-                        <RadioGroup value={gender} onChange={(e) => setGender(e.target.value)} row>
-                          <FormControlLabel value="male" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Male</span>} />
-                          <FormControlLabel value="female" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Female</span>} />
-                        </RadioGroup>
-                      </FormControl>
-                    </Card>
-                  </Grid>
-                </Grid>
-
-                <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={handlePrevious}
-                    startIcon={<ArrowBack />}
-                    sx={{ borderRadius: 20, px: 3, color: '#fff', borderColor: '#43a047', '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' } }}
-                  >
-                    Previous
-                  </Button>
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={handleDeleteProfile}
-                      sx={{ borderRadius: 20, px: 3, color: '#fff', borderColor: '#f44336', '&:hover': { bgcolor: '#b71c1c', borderColor: '#b71c1c' } }}
-                    >
-                      Delete Account
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isUpdating}
-                      startIcon={isUpdating ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
-                      sx={{
-                        borderRadius: 20,
-                        px: 4,
-                        bgcolor: '#43a047',
-                        color: '#fff',
-                        '&:hover': { bgcolor: '#388e3c' },
-                        boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
-                      }}
-                    >
-                      {isUpdating ? "Updating..." : "Update Profile"}
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
             </StyledPaper>
           </Box>
         </Fade>
