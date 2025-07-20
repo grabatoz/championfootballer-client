@@ -2,7 +2,7 @@
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Edit, Person, Sports, Settings, AccountCircle } from "@mui/icons-material"
+import { Edit, Person, Sports, AccountCircle } from "@mui/icons-material"
 import { Visibility, VisibilityOff, ArrowBack, ArrowForward } from "@mui/icons-material"
 import {
   Box,
@@ -18,7 +18,6 @@ import {
   FormLabel,
   Slider,
   CircularProgress,
-  Alert,
   IconButton,
   Card,
   CardContent,
@@ -143,7 +142,7 @@ const PlayerProfileCard = () => {
   const [defending, setDefending] = useState(user?.skills?.defending )
   const [physical, setPhysical] = useState(user?.skills?.physical)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [error, setError] = useState<string>("")
+  const [, setError] = useState<string>("")
   const [firstName, setFirstName] = useState(user?.firstName || "")
   const [lastName, setLastName] = useState(user?.lastName || "")
   const [age, setAge] = useState(user?.age || "")
