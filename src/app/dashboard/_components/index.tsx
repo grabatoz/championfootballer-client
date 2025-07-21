@@ -101,7 +101,7 @@ export default function PlayerDashboard() {
             />
           </Box>
 
-    <Box 
+    {/* <Box 
       sx={{ 
         flex: 1, 
         backgroundColor: 'rgba(255,255,255,0.85)', 
@@ -128,7 +128,7 @@ export default function PlayerDashboard() {
                 Edit Profile & Player Card
               </Button>
             </Link>
-          </Box>
+          </Box> */}
         </Box>
 </Paper>
         {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>

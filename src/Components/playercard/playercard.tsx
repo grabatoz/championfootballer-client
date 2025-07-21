@@ -6,10 +6,12 @@ import {
   IconButton,
   Avatar,
   Divider,
+  Button,
 } from '@mui/material';
 import vector from '@/Components/images/Vector.svg';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
+import Link from 'next/link';
 
 interface PlayerCardProps {
   name: string;
@@ -50,16 +52,22 @@ const PlayerCard = ({
         position: 'relative',
         fontWeight: 'bold',
         color: 'white',
-      }}
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          mx: 'auto',
+          overflow: 'hidden',
+        }}
     >
       {/* Background Image */}
-      <Image
+      {/* <Image
         src={vector}
         alt="Card Background"
         layout="fill"
         objectFit="contain"
         className="z-0"
-      />
+        style={{ }}
+      /> */}
 
       {/* Overlay Content */}
       <Box
@@ -77,6 +85,11 @@ const PlayerCard = ({
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
           <Typography fontWeight={'bold'} fontSize="15px">NO. <span className='font-bold text-[22px]'> {number} </span></Typography>
+     <Button variant="contained" color="success">
+    <Link href={'/profile'}>
+      edit profile
+    </Link>
+     </Button>
         </Box>
 
 <Box
@@ -118,25 +131,13 @@ const PlayerCard = ({
   >
     <Avatar
       src={typeof profileImage === 'string' ? profileImage : undefined}
-      sx={{ width: 80, height: 80 }}
+      sx={{ width: 85, height: 85 , borderRadius:'0'}}
       alt="Profile"
     >
       {(!profileImage || typeof profileImage !== 'string') && (
         <Image height={0} width={0} src={imgicon.src} alt="Profile" style={{ width: '100%', height: '100%' }} />
       )}
     </Avatar>
-    <IconButton
-      size="small"
-      sx={{
-        position: 'absolute',
-        top: 5,
-        right: 5,
-        // bgcolor: 'white',
-        p: '2px',
-        // '&:hover': { bgcolor: '#eee' },
-      }}
-    >
-    </IconButton>
   </Box>
 </Box>
 
