@@ -104,7 +104,7 @@ const AuthTabs = () => {
       console.log('[AuthTabs] Login result from server:', result);
       if (result.success) {
         toast.success('Login successful!');
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       } else {
         toast.error(result.error || 'Login failed.');
       }
