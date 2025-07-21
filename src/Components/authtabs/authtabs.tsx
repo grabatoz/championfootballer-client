@@ -106,9 +106,7 @@ const AuthTabs = () => {
       if (result.success) {
         toast.success('Login successful!');
         console.log('Redirecting to /dashboard');
-        router.push('/dashboard');
-        // If router.push does not work, uncomment below:
-        // window.location.href = '/dashboard';
+        window.location.href = '/dashboard';
       } else {
         toast.error(result.error || 'Login failed.');
       }
