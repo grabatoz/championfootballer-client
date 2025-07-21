@@ -133,7 +133,7 @@ const PlayerProfileCard = () => {
   const [, setError] = useState<string>("")
   const [firstName, setFirstName] = useState(user?.firstName || "")
   const [lastName, setLastName] = useState(user?.lastName || "")
-  const [age, setAge] = useState(user?.age || "")
+  const [age, setAge] = useState(user?.age || "00")
   const [gender, setGender] = useState(user?.gender || "")
   const [positionType, setPositionType] = useState(user?.positionType || "")
   const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)")
@@ -328,13 +328,13 @@ const PlayerProfileCard = () => {
               alignItems: 'center',
             }}>
               {/* Personal Info left, Image right */}
-              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', mb: 2, width: '100%', height: 180 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', width: '100%', height: 180 }}>
                 <Avatar
                   src={imgSrc}
                   alt="Profile"
                   sx={{
                     width: 110,
-                    height: 140,
+                    height: 150,
                     border: '4px solid green',
                     borderRadius: 2,
                     background: '#fff',
@@ -357,17 +357,18 @@ const PlayerProfileCard = () => {
                   <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
-                    Age: <span style={{ color: '#FFD600' }}>{user?.age || "18"}</span>
+                  <Typography sx={{ fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                    Age: <span>{user?.age || "18"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
-                    Email: <span style={{ color: '#FFD600' }}>{user?.email || "email@example.com"}</span>
+                  <Typography sx={{ fontSize: '14px', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#fff', fontWeight: 600 }}>Email:</span>
+                    <span style={{ fontWeight: 700 }}>{user?.email || "email@example.com"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
-                    Shirt: <span style={{ color: '#FFD600' }}>{user?.shirtNumber || "00"}</span>
+                  <Typography sx={{  fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                    Shirt: <span >{user?.shirtNumber || "00"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
-                    Preferred <span style={{ color: '#FFD600' }}>Foot:</span> <span style={{ color: '#FFD600' }}>{user?.preferredFoot || "Right"}</span>
+                  <Typography sx={{  fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                    Preferred <span>Foot:</span> <span>{user?.preferredFoot || "Right"}</span>
                   </Typography>
                   <Chip
                     label={positionType || "Position"}
@@ -395,7 +396,6 @@ const PlayerProfileCard = () => {
                   borderRadius: 3,
                   mx: 'auto',
                   mb: 2,
-                  mt:2,
                 }}
               >
                 <CardContent>
@@ -436,7 +436,7 @@ const PlayerProfileCard = () => {
                 </CardContent>
               </Card>
 
-              <Box sx={{ textAlign: "center", mt: 2 }}>
+              <Box sx={{ textAlign: "center" }}>
                 <Button
                   variant="contained"
                   size="large"
@@ -445,8 +445,8 @@ const PlayerProfileCard = () => {
                   sx={{
                     background: "#43a047",
                     borderRadius: 25,
-                    px: 4,
-                    py: 1.5,
+                    px: 2,
+                    py: 1,
                     fontSize: "1.1rem",
                     textTransform: "none",
                     color: '#fff',
@@ -491,15 +491,15 @@ const PlayerProfileCard = () => {
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 4, mb: 4 }}>
                 {/* Profile Image Left */}
                 <Box sx={{ minWidth: 140, textAlign: 'center' }}>
-                  <Box sx={{ textAlign: "center", mb: 4 }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
+                  <Box sx={{ textAlign: "center",  }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <Box sx={{ position: "relative", display: "inline-block" }}>
                         <Avatar
                           src={imagePreview || imgSrc}
                           alt="Profile"
                           sx={{
                             width: 150,
-                            height: 180,
+                            height: 215,
                             border: '4px solid green',
                             borderRadius: 2,
                             background: '#fff',
@@ -513,7 +513,7 @@ const PlayerProfileCard = () => {
                           component="label"
                           sx={{
                             position: "absolute",
-                            bottom: 0,
+                            top: -10,
                             left: "50%",
                             transform: "translateX(-50%)",
                             bgcolor: "#43a047",
@@ -524,7 +524,7 @@ const PlayerProfileCard = () => {
                             height: 30,
                             borderRadius: "50%",
                             border: "3px solid #fff",
-                            ml:6
+                            ml:8
                           }}
                         >
                           <Edit sx={{ fontSize: 20 }} />
@@ -575,6 +575,7 @@ const PlayerProfileCard = () => {
                         variant="outlined"
                       />
                     </Grid>
+                    {/* Email and Password side by side */}
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
                         label="Email Address"
@@ -586,16 +587,6 @@ const PlayerProfileCard = () => {
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField
-                        label="Age"
-                        type="number"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
-                        fullWidth
-                        variant="outlined"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
                       <StyledTextField
                         label="Change Password"
                         type={showPassword ? "text" : "password"}
@@ -612,6 +603,76 @@ const PlayerProfileCard = () => {
                           ),
                         }}
                       />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <StyledTextField
+                        label="Age"
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    {/* Preferred Foot */}
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{ p: 2, backgroundColor: '#1f673b', border:'2px solid #43a047' , borderRadius: 3 }}>
+                        <FormControl component="fieldset">
+                          <StyledFormLabel sx={{color: '#fff !important', textAlign: 'center', width: '100%' , mt:-2 }}>
+                            Preferred Foot
+                          </StyledFormLabel>
+                          <RadioGroup
+                            row
+                            value={preferredFoot}
+                            onChange={(e) => setPreferredFoot(e.target.value)}
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'row !important',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              position:'relative',
+                              mb:-2
+                            }}
+                          >
+                            <FormControlLabel
+                              value="Left"
+                              control={<StyledRadio />}
+                              label={<span style={{ color: '#fff' }}>Left</span>}
+                              sx={{ flex: 1, justifyContent: 'flex-start' }}
+                            />
+                            <FormControlLabel
+                              value="Right"
+                              control={<StyledRadio />}
+                              label={<span style={{ color: '#fff' }}>Right</span>}
+                              sx={{ flex: 1, justifyContent: 'flex-end' , mt:0 , position:'absolute' , ml:10 }}
+
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      </Card>
+                    </Grid>
+                    {/* Gender */}
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{ p: 2, backgroundColor: '#1f673b', borderRadius: 3 , border:'2px solid #43a047' }}>
+                        <FormControl component="fieldset">
+                          <StyledFormLabel sx={{color : '#fff !important' , mt:-2}} >
+                            Gender
+                          </StyledFormLabel>
+                          <RadioGroup
+                           sx={{
+                            display: 'flex',
+                            flexDirection: 'row !important',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            position:'relative',
+                            mb:-2
+                          }}
+                           value={gender} onChange={(e) => setGender(e.target.value)} row>
+                            <FormControlLabel sx={{ flex: 1, justifyContent: 'flex-start' }} value="male" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Male</span>} />
+                            <FormControlLabel  sx={{ flex: 1, justifyContent: 'flex-end' , mt:0 , position:'absolute' , ml:8 }} value="female" control={<StyledRadio />} label={<span style={{ color: '#fff'}}>Female</span>} />
+                          </RadioGroup>
+                        </FormControl>
+                      </Card>
                     </Grid>
                   </Grid>
                 </Box>
@@ -639,7 +700,7 @@ const PlayerProfileCard = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={6}>
                   <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                     <FormControl component="fieldset">
                       <StyledFormLabel sx={{ mb: 1 ,color:'#fff !important'}}>
@@ -686,7 +747,7 @@ const PlayerProfileCard = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                     <FormControl component="fieldset">
                       <StyledFormLabel sx={{ mb: 1 , color:'#fff !important' }}>
@@ -701,7 +762,7 @@ const PlayerProfileCard = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                {/* <Grid item xs={12} sm={6}>
                   <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                     <FormControl component="fieldset">
                       <StyledFormLabel sx={{ mb: 1 , color:'#fff !important' }}>
@@ -726,7 +787,7 @@ const PlayerProfileCard = () => {
                         </FormControl>
                       </Card>
                     </Grid>
-                </Grid>
+                </Grid> */}
               </Grid>
 
               <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>

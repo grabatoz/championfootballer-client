@@ -642,16 +642,19 @@ function AllLeagues() {
                     PaperProps={{
                         sx: {
                             borderRadius: 3,
-                            background: 'rgba(255,255,255,0.10)',
-                            backdropFilter: 'blur(12px)',
-                            boxShadow: '0 8px 32px 0 rgba(31,38,135,0.27)',
+                            background: '#1f673b',
+                            border: '2px solid #43a047',
+                            boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
                             p: 2,
+                            color: '#fff',
                         },
                     }}
                 >
                     <Box display="flex" justifyContent="space-between" alignItems="center" p={1}>
-                        <DialogTitle sx={{ p: 0, fontWeight: 'bold', color: '#263238' }}>Create a League</DialogTitle>
-                        <IconButton onClick={() => setIsDialogOpen(false)}>
+                        <DialogTitle sx={{ p: 0, fontWeight: 'bold', color: '#fff', fontSize: 22, letterSpacing: 0.5 }}>
+                            Create a League
+                        </DialogTitle>
+                        <IconButton onClick={() => setIsDialogOpen(false)} sx={{ color: '#fff' }}>
                             <X />
                         </IconButton>
                     </Box>
@@ -671,30 +674,68 @@ function AllLeagues() {
                                 }
                             }}
                             sx={{
-                                input: {
-                                    color: '#263238',
-                                    backgroundColor: 'rgba(255,255,255,0.8)',
-                                    borderRadius: 1,
+                                mt: 1,
+                                mb: 2,
+                                '& .MuiOutlinedInput-root': {
+                                    background: '#1f673b',
+                                    color: '#fff',
+                                    borderRadius: 2,
+                                    border: '1.5px solid #43a047',
+                                    '& fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#388e3c',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                    '& input': {
+                                        color: '#fff',
+                                    },
+                                },
+                                '& label': {
+                                    color: '#fff',
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#fff',
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#fff',
                                 },
                             }}
+                            InputLabelProps={{ sx: { color: '#fff' } }}
                         />
                     </DialogContent>
-                    <DialogActions>
+                    <DialogActions sx={{ px: 3, pb: 2 }}>
                         <Button
                             onClick={handleCreateLeague}
                             variant="contained"
                             disabled={isCreating || !leagueName.trim()}
                             sx={{
-                                bgcolor: '#1976d2',
+                                bgcolor: '#43a047',
                                 color: 'white',
                                 fontWeight: 'bold',
                                 borderRadius: 2,
-                                '&:hover': { bgcolor: '#1565c0' },
+                                px: 3,
+                                boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                                '&:hover': { bgcolor: '#388e3c' },
                             }}
                         >
                             {isCreating ? 'Creating...' : 'Create League'}
                         </Button>
-                        <Button onClick={() => setIsDialogOpen(false)} color="inherit">
+                        <Button
+                            onClick={() => setIsDialogOpen(false)}
+                            variant="outlined"
+                            sx={{
+                                color: '#fff',
+                                border: '1.5px solid #43a047',
+                                borderRadius: 2,
+                                px: 3,
+                                fontWeight: 'bold',
+                                '&:hover': { bgcolor: 'rgba(67,160,71,0.08)' },
+                            }}
+                        >
                             Cancel
                         </Button>
                     </DialogActions>

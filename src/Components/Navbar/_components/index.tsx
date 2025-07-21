@@ -19,7 +19,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
-import cflogo from '@/Components/images/cflogo.svg';
+import cflogo from '@/Components/images/logo.png';
 
 export default function NavigationBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
