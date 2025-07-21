@@ -20,12 +20,37 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
 import cflogo from '@/Components/images/logo.png';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import Grow from '@mui/material/Grow';
+import Fade from '@mui/material/Fade';
+import Slide from '@mui/material/Slide';
+import { forwardRef } from 'react';
+import type { TransitionProps } from '@mui/material/transitions';
+
+// Custom SlideFade transition
+const SlideFade = forwardRef(function SlideFade(
+  props: TransitionProps & { children: React.ReactElement<any, any> },
+  ref: React.Ref<unknown>
+) {
+  const { in: inProp, children, ...other } = props;
+  return (
+    <Slide direction="down" in={inProp} ref={ref} {...other} timeout={300}>
+      <Fade in={inProp} timeout={300}>
+        {children}
+      </Fade>
+    </Slide>
+  );
+});
 
 export default function NavigationBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { isAuthenticated, dispatch } = useAuth();
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
+  const openProfileMenu = Boolean(profileMenuAnchor);
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +64,21 @@ export default function NavigationBar() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileMenuAnchor(event.currentTarget);
+  };
+  const handleProfileMenuClose = () => {
+    setProfileMenuAnchor(null);
+  };
+  const handleProfileClick = () => {
+    handleProfileMenuClose();
+    router.push('/profile');
+  };
+  const handleSignOutClick = () => {
+    handleProfileMenuClose();
+    handleSignOut();
   };
 
   const navLinks = [
@@ -97,18 +137,56 @@ export default function NavigationBar() {
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
             {isAuthenticated && renderNavLinks()}
             {isAuthenticated && (
-              <Button
-                onClick={handleSignOut}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  color: 'red',
-                  fontSize: '1rem',
-                  '&:hover': { color: '#b71c1c' },
-                }}
-              >
-                Sign out
-              </Button>
+              <>
+                <Button
+                  onClick={handleProfileMenuOpen}
+                  startIcon={<AccountCircleIcon />}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: '#fff',
+                    bgcolor: '#43a047',
+                    borderRadius: 2,
+                    px: 2.5,
+                    fontSize: '1rem',
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                    transition: 'box-shadow 0.2s, transform 0.2s',
+                    '&:hover': {
+                      bgcolor: '#388e3c',
+                      color: '#fff',
+                      boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
+                      transform: 'translateY(-2px) scale(1.04)',
+                    },
+                  }}
+                >
+                  Profile
+                </Button>
+                <Menu
+                  anchorEl={profileMenuAnchor}
+                  open={openProfileMenu}
+                  onClose={handleProfileMenuClose}
+                  TransitionComponent={SlideFade}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: '#1f673b',
+                      color: '#fff',
+                      borderRadius: 2,
+                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
+                      mt: 1.5,
+                      minWidth: 140,
+                    },
+                  }}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    Profile
+                  </MenuItem>
+                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
+                    Sign out
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           </Box>
 
@@ -140,6 +218,59 @@ export default function NavigationBar() {
       >
         <Box sx={{ mt: 2 }}>
           <List>
+            {isAuthenticated && (
+              <ListItem disablePadding>
+                <Button
+                  onClick={handleProfileMenuOpen}
+                  startIcon={<AccountCircleIcon />}
+                  fullWidth
+                  sx={{
+                    justifyContent: 'flex-start',
+                    px: 3,
+                    py: 1.5,
+                    color: '#fff',
+                    bgcolor: '#43a047',
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    mb: 1,
+                    transition: 'box-shadow 0.2s, transform 0.2s',
+                    '&:hover': {
+                      bgcolor: '#388e3c',
+                      color: '#fff',
+                      boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
+                      transform: 'translateY(-2px) scale(1.04)',
+                    },
+                  }}
+                >
+                  Profile
+                </Button>
+                <Menu
+                  anchorEl={profileMenuAnchor}
+                  open={openProfileMenu}
+                  onClose={handleProfileMenuClose}
+                  TransitionComponent={SlideFade}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: '#1f673b',
+                      color: '#fff',
+                      borderRadius: 2,
+                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
+                      mt: 1.5,
+                      minWidth: 140,
+                    },
+                  }}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    Profile
+                  </MenuItem>
+                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
+                    Sign out
+                  </MenuItem>
+                </Menu>
+              </ListItem>
+            )}
             {navLinks.map((link) => (
               <ListItem key={link.href} disablePadding>
                 <Button
@@ -154,24 +285,7 @@ export default function NavigationBar() {
               </ListItem>
             ))}
             <Divider sx={{ my: 1 }} />
-            <ListItem disablePadding>
-              <Button
-                onClick={() => {
-                  handleSignOut();
-                  setDrawerOpen(false);
-                }}
-                fullWidth
-                sx={{
-                  justifyContent: 'flex-start',
-                  px: 3,
-                  py: 1.5,
-                  color: '#d32f2f',
-                  fontWeight: 600,
-                }}
-              >
-                <ListItemText primary="Sign out" />
-              </Button>
-            </ListItem>
+            {/* Old Sign out button removed from here, now in Profile menu */}
           </List>
         </Box>
       </Drawer>
