@@ -152,7 +152,7 @@ const PlayerProfileCard = () => {
   const [style, setStyle] = useState(user?.style || "")
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
   const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "")
-  const [password, setPassword] = useState(user?.password || "")
+  const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -161,7 +161,7 @@ const PlayerProfileCard = () => {
 
   const router = useRouter()
 
-  const steps = ["Profile Overview", "Basic Info", "Skills & Stats", "Account Settings"]
+  const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
 
   useEffect(() => {
     setImgSrc(user?.profilePicture || "/assets/group451.png?height=120&width=120")
@@ -316,7 +316,7 @@ const PlayerProfileCard = () => {
   // Step 1: Profile Overview
   if (step === 1) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="sm" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
         <Fade in timeout={800}>
           <Box>
             <Stepper activeStep={step - 1} sx={{ mb: 4 }}>
@@ -327,99 +327,128 @@ const PlayerProfileCard = () => {
               ))}
             </Stepper>
 
-            <StyledPaper elevation={4} sx={{ p: 4, border: `2px solid #4CAF50` , background:'#1f673b' }}>
-              {/* Image + Personal Info side by side */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'flex-start', mb: 4 }}>
-                <Zoom in timeout={600}>
-                  <ProfileAvatar src={imgSrc} alt="Profile">
-                    <Person sx={{ fontSize: 60 }} />
-                  </ProfileAvatar>
-                </Zoom>
-                <Box sx={{
-                  background: 'rgba(255,255,255,0.08)',
-                  borderRadius: 3,
-                  p: 2.5,
-                  minWidth: 220,
-                  color: '#fff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  boxShadow: '0 2px 8px 0 rgba(67,160,71,0.10)'
-                }}>
-                  <Typography variant="h5" fontWeight="bold" sx={{ mb: 1, color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <StyledPaper elevation={4} sx={{
+              p: 1.5,
+              border: `2px solid #4CAF50`,
+              background: '#1f673b',
+              borderRadius: 4,
+              maxWidth: 350,
+              mx: 'auto',
+              boxShadow: '0 4px 24px 0 rgba(67,160,71,0.18)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}>
+              {/* Personal Info left, Image right */}
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', mb: 2, width: '100%', height: 180 }}>
+                <Avatar
+                  src={imgSrc}
+                  alt="Profile"
+                  sx={{
+                    width: 110,
+                    height: 140,
+                    border: '4px solid green',
+                    borderRadius: 2,
+                    background: '#fff',
+                    boxShadow: 'none',
+                    objectFit: 'cover'
+                  }}
+                >
+                  <Person sx={{ fontSize: 60, color: '#111' }} />
+                </Avatar>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    height: '100%',
+                    flex: 1,
+                    ml:1
+                  }}
+                >
+                  <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                    <b>Age:</b> {user?.age || "18"}
+                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
+                    Age: <span style={{ color: '#FFD600' }}>{user?.age || "18"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                    <b>Email:</b> {user?.email || "email@example.com"}
+                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
+                    Email: <span style={{ color: '#FFD600' }}>{user?.email || "email@example.com"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                    <b>Shirt No:</b> {user?.shirtNumber || "00"}
+                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
+                    Shirt: <span style={{ color: '#FFD600' }}>{user?.shirtNumber || "00"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                    <b>Preferred Foot:</b> {user?.preferredFoot || "Right"}
+                  <Typography sx={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600 }}>
+                    Preferred <span style={{ color: '#FFD600' }}>Foot:</span> <span style={{ color: '#FFD600' }}>{user?.preferredFoot || "Right"}</span>
                   </Typography>
                   <Chip
                     label={positionType || "Position"}
                     color="primary"
-                    sx={{ fontSize: '1rem', px: 2, py: 1, background: '#43a047', color: 'white', fontWeight: 700, boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)', border: '1.5px solid #fff', mt: 1 }}
+                    sx={{
+                      fontSize: '1rem',
+                      px: 2,
+                      py: 0.5,
+                      background: '#43a047',
+                      color: '#fff',
+                      fontWeight: 700,
+                      border: '2px solid #fff',
+                      // alignSelf: 'center'
+                    }}
                   />
                 </Box>
               </Box>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={12}>
-                  <Card
-                    sx={{
-                      height: "100%",
-                      background: 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                      borderRadius: 3,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1, color: '#fff' }}>
-                        <Sports /> Skills Overview
-                      </Typography>
-                      <Stack spacing={2}>
-                        {[
-                          { name: "Dribbling", value: dribbling },
-                          { name: "Shooting", value: shooting },
-                          { name: "Passing", value: passing },
-                          { name: "Pace", value: pace },
-                          { name: "Defending", value: defending },
-                          { name: "Physical", value: physical },
-                        ].map((skill) => (
-                          <Box key={skill.name}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                              <Typography variant="body2" sx={{ color: '#fff' }}>{skill.name}</Typography>
-                              <Typography variant="body2" fontWeight="bold" sx={{ color: '#fff' }}>
-                                {skill.value}
-                              </Typography>
-                            </Box>
-                            <LinearProgress
-                              variant="determinate"
-                              value={skill.value}
-                              sx={{
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: "rgba(255,255,255,0.3)",
-                                '& .MuiLinearProgress-bar': {
-                                  backgroundColor: "#fff",
-                                },
-                              }}
-                            />
-                          </Box>
-                        ))}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              <Card
+                sx={{
+                  width: '100%',
+                  maxWidth: 320,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  borderRadius: 3,
+                  mx: 'auto',
+                  mb: 2,
+                  mt:2,
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1, color: '#fff', fontWeight: 600, fontSize: 18 }}>
+                    <Sports /> Skills Overview
+                  </Typography>
+                  <Stack spacing={1.2}>
+                    {[
+                      { name: "Dribbling", value: dribbling },
+                      { name: "Shooting", value: shooting },
+                      { name: "Passing", value: passing },
+                      { name: "Pace", value: pace },
+                      { name: "Defending", value: defending },
+                      { name: "Physical", value: physical },
+                    ].map((skill) => (
+                      <Box key={skill.name}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ color: '#fff' }}>{skill.name}</Typography>
+                          <Typography variant="body2" fontWeight="bold" sx={{ color: '#fff' }}>
+                            {skill.value}
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={skill.value}
+                          sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: "rgba(255,255,255,0.3)",
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: "#fff",
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
 
-              <Box sx={{ textAlign: "center", mt: 4 }}>
+              <Box sx={{ textAlign: "center", mt: 2 }}>
                 <Button
                   variant="contained"
                   size="large"
@@ -434,6 +463,7 @@ const PlayerProfileCard = () => {
                     textTransform: "none",
                     color: '#fff',
                     '&:hover': { bgcolor: '#388e3c' },
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                   }}
                 >
                   Edit Profile
@@ -473,31 +503,68 @@ const PlayerProfileCard = () => {
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 4, mb: 4 }}>
                 {/* Profile Image Left */}
                 <Box sx={{ minWidth: 140, textAlign: 'center' }}>
-                  <Box sx={{ position: "relative", display: "inline-block" }}>
-                    <ProfileAvatar src={imagePreview || imgSrc} alt="Profile">
-                      <Person sx={{ fontSize: 60 }} />
-                    </ProfileAvatar>
-                    <IconButton
-                      component="label"
-                      sx={{
-                        position: "absolute",
-                        bottom: 0,
-                        right: 0,
-                        bgcolor: "#43a047",
-                        color: "white",
-                        '&:hover': { bgcolor: '#388e3c' },
-                        boxShadow: 3,
-                      }}
-                    >
-                      <Edit />
-                      <input type="file" accept="image/*" hidden onChange={handleImageChange} />
-                    </IconButton>
+                  <Box sx={{ textAlign: "center", mb: 4 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
+                      <Box sx={{ position: "relative", display: "inline-block" }}>
+                        <Avatar
+                          src={imagePreview || imgSrc}
+                          alt="Profile"
+                          sx={{
+                            width: 150,
+                            height: 180,
+                            border: '4px solid green',
+                            borderRadius: 2,
+                            background: '#fff',
+                            boxShadow: 'none',
+                            objectFit: 'cover'
+                          }}
+                        >
+                          <Person sx={{ fontSize: 60, color: '#111' }} />
+                        </Avatar>
+                        <IconButton
+                          component="label"
+                          sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            bgcolor: "#43a047",
+                            color: "white",
+                            '&:hover': { bgcolor: '#388e3c' },
+                            boxShadow: 3,
+                            width: 30,
+                            height: 30,
+                            borderRadius: "50%",
+                            border: "3px solid #fff",
+                            ml:6
+                          }}
+                        >
+                          <Edit sx={{ fontSize: 20 }} />
+                          <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+                        </IconButton>
+                      </Box>
+                      {imageFile && (
+                        <Button
+                          variant="contained"
+                          onClick={handleUploadImage}
+                          sx={{
+                            mt: 3,
+                            borderRadius: 20,
+                            bgcolor: '#43a047',
+                            color: '#fff',
+                            fontWeight: 700,
+                            fontSize: 10,
+                            px: 4,
+                            py: 1.5,
+                            '&:hover': { bgcolor: '#388e3c' }
+                          }}
+                          fullWidth={false}
+                        >
+                          UPLOAD IMAGE
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
-                  {imageFile && (
-                    <Button variant="contained" onClick={handleUploadImage} sx={{ mt: 2, borderRadius: 20, bgcolor: '#43a047', color: '#fff', '&:hover': { bgcolor: '#388e3c' } }}>
-                      Upload Image
-                    </Button>
-                  )}
                 </Box>
                 {/* Fields Right */}
                 <Box sx={{ flex: 1 }}>
@@ -658,7 +725,7 @@ const PlayerProfileCard = () => {
                       </RadioGroup>
                     </FormControl>
                   </Card>
-                <Grid item xs={12}>
+                <Grid item xs={12} mt={3}>
                       <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                         <FormControl component="fieldset">
                           <StyledFormLabel sx={{ mb: 1 }}>
