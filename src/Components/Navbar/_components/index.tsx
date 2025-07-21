@@ -23,7 +23,6 @@ import cflogo from '@/Components/images/logo.png';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import Grow from '@mui/material/Grow';
 import Fade from '@mui/material/Fade';
 import Slide from '@mui/material/Slide';
 import { forwardRef } from 'react';
@@ -31,14 +30,14 @@ import type { TransitionProps } from '@mui/material/transitions';
 
 // Custom SlideFade transition
 const SlideFade = forwardRef(function SlideFade(
-  props: TransitionProps & { children: React.ReactElement<any, any> },
+  props: TransitionProps & { children: React.ReactElement },
   ref: React.Ref<unknown>
 ) {
   const { in: inProp, children, ...other } = props;
   return (
     <Slide direction="down" in={inProp} ref={ref} {...other} timeout={300}>
       <Fade in={inProp} timeout={300}>
-        {children}
+        {children ?? <span />}
       </Fade>
     </Slide>
   );
