@@ -30,7 +30,6 @@ import {
   Grid,
   Container,
   Fade,
-  Zoom,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
@@ -43,17 +42,6 @@ const StyledPaper = styled(Paper)(({}) => ({
   boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
   border: "1px solid rgba(255,255,255,0.2)",
   backdropFilter: "blur(10px)",
-}))
-
-const ProfileAvatar = styled(Avatar)(({}) => ({
-  width: 120,
-  height: 120,
-  border: "4px solid #fff",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-  transition: "transform 0.3s ease",
-  "&:hover": {
-    transform: "scale(1.05)",
-  },
 }))
 
 const SkillCard = styled(Card)(({}) => ({
