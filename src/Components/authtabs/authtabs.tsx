@@ -54,9 +54,10 @@ const AuthTabs = () => {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
-    }
+    // Commented out to avoid double redirect issues
+    // if (isAuthenticated) {
+    //   router.push('/dashboard');
+    // }
   }, [isAuthenticated, router]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
@@ -104,7 +105,10 @@ const AuthTabs = () => {
       console.log('[AuthTabs] Login result from server:', result);
       if (result.success) {
         toast.success('Login successful!');
+        console.log('Redirecting to /dashboard');
         router.push('/dashboard');
+        // If router.push does not work, uncomment below:
+        // window.location.href = '/dashboard';
       } else {
         toast.error(result.error || 'Login failed.');
       }
