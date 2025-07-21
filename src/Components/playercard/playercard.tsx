@@ -3,12 +3,12 @@ import Image from 'next/image';
 import {
   Box,
   Typography,
-  IconButton,
+  // IconButton,
   Avatar,
   Divider,
   Button,
 } from '@mui/material';
-import vector from '@/Components/images/Vector.svg';
+// import vector from '@/Components/images/Vector.svg';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
 import Link from 'next/link';
