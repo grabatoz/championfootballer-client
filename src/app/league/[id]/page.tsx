@@ -218,6 +218,14 @@ export default function LeagueDetailPage() {
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
 
+    // Add this useEffect to sync tab param with section
+    useEffect(() => {
+      const tab = searchParams?.get('tab');
+      if (tab === 'table' || tab === 'awards' || tab === 'members' || tab === 'matches') {
+        setSection(tab);
+      }
+    }, [searchParams]);
+
     // Declare isMember and isAdmin here so they are available for useEffect and logic below
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
@@ -524,33 +532,52 @@ export default function LeagueDetailPage() {
                     Back to All Leagues
                 </Button>
                 <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: { xs: 'flex-start', sm: 'center' },
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            justifyContent: 'space-between',
+                            mb: 2,
+                        }}
+                    >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Trophy size={32} />
                             <Typography textTransform="uppercase" variant="h4" component="h1">
                                 {league.name}
                             </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                mt: { xs: 2, sm: 0 },
+                                width: { xs: '100%', sm: 'auto' },
+                                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                            }}
+                        >
                             {isMember && (
-                          <>
-                            <Chip
-                                label={`Invite Code: ${league.inviteCode}`}
-                                sx={{
-                                    backgroundColor: '#43a047',
-                                    '&:hover': { backgroundColor: '#388e3c' }, color: 'white'
-                                }}
-                            />
-                            <Chip
-                                label={<Copy className='stroke-white' />}
-                                onClick={() => navigator.clipboard.writeText(league.inviteCode)}
-                                sx={{
-                                    mr: 1, backgroundColor: '#43a047',
-                                    '&:hover': { backgroundColor: '#388e3c' }
-                                }}
-                            />
-                          </>
-                        )}
+                                <>
+                                    <Chip
+                                        label={`Invite Code: ${league.inviteCode}`}
+                                        sx={{
+                                            backgroundColor: '#43a047',
+                                            '&:hover': { backgroundColor: '#388e3c' },
+                                            color: 'white',
+                                        }}
+                                    />
+                                    <Chip
+                                        label={<Copy className='stroke-white' />}
+                                        onClick={() => navigator.clipboard.writeText(league.inviteCode)}
+                                        sx={{
+                                            mr: 1,
+                                            backgroundColor: '#43a047',
+                                            '&:hover': { backgroundColor: '#388e3c' },
+                                        }}
+                                    />
+                                </>
+                            )}
                             {isAdmin && (
                                 <IconButton onClick={() => setIsSettingsOpen(true)} sx={{ ml: 1 }}>
                                     <Settings style={{ color: 'white' }} />
@@ -568,7 +595,10 @@ export default function LeagueDetailPage() {
                                 mr: 1
                             }}
                             startIcon={<Users className='stroke-white' />}
-                            onClick={() => setSection('members')}
+                            onClick={() => {
+                                setSection('members');
+                                router.replace(`/league/${leagueId}?tab=members`);
+                            }}
                         >
                             {`${league.members?.length || 0} Members`}
                         </Button>
@@ -581,7 +611,10 @@ export default function LeagueDetailPage() {
                                 mr: 1
                             }}
                             startIcon={<Calendar className='stroke-white' />}
-                            onClick={() => setSection('matches')}
+                            onClick={() => {
+                                setSection('matches');
+                                router.replace(`/league/${leagueId}?tab=matches`);
+                            }}
                         >
                             {`${league.matches?.length || 0} Matches`}
                         </Button>
@@ -592,7 +625,10 @@ export default function LeagueDetailPage() {
                                '&:hover': { backgroundColor: '#388e3c' },
                            }}
                             startIcon={<Table2Icon className='stroke-white' />}
-                            onClick={() => setSection('table')}
+                            onClick={() => {
+                                setSection('table');
+                                router.replace(`/league/${leagueId}?tab=table`);
+                            }}
                         >
                             Table
                         </Button>
@@ -603,7 +639,10 @@ export default function LeagueDetailPage() {
                                 '&:hover': { backgroundColor: '#388e3c' },
                             }}
                             startIcon={<Trophy className='stroke-white' />}
-                            onClick={() => setSection('awards')}
+                            onClick={() => {
+                                setSection('awards');
+                                router.replace(`/league/${leagueId}?tab=awards`);
+                            }}
                         >
                             Trophy Room
                         </Button>

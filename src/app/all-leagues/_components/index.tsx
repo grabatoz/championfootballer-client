@@ -593,7 +593,7 @@ function AllLeagues() {
                                                             toast.error('Points are hidden for this league.');
                                                             return;
                                                         }
-                                                        handleOpenTable(league);
+                                                        router.push(`/league/${league.id}?tab=table`);
                                                     }}
                                                 >
                                                     Table
@@ -609,7 +609,7 @@ function AllLeagues() {
                                                         boxShadow: '0 2px 8px rgba(0,200,83,0.12)',
                                                         '&:hover': { bgcolor: '#388e3c' },
                                                     }}
-                                                    onClick={() => handleLeagueAwardClick(league?.id)}
+                                                    onClick={() => router.push(`/league/${league.id}?tab=awards`)}
                                                 >
                                                     Award
                                                 </Button>
