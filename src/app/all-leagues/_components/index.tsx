@@ -14,16 +14,6 @@ import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
 
-interface TableData {
-    id: string;
-    name: string;
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    winPercentage: string;
-    isAdmin?: boolean;
-}
 
 interface LeagueMembersDialogProps {
     open: boolean;
