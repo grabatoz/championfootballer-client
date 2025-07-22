@@ -2,17 +2,14 @@
 
 import { useAuth } from '@/lib/hooks';
 import { Delete, ExitToApp, People, X } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, CircularProgress, TableContainer, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, HandshakeIcon, SettingsIcon, ShieldIcon, ThumbsDownIcon } from 'lucide-react';
+import { ArrowLeft, SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
-import { Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
-import { User, League, Match } from '@/types/user';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import { User, League } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
@@ -111,10 +108,7 @@ function AllLeagues() {
     const [inviteCode, setInviteCode] = useState('');
     const [isJoining, setIsJoining] = useState(false);
     const { token, user } = useAuth();
-    const [openTable, setOpenTable] = useState(false);
-    const [isTableLoading, setIsTableLoading] = useState(false);
     const [openMembers, setOpenMembers] = useState(false);
-    const [selectedTableData, setSelectedTableData] = useState<TableData[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
     const [, setLoadingMembers] = useState(false);
     const dispatch = useDispatch<AppDispatch>();
