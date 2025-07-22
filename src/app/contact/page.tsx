@@ -47,8 +47,12 @@ export default function ContactForm() {
       });
       toast.success("Message sent successfully")
       reset() // Reset form after successful submission
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send message")
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to send message");
+      } else {
+        toast.error("Failed to send message");
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -88,7 +92,7 @@ export default function ContactForm() {
           align="center"
           sx={{ mb: 3, color: 'rgba(255,255,255,0.85)' }}
         >
-          Have a question or feedback? Fill out the form below and we'll get back to you!
+          {`Have a question or feedback? Fill out the form below and we'll get back to you!`}
         </Typography>
         <Box component="form" onSubmit={handleSubmit(submitContactForm)} noValidate>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
