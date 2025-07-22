@@ -37,7 +37,7 @@ export default function Footer() {
           <Stack direction="row" spacing={2}>
             <IconButton
               component="a"
-              href="https://twitter.com"
+              href="https://x.com/champf2baller"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
@@ -52,7 +52,7 @@ export default function Footer() {
             </IconButton>
             <IconButton
               component="a"
-              href="https://instagram.com"
+              href="https://www.instagram.com/champf2baller/"
               target="_blank"
               rel="noopener noreferrer"
               sx={{

@@ -32,8 +32,8 @@ import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
 import Defence from '@/Components/images/defence.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
-import FreeKick from '@/Components/images/cleansheet.png'
-import penalty from '@/Components/images/cleansheet.png'
+import FreeKick from '@/Components/images/freekick.png'
+import penalty from '@/Components/images/penalty.png'
 
 interface User {
     id: string;
@@ -372,7 +372,7 @@ export default function PlayMatchPage() {
                                     </Button>
                                 )}
                             </Box>
-                            <Divider sx={{ mb: 1.5, backgroundColor: '#0a3e1e' }} />
+                            <Divider sx={{ mb: 1.5, backgroundColor: '#fff' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.homeTeamUsers.length > 0 ? (
                                             <Box
@@ -413,7 +413,7 @@ export default function PlayMatchPage() {
                         </Card>
                     </Box>
                     <Box>
-                        <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 }}>
+                        <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 , mt:5}}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, mt: 1, p: 1 }}>
                                 <Typography variant="h5" color={'white'} gutterBottom>{match.awayTeamName} - <span className='text-green-700'>{typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0} </span></Typography>
                                 {user && match.status === 'completed' && league.active && match.awayTeamUsers.some(p => p.id === user.id) && (
@@ -432,7 +432,7 @@ export default function PlayMatchPage() {
                                     </Button>
                                 )}
                             </Box>
-                            <Divider sx={{ mb: 1.5, backgroundColor: '#235235' }} />
+                            <Divider sx={{ mb: 1.5, backgroundColor: '#fff' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.awayTeamUsers.length > 0 ? (
                                             <Box
@@ -505,7 +505,7 @@ export default function PlayMatchPage() {
             {(Object.keys(playerVotes).length > 0) && (
                 <Paper sx={{ p: 3, mt: 4, backgroundColor: '#0a3e1e', color: 'white' }}>
                     <Typography variant="h5" component="h2" gutterBottom>MOTM Votes</Typography>
-                    <Divider sx={{ mb: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                    <Divider sx={{ mb: 3, backgroundColor: '#fff' }} />
                     <Box
                         sx={{
                             display: { xs: 'flex', sm: 'grid' },
