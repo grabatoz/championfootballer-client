@@ -268,9 +268,6 @@ function AllLeagues() {
     const handleLeagueClick = (leagueId: string) => {
         router.push(`/league/${leagueId}`);
     };
-    const handleLeagueAwardClick = (leagueId: string) => {
-        router.push(`/league/${leagueId}/trophy-room`);
-    };
 
     const handleOpenTable = async (league: League) => {
         setOpenTable(true);
