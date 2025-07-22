@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks';
-import { Delete, ExitToApp, People, X } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, X } from '@mui/icons-material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -13,79 +13,357 @@ import { User, League } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
+import Tooltip from '@mui/material/Tooltip';
+import Slide, { SlideProps } from '@mui/material/Slide';
 
 
 interface LeagueMembersDialogProps {
-    open: boolean;
-    onClose: () => void;
-    league: League | null;
-    currentUserId: string;
-    onRemoveMember: (memberId: string) => void;
-    onLeaveLeague: () => void;
+  open: boolean
+  onClose: () => void
+  league: League | null
+  currentUserId: string
+  onRemoveMember: (memberId: string) => void
+  onLeaveLeague: () => void
 }
 
-function LeagueMembersDialog({ open, onClose, league, currentUserId, onRemoveMember, onLeaveLeague }: LeagueMembersDialogProps) {
-    if (!league) return null;
+  
 
-    const isAdmin = league.adminId === currentUserId;
+const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>
-                <Box display="flex" alignItems="center" gap={2}>
-                    <People />
-                    <Typography variant="h6">{league.name} - Members</Typography>
+function LeagueMembersDialog({
+  open,
+  onClose,
+  league,
+  currentUserId,
+  onRemoveMember,
+  onLeaveLeague,
+}: LeagueMembersDialogProps) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+
+  if (!league) return null
+
+  const isAdmin = league.adminId === currentUserId
+  const memberCount = league.members.length
+
+  const handleRemoveMember = (memberId: string, memberName: string) => {
+    if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
+      onRemoveMember(memberId)
+    }
+  }
+
+  const handleLeaveLeague = () => {
+    if (window.confirm("Are you sure you want to leave this league?")) {
+      onLeaveLeague()
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+      TransitionComponent={Transition}
+      PaperProps={{
+        sx: {
+          background: "linear-gradient(135deg, #1f673b 0%, #2e7d32 100%)",
+          color: "white",
+          borderRadius: isMobile ? 0 : 3,
+          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(31, 103, 59, 0.3)",
+          overflow: "hidden",
+          maxHeight: isMobile ? "100vh" : "80vh",
+        },
+      }}
+    >
+      {/* Header */}
+      <DialogTitle
+        sx={{
+          background: "linear-gradient(135deg, #0a3e1e 0%, #1b5e20 100%)",
+          color: "white",
+          fontWeight: 700,
+          fontSize: { xs: 18, sm: 22 },
+          borderRadius: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          py: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 3 },
+          position: "relative",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: "linear-gradient(90deg, #43a047, #66bb6a, #43a047)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: 2,
+              bgcolor: "rgba(67, 160, 71, 0.2)",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#43a047" }} />
+          </Box>
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: "white",
+                fontSize: { xs: 16, sm: 20 },
+                lineHeight: 1.2,
+              }}
+            >
+              {league.name}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(255, 255, 255, 0.8)",
+                fontSize: { xs: 12, sm: 14 },
+                fontWeight: 500,
+              }}
+            >
+              {memberCount} {memberCount === 1 ? "Member" : "Members"}
+            </Typography>
+          </Box>
+        </Box>
+
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "rgba(255, 255, 255, 0.8)",
+            bgcolor: "rgba(255, 255, 255, 0.1)",
+            "&:hover": {
+              bgcolor: "rgba(255, 255, 255, 0.2)",
+              color: "white",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      {/* Content */}
+      <DialogContent
+        sx={{
+          bgcolor: "transparent",
+          px: 0,
+          py: 0,
+          overflow: "auto",
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "rgba(255, 255, 255, 0.1)",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "rgba(67, 160, 71, 0.5)",
+            borderRadius: "3px",
+          },
+        }}
+      >
+        <List sx={{ py: 0 }}>
+          {league.members.map((member, index) => {
+            const memberName = `${member.firstName} ${member.lastName}`
+            const isLeagueAdmin = member.id === league.adminId
+            const isCurrentUser = member.id === currentUserId
+
+            return (
+              <Fade in={true} timeout={300 + index * 100} key={member.id}>
+                <Box>
+                  <ListItem
+                    sx={{
+                      py: { xs: 2, sm: 2.5 },
+                      px: { xs: 2, sm: 3 },
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      bgcolor: isCurrentUser ? "rgba(67, 160, 71, 0.1)" : "transparent",
+                      borderLeft: isCurrentUser ? "4px solid #43a047" : "none",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(255, 255, 255, 0.05)",
+                      },
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        sx={{
+                          width: { xs: 44, sm: 52 },
+                          height: { xs: 44, sm: 52 },
+                          bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
+                          color: "white",
+                          fontWeight: 700,
+                          fontSize: { xs: 16, sm: 18 },
+                          border: isCurrentUser ? "3px solid #43a047" : "2px solid rgba(255, 255, 255, 0.2)",
+                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        {member.profilePicture ? (
+                          <Image
+                            src={member.profilePicture || "/placeholder.svg"}
+                            alt={memberName}
+                            width={48}
+                            height={48}
+                            style={{ borderRadius: "50%" }}
+                          />
+                        ) : (
+                          `${member.firstName[0]}${member.lastName[0] || ""}`
+                        )}
+                      </Avatar>
+                    </ListItemAvatar>
+
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "white",
+                              fontSize: { xs: 16, sm: 18 },
+                            }}
+                          >
+                            {memberName}
+                          </Typography>
+                          {isCurrentUser && (
+                            <Chip
+                              label="You"
+                              size="small"
+                              sx={{
+                                bgcolor: "#43a047",
+                                color: "white",
+                                fontWeight: 600,
+                                fontSize: 11,
+                                height: 20,
+                              }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#43a047" }} />}
+                          <Typography
+                            sx={{
+                              color: isLeagueAdmin ? "#43a047" : "rgba(255, 255, 255, 0.7)",
+                              fontWeight: 500,
+                              fontSize: { xs: 13, sm: 14 },
+                            }}
+                          >
+                            {isLeagueAdmin ? "League Admin" : "Member"}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+
+                    {isAdmin && member.id !== currentUserId && (
+                      <Tooltip title={`Remove ${memberName}`} arrow>
+                        <IconButton
+                          onClick={() => handleRemoveMember(member.id, memberName)}
+                          sx={{
+                            color: "#ff5252",
+                            bgcolor: "rgba(255, 82, 82, 0.1)",
+                            "&:hover": {
+                              bgcolor: "rgba(255, 82, 82, 0.2)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <Delete sx={{ fontSize: 20 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </ListItem>
+                  {index < league.members.length - 1 && (
+                    <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.08)", mx: 2 }} />
+                  )}
                 </Box>
-            </DialogTitle>
-            <DialogContent>
-                <List>
-                    {league.members.map((member) => {
-                        const memberName = `${member.firstName} ${member.lastName}`;
-                        return (
-                            <React.Fragment key={member.id}>
-                                <ListItem>
-                                    <ListItemAvatar>
-                                        <Avatar>
-                                            {member.profilePicture ? (
-                                                <Image src={member.profilePicture} alt={memberName} width={40} height={40} />
-                                            ) : (
-                                                `${member.firstName[0]}${member.lastName[0] || ''}`
-                                            )}
-                                        </Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText
-                                        primary={memberName}
-                                        secondary={member.id === league.adminId ? 'Admin' : 'Member'}
-                                    />
-                                    {isAdmin && member.id !== currentUserId && (
-                                        <IconButton
-                    color="error"
-                                            onClick={() => onRemoveMember(member.id)}
-                >
-                                            <Delete />
-                                        </IconButton>
-                                    )}
-                                </ListItem>
-                                <Divider />
-                            </React.Fragment>
-                        );
-                    })}
-                </List>
-            </DialogContent>
-            <DialogActions>
-                {!isAdmin && (
-                    <Button
-                        color="error"
-                        startIcon={<ExitToApp />}
-                        onClick={onLeaveLeague}
-                    >
-                        Leave League
-                    </Button>
-                )}
-                <Button onClick={onClose}>Close</Button>
-            </DialogActions>
-        </Dialog>
-    );
+              </Fade>
+            )
+          })}
+        </List>
+      </DialogContent>
+
+      {/* Footer */}
+      <DialogActions
+        sx={{
+          background: "linear-gradient(135deg, #0a3e1e 0%, #1b5e20 100%)",
+          p: { xs: 2, sm: 3 },
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 2,
+          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+        }}
+      >
+        {!isAdmin && (
+          <Button
+            startIcon={<ExitToApp />}
+            onClick={handleLeaveLeague}
+            sx={{
+              fontWeight: 600,
+              bgcolor: "#fff",
+              color: "#d32f2f",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "#ffebee",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            Leave League
+          </Button>
+        )}
+
+        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+          <Button
+            onClick={onClose}
+            sx={{
+              fontWeight: 600,
+              color: "#43a047",
+              borderColor: "#43a047",
+              borderRadius: 2,
+              border: "2px solid",
+              bgcolor: "white",
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "#e8f5e9",
+                borderColor: "#43a047",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            Close
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
+  )
 }
 
 function AllLeagues() {

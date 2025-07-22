@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, Table2Icon } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, Table2Icon, Shield } from 'lucide-react';
 import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
@@ -41,6 +41,7 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import Group from '@/Components/images/group451.png'
+import ShieldImg from '@/Components/images/shield.png';
 
 
 interface League {
@@ -217,6 +218,7 @@ export default function LeagueDetailPage() {
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
+    const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
 
     // Add this useEffect to sync tab param with section
     useEffect(() => {
@@ -305,6 +307,19 @@ export default function LeagueDetailPage() {
             setCheckedCommonLeague(true);
         });
     }, [user, profilePlayerId, token]);
+
+    // Fetch XP for all users in this league
+    useEffect(() => {
+      async function fetchXP() {
+        if (!league) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`);
+        if (res.ok) {
+          const data = await res.json();
+          setUserLeagueXP(data.xp || {});
+        }
+      }
+      fetchXP();
+    }, [league]);
 
 
     const handleBackToAllLeagues = () => {
@@ -883,6 +898,7 @@ export default function LeagueDetailPage() {
                                   <Box sx={{ minWidth: 32, textAlign: 'center' }}>D</Box>
                                   <Box sx={{ minWidth: 32, textAlign: 'center' }}>L</Box>
                                   <Box sx={{ minWidth: 48, textAlign: 'center' }}>W%</Box>
+                                  <Box sx={{ minWidth: 60, textAlign: 'center' }}>XP Points</Box>
                               </Box>
                           </Box>
                           <Box>
@@ -946,12 +962,19 @@ export default function LeagueDetailPage() {
                                           />
                                         </Box>
                                         {/* Team name and player name */}
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
                                           <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: 16, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {row.name.split(' ')[0]}
                                           </Typography>
                                           <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 400, fontSize: 13, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {row.name.split(' ').slice(1).join(' ')}
+                                            {row.isAdmin && (
+                                              <span title="League Creator" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 4, verticalAlign: 'middle' }}>
+                                                <IconButton>
+                                                    <Shield color='green' />
+                                                </IconButton>
+                                              </span>
+                                            )}
                                           </Typography>
                                         </Box>
                                         {/* Stats */}
@@ -961,6 +984,7 @@ export default function LeagueDetailPage() {
                                           <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.draws}</Box>
                                           <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor }}>{row.losses}</Box>
                                           <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor }}>{row.winPercentage}</Box>
+                                          <Box sx={{ minWidth: 60, textAlign: 'center', color: textColor }}>{userLeagueXP[row.id] ?? 0}</Box>
                                         </Box>
                                       </Box>
                                       <Divider sx={{backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />

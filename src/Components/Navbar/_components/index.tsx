@@ -27,6 +27,11 @@ import Fade from '@mui/material/Fade';
 import Slide from '@mui/material/Slide';
 import { forwardRef } from 'react';
 import type { TransitionProps } from '@mui/material/transitions';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Custom SlideFade transition
 const SlideFade = forwardRef(function SlideFade(
@@ -50,6 +55,8 @@ export default function NavigationBar() {
   const { isAuthenticated, dispatch } = useAuth();
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
   const openProfileMenu = Boolean(profileMenuAnchor);
+  const [howToPlayOpen, setHowToPlayOpen] = useState(false);
+  const [gameRulesOpen, setGameRulesOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -80,29 +87,36 @@ export default function NavigationBar() {
     handleSignOut();
   };
 
-  const navLinks = [
-    { label: 'How to play', href: '/how-to-play' },
-    { label: 'Game rules', href: '/game-rules' },
-  ];
-
-  const renderNavLinks = () =>
-    navLinks.map((link) => (
+  const renderNavLinks = () => (
+    <>
       <Button
-        key={link.href}
-        component={Link}
-        href={link.href}
+        onClick={() => setHowToPlayOpen(true)}
         sx={{
           textTransform: 'none',
           fontWeight: 600,
           color: 'white',
           fontSize: '1rem',
           transition: '0.3s',
-          '&:hover': { color: '#1976d2' },
+          '&:hover': { color: '#43a047' },
         }}
       >
-        {link.label}
+        How to play
       </Button>
-    ));
+      <Button
+        onClick={() => setGameRulesOpen(true)}
+        sx={{
+          textTransform: 'none',
+          fontWeight: 600,
+          color: 'white',
+          fontSize: '1rem',
+          transition: '0.3s',
+          '&:hover': { color: '#43a047' },
+        }}
+      >
+        Game rules
+      </Button>
+    </>
+  );
 
   if (!mounted) {
     return (
@@ -270,24 +284,87 @@ export default function NavigationBar() {
                 </Menu>
               </ListItem>
             )}
-            {navLinks.map((link) => (
-              <ListItem key={link.href} disablePadding>
+            {isAuthenticated && (
+              <ListItem disablePadding>
                 <Button
-                  component={Link}
-                  href={link.href}
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={() => { setHowToPlayOpen(true); setDrawerOpen(false); }}
                   fullWidth
                   sx={{ justifyContent: 'flex-start', px: 3, py: 1.5, color: 'white' }}
                 >
-                  <ListItemText primary={link.label} />
+                  <ListItemText primary="How to play" />
                 </Button>
               </ListItem>
-            ))}
+            )}
+            {isAuthenticated && (
+              <ListItem disablePadding>
+                <Button
+                  onClick={() => { setGameRulesOpen(true); setDrawerOpen(false); }}
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start', px: 3, py: 1.5, color: 'white' }}
+                >
+                  <ListItemText primary="Game rules" />
+                </Button>
+              </ListItem>
+            )}
             <Divider sx={{ my: 1 }} />
             {/* Old Sign out button removed from here, now in Profile menu */}
           </List>
         </Box>
       </Drawer>
+      <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#1f673b', color: 'white', fontWeight: 700, fontSize: 22 }}>
+          How to play
+          <IconButton
+            aria-label="close"
+            onClick={() => setHowToPlayOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
+          <Typography variant="body1" sx={{ fontSize:'18px' , fontWeight:'900' , fontFamily:'sans-serif' }}>
+            {/* Replace with real content or fetch from CMS if needed */}
+           Developing your Player Card
+          </Typography>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#1f673b', color: 'white', fontWeight: 700, fontSize: 22 }}>
+          Game rules
+          <IconButton
+            aria-label="close"
+            onClick={() => setGameRulesOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
+          <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Rules</Typography>
+          <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
+            <li>Play fair</li>
+            <li>Play safe</li>
+            <li>Show respect</li>
+            <li>Play as a team</li>
+            <li>Commit to play</li>
+            <li>Pick balance teams</li>
+            <li>Rise to the challenge</li>
+            <li>Have fun!</li>
+          </ul>
+          <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Characteristics of a champion</Typography>
+          <ul style={{ marginLeft: 20, color: '#222' }}>
+            <li><b>C</b>ourageous</li>
+            <li><b>H</b>opeful</li>
+            <li><b>A</b>ppreciative</li>
+            <li><b>M</b>odest</li>
+            <li><b>P</b>erseverant</li>
+            <li><b>I</b>nspired</li>
+            <li><b>O</b>ptimistic</li>
+            <li><b>N</b>oble</li>
+          </ul>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
