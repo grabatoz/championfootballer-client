@@ -203,7 +203,7 @@ export default function LeagueDetailPage() {
     console.log('leagues matches', league?.matches)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { user, token } = useAuth();
+    const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
@@ -274,9 +274,11 @@ export default function LeagueDetailPage() {
         }
     }, [leagueId, token]);
     useEffect(() => {
-        if (!leagueId && !token) return;
+        // Wait for auth to finish loading, user to be authenticated, and token to be available
+        if (authLoading) return;
+        if (!isAuthenticated || !token) return;
         fetchLeagueDetails();
-    }, [leagueId, token, fetchLeagueDetails]);
+    }, [token, authLoading, isAuthenticated, fetchLeagueDetails]);
 
     // Professional access logic: allow if user and profile player have ever shared ANY league
     useEffect(() => {

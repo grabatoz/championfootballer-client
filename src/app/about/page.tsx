@@ -9,7 +9,7 @@ export default function AboutCF() {
   }, [])
 
   return (
-    <div className='p-6'>
+    <div className='p-6 bg-[#d6ffd1]'>
       <div className="mb-5 text-3xl font-semibold">About CF</div>
       <div className="flex flex-col gap-2">
         <p>

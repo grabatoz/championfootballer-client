@@ -74,7 +74,7 @@ function TermConditions() {
     ];
 
     return (
-        <div className='p-6'>
+        <div className='p-6 bg-[#d6ffd1]'>
             <h1 className='text-[30px] font-semibold leading-9 mt-5' >Terms & Conditions</h1>
             <div className='text-lg font-bold leading-6 mt-5'>
                 {"Last updated August 22, 2022"}

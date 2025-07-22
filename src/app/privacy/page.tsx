@@ -6,7 +6,7 @@ function PrivacyPloices() {
     window.scrollTo({ top: 0 })
   }, [])
   return (
-    <div className='p-6'>
+    <div className='p-6 bg-[#d6ffd1]'>
     <div className="mb-5 text-3xl font-semibold">Privacy Policy</div>
     <div className="flex flex-col gap-5">
       <p>
