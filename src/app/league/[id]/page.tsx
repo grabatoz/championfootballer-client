@@ -41,7 +41,6 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import Group from '@/Components/images/group451.png'
-import ShieldImg from '@/Components/images/shield.png';
 
 
 interface League {
