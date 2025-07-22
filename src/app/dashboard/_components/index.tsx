@@ -48,7 +48,7 @@ export default function PlayerDashboard() {
 
   const items = [
     { label: 'League', icon: league , url:'all-leagues' },
-    { label: 'matches', icon: matches , url:'all-matches'},
+    { label: 'Matches', icon: matches , url:'all-matches'},
     { label: 'Dream Team', icon: dreamteam , url:'dream-team'},
     { label: 'Players', icon: players , url:'all-players'},
     { label: 'Trophy Room', icon: trophy , url:'trophy-room'},
