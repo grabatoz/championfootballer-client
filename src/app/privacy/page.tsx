@@ -352,12 +352,12 @@ function PrivacyPloices() {
         <em>We do not knowingly collect data from or market to children under 18 years of age.</em>
       </p>
       <p>
-        We do not knowingly solicit data from or market to children under 18 years of age. By using the Services, you
+       {` We do not knowingly solicit data from or market to children under 18 years of age. By using the Services, you
         represent that you are at least 18 or that you are the parent or guardian of such a minor and consent to such
         minor dependent's use of the Services. If we learn that personal information from users less than 18 years of
         age has been collected, we will deactivate the account and take reasonable measures to promptly delete such
         data from our records. If you become aware of any data we may have collected from children under age 18,
-        please contact us at championfootballer@outlook.com.
+        please contact us at championfootballer@outlook.com.`}
       </p>
       <ol start={9}>
         <li>
@@ -448,12 +448,12 @@ function PrivacyPloices() {
         </em>
       </p>
       <p>
-        California Civil Code Section 1798.83, also known as the "Shine The Light" law, permits our users who are
+      {`  California Civil Code Section 1798.83, also known as the "Shine The Light" law, permits our users who are
         California residents to request and obtain from us, once a year and free of charge, information about
         categories of personal information (if any) we disclosed to third parties for direct marketing purposes and
         the names and addresses of all third parties with which we shared personal information in the immediately
         preceding calendar year. If you are a California resident and would like to make such a request, please submit
-        your request in writing to us using the contact information provided below.
+        your request in writing to us using the contact information provided below.`}
       </p>
       <p>
         If you are under 18 years of age, reside in California, and have a registered account with Services, you have
@@ -475,11 +475,11 @@ function PrivacyPloices() {
         <em>Yes, we will update this notice as necessary to stay compliant with relevant laws.</em>
       </p>
       <p>
-        We may update this privacy notice from time to time. The updated version will be indicated by an updated
+       {` We may update this privacy notice from time to time. The updated version will be indicated by an updated
         "Revised" date and the updated version will be effective as soon as it is accessible. If we make material
         changes to this privacy notice, we may notify you either by prominently posting a notice of such changes or by
         directly sending you a notification. We encourage you to review this privacy notice frequently to be informed
-        of how we are protecting your information.
+        of how we are protecting your information.`}
       </p>
       <ol start={13}>
         <li>
@@ -517,8 +517,8 @@ function PrivacyPloices() {
         <a href="https://championfootballer.com/" className="text-blue-600 hover:underline">
           https://championfootballer.com
         </a>
-        , ("<strong>Websites</strong>"). It explains what these technologies are and why we use them, as well as your
-        rights to control our use of them.
+        {`,`} ("<strong>Websites</strong>"){`. It explains what these technologies are and why we use them, as well as your
+        rights to control our use of them.`}
       </p>
       <p>
         In some cases we may use cookies to collect personal information, or that becomes personal information if we
@@ -533,21 +533,21 @@ function PrivacyPloices() {
         as well as to provide reporting information.
       </p>
       <p>
-        Cookies set by the website owner (in this case, Champion Footballer) are called "first party cookies". Cookies
+       {` Cookies set by the website owner (in this case, Champion Footballer) are called "first party cookies". Cookies
         set by parties other than the website owner are called "third party cookies". Third party cookies enable third
         party features or functionality to be provided on or through the website (e.g. like advertising, interactive
         content and analytics). The parties that set these third party cookies can recognize your computer both when
-        it visits the website in question and also when it visits certain other websites.
+        it visits the website in question and also when it visits certain other websites.`}
       </p>
       <p>
         <strong>Why do we use cookies?</strong>
       </p>
       <p>
-        We use first and third party cookies for several reasons. Some cookies are required for technical reasons in
+      {`  We use first and third party cookies for several reasons. Some cookies are required for technical reasons in
         order for our Websites to operate, and we refer to these as "essential" or "strictly necessary" cookies. Other
         cookies also enable us to track and target the interests of our users to enhance the experience on our Online
         Properties. Third parties serve cookies through our Websites for advertising, analytics and other purposes.
-        This is described in more detail below.
+        This is described in more detail below.`}
       </p>
       <p>
         The specific types of first and third party cookies served through our Websites and the purposes they perform
@@ -602,7 +602,7 @@ function PrivacyPloices() {
         <strong>What about other tracking technologies, like web beacons?</strong>
       </p>
       <p>
-        Cookies are not the only way to recognize or track visitors to a website. We may use other, similar
+       {` Cookies are not the only way to recognize or track visitors to a website. We may use other, similar
         technologies from time to time, like web beacons (sometimes called "tracking pixels" or "clear gifs"). These
         are tiny graphics files that contain a unique identifier that enable us to recognize when someone has visited
         our Websites or opened an e-mail including them. This allows us, for example, to monitor the traffic patterns
@@ -610,15 +610,15 @@ function PrivacyPloices() {
         whether you have come to the website from an online advertisement displayed on a third-party website, to
         improve site performance, and to measure the success of e-mail marketing campaigns. In many instances, these
         technologies are reliant on cookies to function properly, and so declining cookies will impair their
-        functioning.
+        functioning.`}
       </p>
       <p>
         <strong>Do you use Flash cookies or Local Shared Objects?</strong>
       </p>
       <p>
-        Websites may also use so-called "Flash Cookies" (also known as Local Shared Objects or "LSOs") to, among other
+     {`   Websites may also use so-called "Flash Cookies" (also known as Local Shared Objects or "LSOs") to, among other
         things, collect and store information about your use of our services, fraud prevention and for other site
-        operations.
+        operations.`}
       </p>
       <p>
         If you do not want Flash Cookies stored on your computer, you can adjust the settings of your Flash player to
@@ -636,10 +636,10 @@ function PrivacyPloices() {
         >
           Global Storage Settings Panel
         </a>{" "}
-        and following the instructions (which may include instructions that explain, for example, how to delete
+       {` and following the instructions (which may include instructions that explain, for example, how to delete
         existing Flash Cookies (referred to "information" on the Macromedia site), how to prevent Flash LSOs from
         being placed on your computer without your being asked, and (for Flash Player 8 and later) how to block Flash
-        Cookies that are not being delivered by the operator of the page you are on at the time).
+        Cookies that are not being delivered by the operator of the page you are on at the time).`}
       </p>
       <p>
         Please note that setting the Flash Player to restrict or limit acceptance of Flash Cookies may reduce or

@@ -7,8 +7,6 @@ import { Box, Container, Typography, IconButton, Stack, Divider, Button } from '
 import { FaInstagram, FaXTwitter } from 'react-icons/fa6';
 import { useAuth } from '@/lib/hooks';
 import { logout } from '@/lib/features/authSlice';
-import Image from 'next/image';
-import logo from '@/Components/images/cflogo2.png';
 
 export default function Footer() {
   const router = useRouter();
