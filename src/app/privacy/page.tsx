@@ -558,17 +558,17 @@ function PrivacyPloices() {
         <strong>How can I control cookies?</strong>
       </p>
       <p>
-        You have the right to decide whether to accept or reject cookies. You can exercise your cookie rights by
+       {` You have the right to decide whether to accept or reject cookies. You can exercise your cookie rights by
         setting your preferences in the Cookie Consent Manager. The Cookie Consent Manager allows you to select which
         categories of cookies you accept or reject. Essential cookies cannot be rejected as they are strictly
-        necessary to provide you with services.
+        necessary to provide you with services.`}
       </p>
       <p>
-        The Cookie Consent Manager can be found in the notification banner and on our website. If you choose to reject
+      {`  The Cookie Consent Manager can be found in the notification banner and on our website. If you choose to reject
         cookies, you may still use our website though your access to some functionality and areas of our website may
         be restricted. You may also set or amend your web browser controls to accept or refuse cookies. As the means
         by which you can refuse cookies through your web browser controls vary from browser-to-browser, you should
-        visit your browser's help menu for more information.
+        visit your browser's help menu for more information.`}
       </p>
       <p>
         In addition, most advertising networks offer you a way to opt out of targeted advertising. If you would like
