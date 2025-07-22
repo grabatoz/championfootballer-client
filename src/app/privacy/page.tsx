@@ -517,7 +517,7 @@ function PrivacyPloices() {
         <a href="https://championfootballer.com/" className="text-blue-600 hover:underline">
           https://championfootballer.com
         </a>
-        {`,`} ("<strong>Websites</strong>"){`. It explains what these technologies are and why we use them, as well as your
+        {`,`} (<strong>Websites</strong>){`. It explains what these technologies are and why we use them, as well as your
         rights to control our use of them.`}
       </p>
       <p>
