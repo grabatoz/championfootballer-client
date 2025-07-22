@@ -37,68 +37,6 @@ interface LeagueMembersDialogProps {
     onLeaveLeague: () => void;
 }
 
-interface LeagueTableDialogProps {
-    open: boolean;
-    onClose: () => void;
-    data: TableData[];
-    isLoading: boolean;
-}
-
-function LeagueTableDialog({ open, onClose, data, isLoading }: LeagueTableDialogProps) {
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ bgcolor: '#10b981', color: 'white' }}>League Table</DialogTitle>
-            <DialogContent sx={{ p: 0, minHeight: '150px' }}>
-                {isLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '150px' }}>
-                        <CircularProgress />
-                    </Box>
-                ) : (
-                    <TableContainer sx={{ overflowX: 'auto' }}>
-                        <Table>
-                            <TableHead>
-                                <TableRow sx={{ bgcolor: '#10b981' }}>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>#</TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>P</TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><EmojiEventsIcon fontSize="small" /></TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><HandshakeIcon fontSize="small" /></TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}><ThumbsDownIcon fontSize="small" /></TableCell>
-                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>W%</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {data.map((row, index) => (
-                                    <TableRow key={row.id}>
-                                          <TableCell>{index + 1}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <SportsSoccerIcon sx={{ color: '#10b981' }} />
-                                                <Typography>{row.name}</Typography>
-                                                {row.isAdmin && <ShieldIcon className={' stroke-[#10b981]'}  />}
-                                            </Box>
-                                        </TableCell>
-                                        {/* <TableCell>{index + 1}</TableCell>
-                                        <TableCell>{row.name}</TableCell> */}
-                                        <TableCell>{row.played}</TableCell>
-                                        <TableCell>{row.wins}</TableCell>
-                                        <TableCell>{row.draws}</TableCell>
-                                        <TableCell>{row.losses}</TableCell>
-                                        <TableCell>{row.winPercentage}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Close</Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
-
 function LeagueMembersDialog({ open, onClose, league, currentUserId, onRemoveMember, onLeaveLeague }: LeagueMembersDialogProps) {
     if (!league) return null;
 
@@ -267,80 +205,6 @@ function AllLeagues() {
 
     const handleLeagueClick = (leagueId: string) => {
         router.push(`/league/${leagueId}`);
-    };
-
-    const handleOpenTable = async (league: League) => {
-        setOpenTable(true);
-        setIsTableLoading(true);
-        setSelectedTableData([]); // Clear previous data
-
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-
-            if (data.success && data.league) {
-                const leagueDetails = data.league;
-                const playerStats = new Map<string, TableData>();
-
-                leagueDetails.members.forEach((member: User) => {
-                    playerStats.set(member.id, {
-                        id: member.id,
-                        name: `${member.firstName} ${member.lastName}`,
-                        played: 0,
-                        wins: 0,
-                        draws: 0,
-                        losses: 0,
-                        winPercentage: '0%',
-                        isAdmin: member.id === (leagueDetails.adminId || leagueDetails.administrators[0]?.id),
-                    });
-                });
-
-                leagueDetails.matches
-                    .filter((match: Match) => match.status === 'completed' && match.homeTeamGoals != null && match.awayTeamGoals != null)
-                    .forEach((match: Match) => {
-                        const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
-                        const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
-                        const isDraw = match.homeTeamGoals === match.awayTeamGoals;
-
-                        const processPlayer = (player: User, isHome: boolean) => {
-                             if (playerStats.has(player.id)) {
-                                const stats = playerStats.get(player.id)!;
-                                stats.played++;
-                                if ((isHome && homeWon) || (!isHome && awayWon)) {
-                                    stats.wins++;
-                                } else if (isDraw) {
-                                    stats.draws++;
-                                } else {
-                                    stats.losses++;
-                                }
-                            }
-                        };
-                        
-                        match.homeTeamUsers.forEach((player: User) => processPlayer(player, true));
-                        match.awayTeamUsers.forEach((player: User) => processPlayer(player, false));
-                    });
-                
-                const tableData = Array.from(playerStats.values()).map((stats: TableData) => ({
-                    ...stats,
-                    winPercentage: stats.played > 0 ? `${Math.round((stats.wins / stats.played) * 100)}%` : '0%',
-                }));
-
-                tableData.sort((a, b) => b.wins - a.wins || b.draws - a.draws || a.losses - b.losses);
-                
-                setSelectedTableData(tableData);
-
-            } else {
-                toast.error(data.message || 'Failed to fetch league table data');
-                setOpenTable(false);
-            }
-        } catch {
-            toast.error('An error occurred while fetching table data.');
-            setOpenTable(false);
-        } finally {
-            setIsTableLoading(false);
-        }
     };
 
     const handleOpenMembers = async (league: League) => {
@@ -739,12 +603,6 @@ function AllLeagues() {
                 </Dialog>
             </Container>
             <Toaster position="top-center" reverseOrder={false} />
-            <LeagueTableDialog
-                open={openTable}
-                onClose={() => setOpenTable(false)}
-                data={selectedTableData}
-                isLoading={isTableLoading}
-            />
             <LeagueMembersDialog
                 open={openMembers}
                 onClose={() => setOpenMembers(false)}
