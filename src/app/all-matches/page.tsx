@@ -604,7 +604,7 @@ export default function AllMatches() {
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
                                     {(selectedMatch.homeTeamUsers || []).map((player: User, idx: number) => (
                                         <Box key={player.id || idx}>
-                                            <PlayerCard {...mapPlayerToCardProps(player)} width={240} height={400} />
+                                            <PlayerCard points={0} {...mapPlayerToCardProps(player)} width={240} height={400} />
                                         </Box>
                                     ))}
                                 </Box>
@@ -617,7 +617,7 @@ export default function AllMatches() {
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
                                     {(selectedMatch.awayTeamUsers || []).map((player: User, idx: number) => (
                                         <Box key={player.id || idx}>
-                                            <PlayerCard {...mapPlayerToCardProps(player)} width={240} height={400} />
+                                            <PlayerCard points={0} {...mapPlayerToCardProps(player)} width={240} height={400} />
                                         </Box>
                                     ))}
                                 </Box>

@@ -40,7 +40,7 @@ textarea::selection,
   color: #fff !important;
 }
 
-input:-webkit-autofill,
+/* input:-webkit-autofill,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:active {
@@ -49,4 +49,4 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #fff !important;
   color: #fff !important;
   caret-color: #fff !important;
-}
+} */
