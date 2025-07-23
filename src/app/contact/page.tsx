@@ -66,6 +66,7 @@ export default function ContactForm() {
         alignItems: 'center',
         justifyContent: 'center',
         py: 6,
+        p:2
       }}
     >
       <Box

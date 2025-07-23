@@ -83,8 +83,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
 
   return (
     <Box>
-      {/* League name and game info at the top */}
-
       <Box
         sx={{
           display: 'flex',
@@ -103,13 +101,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           border: '1px solid #f0f0f0',
         }}
       >
-        {/* League name and game info at the very top of the box */}
         <Link href={`/league/${leagueId}`}>
-          <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22 }, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%' }}>
+          <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22}, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%' }}>
             League Name : <span className='underline'>{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
           </Typography>
         </Link>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' , sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Home Team */}
           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
             <Box
@@ -117,10 +114,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               src={homeTeamImg}
               alt={homeTeamName}
               sx={{
-                height: { xs: 90, md: 140 },
+                height: { xs: 140, md: 140 },
                 mr: 2,
                 // background: '#fff',
-                maxWidth: { xs: 90, md: 140 },
+                maxWidth: { xs: 140, md: 140 },
                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
                 p: 1,
                 color: 'white',
@@ -149,10 +146,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               src={awayTeamImg}
               alt={awayTeamName}
               sx={{
-                height: { xs: 90, md: 140 },
+                height: { xs: 140, md: 140 },
                 ml: 2,
                 // background: '#fff',
-                maxWidth: { xs: 90, md: 140 },
+                maxWidth: { xs: 140, md: 140 },
                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
                 p: 1,
                 borderRadius: 2,
@@ -160,7 +157,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             />
           </Box>
         </Box>
-        {/* Match start/end info at the very bottom of the box */}
         <Box
           sx={{
             width: '100%',
@@ -228,7 +224,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               </Button>
             )}
           </Box>
-          {/* Start/End date: below buttons for xs, left for md+ */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, order: { xs: 2, md: 1 }, width: { xs: '100%', md: 'auto' } }}>
             <Typography>
               Start: {new Date(matchStartTime).toLocaleString()}
@@ -241,7 +236,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           </Box>
         </Box>
       </Box>
-      {/* Prediction bar only if not completed */}
       {showPredictionBar && (
         <Box sx={{ mt: 1, width: '100%', maxWidth: 900, mx: 'auto', position: 'relative' }}>
           {isDraw ? (
@@ -294,8 +288,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           )}
         </Box>
       )}
-      {/* Match start/end info at the bottom */}
-
     </Box>
   );
 };
