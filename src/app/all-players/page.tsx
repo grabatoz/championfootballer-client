@@ -85,24 +85,25 @@ const AllPlayersPage = () => {
   });
 
   return (
-    <Container maxWidth="md" sx={{ 
-      py: 4, 
-      backgroundColor: '#1f673b', 
-      height: '100vh', 
+    <Container maxWidth="md" sx={{
+      py: { xs: 2, sm: 4 },
+      backgroundColor: '#1f673b',
+      minHeight: '100vh',
       color: 'white',
-      borderRadius: 5,
+      borderRadius: { xs: 2, sm: 5 },
       overflow: 'hidden',
-      mt:3
+      mt: { xs: 1, sm: 3 },
+      px: { xs: 0.5, sm: 2 },
     }}>
-      <Paper elevation={0} sx={{ 
-        p: 3, 
-        borderRadius: 3, 
+      <Paper elevation={0} sx={{
+        p: { xs: 1, sm: 3 },
+        borderRadius: { xs: 2, sm: 3 },
         backgroundColor: 'transparent',
-        height: '100%',
+        minHeight: '100%',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
       }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff' }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff', fontSize: { xs: 20, sm: 32 } }}>
           All Players
         </Typography>
         <TextField
@@ -112,7 +113,7 @@ const AllPlayersPage = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{
-            mb: 3,
+            mb: 1,
             '& .MuiOutlinedInput-root': {
               borderRadius: '25px',
               backgroundColor: '#0a3e1e',
@@ -126,25 +127,51 @@ const AllPlayersPage = () => {
               '&.Mui-focused fieldset': {
                 borderColor: '#43a047',
               },
+              // Autofill fix for Chrome, Safari, Edge
+              '& input:-webkit-autofill': {
+                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                WebkitTextFillColor: 'white',
+                caretColor: 'white',
+                transition: 'background-color 5000s ease-in-out 0s',
+              },
+              '& input:-webkit-autofill:focus': {
+                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                WebkitTextFillColor: 'white',
+                caretColor: 'white',
+              },
+              '& input:-webkit-autofill:hover': {
+                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                WebkitTextFillColor: 'white',
+                caretColor: 'white',
+              },
+              '& input:-webkit-autofill:active': {
+                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                WebkitTextFillColor: 'white',
+                caretColor: 'white',
+              },
             },
             '& .MuiInputBase-input': {
               color: 'white',
+              fontSize: { xs: 14, sm: 16 },
             },
             '& .MuiInputLabel-root': {
               color: 'white',
             },
           }}
         />
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, mb: 1 }}>
-          {/* <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Pos</Typography> */}
-          <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Name</Typography>
-          <Box sx={{ display: 'flex', gap: 5 }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>Stats</Typography>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>XP Points</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
+          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, minWidth: 40, textAlign: 'center' }}>Pos</Typography>
+          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1 , ml: 3 }}>Name</Typography>
+          <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Stats</Typography>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>XP Points</Typography>
           </Box>
         </Box>
-
+          {searchQuery && filteredPlayers.length === 0 && (
+          <Typography sx={{ color: 'white', background: '#0a3e1e', borderRadius: 2, px: 2, py: 1, mt: 1, textAlign: 'center', fontWeight: 500 }}>
+            User not found
+          </Typography>
+        )}
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <CircularProgress />
@@ -152,15 +179,16 @@ const AllPlayersPage = () => {
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
         ) : (
-          <Box sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            borderRadius: 3,
+          <Box sx={{
+            flex: 1,
+            overflow: 'auto',
+            borderRadius: { xs: 2, sm: 3 },
             '&::-webkit-scrollbar': {
               display: 'none'
             },
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            msOverflowStyle: 'none',
+            px: { xs: 0, sm: 1 },
           }}>
             <List>
               {sortedPlayers.map((player: Player, idx: number) => {
@@ -198,36 +226,37 @@ const AllPlayersPage = () => {
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',
+                        py: { xs: 1, sm: 2 },
+                        px: { xs: 1, sm: 2 },
+                        alignItems: 'center',
                       }}
                     >
                       {/* Ranking badge or number */}
-                      <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                      <Box sx={{ width: { xs: 28, sm: 36 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: { xs: 1, sm: 2 } }}>
                         {badgeImg ? (
-                          <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
+                          <img src={badgeImg.src} alt={`${idx + 1}st`} width={24} height={24} style={{ borderRadius: '50%' }} />
                         ) : (
                           <Box sx={{
-                            width: 28, height: 28, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14,
+                            width: 20, height: 20, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 10,
                             borderRadius: '50%', background: 'rgba(255,255,255,0.15)'
                           }}>{`${idx + 1}th`}</Box>
                         )}
                       </Box>
                       <ListItemAvatar>
-                        <Avatar src={player?.profilePicture || '/assets/group.svg'} />
+                        <Avatar src={player?.profilePicture || '/assets/group.svg'} sx={{ width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }} />
                       </ListItemAvatar>
-                      <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium' }} />
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 8, ml: 'auto' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
-                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : '#00C853' }} />
+                      <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium', fontSize: { xs: 13, sm: 16 } }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: { xs: 24, sm: 40 } }}>
+                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : '#00C853', fontSize: { xs: 16, sm: 24 } }} />
                         </Box>
-                        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: 60, textAlign: 'center' }}>
+                        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: { xs: 36, sm: 60 }, textAlign: 'center', fontSize: { xs: 13, sm: 20 } }}>
                           {player.rating}
                         </Typography>
                       </Box>
                     </ListItem>
-                    {/* {idx !== sortedPlayers.length - 1 && ( */}
-                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
-                    {/* )} */}
+                    <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                   </React.Fragment>
                 );
               })}

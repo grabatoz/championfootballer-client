@@ -614,7 +614,27 @@ function AllLeagues() {
                                 value={inviteCode}
                                 onChange={(e) => setInviteCode(e.target.value)}
                                 size="small"
-                                sx={{ backgroundColor: 'white', borderRadius: 1, flex: 1, maxWidth: 300 }}
+                                sx={{
+                                  backgroundColor: 'white',
+                                  borderRadius: 1,
+                                  flex: 1,
+                                  maxWidth: 300,
+                                  '& .MuiOutlinedInput-root': {
+                                    backgroundColor: 'white',
+                                    borderRadius: 1,
+                                    '& fieldset': { borderColor: '#43a047' },
+                                    '&:hover fieldset': { borderColor: '#43a047' },
+                                    '&.Mui-focused fieldset': { borderColor: '#43a047' },
+                                    '& input': { color: '#222' },
+                                    '& input:-webkit-autofill': {
+                                      WebkitBoxShadow: '0 0 0 1000px white inset !important',
+                                      WebkitTextFillColor: '#222 !important',
+                                      color: '#222 !important',
+                                      transition: 'background-color 5000s ease-in-out 0s',
+                                    },
+                                  },
+                                  '& .MuiInputLabel-root.Mui-focused': { color: '#43a047' },
+                                }}
                             />
                             <Button
                                 variant="contained"

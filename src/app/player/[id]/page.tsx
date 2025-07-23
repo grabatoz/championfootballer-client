@@ -351,103 +351,40 @@ const PlayerStatsPage = () => {
                     </Tabs>
                 </Box>
             </Box>
-
-            {/* Metric Buttons - Show for all tabs */}
-            {/* <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
-                        gap: 2,
-                        background: '#1f673b',
-                        boxShadow: 1,
-                        p: 2,
-                        mt: 2,
-                        color: '#fff',
-                    }}
-                >
-                    {metrics.map(m => (
-                        <Button
-                            key={m.key}
-                            onClick={() => setSelectedMetric(m.key)}
-                            variant={selectedMetric === m.key ? 'contained' : 'outlined'}
-                            sx={{
-                                bgcolor: selectedMetric === m.key ? '#43a047' : 'transparent',
-                                color: selectedMetric === m.key ? 'white' : '#fff',
-                                borderColor: '#4caf50',
-                                fontWeight: 'bold',
-                                flexDirection: 'column',
-                                borderRadius: 2,
-                                boxShadow: selectedMetric === m.key ? 2 : 0,
-                                minHeight: 80,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    background: selectedMetric === m.key
-                                        ? '#388e3c'
-                                        : 'rgba(76, 175, 80, 0.1)',
-                                },
-                            }}
-                        >
-                            <Image src={m.icon} alt={m.label} width={32} height={32} />
-                            <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
-                        </Button>
-                    ))}
-                </Box> */}
-
-            {/* League Selector - Show for all tabs */}
-            {/* <Box sx={{ p: 2, background: '#1f673b' }}>
-                    <FormControl fullWidth>
-                        <InputLabel sx={{ color: 'white' }}>Select League</InputLabel>
-                        <Select
-                            value={selectedLeaderboardLeague}
-                            label="Select League"
-                            onChange={(e) => setSelectedLeaderboardLeague(e.target.value as string)}
-                            sx={{
-                                color: 'white',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#4caf50'
-                                },
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#4caf50'
-                                },
-                                '& .MuiSvgIcon-root': {
-                                    color: 'white'
-                                }
-                            }}
-                        >
-                            {leagues.map(league => (
-                                <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Box> */}
             <Paper elevation={4} sx={{
-                p: { xs: 3, md: 4 },
+                p: { xs: 2, md: 4 },
                 backgroundColor: '#1f673b',
                 borderRadius: 4,
                 position: 'relative',
-                overflow: 'auto', // enable scrolling
-                height: '100vh', // fixed height (adjust as needed)
-                // Hide scrollbar for Webkit browsers (Chrome, Safari, Edge)
-                '&::-webkit-scrollbar': { display: 'none' },
-                // Hide scrollbar for Firefox
-                scrollbarWidth: 'none',
-                // Hide scrollbar for IE/Edge
-                msOverflowStyle: 'none',
+                overflow: 'hidden',
+                minHeight: { xs: '70vh', md: '80vh' },
+                height: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
             }}>
-                {/* Update the main flex layout to allow the right content to scroll independently */}
+                {/* Responsive main flex layout: sidebar left, awards right (row on md+, column on xs/sm) */}
                 <Box
                     sx={{
                         display: 'flex',
-                        flexDirection: { xs: 'column', lg: 'row' },
-                        alignItems: { xs: 'center', lg: 'flex-start' },
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: 'stretch',
                         gap: 4,
                         mb: 4,
-                        height: '100vh', // Ensure full viewport height for scrolling
-                        overflow: 'hidden',
+                        flex: 1,
+                        minHeight: 0,
+                        width: '100%',
                     }}
                 >
-                    {/* Left column: sticky player info and leaderboard */}
-                    <Box sx={{ width: { xs: '90%', md: 280 }, display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+                    {/* Sidebar: fixed width on md+, full width on mobile */}
+                    <Box sx={{
+                        width: { xs: '100%', md: 280 },
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 3,
+                        flexShrink: 0,
+                        mb: { xs: 3, md: 0 },
+                    }}>
                         <Box
                             sx={{
                                 width: '100%',
@@ -625,28 +562,6 @@ const PlayerStatsPage = () => {
                                     </Select>
                                 </FormControl>
                             </Box>
-                            {/* Filters Row */}
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2, mb: 3 }}>
-                                {/* <TextField
-                                    label="Age"
-                                    variant="outlined"
-                                    size="small"
-                                    value={ageFilter || ''}
-                                    onChange={e => setAgeFilter(e.target.value)}
-                                    sx={{ background: 'white', borderRadius: 1 }}
-                                /> */}
-                                {/* <TextField
-                                    label="Style"
-                                    variant="outlined"
-                                    size="small"
-                                    value={styleFilter || ''}
-                                    onChange={e => setStyleFilter(e.target.value)}
-                                    sx={{ background: 'white', borderRadius: 1 }}
-                                /> */}
-
-
-
-                            </Box>
                             {/* Leaderboard List */}
                             {leaderboardLoading ? (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -685,9 +600,6 @@ const PlayerStatsPage = () => {
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>{player.name}</Typography>
                                                 </Box>
                                             </Paper>
-                                            {/* {idx < leaderboardPlayers.length - 1 && (
-                                                <Divider sx={{ backgroundColor: '#fff', height: 1, my: 1 }} />
-                                            )} */}
                                             <Divider sx={{ borderColor: '#fff' }} />
                                         </React.Fragment>
                                     ))}
@@ -697,8 +609,19 @@ const PlayerStatsPage = () => {
                     </Box>
 
 
-                    {/* Right column: main content, scrollable */}
-                    <Box sx={{ flex: 1, width: '100%', maxWidth: '1400px', height: '100vh', overflowY: 'auto' }}>
+                    {/* Main content: flex: 1, never moves below sidebar on desktop */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            minWidth: 0,
+                            width: '100%',
+                            maxWidth: 1200,
+                            height: 'auto',
+                            overflow: 'visible',
+                            pb: 2,
+                            mx: 'auto',
+                        }}
+                    >
                         {tab === 0 && (
                             <Box>
                                 <Box sx={{
@@ -900,7 +823,7 @@ const PlayerStatsPage = () => {
                             </Box>
                         )}
                         {tab === 2 && (
-                            <Box>
+                            <Box sx={{ width: '100%' }}>
                                 {allTrophyAwards.length === 0 ? (
                                     <Paper elevation={2} sx={{
                                         p: 4,
@@ -917,95 +840,127 @@ const PlayerStatsPage = () => {
                                     </Paper>
                                 ) : (
                                     <Box sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
-                                        gap: 4,
-                                        justifyContent: 'center',
+                                        width: '100%',
+                                        maxWidth: { xs: '100%', md: 1200 },
+                                        mx: 'auto',
+                                        py: 1,
+                                        maxHeight: { xs: '60vh', sm: '70vh' },
+                                        overflowY: 'auto',
+                                        overflowX: 'hidden', // absolutely prevent x scroll
+                                        pr: 1,
+                                        '::-webkit-scrollbar': { width: 8 },
+                                        '::-webkit-scrollbar-thumb': { background: '#bdbdbd', borderRadius: 4 },
                                     }}>
-                                        {allTrophyAwards.map((trophy, idx) => {
-                                            const detail = trophyDetails[trophy.key];
-                                            if (!detail) return null;
-                                            return (
-                                                <Card
-                                                    key={trophy.key + trophy.leagueName + trophy.winnerId + idx}
-                                                    sx={{
-                                                        width: 260,
-                                                        height: 250,
-                                                        mx: 'auto',
-                                                        my: 2,
-                                                        borderRadius: 3,
-                                                        boxShadow: 3,
-                                                        border: '2px solid #43a047',
-                                                        background: '#fff',
-                                                        textAlign: 'center',
-                                                        p: 0,
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        justifyContent: 'center',
-                                                        alignItems: 'center',
-                                                    }}
-                                                >
-                                                    <CardContent sx={{
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'flex-end',
-                                                        height: '100%',
-                                                        width: '100%',
-                                                        p: 2,
-                                                        gap: 1.2,
-                                                        mt: 2,
-                                                    }}>
-                                                        <Box sx={{ width: '100%' }}>
-                                                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, color: '#333', textAlign: 'center' }}>
-                                                                {trophy.key}
-                                                            </Typography>
-                                                            <Typography variant="subtitle2" sx={{ color: '#757575', mb: 1, fontSize: 14, textAlign: 'center' }}>
-                                                                {detail.description}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Box sx={{ mb: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-                                                            <Box sx={{
-                                                                width: 68,
-                                                                height: 68,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                mx: 'auto',
-                                                            }}>
-                                                                <Image
-                                                                    src={detail.image}
-                                                                    alt={trophy.key}
-                                                                    height={56}
-                                                                    width={56}
-                                                                    style={{ objectFit: 'contain', display: 'block' }}
-                                                                />
+                                        <Box
+                                            sx={theme => ({
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr', // default: 1 card per row
+                                                gap: { xs: 2, sm: 4 },
+                                                justifyContent: 'center',
+                                                minWidth: 0,
+                                                width: '100%',
+                                                [theme.breakpoints.up(376)]: {
+                                                    gridTemplateColumns: '1fr 1fr', // 2 cards per row from 376px
+                                                },
+                                                [theme.breakpoints.up(760)]: {
+                                                    gridTemplateColumns: '1fr 1fr 1fr', // 3 cards per row from 760px
+                                                },
+                                                [theme.breakpoints.up(900)]: {
+                                                    gridTemplateColumns: '1fr 1fr', // 2 cards per row from 900px
+                                                },
+                                                [theme.breakpoints.up(1024)]: {
+                                                    gridTemplateColumns: '1fr 1fr', // 3 cards per row from 1160px
+                                                },
+                                                [theme.breakpoints.up(1160)]: {
+                                                    gridTemplateColumns: '1fr 1fr 1fr', // 3 cards per row from 1160px
+                                                },
+                                            })}
+                                        >
+                                            {allTrophyAwards.map((trophy, idx) => {
+                                                const detail = trophyDetails[trophy.key];
+                                                if (!detail) return null;
+                                                return (
+                                                    <Card
+                                                        key={trophy.key + trophy.leagueName + trophy.winnerId + idx}
+                                                        sx={{
+                                                            width: '100%', // always fill grid cell
+                                                            maxWidth: { xs: '100%', sm: 240, md: 320 },
+                                                            minWidth: 0,
+                                                            height: 'auto', // auto height
+                                                            mx: 'auto',
+                                                            borderRadius: 3,
+                                                            boxShadow: 3,
+                                                            border: '2px solid #43a047',
+                                                            background: '#fff',
+                                                            textAlign: 'center',
+                                                            p: 0,
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            justifyContent: 'center',
+                                                            alignItems: 'center',
+                                                        }}
+                                                    >
+                                                        <CardContent sx={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'flex-end',
+                                                            height: '100%',
+                                                            width: '100%',
+                                                            p: { xs: 1, sm: 2 },
+                                                            gap: 1.2,
+                                                            mt: { xs: 1, sm: 2 },
+                                                        }}>
+                                                            <Box sx={{ width: '100%' }}>
+                                                                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, color: '#333', textAlign: 'center', fontSize: { xs: 13, sm: 16, md: 18 } }}>
+                                                                    {trophy.key}
+                                                                </Typography>
+                                                                <Typography variant="subtitle2" sx={{ color: '#757575', mb: 1, fontSize: { xs: 10, sm: 12, md: 14 }, textAlign: 'center' }}>
+                                                                    {detail.description}
+                                                                </Typography>
                                                             </Box>
-                                                        </Box>
-                                                        <Button
-                                                            variant="contained"
-                                                            sx={{
-                                                                background: '#43a047',
-                                                                color: '#fff',
-                                                                fontWeight: 'bold',
-                                                                borderRadius: 2,
-                                                                boxShadow: 2,
-                                                                width: '100%',
-                                                                fontSize: 16,
-                                                                letterSpacing: 1,
-                                                                py: 1,
-                                                                // mb: 2,
-                                                                mt: 'auto',
-                                                                '&:hover': { background: '#43a047' },
-                                                            }}
-                                                            disableElevation
-                                                        >
-                                                            {trophy.leagueName}
-                                                        </Button>
-                                                    </CardContent>
-                                                </Card>
-                                            );
-                                        })}
+                                                            <Box sx={{ mb: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                                                                <Box sx={{
+                                                                    width: { xs: 38, sm: 48, md: 68 },
+                                                                    height: { xs: 38, sm: 48, md: 68 },
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    mx: 'auto',
+                                                                }}>
+                                                                    <Image
+                                                                        src={detail.image}
+                                                                        alt={trophy.key}
+                                                                        height={28}
+                                                                        width={28}
+                                                                        style={{ objectFit: 'contain', display: 'block', width: '100%', height: '100%' }}
+                                                                    />
+                                                                </Box>
+                                                            </Box>
+                                                            <Button
+                                                                variant="contained"
+                                                                sx={{
+                                                                    background: '#43a047',
+                                                                    color: '#fff',
+                                                                    fontWeight: 'bold',
+                                                                    borderRadius: 2,
+                                                                    boxShadow: 2,
+                                                                    width: '100%',
+                                                                    fontSize: { xs: 11, sm: 13, md: 16 },
+                                                                    letterSpacing: 1,
+                                                                    py: 0.7,
+                                                                    mt: 'auto',
+                                                                    '&:hover': { background: '#43a047' },
+                                                                }}
+                                                                disableElevation
+                                                            >
+                                                                {trophy.leagueName}
+                                                            </Button>
+                                                        </CardContent>
+                                                    </Card>
+                                                );
+                                            })}
+                                        </Box>
                                     </Box>
                                 )}
                             </Box>

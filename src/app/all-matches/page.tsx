@@ -329,26 +329,7 @@ export default function AllMatches() {
   boxShadow: '0 4px 24px 0 rgba(67,160,71,0.18)',
   p: 4,
 }}>
-  <Typography
-    variant="h3"
-    fontWeight="bold"
-    align="center"
-    sx={{ color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
-  >
-    {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
-  </Typography>
-  <Typography
-    variant="subtitle1"
-    align="center"
-    sx={{ mt: 1, color: '#e0f2f1', fontWeight: 500 }}
-  >
-    {selectedLeague === 'all'
-      ? 'Select a league to view its matches'
-      : `Viewing matches for ${selectedLeagueName}`}
-  </Typography>
-</Box>
-{/* League Dropdown */}
-<Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
   <FormControl
     fullWidth
     sx={{
@@ -378,7 +359,7 @@ export default function AllMatches() {
       },
     }}
   >
-    <InputLabel id="league-select-label" sx={{ color: '#fff' }}>Select League</InputLabel>
+    <InputLabel id="league-select-label" sx={{ color: '#fff', '&.Mui-focused': { color: '#fff' } }}>Select League</InputLabel>
     <Select
       labelId="league-select-label"
       id="league-select"
@@ -396,6 +377,26 @@ export default function AllMatches() {
     </Select>
   </FormControl>
 </Box>
+  <Typography
+    variant="h3"
+    fontWeight="bold"
+    align="center"
+    sx={{ color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+  >
+    {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
+  </Typography>
+  <Typography
+    variant="subtitle1"
+    align="center"
+    sx={{ mt: 1, color: '#e0f2f1', fontWeight: 500 }}
+  >
+    {selectedLeague === 'all'
+      ? 'Select a league to view its matches'
+      : `Viewing matches for ${selectedLeagueName}`}
+  </Typography>
+</Box>
+{/* League Dropdown */}
+
 
                 {/* Match Cards */}
                 <Box sx={{

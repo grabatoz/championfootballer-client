@@ -139,11 +139,11 @@ export default function NavigationBar() {
             <Image
               src={cflogo}
               alt="Champion Footballer Logo"
-              width={140}
+              width={600}
               height={40}
               className="w-auto"
               priority
-              unoptimized
+              // unoptimized
             />
           </Link>
 
