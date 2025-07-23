@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import Image, { StaticImageData } from 'next/image';
 import {
   Box,
   Typography,
@@ -68,7 +68,7 @@ import vectorGold from '@/Components/images/golden.svg';
 import vectorBlack from '@/Components/images/Vector.svg';
 import vectorDefault from '@/Components/images/Vector.svg';
 
-const vectorMap: Record<string, any> = {
+const vectorMap: Record<string, StaticImageData> = {
   Green: vectorGreen,
   Blue: vectorBlue,
   Bronze: vectorBronze,

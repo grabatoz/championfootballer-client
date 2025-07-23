@@ -97,7 +97,7 @@ export default function MatchDetailsPage() {
   const [league, setLeague] = useState<League | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
   const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
-  const [votedForId, setVotedForId] = useState<string | null>(null);
+  const [, setVotedForId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!matchId || !token) return;
