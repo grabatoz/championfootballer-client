@@ -3,20 +3,46 @@ import Image from 'next/image';
 import {
   Box,
   Typography,
-  // IconButton,
   Avatar,
   Divider,
   Button,
 } from '@mui/material';
-// import vector from '@/Components/images/Vector.svg';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
 import Link from 'next/link';
 
+// Static mapping for levels, milestone titles, colors, and point ranges
+const LEVELS = [
+  { level: 1, min: 0, max: 100, title: "Rookie", color: "Green" },
+  { level: 2, min: 100, max: 250, title: "The Prospect", color: "Green" },
+  { level: 3, min: 250, max: 500, title: "Rising Star", color: "Green" },
+  { level: 4, min: 500, max: 1000, title: "The Skilled Player", color: "Blue" },
+  { level: 5, min: 1000, max: 2000, title: "The Talented Player", color: "Blue" },
+  { level: 6, min: 2000, max: 3000, title: "The Chosen One", color: "Blue" },
+  { level: 7, min: 3000, max: 4000, title: "Serial Winner", color: "Blue" },
+  { level: 8, min: 4000, max: 5000, title: "Supreme Player", color: "Bronze" },
+  { level: 9, min: 5000, max: 6000, title: "The Invincible", color: "Bronze" },
+  { level: 10, min: 6000, max: 7000, title: "The Maestro", color: "Bronze" },
+  { level: 11, min: 7000, max: 8000, title: "Crème de la Crème", color: "Bronze" },
+  { level: 12, min: 8000, max: 9000, title: "Elite", color: "Silver" },
+  { level: 13, min: 9000, max: 10000, title: "World-Class", color: "Silver" },
+  { level: 14, min: 10000, max: 12000, title: "The Undisputed", color: "Silver" },
+  { level: 15, min: 12000, max: 15000, title: "Icon", color: "Silver" },
+  { level: 16, min: 15000, max: 18000, title: "Generational Talent", color: "Gold" },
+  { level: 17, min: 18000, max: 22000, title: "Legend of the Game", color: "Gold" },
+  { level: 18, min: 22000, max: 25000, title: "Football Royalty", color: "Gold" },
+  { level: 19, min: 25000, max: 30000, title: "Hall of Famer", color: "Gold" },
+  { level: 20, min: 30000, max: Infinity, title: "Champion Footballer", color: "Black" },
+];
+
+function getLevelInfo(points: number) {
+  return LEVELS.find(lvl => points >= lvl.min && points < lvl.max) || LEVELS[LEVELS.length - 1];
+}
+
 interface PlayerCardProps {
   name: string;
   number: string;
-  level: string;
+  points: number; // Now only pass points
   stats: {
     DRI: string;
     SHO: string;
@@ -33,10 +59,28 @@ interface PlayerCardProps {
   height?: number | string;
 }
 
+// Import all possible vector images
+import vectorGreen from '@/Components/images/Vector.svg';
+import vectorBlue from '@/Components/images/blue.svg';
+import vectorBronze from '@/Components/images/bronze.svg';
+import vectorSilver from '@/Components/images/silver.svg';
+import vectorGold from '@/Components/images/golden.svg';
+import vectorBlack from '@/Components/images/Vector.svg';
+import vectorDefault from '@/Components/images/Vector.svg';
+
+const vectorMap: Record<string, any> = {
+  Green: vectorGreen,
+  Blue: vectorBlue,
+  Bronze: vectorBronze,
+  Silver: vectorSilver,
+  Gold: vectorGold,
+  Black: vectorBlack,
+};
+
 const PlayerCard = ({
   name,
   number,
-  level,
+  points,
   foot,
   stats,
   profileImage,
@@ -44,6 +88,13 @@ const PlayerCard = ({
   width,
   height,
 }: PlayerCardProps) => {
+  // Find the level info based on points
+  const levelInfo = getLevelInfo(points);
+  const { title, color } = levelInfo;
+  // Pick the correct vector image based on color
+  const vectorImg = vectorMap[color] || vectorDefault;
+  // Set text color: black for Silver/Gold, white otherwise
+  const textColor = (color === 'Silver' || color === 'Gold') ? 'black' : 'white';
   return (
     <Box
       sx={{
@@ -51,23 +102,18 @@ const PlayerCard = ({
         height: height || 430,
         position: 'relative',
         fontWeight: 'bold',
-        color: 'white',
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          mx: 'auto',
-          overflow: 'hidden',
+        color: textColor,
         }}
     >
       {/* Background Image */}
-      {/* <Image
-        src={vector}
+      <Image
+        src={vectorImg}
         alt="Card Background"
         layout="fill"
         objectFit="contain"
         className="z-0"
         style={{ }}
-      /> */}
+      />
 
       {/* Overlay Content */}
       <Box
@@ -80,11 +126,12 @@ const PlayerCard = ({
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
+          color: textColor,
         }}
       >
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
-          <Typography fontWeight={'bold'} fontSize="15px">NO. <span className='font-bold text-[22px]'> {number} </span></Typography>
+          <Typography fontWeight={'bold'} fontSize="15px" color={textColor}>NO. <span className='font-bold text-[22px]'> {number} </span></Typography>
      <Button variant="contained" color="success">
     <Link href={'/profile'}>
       edit profile
@@ -97,22 +144,32 @@ const PlayerCard = ({
   justifyContent="space-between"
   alignItems="flex-start"
   px={2}
-  mt={5}
+  mt={2}
+
 >
   {/* Left: Number, XXX, Foot */}
   <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
-    <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'}>{number}</Typography>
-    <Divider sx={{ bgcolor: 'white'}}/>
-    <Typography fontSize="17px" fontWeight={'bold'}>XXX</Typography>
-    <Divider sx={{ bgcolor: 'white'}}/>
+    <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'} color={textColor}>{number}</Typography>
+    <Divider sx={{ bgcolor: textColor}}/>
+    <Typography fontSize="15px" fontWeight={'bold'} color={textColor}>{points} <span>xp</span></Typography>
+    <Divider sx={{ bgcolor: textColor}}/>
     <Box
       display="flex"
       alignItems="center"
       gap={0.5}
       mt={0.5}
     >
-      <Image src={Foot} alt="Shoe" width={22} height={10} />
-      <Typography fontSize="16px" fontWeight={'bold'}>{foot}</Typography>
+      {/* Render Foot SVG in black if textColor is black, else normal */}
+      <Box sx={{ display: 'inline-block', verticalAlign: 'middle', ...(textColor === 'black' ? { filter: 'invert(0)' } : {}) }}>
+        <Image
+          src={Foot}
+          alt="Shoe"
+          width={22}
+          height={10}
+          style={textColor === 'black' ? { filter: 'brightness(0) saturate(100%)' } : {}}
+        />
+      </Box>
+      <Typography fontSize="16px" fontWeight={'bold'} color={textColor}>{foot}</Typography>
     </Box>
   </Box>
 
@@ -122,7 +179,7 @@ const PlayerCard = ({
       position: 'relative',
       width: 100,
       height: 100,
-      border: '2px solid white',
+      border: `2px solid ${textColor}`,
       borderRadius: '10px',
       display: 'flex',
       alignItems: 'center',
@@ -142,22 +199,23 @@ const PlayerCard = ({
 </Box>
 
 
-        {/* Name and Level */}
+        {/* Name and Title (from static logic) */}
         <Box sx={{ mt: 2 }}>
           <Typography
             fontSize="18px"
             fontWeight="bold"
             sx={{ textTransform: 'uppercase' }}
+            color={textColor}
           >
             {name}
           </Typography>
-          <Typography fontSize="12px" fontWeight={'bold'}>Level {level}</Typography>
+          <Typography fontSize="12px" fontWeight={'bold'} color={textColor}>{title}</Typography>
         </Box>
 
         {/* Divider */}
         <Divider
           sx={{
-            bgcolor: 'white',
+            bgcolor: textColor,
             width: '50%',
             mx: 'auto',
             my: 1,
@@ -166,44 +224,12 @@ const PlayerCard = ({
         />
 
         {/* Stats */}
-        {/* <Grid container spacing={1} justifyContent="center">
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 DRI
-            </Typography>
-          </Grid>
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 PAC
-            </Typography>
-          </Grid>
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 SHO
-            </Typography>
-          </Grid>
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 DEF
-            </Typography>
-          </Grid>
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 PAS
-            </Typography>
-          </Grid>
-          <Grid item xs={6} component="div">
-            <Typography fontSize="14px">
-              00 PHY
-            </Typography>
-          </Grid>
-        </Grid> */}
 <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
   {/* Left Side Stats */}
   <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-    <Typography fontSize="14px">{stats?.DRI} DRI</Typography>
-    <Typography fontSize="14px">{stats?.SHO} SHO</Typography>
-    <Typography fontSize="14px">{stats?.PAS} PAS</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.DRI} DRI</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.SHO} SHO</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.PAS} PAS</Typography>
   </Box>
 
   {/* Vertical Line */}
@@ -211,23 +237,23 @@ const PlayerCard = ({
     sx={{
       width: '1px',
       height: '80px',
-      bgcolor: 'white',
+      bgcolor: textColor,
       mx: 1,
     }}
   />
 
   {/* Right Side Stats */}
   <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
-    <Typography fontSize="14px">{stats?.PAC} PAC</Typography>
-    <Typography fontSize="14px">{stats?.DEF} DEF</Typography>
-    <Typography fontSize="14px">{stats?.PHY} PHY</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.PAC} PAC</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.DEF} DEF</Typography>
+    <Typography fontSize="14px" color={textColor}>{stats?.PHY} PHY</Typography>
   </Box>
 </Box>
 
         {/* Bottom Divider */}
         <Divider
           sx={{
-            bgcolor: 'white',
+            bgcolor: textColor,
             width: '30%',
             mx: 'auto',
             mt: 2,

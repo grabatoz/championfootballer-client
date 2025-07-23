@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public paths that don't require authentication
-  const isPublicPath = pathname === '/';
+  const isPublicPath = pathname === '/' || pathname === '/terms' || pathname === '/privacy' || pathname === '/contact';
 
   // If user is logged in and tries to access auth pages, redirect to dashboard
   if (token && (pathname === '/')) {

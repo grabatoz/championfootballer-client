@@ -22,12 +22,13 @@ import Dashbg from '@/Components/images/dashbg.webp'
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage } from '@/lib/features/authSlice';
+import { User } from '@/types/user';
 // import { joinLeague } from '@/lib/features/leagueSlice';
 
 export default function PlayerDashboard() {
   // const [inviteCode, setInviteCode] = useState('');
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth) as { user: User };
 
   useEffect(() => {
     dispatch(initializeFromStorage());
@@ -85,7 +86,7 @@ export default function PlayerDashboard() {
             <PlayerCard
               name={user?.firstName || ''}
               number={user?.shirtNumber || '00'}
-              level={''}
+              points={user?.xp || 0}
               stats={{
                 DRI: user?.skills?.dribbling?.toString() || '',
                 SHO: user?.skills?.shooting?.toString() || '',
@@ -204,13 +205,14 @@ export default function PlayerDashboard() {
                 src={item.icon}
                 alt="img"
                 style={{
-                  width: '110px',
-                  height: '110px',
+                  width: '100%',
+                  maxWidth: window.innerWidth < 600 ? 40 : 90,
+                  height: window.innerWidth < 600 ? 40 : 90,
                   objectFit: 'contain',
-                  marginBottom: 8,
+                  marginBottom: 6,
                 }}
-                width={100}
-                height={100}
+                width={window.innerWidth < 600 ? 40 : 90}
+                height={window.innerWidth < 600 ? 40 : 90}
               />
               <Typography variant="h6" sx={{ color: '#004d40' }}>
                 {item.label}

@@ -20,7 +20,7 @@ const AuthTabs = () => {
   const { dispatch: authDispatch } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth) as { isAuthenticated: boolean };
 
   const [loginData, setLoginData] = useState<LoginCredentials>({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');

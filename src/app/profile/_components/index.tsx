@@ -36,7 +36,7 @@ import { updateProfile, deleteProfile } from "@/lib/api"
 import { useRouter } from "next/navigation"
 
 // Styled components for better design
-const StyledPaper = styled(Paper)(({}) => ({
+const StyledPaper = styled(Paper)(({ }) => ({
   background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
   borderRadius: 20,
   boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
@@ -44,7 +44,7 @@ const StyledPaper = styled(Paper)(({}) => ({
   backdropFilter: "blur(10px)",
 }))
 
-const SkillCard = styled(Card)(({}) => ({
+const SkillCard = styled(Card)(({ }) => ({
   background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   color: "white",
   borderRadius: 15,
@@ -54,7 +54,7 @@ const SkillCard = styled(Card)(({}) => ({
   },
 }))
 
-const StyledSlider = styled(Slider)(({  }) => ({
+const StyledSlider = styled(Slider)(({ }) => ({
   "& .MuiSlider-thumb": {
     width: 24,
     height: 24,
@@ -76,17 +76,17 @@ const StyledSlider = styled(Slider)(({  }) => ({
 }))
 
 // Styled TextField for green bg and white text
-const StyledTextField = styled(TextField)(({}) => ({
+const StyledTextField = styled(TextField)(({ }) => ({
   '& .MuiOutlinedInput-root': {
     background: '#1f673b',
-    color: '#fff',
+    color: 'white',
     borderRadius: 8,
     border: '1.5px solid #43a047',
     '& fieldset': {
       borderColor: '#43a047',
     },
     '&:hover fieldset': {
-      borderColor: '#1f673b',
+      borderColor: '#388e3c',
     },
     '&.Mui-focused fieldset': {
       borderColor: '#43a047',
@@ -120,10 +120,18 @@ const StyledTextField = styled(TextField)(({}) => ({
   '& .MuiInputLabel-root.Mui-focused': {
     color: '#fff',
   },
+  '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+  WebkitAppearance: 'none',
+  margin: 0,
+},
+'& input[type=number]': {
+  MozAppearance: 'textfield',
+  appearance: 'textfield',
+},
 }))
 
 // Styled Radio for green accent and white label
-const StyledRadio = styled(Radio)(({}) => ({
+const StyledRadio = styled(Radio)(({ }) => ({
   color: '#43a047',
   '&.Mui-checked': {
     color: '#43a047',
@@ -139,11 +147,11 @@ const StyledFormLabel = styled(FormLabel)(() => ({
 const PlayerProfileCard = () => {
   const { user, token, isAuthenticated } = useAuth()
   const [step, setStep] = useState(1)
-  const [dribbling, setDribbling] = useState(user?.skills?.dribbling )
-  const [shooting, setShooting] = useState(user?.skills?.shooting )
-  const [passing, setPassing] = useState(user?.skills?.passing )
-  const [pace, setPace] = useState(user?.skills?.pace )
-  const [defending, setDefending] = useState(user?.skills?.defending )
+  const [dribbling, setDribbling] = useState(user?.skills?.dribbling)
+  const [shooting, setShooting] = useState(user?.skills?.shooting)
+  const [passing, setPassing] = useState(user?.skills?.passing)
+  const [pace, setPace] = useState(user?.skills?.pace)
+  const [defending, setDefending] = useState(user?.skills?.defending)
   const [physical, setPhysical] = useState(user?.skills?.physical)
   const [isUpdating, setIsUpdating] = useState(false)
   const [, setError] = useState<string>("")
@@ -155,7 +163,7 @@ const PlayerProfileCard = () => {
   const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)")
   const [style, setStyle] = useState(user?.style || "")
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
-  const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "")
+  const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "00")
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
@@ -367,7 +375,7 @@ const PlayerProfileCard = () => {
                     alignItems: 'flex-start',
                     height: '100%',
                     flex: 1,
-                    ml:1
+                    ml: 1
                   }}
                 >
                   <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
@@ -380,10 +388,10 @@ const PlayerProfileCard = () => {
                     <span style={{ color: '#fff', fontWeight: 600 }}>Email:</span>
                     <span style={{ fontWeight: 700 }}>{user?.email || "email@example.com"}</span>
                   </Typography>
-                  <Typography sx={{  fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                  <Typography sx={{ fontSize: '14px', color: '#fff', fontWeight: 600 }}>
                     Shirt: <span >{user?.shirtNumber || "00"}</span>
                   </Typography>
-                  <Typography sx={{  fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                  <Typography sx={{ fontSize: '14px', color: '#fff', fontWeight: 600 }}>
                     Preferred <span>Foot:</span> <span>{user?.preferredFoot || "Right"}</span>
                   </Typography>
                   <Chip
@@ -400,11 +408,11 @@ const PlayerProfileCard = () => {
                       // alignSelf: 'center'
                     }}
                   />
-                        </Box>
-                        </Box>
+                </Box>
+              </Box>
 
-                  <Card
-                    sx={{
+              <Card
+                sx={{
                   width: '100%',
                   maxWidth: 320,
                   background: 'rgba(255,255,255,0.08)',
@@ -412,46 +420,46 @@ const PlayerProfileCard = () => {
                   borderRadius: 3,
                   mx: 'auto',
                   mb: 2,
-                  mt:2
-                    }}
-                  >
-                    <CardContent>
+                  mt: 2
+                }}
+              >
+                <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1, color: '#fff', fontWeight: 600, fontSize: 18 }}>
-                        <Sports /> Skills Overview
-                      </Typography>
+                    <Sports /> Skills Overview
+                  </Typography>
                   <Stack spacing={1.2}>
-                        {[
-                          { name: "Dribbling", value: dribbling },
-                          { name: "Shooting", value: shooting },
-                          { name: "Passing", value: passing },
-                          { name: "Pace", value: pace },
-                          { name: "Defending", value: defending },
-                          { name: "Physical", value: physical },
-                        ].map((skill) => (
-                          <Box key={skill.name}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    {[
+                      { name: "Dribbling", value: dribbling },
+                      { name: "Shooting", value: shooting },
+                      { name: "Passing", value: passing },
+                      { name: "Pace", value: pace },
+                      { name: "Defending", value: defending },
+                      { name: "Physical", value: physical },
+                    ].map((skill) => (
+                      <Box key={skill.name}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                           <Typography variant="body2" sx={{ color: '#fff' }}>{skill.name}</Typography>
                           <Typography variant="body2" fontWeight="bold" sx={{ color: '#fff' }}>
-                                {skill.value}
-                              </Typography>
-                            </Box>
-                            <LinearProgress
-                              variant="determinate"
-                              value={skill.value}
-                              sx={{
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: "rgba(255,255,255,0.3)",
+                            {skill.value}
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={skill.value}
+                          sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: "rgba(255,255,255,0.3)",
                             '& .MuiLinearProgress-bar': {
                               backgroundColor: "#fff",
-                                },
-                              }}
-                            />
-                          </Box>
-                        ))}
-                      </Stack>
-                    </CardContent>
-                  </Card>
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
 
               <Box sx={{ textAlign: "center" }}>
                 <Button
@@ -495,7 +503,7 @@ const PlayerProfileCard = () => {
               ))}
             </Stepper>
 
-            <StyledPaper elevation={0} sx={{ p: 4 , background:'#1f673b' , color:'white' }}>
+            <StyledPaper elevation={0} sx={{ p: 4, background: '#1f673b', color: 'white' }}>
               <Typography
                 variant="h5"
                 fontWeight="bold"
@@ -546,9 +554,9 @@ const PlayerProfileCard = () => {
                         >
                           <Person sx={{ fontSize: 60, color: '#111' }} />
                         </Avatar>
-                  <IconButton
-                    component="label"
-                    sx={{
+                        <IconButton
+                          component="label"
+                          sx={{
                             position: 'absolute',
                             top: -10,
                             left: '50%',
@@ -556,19 +564,19 @@ const PlayerProfileCard = () => {
                             bgcolor: '#43a047',
                             color: 'white',
                             '&:hover': { bgcolor: '#1f673b' },
-                      boxShadow: 3,
+                            boxShadow: 3,
                             width: 30,
                             height: 30,
                             borderRadius: '50%',
                             border: '3px solid #fff',
                             ml: 8,
-                    }}
-                  >
+                          }}
+                        >
                           <Edit sx={{ fontSize: 20 }} />
-                    <input type="file" accept="image/*" hidden onChange={handleImageChange} />
-                  </IconButton>
-                </Box>
-                {imageFile && (
+                          <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+                        </IconButton>
+                      </Box>
+                      {imageFile && (
                         <Button
                           variant="contained"
                           onClick={handleUploadImage}
@@ -586,32 +594,32 @@ const PlayerProfileCard = () => {
                           fullWidth={false}
                         >
                           UPLOAD IMAGE
-                  </Button>
-                )}
-              </Box>
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
                 </Box>
                 {/* Fields Right (on mobile: below image) */}
                 <Box sx={{ flex: 1, width: '100%' }}>
                   <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={6}>
                       <StyledTextField
-                    label="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                        label="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
                       <StyledTextField
-                    label="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
+                        label="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    </Grid>
                     {/* Email and Password side by side */}
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
@@ -641,75 +649,91 @@ const PlayerProfileCard = () => {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <StyledTextField
-                        label="Age"
-                        type="number"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
-                        fullWidth
-                        variant="outlined"
-                      />
-                    </Grid>
-                    {/* Preferred Foot */}
-                    <Grid item xs={12} sm={4}>
-                      <Card sx={{ p: 2, backgroundColor: '#1f673b', border:'2px solid #43a047' , borderRadius: 3 }}>
-                        <FormControl component="fieldset">
-                          <StyledFormLabel sx={{color: '#fff !important', textAlign: 'center', width: '100%' , mt:-2 }}>
-                            Preferred Foot
-                          </StyledFormLabel>
-                          <RadioGroup
-                            row
-                            value={preferredFoot}
-                            onChange={(e) => setPreferredFoot(e.target.value)}
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'row !important',
-                              justifyContent: 'space-between',
-                              width: '100%',
-                              position:'relative',
-                              mb:-2
-                            }}
-                          >
-                            <FormControlLabel
-                              value="Left"
-                              control={<StyledRadio />}
-                              label={<span style={{ color: '#fff' }}>Left</span>}
-                              sx={{ flex: 1, justifyContent: 'flex-start' }}
-                            />
-                            <FormControlLabel
-                              value="Right"
-                              control={<StyledRadio />}
-                              label={<span style={{ color: '#fff' }}>Right</span>}
-                              sx={{ flex: 1, justifyContent: 'flex-end' , mt:0 , position:'absolute' , ml:10 }}
+                    <Grid container spacing={2} mt={1} ml={0.5} alignItems="flex-start">
+                      <Grid item xs={2} sm={2}>
+                        <StyledTextField
+                          label="Shirt Number"
+                          type="number"
+                          value={shirtNumber}
+                          onChange={(e) => setShirtNumber(e.target.value)}
+                          fullWidth
+                          variant="outlined"
+                          InputProps={{ sx: { height: 70  , borderRadius: 2 } }}
+                        />
+                      </Grid>
+                      <Grid item xs={2} sm={2}>
+                        <StyledTextField
+                          label="Age"
+                          type="number"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          fullWidth
+                          variant="outlined"
+                          InputProps={{ sx: { height: 70 } }}
+                        />
+                      </Grid>
+                      <Grid item xs={4} sm={4}>
+                        {/* Gender field - leave as is */}
+                        {/* Replace below with your actual gender field/component */}
+                        <Card sx={{ p: 2, backgroundColor: '#1f673b', borderRadius: 3, border: '2px solid #43a047' }}>
+                          <FormControl component="fieldset">
+                            <StyledFormLabel sx={{ color: '#fff !important', mt: -2 }} >
+                              Gender
+                            </StyledFormLabel>
+                            <RadioGroup
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'row !important',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                position: 'relative',
+                                mb: -2
+                              }}
+                              value={gender} onChange={(e) => setGender(e.target.value)} row>
+                              <FormControlLabel sx={{ flex: 1, justifyContent: 'flex-start' }} value="male" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Male</span>} />
+                              <FormControlLabel sx={{ flex: 1, justifyContent: 'flex-end', mt: 0, position: 'absolute', ml: 8 }} value="female" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Female</span>} />
+                            </RadioGroup>
+                          </FormControl>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={3} sm={4}>
+                        {/* Preferred Foot field - leave as is */}
+                        {/* Replace below with your actual preferred foot field/component */}
+                        <Card sx={{ p: 2, backgroundColor: '#1f673b', border: '2px solid #43a047', borderRadius: 3 }}>
+                          <FormControl component="fieldset">
+                            <StyledFormLabel sx={{ color: '#fff !important', textAlign: 'center', width: '100%', mt: -2 }}>
+                              Preferred Foot
+                            </StyledFormLabel>
+                            <RadioGroup
+                              row
+                              value={preferredFoot}
+                              onChange={(e) => setPreferredFoot(e.target.value)}
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'row !important',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                position: 'relative',
+                                mb: -2
+                              }}
+                            >
+                              <FormControlLabel
+                                value="Left"
+                                control={<StyledRadio />}
+                                label={<span style={{ color: '#fff' }}>Left</span>}
+                                sx={{ flex: 1, justifyContent: 'flex-start' }}
+                              />
+                              <FormControlLabel
+                                value="Right"
+                                control={<StyledRadio />}
+                                label={<span style={{ color: '#fff' }}>Right</span>}
+                                sx={{ flex: 1, justifyContent: 'flex-end', mt: 0, position: 'absolute', ml: 10 }}
 
-                            />
-                          </RadioGroup>
-                        </FormControl>
-                      </Card>
-                    </Grid>
-                    {/* Gender */}
-                    <Grid item xs={12} sm={4}>
-                      <Card sx={{ p: 2, backgroundColor: '#1f673b', borderRadius: 3 , border:'2px solid #43a047' }}>
-                        <FormControl component="fieldset">
-                          <StyledFormLabel sx={{color : '#fff !important' , mt:-2}} >
-                            Gender
-                          </StyledFormLabel>
-                          <RadioGroup
-                           sx={{
-                            display: 'flex',
-                            flexDirection: 'row !important',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            position:'relative',
-                            mb:-2
-                          }}
-                           value={gender} onChange={(e) => setGender(e.target.value)} row>
-                            <FormControlLabel sx={{ flex: 1, justifyContent: 'flex-start' }} value="male" control={<StyledRadio />} label={<span style={{ color: '#fff' }}>Male</span>} />
-                            <FormControlLabel  sx={{ flex: 1, justifyContent: 'flex-end' , mt:0 , position:'absolute' , ml:8 }} value="female" control={<StyledRadio />} label={<span style={{ color: '#fff'}}>Female</span>} />
-                          </RadioGroup>
-                        </FormControl>
-                      </Card>
+                              />
+                            </RadioGroup>
+                          </FormControl>
+                        </Card>
+                      </Grid>
                     </Grid>
                   </Grid>
                 </Box>
@@ -719,7 +743,7 @@ const PlayerProfileCard = () => {
                 <Grid item xs={12}>
                   <Card sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
                     <FormControl component="fieldset">
-                      <StyledFormLabel sx={{ mb: 1 , color:'#fff !important' }}>
+                      <StyledFormLabel sx={{ mb: 1, color: '#fff !important' }}>
                         Position Type
                       </StyledFormLabel>
                       <RadioGroup value={positionType} onChange={(e) => setPositionType(e.target.value)} row>
@@ -855,7 +879,7 @@ const PlayerProfileCard = () => {
               ))}
             </Stepper>
 
-            <StyledPaper elevation={0} sx={{ p: 4 , background:'#1f673b' , color:'white' }}>
+            <StyledPaper elevation={0} sx={{ p: 4, background: '#1f673b', color: 'white' }}>
               <Typography
                 variant="h5"
                 fontWeight="bold"
@@ -864,20 +888,6 @@ const PlayerProfileCard = () => {
               >
                 <Sports color="primary" /> Skills & Attributes
               </Typography>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <StyledTextField
-                    label="Shirt Number"
-                    type="number"
-                    value={shirtNumber}
-                    onChange={(e) => setShirtNumber(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-              </Grid>
-
               <Grid container spacing={3} sx={{ mt: 2 }}>
                 {skills.map((skill) => (
                   <Grid item xs={12} sm={6} key={skill.name}>
@@ -940,32 +950,32 @@ const PlayerProfileCard = () => {
               {/* Update & Delete Account Buttons */}
               <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
                 <Stack direction="row" justifyContent="center" spacing={3} sx={{ mt: 5 }}>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={handleDeleteProfile}
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleDeleteProfile}
                     sx={{ borderRadius: 20, px: 4, color: '#fff', borderColor: '#f44336', '&:hover': { bgcolor: '#b71c1c', borderColor: '#b71c1c' }, fontWeight: 600 }}
-                    >
-                      Delete Account
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isUpdating}
+                  >
+                    Delete Account
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isUpdating}
                     startIcon={isUpdating ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
-                      sx={{
-                        borderRadius: 20,
+                    sx={{
+                      borderRadius: 20,
                       px: 5,
                       bgcolor: '#43a047',
                       color: '#fff',
                       '&:hover': { bgcolor: '#1f673b' },
                       fontWeight: 600,
-                        boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
-                      }}
-                    >
-                      {isUpdating ? "Updating..." : "Update Profile"}
-                    </Button>
-                  </Stack>
+                      boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
+                    }}
+                  >
+                    {isUpdating ? "Updating..." : "Update Profile"}
+                  </Button>
+                </Stack>
               </form>
 
               <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
@@ -977,7 +987,7 @@ const PlayerProfileCard = () => {
                 >
                   Previous
                 </Button>
-                </Stack>
+              </Stack>
             </StyledPaper>
           </Box>
         </Fade>

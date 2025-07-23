@@ -31,6 +31,7 @@ export interface User {
   profilePicture?: string | null;
   positionType: string;
   skills?: Skills;
+  xp?: number;
 }
 
 export interface AuthResponse {
