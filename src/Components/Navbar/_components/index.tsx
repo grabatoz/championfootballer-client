@@ -32,6 +32,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
+import playercardupdate from '@/Components/images/playercardupdate.png';
+import leagueimg from '@/Components/images/leagueimg.png';
+import progressimg from '@/Components/images/progressimg.png';
+import leaguesetting from '@/Components/images/leaguesetting.png';
+import matchdetails from '@/Components/images/matchdetails.png';
+import palyerstats from '@/Components/images/palyerstats.png';
 
 // Custom SlideFade transition
 const SlideFade = forwardRef(function SlideFade(
@@ -143,7 +149,7 @@ export default function NavigationBar() {
               height={40}
               className="w-auto"
               priority
-              // unoptimized
+            // unoptimized
             />
           </Link>
 
@@ -313,7 +319,7 @@ export default function NavigationBar() {
       </Drawer>
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: '#1f673b', color: 'white', fontWeight: 700, fontSize: 22 }}>
-          How to play
+          How to Play
           <IconButton
             aria-label="close"
             onClick={() => setHowToPlayOpen(false)}
@@ -322,10 +328,111 @@ export default function NavigationBar() {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
-          <Typography variant="body1" sx={{ fontSize:'18px' , fontWeight:'900' , fontFamily:'sans-serif' }}>
-            {/* Replace with real content or fetch from CMS if needed */}
-           Developing your Player Card
+        <DialogContent sx={{ color: '#222', mt: 2 }}>
+          {/* Step 1: Player Card */}
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            1. Set Up Your Player Card
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            After registering, your Player Card stats will be set to zero by default. Before joining a match, update your Player Card by adjusting your skill levels using the sliders. These stats help balance teams and improve match predictions.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={playercardupdate.src} alt='Player Card Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+
+          {/* Step 2: Join or Create a League */}
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            2. Join or Create a League
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            To play matches, you need to be part of a league. You can join an existing league using an <b>invite code</b> or the <b>join league</b> link. To create your own league, click the <b>Create New League</b> button on the home page and enter a league name.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={leagueimg.src} alt='League Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            If you are in multiple leagues, the all league among them will be displayed as your primary league in the Join League section.
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          By default, once you have created a new league you will be assigned as league<b> admin</b>. The league admin will be given full control over selecting teams, creating new matches and adding in match scores. You can always switch the league admin anytime with another player in the same league by going through the league setting option
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={leaguesetting.src} alt='leaguesetting' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          In the league setting as the league admin, it is good practice to enter the total number of matches to be played in the league. Once you have reached the maximum number of games in the league, virtual awards will be finalised on the home page.
+          </Typography>
+          {/* Step 3: Play Matches & Track Progress */}
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            3. Play Matches & Track Progress
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Once you’re in a league, you can join scheduled matches, view your stats, and see your progress on the leaderboard and trophy room. Keep your Player Card updated for the best experience!
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            {/* Replace progressimg with your actual image import */}
+            <Image src={progressimg.src} alt='Progress Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+
+          {/* Step 4: Earn XP & Win Awards */}
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            4. Earn XP & Win Awards
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            You earn XP (Experience Points) for your performance in matches:
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              <li>Win: 30 XP &nbsp;|&nbsp; Draw: 15 XP &nbsp;|&nbsp; Loss: 10 XP</li>
+              <li>Goal: 3 XP (win), 2 XP (loss)</li>
+              <li>Assist: 2 XP (win), 1 XP (loss)</li>
+              <li>Clean Sheet (GK): 5 XP</li>
+              <li>Man of the Match: 10 XP (win), 5 XP (loss)</li>
+              <li>Special Achievements: Extra XP for milestones (e.g., hat-trick, win streaks, etc.)</li>
+            </ul>
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            At the end of each league, top performers win special awards:<br />
+            <b>Champion Footballer</b> (1st place), <b>Runner-Up</b> (2nd place), <b>Ballon d'Or</b> (most MOTM), <b>GOAT</b> (highest win ratio), <b>Golden Boot</b> (most goals), <b>King Playmaker</b> (most assists), <b>Legendary Shield</b> (best defender/goalkeeper), and <b>The Dark Horse</b> (outside top 3, most MOTM votes).
+          </Typography>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            5. Creating Matches and Selecting Teams
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          As a league admin you can create matches and select teams. 
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          {`To create a new match, select `}<b>Matches</b> {`> click on to`} <b>Schedule New Match </b>{`and enter the relevant match details >`} <b>Schedule Match</b>{`. The new match will be visible to all players in the league. `} 
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          {`Players can select their availability to play the match by logging in to their home page > click on to`} Matches {`>`}<b> Mark yourself as available</b>. 
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            {/* Replace progressimg with your actual image import */}
+            <Image src={matchdetails.src} alt='Progress Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            6. League Table
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          Once a match has been played and scores has been uploaded by the league admin, players on the <b>winning</b> team will be allocated 3 points and 1 for drawing. All players can view match results. The player with the most matches won in a league becomes the <b>Champion Footballer</b>. 
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          {`You can track each player’s game stats by clicking onto player name from league table. `} 
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            {/* Replace progressimg with your actual image import */}
+            <Image src={palyerstats.src} alt='Progress Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            7. League Admin
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          League admin will have a slightly different view on Champion Football to the rest of the players in the league. League admin can be interchangeable between league players.
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          The league admin will act as the league manager and will be passed on the responsibility to keep the league running by creating matches, selecting teams, adding scores. 
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+          The league admin can alter changes to the league such as league/team names, number of games to be played  
           </Typography>
         </DialogContent>
       </Dialog>

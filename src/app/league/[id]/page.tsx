@@ -894,12 +894,9 @@ export default function LeagueDetailPage() {
                     </Box>
                 )}
                 {section === 'table' && (
-                    // Table Section
                     <Box sx={{
                         maxHeight: 350,
-                        overflowY: 'auto',
-                        scrollbarWidth: 'none',
-                        '&::-webkit-scrollbar': { display: 'none' },
+                        overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                         borderRadius: 3,
                         p: 0,
                         color: 'white',
@@ -915,6 +912,7 @@ export default function LeagueDetailPage() {
                         <Box sx={{
                             width: '100%',
                             overflowX: 'auto',
+                            scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                             px: 2,
                             pb: 2,
                         }}>
@@ -937,12 +935,12 @@ export default function LeagueDetailPage() {
                                         <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>D</Box>
                                         <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>L</Box>
                                         <Box sx={{ minWidth: 48, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>W%</Box>
+                                        <Box sx={{ minWidth: 40, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>Pts</Box>
                                         <Box sx={{ minWidth: 60, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>XP Points</Box>
                                     </Box>
                                 </Box>
                                 <Box>
                                     {tableData.length > 0 ? tableData.map((row, idx) => {
-                                        // Row background and text color logic
                                         let rowBg = '#0a4822';
                                         let textColor = '#fff';
                                         const subTextColor = '#fff';
@@ -979,7 +977,6 @@ export default function LeagueDetailPage() {
                                                             minHeight: 60,
                                                         }}
                                                     >
-                                                        {/* Position badge */}
                                                         <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
                                                             {badgeImg ? (
                                                                 <Image src={badgeImg} alt={`${idx + 1}st`} width={32} height={32} />
@@ -990,7 +987,6 @@ export default function LeagueDetailPage() {
                                                                 }}>{`${idx + 1}th`}</Box>
                                                             )}
                                                         </Box>
-                                                        {/* Team logo/profile */}
                                                         <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                             <img
                                                                 src={row.profilePicture || '/assets/group.svg'}
@@ -1000,7 +996,6 @@ export default function LeagueDetailPage() {
                                                                 style={{ borderRadius: '50%', objectFit: 'cover', width: 40, height: 40, display: 'block' }}
                                                             />
                                                         </Box>
-                                                        {/* Team name and player name */}
                                                         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
                                                             <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: { xs: 12, sm: 14, md: 16 }, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 {row.name.split(' ')[0]}
@@ -1016,13 +1011,14 @@ export default function LeagueDetailPage() {
                                                                 )}
                                                             </Typography>
                                                         </Box>
-                                                        {/* Stats */}
+                                                     
                                                         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2, md: 4 }, ml: 'auto' }}>
                                                             <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.played}</Box>
                                                             <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.wins}</Box>
                                                             <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.draws}</Box>
                                                             <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.losses}</Box>
                                                             <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.winPercentage}</Box>
+                                                            <Box sx={{ minWidth: 40, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.wins * 3 + row.draws}</Box>
                                                             <Box sx={{ minWidth: 60, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{userLeagueXP[row.id] ?? 0}</Box>
                                                         </Box>
                                                     </Box>
