@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,17 @@ export default function PlayerDashboard() {
   // const [inviteCode, setInviteCode] = useState('');
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User };
+
+  // Add state for window width
+  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  useEffect(() => {
+    // Only run on client
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     dispatch(initializeFromStorage());
@@ -206,13 +217,13 @@ export default function PlayerDashboard() {
                 alt="img"
                 style={{
                   width: '100%',
-                  maxWidth: window.innerWidth < 600 ? 40 : 90,
-                  height: window.innerWidth < 600 ? 40 : 90,
+                  maxWidth: windowWidth < 600 ? 40 : 100,
+                  height: windowWidth < 600 ? 40 : 100,
                   objectFit: 'contain',
                   marginBottom: 6,
                 }}
-                width={window.innerWidth < 600 ? 40 : 90}
-                height={window.innerWidth < 600 ? 40 : 90}
+                width={windowWidth < 600 ? 40 : 90}
+                height={windowWidth < 600 ? 40 : 90}
               />
               <Typography variant="h6" sx={{ color: '#004d40' }}>
                 {item.label}
