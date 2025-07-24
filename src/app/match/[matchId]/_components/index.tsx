@@ -305,7 +305,7 @@ export default function MatchDetailsPage() {
                     alignItems: 'center',
                   }}
                 >
-                  <Box sx={{ display: "flex", gap: 4, minWidth: 900 }}>
+                  <Box sx={{ display: "flex", gap: 4, minWidth: 100 }}>
                     {/* Away Team Table (left) */}
                     <Box
                       sx={{
@@ -331,7 +331,7 @@ export default function MatchDetailsPage() {
                           fontSize: { xs: 11, sm: 13, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: 700 }}>
+                        <Box sx={{ minWidth: 600 }}>
                           <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
                             {match.awayTeamName} Players
                           </Typography>
@@ -479,7 +479,7 @@ export default function MatchDetailsPage() {
                           fontSize: { xs: 11, sm: 13, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: 700 }}>
+                        <Box sx={{ minWidth: 600 }}>
                           <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
                             {match.homeTeamName} Players
                           </Typography>
@@ -645,13 +645,13 @@ export default function MatchDetailsPage() {
                       boxShadow: 2,
                       overflowX: "auto",
                       minWidth: 0,
-                      maxWidth: { xs: "100%", sm: 600 },
+                      maxWidth: { xs: "100%", sm: 800 }, // width increased
                       width: "100%",
                       fontSize: { xs: 11, sm: 13, md: 15 },
                       mx: "auto",
                     }}
                   >
-                    <Box sx={{ minWidth: '100%' }}>
+                    <Box sx={{ minWidth: 350 }}> {/* minWidth set */}
                       <Typography
                         variant="h6"
                         fontWeight="bold"
