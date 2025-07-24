@@ -390,8 +390,8 @@ export default function NavigationBar() {
             </ul>
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            At the end of each league, top performers win special awards:<br />
-            <b>Champion Footballer</b> (1st place), <b>Runner-Up</b> (2nd place), <b>Ballon d'Or</b> (most MOTM), <b>GOAT</b> (highest win ratio), <b>Golden Boot</b> (most goals), <b>King Playmaker</b> (most assists), <b>Legendary Shield</b> (best defender/goalkeeper), and <b>The Dark Horse</b> (outside top 3, most MOTM votes).
+            {`At the end of each league, top performers win special awards`}:<br />
+            <b>Champion Footballer</b> {`(1st place),`} <b>{`Runner-Up`}</b> {`(2nd place),`} <b>{`Ballon d'Or`}</b>{` (most MOTM),`} <b>GOAT</b> {`(highest win ratio),`} <b>Golden Boot</b> {`(most goals),`} <b>King Playmaker</b> {`(most assists),`} <b>Legendary Shield</b> {`(best defender/goalkeeper), and `}<b>The Dark Horse</b> {`(outside top 3, most MOTM votes)`}.
           </Typography>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             5. Creating Matches and Selecting Teams
