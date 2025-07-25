@@ -992,6 +992,7 @@ const PlayerProfileCard = () => {
             </StyledPaper>
           </Box>
         </Fade>
+        <Toaster position="top-center" reverseOrder={false} />
       </Container>
     )
   }

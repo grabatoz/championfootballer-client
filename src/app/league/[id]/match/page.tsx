@@ -669,6 +669,7 @@ export default function ScheduleMatchPage() {
                     </Box>
                 </Box>
             </Box>
+            <Toaster position="top-center" reverseOrder={false} />            
         </LocalizationProvider>
     );
 } 
