@@ -1,6 +1,15 @@
 import { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
 import { User, League, Match } from '@/types/user';
 import Cookies from 'js-cookie';
+import type {
+  LeaguesResponse,
+  LeaderboardResponse,
+  PlayersResponse,
+  MatchesResponse,
+  DreamTeamResponse,
+  PlayerStatsResponse,
+  CacheEntry
+} from '../types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -709,4 +718,98 @@ export const playerAPI = {
         return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' };
     }
   },
+}
+
+// --- LocalStorage Cache Utility ---
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+function getCache<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
+  // 1. Try localStorage
+  const cached = localStorage.getItem(key);
+  if (cached) {
+    try {
+      const { data, expiry } = JSON.parse(cached) as CacheEntry<T>;
+      if (Date.now() < expiry) return data;
+    } catch {}
+  }
+  // 2. Try cookies
+  const cookie = Cookies.get(key);
+  if (cookie) {
+    try {
+      const { data, expiry } = JSON.parse(cookie) as CacheEntry<T>;
+      if (Date.now() < expiry) {
+        // Restore to localStorage for next time
+        localStorage.setItem(key, cookie);
+        return data;
+      }
+    } catch {}
+  }
+  return null;
+}
+function setCache<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+  const value = JSON.stringify({ data, expiry: Date.now() + CACHE_TTL });
+  localStorage.setItem(key, value);
+  Cookies.set(key, value, { expires: 1/144 }); // ~10 min
+}
+
+// --- API Wrappers with Local Cache ---
+export async function fetchLeaguesWithCache(token: string): Promise<LeaguesResponse> {
+  const key = 'leagues_cache';
+  const cached = getCache<LeaguesResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/leagues/user`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: LeaguesResponse = await res.json();
+  setCache(key, data);
+  return data;
+}
+
+export async function fetchLeaderboardWithCache(token: string): Promise<LeaderboardResponse> {
+  const key = 'leaderboard_cache';
+  const cached = getCache<LeaderboardResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/leaderboard`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: LeaderboardResponse = await res.json();
+  setCache(key, data);
+  return data;
+}
+
+export async function fetchPlayersWithCache(token: string): Promise<PlayersResponse> {
+  const key = 'players_cache';
+  const cached = getCache<PlayersResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/players`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: PlayersResponse = await res.json();
+  setCache(key, data);
+  return data;
+}
+
+export async function fetchMatchesWithCache(token: string): Promise<MatchesResponse> {
+  const key = 'matches_cache';
+  const cached = getCache<MatchesResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/matches`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: MatchesResponse = await res.json();
+  setCache(key, data);
+  return data;
+}
+
+export async function fetchDreamTeamWithCache(token: string): Promise<DreamTeamResponse> {
+  const key = 'dreamteam_cache';
+  const cached = getCache<DreamTeamResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/dreamTeam`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: DreamTeamResponse = await res.json();
+  setCache(key, data);
+  return data;
+}
+
+export async function fetchPlayerStatsWithCache(playerId: string, token: string): Promise<PlayerStatsResponse> {
+  const key = `playerstats_cache_${playerId}`;
+  const cached = getCache<PlayerStatsResponse>(key);
+  if (cached) return cached;
+  const res = await fetch(`/api/players/${playerId}/stats`, { headers: { Authorization: `Bearer ${token}` } });
+  const data: PlayerStatsResponse = await res.json();
+  setCache(key, data);
+  return data;
 }

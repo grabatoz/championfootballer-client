@@ -75,3 +75,136 @@ export interface CreateLeagueDTO {
     status?: 'scheduled' | 'completed' | 'cancelled'; // Example values
   }
     
+// --- API Response Types for Backend Integration ---
+
+// Leagues
+export interface LeagueMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position?: string;
+  positionType?: string;
+  profilePicture?: string;
+}
+export interface LeagueMatch {
+  id: string;
+  homeTeamUsers?: LeagueMember[];
+  awayTeamUsers?: LeagueMember[];
+  statistics?: any[];
+  [key: string]: any;
+}
+export interface LeagueApi {
+  id: string;
+  name: string;
+  members?: LeagueMember[];
+  administeredLeagues?: LeagueMember[];
+  matches?: LeagueMatch[];
+  [key: string]: any;
+}
+export interface LeaguesResponse {
+  success: boolean;
+  leagues: LeagueApi[];
+}
+
+// Leaderboard
+export interface LeaderboardPlayer {
+  id: string;
+  name: string;
+  positionType?: string;
+  profilePicture?: string;
+  value?: number;
+}
+export interface LeaderboardResponse {
+  players: LeaderboardPlayer[];
+  message?: string;
+}
+
+// Players
+export interface PlayerListItem {
+  id: string;
+  name: string;
+  profilePicture?: string;
+  rating?: number;
+  position?: string;
+  positionType?: string;
+}
+export interface PlayersResponse {
+  success: boolean;
+  players: PlayerListItem[];
+}
+
+// Matches
+export interface MatchUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  profilePicture?: string;
+}
+export interface MatchApi {
+  id: string;
+  homeTeamUsers?: MatchUser[];
+  awayTeamUsers?: MatchUser[];
+  votes?: any[];
+  [key: string]: any;
+}
+export interface MatchesResponse {
+  success: boolean;
+  matches: MatchApi[];
+}
+
+// Dream Team
+export interface DreamTeamPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position?: string;
+  profilePicture?: string;
+  xp?: number;
+  achievements?: string[];
+  stats: {
+    matchesPlayed: number;
+    goals: number;
+    assists: number;
+    cleanSheets: number;
+    motm: number;
+    winPercentage: number;
+    points: number;
+  };
+}
+export interface DreamTeamResponse {
+  success: boolean;
+  dreamTeam: DreamTeamPlayer[];
+  totalPlayers: number;
+}
+
+// Player Stats (Trophy Room)
+export interface PlayerStats {
+  id: string;
+  name: string;
+  position?: string;
+  rating?: number;
+  avatar?: string;
+  age?: number;
+  style?: string;
+  positionType?: string;
+  preferredFoot?: string;
+  shirtNo?: string;
+}
+export interface PlayerStatsResponse {
+  success: boolean;
+  data: {
+    player: PlayerStats;
+    leagues: LeagueApi[];
+    years: number[];
+    currentStats: Record<string, number>;
+    accumulativeStats: Record<string, number>;
+    trophies: Record<string, { leagueId: string; leagueName: string }[]>;
+  };
+}
+
+// --- Cache Utility Types ---
+export interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+} 
+    
