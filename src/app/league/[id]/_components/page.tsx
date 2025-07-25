@@ -40,7 +40,6 @@ import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
-import Group from '@/Components/images/group451.png'
 
 
 interface League {
