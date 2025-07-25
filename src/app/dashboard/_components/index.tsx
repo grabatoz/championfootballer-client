@@ -205,7 +205,7 @@ export default function PlayerDashboard() {
                 '&:hover': {
                   transform: 'scale(1.05)',
                 },
-                p: 2,
+                // p: 2,
                 m: { xs: 0, sm: 1 }, // Remove margin on mobile
                 width: '100%', // Make sure card is full width in its grid cell
                 boxSizing: 'border-box',
@@ -217,8 +217,8 @@ export default function PlayerDashboard() {
                 alt="img"
                 style={{
                   width: '100%',
-                  maxWidth: windowWidth < 600 ? 40 : 100,
-                  height: windowWidth < 600 ? 40 : 100,
+                  maxWidth: windowWidth < 600 ? 100 : 100,
+                  height: windowWidth < 600 ? 100 : 100,
                   objectFit: 'contain',
                   marginBottom: 6,
                 }}
