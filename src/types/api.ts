@@ -90,8 +90,17 @@ export interface LeagueMatch {
   id: string;
   homeTeamUsers?: LeagueMember[];
   awayTeamUsers?: LeagueMember[];
-  statistics?: any[];
+  statistics?: MatchStatistic[];
   [key: string]: any;
+}
+export interface MatchStatistic {
+  id: string;
+  user_id: string;
+  match_id: string;
+  goals?: number;
+  assists?: number;
+  cleanSheets?: number;
+  [key: string]: string | number | undefined;
 }
 export interface LeagueApi {
   id: string;
@@ -144,8 +153,14 @@ export interface MatchApi {
   id: string;
   homeTeamUsers?: MatchUser[];
   awayTeamUsers?: MatchUser[];
-  votes?: any[];
+  votes?: VoteApi[];
   [key: string]: any;
+}
+export interface VoteApi {
+  id: string;
+  matchId: string;
+  voterId: string;
+  votedForId: string;
 }
 export interface MatchesResponse {
   success: boolean;
