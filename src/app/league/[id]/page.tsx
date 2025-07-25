@@ -1041,6 +1041,7 @@ export default function LeagueDetailPage() {
                     </Box>
                         )}
                     </Paper>
+                    
             <Dialog open={teamModalOpen} onClose={handleCloseTeamModal} fullWidth maxWidth="sm">
                 <DialogTitle>Teams for {selectedMatch?.homeTeamName} vs {selectedMatch?.awayTeamName}</DialogTitle>
                 <DialogContent>
