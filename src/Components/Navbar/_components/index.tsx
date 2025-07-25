@@ -450,25 +450,25 @@ export default function NavigationBar() {
         <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
           <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
-            <li>Play fair</li>
-            <li>Play safe</li>
-            <li>Show respect</li>
-            <li>Play as a team</li>
-            <li>Commit to play</li>
-            <li>Pick balance teams</li>
-            <li>Rise to the challenge</li>
-            <li>Have fun!</li>
+            <li style={{listStyleType: 'disc'}}>Play fair</li>
+            <li style={{listStyleType: 'disc'}}>Play safe</li>
+            <li style={{listStyleType: 'disc'}}>Show respect</li>
+            <li style={{listStyleType: 'disc'}}>Play as a team</li>
+            <li style={{listStyleType: 'disc'}}>Commit to play</li>
+            <li style={{listStyleType: 'disc'}}>Pick balance teams</li>
+            <li style={{listStyleType: 'disc'}}>Rise to the challenge</li>
+            <li style={{listStyleType: 'disc'}}>Have fun!</li>
           </ul>
           <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Characteristics of a champion</Typography>
-          <ul style={{ marginLeft: 20, color: '#222' }}>
-            <li><b>C</b>ourageous</li>
-            <li><b>H</b>opeful</li>
-            <li><b>A</b>ppreciative</li>
-            <li><b>M</b>odest</li>
-            <li><b>P</b>erseverant</li>
-            <li><b>I</b>nspired</li>
-            <li><b>O</b>ptimistic</li>
-            <li><b>N</b>oble</li>
+          <ul style={{ marginLeft: 20, color: '#222' , fontSize: '1.1rem' }}>
+            <li><span style={{fontWeight: 900}}>C</span>ourageous</li>
+            <li><span style={{fontWeight: 900}}>H</span>opeful</li>
+            <li><span style={{fontWeight: 900}}>A</span>ppreciative</li>
+            <li><span style={{fontWeight: 900}}>M</span>odest</li>
+            <li><span style={{fontWeight: 900}}>P</span>erseverant</li>
+            <li><span style={{fontWeight: 900}}>I</span>nspired</li>
+            <li><span style={{fontWeight: 900}}>O</span>ptimistic</li>
+            <li><span style={{fontWeight: 900}}>N</span>oble</li>
           </ul>
         </DialogContent>
       </Dialog>
