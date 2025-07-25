@@ -91,7 +91,11 @@ export interface LeagueMatch {
   homeTeamUsers?: LeagueMember[];
   awayTeamUsers?: LeagueMember[];
   statistics?: MatchStatistic[];
-  [key: string]: any;
+  // Add explicit fields as needed
+  date?: string;
+  leagueId?: string;
+  homeTeamGoals?: number;
+  awayTeamGoals?: number;
 }
 export interface MatchStatistic {
   id: string;
@@ -108,7 +112,9 @@ export interface LeagueApi {
   members?: LeagueMember[];
   administeredLeagues?: LeagueMember[];
   matches?: LeagueMatch[];
-  [key: string]: any;
+  // Add explicit fields as needed
+  description?: string;
+  startDate?: string;
 }
 export interface LeaguesResponse {
   success: boolean;
@@ -154,7 +160,10 @@ export interface MatchApi {
   homeTeamUsers?: MatchUser[];
   awayTeamUsers?: MatchUser[];
   votes?: VoteApi[];
-  [key: string]: any;
+  date?: string;
+  leagueId?: string;
+  homeTeamGoals?: number;
+  awayTeamGoals?: number;
 }
 export interface VoteApi {
   id: string;
