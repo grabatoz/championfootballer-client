@@ -18,24 +18,6 @@ const initialState: LeagueState = {
   error: null,
 };
 
-export const fetchLeagues = createAsyncThunk(
-  'league/fetchAll',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await leagueAPI.getLeagues();
-      if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to fetch leagues');
-      }
-      return response.data || [];
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('An unexpected error occurred');
-    }
-  }
-);
-
 export const createLeague = createAsyncThunk(
   'league/create',
   async (leagueData: CreateLeagueDTO, { rejectWithValue }) => {
@@ -93,19 +75,6 @@ const leagueSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Leagues
-      .addCase(fetchLeagues.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchLeagues.fulfilled, (state, action) => {
-        state.loading = false;
-        state.leagues = action.payload;
-      })
-      .addCase(fetchLeagues.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
       // Create League
       .addCase(createLeague.pending, (state) => {
         state.loading = true;

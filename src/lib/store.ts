@@ -5,6 +5,7 @@ import matchReducer from './features/matchSlice';
 import userReducer from './features/userSlice';
 import profileReducer from './features/profileSlice';
 import playerStatsReducer from './features/playerStatsSlice';
+import { leaguesApi } from './features/leaguesApi';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 // import { apiMiddleware } from './middleware/apiMiddleware';
 
@@ -17,12 +18,12 @@ export const makeStore = () => {
       user: userReducer,
       profile: profileReducer,
       playerStats: playerStatsReducer,
+      [leaguesApi.reducerPath]: leaguesApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: false,
-      })
-      // .concat(apiMiddleware)
+      }).concat(leaguesApi.middleware),
   });
 };
 
