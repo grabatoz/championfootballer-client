@@ -20,6 +20,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import toast, { Toaster } from 'react-hot-toast';
 
 // Assuming User and League interfaces are available or defined here
 interface User {
@@ -183,7 +184,7 @@ export default function ScheduleMatchPage() {
 
             const result = await response.json();
             if (result.success) {
-                alert('Match scheduled successfully!');
+                toast.success('Match scheduled successfully!');
                 router.push(`/league/${leagueId}`);
             } else {
                 throw new Error(result.message || 'Failed to schedule match.');

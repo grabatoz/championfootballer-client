@@ -34,6 +34,7 @@ import {
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { useRouter } from "next/navigation"
+import toast, { Toaster } from 'react-hot-toast';
 
 // Styled components for better design
 const StyledPaper = styled(Paper)(({ }) => ({
@@ -263,7 +264,7 @@ const PlayerProfileCard = () => {
       if (!ok) {
         throw new Error(data.message || "Failed to update profile")
       }
-      alert("Profile updated successfully!")
+      toast.success("Profile updated successfully!")
       router.push("/dashboard")
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -284,7 +285,7 @@ const PlayerProfileCard = () => {
       localStorage.clear()
       window.location.href = "/"
     } else {
-      alert("Failed to delete account. Please try again.")
+      toast.error("Failed to delete account. Please try again.")
     }
   }
 
@@ -318,10 +319,10 @@ const PlayerProfileCard = () => {
     })
     const data = await res.json()
     if (data.success) {
-      alert("Profile picture updated!")
+      toast.success("Profile picture updated!")
       window.location.reload()
     } else {
-      alert("Failed to upload image")
+      toast.error("Failed to upload image")
     }
   }
 

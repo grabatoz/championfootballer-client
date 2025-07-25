@@ -21,6 +21,7 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import Image from 'next/image';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface User {
     id: string;
@@ -166,7 +167,7 @@ export default function EditMatchPage() {
 
             const result = await response.json();
             if (result.success) {
-                alert('Match updated successfully!'); // Or use a toast notification
+                toast.success('Match updated successfully!'); // Or use a toast notification
                 router.push(`/league/${leagueId}`);
             } else {
                 throw new Error(result.message || 'Failed to update match.');
