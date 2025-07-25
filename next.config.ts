@@ -14,11 +14,6 @@ const nextConfig: NextConfig = {
             hostname: 'res.cloudinary.com',
             pathname: '/**', // allow all images from cloudinary
           },
-          {
-            protocol: 'https',
-            hostname: 'res.cloudinary.com',
-            pathname: '/**',
-          },
         ],
       },    
 };
