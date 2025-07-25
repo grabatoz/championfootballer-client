@@ -25,7 +25,7 @@ import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import ResponsiveCard from '@/Components/card/card';
-import { Add, Remove} from '@mui/icons-material';
+import { Add, Remove } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import Goals from '@/Components/images/goal.png'
 import Imapct from '@/Components/images/imapct.png'
@@ -349,10 +349,10 @@ export default function PlayMatchPage() {
                 '&:hover': { backgroundColor: '#388e3c' },
             }}>Back to League</Button>
 
-            <Paper sx={{ p: 3, backgroundColor: '#0a3e1e', color: 'black' }}>
+            <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'black' }}>
                 <Box>
                     <Box>
-                        <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 }}>
+                        <Card sx={{ backgroundColor: '#0a3e1e', p: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, p: 1 }}>
                                 <Typography variant="h5" color={'white'} gutterBottom>{match.homeTeamName} - <span className='text-green-700'> {typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}</span> </Typography>
                                 {user && match.status === 'completed' && league.active && match.homeTeamUsers.some(p => p.id === user.id) && (
@@ -375,18 +375,19 @@ export default function PlayMatchPage() {
                             <Divider sx={{ mb: 1.5, backgroundColor: '#fff' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.homeTeamUsers.length > 0 ? (
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
                                             flexDirection: { xs: 'row', sm: 'row', md: 'row' },
                                             flexWrap: { xs: 'nowrap', sm: 'wrap' },
                                             gap: 1,
                                             overflowX: { xs: 'auto', sm: 'visible' },
+                                            scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                                             width: '100%',
                                         }}
                                     >
                                         {match.homeTeamUsers.map((player) => (
-                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#235235', ml: '-5', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#0a3e1e', ml: '-5', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                                                 <ResponsiveCard {...mapPlayerToCardProps(player)} />
                                                 {user && user.id !== player.id && (
                                                     (() => {
@@ -395,12 +396,12 @@ export default function PlayMatchPage() {
                                                         const motmDisabled = loadingVote || isVotedPlayer || match.status !== 'completed' || !league.active;
                                                         return (
                                                             <Box sx={{ mt: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                            <MotmButton
-                                                                voted={isVotedPlayer}
-                                                                onClick={() => handleVote(player.id)}
-                                                                disabled={motmDisabled}
-                                                                color={motmColor}
-                                                            />
+                                                                <MotmButton
+                                                                    voted={isVotedPlayer}
+                                                                    onClick={() => handleVote(player.id)}
+                                                                    disabled={motmDisabled}
+                                                                    color={motmColor}
+                                                                />
                                                             </Box>
                                                         );
                                                     })()
@@ -413,7 +414,7 @@ export default function PlayMatchPage() {
                         </Card>
                     </Box>
                     <Box>
-                        <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', p: 1 , mt:5}}>
+                        <Card sx={{ backgroundColor: '#0a3e1e', p: 1, mt: 5 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, mt: 1, p: 1 }}>
                                 <Typography variant="h5" color={'white'} gutterBottom>{match.awayTeamName} - <span className='text-green-700'>{typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0} </span></Typography>
                                 {user && match.status === 'completed' && league.active && match.awayTeamUsers.some(p => p.id === user.id) && (
@@ -422,7 +423,7 @@ export default function PlayMatchPage() {
                                         onClick={handleOpenStatsModal}
                                         startIcon={<Add />}
                                         sx={{
-                                            bgcolor: '#43a047',
+                                            bgcolor: '#0a3e1e',
                                             color: 'white',
                                             fontWeight: 'bold',
                                             '&:hover': { bgcolor: '#388e3c' },
@@ -435,18 +436,19 @@ export default function PlayMatchPage() {
                             <Divider sx={{ mb: 1.5, backgroundColor: '#fff' }} />
                             <CardContent sx={{ p: 1 }}>
                                 {match.awayTeamUsers.length > 0 ? (
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
                                             flexDirection: { xs: 'row', sm: 'row', md: 'row' },
                                             flexWrap: { xs: 'nowrap', sm: 'wrap' },
                                             gap: 1,
                                             overflowX: { xs: 'auto', sm: 'visible' },
+                                            scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                                             width: '100%',
                                         }}
                                     >
                                         {match.awayTeamUsers.map((player) => (
-                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#235235', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                            <Box key={player.id} sx={{ minWidth: 220, backgroundColor: '#0a3e1e', display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                                                 <ResponsiveCard {...mapPlayerToCardProps(player)} />
                                                 {user && user.id !== player.id && (
                                                     (() => {
@@ -455,12 +457,12 @@ export default function PlayMatchPage() {
                                                         const motmDisabled = loadingVote || isVotedPlayer || match.status !== 'completed' || !league.active;
                                                         return (
                                                             <Box sx={{ mt: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                            <MotmButton
-                                                                voted={isVotedPlayer}
-                                                                onClick={() => handleVote(player.id)}
-                                                                disabled={motmDisabled}
-                                                                color={motmColor}
-                                                            />
+                                                                <MotmButton
+                                                                    voted={isVotedPlayer}
+                                                                    onClick={() => handleVote(player.id)}
+                                                                    disabled={motmDisabled}
+                                                                    color={motmColor}
+                                                                />
                                                             </Box>
                                                         );
                                                     })()
@@ -479,31 +481,31 @@ export default function PlayMatchPage() {
                 sx={{
                     p: { xs: 1, sm: 2 },
                     my: 2,
-                    background: '#0a3e1e',
+                    background: '#1f673b',
                     borderLeft: '4px solid #1976d2',
                     maxWidth: '100%',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
                 }}
             >
-                    <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 1 }}>
-                        Match Note
-                    </Typography>
+                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', mb: 1 , fontSize: 20}}>
+                    Match Note :
+                </Typography>
                 <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                        {match.notes}
-                    </Typography>
+                    {match.notes}
+                </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                        <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                            Start Time:
-                        </Typography>
+                    <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold' , fontSize: 18}}>
+                        Start Time:
+                    </Typography>
                     <Typography variant="body1" sx={{ color: '#fff' }}>
-                            {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
-                        </Typography>
-                    </Box>
-                </Paper>
+                        {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
+                    </Typography>
+                </Box>
+            </Paper>
 
             {(Object.keys(playerVotes).length > 0) && (
-                <Paper sx={{ p: 3, mt: 4, backgroundColor: '#0a3e1e', color: 'white' }}>
+                <Paper sx={{ p: 3, mt: 4, backgroundColor: '#1f673b', color: 'white' }}>
                     <Typography variant="h5" component="h2" gutterBottom>MOTM Votes</Typography>
                     <Divider sx={{ mb: 3, backgroundColor: '#fff' }} />
                     <Box
@@ -511,6 +513,7 @@ export default function PlayMatchPage() {
                             display: { xs: 'flex', sm: 'grid' },
                             flexDirection: { xs: 'row', sm: undefined },
                             overflowX: { xs: 'auto', sm: 'visible' },
+                            scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                             gap: 3,
                             gridTemplateColumns: { sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                             width: '100%',
@@ -537,7 +540,7 @@ export default function PlayMatchPage() {
                                             }}
                                         />
                                     </Box>
-                                    <ResponsiveCard {...mapPlayerToCardProps(player)} backgroundColor="#0a3e1e" />
+                                    <ResponsiveCard {...mapPlayerToCardProps(player)} backgroundColor="#1f673b" />
                                 </Box>
                             ))}
                     </Box>
@@ -548,7 +551,7 @@ export default function PlayMatchPage() {
                 <Box sx={{
                     mt: 4,
                     mb: 4, // margin below
-                    backgroundColor: '#0a3e1e',
+                    backgroundColor: '#1f673b',
                     color: 'white',
                     p: { xs: 2, sm: 3 }, // padding
                     borderRadius: 3,
@@ -654,7 +657,7 @@ export default function PlayMatchPage() {
                     <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoals)} onDecrement={() => handleStatChange('goals', -1, teamGoals)} />
                     <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoals)} onDecrement={() => handleStatChange('assists', -1, teamGoals)} />
                     <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
-                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />}label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoals)} onDecrement={() => handleStatChange('penalties', -1, teamGoals)} />
+                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoals)} onDecrement={() => handleStatChange('penalties', -1, teamGoals)} />
                     <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoals)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoals)} />
                     <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} />
                     <StatCounter icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />} label="Impact" value={stats.impact} onIncrement={() => handleStatChange('impact', 1, 1)} onDecrement={() => handleStatChange('impact', -1, 1)} />

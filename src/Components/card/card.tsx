@@ -64,7 +64,7 @@ const ResponsiveCard = ({
                 fontWeight: 'bold',
                 color: 'white',
                 overflow: 'hidden',
-                backgroundColor: backgroundColor || '#235235', // <-- use prop or default
+                backgroundColor: backgroundColor || '#0a3e1e', // <-- use prop or default
             }}
         >
             {/* Keep SVG image same */}

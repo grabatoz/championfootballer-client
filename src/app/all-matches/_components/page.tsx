@@ -53,17 +53,17 @@ interface PlayerCardProps {
     number: string;
     level: string;
     stats: {
-      DRI: string;
-      SHO: string;
-      PAS: string;
-      PAC: string;
-      DEF: string;
-      PHY: string;
+        DRI: string;
+        SHO: string;
+        PAS: string;
+        PAC: string;
+        DEF: string;
+        PHY: string;
     };
     foot: string;
     shirtIcon: string;
     profileImage?: string;
-  }
+}
 
 export default function AllMatches() {
     const router = useRouter();
@@ -73,10 +73,10 @@ export default function AllMatches() {
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-    console.log('selectedMatch',selectedMatch)
+    console.log('selectedMatch', selectedMatch)
     const { token, user } = useAuth();
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [key: string]: boolean }>({});
-  
+
     const fetchLeagues = useCallback(async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
@@ -139,7 +139,7 @@ export default function AllMatches() {
             setLoading(false);
         }
     }, [token]);
-    
+
     useEffect(() => {
         if (token) {
             fetchLeagues();
@@ -154,7 +154,7 @@ export default function AllMatches() {
     }, [leagues, selectedLeague]);
 
     // Fetch matches whenever selected league changes
-   
+
     useEffect(() => {
         if (token && selectedLeague !== 'all') {
             fetchMatchesByLeague(selectedLeague);
@@ -178,8 +178,8 @@ export default function AllMatches() {
     };
 
     // Get the name of the selected league for display
-    const selectedLeagueName = selectedLeague === 'all' 
-        ? 'All Leagues' 
+    const selectedLeagueName = selectedLeague === 'all'
+        ? 'All Leagues'
         : leagues.find(league => league.id === selectedLeague)?.name || '';
 
     // const handleOpenTeamModal = (match: Match) => {
@@ -314,95 +314,143 @@ export default function AllMatches() {
                 <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToDashboard}
-                    sx={{ mb: 2, color: 'white' , backgroundColor:'#1f673b' ,
+                    sx={{
+                        mb: 2, color: 'white', backgroundColor: '#1f673b',
                         '&:hover': { backgroundColor: '#388e3c' },
-                     }}
+                    }}
                 >
                     Back to Dashboard
                 </Button>
 
                 {/* Header */}
-                <Box sx={{
-  mb: 4,
-  background: 'linear-gradient(135deg, #1f673b 0%, #43a047 100%)',
-  borderRadius: 4,
-  boxShadow: '0 4px 24px 0 rgba(67,160,71,0.18)',
-  p: 4,
-}}>
-    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
-  <FormControl
-    fullWidth
-    sx={{
-      maxWidth: 400,
-      background: 'linear-gradient(90deg, #1f673b 0%, #43a047 100%)',
-      borderRadius: 3,
-      boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
-      '& .MuiOutlinedInput-root': {
-        color: '#fff',
-        background: 'transparent',
-        borderRadius: 3,
-        '& fieldset': {
-          borderColor: '#43a047',
-        },
-        '&:hover fieldset': {
-          borderColor: '#388e3c',
-        },
-        '&.Mui-focused fieldset': {
-          borderColor: '#43a047',
-        },
-      },
-      '& .MuiInputLabel-root': {
-        color: '#fff',
-      },
-      '& .MuiSelect-icon': {
-        color: '#fff',
-      },
-    }}
-  >
-    <InputLabel id="league-select-label" sx={{ color: '#fff', '&.Mui-focused': { color: '#fff' } }}>Select League</InputLabel>
-    <Select
-      labelId="league-select-label"
-      id="league-select"
-      value={selectedLeague}
-      label="Select League"
-      onChange={handleLeagueChange}
-      sx={{ color: '#fff' }}
-    >
-      <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
-      {leagues.map((league) => (
-        <MenuItem key={league.id} value={league.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
-          {league.name}
-        </MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-</Box>
-  <Typography
-    variant="h3"
-    fontWeight="bold"
-    align="center"
-    sx={{ color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
-  >
-    {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
-  </Typography>
-  <Typography
-    variant="subtitle1"
-    align="center"
-    sx={{ mt: 1, color: '#e0f2f1', fontWeight: 500 }}
-  >
-    {selectedLeague === 'all'
-      ? 'Select a league to view its matches'
-      : `Viewing matches for ${selectedLeagueName}`}
-  </Typography>
-</Box>
-{/* League Dropdown */}
+                {/* <Box sx={{
+                    mb: 4,
+                    background: 'linear-gradient(135deg, #1f673b 0%, #43a047 100%)',
+                    borderRadius: 4,
+                    boxShadow: '0 4px 24px 0 rgba(67,160,71,0.18)',
+                    p: 4,
+                }}>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+                        <FormControl
+                            fullWidth
+                            sx={{
+                                maxWidth: 400,
+                                background: 'linear-gradient(90deg, #1f673b 0%, #43a047 100%)',
+                                borderRadius: 3,
+                                boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
+                                '& .MuiOutlinedInput-root': {
+                                    color: '#fff',
+                                    background: 'transparent',
+                                    borderRadius: 3,
+                                    '& fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#388e3c',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#fff',
+                                },
+                                '& .MuiSelect-icon': {
+                                    color: '#fff',
+                                },
+                            }}
+                        >
+                            <InputLabel id="league-select-label" sx={{ color: '#fff', '&.Mui-focused': { color: '#fff' } }}>Select League</InputLabel>
+                            <Select
+                                labelId="league-select-label"
+                                id="league-select"
+                                value={selectedLeague}
+                                label="Select League"
+                                onChange={handleLeagueChange}
+                                sx={{ color: '#fff' }}
+                            >
+                                <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
+                                {leagues.map((league) => (
+                                    <MenuItem key={league.id} value={league.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
+                                        {league.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    <Typography
+                        variant="h3"
+                        fontWeight="bold"
+                        align="center"
+                        sx={{ color: '#fff', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+                    >
+                        {selectedLeague === 'all' ? 'All Matches' : `League ${selectedLeagueName} Matches`}
+                    </Typography>
+                    <Typography
+                        variant="subtitle1"
+                        align="center"
+                        sx={{ mt: 1, color: '#e0f2f1', fontWeight: 500 }}
+                    >
+                        {selectedLeague === 'all'
+                            ? 'Select a league to view its matches'
+                            : `Viewing matches for ${selectedLeagueName}`}
+                    </Typography>
+                </Box> */}
+                {/* League Dropdown */}
 
-
+                <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+                        <FormControl
+                            fullWidth
+                            sx={{
+                                maxWidth: 400,
+                                background: 'linear-gradient(90deg, #1f673b 0%, #43a047 100%)',
+                                borderRadius: 3,
+                                boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
+                                '& .MuiOutlinedInput-root': {
+                                    color: '#fff',
+                                    background: 'transparent',
+                                    borderRadius: 3,
+                                    '& fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#388e3c',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#43a047',
+                                    },
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#fff',
+                                },
+                                '& .MuiSelect-icon': {
+                                    color: '#fff',
+                                },
+                            }}
+                        >
+                            <InputLabel id="league-select-label" sx={{ color: '#000', '&.Mui-focused': { color: '#000' } }}>Select League</InputLabel>
+                            <Select
+                                labelId="league-select-label"
+                                id="league-select"
+                                value={selectedLeague}
+                                label="Select League"
+                                onChange={handleLeagueChange}
+                                sx={{ color: '#fff' }}
+                            >
+                                <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
+                                {leagues.map((league) => (
+                                    <MenuItem key={league.id} value={league.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
+                                        {league.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
                 {/* Match Cards */}
                 <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                  gap: 3,
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                    gap: 3,
                 }}>
                     {loading ? (
                         <Typography color="black" align="center">Loading matches...</Typography>
@@ -448,19 +496,19 @@ export default function AllMatches() {
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
                             return (
-                                <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative' , border:'3px solid green' }}>
+                                <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative', border: '4px solid green' , borderRadius: 3 }}>
                                     <CardContent sx={{ p: 2 }}>
-                                    {isAdmin && (
-                                                    <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/edit`} passHref>
-                                                        <IconButton
-                                                            size="small"
-                                                            sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
-                                                            disabled={!leagueForMatch?.active}
-                                                        >
-                                                            <Edit size={16} />
-                                                        </IconButton>
-                                                    </Link>
-                                                )}
+                                        {isAdmin && (
+                                            <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/edit`} passHref>
+                                                <IconButton
+                                                    size="small"
+                                                    sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                    disabled={!leagueForMatch?.active}
+                                                >
+                                                    <Edit size={16} />
+                                                </IconButton>
+                                            </Link>
+                                        )}
                                         {/* Available/Pending info at the top */}
                                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
                                             <Typography color="success.main">Available: {availableCount}</Typography>
@@ -537,20 +585,20 @@ export default function AllMatches() {
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                                             {isScheduled && (
                                                 <Button
-                                                variant="contained"
-                                                onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
+                                                    variant="contained"
+                                                    onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
                                                     disabled={availabilityLoading[match.id] || !league?.active}
-                                                sx={{
-                                                    backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
-                                                    '&:hover': {
-                                                        backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
-                                                    },
-                                                    '&.Mui-disabled': {
-                                                        backgroundColor: 'rgba(255,255,255,0.3)',
-                                                        color: 'rgba(255,255,255,0.5)'
-                                                    }
-                                                }}
-                                            >
+                                                    sx={{
+                                                        backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
+                                                        '&:hover': {
+                                                            backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
+                                                        },
+                                                        '&.Mui-disabled': {
+                                                            backgroundColor: 'rgba(255,255,255,0.3)',
+                                                            color: 'rgba(255,255,255,0.5)'
+                                                        }
+                                                    }}
+                                                >
                                                     {availabilityLoading[match.id]
                                                         ? <CircularProgress size={20} color="inherit" />
                                                         : (isUserAvailable ? 'Unavailable' : 'Available')}
@@ -572,19 +620,19 @@ export default function AllMatches() {
                                                 </Button>
                                             )}
                                             {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
-                                                    <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/play`} passHref>
-                                                        <Button
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: '#43a047',
-                                                                color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
-                                                            }}
-                                                            disabled={!leagueForMatch?.active}
-                                                        >
-                                                                {isAdmin ? 'Update Score Card' : 'View Team'}
-                                                        </Button>
-                                                    </Link>
-                                                )}
+                                                <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/play`} passHref>
+                                                    <Button
+                                                        size="small"
+                                                        sx={{
+                                                            backgroundColor: '#43a047',
+                                                            color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
+                                                        }}
+                                                        disabled={!leagueForMatch?.active}
+                                                    >
+                                                        {isAdmin ? 'Update Score Card' : 'View Team'}
+                                                    </Button>
+                                                </Link>
+                                            )}
                                         </Box>
                                     </CardContent>
                                 </Card>

@@ -40,6 +40,7 @@ import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
+import CloseIcon from '@mui/icons-material/Close';
 
 
 interface League {
@@ -56,6 +57,7 @@ interface League {
 }
 
 interface User {
+    xp: number;
     shirtNumber: undefined;
     positionType: undefined;
     id: string;
@@ -89,6 +91,31 @@ interface LeagueSettingsDialogProps {
     onDelete: () => void;
 }
 
+const getBadgeForPosition = (position: number) => {
+    switch (position) {
+        case 1:
+            return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
+        case 2:
+            return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
+        case 3:
+            return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
+        default:
+            return `${position}th`
+    }
+}
+
+const getRowStyles = (index: number) => {
+    if (index === 0) {
+        return "bg-[#0a3e1e]" // First place - darker green
+    } else if (index === 1) {
+        return "bg-[#0a4822]" // Second place - medium green
+    } else if (index === 2) {
+        return "bg-[#094420]" // Third place - another shade of green
+    }
+    return "bg-[#0a4822]" // All other places - medium green
+}
+
+
 function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
     const [name, setName] = useState('');
     const [adminId, setAdminId] = useState('');
@@ -121,7 +148,21 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: Lea
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ fontWeight: 'bold' }}>Manage League Settings</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 'bold', position: 'relative' }}>
+                Manage League Settings
+                <IconButton
+                    aria-label="close"
+                    onClick={onClose}
+                    sx={{
+                        position: 'absolute',
+                        right: 8,
+                        top: 8,
+                        color: (theme) => theme.palette.grey[500],
+                    }}
+                >
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
             <DialogContent>
                 <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
@@ -186,6 +227,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: Lea
 
 // Add TableData type
 interface TableData {
+    xp: number;
     id: string;
     name: string;
     played: number;
@@ -216,24 +258,20 @@ export default function LeagueDetailPage() {
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
-    const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
+    const [, setUserLeagueXP] = useState<Record<string, number>>({});
 
     // Add this useEffect to sync tab param with section
     useEffect(() => {
-      const tab = searchParams?.get('tab');
-      if (tab === 'table' || tab === 'awards' || tab === 'members' || tab === 'matches') {
-        setSection(tab);
-      }
+        const tab = searchParams?.get('tab');
+        if (tab === 'table' || tab === 'awards' || tab === 'members' || tab === 'matches') {
+            setSection(tab);
+        }
     }, [searchParams]);
 
     // Declare isMember and isAdmin here so they are available for useEffect and logic below
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
-    // const handleOpenTeamModal = (match: Match) => {
-    //     setSelectedMatch(match);
-    //     setTeamModalOpen(true);
-    // };
 
     const handleCloseTeamModal = () => {
         setTeamModalOpen(false);
@@ -310,15 +348,15 @@ export default function LeagueDetailPage() {
 
     // Fetch XP for all users in this league
     useEffect(() => {
-      async function fetchXP() {
-        if (!league) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserLeagueXP(data.xp || {});
+        async function fetchXP() {
+            if (!league) return;
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`);
+            if (res.ok) {
+                const data = await res.json();
+                setUserLeagueXP(data.xp || {});
+            }
         }
-      }
-      fetchXP();
+        fetchXP();
     }, [league]);
 
 
@@ -437,6 +475,7 @@ export default function LeagueDetailPage() {
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
+                xp: member?.xp || 0
             });
         });
         league.matches
@@ -546,7 +585,7 @@ export default function LeagueDetailPage() {
                 >
                     Back to All Leagues
                 </Button>
-                <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
+                {/* <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
                     <Box
                         sx={{
                             display: 'flex',
@@ -575,20 +614,27 @@ export default function LeagueDetailPage() {
                             {isMember && (
                                 <>
                                     <Chip
-                                        label={`Invite Code: ${league.inviteCode}`}
+                                        label={
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <span>{`Invite Code: ${league.inviteCode}`}</span>
+                                                <Chip
+                                                    label={<Copy className='stroke-white' />}
+                                                    onClick={() => navigator.clipboard.writeText(league.inviteCode)}
+                                                    sx={{
+                                                        backgroundColor: '#43a047',
+                                                        '&:hover': { backgroundColor: '#388e3c' },
+                                                        minWidth: 'auto',
+                                                    }}
+                                                />
+                                            </Box>
+                                        }
                                         sx={{
                                             backgroundColor: '#43a047',
                                             '&:hover': { backgroundColor: '#388e3c' },
                                             color: 'white',
-                                        }}
-                                    />
-                                    <Chip
-                                        label={<Copy className='stroke-white' />}
-                                        onClick={() => navigator.clipboard.writeText(league.inviteCode)}
-                                        sx={{
-                                            mr: 1,
-                                            backgroundColor: '#43a047',
-                                            '&:hover': { backgroundColor: '#388e3c' },
+                                            maxWidth: '190px', // Set specific max width
+                                            width: 'auto',
+                                            minWidth: 'auto',
                                         }}
                                     />
                                 </>
@@ -634,11 +680,11 @@ export default function LeagueDetailPage() {
                             {`${league.matches?.length || 0} Matches`}
                         </Button>
                         <Button
-                           variant="contained"
-                           sx={{
-                               backgroundColor: '#43a047',
-                               '&:hover': { backgroundColor: '#388e3c' },
-                           }}
+                            variant="contained"
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                            }}
                             startIcon={<Table2Icon className='stroke-white' />}
                             onClick={() => {
                                 setSection('table');
@@ -664,27 +710,228 @@ export default function LeagueDetailPage() {
                         {isAdmin && (
                             <Link href={`/league/${leagueId}/match`} passHref>
                                 <Button
-                                  variant="contained"
-                                  sx={{
-                                      backgroundColor: '#43a047',
-                                      '&:hover': { backgroundColor: '#388e3c' },
-                                  }}
-                                  startIcon={<Calendar className='stroke-white' />}
+                                    variant="contained"
+                                    sx={{
+                                        backgroundColor: '#43a047',
+                                        '&:hover': { backgroundColor: '#388e3c' },
+                                    }}
+                                    startIcon={<Calendar className='stroke-white' />}
                                     disabled={!league.active}
                                 >
                                     Schedule New Match
                                 </Button>
-                        </Link>
+                            </Link>
                         )}
-                        {/* </Link> */}
+                        
+                    </Box>
+                </Paper> */}
+                <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: { xs: 'flex-start', sm: 'center' },
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            justifyContent: 'space-between',
+                            mb: 2,
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Trophy size={32} />
+                            <Typography textTransform="uppercase" variant="h4" component="h1">
+                                {league.name}
+                            </Typography>
+                        </Box>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                // gap: 1,
+                                mt: { xs: 2, sm: 0 },
+                                width: { xs: '100%', sm: 'auto' },
+                                justifyContent: { xs: 'flex-end', sm: 'flex-end' },
+                            }}
+                        >
+                            {isMember && (
+                                <Chip
+                                    label={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                                {`Code: ${league.inviteCode}`}
+                                            </Typography>
+                                            <Chip
+                                                label={<Copy size={16} className='stroke-white' />}
+                                                onClick={() => navigator.clipboard.writeText(league.inviteCode)}
+                                                sx={{
+                                                    backgroundColor: '#43a047',
+                                                    '&:hover': { backgroundColor: '#388e3c' },
+                                                    minWidth: 'auto',
+                                                    height: '24px',
+                                                    '& .MuiChip-label': { px: 1 }
+                                                }}
+                                            />
+                                        </Box>
+                                    }
+                                    sx={{
+                                        backgroundColor: '#43a047',
+                                        '&:hover': { backgroundColor: '#388e3c' },
+                                        color: 'white',
+                                        maxWidth: { xs: '180px', sm: '200px' },
+                                        width: 'auto',
+                                        minWidth: 'auto',
+                                        height: 'auto',
+                                    }}
+                                />
+                            )}
+                            {isAdmin && (
+                                <IconButton
+                                    onClick={() => setIsSettingsOpen(true)}
+                                    sx={{
+                                        ml: 1,
+                                        color: 'white',
+                                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+                                    }}
+                                >
+                                    <Settings />
+                                </IconButton>
+                            )}
+                        </Box>
+                    </Box>
+
+                    {/* Navigation Buttons Section */}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            gap: { xs: 1, sm: 2 },
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            justifyContent: { xs: 'center', sm: 'flex-start' }
+                        }}
+                    >
+                        <Button
+                            variant="contained"
+                            size={window.innerWidth < 600 ? "small" : "medium"}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                                color: 'white',
+                                minWidth: { xs: 'auto', sm: '120px' },
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 }
+                            }}
+                            startIcon={<Users size={18} className='stroke-white' />}
+                            onClick={() => {
+                                setSection('members');
+                                router.replace(`/league/${leagueId}?tab=members`);
+                            }}
+                        >
+                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                                {`${league.members?.length || 0} Members`}
+                            </Box>
+                            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                                {`${league.members?.length || 0}`}
+                            </Box>
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            size={window.innerWidth < 600 ? "small" : "medium"}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                                color: 'white',
+                                minWidth: { xs: 'auto', sm: '120px' },
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 }
+                            }}
+                            startIcon={<Calendar size={18} className='stroke-white' />}
+                            onClick={() => {
+                                setSection('matches');
+                                router.replace(`/league/${leagueId}?tab=matches`);
+                            }}
+                        >
+                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                                {`${league.matches?.length || 0} Matches`}
+                            </Box>
+                            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                                {`${league.matches?.length || 0}`}
+                            </Box>
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            size={window.innerWidth < 600 ? "small" : "medium"}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                                minWidth: { xs: 'auto', sm: '80px' },
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 }
+                            }}
+                            startIcon={<Table2Icon size={18} className='stroke-white' />}
+                            onClick={() => {
+                                setSection('table');
+                                router.replace(`/league/${leagueId}?tab=table`);
+                            }}
+                        >
+                            Table
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            size={window.innerWidth < 600 ? "small" : "medium"}
+                            sx={{
+                                backgroundColor: '#43a047',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                                minWidth: { xs: 'auto', sm: '120px' },
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 }
+                            }}
+                            startIcon={<Trophy size={18} className='stroke-white' />}
+                            onClick={() => {
+                                setSection('awards');
+                                router.replace(`/league/${leagueId}?tab=awards`);
+                            }}
+                        >
+                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                                Trophy Room
+                            </Box>
+                            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                                Trophy
+                            </Box>
+                        </Button>
+
+                        {isAdmin && (
+                            <Link href={`/league/${leagueId}/match`} passHref>
+                                <Button
+                                    variant="contained"
+                                    size={window.innerWidth < 600 ? "small" : "medium"}
+                                    sx={{
+                                        backgroundColor: '#43a047',
+                                        '&:hover': { backgroundColor: '#388e3c' },
+                                        minWidth: { xs: 'auto', sm: '160px' },
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                        px: { xs: 1, sm: 2 }
+                                    }}
+                                    startIcon={<Calendar size={18} className='stroke-white' />}
+                                    disabled={!league.active}
+                                >
+                                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                                        Schedule New Match
+                                    </Box>
+                                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                                        Schedule
+                                    </Box>
+                                </Button>
+                            </Link>
+                        )}
                     </Box>
                 </Paper>
             </Box>
             {/* Section Content */}
-            <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white', minHeight: 400 }}>
+            <Paper sx={{ backgroundColor: '#1f673b', color: 'white', minHeight: 400 }}>
                 {section === 'members' && (
                     // Members Section
-                    <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                    <Box sx={{ p: 2, maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                         <Typography variant="h6" sx={{ backgroundColor: '#1f673b', padding: '10px', color: 'white' }} gutterBottom>
                             League Members
                         </Typography>
@@ -715,7 +962,7 @@ export default function LeagueDetailPage() {
                 )}
                 {section === 'matches' && (
                     // Matches Section
-                    <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                    <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' }, p: 2 }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Matches
                         </Typography>
@@ -832,21 +1079,21 @@ export default function LeagueDetailPage() {
                                                 <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                                                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
                                                     {isMember && match.status === 'scheduled' && (
-                                                    <Button
-                                                        variant="contained"
-                                                        onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
+                                                        <Button
+                                                            variant="contained"
+                                                            onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
                                                             disabled={availabilityLoading[match.id] || !league.active}
-                                                        sx={{
-                                                            backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
-                                                            '&:hover': {
-                                                                backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
-                                                            },
-                                                            '&.Mui-disabled': {
-                                                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                                                color: 'rgba(255,255,255,0.5)'
-                                                            }
-                                                        }}
-                                                    >
+                                                            sx={{
+                                                                backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
+                                                                '&:hover': {
+                                                                    backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
+                                                                },
+                                                                '&.Mui-disabled': {
+                                                                    backgroundColor: 'rgba(255,255,255,0.3)',
+                                                                    color: 'rgba(255,255,255,0.5)'
+                                                                }
+                                                            }}
+                                                        >
                                                             {availabilityLoading[match.id] ? <CircularProgress size={20} color="inherit" /> : (isUserAvailable ? 'Unavailable' : 'Available')}
                                                         </Button>
                                                     )}
@@ -863,22 +1110,22 @@ export default function LeagueDetailPage() {
                                                             }}
                                                         >
                                                             Match Ended
-                                                    </Button>
-                                                    )}
-                                                     {(match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
-                                                    <Link href={`/league/${leagueId}/match/${match.id}/play`} passHref>
-                                                        <Button
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: '#43a047',
-                                                                color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
-                                                            }}
-                                                            disabled={!league.active}
-                                                        >
-                                                                {isAdmin ? 'Update Score Card' : 'View Team'}
                                                         </Button>
-                                                    </Link>
-                                                )}
+                                                    )}
+                                                    {(match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
+                                                        <Link href={`/league/${leagueId}/match/${match.id}/play`} passHref>
+                                                            <Button
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: '#43a047',
+                                                                    color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
+                                                                }}
+                                                                disabled={!league.active}
+                                                            >
+                                                                {isAdmin ? 'Update Score Card' : 'View Team'}
+                                                            </Button>
+                                                        </Link>
+                                                    )}
                                                 </Box>
                                             </CardContent>
                                         </Card>
@@ -892,155 +1139,112 @@ export default function LeagueDetailPage() {
                         )}
                     </Box>
                 )}
+
                 {section === 'table' && (
-                    <Box sx={{
-                        maxHeight: 350,
-                        overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
-                        borderRadius: 3,
-                        p: 0,
-                        color: 'white',
-                        minHeight: 400,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                    }}>
-                        <Typography variant="h6" gutterBottom sx={{ px: 3, pt: 3 }}>
-                            League Table
-                        </Typography>
-                        <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)', mx: 3 }} />
-                        <Box sx={{
-                            width: '100%',
-                            overflowX: 'auto',
-                            scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
-                            px: 2,
-                            pb: 2,
-                        }}>
-                            <Box sx={{ minWidth: 600 }}>
-                                <Box sx={{
-                                    bgcolor: '#43a047',
-                                    borderRadius: 3,
-                                    px: 2,
-                                    py: 1,
-                                    mb: 2,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    minWidth: 600,
-                                }}>
-                                    <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: 12, sm: 14, md: 16 } }}>Pos</Box>
-                                    <Box sx={{ ml: 4, flex: 1, color: 'white', fontWeight: 'bold', fontSize: { xs: 12, sm: 14, md: 16 } }}>Player</Box>
-                                    <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2, md: 4 }, color: 'white', fontWeight: 'bold' }}>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>P</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>W</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>D</Box>
-                                        <Box sx={{ minWidth: 32, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>L</Box>
-                                        <Box sx={{ minWidth: 48, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>W%</Box>
-                                        <Box sx={{ minWidth: 40, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>Pts</Box>
-                                        <Box sx={{ minWidth: 60, textAlign: 'center', fontSize: { xs: 12, sm: 14, md: 16 } }}>XP Points</Box>
-                                    </Box>
-                                </Box>
-                                <Box>
-                                    {tableData.length > 0 ? tableData.map((row, idx) => {
-                                        let rowBg = '#0a4822';
-                                        let textColor = '#fff';
-                                        const subTextColor = '#fff';
-                                        let fontWeight = 500;
-                                        let badgeImg = null;
-                                        let rowGradient = null;
-                                        if (idx === 0) {
-                                            rowGradient = '#0a3e1e'; // gold/orange
-                                            textColor = '#fff';
-                                            fontWeight = 700;
-                                            badgeImg = FirstBadge;
-                                        } else if (idx === 1) {
-                                            rowBg = '#0a4822'; // silver
-                                            badgeImg = SecondBadge;
-                                        } else if (idx === 2) {
-                                            rowBg = '#094420'; // bronze
-                                            badgeImg = ThirdBadge;
-                                        } else {
-                                            rowBg = '#0a4822';
-                                        }
+                    <div className="w-full mx-auto">
+                        <Card sx={{ backgroundColor: '#1f673b' }} className="bg-[#0a4822] border-green-700 text-white overflow-hidden rounded-xl">
+                            <div className="p-3">
+                                <h2 className="text-lg font-bold text-white">League Table</h2>
+                            </div>
+
+                            <div className="px-2 pb-2">
+                                <div className="bg-[#43a047] rounded-lg px-2 py-1 mb-2 flex items-center">
+                                    <div className="text-white font-bold text-xs sm:text-sm md:text-base">Pos</div>
+                                    <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base">Player</div>
+                                    <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
+                                        <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">P</div>
+                                        <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">W</div>
+                                        <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">D</div>
+                                        <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">L</div>
+                                        <div className="min-w-10 text-center text-xs sm:text-sm md:text-base">W%</div>
+                                        <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
+                                        <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-[1px]">
+                                    {tableData.map((player, index) => {
+                                        const position = index + 1;
+                                        const badge = getBadgeForPosition(position);
+                                        const points = player.wins * 3 + player.draws;
+                                        const firstName = player.name.split(" ")[0] || player.name; // Ensure first name exists
+                                        const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
+
                                         return (
-                                            <React.Fragment key={row.id}>
-                                                <Link href={`/player/${row.id}`} passHref>
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            px: 2, // padding x = 2
-                                                            py: 1.5,
-                                                            background: rowGradient ? rowGradient : rowBg,
-                                                            color: textColor,
-                                                            fontWeight,
-                                                            boxShadow: 'none',
-                                                            minHeight: 60,
-                                                        }}
-                                                    >
-                                                        <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
-                                                            {badgeImg ? (
-                                                                <Image src={badgeImg} alt={`${idx + 1}st`} width={32} height={32} />
-                                                            ) : (
-                                                                <Box sx={{
-                                                                    width: 28, height: 28, display: 'flex',
-                                                                    alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
-                                                                }}>{`${idx + 1}th`}</Box>
-                                                            )}
-                                                        </Box>
-                                                        <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            <img
-                                                                src={row.profilePicture || '/assets/group.svg'}
-                                                                alt={row.name}
-                                                                width={40}
-                                                                height={40}
-                                                                style={{ borderRadius: '50%', objectFit: 'cover', width: 40, height: 40, display: 'block' }}
-                                                            />
-                                                        </Box>
-                                                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <Typography variant="body1" sx={{ fontWeight: 700, color: textColor, fontSize: { xs: 12, sm: 14, md: 16 }, lineHeight: 1.1, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {row.name.split(' ')[0]}
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 400, fontSize: { xs: 10, sm: 12, md: 14 }, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {row.name.split(' ').slice(1).join(' ')}
-                                                                {row.isAdmin && (
-                                                                    <span title="League Creator" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 4, verticalAlign: 'middle' }}>
-                                                                        <IconButton>
-                                                                            <Shield color='green' />
-                                                                        </IconButton>
-                                                                    </span>
-                                                                )}
-                                                            </Typography>
-                                                        </Box>
-                                                     
-                                                        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2, md: 4 }, ml: 'auto' }}>
-                                                            <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.played}</Box>
-                                                            <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.wins}</Box>
-                                                            <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.draws}</Box>
-                                                            <Box sx={{ minWidth: 32, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.losses}</Box>
-                                                            <Box sx={{ minWidth: 48, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.winPercentage}</Box>
-                                                            <Box sx={{ minWidth: 40, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{row.wins * 3 + row.draws}</Box>
-                                                            <Box sx={{ minWidth: 60, textAlign: 'center', color: textColor, fontSize: { xs: 12, sm: 14, md: 16 } }}>{userLeagueXP[row.id] ?? 0}</Box>
-                                                        </Box>
-                                                    </Box>
-                                                    <Divider sx={{backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
-                                                </Link>
-                                            </React.Fragment>
+                                            <Link key={player.id} href={`/player/${player.id}`} className="block">
+                                                <div className={`${getRowStyles(index)} px-2 py-1.5 min-h-[60px] flex items-start`}>
+                                                    <div className="w-9 flex items-center justify-center mr-1">
+                                                        {index < 3 ? (
+                                                            <div className="w-8 h-8 flex items-center justify-center">{badge}</div>
+                                                        ) : (
+                                                            <div className="w-7 h-7 flex items-center justify-center font-bold text-white text-xs sm:text-sm md:text-base">
+                                                                {badge}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
+                                                        <div className="max-[500px]:mb-2">
+                                                            <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden bg-white border-2 border-white flex-shrink-0">
+                                                                <img
+                                                                    src={player.profilePicture || "/placeholder.svg"}
+                                                                    alt={player.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col gap-0.5 max-[500px]:ml-0 min-[500px]:ml-2">
+                                                            <div className="font-bold text-white text-xs sm:text-sm md:text-base uppercase max-[500px]:hidden min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
+                                                                {firstName}
+                                                            </div>
+                                                            <div className="flex items-center gap-0.5">
+                                                                <div className="text-white font-normal text-[8px] sm:text-xs md:text-sm whitespace-normal overflow-hidden text-ellipsis">
+                                                                    {lastName}
+                                                                </div>
+                                                                {player.isAdmin && <Shield className="text-green-500 w-4 h-4" />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-0.5 sm:gap-1 md:gap-4 ml-auto items-center">
+                                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.played}
+                                                        </div>
+                                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.wins}
+                                                        </div>
+                                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.draws}
+                                                        </div>
+                                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.losses}
+                                                        </div>
+                                                        <div className="min-w-10 text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.winPercentage}
+                                                        </div>
+                                                        <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
+                                                        <div className="min-w-[50px] text-center text-white text-xs sm:text-sm md:text-base">
+                                                            {player.xp}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="h-[1px] bg-white"></div>
+                                            </Link>
                                         );
-                                    }) : (
-                                        <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 3 }}>No data</Paper>
-                                    )}
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Box>
+                                    })}
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
                 )}
+
                 {section === 'awards' && (
                     // Trophy Room Section
                     <Box sx={{ maxHeight: 'none', p: 0 }}>
                         <TrophyRoom leagueId={leagueId} />
                     </Box>
-                        )}
-                    </Paper>
-                    
+                )}
+            </Paper>
+
             <Dialog open={teamModalOpen} onClose={handleCloseTeamModal} fullWidth maxWidth="sm">
                 <DialogTitle>Teams for {selectedMatch?.homeTeamName} vs {selectedMatch?.awayTeamName}</DialogTitle>
                 <DialogContent>
