@@ -486,6 +486,20 @@ const PlayerProfileCard = () => {
             </StyledPaper>
           </Box>
         </Fade>
+        {(
+          <style>{`
+            .profile-autofill input:-webkit-autofill,
+            .profile-autofill input:-webkit-autofill:focus,
+            .profile-autofill input:-webkit-autofill:hover,
+            .profile-autofill input:-webkit-autofill:active {
+              -webkit-box-shadow: 0 0 0 1000px #1f673b inset !important;
+              box-shadow: 0 0 0 1000px #1f673b inset !important;
+              -webkit-text-fill-color: #fff !important;
+              color: #fff !important;
+              caret-color: #fff !important;
+            }
+          `}</style>
+        )}
       </Container>
     )
   }
@@ -605,6 +619,7 @@ const PlayerProfileCard = () => {
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
+                        className="profile-autofill"
                         label="First Name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
@@ -614,6 +629,7 @@ const PlayerProfileCard = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
+                        className="profile-autofill"
                         label="Last Name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
@@ -624,6 +640,7 @@ const PlayerProfileCard = () => {
                     {/* Email and Password side by side */}
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
+                        className="profile-autofill"
                         label="Email Address"
                         type="email"
                         value={email}
@@ -634,6 +651,7 @@ const PlayerProfileCard = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
+                        className="profile-autofill"
                         label="Change Password"
                         type={showPassword ? "text" : "password"}
                         value={password}
@@ -653,6 +671,7 @@ const PlayerProfileCard = () => {
                     <Grid container spacing={2} mt={1} ml={0.5} alignItems="flex-start">
                       <Grid item xs={2} sm={2}>
                         <StyledTextField
+                          className="profile-autofill"
                           label="Shirt Number"
                           type="number"
                           value={shirtNumber}
@@ -664,6 +683,7 @@ const PlayerProfileCard = () => {
                       </Grid>
                       <Grid item xs={2} sm={2}>
                         <StyledTextField
+                          className="profile-autofill"
                           label="Age"
                           type="number"
                           value={age}
@@ -853,6 +873,20 @@ const PlayerProfileCard = () => {
             </StyledPaper>
           </Box>
         </Fade>
+        {(
+          <style>{`
+            .profile-autofill input:-webkit-autofill,
+            .profile-autofill input:-webkit-autofill:focus,
+            .profile-autofill input:-webkit-autofill:hover,
+            .profile-autofill input:-webkit-autofill:active {
+              -webkit-box-shadow: 0 0 0 1000px #1f673b inset !important;
+              box-shadow: 0 0 0 1000px #1f673b inset !important;
+              -webkit-text-fill-color: #fff !important;
+              color: #fff !important;
+              caret-color: #fff !important;
+            }
+          `}</style>
+        )}
       </Container>
     )
   }

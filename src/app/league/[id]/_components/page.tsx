@@ -701,7 +701,7 @@ export default function LeagueDetailPage() {
                                         id: member.id || '',
                                         firstName: member.firstName || '',
                                         lastName: member.lastName || '',
-                                        profilePicture: member.profilePicture || Group.src,
+                                        profilePicture: member?.profilePicture || '',
                                         position: member.positionType || undefined,
                                         shirtNumber: member.shirtNumber || 22,
                                     }} />
@@ -988,7 +988,7 @@ export default function LeagueDetailPage() {
                                                             )}
                                                         </Box>
                                                         <Box sx={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#fff', mr: 2, border: '2px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            <Image
+                                                            <img
                                                                 src={row.profilePicture || '/assets/group.svg'}
                                                                 alt={row.name}
                                                                 width={40}

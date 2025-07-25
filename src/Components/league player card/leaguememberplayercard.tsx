@@ -2,8 +2,9 @@
 import { Card, Typography, Box } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import Link from "next/link"
-import Image from "next/image"
+
 import Group from '@/Components/images/group451.png'
+import Image from "next/image"
 
 
 
@@ -95,7 +96,7 @@ export default function PlayerCard({ member }: PlayerCardProps) {
         <CardContentBox>
           {/* <ModernProfile> */}
             {member.profilePicture ? (
-              <Image
+              <img
                 src={member.profilePicture}
                 alt="Profile"
                 width={64}
