@@ -154,7 +154,7 @@ const AuthTabs = () => {
         }
         localStorage.setItem('user', JSON.stringify(result.data));
         toast.success('Registration successful!');
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (err: unknown) {
       console.error('[AuthTabs] Register submission error:', err);
