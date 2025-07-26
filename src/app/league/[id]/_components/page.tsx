@@ -1072,19 +1072,19 @@ export default function LeagueDetailPage() {
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-0.5 max-[500px]:-ml-8 min-[500px]:ml-2">
-                                                            <div className="font-bold text-white text-xs sm:text-sm md:text-base uppercase max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
+                                                            {/* <div className="font-bold text-white text-xs sm:text-sm md:text-base uppercase max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
                                                                 {firstName}
-                                                            </div>
+                                                            </div> */}
                                                             <div className="flex items-center ">
-                                                                <div className="text-white font-normal text-[8px] sm:text-xs md:text-sm whitespace-normal overflow-hidden text-ellipsis">
-                                                                    {lastName}
+                                                                <div className="text-white font-normal text-xs sm:text-sm md:text-base uppercase max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
+                                                                {firstName}   {lastName}
                                                                 </div>
                                                                 {player.isAdmin && <Shield className="text-green-500 w-4 h-4" />}
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex gap-0.5 sm:gap-1 md:gap-4 ml-auto items-center max-[500px]:mt-6">
+                                                    <div className="flex gap-0.5 sm:gap-1 md:gap-4 ml-auto items-center max-[500px]:mt-4">
                                                         <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
                                                             {player.played}
                                                         </div>
