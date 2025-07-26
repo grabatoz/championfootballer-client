@@ -122,7 +122,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         <Box
           sx={{
             display: "flex",
-            flexDirection: { xs: "column", sm: "row" }, // Keep sm as row, xs as column
+            flexDirection: { xs: "row", sm: "row" }, // Keep sm as row, xs as column
             alignItems: "center",
             justifyContent: "space-between",
             width: "100%",
@@ -134,11 +134,13 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" }, // Stack vertically on xs, row on sm+
               alignItems: "center",
               flex: 1,
               minWidth: 0,
               width: { xs: "100%", sm: "auto" },
               justifyContent: { xs: "center", sm: "flex-start" },
+              gap: { xs: 1, sm: 2 }, // Gap between image and text
             }}
           >
             <Box
@@ -148,27 +150,33 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
                 width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
-                mr: { xs: 1, sm: 2 }, // Reduced margin for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
                 color: "white",
                 borderRadius: 2,
-                marginRight: { xs: 5, sm: 5, md: 1 },
+                // Remove marginRight for xs since we're stacking vertically
+                marginRight: { sm: 5, md: 1 },
                 // objectFit: "contain", // Ensure image fits without cropping
               }}
             />
-            <Box sx={{ minWidth: 0, textAlign: { xs: "left", sm: "left" } }}>
+            <Box sx={{ 
+              minWidth: 0, 
+              textAlign: { xs: "center", sm: "left" },
+              display: "flex",
+              flexDirection: "column",
+              alignItems: { xs: "center", sm: "flex-start" }
+            }}>
               <Typography
                 variant="h6"
                 fontWeight={700}
-                sx={{ fontSize: { xs: 26, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
+                sx={{ fontSize: { xs: 23, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
               >
                 {homeTeamName}
               </Typography>
               <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 40, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 30, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
               >
                 {homeGoals}
               </Typography>
@@ -201,29 +209,15 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" }, // Stack vertically on xs, row on sm+
               alignItems: "center",
               flex: 1,
-              justifyContent: { xs: "center", sm: "flex-end" },
               minWidth: 0,
               width: { xs: "100%", sm: "auto" },
+              justifyContent: { xs: "center", sm: "flex-start" },
+              gap: { xs: 1, sm: 2 }, // Gap between image and text
             }}
           >
-            <Box sx={{ minWidth: 0, textAlign: { xs: "right", sm: "right" } }}>
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{ fontSize: { xs: 26, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
-              >
-                {awayTeamName}
-              </Typography>
-              <Typography
-                variant="h4"
-                fontWeight={800}
-                sx={{ fontSize: { xs: 40, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
-              >
-                {awayGoals}
-              </Typography>
-            </Box>
             <Box
               component="img"
               src={awayTeamImg}
@@ -231,14 +225,37 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
                 width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
-                ml: { xs: 1, sm: 2 }, // Reduced margin for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
-                marginLeft: { xs: 5, sm: 5, md: 1 },
+                color: "white",
                 borderRadius: 2,
+                // Remove marginRight for xs since we're stacking vertically
+                marginRight: { sm: 5, md: 1 },
                 // objectFit: "contain", // Ensure image fits without cropping
               }}
             />
+            <Box sx={{ 
+              minWidth: 0, 
+              textAlign: { xs: "center", sm: "left" },
+              display: "flex",
+              flexDirection: "column",
+              alignItems: { xs: "center", sm: "flex-start" }
+            }}>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                sx={{ fontSize: { xs: 23, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
+              >
+                {awayTeamName}
+              </Typography>
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                sx={{ fontSize: { xs: 30, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
+              >
+                {awayGoals}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 
