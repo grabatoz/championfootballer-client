@@ -13,7 +13,6 @@ import ThirdBadge from '@/Components/images/3rd.png';
 import React from "react";
 import Link from "next/link";
 import ResponsiveCard from "@/Components/card/card";
-import { Shield } from "lucide-react";
 import Image from "next/image";
 
 const getBadgeForPosition = (position: number) => {
