@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Avatar, Divider, Paper, Chip, Card } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Avatar, Divider,  Card } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -12,7 +12,6 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import React from "react";
 import Link from "next/link";
-import ResponsiveCard from "@/Components/card/card";
 import Image from "next/image";
 
 const getBadgeForPosition = (position: number) => {
@@ -55,6 +54,7 @@ interface User {
   };
   preferredFoot?: string;
   profilePicture?: string;
+  positionType?: string;
   statistics?: {
     goals?: number;
     assists?: number;
@@ -94,23 +94,6 @@ interface League {
   matches: { id: string }[];
 }
 
-interface PlayerCardProps {
-  name: string;
-  number: string;
-  level: string;
-  stats: {
-    DRI: string;
-    SHO: string;
-    PAS: string;
-    PAC: string;
-    DEF: string;
-    PHY: string;
-  };
-  foot: string;
-  shirtIcon: string;
-  profileImage?: string;
-  isCaptain?: boolean;
-}
 
 export default function MatchDetailsPage() {
   const params = useParams();
@@ -162,27 +145,6 @@ export default function MatchDetailsPage() {
       setSelectedTeam('home');
     }
   }, [match, selectedTeam]);
-
-  const mapPlayerToCardProps = (player: User): PlayerCardProps => {
-    // const teamGoals = playerOnHomeTeam ? homeGoals : awayGoals;
-    return {
-      name: `${player.firstName || ''} ${player.lastName || ''}`,
-      number: player.shirtNumber || '10',
-      level: player.level || '1',
-      stats: {
-        DRI: player.skills?.dribbling?.toString() || '50',
-        SHO: player.skills?.shooting?.toString() || '50',
-        PAS: player.skills?.passing?.toString() || '50',
-        PAC: player.skills?.pace?.toString() || '50',
-        DEF: player.skills?.defending?.toString() || '50',
-        PHY: player.skills?.physical?.toString() || '50'
-      },
-      foot: player.preferredFoot === 'right' ? 'R' : 'L',
-      profileImage: player.profilePicture || '/assets/group.svg',
-      isCaptain: player.id === match?.homeCaptainId || player.id === match?.awayCaptainId,
-      shirtIcon: ''
-    };
-  };
 
   // Fetch votes and set votedForId ONLY from backend
   const fetchVotes = useCallback(async () => {
@@ -785,47 +747,66 @@ export default function MatchDetailsPage() {
             </Box>
           </Box>
 
-          {(Object.keys(playerVotes).length > 0) && (
-            <Paper sx={{ p: 3, mt: 4, backgroundColor: '#0a3e1e', color: 'white' }}>
-              <Typography variant="h5" component="h2" gutterBottom>MOTM Votes</Typography>
-              <Divider sx={{ mb: 3, backgroundColor: '#fff' }} />
-              <Box
-                sx={{
-                  display: { xs: 'flex', sm: 'grid' },
-                  flexDirection: { xs: 'row', sm: undefined },
-                  overflowX: { xs: 'auto', sm: 'visible' },
-                  gap: 3,
-                  gridTemplateColumns: { sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                  width: '100%',
-                }}
-              >
-                {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                  .filter(player => playerVotes[player.id] > 0)
-                  .map((player) => (
-                    <Box key={player.id} sx={{ minWidth: { xs: 220, sm: 'unset' }, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <Chip
-                          label={playerVotes[player.id]}
-                          sx={{
-                            mb: 1,
-                            backgroundColor: '#ffc107',
-                            color: 'black',
-                            fontWeight: 'bold',
-                            borderRadius: '50%',
-                            width: '32px',
-                            height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        />
-                      </Box>
-                      <ResponsiveCard {...mapPlayerToCardProps(player)} backgroundColor="#0a3e1e" />
-                    </Box>
-                  ))}
-              </Box>
-            </Paper>
-          )}
+          <div className="p-6 mt-8 bg-[#1f673b] text-white rounded-lg">
+                <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
+                <div className="w-full h-px bg-white mb-6"></div>
+
+                {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
+                <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
+                    {[...match.homeTeamUsers, ...match.awayTeamUsers]
+                     .filter(player => playerVotes[player.id] > 0)
+                     .map((player) => (
+                            <Link key={player.id} href={`/player/${player.id}`}>
+                                <div className="group">
+                                    {/* Mobile layout: Image on top center */}
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 bg-[#0a4822] rounded-lg border border-[#43a047] min-h-[80px] sm:min-h-[100px] hover:bg-[#1f673b] hover:-translate-y-1 transition-all duration-200 ease-in-out">
+                                        {/* Profile Image */}
+                                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-[#43a047] mb-3 sm:mb-0 sm:mr-4 flex-shrink-0">
+                                            <img
+                                                src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"}
+                                                alt={`${player.firstName} ${player.lastName}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+
+                                        {/* Player Info */}
+                                        <div className="flex-1 min-w-0 text-center sm:text-left">
+                                            <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
+                                                {player.firstName} {player.lastName}
+                                                {player.id === match.homeCaptainId ? " (C)" : ""}
+                                            </h3>
+
+                                            <p className="text-[#B2DFDB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
+                                                {player.positionType || "Player"}
+                                            </p>
+
+                                            {/* Buttons */}
+                                            <div className="flex justify-center sm:justify-start gap-2 items-center">
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                                                >
+                                                    Shirt No {player.shirtNumber || "0"}
+                                                </Button>
+
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                                                >
+                                                    {typeof playerVotes[player.id] === "number" &&
+                                                        playerVotes[player.id] > 0 &&
+                                                        `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                </div>
+            </div>
         </>
       )}
     </Box>
