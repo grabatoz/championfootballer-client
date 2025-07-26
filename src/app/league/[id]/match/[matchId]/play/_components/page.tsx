@@ -17,10 +17,8 @@ import {
     DialogTitle,
     IconButton,
     Alert,
-    Chip,
     SxProps,
     Theme,
-    Avatar,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
@@ -324,28 +322,6 @@ export default function PlayMatchPage() {
     const playerOnHomeTeam = match.homeTeamUsers.some(p => p.id === user.id);
     const playerOnAwayTeam = match.awayTeamUsers.some(p => p.id === user.id);
     const teamGoals = playerOnHomeTeam ? match.homeTeamGoals || 0 : (playerOnAwayTeam ? match.awayTeamGoals || 0 : 0);
-
-    const mapPlayerToCardProps = (player: User): PlayerCardProps => {
-        // const teamGoals = playerOnHomeTeam ? homeGoals : awayGoals;
-        return {
-            name: `${player.firstName || ''} ${player.lastName || ''}`,
-            number: player.shirtNumber || '10',
-            level: player.level || '1',
-            stats: {
-                DRI: player.skills?.dribbling?.toString() || '50',
-                SHO: player.skills?.shooting?.toString() || '50',
-                PAS: player.skills?.passing?.toString() || '50',
-                PAC: player.skills?.pace?.toString() || '50',
-                DEF: player.skills?.defending?.toString() || '50',
-                PHY: player.skills?.physical?.toString() || '50'
-            },
-            foot: player.preferredFoot === 'right' ? 'R' : 'L',
-            profileImage: player.profilePicture || '/assets/group.svg',
-            isCaptain: player.id === match.homeCaptainId || player.id === match.awayCaptainId,
-            shirtIcon: ''
-        };
-    };
-
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
@@ -421,9 +397,7 @@ export default function PlayMatchPage() {
                             }}>
                                 {match.homeTeamUsers.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, sm: 2 } }}>
-                                        {match.homeTeamUsers.map((player, index) => {
-                                            const stats = player.statistics?.[0] || {};
-
+                                        {match.homeTeamUsers.map((player) => {
                                             return (
                                                 <Box key={player.id} sx={{
                                                     display: 'flex',
@@ -597,9 +571,7 @@ export default function PlayMatchPage() {
                             }}>
                                 {match.awayTeamUsers.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, sm: 2 } }}>
-                                        {match.awayTeamUsers.map((player, index) => {
-                                            const stats = player.statistics?.[0] || {};
-
+                                        {match.awayTeamUsers.map((player) => {
                                             return (
                                                 <Link key={player.id} href={`/player/${player.id}`}>
                                                     <Box key={player.id} sx={{
