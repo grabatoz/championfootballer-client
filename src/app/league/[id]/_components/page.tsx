@@ -830,9 +830,33 @@ export default function LeagueDetailPage() {
                 {section === 'matches' && (
                     // Matches Section
                     <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' }, p: 2 }}>
+                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Matches
                         </Typography>
+                        {isAdmin && (
+                            <Link href={`/league/${leagueId}/match`} passHref>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    sx={{
+                                        backgroundColor: '#43a047',
+                                        '&:hover': { backgroundColor: '#388e3c' },
+                                        color: 'white',
+                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                        px: { xs: 1, sm: 1.5 },
+                                        py: 0.5,
+                                        minWidth: 'auto'
+                                    }}
+                                    startIcon={<Calendar size={16} className='stroke-white' />}
+                                    disabled={!league.active}
+                                >
+                                    Schedule Match
+                                </Button>
+                            </Link>
+                        )}
+                       </Box>
+
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
                         {league.matches && league.matches.length > 0 ? (
                             <Box sx={{
