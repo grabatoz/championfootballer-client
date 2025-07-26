@@ -451,11 +451,7 @@ const PlayerStatsPage = () => {
                             }}
                         >
                             <Avatar
-                                src={fullPlayerData?.player?.profilePicture ? (
-                                    fullPlayerData.player.profilePicture.startsWith('http')
-                                        ? fullPlayerData.player.profilePicture
-                                        : `${process.env.NEXT_PUBLIC_API_URL}${fullPlayerData.player.profilePicture}`
-                                ) : undefined}
+                                src={fullPlayerData?.player?.profilePicture || '/assets/group451.png'}
                                 alt={fullPlayerData?.player?.name}
                                 sx={{
                                     width: 90,
@@ -648,48 +644,48 @@ const PlayerStatsPage = () => {
                             )}
                         </Paper>
                     </Box>
-                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex',sm: 'none' , md: 'none' } }}>
-    <Box
-        sx={{
-            display: 'inline-flex',
-            background: '#1f673b',
-            borderRadius: 3,
-            px: 3,
-            py: 0.5,
-            boxShadow: 1,
-            border: '2px solid green'
-        }}
-    >
-        <Tabs
-            value={tab}
-            onChange={handleTabChange}
-            sx={{
-                '& .MuiTab-root': {
-                    color: 'white',
-                    fontWeight: 'bold',
-                    fontSize: { xs: '14px', md: '16px' },
-                    minWidth: 0,
-                    width: 'auto',
-                    px: 2,
-                    textTransform: 'none',
-                    '&.Mui-selected': {
-                        color: '#4caf50',
-                        backgroundColor: '#1f673b'
-                    }
-                },
-                '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50',
-                    height: 3
-                }
-            }}
-        >
-            <Tab label="Overview" />
-            <Tab label="Stats" />
-            <Tab label="Awards" />
-            <Tab label="Leagues Overview" />
-        </Tabs>
-    </Box>
-</Box>
+                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'none', md: 'none' } }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                background: '#1f673b',
+                                borderRadius: 3,
+                                px: 3,
+                                py: 0.5,
+                                boxShadow: 1,
+                                border: '2px solid green'
+                            }}
+                        >
+                            <Tabs
+                                value={tab}
+                                onChange={handleTabChange}
+                                sx={{
+                                    '& .MuiTab-root': {
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '14px', md: '16px' },
+                                        minWidth: 0,
+                                        width: 'auto',
+                                        px: 2,
+                                        textTransform: 'none',
+                                        '&.Mui-selected': {
+                                            color: '#4caf50',
+                                            backgroundColor: '#1f673b'
+                                        }
+                                    },
+                                    '& .MuiTabs-indicator': {
+                                        backgroundColor: '#4caf50',
+                                        height: 3
+                                    }
+                                }}
+                            >
+                                <Tab label="Overview" />
+                                <Tab label="Stats" />
+                                <Tab label="Awards" />
+                                <Tab label="Leagues Overview" />
+                            </Tabs>
+                        </Box>
+                    </Box>
 
                     {/* Main content: flex: 1, never moves below sidebar on desktop */}
                     <Box
