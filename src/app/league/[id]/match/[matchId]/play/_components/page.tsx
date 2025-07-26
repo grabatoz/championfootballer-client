@@ -83,24 +83,6 @@ interface League {
     active: boolean;
 }
 
-interface PlayerCardProps {
-    name: string;
-    number: string;
-    level: string;
-    stats: {
-        DRI: string;
-        SHO: string;
-        PAS: string;
-        PAC: string;
-        DEF: string;
-        PHY: string;
-    };
-    foot: string;
-    shirtIcon: string;
-    profileImage?: string;
-    isCaptain?: boolean;
-}
-
 interface MotmButtonProps {
     voted: boolean;
     onClick: () => void;
