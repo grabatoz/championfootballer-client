@@ -147,7 +147,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={homeTeamName}
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 130, sm: 130, md: 150 }, // Adjusted image size for smaller screens
+                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
                 mr: { xs: 1, sm: 2 }, // Reduced margin for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
@@ -230,7 +230,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={awayTeamName}
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 130, sm: 130, md: 150 }, // Adjusted image size for smaller screens
+                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
                 ml: { xs: 1, sm: 2 }, // Reduced margin for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },

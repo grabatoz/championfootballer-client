@@ -639,7 +639,7 @@ export default function MatchDetailsPage() {
                   </Box>
                   <Box
                     sx={{
-                      p: 3,
+                      p: 1,
                       borderRadius: 3,
                       background: "#185c34",
                       boxShadow: 2,
