@@ -567,7 +567,7 @@ export default function LeagueDetailPage() {
     }
 
     return (
-        <Box sx={{ p: 4, minHeight: '100vh' }}>
+        <Box sx={{ minHeight: '100vh' }} className='sm:p-8'>
             {!league.active && (
                 <Alert severity="warning" sx={{ mb: 2 }}>
                     This league is currently inactive. All actions are disabled until an admin reactivates it.
