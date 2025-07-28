@@ -19,7 +19,10 @@ import {
     Divider,
     Card,
     CardContent,
+    Drawer,
+    IconButton,
 } from '@mui/material';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
@@ -36,12 +39,12 @@ import Image, { StaticImageData } from 'next/image';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import flag from '@/Components/images/league.png';
-import Goals from '@/Components/images/goal.png';
-import Imapct from '@/Components/images/imapct.png';
-import Assist from '@/Components/images/Assist.png';
-import Defence from '@/Components/images/defence.png';
-import MOTM from '@/Components/images/MOTM.png';
-import CleanSheet from '@/Components/images/cleansheet.png';
+// import Goals from '@/Components/images/goal.png';
+// import Imapct from '@/Components/images/imapct.png';
+// import Assist from '@/Components/images/Assist.png';
+// import Defence from '@/Components/images/defence.png';
+// import MOTM from '@/Components/images/MOTM.png';
+// import CleanSheet from '@/Components/images/cleansheet.png';
 import { useAuth } from '@/lib/hooks';
 import Link from 'next/link';
 
@@ -98,17 +101,19 @@ const trophyDetails: Record<string, { image: StaticImageData; description: strin
     },
     'The Dark Horse': {
         image: DarkHorseImg,
-        description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes',
+        description: 'Player With The Most Unexpected Performance',
     },
 };
 
 const metrics = [
-    { key: 'goals', label: 'Goals', icon: Goals },
-    { key: 'assists', label: 'Assists', icon: Assist },
-    { key: 'defence', label: 'Defence', icon: Defence },
-    { key: 'motm', label: 'MOTM', icon: MOTM },
-    { key: 'impact', label: 'Impact', icon: Imapct },
-    { key: 'cleanSheet', label: 'Clean Sheet', icon: CleanSheet },
+    { key: 'goals', label: 'Goals' },
+    { key: 'assists', label: 'Assists' },
+    { key: 'cleanSheets', label: 'Clean Sheets' },
+    { key: 'motmVotes', label: 'MOTM Votes' },
+    { key: 'impact', label: 'Impact' },
+    { key: 'defence', label: 'Defence' },
+    { key: 'freeKicks', label: 'Free Kicks' },
+    { key: 'penalties', label: 'Penalties' },
 ];
 
 interface LeaderboardPlayer {
@@ -137,6 +142,10 @@ type LeagueMatch = {
     end?: string;
     location?: string;
     playerStats?: {
+        freeKicks: number;
+        defence: number;
+        impact: number;
+        penalties: number;
         goals?: number;
         assists?: number;
         cleanSheets?: number;
@@ -176,6 +185,9 @@ const PlayerStatsPage = () => {
     const [positionFilter, setPositionFilter] = useState('');
     // const [positionTypeFilter, setPositionTypeFilter] = useState('');
     // const [footFilter, setFootFilter] = useState('');
+
+    // Filter dialog state
+    const [filterDialogOpen, setFilterDialogOpen] = useState(false);
 
     // Fetch leagues for leaderboard
     useEffect(() => {
@@ -310,15 +322,47 @@ const PlayerStatsPage = () => {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh' }}>
-            {/* <Box  sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 4}}>
+            <Box sx={{ width: '100%', mb: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {/* Back Button - Left side */}
+                <Button
+                    variant="outlined"
+                    color="inherit"
+                    sx={{ 
+                        color: '#1f673b', 
+                        borderColor: '#1f673b', 
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        mr: 2,
+                        ml: 3,
+                        fontSize: { xs: '12px', sm: '14px', md: '16px' },
+                        px: { xs: 1, sm: 2, md: 3 },
+                        py: { xs: 0.5, sm: 1, md: 1.5 },
+                        height: { xs: 32, sm: 36, md: 40 },
+                        '&:hover': {
+                            borderColor: '#388e3c',
+                            backgroundColor: 'rgba(31,103,59,0.1)'
+                        }
+                    }}
+                    onClick={() => {
+                        // Try to go back, if no previous page, go to dashboard
+                        router.push('/all-players');
+                    }}
+                >
+                    ← Back to All Players
+                </Button>
+              
                 <Box
                     sx={{
-                        display: 'inline-flex',
                         background: '#1f673b',
                         borderRadius: 3,
                         px: 3,
                         py: 0.5,
                         boxShadow: 1,
+                        display: { xs: 'none', sm: 'none', md: 'inline-flex', lg: 'inline-flex' },
+                        justifyContent: 'center',
+                        flex: 1,
+                        maxWidth: 'fit-content',
+                        mx: 'auto'
                     }}
                 >
                     <Tabs
@@ -350,46 +394,29 @@ const PlayerStatsPage = () => {
                         <Tab label="Leagues Overview" />
                     </Tabs>
                 </Box>
-            </Box> */}
-            <Box sx={{ width: '100%', justifyContent: 'center', mb: 4, display: { xs: 'none', sm: 'flex', md: 'flex' } }}>
-                <Box
-                    sx={{
-                        display: 'inline-flex',
-                        background: '#1f673b',
-                        borderRadius: 3,
-                        px: 3,
-                        py: 0.5,
-                        boxShadow: 1,
-                    }}
-                >
-                    <Tabs
-                        value={tab}
-                        onChange={handleTabChange}
+                
+                {/* Top Players Filter Button - Right side */}
+                <Box sx={{ display: { xs: 'flex', md: 'none', lg: 'none' }, justifyContent: 'flex-end', ml: 'auto' }}>
+                    <IconButton
+                        onClick={() => setFilterDialogOpen(true)}
                         sx={{
-                            '& .MuiTab-root': {
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '14px', md: '16px' },
-                                minWidth: 0,
-                                width: 'auto',
-                                px: 2,
-                                textTransform: 'none',
-                                '&.Mui-selected': {
-                                    color: '#4caf50',
-                                    backgroundColor: '#1f673b'
-                                }
-                            },
-                            '& .MuiTabs-indicator': {
-                                backgroundColor: '#4caf50',
-                                height: 3
+                            color: 'white',
+                            bgcolor: 'rgba(31,103,59,0.9)',
+                            '&:hover': { bgcolor: 'rgba(31,103,59,1)' },
+                            boxShadow: 2,
+                            borderRadius: 0,
+                            fontSize: { xs: '10px', sm: '12px' },
+                            px: { xs: 1, sm: 2 },
+                            py: { xs: 0.5, sm: 1 },
+                            height: { xs: 28, sm: 32 },
+                            width: { xs: 'auto', sm: 'auto' },
+                            '& .MuiIconButton-label': {
+                                fontSize: { xs: '10px', sm: '12px' }
                             }
                         }}
                     >
-                        <Tab label="Overview" />
-                        <Tab label="Stats" />
-                        <Tab label="Awards" />
-                        <Tab label="Leagues Overview" />
-                    </Tabs>
+                        Top Players <FilterListIcon sx={{ fontSize: { xs: '14px', sm: '16px' } }} />
+                    </IconButton>
                 </Box>
             </Box>
             <Paper elevation={4} sx={{
@@ -487,13 +514,20 @@ const PlayerStatsPage = () => {
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
-                                border: '2px solid green'
-
+                                border: '2px solid green',
+                                display: { xs: 'none', md: 'none', lg: 'flex' },
                             }}
                         >
-                            <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 'bold' }}>Top Players</Typography>
-                            {/* League and Metric Selects */}
-                            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                            {/* Header with Filter Button for small screens */}
+
+
+                            {/* League and Metric Selects - Only visible on screens 900px and above */}
+                            <Box sx={{
+                                display: { xs: 'none', md: 'none', },
+                                gap: 2,
+                                mb: 3,
+                                flexWrap: 'wrap'
+                            }}>
                                 <FormControl size="small" sx={{ minWidth: '100%', background: 'white', borderRadius: 1 }}>
                                     <InputLabel sx={{ color: '#fff' }}>League</InputLabel>
                                     <Select
@@ -599,6 +633,7 @@ const PlayerStatsPage = () => {
                                     </Select>
                                 </FormControl>
                             </Box>
+
                             {/* Leaderboard List */}
                             {leaderboardLoading ? (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -609,7 +644,7 @@ const PlayerStatsPage = () => {
                                     No players found for the selected criteria.
                                 </Typography>
                             ) : (
-                                <Box sx={{ display: 'grid', gap: 2 }}>
+                                <Box sx={{ gap: 2, display: { xs: 'none', md: 'none', lg: 'grid' } }}>
                                     {leaderboardPlayers.map((player) => (
                                         <React.Fragment key={player.id}>
                                             <Paper
@@ -620,8 +655,15 @@ const PlayerStatsPage = () => {
                                                     background: '#1f673b',
                                                     cursor: 'pointer',
                                                     boxShadow: 'none',
+
                                                 }}
-                                                onClick={() => handleLeaderboardPlayerClick(player.id)}
+                                                onClick={() => {
+                                                    handleLeaderboardPlayerClick(player.id);
+                                                    // Close filter dialog on small screens when player is clicked
+                                                    if (window.innerWidth < 900) {
+                                                        setFilterDialogOpen(false);
+                                                    }
+                                                }}
                                             >
                                                 <Avatar
                                                     src={
@@ -643,8 +685,195 @@ const PlayerStatsPage = () => {
                                 </Box>
                             )}
                         </Paper>
+
+                        {/* Filter Dialog for small screens */}
+                        <Drawer
+                            anchor="right"
+                            open={filterDialogOpen}
+                            onClose={() => setFilterDialogOpen(false)}
+                            sx={{
+                                '& .MuiDrawer-paper': {
+                                    bgcolor: '#1f673b',
+                                    color: 'white',
+                                    width: 340,
+                                    maxWidth: '100vw',
+                                    height: '100%',
+                                    p: 0,
+                                    borderTopLeftRadius: 8,
+                                    borderBottomLeftRadius: 8,
+                                }
+                            }}
+                        >
+                            <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                        Filter Players
+                                    </Typography>
+                                    <IconButton
+                                        onClick={() => setFilterDialogOpen(false)}
+                                        sx={{ color: 'white' }}
+                                    >
+                                        ✕
+                                    </IconButton>
+                                </Box>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                                    <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
+                                        <InputLabel sx={{ color: '#1f673b' }}>League</InputLabel>
+                                        <Select
+                                            value={selectedLeaderboardLeague}
+                                            label="League"
+                                            onChange={e => setSelectedLeaderboardLeague(e.target.value)}
+                                            sx={{
+                                                background: '#0a3e1e',
+                                                color: '#fff',
+                                                '& .MuiSelect-icon': { color: '#fff' },
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#4caf50',
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#388e3c',
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#43a047',
+                                                },
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        background: '#0a3e1e',
+                                                        color: '#fff',
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {leagues.map((l) => (
+                                                <MenuItem key={l.id} value={l.id} sx={{ color: '#fff' }}>{l.name}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
+                                        <InputLabel sx={{ color: '#1f673b' }}>Metric</InputLabel>
+                                        <Select
+                                            value={selectedMetric}
+                                            label="Metric"
+                                            onChange={e => setSelectedMetric(e.target.value)}
+                                            sx={{
+                                                background: '#0a3e1e',
+                                                color: '#fff',
+                                                '& .MuiSelect-icon': { color: '#fff' },
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#4caf50',
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#388e3c',
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#43a047',
+                                                },
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        background: '#0a3e1e',
+                                                        color: '#fff',
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {metrics.map((m) => (
+                                                <MenuItem key={m.key} value={m.key}>{m.label}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
+                                        <InputLabel sx={{ color: '#1f673b' }}>Position Type</InputLabel>
+                                        <Select
+                                            value={positionFilter || ''}
+                                            label="Position Type"
+                                            onChange={e => setPositionFilter(e.target.value)}
+                                            sx={{
+                                                background: '#0a3e1e',
+                                                color: '#fff',
+                                                '& .MuiSelect-icon': { color: '#fff' },
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#4caf50',
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#388e3c',
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#43a047',
+                                                },
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        background: '#0a3e1e',
+                                                        color: '#fff',
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <MenuItem value="">All</MenuItem>
+                                            <MenuItem value="Forward">Forward</MenuItem>
+                                            <MenuItem value="Midfielder">Midfielder</MenuItem>
+                                            <MenuItem value="Defender">Defender</MenuItem>
+                                            <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                                {/* Players List in Drawer */}
+                                <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+                                    {leaderboardLoading ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                            <CircularProgress sx={{ color: '#4caf50' }} />
+                                        </Box>
+                                    ) : leaderboardPlayers.length === 0 ? (
+                                        <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic', textAlign: 'center', py: 4 }}>
+                                            No players found for the selected criteria.
+                                        </Typography>
+                                    ) : (
+                                        <Box sx={{ display: 'grid', gap: 2 }}>
+                                            {leaderboardPlayers.map((player) => (
+                                                <React.Fragment key={player.id}>
+                                                    <Paper
+                                                        sx={{
+                                                            display: 'flex',
+                                                            color: 'white',
+                                                            alignItems: 'center',
+                                                            background: '#1f673b',
+                                                            cursor: 'pointer',
+                                                            boxShadow: 'none',
+                                                        }}
+                                                        onClick={() => {
+                                                            handleLeaderboardPlayerClick(player.id);
+                                                            setFilterDialogOpen(false);
+                                                        }}
+                                                    >
+                                                        <Avatar
+                                                            src={
+                                                                player?.profilePicture
+                                                                    ? (player.profilePicture || '/assets/group.svg'
+                                                                        ? player.profilePicture
+                                                                        : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
+                                                                    : '/assets/group451.png'
+                                                            }
+                                                            sx={{ width: 50, height: 50, mr: 2 }}
+                                                        />
+                                                        <Box>
+                                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>{player.name}</Typography>
+                                                        </Box>
+                                                    </Paper>
+                                                    <Divider sx={{ borderColor: '#fff' }} />
+                                                </React.Fragment>
+                                            ))}
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+                        </Drawer>
                     </Box>
-                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'none', md: 'none' } }}>
+                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'flex', md: 'none' } }}>
                         <Box
                             sx={{
                                 display: 'inline-flex',
@@ -885,6 +1114,10 @@ const PlayerStatsPage = () => {
                                                                         <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
                                                                         <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
                                                                         <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                                                        <Typography>Penalties: <b>{playerStats.penalties ?? 0}</b></Typography>
+                                                                        <Typography>Free Kicks: <b>{playerStats.freeKicks ?? 0}</b></Typography>
+                                                                        <Typography>Defence: <b>{playerStats.defence ?? 0}</b></Typography>
+                                                                        <Typography>Impact: <b>{playerStats.impact ?? 0}</b></Typography>
                                                                     </Box>
                                                                 ) : (
                                                                     <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>No stats available for this match.</Typography>

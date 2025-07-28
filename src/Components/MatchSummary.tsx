@@ -214,32 +214,18 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               flex: 1,
               minWidth: 0,
               width: { xs: "100%", sm: "auto" },
-              justifyContent: { xs: "center", sm: "flex-start" },
+              justifyContent: { xs: "center", sm: "flex-end" }, // Changed to flex-end for away team
               gap: { xs: 1, sm: 2 }, // Gap between image and text
             }}
           >
-            <Box
-              component="img"
-              src={awayTeamImg}
-              alt={awayTeamName}
-              sx={{
-                height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
-                maxWidth: { xs: 150, sm: 150, md: 200 },
-                p: { xs: 0, sm: 0, md: 1 },
-                color: "white",
-                borderRadius: 2,
-                // Remove marginRight for xs since we're stacking vertically
-                marginRight: { sm: 5, md: 1 },
-                // objectFit: "contain", // Ensure image fits without cropping
-              }}
-            />
+            {/* For larger screens, show goals first (left), then image (right) */}
             <Box sx={{ 
               minWidth: 0, 
-              textAlign: { xs: "center", sm: "left" },
+              textAlign: { xs: "center", sm: "right" }, // Right align text for away team
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", sm: "flex-start" }
+              alignItems: { xs: "center", sm: "flex-end" }, // Right align for away team
+              order: { xs: 2, sm: 1 } // On xs: goals below image, on sm+: goals first (left)
             }}>
               <Typography
                 variant="h6"
@@ -256,6 +242,21 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 {awayGoals}
               </Typography>
             </Box>
+            <Box
+              component="img"
+              src={awayTeamImg}
+              alt={awayTeamName}
+              sx={{
+                height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
+                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
+                maxWidth: { xs: 150, sm: 150, md: 200 },
+                p: { xs: 0, sm: 0, md: 1 },
+                color: "white",
+                borderRadius: 2,
+                marginLeft: { sm: 5, md: 1 }, // Add margin left for larger screens
+                order: { xs: 1, sm: 2 } // On xs: image first (top), on sm+: image second (right)
+              }}
+            />
           </Box>
         </Box>
 
