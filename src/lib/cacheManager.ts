@@ -5,15 +5,72 @@ import type {
   PlayersResponse,
   MatchesResponse,
   DreamTeamResponse,
-  PlayerStatsResponse
+  PlayerStatsResponse,
+  MatchUser
 } from '@/types/api';
+import type { League, User, Match } from '@/types/user';
 
-// Cache Manager for all backend routes
+// Helper to ensure profilePicture is string | undefined
+function normalizeProfilePicture(pic: string | null | undefined): string | undefined {
+  return pic === null ? undefined : pic;
+}
+
+// Helper to create a default LeaderboardPlayer
+function createLeaderboardPlayer(
+  playerId: string,
+  value: number,
+  metric: keyof LeaderboardResponse['players'][number]
+): LeaderboardResponse['players'][number] {
+  return {
+    id: playerId,
+    name: '',
+    positionType: '',
+    profilePicture: undefined,
+    value,
+    [metric]: value
+  } as LeaderboardResponse['players'][number];
+}
+
+// Helper to convert User to PlayerListItem
+function toPlayerListItem(user: User): PlayersResponse['players'][number] {
+  const rating = 'rating' in user && typeof (user as { rating?: number }).rating === 'number'
+    ? (user as { rating: number }).rating
+    : 0;
+  return {
+    ...user,
+    name: (user.firstName && user.lastName) ? `${user.firstName} ${user.lastName}` : '',
+    profilePicture: normalizeProfilePicture(user.profilePicture),
+    rating,
+  };
+}
+
+// Helper to convert User to MatchUser
+function toMatchUser(user: User): MatchUser {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    // position: user.position,
+    // positionType: user.positionType,
+    // style: user.style,
+    // preferredFoot: user.preferredFoot,
+    // shirtNumber: user.shirtNumber,
+    profilePicture: normalizeProfilePicture(user.profilePicture),
+    // xp: user.xp,
+    // createdAt: user.createdAt,
+    // updatedAt: user.updatedAt,
+  };
+}
+
+// Helper to convert User[] to MatchUser[]
+function toMatchUserArray(users: User[] | undefined): MatchUser[] {
+  if (!users) return [];
+  return users.map(u => toMatchUser(u));
+}
+
 export class CacheManager {
   private static instance: CacheManager;
-  
   private constructor() {}
-  
   public static getInstance(): CacheManager {
     if (!CacheManager.instance) {
       CacheManager.instance = new CacheManager();
@@ -22,171 +79,108 @@ export class CacheManager {
   }
 
   // Leagues Cache Management
-  public updateLeaguesCache(newLeague: any): void {
+  public updateLeaguesCache(newLeague: League): void {
     const key = 'leagues_cache';
     const existing = getCache<LeaguesResponse>(key);
-    
     if (existing && existing.leagues) {
-      // Add the new league to the beginning of the leagues array
       const updatedLeagues = [newLeague, ...existing.leagues];
-      const updatedData: LeaguesResponse = {
-        ...existing,
-        leagues: updatedLeagues
-      };
-      setCache(key, updatedData);
-      console.log('✅ Updated leagues cache with new league:', newLeague.name);
+      setCache(key, { ...existing, leagues: updatedLeagues });
     } else {
-      console.log('📝 No existing leagues cache found, creating new one');
-      const newData: LeaguesResponse = {
-        success: true,
-        leagues: [newLeague]
-      };
-      setCache(key, newData);
+      setCache(key, { success: true, leagues: [newLeague] });
     }
   }
 
-  public updateLeaguesCacheOnJoin(joinedLeague: any): void {
+  public updateLeaguesCacheOnJoin(joinedLeague: League): void {
     const key = 'leagues_cache';
     const existing = getCache<LeaguesResponse>(key);
-    
     if (existing && existing.leagues) {
-      // Check if league already exists in cache
-      const leagueExists = existing.leagues.some((league: any) => league.id === joinedLeague.id);
+      const leagueExists = existing.leagues.some((league) => league.id === joinedLeague.id);
       if (!leagueExists) {
-        // Add the joined league to the leagues array
         const updatedLeagues = [...existing.leagues, joinedLeague];
-        const updatedData: LeaguesResponse = {
-          ...existing,
-          leagues: updatedLeagues
-        };
-        setCache(key, updatedData);
-        console.log('✅ Updated leagues cache with joined league:', joinedLeague.name);
+        setCache(key, { ...existing, leagues: updatedLeagues });
       }
     }
   }
 
   // Leaderboard Cache Management
-  public updateLeaderboardCache(newStats: any, metric: string = 'goals'): void {
-    const key = 'leaderboard_cache';
-    const existing = getCache<LeaderboardResponse>(key);
-    
+  public updateLeaderboardCache(
+    playerId: string,
+    value: number,
+    metric: keyof LeaderboardResponse['players'][number],
+    cacheKey: string = 'leaderboard_cache'
+  ): void {
+    const existing = getCache<LeaderboardResponse>(cacheKey);
     if (existing && existing.players) {
-      // Find and update existing player or add new player
-      const playerIndex = existing.players.findIndex((player: any) => player.id === newStats.playerId);
+      const playerIndex = existing.players.findIndex((player) => player.id === playerId);
       if (playerIndex !== -1) {
-        // Update existing player stats
         const updatedPlayers = [...existing.players];
-        updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newStats };
-        const updatedData: LeaderboardResponse = {
-          ...existing,
-          players: updatedPlayers
+        updatedPlayers[playerIndex] = {
+          ...updatedPlayers[playerIndex],
+          [metric]: value
         };
-        setCache(key, updatedData);
-        console.log('✅ Updated leaderboard cache for player:', newStats.playerId);
+        setCache(cacheKey, { ...existing, players: updatedPlayers });
       } else {
-        // Add new player to leaderboard
-        const updatedPlayers = [...existing.players, newStats];
-        const updatedData: LeaderboardResponse = {
-          ...existing,
-          players: updatedPlayers
-        };
-        setCache(key, updatedData);
-        console.log('✅ Added new player to leaderboard cache:', newStats.playerId);
+        const newPlayer = createLeaderboardPlayer(playerId, value, metric);
+        setCache(cacheKey, { ...existing, players: [...existing.players, newPlayer] });
       }
     }
   }
 
   // Players Cache Management
-  public updatePlayersCache(newPlayer: any): void {
+  public updatePlayersCache(newPlayer: User): void {
     const key = 'players_cache';
     const existing = getCache<PlayersResponse>(key);
-    
     if (existing && existing.players) {
-      // Find and update existing player or add new player
-      const playerIndex = existing.players.findIndex((player: any) => player.id === newPlayer.id);
+      const playerIndex = existing.players.findIndex((player) => player.id === newPlayer.id);
+      const normalizedPlayer = toPlayerListItem(newPlayer);
       if (playerIndex !== -1) {
-        // Update existing player
         const updatedPlayers = [...existing.players];
-        updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newPlayer };
-        const updatedData: PlayersResponse = {
-          ...existing,
-          players: updatedPlayers
-        };
-        setCache(key, updatedData);
-        console.log('✅ Updated players cache for player:', newPlayer.id);
+        updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...normalizedPlayer };
+        setCache(key, { ...existing, players: updatedPlayers });
       } else {
-        // Add new player
-        const updatedPlayers = [...existing.players, newPlayer];
-        const updatedData: PlayersResponse = {
-          ...existing,
-          players: updatedPlayers
-        };
-        setCache(key, updatedData);
-        console.log('✅ Added new player to players cache:', newPlayer.id);
+        setCache(key, { ...existing, players: [...existing.players, normalizedPlayer] });
       }
     }
   }
 
   // Player Stats Cache Management
-  public updatePlayerStatsCache(playerId: string, newStats: any): void {
+  public updatePlayerStatsCache(playerId: string, newStats: PlayerStatsResponse): void {
     const key = `playerstats_cache_${playerId}`;
     const existing = getCache<PlayerStatsResponse>(key);
-    
     if (existing) {
-      // Merge new stats with existing stats
-      const updatedData: PlayerStatsResponse = {
-        ...existing,
-        ...newStats
-      };
-      setCache(key, updatedData);
-      console.log('✅ Updated player stats cache for player:', playerId);
+      setCache(key, { ...existing, ...newStats });
     }
   }
 
   // Matches Cache Management
-  public updateMatchesCache(newMatch: any): void {
+  public updateMatchesCache(newMatch: Match): void {
     const key = 'matches_cache';
     const existing = getCache<MatchesResponse>(key);
-    
     if (existing && existing.matches) {
-      // Find and update existing match or add new match
-      const matchIndex = existing.matches.findIndex((match: any) => match.id === newMatch.id);
+      const matchIndex = existing.matches.findIndex((match) => match.id === newMatch.id);
+      // Convert homeTeamUsers and awayTeamUsers
+      const normalizedMatch = {
+        ...newMatch,
+        homeTeamUsers: toMatchUserArray((newMatch as Match & { homeTeamUsers?: User[] }).homeTeamUsers),
+        awayTeamUsers: toMatchUserArray((newMatch as Match & { awayTeamUsers?: User[] }).awayTeamUsers),
+        profilePicture: normalizeProfilePicture((newMatch as Match & { profilePicture?: string | null }).profilePicture),
+      };
       if (matchIndex !== -1) {
-        // Update existing match
         const updatedMatches = [...existing.matches];
-        updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...newMatch };
-        const updatedData: MatchesResponse = {
-          ...existing,
-          matches: updatedMatches
-        };
-        setCache(key, updatedData);
-        console.log('✅ Updated matches cache for match:', newMatch.id);
+        updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...normalizedMatch };
+        setCache(key, { ...existing, matches: updatedMatches });
       } else {
-        // Add new match
-        const updatedMatches = [...existing.matches, newMatch];
-        const updatedData: MatchesResponse = {
-          ...existing,
-          matches: updatedMatches
-        };
-        setCache(key, updatedData);
-        console.log('✅ Added new match to matches cache:', newMatch.id);
+        setCache(key, { ...existing, matches: [...existing.matches, normalizedMatch] });
       }
     }
   }
 
   // Dream Team Cache Management
-  public updateDreamTeamCache(newDreamTeam: any): void {
+  public updateDreamTeamCache(newDreamTeam: DreamTeamResponse): void {
     const key = 'dreamteam_cache';
     const existing = getCache<DreamTeamResponse>(key);
-    
     if (existing) {
-      // Update dream team data
-      const updatedData: DreamTeamResponse = {
-        ...existing,
-        ...newDreamTeam
-      };
-      setCache(key, updatedData);
-      console.log('✅ Updated dream team cache');
+      setCache(key, { ...existing, ...newDreamTeam });
     }
   }
 
@@ -196,10 +190,8 @@ export class CacheManager {
     if (existing) {
       const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
       setCache(cacheKey, updatedData);
-      console.log(`✅ Updated cache for key: ${cacheKey}`);
     } else {
       setCache(cacheKey, newData);
-      console.log(`📝 Created new cache for key: ${cacheKey}`);
     }
   }
 
@@ -208,7 +200,6 @@ export class CacheManager {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(cacheKey);
       document.cookie = `${cacheKey}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      console.log(`🗑️ Cleared cache for key: ${cacheKey}`);
     }
   }
 
@@ -222,12 +213,10 @@ export class CacheManager {
         'matches_cache',
         'dreamteam_cache'
       ];
-      
       cacheKeys.forEach(key => {
         localStorage.removeItem(key);
         document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
       });
-      
       // Clear player stats caches (they have dynamic keys)
       const keys = Object.keys(localStorage);
       keys.forEach(key => {
@@ -235,15 +224,12 @@ export class CacheManager {
           localStorage.removeItem(key);
         }
       });
-      
-      console.log('🗑️ Cleared all caches');
     }
   }
 
   // Get cache status
   public getCacheStatus(): Record<string, boolean> {
     if (typeof window === 'undefined') return {};
-    
     const cacheKeys = [
       'leagues_cache',
       'leaderboard_cache', 
@@ -251,20 +237,15 @@ export class CacheManager {
       'matches_cache',
       'dreamteam_cache'
     ];
-    
     const status: Record<string, boolean> = {};
     cacheKeys.forEach(key => {
       status[key] = !!localStorage.getItem(key);
     });
-    
     return status;
   }
 }
 
-// Export singleton instance
 export const cacheManager = CacheManager.getInstance();
-
-// Export convenience functions
 export const {
   updateLeaguesCache,
   updateLeaguesCacheOnJoin,

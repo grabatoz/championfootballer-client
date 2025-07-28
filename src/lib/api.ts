@@ -8,7 +8,8 @@ import type {
   MatchesResponse,
   DreamTeamResponse,
   PlayerStatsResponse,
-  CacheEntry
+  CacheEntry,
+  MatchUser
 } from '@/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -754,264 +755,162 @@ export function setCache<T>(key: string, data: T) {
   Cookies.set(key, value, { expires: 1/144 }); // ~10 min
 }
 
-// Function to update existing cache with new data
-function updateCache<T>(key: string, newData: T, mergeFunction?: (existing: T, newData: T) => T) {
-  if (typeof window === 'undefined') return;
-  
-  const existing = getCache<T>(key);
-  if (existing) {
-    // If merge function provided, use it to combine data
-    const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
-    setCache(key, updatedData);
-    console.log(`Updated cache for key: ${key}`);
-  } else {
-    // If no existing cache, just set the new data
-    setCache(key, newData);
-  }
+// Helper to ensure profilePicture is string | undefined
+function normalizeProfilePicture(pic: string | null | undefined): string | undefined {
+  return pic === null ? undefined : pic;
 }
 
-// --- API Wrappers with Local Cache ---
-export async function fetchLeaguesWithCache(token: string): Promise<LeaguesResponse> {
-  const key = 'leagues_cache';
-  const cached = getCache<LeaguesResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/leagues/user`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: LeaguesResponse = await res.json();
-  console.log('data2',data);
-  
-  setCache(key, data);
-  return data;
+// Helper to create a default LeaderboardPlayer
+function createLeaderboardPlayer(
+  playerId: string,
+  value: number,
+  metric: keyof LeaderboardResponse['players'][number]
+): LeaderboardResponse['players'][number] {
+  return {
+    id: playerId,
+    name: '', // Default empty, should be filled by caller if possible
+    positionType: '',
+    profilePicture: undefined,
+    value,
+    [metric]: value
+  } as LeaderboardResponse['players'][number];
 }
 
-export async function fetchLeaderboardWithCache(token: string): Promise<LeaderboardResponse> {
-  const key = 'leaderboard_cache';
-  const cached = getCache<LeaderboardResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/leaderboard`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: LeaderboardResponse = await res.json();
-  setCache(key, data);
-  return data;
+// Helper to convert User to PlayerListItem
+function toPlayerListItem(user: User): PlayersResponse['players'][number] {
+  return {
+    ...user,
+    name: (user.firstName && user.lastName) ? `${user.firstName} ${user.lastName}` : '',
+    profilePicture: normalizeProfilePicture(user.profilePicture),
+    rating: (user as User & { rating?: number }).rating ?? 0,
+  };
 }
 
-export async function fetchPlayersWithCache(token: string): Promise<PlayersResponse> {
-  const key = 'players_cache';
-  const cached = getCache<PlayersResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/players`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: PlayersResponse = await res.json();
-  setCache(key, data);
-  return data;
+// Helper to convert User[] to MatchUser[]
+function toMatchUserArray(users: User[] | undefined): MatchUser[] {
+  if (!users) return [];
+  return users.map(u => ({
+    id: u.id,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    profilePicture: normalizeProfilePicture(u.profilePicture),
+  }));
 }
 
-export async function fetchMatchesWithCache(token: string): Promise<MatchesResponse> {
-  const key = 'matches_cache';
-  const cached = getCache<MatchesResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/matches`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: MatchesResponse = await res.json();
-  setCache(key, data);
-  return data;
-}
-
-export async function fetchDreamTeamWithCache(token: string): Promise<DreamTeamResponse> {
-  const key = 'dreamteam_cache';
-  const cached = getCache<DreamTeamResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/dreamTeam`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: DreamTeamResponse = await res.json();
-  setCache(key, data);
-  return data;
-}
-
-export async function fetchPlayerStatsWithCache(playerId: string, token: string): Promise<PlayerStatsResponse> {
-  const key = `playerstats_cache_${playerId}`;
-  const cached = getCache<PlayerStatsResponse>(key);
-  if (cached) return cached;
-  const res = await fetch(`/api/players/${playerId}/stats`, { headers: { Authorization: `Bearer ${token}` } });
-  const data: PlayerStatsResponse = await res.json();
-  setCache(key, data);
-  return data;
-}
-
-// Function to update leagues cache when a new league is created
-export function updateLeaguesCache(newLeague: any) {
+// Leagues
+export function updateLeaguesCache(newLeague: League) {
   const key = 'leagues_cache';
   const existing = getCache<LeaguesResponse>(key);
-  
   if (existing && existing.leagues) {
-    // Add the new league to the beginning of the leagues array
     const updatedLeagues = [newLeague, ...existing.leagues];
-    const updatedData: LeaguesResponse = {
-      ...existing,
-      leagues: updatedLeagues
-    };
-    setCache(key, updatedData);
-    console.log('Updated leagues cache with new league:', newLeague.name);
+    setCache(key, { ...existing, leagues: updatedLeagues });
   } else {
-    console.log('No existing leagues cache found, creating new one');
-    const newData: LeaguesResponse = {
-      success: true,
-      leagues: [newLeague]
-    };
-    setCache(key, newData);
+    setCache(key, { success: true, leagues: [newLeague] });
   }
 }
 
-// Function to update leagues cache when a league is joined
-export function updateLeaguesCacheOnJoin(joinedLeague: any) {
+export function updateLeaguesCacheOnJoin(joinedLeague: League) {
   const key = 'leagues_cache';
   const existing = getCache<LeaguesResponse>(key);
-  
   if (existing && existing.leagues) {
-    // Check if league already exists in cache
     const leagueExists = existing.leagues.some(league => league.id === joinedLeague.id);
     if (!leagueExists) {
-      // Add the joined league to the leagues array
       const updatedLeagues = [...existing.leagues, joinedLeague];
-      const updatedData: LeaguesResponse = {
-        ...existing,
-        leagues: updatedLeagues
-      };
-      setCache(key, updatedData);
-      console.log('Updated leagues cache with joined league:', joinedLeague.name);
+      setCache(key, { ...existing, leagues: updatedLeagues });
     }
   }
 }
 
-// Function to update leaderboard cache when new stats are added
-export function updateLeaderboardCache(newStats: any, metric: string = 'goals') {
-  const key = 'leaderboard_cache';
-  const existing = getCache<LeaderboardResponse>(key);
-  
+// Leaderboard
+export function updateLeaderboardCache(
+  playerId: string,
+  value: number,
+  metric: keyof LeaderboardResponse['players'][number],
+  cacheKey: string = 'leaderboard_cache'
+) {
+  const existing = getCache<LeaderboardResponse>(cacheKey);
   if (existing && existing.players) {
-    // Find and update existing player or add new player
-    const playerIndex = existing.players.findIndex(player => player.id === newStats.playerId);
+    const playerIndex = existing.players.findIndex(player => player.id === playerId);
     if (playerIndex !== -1) {
-      // Update existing player stats
       const updatedPlayers = [...existing.players];
-      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newStats };
-      const updatedData: LeaderboardResponse = {
-        ...existing,
-        players: updatedPlayers
+      updatedPlayers[playerIndex] = {
+        ...updatedPlayers[playerIndex],
+        [metric]: value
       };
-      setCache(key, updatedData);
-      console.log('Updated leaderboard cache for player:', newStats.playerId);
+      setCache(cacheKey, { ...existing, players: updatedPlayers });
     } else {
-      // Add new player to leaderboard
-      const updatedPlayers = [...existing.players, newStats];
-      const updatedData: LeaderboardResponse = {
-        ...existing,
-        players: updatedPlayers
-      };
-      setCache(key, updatedData);
-      console.log('Added new player to leaderboard cache:', newStats.playerId);
+      // Add new player with safe defaults
+      const newPlayer = createLeaderboardPlayer(playerId, value, metric);
+      setCache(cacheKey, { ...existing, players: [...existing.players, newPlayer] });
     }
   }
 }
 
-// Function to update players cache when new player data is available
-export function updatePlayersCache(newPlayer: any) {
+// Players
+export function updatePlayersCache(newPlayer: User) {
   const key = 'players_cache';
   const existing = getCache<PlayersResponse>(key);
-  
   if (existing && existing.players) {
-    // Find and update existing player or add new player
     const playerIndex = existing.players.findIndex(player => player.id === newPlayer.id);
+    const normalizedPlayer = toPlayerListItem(newPlayer);
     if (playerIndex !== -1) {
-      // Update existing player
       const updatedPlayers = [...existing.players];
-      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newPlayer };
-      const updatedData: PlayersResponse = {
-        ...existing,
-        players: updatedPlayers
-      };
-      setCache(key, updatedData);
-      console.log('Updated players cache for player:', newPlayer.id);
+      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...normalizedPlayer };
+      setCache(key, { ...existing, players: updatedPlayers });
     } else {
-      // Add new player
-      const updatedPlayers = [...existing.players, newPlayer];
-      const updatedData: PlayersResponse = {
-        ...existing,
-        players: updatedPlayers
-      };
-      setCache(key, updatedData);
-      console.log('Added new player to players cache:', newPlayer.id);
+      setCache(key, { ...existing, players: [...existing.players, normalizedPlayer] });
     }
   }
 }
 
-// Function to update player stats cache when new stats are added
-export function updatePlayerStatsCache(playerId: string, newStats: any) {
+// Player Stats
+export function updatePlayerStatsCache(playerId: string, newStats: PlayerStatsResponse) {
   const key = `playerstats_cache_${playerId}`;
   const existing = getCache<PlayerStatsResponse>(key);
-  
   if (existing) {
-    // Merge new stats with existing stats
-    const updatedData: PlayerStatsResponse = {
-      ...existing,
-      ...newStats
-    };
-    setCache(key, updatedData);
-    console.log('Updated player stats cache for player:', playerId);
+    setCache(key, { ...existing, ...newStats });
   }
 }
 
-// Function to update matches cache when new match is created or updated
-export function updateMatchesCache(newMatch: any) {
+// Matches
+export function updateMatchesCache(newMatch: Match) {
   const key = 'matches_cache';
   const existing = getCache<MatchesResponse>(key);
-  
   if (existing && existing.matches) {
-    // Find and update existing match or add new match
     const matchIndex = existing.matches.findIndex(match => match.id === newMatch.id);
+    // Convert homeTeamUsers and awayTeamUsers
+    const normalizedMatch = {
+      ...newMatch,
+      homeTeamUsers: toMatchUserArray((newMatch as Match & { homeTeamUsers?: User[] }).homeTeamUsers),
+      awayTeamUsers: toMatchUserArray((newMatch as Match & { awayTeamUsers?: User[] }).awayTeamUsers),
+      profilePicture: normalizeProfilePicture((newMatch as Match & { profilePicture?: string | null }).profilePicture),
+    };
     if (matchIndex !== -1) {
-      // Update existing match
       const updatedMatches = [...existing.matches];
-      updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...newMatch };
-      const updatedData: MatchesResponse = {
-        ...existing,
-        matches: updatedMatches
-      };
-      setCache(key, updatedData);
-      console.log('Updated matches cache for match:', newMatch.id);
+      updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...normalizedMatch };
+      setCache(key, { ...existing, matches: updatedMatches });
     } else {
-      // Add new match
-      const updatedMatches = [...existing.matches, newMatch];
-      const updatedData: MatchesResponse = {
-        ...existing,
-        matches: updatedMatches
-      };
-      setCache(key, updatedData);
-      console.log('Added new match to matches cache:', newMatch.id);
+      setCache(key, { ...existing, matches: [...existing.matches, normalizedMatch] });
     }
   }
 }
 
-// Function to update dream team cache when new dream team is created
-export function updateDreamTeamCache(newDreamTeam: any) {
+// Dream Team
+export function updateDreamTeamCache(newDreamTeam: DreamTeamResponse) {
   const key = 'dreamteam_cache';
   const existing = getCache<DreamTeamResponse>(key);
-  
   if (existing) {
-    // Update dream team data
-    const updatedData: DreamTeamResponse = {
-      ...existing,
-      ...newDreamTeam
-    };
-    setCache(key, updatedData);
-    console.log('Updated dream team cache');
+    setCache(key, { ...existing, ...newDreamTeam });
   }
 }
 
-// Generic function to update any cache with new data
+// Generic
 export function updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: (existing: T, newData: T) => T) {
   const existing = getCache<T>(cacheKey);
   if (existing) {
     const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
     setCache(cacheKey, updatedData);
-    console.log(`Updated cache for key: ${cacheKey}`);
   } else {
     setCache(cacheKey, newData);
-    console.log(`Created new cache for key: ${cacheKey}`);
   }
 }
