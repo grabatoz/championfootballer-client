@@ -355,14 +355,15 @@ const PlayerStatsPage = () => {
                     sx={{
                         background: '#1f673b',
                         borderRadius: 3,
-                        px: 3,
+                        px: { xs: 1, sm: 2, md: 3 },
                         py: 0.5,
                         boxShadow: 1,
                         display: { xs: 'none', sm: 'none', md: 'inline-flex', lg: 'inline-flex' },
                         justifyContent: 'center',
                         flex: 1,
                         maxWidth: 'fit-content',
-                        mx: 'auto'
+                        mx: 'auto',
+                        overflow: 'hidden'
                     }}
                 >
                     <Tabs
@@ -372,10 +373,10 @@ const PlayerStatsPage = () => {
                             '& .MuiTab-root': {
                                 color: 'white',
                                 fontWeight: 'bold',
-                                fontSize: { xs: '14px', md: '16px' },
+                                fontSize: { xs: '10px', sm: '12px', md: '14px', lg: '16px' },
                                 minWidth: 0,
                                 width: 'auto',
-                                px: 2,
+                                px: { xs: 1, sm: 1.5, md: 2 },
                                 textTransform: 'none',
                                 '&.Mui-selected': {
                                     color: '#4caf50',
@@ -919,16 +920,18 @@ const PlayerStatsPage = () => {
                             </Box>
                         </Drawer>
                     </Box>
-                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'flex', md: 'none' } }}>
+                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'flex', md: 'none' } , mt:{xs: -5, sm: -5, md: 0} }}>
                         <Box
                             sx={{
                                 display: 'inline-flex',
                                 background: '#1f673b',
                                 borderRadius: 3,
-                                px: 3,
+                                px: { xs: 1, sm: 2, md: 3 },
                                 py: 0.5,
                                 boxShadow: 1,
-                                border: '2px solid green'
+                                border: '2px solid green',
+                                overflow: 'hidden',
+                                maxWidth: '100%'
                             }}
                         >
                             <Tabs
@@ -938,10 +941,10 @@ const PlayerStatsPage = () => {
                                     '& .MuiTab-root': {
                                         color: 'white',
                                         fontWeight: 'bold',
-                                        fontSize: { xs: '14px', md: '16px' },
+                                        fontSize: { xs: '10px', sm: '12px', md: '14px' },
                                         minWidth: 0,
                                         width: 'auto',
-                                        px: 2,
+                                        px: { xs: 0.5, sm: 1, md: 2 },
                                         textTransform: 'none',
                                         '&.Mui-selected': {
                                             color: '#4caf50',
@@ -999,6 +1002,7 @@ const PlayerStatsPage = () => {
                                 <Paper elevation={0} sx={{
                                     p: {xs: 0, sm: 0, md: 3},
                                     background: '#1f673b',
+                                    mt:{xs: -5, sm: -5, md: 0}
                                 }}>
                                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>Leagues Played</Typography>
                                     <Box
