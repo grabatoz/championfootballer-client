@@ -19,7 +19,6 @@ import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import toast, { Toaster } from 'react-hot-toast';
 
 // Assuming User and League interfaces are available or defined here
@@ -573,7 +572,7 @@ export default function ScheduleMatchPage() {
                                         {homeCaptain && (
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <Image
+                                                    <img
                                                         src={homeCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={homeCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
@@ -624,7 +623,7 @@ export default function ScheduleMatchPage() {
                                         {awayCaptain && (
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <Image
+                                                    <img
                                                         src={awayCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={awayCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}

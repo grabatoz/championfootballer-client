@@ -13,6 +13,7 @@ import { User, League } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
+import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
 
@@ -442,10 +443,17 @@ function AllLeagues() {
     }
 
     try {
-      await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      const result = await dispatch(joinLeague(inviteCode.trim())).unwrap();
       toast.success('Successfully joined the league!');
       setIsJoining(false);
       setInviteCode('');
+      
+      // Update cache with joined league
+      if (result) {
+        cacheManager.updateLeaguesCacheOnJoin(result);
+        console.log('Updated cache with joined league:', result.name);
+      }
+      
       fetchUserLeagues();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
@@ -453,19 +461,30 @@ function AllLeagues() {
     }
   };
 
+  // Function to update leagues cache with new league
+  const updateLeaguesCacheWithNewLeague = useCallback((newLeague: any) => {
+    cacheManager.updateLeaguesCache(newLeague);
+  }, []);
+
   const fetchUserLeagues = useCallback(async () => {
     try {
+      console.log('Fetching user leagues...');
+      setLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
+      console.log('Fetched leagues data:', data);
 
       if (data.success) {
+        console.log('Setting leagues:', data.leagues);
         setLeagues(data.leagues || []);
       } else {
+        console.error('Failed to fetch leagues:', data.message);
         toast.error(data.message || 'Failed to fetch leagues');
       }
-    } catch {
+    } catch (error) {
+      console.error('Error fetching leagues:', error);
       toast.error('An error occurred while fetching leagues');
     } finally {
       setLoading(false);
@@ -485,6 +504,7 @@ function AllLeagues() {
     }
     setIsCreating(true);
     try {
+      console.log('Creating league:', leagueName.trim());
       const formData = new FormData();
       formData.append('name', leagueName.trim());
       if (leagueImage) formData.append('image', leagueImage);
@@ -499,18 +519,40 @@ function AllLeagues() {
       });
 
       const data = await response.json();
+      console.log('Create league response:', data);
 
       if (data.success) {
+        console.log('League created successfully, refreshing list...');
         toast.success('League created successfully!');
         setIsDialogOpen(false);
         setLeagueName('');
         setLeagueImage(null);
-        fetchUserLeagues();
-        setLoading(true)
+        
+        // Update the leagues cache with the new league
+        if (data.league) {
+          const newLeague = {
+            ...data.league,
+            members: [],
+            administrators: user ? [user] : [],
+            matches: [],
+            active: true,
+            maxGames: null,
+            showPoints: true
+          };
+          
+          // Update cache with new league
+          updateLeaguesCacheWithNewLeague(newLeague);
+          
+          // Update local state
+          setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
+          console.log('Updated cache and local state with new league:', newLeague);
+        }
       } else {
+        console.error('Failed to create league:', data.message);
         toast.error(data.message || 'Failed to create league');
       }
-    } catch {
+    } catch (error) {
+      console.error('Error creating league:', error);
       toast.error('An error occurred while creating the league');
     } finally {
       setIsCreating(false);

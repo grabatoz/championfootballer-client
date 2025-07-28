@@ -462,7 +462,26 @@ const PlayerProfileCard = () => {
                 </CardContent>
               </Card>
 
-              <Box sx={{ textAlign: "center" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <Button
+                  variant="contained"
+                  size="large"
+                  onClick={()=>router.push('/dashboard')}
+                  startIcon={<ArrowBack />}
+                  sx={{
+                    background: "#43a047",
+                    borderRadius: 25,
+                    px: 2,
+                    py: 1,
+                    fontSize: "1.1rem",
+                    textTransform: "none",
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#1f673b' },
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                  }}
+                >
+                  Home
+                </Button>
                 <Button
                   variant="contained"
                   size="large"
@@ -669,7 +688,8 @@ const PlayerProfileCard = () => {
                       />
                     </Grid>
                     <Grid container spacing={2} mt={1} ml={0.5} alignItems="flex-start">
-                      <Grid item xs={2} sm={2}>
+                      {/* Top Row: Shirt Number and Age (always on top) */}
+                      <Grid item xs={6} sm={2}>
                         <StyledTextField
                           className="profile-autofill"
                           label="Shirt Number"
@@ -678,10 +698,10 @@ const PlayerProfileCard = () => {
                           onChange={(e) => setShirtNumber(e.target.value)}
                           fullWidth
                           variant="outlined"
-                          InputProps={{ sx: { height: 70  , borderRadius: 2 } }}
+                          InputProps={{ sx: { height: 70, borderRadius: 2 } }}
                         />
                       </Grid>
-                      <Grid item xs={2} sm={2}>
+                      <Grid item xs={6} sm={2}>
                         <StyledTextField
                           className="profile-autofill"
                           label="Age"
@@ -693,9 +713,13 @@ const PlayerProfileCard = () => {
                           InputProps={{ sx: { height: 70 } }}
                         />
                       </Grid>
-                      <Grid item xs={4} sm={4}>
-                        {/* Gender field - leave as is */}
-                        {/* Replace below with your actual gender field/component */}
+                      
+                      {/* Bottom Row: Gender and Preferred Foot (move below on small screens) */}
+                      <Grid item xs={12} sm={4} sx={{ 
+                        order: { xs: 3, sm: 3 },
+                        mt: { xs: 2, sm: 0 }
+                      }}>
+                        {/* Gender field */}
                         <Card sx={{ p: 2, backgroundColor: '#1f673b', borderRadius: 3, border: '2px solid #43a047' }}>
                           <FormControl component="fieldset">
                             <StyledFormLabel sx={{ color: '#fff !important', mt: -2 }} >
@@ -717,9 +741,11 @@ const PlayerProfileCard = () => {
                           </FormControl>
                         </Card>
                       </Grid>
-                      <Grid item xs={3} sm={4}>
-                        {/* Preferred Foot field - leave as is */}
-                        {/* Replace below with your actual preferred foot field/component */}
+                      <Grid item xs={12} sm={4} sx={{ 
+                        order: { xs: 4, sm: 4 },
+                        mt: { xs: 2, sm: 0 }
+                      }}>
+                        {/* Preferred Foot field */}
                         <Card sx={{ p: 2, backgroundColor: '#1f673b', border: '2px solid #43a047', borderRadius: 3 }}>
                           <FormControl component="fieldset">
                             <StyledFormLabel sx={{ color: '#fff !important', textAlign: 'center', width: '100%', mt: -2 }}>
@@ -749,7 +775,6 @@ const PlayerProfileCard = () => {
                                 control={<StyledRadio />}
                                 label={<span style={{ color: '#fff' }}>Right</span>}
                                 sx={{ flex: 1, justifyContent: 'flex-end', mt: 0, position: 'absolute', ml: 10 }}
-
                               />
                             </RadioGroup>
                           </FormControl>

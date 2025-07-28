@@ -9,7 +9,7 @@ import type {
   DreamTeamResponse,
   PlayerStatsResponse,
   CacheEntry
-} from '../types/api';
+} from '@/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -722,7 +722,7 @@ export const playerAPI = {
 
 // --- LocalStorage Cache Utility ---
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-function getCache<T>(key: string): T | null {
+export function getCache<T>(key: string): T | null {
   if (typeof window === 'undefined') return null;
   // 1. Try localStorage
   const cached = localStorage.getItem(key);
@@ -746,11 +746,28 @@ function getCache<T>(key: string): T | null {
   }
   return null;
 }
-function setCache<T>(key: string, data: T) {
+
+export function setCache<T>(key: string, data: T) {
   if (typeof window === 'undefined') return;
   const value = JSON.stringify({ data, expiry: Date.now() + CACHE_TTL });
   localStorage.setItem(key, value);
   Cookies.set(key, value, { expires: 1/144 }); // ~10 min
+}
+
+// Function to update existing cache with new data
+function updateCache<T>(key: string, newData: T, mergeFunction?: (existing: T, newData: T) => T) {
+  if (typeof window === 'undefined') return;
+  
+  const existing = getCache<T>(key);
+  if (existing) {
+    // If merge function provided, use it to combine data
+    const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
+    setCache(key, updatedData);
+    console.log(`Updated cache for key: ${key}`);
+  } else {
+    // If no existing cache, just set the new data
+    setCache(key, newData);
+  }
 }
 
 // --- API Wrappers with Local Cache ---
@@ -760,6 +777,8 @@ export async function fetchLeaguesWithCache(token: string): Promise<LeaguesRespo
   if (cached) return cached;
   const res = await fetch(`/api/leagues/user`, { headers: { Authorization: `Bearer ${token}` } });
   const data: LeaguesResponse = await res.json();
+  console.log('data2',data);
+  
   setCache(key, data);
   return data;
 }
@@ -812,4 +831,187 @@ export async function fetchPlayerStatsWithCache(playerId: string, token: string)
   const data: PlayerStatsResponse = await res.json();
   setCache(key, data);
   return data;
+}
+
+// Function to update leagues cache when a new league is created
+export function updateLeaguesCache(newLeague: any) {
+  const key = 'leagues_cache';
+  const existing = getCache<LeaguesResponse>(key);
+  
+  if (existing && existing.leagues) {
+    // Add the new league to the beginning of the leagues array
+    const updatedLeagues = [newLeague, ...existing.leagues];
+    const updatedData: LeaguesResponse = {
+      ...existing,
+      leagues: updatedLeagues
+    };
+    setCache(key, updatedData);
+    console.log('Updated leagues cache with new league:', newLeague.name);
+  } else {
+    console.log('No existing leagues cache found, creating new one');
+    const newData: LeaguesResponse = {
+      success: true,
+      leagues: [newLeague]
+    };
+    setCache(key, newData);
+  }
+}
+
+// Function to update leagues cache when a league is joined
+export function updateLeaguesCacheOnJoin(joinedLeague: any) {
+  const key = 'leagues_cache';
+  const existing = getCache<LeaguesResponse>(key);
+  
+  if (existing && existing.leagues) {
+    // Check if league already exists in cache
+    const leagueExists = existing.leagues.some(league => league.id === joinedLeague.id);
+    if (!leagueExists) {
+      // Add the joined league to the leagues array
+      const updatedLeagues = [...existing.leagues, joinedLeague];
+      const updatedData: LeaguesResponse = {
+        ...existing,
+        leagues: updatedLeagues
+      };
+      setCache(key, updatedData);
+      console.log('Updated leagues cache with joined league:', joinedLeague.name);
+    }
+  }
+}
+
+// Function to update leaderboard cache when new stats are added
+export function updateLeaderboardCache(newStats: any, metric: string = 'goals') {
+  const key = 'leaderboard_cache';
+  const existing = getCache<LeaderboardResponse>(key);
+  
+  if (existing && existing.players) {
+    // Find and update existing player or add new player
+    const playerIndex = existing.players.findIndex(player => player.id === newStats.playerId);
+    if (playerIndex !== -1) {
+      // Update existing player stats
+      const updatedPlayers = [...existing.players];
+      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newStats };
+      const updatedData: LeaderboardResponse = {
+        ...existing,
+        players: updatedPlayers
+      };
+      setCache(key, updatedData);
+      console.log('Updated leaderboard cache for player:', newStats.playerId);
+    } else {
+      // Add new player to leaderboard
+      const updatedPlayers = [...existing.players, newStats];
+      const updatedData: LeaderboardResponse = {
+        ...existing,
+        players: updatedPlayers
+      };
+      setCache(key, updatedData);
+      console.log('Added new player to leaderboard cache:', newStats.playerId);
+    }
+  }
+}
+
+// Function to update players cache when new player data is available
+export function updatePlayersCache(newPlayer: any) {
+  const key = 'players_cache';
+  const existing = getCache<PlayersResponse>(key);
+  
+  if (existing && existing.players) {
+    // Find and update existing player or add new player
+    const playerIndex = existing.players.findIndex(player => player.id === newPlayer.id);
+    if (playerIndex !== -1) {
+      // Update existing player
+      const updatedPlayers = [...existing.players];
+      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...newPlayer };
+      const updatedData: PlayersResponse = {
+        ...existing,
+        players: updatedPlayers
+      };
+      setCache(key, updatedData);
+      console.log('Updated players cache for player:', newPlayer.id);
+    } else {
+      // Add new player
+      const updatedPlayers = [...existing.players, newPlayer];
+      const updatedData: PlayersResponse = {
+        ...existing,
+        players: updatedPlayers
+      };
+      setCache(key, updatedData);
+      console.log('Added new player to players cache:', newPlayer.id);
+    }
+  }
+}
+
+// Function to update player stats cache when new stats are added
+export function updatePlayerStatsCache(playerId: string, newStats: any) {
+  const key = `playerstats_cache_${playerId}`;
+  const existing = getCache<PlayerStatsResponse>(key);
+  
+  if (existing) {
+    // Merge new stats with existing stats
+    const updatedData: PlayerStatsResponse = {
+      ...existing,
+      ...newStats
+    };
+    setCache(key, updatedData);
+    console.log('Updated player stats cache for player:', playerId);
+  }
+}
+
+// Function to update matches cache when new match is created or updated
+export function updateMatchesCache(newMatch: any) {
+  const key = 'matches_cache';
+  const existing = getCache<MatchesResponse>(key);
+  
+  if (existing && existing.matches) {
+    // Find and update existing match or add new match
+    const matchIndex = existing.matches.findIndex(match => match.id === newMatch.id);
+    if (matchIndex !== -1) {
+      // Update existing match
+      const updatedMatches = [...existing.matches];
+      updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...newMatch };
+      const updatedData: MatchesResponse = {
+        ...existing,
+        matches: updatedMatches
+      };
+      setCache(key, updatedData);
+      console.log('Updated matches cache for match:', newMatch.id);
+    } else {
+      // Add new match
+      const updatedMatches = [...existing.matches, newMatch];
+      const updatedData: MatchesResponse = {
+        ...existing,
+        matches: updatedMatches
+      };
+      setCache(key, updatedData);
+      console.log('Added new match to matches cache:', newMatch.id);
+    }
+  }
+}
+
+// Function to update dream team cache when new dream team is created
+export function updateDreamTeamCache(newDreamTeam: any) {
+  const key = 'dreamteam_cache';
+  const existing = getCache<DreamTeamResponse>(key);
+  
+  if (existing) {
+    // Update dream team data
+    const updatedData: DreamTeamResponse = {
+      ...existing,
+      ...newDreamTeam
+    };
+    setCache(key, updatedData);
+    console.log('Updated dream team cache');
+  }
+}
+
+// Generic function to update any cache with new data
+export function updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: (existing: T, newData: T) => T) {
+  const existing = getCache<T>(cacheKey);
+  if (existing) {
+    const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
+    setCache(cacheKey, updatedData);
+    console.log(`Updated cache for key: ${cacheKey}`);
+  } else {
+    setCache(cacheKey, newData);
+    console.log(`Created new cache for key: ${cacheKey}`);
+  }
 }

@@ -511,8 +511,8 @@ export default function AllMatches() {
                                         )}
                                         {/* Available/Pending info at the top */}
                                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
-                                            <Typography color="success.main">Available: {availableCount}</Typography>
-                                            <Typography color="warning.main">Pending: {pendingCount}</Typography>
+                                            <Typography color="success.main">User Available: {availableCount}</Typography>
+                                            <Typography color="warning.main">User Pending: {pendingCount}</Typography>
                                         </Box>
                                         <Link href={`/match/${match?.id}`}>
                                             <Box sx={{

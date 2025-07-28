@@ -396,53 +396,57 @@ export default function PlayMatchPage() {
                                                         transition: 'all 0.2s ease'
                                                     }
                                                 }}>
-                                                    {/* Player Profile Picture */}
-                                                    <Box sx={{
-                                                        width: { xs: 35, sm: 50, md: 60 },
-                                                        height: { xs: 35, sm: 50, md: 60 },
-                                                        borderRadius: '50%',
-                                                        overflow: 'hidden',
-                                                        border: '2px solid #43a047',
-                                                        mr: { xs: 0, sm: 2 },
-                                                        mb: { xs: 0.5, sm: 0 },
-                                                        flexShrink: 0
-                                                    }}>
-                                                        <img
-                                                            src={player.profilePicture || "/placeholder.svg"}
-                                                            alt={player.firstName + " " + player.lastName}
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '100%',
-                                                                objectFit: 'cover'
-                                                            }}
-                                                        />
-                                                    </Box>
+                                                    <Link href={`/player/${player.id}`}>
+                                                        {/* Player Profile Picture */}
+                                                        <Box sx={{
+                                                            width: { xs: 35, sm: 50, md: 60 },
+                                                            height: { xs: 35, sm: 50, md: 60 },
+                                                            borderRadius: '50%',
+                                                            overflow: 'hidden',
+                                                            border: '2px solid #43a047',
+                                                            mr: { xs: 0, sm: 2 },
+                                                            mb: { xs: 0.5, sm: 0 },
+                                                            flexShrink: 0
+                                                        }}>
+                                                            <img
+                                                                src={player.profilePicture || "/placeholder.svg"}
+                                                                alt={player.firstName + " " + player.lastName}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit: 'cover'
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Link>
 
                                                     {/* Player Info */}
                                                     <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                                                        <Typography variant="h6" sx={{
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            fontSize: { xs: 11, sm: 14, md: 16 },
-                                                            mb: 0.5,
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            lineHeight: { xs: 1.2, sm: 1.4 }
-                                                        }}>
-                                                            {player.firstName} {player.lastName}
-                                                            {player.id === match.homeCaptainId ? ' (C)' : ''}
-                                                        </Typography>
+                                                        <Link href={`/player/${player.id}`}>
 
-                                                        <Typography variant="body2" sx={{
-                                                            color: '#B2DFDB',
-                                                            fontSize: { xs: 9, sm: 12, md: 14 },
-                                                            mb: { xs: 0.25, sm: 1 },
-                                                            lineHeight: { xs: 1.1, sm: 1.3 }
-                                                        }}>
-                                                            {player.positionType || 'Player'}
-                                                        </Typography>
+                                                            <Typography variant="h6" sx={{
+                                                                color: 'white',
+                                                                fontWeight: 'bold',
+                                                                fontSize: { xs: 11, sm: 14, md: 16 },
+                                                                mb: 0.5,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                lineHeight: { xs: 1.2, sm: 1.4 }
+                                                            }}>
+                                                                {player.firstName} {player.lastName}
+                                                                {player.id === match.homeCaptainId ? ' (C)' : ''}
+                                                            </Typography>
 
+                                                            <Typography variant="body2" sx={{
+                                                                color: '#B2DFDB',
+                                                                fontSize: { xs: 9, sm: 12, md: 14 },
+                                                                mb: { xs: 0.25, sm: 1 },
+                                                                lineHeight: { xs: 1.1, sm: 1.3 }
+                                                            }}>
+                                                                {player.positionType || 'Player'}
+                                                            </Typography>
+                                                        </Link>
                                                         <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' }, gap: 1, alignItems: 'center' }}>
                                                             <Button
                                                                 variant="contained"
@@ -571,53 +575,57 @@ export default function PlayMatchPage() {
                                                             transition: 'all 0.2s ease'
                                                         }
                                                     }}>
-                                                        {/* Player Profile Picture */}
-                                                        <Box sx={{
-                                                            width: { xs: 35, sm: 50, md: 60 },
-                                                            height: { xs: 35, sm: 50, md: 60 },
-                                                            borderRadius: '50%',
-                                                            overflow: 'hidden',
-                                                            border: '2px solid #43a047',
-                                                            mr: { xs: 0, sm: 2 },
-                                                            mb: { xs: 0.5, sm: 0 },
-                                                            flexShrink: 0
-                                                        }}>
-                                                            <img
-                                                                src={player.profilePicture || "/placeholder.svg"}
-                                                                alt={player.firstName + " " + player.lastName}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    height: '100%',
-                                                                    objectFit: 'cover'
-                                                                }}
-                                                            />
-                                                        </Box>
+                                                        <Link href={`/player/${player.id}`}>
 
+                                                            {/* Player Profile Picture */}
+                                                            <Box sx={{
+                                                                width: { xs: 35, sm: 50, md: 60 },
+                                                                height: { xs: 35, sm: 50, md: 60 },
+                                                                borderRadius: '50%',
+                                                                overflow: 'hidden',
+                                                                border: '2px solid #43a047',
+                                                                mr: { xs: 0, sm: 2 },
+                                                                mb: { xs: 0.5, sm: 0 },
+                                                                flexShrink: 0
+                                                            }}>
+                                                                <img
+                                                                    src={player.profilePicture || "/placeholder.svg"}
+                                                                    alt={player.firstName + " " + player.lastName}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'cover'
+                                                                    }}
+                                                                />
+                                                            </Box>
+                                                        </Link>
                                                         {/* Player Info */}
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                                                            <Typography variant="h6" sx={{
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
-                                                                fontSize: { xs: 11, sm: 14, md: 16 },
-                                                                mb: 0.5,
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap',
-                                                                lineHeight: { xs: 1.2, sm: 1.4 }
-                                                            }}>
-                                                                {player.firstName} {player.lastName}
-                                                                {player.id === match.awayCaptainId ? ' (C)' : ''}
-                                                            </Typography>
+                                                            <Link href={`/player/${player.id}`}>
 
-                                                            <Typography variant="body2" sx={{
-                                                                color: '#B2DFDB',
-                                                                fontSize: { xs: 9, sm: 12, md: 14 },
-                                                                mb: { xs: 0.25, sm: 1 },
-                                                                lineHeight: { xs: 1.1, sm: 1.3 }
-                                                            }}>
-                                                                {player.positionType || 'Player'}
-                                                            </Typography>
+                                                                <Typography variant="h6" sx={{
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: { xs: 11, sm: 14, md: 16 },
+                                                                    mb: 0.5,
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    lineHeight: { xs: 1.2, sm: 1.4 }
+                                                                }}>
+                                                                    {player.firstName} {player.lastName}
+                                                                    {player.id === match.awayCaptainId ? ' (C)' : ''}
+                                                                </Typography>
 
+                                                                <Typography variant="body2" sx={{
+                                                                    color: '#B2DFDB',
+                                                                    fontSize: { xs: 9, sm: 12, md: 14 },
+                                                                    mb: { xs: 0.25, sm: 1 },
+                                                                    lineHeight: { xs: 1.1, sm: 1.3 }
+                                                                }}>
+                                                                    {player.positionType || 'Player'}
+                                                                </Typography>
+                                                            </Link>
                                                             <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' }, gap: 1, alignItems: 'center' }}>
                                                                 <Button
                                                                     variant="contained"
@@ -709,8 +717,8 @@ export default function PlayMatchPage() {
                 {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
                 <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
                     {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                     .filter(player => playerVotes[player.id] > 0)
-                     .map((player) => (
+                        .filter(player => playerVotes[player.id] > 0)
+                        .map((player) => (
                             <Link key={player.id} href={`/player/${player.id}`}>
                                 <div className="group">
                                     {/* Mobile layout: Image on top center */}

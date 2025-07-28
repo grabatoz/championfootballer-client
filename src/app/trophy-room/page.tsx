@@ -80,8 +80,8 @@ const TrophyCard = ({ title, description, image, color, leagueName, onButtonClic
       elevation={4}
       sx={{
         width: '100%',
-        height: 320,
-        maxWidth: 280,
+        height: { xs: 190, sm: 280, md: 320 },
+        maxWidth: { xs: 160, sm: 240, md: 280 },
         margin: '0 auto',
         textAlign: 'center',
         borderRadius: '16px',
@@ -89,18 +89,58 @@ const TrophyCard = ({ title, description, image, color, leagueName, onButtonClic
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        px: 2, py: 3,
+        px: { xs: 1, sm: 1.5, md: 2 },
+        py: { xs: 1.5, sm: 2, md: 3 },
       }}
     >
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>{title}</Typography>
-        <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>{description}</Typography>
-        <Image src={image} alt={title} height={80} width={80} style={{ margin: '0 auto' }} />
+        <Typography variant="h6" sx={{ 
+          fontWeight: 'bold', 
+          color: '#333', 
+          mb: { xs: 0.5, sm: 1 },
+          fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' }
+        }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" sx={{ 
+          color: '#666', 
+          mb: { xs: 1, sm: 1.5, md: 2 },
+          fontSize: { xs: '0.7rem', sm: '0.875rem', md: '1rem' },
+          lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 }
+        }}>
+          {description}
+        </Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          height: { xs: 45, sm: 60, md: 80 },
+          width: { xs: 45, sm: 60, md: 80 },
+          margin: '0 auto'
+        }}>
+          <Image 
+            src={image} 
+            alt={title} 
+            height={60} 
+            width={60} 
+            style={{ 
+              height: '100%',
+              width: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        </Box>
       </Box>
   
       <Button 
         variant="contained" 
-        sx={{ backgroundColor: color, color: 'white', fontWeight: 'bold' }}
+        sx={{ 
+          backgroundColor: color, 
+          color: 'white', 
+          fontWeight: 'bold',
+          fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+          py: { xs: 0.5, sm: 0.75, md: 1 },
+          px: { xs: 1, sm: 1.5, md: 2 }
+        }}
         onClick={onButtonClick}
         disabled={!onButtonClick}
       >
@@ -311,7 +351,7 @@ export default function GlobalTrophyRoom() {
                 />
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3, justifyContent: 'center' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center' }}>
                 {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (
                     <Box key={`${trophy.title}-${index}`}>
                         <TrophyCard 

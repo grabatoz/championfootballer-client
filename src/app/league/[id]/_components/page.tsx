@@ -259,6 +259,7 @@ export default function LeagueDetailPage() {
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
     const [, setUserLeagueXP] = useState<Record<string, number>>({});
+    const [showPointsAlert, setShowPointsAlert] = useState(false);
 
     // Add this useEffect to sync tab param with section
     useEffect(() => {
@@ -742,6 +743,11 @@ export default function LeagueDetailPage() {
                             }}
                             startIcon={<Table2Icon size={16} className='stroke-white' />}
                             onClick={() => {
+                                // Check if points are disabled
+                                if (league?.showPoints === false) {
+                                    setShowPointsAlert(true);
+                                    return;
+                                }
                                 setSection('table');
                                 router.replace(`/league/${leagueId}?tab=table`);
                             }}
@@ -883,8 +889,8 @@ export default function LeagueDetailPage() {
                                             )}
                                             {/* Available/Pending info at the top */}
                                             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
-                                                <Typography color="success.main">Available: {availableCount}</Typography>
-                                                <Typography color="warning.main">Pending: {pendingCount}</Typography>
+                                                <Typography color="success.main">User Available: {availableCount}</Typography>
+                                                <Typography color="warning.main"> User Pending: {pendingCount}</Typography>
                                             </Box>
                                             <Link href={`/match/${match?.id}`}>
                                                 <Box sx={{
@@ -1172,6 +1178,28 @@ export default function LeagueDetailPage() {
                 message={toastMessage}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             />
+            
+            {/* Points Disabled Alert */}
+            <Snackbar
+                open={showPointsAlert}
+                autoHideDuration={4000}
+                onClose={() => setShowPointsAlert(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={() => setShowPointsAlert(false)} 
+                    severity="info" 
+                    sx={{ 
+                        width: '100%',
+                        backgroundColor: '#1f673b',
+                        color: 'white',
+                        '& .MuiAlert-icon': { color: 'white' },
+                        '& .MuiAlert-message': { color: 'white' }
+                    }}
+                >
+                    Admin have disabled the points option. You will not see the points in the table.
+                </Alert>
+            </Snackbar>
         </Box>
     );
 } 
