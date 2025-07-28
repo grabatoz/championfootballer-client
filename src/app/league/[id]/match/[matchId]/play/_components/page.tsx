@@ -34,6 +34,7 @@ import FreeKick from '@/Components/images/freekick.png'
 import penalty from '@/Components/images/penalty.png'
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
+import { LeaderboardPlayer } from '@/types/api';
 
 interface User {
     id: string;
@@ -252,7 +253,7 @@ export default function PlayMatchPage() {
                 if (data.updatedStats) {
                     Object.entries(data.updatedStats).forEach(([metric, value]) => {
                         if (typeof value === 'number') {
-                            cacheManager.updateLeaderboardCache(playerId, value, metric as any, `leaderboard_motm_${matchId}`);
+                            cacheManager.updateLeaderboardCache(playerId, value, metric as keyof LeaderboardPlayer, `leaderboard_motm_${matchId}`);
                         }
                     });
                 }
@@ -302,7 +303,7 @@ export default function PlayMatchPage() {
                 if (data.updatedStats) {
                     Object.entries(data.updatedStats).forEach(([metric, value]) => {
                         if (typeof value === 'number') {
-                            cacheManager.updateLeaderboardCache(data.playerId, value, metric as any);
+                            cacheManager.updateLeaderboardCache(data.playerId, value, metric as keyof LeaderboardPlayer);
                         }
                     });
                 }
