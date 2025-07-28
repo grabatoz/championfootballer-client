@@ -515,19 +515,13 @@ const PlayerStatsPage = () => {
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
                                 border: '2px solid green',
-                                display: { xs: 'none', md: 'none', lg: 'flex' },
+                                display: { xs: 'none' , md: 'block'},
+
                             }}
                         >
-                            {/* Header with Filter Button for small screens */}
-
-
-                            {/* League and Metric Selects - Only visible on screens 900px and above */}
-                            <Box sx={{
-                                display: { xs: 'none', md: 'none', },
-                                gap: 2,
-                                mb: 3,
-                                flexWrap: 'wrap'
-                            }}>
+                            <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 'bold' }}>Top Players</Typography>
+                            {/* League and Metric Selects */}
+                            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                                 <FormControl size="small" sx={{ minWidth: '100%', background: 'white', borderRadius: 1 }}>
                                     <InputLabel sx={{ color: '#fff' }}>League</InputLabel>
                                     <Select
@@ -633,7 +627,6 @@ const PlayerStatsPage = () => {
                                     </Select>
                                 </FormControl>
                             </Box>
-
                             {/* Leaderboard List */}
                             {leaderboardLoading ? (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -644,7 +637,7 @@ const PlayerStatsPage = () => {
                                     No players found for the selected criteria.
                                 </Typography>
                             ) : (
-                                <Box sx={{ gap: 2, display: { xs: 'none', md: 'none', lg: 'grid' } }}>
+                                <Box sx={{ display: 'grid', gap: 2 }}>
                                     {leaderboardPlayers.map((player) => (
                                         <React.Fragment key={player.id}>
                                             <Paper
@@ -655,15 +648,8 @@ const PlayerStatsPage = () => {
                                                     background: '#1f673b',
                                                     cursor: 'pointer',
                                                     boxShadow: 'none',
-
                                                 }}
-                                                onClick={() => {
-                                                    handleLeaderboardPlayerClick(player.id);
-                                                    // Close filter dialog on small screens when player is clicked
-                                                    if (window.innerWidth < 900) {
-                                                        setFilterDialogOpen(false);
-                                                    }
-                                                }}
+                                                onClick={() => handleLeaderboardPlayerClick(player.id)}
                                             >
                                                 <Avatar
                                                     src={
@@ -938,7 +924,7 @@ const PlayerStatsPage = () => {
                                     mb: 4,
                                     alignItems: 'center'
                                 }}>
-                                    <Box sx={{ flex: 1 }}>
+                                    <Box sx={{ flex: 1 , display: {xs: 'none', sm: 'none', md: 'block'} }}>
                                         <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{fullPlayerData?.player?.name}</Typography>
                                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                             <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {fullPlayerData?.player?.age || '-'}</Typography>
@@ -949,9 +935,9 @@ const PlayerStatsPage = () => {
                                         </Box>
                                     </Box>
                                 </Box>
-                                <Divider sx={{ mb: 2, backgroundColor: '#fff' }} />
+                                <Divider sx={{ mb: 2, backgroundColor: '#fff' ,display: {xs: 'none', sm: 'none', md: 'block'}}} />
                                 <Paper elevation={0} sx={{
-                                    p: 3,
+                                    p: {xs: 0, sm: 0, md: 3},
                                     background: '#1f673b',
                                 }}>
                                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>Leagues Played</Typography>
