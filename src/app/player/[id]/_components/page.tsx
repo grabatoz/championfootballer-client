@@ -469,11 +469,11 @@ const PlayerStatsPage = () => {
                                 top: 0,
                                 zIndex: 2,
                                 gap: 2,
-                                height: 150,
+                                height: {xs: 180, sm: 180, md: 150},
                                 overflow: 'auto',
                                 '&::-webkit-scrollbar': { display: 'none' },
-                                scrollbarWidth: 'none',
-                                msOverflowStyle: 'none',
+                                // scrollbarWidth: 'none',
+                                // msOverflowStyle: 'none',
                                 border: '2px solid green'
                             }}
                         >
@@ -481,8 +481,8 @@ const PlayerStatsPage = () => {
                                 src={fullPlayerData?.player?.profilePicture || '/assets/group451.png'}
                                 alt={fullPlayerData?.player?.name}
                                 sx={{
-                                    width: 90,
-                                    height: 90,
+                                    width: {xs: 100, sm: 100, md: 90},
+                                    height: {xs: 100, sm: 100, md: 90},
                                     borderRadius: 3,
                                     boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
                                     border: '3px solid #fff',
@@ -492,10 +492,20 @@ const PlayerStatsPage = () => {
                                     // mb: { xs: 2, sm: 0 },
                                 }}
                             />
-                            <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                            <Box sx={{ textAlign: { xs: 'center', sm: 'left' } , display: { xs: 'none', md: 'block' } }}>
                                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>{fullPlayerData?.player?.name}</Typography>
                                 <Typography variant="body2" sx={{ color: '#B2DFDB', mb: 1 }}>Shirt No {fullPlayerData?.player?.shirtNo || '00'}</Typography>
                             </Box>
+                            <Box sx={{ flex: 1 , display: {xs: 'block', sm: 'block', md: 'none'} }}>
+                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{fullPlayerData?.player?.name}</Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {fullPlayerData?.player?.age || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Style: {fullPlayerData?.player?.style || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position: {fullPlayerData?.player?.position || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Position Type: {fullPlayerData?.player?.positionType || '-'}</Typography>
+                                            <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Preferred Foot: {fullPlayerData?.player?.preferredFoot || '-'}</Typography>
+                                        </Box>
+                                    </Box>
                         </Box>
                         <Paper
                             elevation={4}
