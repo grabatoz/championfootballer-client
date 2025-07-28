@@ -462,7 +462,7 @@ function AllLeagues() {
   };
 
   // Function to update leagues cache with new league
-  const updateLeaguesCacheWithNewLeague = useCallback((newLeague: any) => {
+  const updateLeaguesCacheWithNewLeague = useCallback((newLeague: League) => {
     cacheManager.updateLeaguesCache(newLeague);
   }, []);
 
