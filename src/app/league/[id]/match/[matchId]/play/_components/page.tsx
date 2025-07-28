@@ -33,6 +33,7 @@ import CleanSheet from '@/Components/images/cleansheet.png'
 import FreeKick from '@/Components/images/freekick.png'
 import penalty from '@/Components/images/penalty.png'
 import Link from 'next/link';
+import { cacheManager } from "@/lib/cacheManager"
 
 interface User {
     id: string;
@@ -185,7 +186,7 @@ export default function PlayMatchPage() {
 
     const handleSaveDetails = async () => {
         try {
-            await Promise.all([
+            const [goalsResponse, notesResponse] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/goals`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -197,6 +198,18 @@ export default function PlayMatchPage() {
                     body: JSON.stringify({ note }),
                 })
             ]);
+            
+            const goalsData = await goalsResponse.json();
+            const notesData = await notesResponse.json();
+            
+            // Update cache with new match data
+            if (goalsData.success && goalsData.match) {
+                cacheManager.updateMatchesCache(goalsData.match);
+            }
+            if (notesData.success && notesData.match) {
+                cacheManager.updateMatchesCache(notesData.match);
+            }
+            
             fetchLeagueAndMatchDetails();
         } catch {
             console.error('Failed to save details');
@@ -227,11 +240,23 @@ export default function PlayMatchPage() {
             // If user already voted for this player, unvote them
             const voteData = votedForId === playerId ? { votedForId: null } : { votedForId: playerId };
 
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(voteData),
             });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update leaderboard cache for MOTM votes
+                if (data.updatedStats) {
+                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
+                        if (typeof value === 'number') {
+                            cacheManager.updateLeaderboardCache(playerId, value, metric as any, `leaderboard_motm_${matchId}`);
+                        }
+                    });
+                }
+            }
         } catch {
             setError('An error occurred while voting.');
         } finally {
@@ -273,6 +298,14 @@ export default function PlayMatchPage() {
             });
             const data = await response.json();
             if (data.success) {
+                // Update leaderboard cache with new stats
+                if (data.updatedStats) {
+                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
+                        if (typeof value === 'number') {
+                            cacheManager.updateLeaderboardCache(data.playerId, value, metric as any);
+                        }
+                    });
+                }
                 setIsStatsModalOpen(false);
                 // Optionally show a success message
             }

@@ -20,6 +20,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
+import { cacheManager } from "@/lib/cacheManager"
 
 // Assuming User and League interfaces are available or defined here
 interface User {
@@ -183,6 +184,10 @@ export default function ScheduleMatchPage() {
 
             const result = await response.json();
             if (result.success) {
+                // Update cache with new match data
+                if (result.match) {
+                    cacheManager.updateMatchesCache(result.match);
+                }
                 toast.success('Match scheduled successfully!');
                 router.push(`/league/${leagueId}`);
             } else {

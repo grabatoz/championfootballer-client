@@ -41,6 +41,7 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import CloseIcon from '@mui/icons-material/Close';
+import { cacheManager } from "@/lib/cacheManager"
 
 
 interface League {
@@ -427,6 +428,10 @@ export default function LeagueDetailPage() {
             });
             const data = await response.json();
             if (data.success) {
+                // Update cache with new league data
+                if (data.league) {
+                    cacheManager.updateLeaguesCache(data.league);
+                }
                 toast.success('League updated successfully!');
                 fetchLeagueDetails();
                 setIsSettingsOpen(false);
@@ -447,6 +452,8 @@ export default function LeagueDetailPage() {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
+                    // Clear league cache since league is deleted
+                    cacheManager.clearCache('leagues_cache');
                     toast.success('League deleted successfully.');
                     router.push('/all-leagues');
                 } else {

@@ -13,6 +13,7 @@ import ThirdBadge from '@/Components/images/3rd.png';
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { cacheManager } from "@/lib/cacheManager"
 
 const getBadgeForPosition = (position: number) => {
   switch (position) {
@@ -229,6 +230,9 @@ export default function MatchDetailsPage() {
       if (!response.ok) throw new Error();
       const data = await response.json();
       if (data.success && data.match) {
+        // Update cache with new match data
+        cacheManager.updateMatchesCache(data.match);
+        
         setMatch(prev => prev && prev.id === matchId ? { ...prev, availableUsers: data.match.availableUsers } : prev);
       }
     } finally {

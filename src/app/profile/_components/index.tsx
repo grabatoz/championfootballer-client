@@ -33,6 +33,7 @@ import {
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
+import { cacheManager } from "@/lib/cacheManager"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -264,6 +265,12 @@ const PlayerProfileCard = () => {
       if (!ok) {
         throw new Error(data.message || "Failed to update profile")
       }
+      
+      // Update cache with new user data
+      if (data.user) {
+        cacheManager.updatePlayersCache(data.user);
+      }
+      
       toast.success("Profile updated successfully!")
       router.push("/dashboard")
     } catch (error: unknown) {
@@ -319,6 +326,10 @@ const PlayerProfileCard = () => {
     })
     const data = await res.json()
     if (data.success) {
+      // Update cache with new user data
+      if (data.user) {
+        cacheManager.updatePlayersCache(data.user);
+      }
       toast.success("Profile picture updated!")
       window.location.reload()
     } else {

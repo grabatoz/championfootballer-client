@@ -11,6 +11,7 @@ import leagueIcon from '@/Components/images/league.png';
 import { User } from '@/types/user';
 import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
+import { cacheManager } from "@/lib/cacheManager"
 
 interface Match {
     id: string;
@@ -266,7 +267,7 @@ export default function AllMatches() {
         }
     }, [selectedLeague, token, fetchLeagueDetails]);
     const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
-        if (!user) {
+        if (!token) {
             setError('Please login to mark availability');
             return;
         }
@@ -285,6 +286,9 @@ export default function AllMatches() {
             }
             const data = await response.json();
             if (data.success && data.match) {
+                // Update cache with new match data
+                cacheManager.updateMatchesCache(data.match);
+                
                 // Update the matches array so the button toggles instantly
                 setMatches(prevMatches => prevMatches.map(m =>
                     m.id === matchId ? { ...m, availableUsers: data.match.availableUsers } : m
