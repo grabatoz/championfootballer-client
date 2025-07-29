@@ -160,6 +160,18 @@ export default function PlayMatchPage() {
     const [votedForId, setVotedForId] = useState<string | null>(null);
     const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
     const [isSubmittingStats, setIsSubmittingStats] = useState(false);
+    const [isAdminStatsModalOpen, setIsAdminStatsModalOpen] = useState(false);
+    const [selectedPlayerForAdmin, setSelectedPlayerForAdmin] = useState<User | null>(null);
+    const [adminStats, setAdminStats] = useState({
+        goals: 0,
+        assists: 0,
+        cleanSheets: 0,
+        penalties: 0,
+        freeKicks: 0,
+        defence: 0,
+        impact: 0,
+    });
+    const [isSubmittingAdminStats, setIsSubmittingAdminStats] = useState(false);
     const [stats, setStats] = useState({
         goals: 0,
         assists: 0,
@@ -249,13 +261,29 @@ export default function PlayMatchPage() {
     // Fetch votes and set votedForId ONLY from backend
     const fetchVotes = useCallback(async () => {
         if (!token) return;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        if (data.success) {
-            setPlayerVotes(data.votes || {});
-            setVotedForId(data.userVote || null); // <-- Always set from backend only!
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, use default values
+                setPlayerVotes({});
+                setVotedForId(null);
+                return;
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                setPlayerVotes(data.votes || {});
+                setVotedForId(data.userVote || null); // <-- Always set from backend only!
+            }
+        } catch (error) {
+            console.error('Failed to fetch votes:', error);
+            // Use default values on error
+            setPlayerVotes({});
+            setVotedForId(null);
         }
     }, [matchId, token]);
 
@@ -294,8 +322,70 @@ export default function PlayMatchPage() {
         }
     };
 
-    const handleOpenStatsModal = () => {
-        setStats({ goals: 0, assists: 0, cleanSheets: 0, penalties: 0, freeKicks: 0, defence: 0, impact: 0 });
+    const handleOpenStatsModal = async () => {
+        if (!user) return;
+        
+        try {
+            // Fetch existing stats for the current user
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, use default stats
+                setStats({ 
+                    goals: 0, 
+                    assists: 0, 
+                    cleanSheets: 0, 
+                    penalties: 0, 
+                    freeKicks: 0, 
+                    defence: 0, 
+                    impact: 0 
+                });
+                setIsStatsModalOpen(true);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.stats) {
+                // Use existing stats if available
+                setStats({
+                    goals: data.stats.goals || 0,
+                    assists: data.stats.assists || 0,
+                    cleanSheets: data.stats.cleanSheets || 0,
+                    penalties: data.stats.penalties || 0,
+                    freeKicks: data.stats.freeKicks || 0,
+                    defence: data.stats.defence || 0,
+                    impact: data.stats.impact || 0,
+                });
+            } else {
+                // Reset to 0 if no existing stats
+                setStats({ 
+                    goals: 0, 
+                    assists: 0, 
+                    cleanSheets: 0, 
+                    penalties: 0, 
+                    freeKicks: 0, 
+                    defence: 0, 
+                    impact: 0 
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch existing stats:', error);
+            // Reset to 0 on error
+            setStats({ 
+                goals: 0, 
+                assists: 0, 
+                cleanSheets: 0, 
+                penalties: 0, 
+                freeKicks: 0, 
+                defence: 0, 
+                impact: 0 
+            });
+        }
+        
         setIsStatsModalOpen(true);
     };
 
@@ -325,6 +415,15 @@ export default function PlayMatchPage() {
                     impact: stats.impact,
                 }),
             });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, show error message
+                toast.error('Stats saving is not available yet. Please contact the administrator.');
+                setIsStatsModalOpen(false);
+                return;
+            }
+            
             const data = await response.json();
             if (data.success) {
                 // Update leaderboard cache with new stats
@@ -342,6 +441,127 @@ export default function PlayMatchPage() {
             toast.error(err instanceof Error ? err.message : String(err));
         } finally {
             setIsSubmittingStats(false);
+        }
+    };
+
+    // Admin Stats Functions
+    const handleOpenAdminStatsModal = async (player: User) => {
+        setSelectedPlayerForAdmin(player);
+        
+        try {
+            // Fetch existing stats for the selected player
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${player.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, use default stats
+                setAdminStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0,
+                });
+                setIsAdminStatsModalOpen(true);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.stats) {
+                // Use existing stats if available
+                setAdminStats({
+                    goals: data.stats.goals || 0,
+                    assists: data.stats.assists || 0,
+                    cleanSheets: data.stats.cleanSheets || 0,
+                    penalties: data.stats.penalties || 0,
+                    freeKicks: data.stats.freeKicks || 0,
+                    defence: data.stats.defence || 0,
+                    impact: data.stats.impact || 0,
+                });
+            } else {
+                // Reset to 0 if no existing stats
+                setAdminStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch existing stats for player:', error);
+            // Reset to 0 on error
+            setAdminStats({
+                goals: 0,
+                assists: 0,
+                cleanSheets: 0,
+                penalties: 0,
+                freeKicks: 0,
+                defence: 0,
+                impact: 0,
+            });
+        }
+        
+        setIsAdminStatsModalOpen(true);
+    };
+
+    const handleCloseAdminStatsModal = () => {
+        setIsAdminStatsModalOpen(false);
+        setSelectedPlayerForAdmin(null);
+    };
+
+    const handleAdminStatChange = (stat: keyof typeof adminStats, increment: number, max: number) => {
+        setAdminStats(prev => ({
+            ...prev,
+            [stat]: Math.max(0, Math.min(max, prev[stat] + increment))
+        }));
+    };
+
+    const handleSaveAdminStats = async () => {
+        if (!selectedPlayerForAdmin) return;
+        
+        setIsSubmittingAdminStats(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    playerId: selectedPlayerForAdmin.id,
+                    ...adminStats
+                })
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, show error message
+                toast.error('Stats saving is not available yet. Please contact the administrator.');
+                handleCloseAdminStatsModal();
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success(`Stats added for ${selectedPlayerForAdmin.firstName} ${selectedPlayerForAdmin.lastName}`);
+                handleCloseAdminStatsModal();
+                fetchLeagueAndMatchDetails();
+            } else {
+                toast.error(data.message || 'Failed to add stats');
+            }
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : String(err));
+        } finally {
+            setIsSubmittingAdminStats(false);
         }
     };
 
@@ -475,8 +695,8 @@ export default function PlayMatchPage() {
                                                                     disabled={loadingVote}
                                                                     color="#43a047"
                                                                     sx={{
-                                                                        width: { xs: 25, sm: 35, md: 65 },
-                                                                        height: { xs: 25, sm: 35, md: 65 },
+                                                                        width: { xs: 20, sm: 35, md: 65 },
+                                                                        height: { xs: 20, sm: 35, md: 65 },
                                                                         mr: { xs: 0.25, sm: 0.5, md: 1 },
                                                                         mt: { xs: 0.25, sm: 0.5, md: 1 }
                                                                     }}
@@ -557,6 +777,32 @@ export default function PlayMatchPage() {
                                                                 >
                                                                     Shirt No {player.shirtNumber || "0"}
                                                                 </Button>
+                                                                
+                                                                {/* Admin Stats Button */}
+                                                                {isAdmin && match.status === 'completed' && league.active && (
+                                                                    <Button
+                                                                        onClick={() => handleOpenAdminStatsModal(player)}
+                                                                        startIcon={<Add />}
+                                                                        variant="contained"
+                                                                        size="small"
+                                                                        sx={{
+                                                                            bgcolor: '#43a047',
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            borderRadius: 1.5,
+                                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                            fontSize: { xs: 5, sm: 7, md: 10 },
+                                                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                                                            height: { xs: 16, sm: 20, md: 28 },
+                                                                            whiteSpace: 'nowrap',
+                                                                            '&:hover': { bgcolor: '#388e3c' },
+                                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 }
+                                                                        }}
+                                                                    >
+                                                                        Admin Stats
+                                                                    </Button>
+                                                                )}
                                                             </Box>
                                                         </Box>
                                                     </Box>
@@ -666,8 +912,8 @@ export default function PlayMatchPage() {
                                                                     disabled={loadingVote}
                                                                     color="#43a047"
                                                                     sx={{
-                                                                        width: { xs: 25, sm: 35, md: 65 },
-                                                                        height: { xs: 25, sm: 35, md: 65 },
+                                                                        width: { xs: 20, sm: 35, md: 65 },
+                                                                        height: { xs: 20, sm: 35, md: 65 },
                                                                         mr: { xs: 0.25, sm: 0.5, md: 1 },
                                                                         mt: { xs: 0.25, sm: 0.5, md: 1 }
                                                                     }}
@@ -748,6 +994,32 @@ export default function PlayMatchPage() {
                                                                 >
                                                                     Shirt No {player.shirtNumber || "0"}
                                                                 </Button>
+                                                                
+                                                                {/* Admin Stats Button */}
+                                                                {isAdmin && match.status === 'completed' && league.active && (
+                                                                    <Button
+                                                                        onClick={() => handleOpenAdminStatsModal(player)}
+                                                                        startIcon={<Add />}
+                                                                        variant="contained"
+                                                                        size="small"
+                                                                        sx={{
+                                                                            bgcolor: '#43a047',
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            borderRadius: 1.5,
+                                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                            fontSize: { xs: 5, sm: 7, md: 10 },
+                                                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                                                            height: { xs: 16, sm: 20, md: 28 },
+                                                                            whiteSpace: 'nowrap',
+                                                                            '&:hover': { bgcolor: '#388e3c' },
+                                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 }
+                                                                        }}
+                                                                    >
+                                                                        Admin Stats
+                                                                    </Button>
+                                                                )}
                                                             </Box>
                                                         </Box>
                                                     </Box>
@@ -975,6 +1247,68 @@ export default function PlayMatchPage() {
                 <DialogActions>
                     <Button onClick={handleCloseStatsModal}>Cancel</Button>
                     <Button onClick={handleSaveStats} variant="contained" disabled={isSubmittingStats}>{isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Admin Stats Modal */}
+            <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
+                <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
+                <DialogContent>
+                    <StatCounter 
+                        icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} 
+                        label="Goals Scored" 
+                        value={adminStats.goals} 
+                        onIncrement={() => handleAdminStatChange('goals', 1, 10)} 
+                        onDecrement={() => handleAdminStatChange('goals', -1, 10)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} 
+                        label="Assists" 
+                        value={adminStats.assists} 
+                        onIncrement={() => handleAdminStatChange('assists', 1, 10)} 
+                        onDecrement={() => handleAdminStatChange('assists', -1, 10)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} 
+                        label="Clean Sheets" 
+                        value={adminStats.cleanSheets} 
+                        onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)} 
+                        onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} 
+                        label="Penalties" 
+                        value={adminStats.penalties} 
+                        onIncrement={() => handleAdminStatChange('penalties', 1, 5)} 
+                        onDecrement={() => handleAdminStatChange('penalties', -1, 5)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} 
+                        label="Free Kicks" 
+                        value={adminStats.freeKicks} 
+                        onIncrement={() => handleAdminStatChange('freeKicks', 1, 5)} 
+                        onDecrement={() => handleAdminStatChange('freeKicks', -1, 5)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} 
+                        label="Defence" 
+                        value={adminStats.defence} 
+                        onIncrement={() => handleAdminStatChange('defence', 1, 1)} 
+                        onDecrement={() => handleAdminStatChange('defence', -1, 1)} 
+                    />
+                    <StatCounter 
+                        icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />} 
+                        label="Impact" 
+                        value={adminStats.impact} 
+                        onIncrement={() => handleAdminStatChange('impact', 1, 1)} 
+                        onDecrement={() => handleAdminStatChange('impact', -1, 1)} 
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseAdminStatsModal}>Cancel</Button>
+                    <Button onClick={handleSaveAdminStats} variant="contained" disabled={isSubmittingAdminStats}>
+                        {isSubmittingAdminStats ? <CircularProgress size={24} /> : 'Upload'}
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Box>
