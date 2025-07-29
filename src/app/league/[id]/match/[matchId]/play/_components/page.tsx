@@ -95,7 +95,7 @@ interface MotmButtonProps {
     sx?: SxProps<Theme>;
 }
 
-const MotmCoin = ({ voted, onClick, disabled, color, sx = {} }: MotmButtonProps) => (
+const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
     <Box
         onClick={disabled ? undefined : onClick}
         sx={{
