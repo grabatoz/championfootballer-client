@@ -43,7 +43,10 @@ import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
+import { PlayerStats } from '@/types/api';
+import { LeaderboardResponse } from '@/types/api';
 
+type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 interface League {
     id: string;
@@ -386,7 +389,7 @@ export default function LeagueDetailPage() {
                         if (typeof value === 'number') {
                             // Update cache if cacheManager is available
                             if (typeof cacheManager !== 'undefined') {
-                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as any);
+                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as PlayerStatsMetric);
                             }
                         }
                     });
