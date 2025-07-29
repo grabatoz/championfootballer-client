@@ -297,7 +297,8 @@ const PlayerStatsPage = () => {
     // const selectedPlayer = leaderboardPlayers.find(p => p.id === playerId);
 
     const { data: fullPlayerData } = useSelector((state: RootState) => state.playerStats);
-
+    console.log('fullPlayerData',fullPlayerData);
+    
     // --- Trophy Room Calculation Logic ---
     const allTrophyAwards = React.useMemo(() => {
         if (!data || !data.trophies) return [];
@@ -479,7 +480,7 @@ const PlayerStatsPage = () => {
                             }}
                         >
                             <Avatar
-                                src={fullPlayerData?.player?.profilePicture || '/assets/group451.png'}
+                                src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
                                 alt={fullPlayerData?.player?.name}
                                 sx={{
                                     width: { xs: 80, sm: 90, md: 90 },
