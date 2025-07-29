@@ -472,7 +472,7 @@ const PlayerStatsPage = () => {
                                 zIndex: 2,
                                 gap: { xs: 1, sm: 2, md: 2 },
                                 height: { xs: 180, sm: 180, md: 150 },
-                                overflow: 'auto',
+                                // overflow: 'auto',
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 // scrollbarWidth: 'none',
                                 // msOverflowStyle: 'none',
