@@ -767,7 +767,7 @@ export default function PlayMatchPage() {
                                                                         fontSize: { xs: 6, sm: 8, md: 12 },
                                                                         fontWeight: 'bold',
                                                                         textTransform: 'none',
-                                                                        height: { xs: 16, sm: 20, md: 28 },
+                                                                        height: { xs: 15, sm: 20, md: 28 },
                                                                         minWidth: { xs: 'auto', sm: 'auto' },
                                                                         '&:hover': {
                                                                             background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'

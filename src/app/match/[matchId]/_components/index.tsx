@@ -70,6 +70,8 @@ interface User {
 }
 
 interface Match {
+  awayTeamImage?: string;
+  homeTeamImage?: string;
   id: string;
   homeTeamName: string;
   awayTeamName: string;
@@ -277,8 +279,8 @@ export default function MatchDetailsPage() {
           <MatchSummary
             homeTeamName={match.homeTeamName}
             awayTeamName={match.awayTeamName}
-            homeTeamImg={'/assets/matches.png'}
-            awayTeamImg={'/assets/matches.png'}
+            homeTeamImg={match.homeTeamImage || '/assets/matches.png'}
+            awayTeamImg={match.awayTeamImage || '/assets/matches.png'}
             homeGoals={typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}
             awayGoals={typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0}
             leagueName={league?.name || 'League'}

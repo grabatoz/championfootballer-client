@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, X } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -435,6 +435,7 @@ function AllLeagues() {
   const [, setLoadingMembers] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -465,6 +466,37 @@ function AllLeagues() {
   const updateLeaguesCacheWithNewLeague = useCallback((newLeague: League) => {
     cacheManager.updateLeaguesCache(newLeague);
   }, []);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      
+      setLeagueImage(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setLeagueImage(null);
+    setImagePreview(null);
+  };
 
   const fetchUserLeagues = useCallback(async () => {
     try {
@@ -527,11 +559,13 @@ function AllLeagues() {
         setIsDialogOpen(false);
         setLeagueName('');
         setLeagueImage(null);
+        setImagePreview(null);
         
         // Update the leagues cache with the new league
         if (data.league) {
           const newLeague = {
             ...data.league,
+            image: data.league.image || null, // Ensure image field is included
             members: [],
             administrators: user ? [user] : [],
             matches: [],
@@ -781,7 +815,7 @@ function AllLeagues() {
                     aria-label={`League: ${league.name}`}
                   >
                     <Box display="flex" position="relative" alignItems="center" gap={{ xs: 1, md: 2 }} mb={{ xs: 0.5, md: 1 }}>
-                      <Image src={leagueIcon} alt={`${league.name} icon`} width={32} height={32} priority />
+                      <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={32} height={32} priority />
                       <Typography
                         textTransform="uppercase"
                         variant="h6"
@@ -933,6 +967,94 @@ function AllLeagues() {
               }}
               InputLabelProps={{ sx: { color: '#fff' } }}
             />
+            
+            {/* League Image Upload Section */}
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ color: '#fff', mb: 1, fontWeight: 'bold' }}>
+                League Image (Optional)
+              </Typography>
+              
+              {/* Image Preview */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2, 
+                mb: 2,
+                p: 2,
+                border: '2px dashed #43a047',
+                borderRadius: 2,
+                background: 'rgba(67,160,71,0.1)',
+                minHeight: 80
+              }}>
+                <Avatar
+                  src={imagePreview || '/assets/league.png'}
+                  alt="League Image"
+                  sx={{ 
+                    width: 60, 
+                    height: 60, 
+                    border: '2px solid #43a047',
+                    background: '#1f673b'
+                  }}
+                  variant="rounded"
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#B2DFDB', mb: 0.5 }}>
+                    {imagePreview ? 'Selected Image' : 'Default Flag Image'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
+                    {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {/* Upload Buttons */}
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUpload />}
+                  sx={{
+                    color: '#43a047',
+                    borderColor: '#43a047',
+                    borderRadius: 2,
+                    px: 2,
+                    fontWeight: 'bold',
+                    '&:hover': { 
+                      borderColor: '#388e3c',
+                      backgroundColor: 'rgba(67,160,71,0.1)'
+                    },
+                  }}
+                >
+                  {imagePreview ? 'Change Image' : 'Upload Image'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                </Button>
+                
+                {imagePreview && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleRemoveImage}
+                    sx={{
+                      color: '#ff6b6b',
+                      borderColor: '#ff6b6b',
+                      borderRadius: 2,
+                      px: 2,
+                      fontWeight: 'bold',
+                      '&:hover': { 
+                        borderColor: '#ff5252',
+                        backgroundColor: 'rgba(255,107,107,0.1)'
+                      },
+                    }}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button

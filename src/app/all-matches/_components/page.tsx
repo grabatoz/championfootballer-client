@@ -37,6 +37,8 @@ interface Match {
     homeTeamGoals?: number;
     awayTeamGoals?: number;
     end?: string;
+    homeTeamImage?: string;
+    awayTeamImage?: string;
 }
 
 interface League {
@@ -529,7 +531,7 @@ export default function AllMatches() {
                                                 minHeight: 100
                                             }}>
                                                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={leagueIcon} alt={match.homeTeamName || match.homeTeam} width={48} height={48} />
+                                                    <Image src={match.homeTeamImage || leagueIcon} alt={match.homeTeamName || match.homeTeam} width={48} height={48} />
                                                     <Typography
                                                         textTransform="uppercase"
                                                         variant="h6"
@@ -556,7 +558,7 @@ export default function AllMatches() {
                                                     VS
                                                 </Typography>
                                                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={leagueIcon} alt={match.awayTeamName || match.awayTeam} width={48} height={48} />
+                                                    <Image src={match.awayTeamImage || leagueIcon} alt={match.awayTeamName || match.awayTeam} width={48} height={48} />
                                                     <Typography
                                                         textTransform="uppercase"
                                                         variant="h6"

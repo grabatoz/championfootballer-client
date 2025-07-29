@@ -48,6 +48,7 @@ export interface ApiError {
 
 // Add these interfaces to avoid 'any' types
 export interface League {
+  image: string;
   id: string;
   name: string;
   inviteCode: string;

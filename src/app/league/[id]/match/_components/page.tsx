@@ -11,13 +11,15 @@ import {
     Autocomplete,
     Checkbox,
     Divider,
+    Avatar,
+    IconButton,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CloudUpload, X } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from "@/lib/cacheManager"
@@ -82,6 +84,12 @@ export default function ScheduleMatchPage() {
     const [awayCaptain, setAwayCaptain] = useState<User | null>(null); // captain for away team
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Team image upload states
+    const [homeTeamImage, setHomeTeamImage] = useState<File | null>(null);
+    const [awayTeamImage, setAwayTeamImage] = useState<File | null>(null);
+    const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
+    const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
+
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
@@ -111,6 +119,57 @@ export default function ScheduleMatchPage() {
             fetchLeagueMembers();
         }
     }, [leagueId, token, fetchLeagueMembers]);
+
+    // Team image upload functions
+    const handleHomeTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                    setHomeTeamImage(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setHomeTeamImagePreview(e.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    toast.error('File size should be less than 5MB');
+                }
+            } else {
+                toast.error('Please select an image file');
+            }
+        }
+    };
+
+    const handleAwayTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                    setAwayTeamImage(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setAwayTeamImagePreview(e.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    toast.error('File size should be less than 5MB');
+                }
+            } else {
+                toast.error('Please select an image file');
+            }
+        }
+    };
+
+    const handleRemoveHomeTeamImage = () => {
+        setHomeTeamImage(null);
+        setHomeTeamImagePreview(null);
+    };
+
+    const handleRemoveAwayTeamImage = () => {
+        setAwayTeamImage(null);
+        setAwayTeamImagePreview(null);
+    };
 
     // Mapper function for the preview cards
     // const mapUserToCardProps = (user: User, isCaptain: boolean): PlayerCardProps => ({
@@ -173,13 +232,33 @@ export default function ScheduleMatchPage() {
         console.log('match data', matchData)
 
         try {
+            // Create FormData for file uploads
+            const formData = new FormData();
+            formData.append('homeTeamName', homeTeamName);
+            formData.append('awayTeamName', awayTeamName);
+            formData.append('date', start.toISOString());
+            formData.append('start', start.toISOString());
+            formData.append('end', end.toISOString());
+            formData.append('location', location);
+            formData.append('homeTeamUsers', JSON.stringify(homeTeamUsers.map(u => u.id)));
+            formData.append('awayTeamUsers', JSON.stringify(awayTeamUsers.map(u => u.id)));
+            formData.append('homeCaptain', homeCaptain?.id || '');
+            formData.append('awayCaptain', awayCaptain?.id || '');
+
+            // Add team images if selected
+            if (homeTeamImage) {
+                formData.append('homeTeamImage', homeTeamImage);
+            }
+            if (awayTeamImage) {
+                formData.append('awayTeamImage', awayTeamImage);
+            }
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(matchData),
+                body: formData,
             });
 
             const result = await response.json();
@@ -356,6 +435,70 @@ export default function ScheduleMatchPage() {
                                 fullWidth
                                 sx={{ mt: 2, mb: 1, ...inputStyles }}
                             />
+
+                            {/* Home Team Image Upload */}
+                            <Box sx={{ mt: 2, mb: 2 }}>
+                                <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
+                                    Home Team Image (Optional)
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <input
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        id="home-team-image-upload"
+                                        type="file"
+                                        onChange={handleHomeTeamImageUpload}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        label="Upload Home Team Image"
+                                        value={homeTeamImage ? homeTeamImage.name : ''}
+                                        InputProps={{
+                                            readOnly: true,
+                                            endAdornment: (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <label htmlFor="home-team-image-upload">
+                                                        <Button
+                                                            component="span"
+                                                            variant="outlined"
+                                                            size="small"
+                                                            sx={{
+                                                                color: '#43a047',
+                                                                borderColor: '#43a047',
+                                                                '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' }
+                                                            }}
+                                                        >
+                                                            Browse
+                                                        </Button>
+                                                    </label>
+                                                    {homeTeamImage && (
+                                                        <IconButton
+                                                            onClick={handleRemoveHomeTeamImage}
+                                                            size="small"
+                                                            sx={{ color: '#f44336' }}
+                                                        >
+                                                            <X />
+                                                        </IconButton>
+                                                    )}
+                                                </Box>
+                                            )
+                                        }}
+                                        sx={{ ...inputStyles }}
+                                    />
+                                </Box>
+                                {homeTeamImagePreview && (
+                                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar
+                                            src={homeTeamImagePreview}
+                                            alt="Home Team Preview"
+                                            sx={{ width: 40, height: 40, border: '2px solid #43a047' }}
+                                        />
+                                        <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
+                                            Image preview
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
                             
                             <Autocomplete
                                 multiple
@@ -425,6 +568,70 @@ export default function ScheduleMatchPage() {
                                 fullWidth
                                 sx={{ mt: 2, mb: 1, ...inputStyles }}
                             />
+
+                            {/* Away Team Image Upload */}
+                            <Box sx={{ mt: 2, mb: 2 }}>
+                                <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
+                                    Away Team Image (Optional)
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <input
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        id="away-team-image-upload"
+                                        type="file"
+                                        onChange={handleAwayTeamImageUpload}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        label="Upload Away Team Image"
+                                        value={awayTeamImage ? awayTeamImage.name : ''}
+                                        InputProps={{
+                                            readOnly: true,
+                                            endAdornment: (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <label htmlFor="away-team-image-upload">
+                                                        <Button
+                                                            component="span"
+                                                            variant="outlined"
+                                                            size="small"
+                                                            sx={{
+                                                                color: '#ef5350',
+                                                                borderColor: '#ef5350',
+                                                                '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' }
+                                                            }}
+                                                        >
+                                                            Browse
+                                                        </Button>
+                                                    </label>
+                                                    {awayTeamImage && (
+                                                        <IconButton
+                                                            onClick={handleRemoveAwayTeamImage}
+                                                            size="small"
+                                                            sx={{ color: '#f44336' }}
+                                                        >
+                                                            <X />
+                                                        </IconButton>
+                                                    )}
+                                                </Box>
+                                            )
+                                        }}
+                                        sx={{ ...inputStyles }}
+                                    />
+                                </Box>
+                                {awayTeamImagePreview && (
+                                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar
+                                            src={awayTeamImagePreview}
+                                            alt="Away Team Preview"
+                                            sx={{ width: 40, height: 40, border: '2px solid #ef5350' }}
+                                        />
+                                        <Typography variant="caption" sx={{ color: '#EF9A9A' }}>
+                                            Image preview
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
 
                             <Autocomplete
                                 multiple
@@ -564,13 +771,40 @@ export default function ScheduleMatchPage() {
                     </Box>
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                    <Paper sx={{ p: 2, backgroundColor: '#1f673b', color: 'white', position: 'sticky', top: '20px' }}>
+                    <Paper sx={{ 
+                        p: 2, 
+                        backgroundColor: '#1f673b', 
+                        color: 'white', 
+                        position: 'sticky', 
+                        top: '20px',
+                        height: { xs: 'auto', md: 'fit-content' },
+                        minHeight: { xs: 'auto', md: '100%' },
+                        display: { xs: 'block', md: 'flex' },
+                        flexDirection: { xs: 'column', md: 'column' }
+                    }}>
                             <Typography variant="h5" gutterBottom>Live Preview</Typography>
                         <Divider sx={{ mb: 2, borderColor: 'white' }} />
-                        <Box sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: 4, minHeight: 250, width: '100%' }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'stretch', 
+                            justifyContent: 'center', 
+                            gap: 4, 
+                            minHeight: { xs: 250, md: 'calc(100vh - 300px)' },
+                            width: '100%',
+                            flex: 1
+                        }}>
                             {/* Home Team Preview */}
                             <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                <Typography variant="h6" sx={{ color: '#66bb6a', textAlign: 'center' }}>{homeTeamName || 'Home Team'}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                    <Avatar
+                                        src={homeTeamImagePreview || '/assets/default-team.png'}
+                                        alt="Home Team"
+                                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #66bb6a' }}
+                                    />
+                                    <Typography variant="h6" sx={{ color: '#66bb6a', textAlign: 'center' }}>
+                                        {homeTeamName || 'Home Team'}
+                                    </Typography>
+                                </Box>
                                 {homeTeamUsers.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
                                         {/* Captain at top */}
@@ -621,7 +855,16 @@ export default function ScheduleMatchPage() {
                             <Box sx={{ width: 2, bgcolor: 'white', minHeight: 180, borderRadius: 1, mx: 2, display: { xs: 'none', md: 'block' } }} />
                              {/* Away Team Preview */}
                             <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>{awayTeamName || 'Away Team'}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                    <Avatar
+                                        src={awayTeamImagePreview || '/assets/default-team.png'}
+                                        alt="Away Team"
+                                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }}
+                                    />
+                                    <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>
+                                        {awayTeamName || 'Away Team'}
+                                    </Typography>
+                                </Box>
                                 {awayTeamUsers.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
                                         {/* Captain at top */}
