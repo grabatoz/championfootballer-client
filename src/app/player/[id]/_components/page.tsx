@@ -483,8 +483,8 @@ const PlayerStatsPage = () => {
                                 src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
                                 alt={fullPlayerData?.player?.name}
                                 sx={{
-                                    width: { xs: 80, sm: 90, md: 90 },
-                                    height: { xs: 80, sm: 90, md: 90 },
+                                    width: { xs: 85, sm: 85, md: 90 },
+                                    height: { xs: 100, sm: 100, md: 90 },
                                     borderRadius: 3,
                                     boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
                                     border: '3px solid #fff',
