@@ -589,6 +589,7 @@ export default function LeagueDetailPage() {
                     sx={{
                         mb: 2, color: 'white', backgroundColor: '#1f673b',
                         '&:hover': { backgroundColor: '#388e3c' },
+                        mt: {xs: 2, sm: 2, md: 0}
                     }}
                 >
                     Back to All Leagues

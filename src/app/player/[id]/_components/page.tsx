@@ -297,8 +297,8 @@ const PlayerStatsPage = () => {
     // const selectedPlayer = leaderboardPlayers.find(p => p.id === playerId);
 
     const { data: fullPlayerData } = useSelector((state: RootState) => state.playerStats);
-    console.log('fullPlayerData',fullPlayerData);
-    
+    console.log('fullPlayerData', fullPlayerData);
+
     // --- Trophy Room Calculation Logic ---
     const allTrophyAwards = React.useMemo(() => {
         if (!data || !data.trophies) return [];
@@ -328,9 +328,9 @@ const PlayerStatsPage = () => {
                 <Button
                     variant="outlined"
                     color="inherit"
-                    sx={{ 
-                        color: '#1f673b', 
-                        borderColor: '#1f673b', 
+                    sx={{
+                        color: '#1f673b',
+                        borderColor: '#1f673b',
                         fontWeight: 600,
                         textTransform: 'none',
                         mr: 2,
@@ -351,7 +351,7 @@ const PlayerStatsPage = () => {
                 >
                     ← Back to All Players
                 </Button>
-              
+
                 <Box
                     sx={{
                         background: '#1f673b',
@@ -396,7 +396,7 @@ const PlayerStatsPage = () => {
                         <Tab label="Leagues Overview" />
                     </Tabs>
                 </Box>
-                
+
                 {/* Top Players Filter Button - Right side */}
                 <Box sx={{ display: { xs: 'flex', md: 'none', lg: 'none' }, justifyContent: 'flex-end', ml: 'auto' }}>
                     <IconButton
@@ -495,64 +495,64 @@ const PlayerStatsPage = () => {
                                     // mb: { xs: 2, sm: 0 },
                                 }}
                             />
-                            <Box sx={{ 
-                                textAlign: 'left', 
+                            <Box sx={{
+                                textAlign: 'left',
                                 display: { xs: 'none', md: 'block' },
                                 flex: 1,
                                 minWidth: 0
                             }}>
-                                <Typography variant="h6" sx={{ 
-                                    color: 'white', 
-                                    fontWeight: 'bold', 
+                                <Typography variant="h6" sx={{
+                                    color: 'white',
+                                    fontWeight: 'bold',
                                     mb: 0.5,
                                     fontSize: { xs: '16px', sm: '18px', md: '20px' }
                                 }}>{fullPlayerData?.player?.name}</Typography>
-                                <Typography variant="body2" sx={{ 
-                                    color: '#B2DFDB', 
+                                <Typography variant="body2" sx={{
+                                    color: '#B2DFDB',
                                     mb: 1,
                                     fontSize: { xs: '12px', sm: '14px', md: '14px' }
                                 }}>Shirt No {fullPlayerData?.player?.shirtNo || '00'}</Typography>
                             </Box>
-                            <Box sx={{ 
-                                flex: 1, 
+                            <Box sx={{
+                                flex: 1,
                                 display: { xs: 'block', sm: 'block', md: 'none' },
                                 minWidth: 0,
                                 width: '100%'
                             }}>
-                                <Typography variant="h4" sx={{ 
-                                    fontWeight: 'bold', 
-                                    color: 'white', 
+                                <Typography variant="h4" sx={{
+                                    fontWeight: 'bold',
+                                    color: 'white',
                                     mb: 2,
                                     fontSize: { xs: '18px', sm: '20px', md: '24px' }
                                 }}>{fullPlayerData?.player?.name}</Typography>
-                                <Box sx={{ 
-                                    display: 'grid', 
-                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, 
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                     gap: { xs: 1, sm: 2 },
                                     fontSize: { xs: '12px', sm: '14px' }
                                 }}>
-                                    <Typography variant="body1" sx={{ 
-                                        color: '#B2DFDB', 
+                                    <Typography variant="body1" sx={{
+                                        color: '#B2DFDB',
                                         fontWeight: 500,
                                         fontSize: { xs: '11px', sm: '12px', md: '14px' }
                                     }}>Age: {fullPlayerData?.player?.age || '-'}</Typography>
-                                    <Typography variant="body1" sx={{ 
-                                        color: '#B2DFDB', 
+                                    <Typography variant="body1" sx={{
+                                        color: '#B2DFDB',
                                         fontWeight: 500,
                                         fontSize: { xs: '11px', sm: '12px', md: '14px' }
                                     }}>Style: {fullPlayerData?.player?.style || '-'}</Typography>
-                                    <Typography variant="body1" sx={{ 
-                                        color: '#B2DFDB', 
+                                    <Typography variant="body1" sx={{
+                                        color: '#B2DFDB',
                                         fontWeight: 500,
                                         fontSize: { xs: '11px', sm: '12px', md: '14px' }
                                     }}>Position: {fullPlayerData?.player?.position || '-'}</Typography>
-                                    <Typography variant="body1" sx={{ 
-                                        color: '#B2DFDB', 
+                                    <Typography variant="body1" sx={{
+                                        color: '#B2DFDB',
                                         fontWeight: 500,
                                         fontSize: { xs: '11px', sm: '12px', md: '14px' }
                                     }}>Position Type: {fullPlayerData?.player?.positionType || '-'}</Typography>
-                                    <Typography variant="body1" sx={{ 
-                                        color: '#B2DFDB', 
+                                    <Typography variant="body1" sx={{
+                                        color: '#B2DFDB',
                                         fontWeight: 500,
                                         fontSize: { xs: '11px', sm: '12px', md: '14px' }
                                     }}>Preferred Foot: {fullPlayerData?.player?.preferredFoot || '-'}</Typography>
@@ -577,7 +577,7 @@ const PlayerStatsPage = () => {
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
                                 border: '2px solid green',
-                                display: { xs: 'none' , md: 'block'},
+                                display: { xs: 'none', md: 'block' },
 
                             }}
                         >
@@ -921,7 +921,7 @@ const PlayerStatsPage = () => {
                             </Box>
                         </Drawer>
                     </Box>
-                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'flex', md: 'none' } , mt:{xs: -5, sm: -5, md: 0} }}>
+                    <Box sx={{ width: '100%', justifyContent: 'center', display: { xs: 'flex', sm: 'flex', md: 'none' }, mt: { xs: -5, sm: -5, md: 0 } }}>
                         <Box
                             sx={{
                                 display: 'inline-flex',
@@ -988,7 +988,7 @@ const PlayerStatsPage = () => {
                                     mb: 4,
                                     alignItems: 'center'
                                 }}>
-                                    <Box sx={{ flex: 1 , display: {xs: 'none', sm: 'none', md: 'block'} }}>
+                                    <Box sx={{ flex: 1, display: { xs: 'none', sm: 'none', md: 'block' } }}>
                                         <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white', mb: 2 }}>{fullPlayerData?.player?.name}</Typography>
                                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                             <Typography variant="body1" sx={{ color: '#B2DFDB', fontWeight: 500 }}>Age: {fullPlayerData?.player?.age || '-'}</Typography>
@@ -999,11 +999,11 @@ const PlayerStatsPage = () => {
                                         </Box>
                                     </Box>
                                 </Box>
-                                <Divider sx={{ mb: 2, backgroundColor: '#fff' ,display: {xs: 'none', sm: 'none', md: 'block'}}} />
+                                <Divider sx={{ mb: 2, backgroundColor: '#fff', display: { xs: 'none', sm: 'none', md: 'block' } }} />
                                 <Paper elevation={0} sx={{
-                                    p: {xs: 0, sm: 0, md: 3},
+                                    p: { xs: 0, sm: 0, md: 3 },
                                     background: '#1f673b',
-                                    mt:{xs: -5, sm: -5, md: 0}
+                                    mt: { xs: -5, sm: -5, md: 0 }
                                 }}>
                                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>Leagues Played</Typography>
                                     <Box
@@ -1160,7 +1160,7 @@ const PlayerStatsPage = () => {
                                                                     </Typography>
                                                                 </Link>
                                                                 {playerStats ? (
-                                                                    <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' , fontWeight: 600, fontSize: {xs: 10, sm: 12, md: 14}}}>
+                                                                    <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', fontWeight: 600, fontSize: { xs: 10, sm: 12, md: 14 } }}>
                                                                         <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
                                                                         <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
                                                                         <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
@@ -1380,15 +1380,15 @@ const PlayerStatsPage = () => {
                                                                             }
                                                                         </Typography>
                                                                         {playerStats ? (
-                                                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' , fontWeight: 600, fontSize: {xs: 10, sm: 12, md: 14}}}>
+                                                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', fontWeight: 600, fontSize: { xs: 10, sm: 12, md: 14 } }}>
                                                                                 <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
-                                                                        <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
-                                                                        <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
-                                                                        <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
-                                                                        <Typography>Penalties: <b>{playerStats.penalties ?? 0}</b></Typography>
-                                                                        <Typography>Free Kicks: <b>{playerStats.freeKicks ?? 0}</b></Typography>
-                                                                        <Typography>Defence: <b>{playerStats.defence ?? 0}</b></Typography>
-                                                                        <Typography>Impact: <b>{playerStats.impact ?? 0}</b></Typography>
+                                                                                <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
+                                                                                <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
+                                                                                <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                                                                <Typography>Penalties: <b>{playerStats.penalties ?? 0}</b></Typography>
+                                                                                <Typography>Free Kicks: <b>{playerStats.freeKicks ?? 0}</b></Typography>
+                                                                                <Typography>Defence: <b>{playerStats.defence ?? 0}</b></Typography>
+                                                                                <Typography>Impact: <b>{playerStats.impact ?? 0}</b></Typography>
                                                                             </Box>
                                                                         ) : (
                                                                             <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>No stats available for this match.</Typography>
