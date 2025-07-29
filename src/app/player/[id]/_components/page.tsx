@@ -1160,7 +1160,7 @@ const PlayerStatsPage = () => {
                                                                     </Typography>
                                                                 </Link>
                                                                 {playerStats ? (
-                                                                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                                                                    <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' , fontWeight: 600, fontSize: {xs: 10, sm: 12, md: 14}}}>
                                                                         <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
                                                                         <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
                                                                         <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
@@ -1380,11 +1380,15 @@ const PlayerStatsPage = () => {
                                                                             }
                                                                         </Typography>
                                                                         {playerStats ? (
-                                                                            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mt: 1 }}>
+                                                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' , fontWeight: 600, fontSize: {xs: 10, sm: 12, md: 14}}}>
                                                                                 <Typography>Goals: <b>{playerStats.goals ?? 0}</b></Typography>
-                                                                                <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
-                                                                                <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
-                                                                                <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                                                        <Typography>Assists: <b>{playerStats.assists ?? 0}</b></Typography>
+                                                                        <Typography>Clean Sheets: <b>{playerStats.cleanSheets ?? 0}</b></Typography>
+                                                                        <Typography>MOTM Votes: <b>{playerStats.motmVotes ?? 0}</b></Typography>
+                                                                        <Typography>Penalties: <b>{playerStats.penalties ?? 0}</b></Typography>
+                                                                        <Typography>Free Kicks: <b>{playerStats.freeKicks ?? 0}</b></Typography>
+                                                                        <Typography>Defence: <b>{playerStats.defence ?? 0}</b></Typography>
+                                                                        <Typography>Impact: <b>{playerStats.impact ?? 0}</b></Typography>
                                                                             </Box>
                                                                         ) : (
                                                                             <Typography sx={{ color: '#B2DFDB', fontStyle: 'italic' }}>No stats available for this match.</Typography>
