@@ -43,7 +43,7 @@ import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
-import { PlayerStats } from '@/types/api';
+// import { PlayerStats } from '@/types/api';
 import { LeaderboardResponse } from '@/types/api';
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];

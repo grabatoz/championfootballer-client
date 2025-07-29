@@ -13,6 +13,10 @@ import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
+import { LeaderboardResponse } from '@/types/api';
+
+type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
+
 
 interface Match {
     id: string;
@@ -302,7 +306,7 @@ export default function AllMatches() {
                         if (typeof value === 'number') {
                             // Update cache if cacheManager is available
                             if (typeof cacheManager !== 'undefined') {
-                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as any);
+                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as PlayerStatsMetric);
                             }
                         }
                     });
