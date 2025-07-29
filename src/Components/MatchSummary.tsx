@@ -149,7 +149,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={homeTeamName}
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
+                width: { xs: 120, sm: 130, md: 130 }, // Adjusted image size for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
                 color: "white",
@@ -199,7 +199,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ fontSize: { xs: 24, sm: 28, md: 48 }, color: "white", letterSpacing: 2, mb: 0.5 }}
+              sx={{ fontSize: { xs: 48, sm: 28, md: 48 }, color: "white", letterSpacing: 2, mb: 0.5 , mt:{xs: -8, sm: -8, md: 0}}}
             >
               VS
             </Typography>
@@ -248,7 +248,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={awayTeamName}
               sx={{
                 height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 130, sm: 130, md: 130 }, // Adjusted image size for smaller screens
+                width: { xs: 120, sm: 130, md: 130 }, // Adjusted image size for smaller screens
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
                 color: "white",

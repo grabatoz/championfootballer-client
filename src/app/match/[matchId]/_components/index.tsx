@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, Button, CircularProgress, Avatar, Divider,  Card } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
@@ -14,6 +14,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
+import { ArrowLeft } from "lucide-react";
 
 const getBadgeForPosition = (position: number) => {
   switch (position) {
@@ -240,8 +241,30 @@ export default function MatchDetailsPage() {
     }
   };
 
+  const router = useRouter();
+
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
+         <Button
+      startIcon={<ArrowLeft />}
+      onClick={() => router.push(`/dashboard`)}
+      sx={{
+        color: "white",
+        backgroundColor: "#1f673b",
+        "&:hover": { backgroundColor: "#388e3c" },
+        minWidth: "fit-content",
+        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+        px: { xs: 2, sm: 3 },
+        py: { xs: 1, sm: 1.5 },
+        borderRadius: 2,
+        fontWeight: "bold",
+        textTransform: "none",
+        height: 40,
+        mb: 2,
+      }}
+    >
+      Back to Dashboard
+    </Button>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
