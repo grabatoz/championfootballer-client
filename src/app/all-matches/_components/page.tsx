@@ -497,8 +497,8 @@ export default function AllMatches() {
                             const { availableCount, pendingCount } = getAvailabilityCounts(match);
                             // Use the latest availableUsers for this match to determine if the user is available
                             const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                            const isCompleted = match.status === 'completed';
-                            const isScheduled = match.status === 'scheduled';
+                            // const isCompleted = match.status === 'completed';
+                            // const isScheduled = match.status === 'scheduled';
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
                             return (
