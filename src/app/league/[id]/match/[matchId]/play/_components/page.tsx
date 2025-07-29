@@ -35,6 +35,8 @@ import penalty from '@/Components/images/penalty.png'
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
 import { LeaderboardPlayer } from '@/types/api';
+import Check from '@/Components/images/check.png'
+import Coin from '@/Components/images/icon.png'
 
 interface User {
     id: string;
@@ -93,31 +95,57 @@ interface MotmButtonProps {
     sx?: SxProps<Theme>;
 }
 
-const MotmButton = ({ voted, onClick, disabled, color, sx = {} }: MotmButtonProps) => (
+const MotmCoin = ({ voted, onClick, disabled, color, sx = {} }: MotmButtonProps) => (
     <Box
         onClick={disabled ? undefined : onClick}
         sx={{
-            mt: 0.5,
-            mx: 'auto',
-            width: 50,
-            height: 50,
-            // borderRadius: '50%',
-            backgroundColor: voted ? '#bdbdbd' : color, // Grey if voted, otherwise use the passed color
-            color: 'white',
-            display: 'flex',
+            position: 'relative',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 'bold',
-            fontSize: { xs: 5, sm: 12, md: 12 },
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.7 : 1,
-            transition: 'background 0.2s',
-            userSelect: 'none',
-            textAlign: 'center',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+                transform: disabled ? 'none' : 'scale(1.1)',
+                filter: disabled ? 'none' : 'brightness(1.2)'
+            },
             ...sx
         }}
     >
-        {voted ? 'MOTM' : 'Select MOTM'}
+        {/* Coin Image */}
+        <img
+            src={Coin.src}
+            alt="MOTM Vote"
+            style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                opacity: disabled ? 0.5 : 1
+            }}
+        />
+        
+        {/* Check Mark Overlay - Only show if voted */}
+        {voted && (
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 2
+                }}
+            >
+                <img
+                    src={Check.src}
+                    alt="Voted"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
+                    }}
+                />
+            </Box>
+        )}
     </Box>
 );
 
@@ -353,8 +381,8 @@ export default function PlayMatchPage() {
                 py: { xs: 0.5, sm: 1 },
                 '&:hover': { backgroundColor: '#388e3c' },
             }}>Back to League</Button>
-
-            <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: 3 }}>
+ 
+           <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: 3 }}>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'row' }, gap: { xs: 0.5, sm: 1, md: 3 } }}>
                     {/* Home Team Section */}
@@ -412,117 +440,130 @@ export default function PlayMatchPage() {
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
                                 {match.homeTeamUsers.length > 0 ? (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, sm: 2 } }}>
-                                        {match.homeTeamUsers.map((player) => {
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        {match.homeTeamUsers.map((player, index) => {
                                             return (
-                                                <Box key={player.id} sx={{
-                                                    display: 'flex',
-                                                    flexDirection: { xs: 'column', sm: 'row' },
-                                                    alignItems: { xs: 'center', sm: 'center' },
-                                                    p: { xs: 0.75, sm: 2 },
-                                                    background: '#0a4822',
-                                                    borderRadius: 2,
-                                                    border: '1px solid #43a047',
-                                                    minHeight: { xs: 60, sm: 80, md: 100 },
-                                                    '&:hover': {
-                                                        backgroundColor: '#1f673b',
-                                                        transform: 'translateY(-1px)',
-                                                        transition: 'all 0.2s ease'
-                                                    }
-                                                }}>
-                                                    <Link href={`/player/${player.id}`}>
-                                                        {/* Player Profile Picture */}
-                                                        <Box sx={{
-                                                            width: { xs: 35, sm: 50, md: 60 },
-                                                            height: { xs: 35, sm: 50, md: 60 },
-                                                            borderRadius: '50%',
-                                                            overflow: 'hidden',
-                                                            border: '2px solid #43a047',
-                                                            mr: { xs: 0, sm: 2 },
-                                                            mb: { xs: 0.5, sm: 0 },
-                                                            flexShrink: 0
-                                                        }}>
-                                                            <img
-                                                                src={player.profilePicture || "/placeholder.svg"}
-                                                                alt={player.firstName + " " + player.lastName}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    height: '100%',
-                                                                    objectFit: 'cover'
-                                                                }}
-                                                            />
-                                                        </Box>
-                                                    </Link>
-
-                                                    {/* Player Info */}
-                                                    <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                                                        <Link href={`/player/${player.id}`}>
-
-                                                            <Typography variant="h6" sx={{
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
-                                                                fontSize: { xs: 11, sm: 14, md: 16 },
-                                                                mb: 0.5,
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap',
-                                                                lineHeight: { xs: 1.2, sm: 1.4 }
+                                                <React.Fragment key={player.id}>
+                                                    <Box sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        p: { xs: 0.5, sm: 1, md: 2 },
+                                                        background: '#0a4822',
+                                                        borderRadius: 0,
+                                                        border: '1px solid #43a047',
+                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        minHeight: { xs: 40, sm: 60, md: 100 },
+                                                        position: 'relative',
+                                                        '&:hover': {
+                                                            backgroundColor: '#1f673b',
+                                                            transform: 'translateY(-1px)',
+                                                            transition: 'all 0.2s ease'
+                                                        }
+                                                    }}>
+                                                        {/* MOTM Coin - Top Right Corner */}
+                                                        {match.status === 'completed' && league.active && user.id !== player.id && (
+                                                            <Box sx={{
+                                                                position: 'absolute',
+                                                                top: { xs: 2, sm: 4, md: 8 },
+                                                                right: { xs: 2, sm: 4, md: 8 },
+                                                                zIndex: 3
                                                             }}>
-                                                                {player.firstName} {player.lastName}
-                                                                {player.id === match.homeCaptainId ? ' (C)' : ''}
-                                                            </Typography>
-
-                                                            <Typography variant="body2" sx={{
-                                                                color: '#B2DFDB',
-                                                                fontSize: { xs: 9, sm: 12, md: 14 },
-                                                                mb: { xs: 0.25, sm: 1 },
-                                                                lineHeight: { xs: 1.1, sm: 1.3 }
-                                                            }}>
-                                                                {player.positionType || 'Player'}
-                                                            </Typography>
-                                                        </Link>
-                                                        <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' }, gap: 1, alignItems: 'center' }}>
-                                                            <Button
-                                                                variant="contained"
-                                                                size="small"
-                                                                sx={{
-                                                                    background: 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)',
-                                                                    color: 'white',
-                                                                    borderRadius: 1.5,
-                                                                    px: { xs: 0.5, sm: 2 },
-                                                                    py: { xs: 0.25, sm: 0.5 },
-                                                                    fontSize: { xs: 8, sm: 12 },
-                                                                    fontWeight: 'bold',
-                                                                    textTransform: 'none',
-                                                                    height: { xs: 20, sm: 28 },
-                                                                    minWidth: { xs: 'auto', sm: 'auto' },
-                                                                    '&:hover': {
-                                                                        background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'
-                                                                    },
-                                                                    mt: { xs: 0.5, sm: 0.5 }
-                                                                }}
-                                                            >
-                                                                Shirt No {player.shirtNumber || "0"}
-                                                            </Button>
-                                                            {/* MOTM Vote Button */}
-                                                            {match.status === 'completed' && league.active && user.id !== player.id && (
-                                                                <MotmButton
+                                                                <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
                                                                     disabled={loadingVote}
                                                                     color="#43a047"
                                                                     sx={{
-                                                                        ml: 0, height: { xs: 20, sm: 28 },
-                                                                        minWidth: { xs: 'auto', sm: 'auto' }, borderRadius: 1.5,
-                                                                        px: { xs: 0.5, sm: 2 },
-                                                                        py: { xs: 0.25, sm: 0.5 },
-                                                                        fontSize: { xs: 7, sm: 10 }
+                                                                        width: { xs: 25, sm: 35, md: 65 },
+                                                                        height: { xs: 25, sm: 35, md: 65 },
+                                                                        mr: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        mt: { xs: 0.25, sm: 0.5, md: 1 }
                                                                     }}
                                                                 />
-                                                            )}
+                                                            </Box>
+                                                        )}
+                                                        
+                                                        <Link href={`/player/${player.id}`}>
+                                                            {/* Player Profile Picture */}
+                                                            <Box sx={{
+                                                                width: { xs: 25, sm: 35, md: 60 },
+                                                                height: { xs: 25, sm: 35, md: 60 },
+                                                                borderRadius: '50%',
+                                                                overflow: 'hidden',
+                                                                border: '2px solid #43a047',
+                                                                mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                flexShrink: 0
+                                                            }}>
+                                                                <img
+                                                                    src={player.profilePicture || "/placeholder.svg"}
+                                                                    alt={player.firstName + " " + player.lastName}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'cover'
+                                                                    }}
+                                                                />
+                                                            </Box>
+                                                        </Link>
+
+                                                        {/* Player Info */}
+                                                        <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            <Link href={`/player/${player.id}`}>
+
+                                                                <Typography variant="h6" sx={{
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                }}>
+                                                                    {player.firstName} {player.lastName}
+                                                                    {player.id === match.homeCaptainId ? ' (C)' : ''}
+                                                                </Typography>
+
+                                                                <Typography variant="body2" sx={{
+                                                                    color: '#B2DFDB',
+                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                }}>
+                                                                    {player.positionType || 'Player'}
+                                                                </Typography>
+                                                            </Link>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
+                                                                <Button
+                                                                    variant="contained"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        background: 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)',
+                                                                        color: 'white',
+                                                                        borderRadius: 1.5,
+                                                                        px: { xs: 0.25, sm: 0.5, md: 2 },
+                                                                        py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                        fontSize: { xs: 6, sm: 8, md: 12 },
+                                                                        fontWeight: 'bold',
+                                                                        textTransform: 'none',
+                                                                        height: { xs: 16, sm: 20, md: 28 },
+                                                                        minWidth: { xs: 'auto', sm: 'auto' },
+                                                                        '&:hover': {
+                                                                            background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'
+                                                                        },
+                                                                        mt: { xs: 0.25, sm: 0.5, md: 0.5 }
+                                                                    }}
+                                                                >
+                                                                    Shirt No {player.shirtNumber || "0"}
+                                                                </Button>
+                                                            </Box>
                                                         </Box>
                                                     </Box>
-                                                </Box>
+                                                    {index < match.homeTeamUsers.length - 1 && (
+                                                        <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
+                                                    )}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </Box>
@@ -590,36 +631,60 @@ export default function PlayMatchPage() {
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
                                 {match.awayTeamUsers.length > 0 ? (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, sm: 2 } }}>
-                                        {match.awayTeamUsers.map((player) => {
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        {match.awayTeamUsers.map((player, index) => {
                                             return (
-                                                <Link key={player.id} href={`/player/${player.id}`}>
-                                                    <Box key={player.id} sx={{
+                                                <React.Fragment key={player.id}>
+                                                    <Box sx={{
                                                         display: 'flex',
-                                                        flexDirection: { xs: 'column', sm: 'row' },
-                                                        alignItems: { xs: 'center', sm: 'center' },
-                                                        p: { xs: 0.75, sm: 2 },
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        p: { xs: 0.5, sm: 1, md: 2 },
                                                         background: '#0a4822',
-                                                        borderRadius: 2,
+                                                        borderRadius: 0,
                                                         border: '1px solid #43a047',
-                                                        minHeight: { xs: 60, sm: 80, md: 100 },
+                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        minHeight: { xs: 40, sm: 60, md: 100 },
+                                                        position: 'relative',
                                                         '&:hover': {
                                                             backgroundColor: '#1f673b',
                                                             transform: 'translateY(-1px)',
                                                             transition: 'all 0.2s ease'
                                                         }
                                                     }}>
+                                                        {/* MOTM Coin - Top Right Corner */}
+                                                        {match.status === 'completed' && league.active && user.id !== player.id && (
+                                                            <Box sx={{
+                                                                position: 'absolute',
+                                                                top: { xs: 2, sm: 4, md: 8 },
+                                                                right: { xs: 2, sm: 4, md: 8 },
+                                                                zIndex: 3
+                                                            }}>
+                                                                <MotmCoin
+                                                                    voted={votedForId === player.id}
+                                                                    onClick={() => handleVote(player.id)}
+                                                                    disabled={loadingVote}
+                                                                    color="#43a047"
+                                                                    sx={{
+                                                                        width: { xs: 25, sm: 35, md: 65 },
+                                                                        height: { xs: 25, sm: 35, md: 65 },
+                                                                        mr: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        mt: { xs: 0.25, sm: 0.5, md: 1 }
+                                                                    }}
+                                                                />
+                                                            </Box>
+                                                        )}
+                                                        
                                                         <Link href={`/player/${player.id}`}>
 
                                                             {/* Player Profile Picture */}
                                                             <Box sx={{
-                                                                width: { xs: 35, sm: 50, md: 60 },
-                                                                height: { xs: 35, sm: 50, md: 60 },
+                                                                width: { xs: 25, sm: 35, md: 60 },
+                                                                height: { xs: 25, sm: 35, md: 60 },
                                                                 borderRadius: '50%',
                                                                 overflow: 'hidden',
                                                                 border: '2px solid #43a047',
-                                                                mr: { xs: 0, sm: 2 },
-                                                                mb: { xs: 0.5, sm: 0 },
+                                                                mr: { xs: 0.5, sm: 1, md: 2 },
                                                                 flexShrink: 0
                                                             }}>
                                                                 <img
@@ -634,18 +699,18 @@ export default function PlayMatchPage() {
                                                             </Box>
                                                         </Link>
                                                         {/* Player Info */}
-                                                        <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                                                        <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                                             <Link href={`/player/${player.id}`}>
 
                                                                 <Typography variant="h6" sx={{
                                                                     color: 'white',
                                                                     fontWeight: 'bold',
-                                                                    fontSize: { xs: 11, sm: 14, md: 16 },
-                                                                    mb: 0.5,
+                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
                                                                     overflow: 'hidden',
                                                                     textOverflow: 'ellipsis',
                                                                     whiteSpace: 'nowrap',
-                                                                    lineHeight: { xs: 1.2, sm: 1.4 }
+                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
                                                                 }}>
                                                                     {player.firstName} {player.lastName}
                                                                     {player.id === match.awayCaptainId ? ' (C)' : ''}
@@ -653,14 +718,14 @@ export default function PlayMatchPage() {
 
                                                                 <Typography variant="body2" sx={{
                                                                     color: '#B2DFDB',
-                                                                    fontSize: { xs: 9, sm: 12, md: 14 },
-                                                                    mb: { xs: 0.25, sm: 1 },
-                                                                    lineHeight: { xs: 1.1, sm: 1.3 }
+                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
                                                                 }}>
                                                                     {player.positionType || 'Player'}
                                                                 </Typography>
                                                             </Link>
-                                                            <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' }, gap: 1, alignItems: 'center' }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 <Button
                                                                     variant="contained"
                                                                     size="small"
@@ -668,41 +733,28 @@ export default function PlayMatchPage() {
                                                                         background: 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)',
                                                                         color: 'white',
                                                                         borderRadius: 1.5,
-                                                                        px: { xs: 0.5, sm: 2 },
-                                                                        py: { xs: 0.25, sm: 0.5 },
-                                                                        fontSize: { xs: 8, sm: 12 },
+                                                                        px: { xs: 0.25, sm: 0.5, md: 2 },
+                                                                        py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                        fontSize: { xs: 6, sm: 8, md: 12 },
                                                                         fontWeight: 'bold',
                                                                         textTransform: 'none',
-                                                                        height: { xs: 20, sm: 28 },
+                                                                        height: { xs: 16, sm: 20, md: 28 },
                                                                         minWidth: { xs: 'auto', sm: 'auto' },
                                                                         '&:hover': {
                                                                             background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'
                                                                         },
-                                                                        mt: { xs: 0.5, sm: 0.5 }
+                                                                        mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                                     }}
                                                                 >
                                                                     Shirt No {player.shirtNumber || "0"}
                                                                 </Button>
-                                                                {/* MOTM Vote Button */}
-                                                                {match.status === 'completed' && league.active && user.id !== player.id && (
-                                                                    <MotmButton
-                                                                        voted={votedForId === player.id}
-                                                                        onClick={() => handleVote(player.id)}
-                                                                        disabled={loadingVote}
-                                                                        color="#43a047"
-                                                                        sx={{
-                                                                            ml: 0, height: { xs: 20, sm: 28 },
-                                                                            minWidth: { xs: 'auto', sm: 'auto' }, borderRadius: 1.5,
-                                                                            px: { xs: 0.5, sm: 2 },
-                                                                            py: { xs: 0.25, sm: 0.5 },
-                                                                            fontSize: { xs: 7, sm: 10 }
-                                                                        }}
-                                                                    />
-                                                                )}
                                                             </Box>
                                                         </Box>
                                                     </Box>
-                                                </Link>
+                                                    {index < match.awayTeamUsers.length - 1 && (
+                                                        <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
+                                                    )}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </Box>
