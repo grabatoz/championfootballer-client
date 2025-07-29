@@ -262,9 +262,9 @@ export default function PlayMatchPage() {
     const fetchVotes = useCallback(async () => {
         if (!token) return;
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
             
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
@@ -274,10 +274,10 @@ export default function PlayMatchPage() {
                 return;
             }
             
-            const data = await response.json();
-            if (data.success) {
-                setPlayerVotes(data.votes || {});
-                setVotedForId(data.userVote || null); // <-- Always set from backend only!
+        const data = await response.json();
+        if (data.success) {
+            setPlayerVotes(data.votes || {});
+            setVotedForId(data.userVote || null); // <-- Always set from backend only!
             }
         } catch (error) {
             console.error('Failed to fetch votes:', error);
@@ -601,7 +601,7 @@ export default function PlayMatchPage() {
                 py: { xs: 0.5, sm: 1 },
                 '&:hover': { backgroundColor: '#388e3c' },
             }}>Back to League</Button>
- 
+
            <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: 3 }}>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'row' }, gap: { xs: 0.5, sm: 1, md: 3 } }}>
@@ -649,7 +649,7 @@ export default function PlayMatchPage() {
                                         Add Stats
                                     </Button>
                                 )}
-                        </Box>
+                            </Box>
 
                         <Card sx={{ backgroundColor: '#0a3e1e', borderRadius: 3, border: '2px solid #43a047' }}>
                             <CardContent sx={{
@@ -665,7 +665,7 @@ export default function PlayMatchPage() {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
-                                                        display: 'flex',
+                                                    display: 'flex',
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
                                                         p: { xs: 0.5, sm: 1, md: 2 },
@@ -719,11 +719,11 @@ export default function PlayMatchPage() {
                                                                     src={player.profilePicture || "/placeholder.svg"}
                                                                     alt={player.firstName + " " + player.lastName}
                                                                     style={{
-                                                                        width: '100%',
+                                            width: '100%',
                                                                         height: '100%',
                                                                         objectFit: 'cover'
                                                                     }}
-                                                                />
+                                                            />
                                                             </Box>
                                                         </Link>
 
@@ -802,9 +802,9 @@ export default function PlayMatchPage() {
                                                                     >
                                                                         Admin Stats
                                                                     </Button>
-                                                                )}
-                                                            </Box>
-                                                        </Box>
+                                                )}
+                                            </Box>
+                                    </Box>
                                                     </Box>
                                                     {index < match.homeTeamUsers.length - 1 && (
                                                         <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
@@ -866,7 +866,7 @@ export default function PlayMatchPage() {
                                         Add Stats
                                     </Button>
                                 )}
-                        </Box>
+                            </Box>
 
                         <Card sx={{ backgroundColor: '#0a3e1e', borderRadius: 3, border: '2px solid #43a047' }}>
                             <CardContent sx={{
@@ -882,7 +882,7 @@ export default function PlayMatchPage() {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
-                                                        display: 'flex',
+                                                    display: 'flex',
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
                                                         p: { xs: 0.5, sm: 1, md: 2 },
@@ -937,11 +937,11 @@ export default function PlayMatchPage() {
                                                                     src={player.profilePicture || "/placeholder.svg"}
                                                                     alt={player.firstName + " " + player.lastName}
                                                                     style={{
-                                                                        width: '100%',
+                                            width: '100%',
                                                                         height: '100%',
                                                                         objectFit: 'cover'
                                                                     }}
-                                                                />
+                                                            />
                                                             </Box>
                                                         </Link>
                                                         {/* Player Info */}
@@ -1019,9 +1019,9 @@ export default function PlayMatchPage() {
                                                                     >
                                                                         Admin Stats
                                                                     </Button>
-                                                                )}
-                                                            </Box>
-                                                        </Box>
+                                                )}
+                                            </Box>
+                                    </Box>
                                                     </Box>
                                                     {index < match.awayTeamUsers.length - 1 && (
                                                         <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
@@ -1054,19 +1054,19 @@ export default function PlayMatchPage() {
             >
                 <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', mb: 1, fontSize: 20 }}>
                     Match Note :
-                </Typography>
+                    </Typography>
                 <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                    {match.notes}
-                </Typography>
+                        {match.notes}
+                    </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                        Start Time:
-                    </Typography>
+                            Start Time:
+                        </Typography>
                     <Typography variant="body1" sx={{ color: '#fff' }}>
-                        {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
-                    </Typography>
-                </Box>
-            </Paper>
+                            {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
+                        </Typography>
+                    </Box>
+                </Paper>
 
             <div className="p-6 mt-8 bg-[#1f673b] text-white rounded-lg">
                 <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
@@ -1074,9 +1074,9 @@ export default function PlayMatchPage() {
 
                 {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
                 <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                    {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                        .filter(player => playerVotes[player.id] > 0)
-                        .map((player) => (
+                        {[...match.homeTeamUsers, ...match.awayTeamUsers]
+                            .filter(player => playerVotes[player.id] > 0)
+                            .map((player) => (
                             <Link key={player.id} href={`/player/${player.id}`}>
                                 <div className="group">
                                     {/* Mobile layout: Image on top center */}

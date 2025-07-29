@@ -503,97 +503,133 @@ export default function AllMatches() {
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
                             return (
                                 <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative', border: '4px solid green' , borderRadius: 3 }}>
-                                    <CardContent sx={{ p: 2 }}>
-                                        {isAdmin && (
-                                            <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/edit`} passHref>
-                                                <IconButton
-                                                    size="small"
-                                                    sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
-                                                    disabled={!leagueForMatch?.active}
-                                                >
-                                                    <Edit size={16} />
-                                                </IconButton>
-                                            </Link>
-                                        )}
-                                        {/* Available/Pending info at the top */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
-                                            <Typography color="success.main">User Available: {availableCount}</Typography>
-                                            <Typography color="warning.main">User Pending: {pendingCount}</Typography>
-                                        </Box>
-                                        <Link href={`/match/${match?.id}`}>
-                                            <Box sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: { xs: 2, sm: 4 },
-                                                textAlign: 'center',
-                                                p: 2,
-                                                minHeight: 100
-                                            }}>
-                                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={match.homeTeamImage || leagueIcon} alt={match.homeTeamName || match.homeTeam} width={48} height={48} />
-                                                    <Typography
-                                                        textTransform="uppercase"
-                                                        variant="h6"
-                                                        sx={{
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            minHeight: 32,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            px: 1,
-                                                            textAlign: 'center',
-                                                            whiteSpace: 'nowrap',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            width: '100%'
-                                                        }}
-                                                        title={match.homeTeamName || match.homeTeam}
-                                                    >
-                                                        {match.homeTeamName || match.homeTeam}
-                                                    </Typography>
-                                                </Box>
-                                                <Typography variant="h5" sx={{ color: 'white', minWidth: 40, textAlign: 'center' }}>
-                                                    VS
-                                                </Typography>
-                                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={match.awayTeamImage || leagueIcon} alt={match.awayTeamName || match.awayTeam} width={48} height={48} />
-                                                    <Typography
-                                                        textTransform="uppercase"
-                                                        variant="h6"
-                                                        sx={{
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            minHeight: 32,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            px: 1,
-                                                            textAlign: 'center',
-                                                            whiteSpace: 'nowrap',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            width: '100%'
-                                                        }}
-                                                        title={match.awayTeamName || match.awayTeam}
-                                                    >
-                                                        {match.awayTeamName || match.awayTeam}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
+                                <CardContent sx={{ p: 2 }}>
+                                    {isAdmin && (
+                                        <Link href={`/league/${league?.id}/match/${match.id}/edit`} passHref>
+                                            <IconButton
+                                                size="small"
+                                                sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                disabled={!league?.active}
+                                            >
+                                                <Edit size={16} />
+                                            </IconButton>
                                         </Link>
-                                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', textAlign: 'center', mt: 1 }}>
-                                            {new Date(match.date).toLocaleString()}
-                                        </Typography>
-                                        <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-                                        {/* Action buttons */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                                            {isScheduled && (
+                                    )}
+                                    
+                                    {/* Match Status - Top Left */}
+                                    <Box sx={{ 
+                                        position: 'absolute', 
+                                        top: 8, 
+                                        left: 8, 
+                                        zIndex: 2 
+                                    }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    color: '#B2DFDB',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.6rem'
+                                                }}
+                                            >
+                                                Match Status:
+                                            </Typography>
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    color: 'white',
+                                                    fontWeight: 'bold',
+                                                    backgroundColor: match.status === 'completed' ? '#43a047' : '#ff9800',
+                                                    px: 1.5,
+                                                    py: 0.5,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.7rem'
+                                                }}
+                                            >
+                                                {match.status === 'completed' ? 'COMPLETED' : 'UPCOMING'}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    
+                                    <Link href={`/match/${match?.id}`}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: { xs: 2, sm: 4 },
+                                            textAlign: 'center',
+                                            p: 2,
+                                            minHeight: 100,
+                                            mt:3
+                                        }}>
+                                            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                                <Image src={match.homeTeamImage || leagueIcon.src} alt={match.homeTeamName || match.homeTeam} width={48} height={48} />
+                                                <Typography
+                                                    textTransform="uppercase"
+                                                    variant="h6"
+                                                    sx={{
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        minHeight: 32,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        px: 1,
+                                                        textAlign: 'center',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        width: '100%'
+                                                    }}
+                                                    title={match.homeTeamName || match.homeTeam}
+                                                >
+                                                    {match.homeTeamName || match.homeTeam}
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="h5" sx={{ color: 'white', minWidth: 40, textAlign: 'center' }}>
+                                                VS
+                                            </Typography>
+                                            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                                <Image src={match.awayTeamImage || leagueIcon.src} alt={match.awayTeamName || match.awayTeam} width={48} height={48} />
+                                                <Typography
+                                                    textTransform="uppercase"
+                                                    variant="h6"
+                                                    sx={{
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        minHeight: 32,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        px: 1,
+                                                        textAlign: 'center',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        width: '100%'
+                                                    }}
+                                                    title={match.awayTeamName || match.awayTeam}
+                                                >
+                                                    {match.awayTeamName || match.awayTeam}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Link>
+                                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', textAlign: 'center', mt: 1 }}>
+                                        {new Date(match.date).toLocaleString()}
+                                    </Typography>
+                                    <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                                    
+                                    {/* Action buttons and availability info */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {/* Availability button and Match Ended button */}
+                                            {match.status === 'scheduled' && (
                                                 <Button
                                                     variant="contained"
                                                     onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
                                                     disabled={availabilityLoading[match.id] || !league?.active}
+                                                    size="small"
                                                     sx={{
                                                         backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
                                                         '&:hover': {
@@ -602,46 +638,208 @@ export default function AllMatches() {
                                                         '&.Mui-disabled': {
                                                             backgroundColor: 'rgba(255,255,255,0.3)',
                                                             color: 'rgba(255,255,255,0.5)'
-                                                        }
+                                                        },
+                                                        fontSize: '0.75rem',
+                                                        py: 0.5
                                                     }}
                                                 >
                                                     {availabilityLoading[match.id]
-                                                        ? <CircularProgress size={20} color="inherit" />
+                                                        ? <CircularProgress size={16} color="inherit" />
                                                         : (isUserAvailable ? 'Unavailable' : 'Available')}
                                                 </Button>
                                             )}
-                                            {isCompleted && (
-                                                <Button
-                                                    variant="contained"
-                                                    disabled
-                                                    sx={{
-                                                        '&.Mui-disabled': {
-                                                            backgroundColor: '#43a047',
-                                                            color: 'white',
-                                                            '&:hover': { bgcolor: '#388e3c' },
-                                                        }
-                                                    }}
-                                                >
-                                                    Match Ended
-                                                </Button>
-                                            )}
-                                            {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
-                                                <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/play`} passHref>
-                                                    <Button
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: '#43a047',
-                                                            color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
-                                                        }}
-                                                        disabled={!leagueForMatch?.active}
-                                                    >
-                                                        {isAdmin ? 'Update Score Card' : 'View Team'}
-                                                    </Button>
-                                                </Link>
+                                            
+                                            {match.status === 'completed' && (
+                                                ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                    <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
+                                                        <Button
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: '#43a047',
+                                                                color: 'white', 
+                                                                '&:hover': { bgcolor: '#388e3c' },
+                                                                fontSize: '0.75rem',
+                                                                py: 0.5
+                                                            }}
+                                                            disabled={!leagueForMatch?.active}
+                                                        >
+                                                            {isAdmin ? 'Update Score Card' : 'View Team'}
+                                                        </Button>
+                                                    </Link>
+                                                )
                                             )}
                                         </Box>
-                                    </CardContent>
-                                </Card>
+                                        
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                            {/* Combined Available & Pending count as professional button */}
+                                            <Button
+                                                // variant="contained"
+                                                size="small"
+                                                // disabled
+                                                sx={{
+                                                    borderColor: '#4caf50',
+                                                    backgroundColor: '#43a047',
+                                                    color: 'white', 
+                                                    '&:hover': { bgcolor: '#388e3c' },
+                                                    fontSize: '0.75rem',
+                                                    py: 0.5,
+                                                    px: 1.5,
+                                                    fontWeight: 'bold',
+                                                    borderRadius: 2,
+                                                    boxShadow: 2,
+                                                    minWidth: 'auto',
+                                                    textTransform: 'none'
+                                                }}
+                                            >
+                                                Available: {availableCount} | Pending: {pendingCount}
+                                            </Button>
+                                            
+                                            {/* View/Update button */}
+                                          
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                                // <Card key={match.id} sx={{ backgroundColor: '#0a3e1e', position: 'relative', border: '4px solid green' , borderRadius: 3 }}>
+                                //     <CardContent sx={{ p: 2 }}>
+                                //         {isAdmin && (
+                                //             <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/edit`} passHref>
+                                //                 <IconButton
+                                //                     size="small"
+                                //                     sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                //                     disabled={!leagueForMatch?.active}
+                                //                 >
+                                //                     <Edit size={16} />
+                                //                 </IconButton>
+                                //             </Link>
+                                //         )}
+                                //         {/* Available/Pending info at the top */}
+                                //         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
+                                //             <Typography color="success.main">User Available: {availableCount}</Typography>
+                                //             <Typography color="warning.main">User Pending: {pendingCount}</Typography>
+                                //         </Box>
+                                //         <Link href={`/match/${match?.id}`}>
+                                //             <Box sx={{
+                                //                 display: 'flex',
+                                //                 alignItems: 'center',
+                                //                 justifyContent: 'center',
+                                //                 gap: { xs: 2, sm: 4 },
+                                //                 textAlign: 'center',
+                                //                 p: 2,
+                                //                 minHeight: 100
+                                //             }}>
+                                //                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                //                     <Image src={match.homeTeamImage || leagueIcon} alt={match.homeTeamName || match.homeTeam} width={48} height={48} />
+                                //                     <Typography
+                                //                         textTransform="uppercase"
+                                //                         variant="h6"
+                                //                         sx={{
+                                //                             color: 'white',
+                                //                             fontWeight: 'bold',
+                                //                             minHeight: 32,
+                                //                             display: 'flex',
+                                //                             alignItems: 'center',
+                                //                             justifyContent: 'center',
+                                //                             px: 1,
+                                //                             textAlign: 'center',
+                                //                             whiteSpace: 'nowrap',
+                                //                             overflow: 'hidden',
+                                //                             textOverflow: 'ellipsis',
+                                //                             width: '100%'
+                                //                         }}
+                                //                         title={match.homeTeamName || match.homeTeam}
+                                //                     >
+                                //                         {match.homeTeamName || match.homeTeam}
+                                //                     </Typography>
+                                //                 </Box>
+                                //                 <Typography variant="h5" sx={{ color: 'white', minWidth: 40, textAlign: 'center' }}>
+                                //                     VS
+                                //                 </Typography>
+                                //                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                //                     <Image src={match.awayTeamImage || leagueIcon} alt={match.awayTeamName || match.awayTeam} width={48} height={48} />
+                                //                     <Typography
+                                //                         textTransform="uppercase"
+                                //                         variant="h6"
+                                //                         sx={{
+                                //                             color: 'white',
+                                //                             fontWeight: 'bold',
+                                //                             minHeight: 32,
+                                //                             display: 'flex',
+                                //                             alignItems: 'center',
+                                //                             justifyContent: 'center',
+                                //                             px: 1,
+                                //                             textAlign: 'center',
+                                //                             whiteSpace: 'nowrap',
+                                //                             overflow: 'hidden',
+                                //                             textOverflow: 'ellipsis',
+                                //                             width: '100%'
+                                //                         }}
+                                //                         title={match.awayTeamName || match.awayTeam}
+                                //                     >
+                                //                         {match.awayTeamName || match.awayTeam}
+                                //                     </Typography>
+                                //                 </Box>
+                                //             </Box>
+                                //         </Link>
+                                //         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', textAlign: 'center', mt: 1 }}>
+                                //             {new Date(match.date).toLocaleString()}
+                                //         </Typography>
+                                //         <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                                //         {/* Action buttons */}
+                                //         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                //             {isScheduled && (
+                                //                 <Button
+                                //                     variant="contained"
+                                //                     onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
+                                //                     disabled={availabilityLoading[match.id] || !league?.active}
+                                //                     sx={{
+                                //                         backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
+                                //                         '&:hover': {
+                                //                             backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
+                                //                         },
+                                //                         '&.Mui-disabled': {
+                                //                             backgroundColor: 'rgba(255,255,255,0.3)',
+                                //                             color: 'rgba(255,255,255,0.5)'
+                                //                         }
+                                //                     }}
+                                //                 >
+                                //                     {availabilityLoading[match.id]
+                                //                         ? <CircularProgress size={20} color="inherit" />
+                                //                         : (isUserAvailable ? 'Unavailable' : 'Available')}
+                                //                 </Button>
+                                //             )}
+                                //             {isCompleted && (
+                                //                 <Button
+                                //                     variant="contained"
+                                //                     disabled
+                                //                     sx={{
+                                //                         '&.Mui-disabled': {
+                                //                             backgroundColor: '#43a047',
+                                //                             color: 'white',
+                                //                             '&:hover': { bgcolor: '#388e3c' },
+                                //                         }
+                                //                     }}
+                                //                 >
+                                //                     Match Ended
+                                //                 </Button>
+                                //             )}
+                                //             {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                //                 <Link href={`/league/${leagueForMatch?.id}/match/${match.id}/play`} passHref>
+                                //                     <Button
+                                //                         size="small"
+                                //                         sx={{
+                                //                             backgroundColor: '#43a047',
+                                //                             color: 'white', '&:hover': { bgcolor: '#388e3c' }, mt: 1, ml: 1
+                                //                         }}
+                                //                         disabled={!leagueForMatch?.active}
+                                //                     >
+                                //                         {isAdmin ? 'Update Score Card' : 'View Team'}
+                                //                     </Button>
+                                //                 </Link>
+                                //             )}
+                                //         </Box>
+                                //     </CardContent>
+                                // </Card>
                             );
                         })
                     )}

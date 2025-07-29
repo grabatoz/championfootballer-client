@@ -13,7 +13,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 function PrivacyPolicies() {
-    useEffect(() => {
+  useEffect(() => {
         window.scrollTo({ top: 0 });
     }, []);
 
@@ -264,7 +264,7 @@ function PrivacyPolicies() {
         });
     };
 
-    return (
+  return (
         <Box sx={{ p: 6, bgcolor: '#d6ffd1', minHeight: '100vh' }}>
             <Typography variant="h3" sx={{ mb: 5, fontWeight: 600, color: '#1f673b' }}>
                 Privacy Policy

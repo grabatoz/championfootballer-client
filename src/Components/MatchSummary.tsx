@@ -100,18 +100,56 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           mx: "auto",
           mb: 3,
           border: "1px solid #f0f0f0",
+          position: "relative"
         }}
       >
+        {/* Match Status - Top Left */}
+        <Box sx={{
+          position: 'absolute', 
+          top: 8, 
+          left: 8, 
+          zIndex: 2 
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#B2DFDB',
+                fontWeight: 'bold',
+                fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
+              }}
+            >
+              Match Status:
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'white',
+                fontWeight: 'bold',
+                backgroundColor: matchStatus === 'completed' ? '#43a047' : '#ff9800',
+                px: { xs: 1, sm: 1.5, md: 2 },
+                py: { xs: 0.3, sm: 0.5, md: 0.7 },
+                borderRadius: 1,
+                fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
+              }}
+            >
+              {matchStatus === 'completed' ? 'COMPLETED' : 'UPCOMING'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* League Name - Centered */}
         <Link href={`/league/${leagueId}`} passHref>
           <Typography
             variant="subtitle1"
             sx={{
-              fontSize: { xs: 16, md: 22 },
+              fontSize: { xs: 12, sm: 14, md: 16, lg: 18, xl: 22 },
               color: "white",
               fontWeight: 600,
               textAlign: "center",
               width: "100%",
-              mb: { xs: 1, md: 2 }, // Added margin bottom for spacing from teams
+              mt: { xs: 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
+              mb: { xs: 1, md: 2 },
             }}
           >
             League Name : <span className="underline">{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of{" "}
@@ -148,8 +186,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               src={homeTeamImg}
               alt={homeTeamName}
               sx={{
-                height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 120, sm: 130, md: 130 }, // Adjusted image size for smaller screens
+                height: { xs: 80, sm: 90, md: 120, lg: 130, xl: 150 }, // More responsive image sizes
+                width: { xs: 65, sm: 70, md: 100, lg: 120, xl: 130 }, // More responsive image sizes
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
                 color: "white",
@@ -159,8 +197,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 // objectFit: "contain", // Ensure image fits without cropping
               }}
             />
-            <Box sx={{ 
-              minWidth: 0, 
+            <Box sx={{
+              minWidth: 0,
               textAlign: { xs: "center", sm: "left" },
               display: "flex",
               flexDirection: "column",
@@ -169,14 +207,14 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               <Typography
                 variant="h6"
                 fontWeight={700}
-                sx={{ fontSize: { xs: 23, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
+                sx={{ fontSize: { xs: 12, sm: 14, md: 18, lg: 22, xl: 26 }, color: "white", lineHeight: 1.2 }}
               >
                 {homeTeamName}
               </Typography>
               <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 30, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#14c38e", lineHeight: 1 }}
               >
                 {homeGoals}
               </Typography>
@@ -199,7 +237,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ fontSize: { xs: 48, sm: 28, md: 48 }, color: "white", letterSpacing: 2, mb: 0.5 , mt:{xs: -8, sm: -8, md: 0}}}
+              sx={{ fontSize: { xs: 24, sm: 30, md: 38, lg: 44, xl: 48 }, color: "white", letterSpacing: 2, mb: 0.5, mt: { xs: -3, sm: 0, md: 0 } }}
             >
               VS
             </Typography>
@@ -219,8 +257,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             }}
           >
             {/* For larger screens, show goals first (left), then image (right) */}
-            <Box sx={{ 
-              minWidth: 0, 
+            <Box sx={{
+              minWidth: 0,
               textAlign: { xs: "center", sm: "right" }, // Right align text for away team
               display: "flex",
               flexDirection: "column",
@@ -230,14 +268,14 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               <Typography
                 variant="h6"
                 fontWeight={700}
-                sx={{ fontSize: { xs: 23, sm: 18, md: 26 }, color: "white", lineHeight: 1.2 }}
+                sx={{ fontSize: { xs: 12, sm: 14, md: 18, lg: 22, xl: 26 }, color: "white", lineHeight: 1.2 }}
               >
                 {awayTeamName}
               </Typography>
               <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 30, sm: 28, md: 40 }, color: "#14c38e", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#14c38e", lineHeight: 1 }}
               >
                 {awayGoals}
               </Typography>
@@ -247,8 +285,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               src={awayTeamImg}
               alt={awayTeamName}
               sx={{
-                height: { xs: 150, sm: 130, md: 150 }, // Adjusted image size for smaller screens
-                width: { xs: 120, sm: 130, md: 130 }, // Adjusted image size for smaller screens
+                height: { xs: 80, sm: 90, md: 120, lg: 130, xl: 150 }, // More responsive image sizes
+                width: { xs: 65, sm: 70, md: 100, lg: 120, xl: 130 }, // More responsive image sizes
                 maxWidth: { xs: 150, sm: 150, md: 200 },
                 p: { xs: 0, sm: 0, md: 1 },
                 color: "white",
@@ -283,25 +321,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               order: { xs: 1, md: 2 },
             }}
           >
-            <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<Add />}
-                sx={{
-                  bgcolor: "#43a047",
-                  color: "white",
-                  fontWeight: "bold",
-                  "&:hover": { bgcolor: "#388e3c" },
-                  fontSize: { xs: "0.75rem", sm: "0.875rem" }, // Adjusted font size for buttons
-                  px: { xs: 1.5, sm: 2 }, // Adjusted padding for buttons
-                  py: { xs: 0.5, sm: 1 }, // Adjusted padding for buttons
-                  minWidth: { xs: "auto", sm: 140 }, // Allow shrinking on xs
-                }}
-              >
-                Your Stats
-              </Button>
-            </Link>
+          
             {matchStatus !== "completed" ? (
               <Button
                 variant="contained"
@@ -316,14 +336,14 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     backgroundColor: "rgba(255,255,255,0.3)",
                     color: "rgba(255,255,255,0.5)",
                   },
-                  fontSize: { xs: "0.75rem", sm: "0.875rem" }, // Adjusted font size for buttons
-                  px: { xs: 1.5, sm: 2 }, // Adjusted padding for buttons
-                  py: { xs: 0.5, sm: 1 }, // Adjusted padding for buttons
-                  minWidth: { xs: "auto", sm: 140 }, // Allow shrinking on xs
+                  fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" }, // More responsive font sizes
+                  px: { xs: 1, sm: 1.5, md: 2 }, // More responsive padding
+                  py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 }, // More responsive padding
+                  minWidth: { xs: "auto", sm: 120, md: 140 }, // More responsive min width
                 }}
               >
                 {availabilityLoading[matchId] ? (
-                  <CircularProgress size={20} color="inherit" />
+                  <CircularProgress size={16} color="inherit" />
                 ) : isUserAvailable ? (
                   "Unavailable"
                 ) : (
@@ -331,23 +351,25 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 )}
               </Button>
             ) : (
-              <Button
-                variant="contained"
-                disabled
-                sx={{
-                  "&.Mui-disabled": {
-                    backgroundColor: "#43a047",
+              <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<Add />}
+                  sx={{
+                    bgcolor: "#43a047",
                     color: "white",
+                    fontWeight: "bold",
                     "&:hover": { bgcolor: "#388e3c" },
-                  },
-                  fontSize: { xs: "0.75rem", sm: "0.875rem" }, // Adjusted font size for buttons
-                  px: { xs: 1.5, sm: 2 }, // Adjusted padding for buttons
-                  py: { xs: 0.5, sm: 1 }, // Adjusted padding for buttons
-                  minWidth: { xs: "auto", sm: 140 }, // Allow shrinking on xs
-                }}
-              >
-                Match Ended
-              </Button>
+                    fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" }, // More responsive font sizes
+                    px: { xs: 1, sm: 1.5, md: 2 }, // More responsive padding
+                    py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 }, // More responsive padding
+                    minWidth: { xs: "auto", sm: 120, md: 140 }, // More responsive min width
+                  }}
+                >
+                  Update Your Stats
+                </Button>
+              </Link>
             )}
           </Box>
           <Box
@@ -359,11 +381,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               width: { xs: "100%", md: "auto" },
             }}
           >
-            <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" } }}>
+            <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
               Start: {new Date(matchStartTime).toLocaleString()}
             </Typography>
             {matchStatus === "completed" && matchEndTime && (
-              <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" } }}>
+              <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
                 End: {new Date(matchEndTime).toLocaleString()}
               </Typography>
             )}
@@ -375,7 +397,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           {isDraw ? (
             <>
               <Typography
-                sx={{ textAlign: "center", fontWeight: 700, fontSize: { xs: 16, md: 24 }, color: "#888", mb: 0.5 }}
+                sx={{ textAlign: "center", fontWeight: 700, fontSize: { xs: 12, sm: 14, md: 16, lg: 20, xl: 24 }, color: "#888", mb: 0.5 }}
               >
                 Draw
               </Typography>
@@ -385,7 +407,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     minWidth: 44,
                     textAlign: "right",
                     fontWeight: 700,
-                    fontSize: { xs: 14, md: 20 },
+                    fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
                     color: "#888",
                   }}
                 >
@@ -419,7 +441,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   <Typography
                     sx={{
                       fontWeight: 700,
-                      fontSize: { xs: 14, md: 20 },
+                      fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
                       color: "#888",
                       textAlign: "center",
                       width: "100%",
@@ -431,7 +453,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   </Typography>
                 </Box>
                 <Typography
-                  sx={{ minWidth: 44, textAlign: "left", fontWeight: 700, fontSize: { xs: 14, md: 20 }, color: "#888" }}
+                  sx={{ minWidth: 44, textAlign: "left", fontWeight: 700, fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 }, color: "#888" }}
                 >
                   0%
                 </Typography>
@@ -444,7 +466,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   minWidth: 44,
                   textAlign: "right",
                   fontWeight: 700,
-                  fontSize: { xs: 14, md: 20 },
+                  fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
                   color: winPercentLeft > winPercentRight ? "#1976d2" : "#888",
                 }}
               >
@@ -496,7 +518,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   minWidth: 44,
                   textAlign: "left",
                   fontWeight: 700,
-                  fontSize: { xs: 14, md: 20 },
+                  fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
                   color: winPercentRight > winPercentLeft ? "#d32f2f" : "#888",
                 }}
               >
@@ -510,310 +532,4 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   )
 }
 
-export default MatchSummary
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useEffect, useState } from 'react';
-// import Box from '@mui/material/Box';
-// import Typography from '@mui/material/Typography';
-// import Link from 'next/link';
-// import Button from '@mui/material/Button';
-// import CircularProgress from '@mui/material/CircularProgress';
-// import { Add } from '@mui/icons-material';
-
-// interface MatchSummaryProps {
-//   homeTeamName: string;
-//   awayTeamName: string;
-//   homeTeamImg: string;
-//   awayTeamImg: string;
-//   homeGoals: number;
-//   awayGoals: number;
-//   leagueName: string;
-//   leagueId: string; // <-- add this
-//   currentMatch: number;
-//   totalMatches: number;
-//   matchStartTime: string; // ISO string
-//   possessionLeft: number; // 0-100
-//   possessionRight: number; // 0-100
-//   winPercentLeft: number; // 0-100
-//   winPercentRight: number; // 0-100
-//   matchStatus: string; // 'not_started' | 'started' | 'completed'
-//   matchEndTime?: string; // ISO string, only for completed
-//   matchId: string;
-//   isUserAvailable: boolean;
-//   availabilityLoading: { [matchId: string]: boolean };
-//   handleToggleAvailability: (matchId: string, isAvailable: boolean) => void;
-// }
-
-// const getElapsedTime = (startTime: string, endTime?: string) => {
-//   const start = new Date(startTime).getTime();
-//   const end = endTime ? new Date(endTime).getTime() : Date.now();
-//   const diff = end - start;
-//   if (diff < 0) return '00:00';
-//   const minutes = Math.floor(diff / 60000);
-//   const seconds = Math.floor((diff % 60000) / 1000);
-//   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-// };
-
-// const MatchSummary: React.FC<MatchSummaryProps> = ({
-//   homeTeamName,
-//   awayTeamName,
-//   homeTeamImg,
-//   awayTeamImg,
-//   homeGoals,
-//   awayGoals,
-//   leagueName,
-//   leagueId, // <-- add this
-//   currentMatch,
-//   totalMatches,
-//   matchStartTime,
-//   winPercentLeft,
-//   winPercentRight,
-//   matchStatus,
-//   matchEndTime,
-//   matchId,
-//   isUserAvailable,
-//   availabilityLoading,
-//   handleToggleAvailability,
-// }) => {
-//   const [, setElapsed] = useState('00:00');
-//   const isDraw = matchStatus === 'completed' && homeGoals === awayGoals;
-
-//   useEffect(() => {
-//     if (matchStatus === 'started') {
-//       setElapsed(getElapsedTime(matchStartTime));
-//       const interval = setInterval(() => {
-//         setElapsed(getElapsedTime(matchStartTime));
-//       }, 1000);
-//       return () => clearInterval(interval);
-//     } else if (matchStatus === 'completed' && matchEndTime) {
-//       setElapsed(getElapsedTime(matchStartTime, matchEndTime));
-//     } else {
-//       setElapsed('00:00');
-//     }
-//   }, [matchStatus, matchStartTime, matchEndTime]);
-
-//   // Remove prediction bar if match is completed
-//   const showPredictionBar = matchStatus !== 'completed';
-
-//   return (
-//     <Box>
-//       <Box
-//         sx={{
-//           display: 'flex',
-//           flexDirection: 'column',
-//           alignItems: 'center',
-//           justifyContent: 'space-between',
-//           p: { xs: 2, md: 3 },
-//           background: '#1f673b',
-//           boxShadow: '0 4px 24px 0 rgba(0,0,0,0.06)',
-//           borderRadius: 3,
-//           minHeight: { xs: 200, md: 160 },
-//           width: '100%',
-//           maxWidth: 900,
-//           mx: 'auto',
-//           mb: 3,
-//           border: '1px solid #f0f0f0',
-//         }}
-//       >
-//         <Link href={`/league/${leagueId}`}>
-//           <Typography variant="subtitle1" sx={{ fontSize: { xs: 16, md: 22}, color: 'white', fontWeight: 600, textAlign: 'center', width: '100%' }}>
-//             League Name : <span className='underline'>{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of {totalMatches}
-//           </Typography>
-//         </Link>
-//         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' , sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-//           {/* Home Team */}
-//           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
-//             <Box
-//               component="img"
-//               src={homeTeamImg}
-//               alt={homeTeamName}
-//               sx={{
-//                 height: { xs: 140, md: 140 },
-//                 mr: 2,
-//                 // background: '#fff',
-//                 maxWidth: { xs: 140, md: 140 },
-//                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
-//                 p: 1,
-//                 color: 'white',
-//                 borderRadius: 2,
-//               }}
-//             />
-//             <Box sx={{ minWidth: 0 }}>
-//               <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: 'white' }}>{homeTeamName}</Typography>
-//               <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#14c38e', lineHeight: 1 }}>{homeGoals}</Typography>
-//             </Box>
-//           </Box>
-//           {/* Center VS */}
-//           <Box sx={{ flex: 2, textAlign: 'center', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-//             <Typography variant="h3" fontWeight={700} sx={{ fontSize: { xs: 28, md: 48 }, color: 'white', letterSpacing: 2, mb: 0.5 }}>
-//               VS
-//             </Typography>
-//           </Box>
-//           {/* Away Team */}
-//           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
-//             <Box sx={{ textAlign: 'right', minWidth: 0 }}>
-//               <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: 18, md: 26 }, color: 'white' }}>{awayTeamName}</Typography>
-//               <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: 26, md: 40 }, color: '#14c38e', lineHeight: 1 }}>{awayGoals}</Typography>
-//             </Box>
-//             <Box
-//               component="img"
-//               src={awayTeamImg}
-//               alt={awayTeamName}
-//               sx={{
-//                 height: { xs: 140, md: 140 },
-//                 ml: 2,
-//                 // background: '#fff',
-//                 maxWidth: { xs: 140, md: 140 },
-//                 // boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.08)',
-//                 p: 1,
-//                 borderRadius: 2,
-//               }}
-//             />
-//           </Box>
-//         </Box>
-//         <Box
-//           sx={{
-//             width: '100%',
-//             pt: 2,
-//             display: 'flex',
-//             flexDirection: { xs: 'column', md: 'row' },
-//             justifyContent: 'space-between',
-//             alignItems: { xs: 'stretch', md: 'center' },
-//             color: '#fff',
-//             fontSize: 15,
-//             gap: { xs: 2, md: 0 },
-//           }}
-//         >
-//           {/* Buttons: on top for xs, center for md+ */}
-//           <Box sx={{ display: 'flex', flex: 1, justifyContent: { xs: 'center', md: 'flex-end' }, gap: 2, order: { xs: 1, md: 2 } }}>
-//             <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
-//               <Button
-//                 variant="contained"
-//                 color="secondary"
-//                 startIcon={<Add />}
-//                 sx={{
-//                   bgcolor: '#43a047',
-//                   color: 'white',
-//                   fontWeight: 'bold',
-//                   '&:hover': { bgcolor: '#388e3c' },
-//                 }}
-//               >
-//                 Your Stats
-//               </Button>
-//             </Link>
-//             {matchStatus !== 'completed' ? (
-//               <Button
-//                 variant="contained"
-//                 onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
-//                 disabled={availabilityLoading[matchId]}
-//                 sx={{
-//                   backgroundColor: isUserAvailable ? '#4caf50' : '#f44336',
-//                   '&:hover': {
-//                     backgroundColor: isUserAvailable ? '#388e3c' : '#d32f2f'
-//                   },
-//                   '&.Mui-disabled': {
-//                     backgroundColor: 'rgba(255,255,255,0.3)',
-//                     color: 'rgba(255,255,255,0.5)'
-//                   },
-//                   minWidth: 140
-//                 }}
-//               >
-//                 {availabilityLoading[matchId]
-//                   ? <CircularProgress size={20} color="inherit" />
-//                   : (isUserAvailable ? 'Unavailable' : 'Available')}
-//               </Button>
-//             ) : (
-//               <Button
-//                 variant="contained"
-//                 disabled
-//                 sx={{
-//                   '&.Mui-disabled': {
-//                     backgroundColor: '#43a047',
-//                     color: 'white',
-//                     '&:hover': { bgcolor: '#388e3c' },
-//                   }
-//                 }}
-//               >
-//                 Match Ended
-//               </Button>
-//             )}
-//           </Box>
-//           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, order: { xs: 2, md: 1 }, width: { xs: '100%', md: 'auto' } }}>
-//             <Typography>
-//               Start: {new Date(matchStartTime).toLocaleString()}
-//             </Typography>
-//             {matchStatus === 'completed' && matchEndTime && (
-//               <Typography>
-//                 End: {new Date(matchEndTime).toLocaleString()}
-//               </Typography>
-//             )}
-//           </Box>
-//         </Box>
-//       </Box>
-//       {showPredictionBar && (
-//         <Box sx={{ mt: 1, width: '100%', maxWidth: 900, mx: 'auto', position: 'relative' }}>
-//           {isDraw ? (
-//             <>
-//               <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: { xs: 18, md: 24 }, color: '#888', mb: 0.5 }}>
-//                 Draw
-//               </Typography>
-//               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center' }}>
-//                 <Typography sx={{ minWidth: 44, textAlign: 'right', fontWeight: 700, fontSize: { xs: 16, md: 20 }, color: '#888' }}>0%</Typography>
-//                 <Box sx={{ flex: 1, mx: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', height: 18, borderRadius: 9, background: '#e0e0e0', position: 'relative' }}>
-//                   <Box sx={{ width: '100%', height: '100%', borderRadius: 9, background: '#bdbdbd', opacity: 0.5, position: 'absolute', left: 0, top: 0 }} />
-//                   <Typography sx={{ fontWeight: 700, fontSize: { xs: 16, md: 20 }, color: '#888', textAlign: 'center', width: '100%', position: 'relative', zIndex: 1 }}>
-//                     100%
-//                   </Typography>
-//                 </Box>
-//                 <Typography sx={{ minWidth: 44, textAlign: 'left', fontWeight: 700, fontSize: { xs: 16, md: 20 }, color: '#888' }}>0%</Typography>
-//               </Box>
-//             </>
-//           ) : (
-//             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-//               <Typography sx={{ minWidth: 44, textAlign: 'right', fontWeight: 700, fontSize: { xs: 16, md: 20 }, color: winPercentLeft > winPercentRight ? '#1976d2' : '#888' }}>
-//                 {winPercentLeft}%
-//               </Typography>
-//               <Box sx={{ flex: 1, mx: 2, display: 'flex', alignItems: 'center', height: 18, borderRadius: 9, background: '#e3eafc', boxShadow: '0 1px 4px 0 rgba(25, 118, 210, 0.07)', overflow: 'hidden', position: 'relative' }}>
-//                 <Box sx={{
-//                   width: `${winPercentLeft}%`,
-//                   height: '100%',
-//                   background: winPercentLeft > winPercentRight
-//                     ? 'linear-gradient(90deg, #1976d2 60%, #64b5f6 100%)'
-//                     : '#e3eafc',
-//                   transition: 'width 0.5s',
-//                   borderTopLeftRadius: 9,
-//                   borderBottomLeftRadius: 9,
-//                 }} />
-//                 <Box sx={{
-//                   width: `${winPercentRight}%`,
-//                   height: '100%',
-//                   background: winPercentRight > winPercentLeft
-//                     ? 'linear-gradient(90deg, #d32f2f 60%, #ff7961 100%)'
-//                     : '#e3eafc',
-//                   transition: 'width 0.5s',
-//                   borderTopRightRadius: 9,
-//                   borderBottomRightRadius: 9,
-//                 }} />
-//               </Box>
-//               <Typography sx={{ minWidth: 44, textAlign: 'left', fontWeight: 700, fontSize: { xs: 16, md: 20 }, color: winPercentRight > winPercentLeft ? '#d32f2f' : '#888' }}>
-//                 {winPercentRight}%
-//               </Typography>
-//             </Box>
-//           )}
-//         </Box>
-//       )}
-//     </Box>
-//   );
-// };
-
-// export default MatchSummary; 
+export default MatchSummary 

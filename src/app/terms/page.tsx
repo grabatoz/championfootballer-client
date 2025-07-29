@@ -261,7 +261,7 @@ function TermConditions() {
     const renderContent = (content: (string | string[])[]) => {
         return content.map((item, index) => {
             if (Array.isArray(item)) {
-                return (
+    return (
                     <List key={index} sx={{ pl: 2 }}>
                         {item.map((listItem, listIndex) => (
                             <ListItem key={listIndex} sx={{ display: 'list-item', pl: 1 }}>
