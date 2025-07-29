@@ -42,6 +42,7 @@ import ThirdBadge from '@/Components/images/3rd.png';
 import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
+import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 
 
 interface League {
@@ -263,6 +264,150 @@ export default function LeagueDetailPage() {
     const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
     const [, setUserLeagueXP] = useState<Record<string, number>>({});
     const [showPointsAlert, setShowPointsAlert] = useState(false);
+    const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
+    const [activeMatchId, setActiveMatchId] = React.useState<string | null>(null);
+    const [stats, setStats] = React.useState({
+        goals: 0,
+        assists: 0,
+        cleanSheets: 0,
+        penalties: 0,
+        freeKicks: 0,
+        defence: 0,
+        impact: 0,
+    });
+    const [isSubmittingStats, setIsSubmittingStats] = React.useState(false);
+
+    // Example stat change handler
+    const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
+        setStats(prev => {
+            const newValue = Math.max(0, (prev[stat] || 0) + increment);
+            return { ...prev, [stat]: Math.min(newValue, max) };
+        });
+    };
+
+    // Fetch existing stats for the player in this match
+    const fetchExistingStats = async (matchId: string) => {
+        if (!token || !user) return;
+        
+        try {
+            // Fetch existing stats for the current user
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, use default stats
+                setStats({ 
+                    goals: 0, 
+                    assists: 0, 
+                    cleanSheets: 0, 
+                    penalties: 0, 
+                    freeKicks: 0, 
+                    defence: 0, 
+                    impact: 0 
+                });
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.stats) {
+                // Use existing stats if available
+                setStats({
+                    goals: data.stats.goals || 0,
+                    assists: data.stats.assists || 0,
+                    cleanSheets: data.stats.cleanSheets || 0,
+                    penalties: data.stats.penalties || 0,
+                    freeKicks: data.stats.freeKicks || 0,
+                    defence: data.stats.defence || 0,
+                    impact: data.stats.impact || 0,
+                });
+            } else {
+                // Reset to 0 if no existing stats
+                setStats({ 
+                    goals: 0, 
+                    assists: 0, 
+                    cleanSheets: 0, 
+                    penalties: 0, 
+                    freeKicks: 0, 
+                    defence: 0, 
+                    impact: 0 
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch existing stats:', error);
+            // Reset to 0 on error
+            setStats({ 
+                goals: 0, 
+                assists: 0, 
+                cleanSheets: 0, 
+                penalties: 0, 
+                freeKicks: 0, 
+                defence: 0, 
+                impact: 0 
+            });
+        }
+    };
+
+    // Save stats to backend
+    const handleSaveStats = async () => {
+        if (!activeMatchId || !token) return;
+        
+        setIsSubmittingStats(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    goals: stats.goals,
+                    assists: stats.assists,
+                    cleanSheets: stats.cleanSheets,
+                    penalties: stats.penalties,
+                    freeKicks: stats.freeKicks,
+                    defence: stats.defence,
+                    impact: stats.impact,
+                }),
+            });
+            
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, show error message
+                console.error('Stats saving is not available yet. Please contact the administrator.');
+                setStatsDialogOpen(false);
+                return;
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update leaderboard cache with new stats
+                if (data.updatedStats) {
+                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
+                        if (typeof value === 'number') {
+                            // Update cache if cacheManager is available
+                            if (typeof cacheManager !== 'undefined') {
+                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as any);
+                            }
+                        }
+                    });
+                }
+                setStatsDialogOpen(false);
+                // Optionally show a success message
+            }
+        } catch (err: unknown) {
+            console.error(err instanceof Error ? err.message : String(err));
+        } finally {
+            setIsSubmittingStats(false);
+        }
+    };
+
+    // Get match goals for the active match
+    const getMatchGoals = () => {
+        if (!activeMatchId || !league) return 10; // Default fallback
+        const match = league.matches.find(m => m.id === activeMatchId);
+        if (!match) return 10;
+        return (match.homeTeamGoals || 0) + (match.awayTeamGoals || 0);
+    };
 
     // Add this useEffect to sync tab param with section
     useEffect(() => {
@@ -583,61 +728,90 @@ export default function LeagueDetailPage() {
                     This league is currently inactive. All actions are disabled until an admin reactivates it.
                 </Alert>
             )}
-            {/* Header */}
-            <Box sx={{ mb: 4 }}>
+            
+            {/* Sticky Back Button - Positioned at far left */}
+            <Box sx={{ 
+                // position: 'sticky', 
+                // top: 0, 
+                // zIndex: 10, 
+                // backgroundColor: 'transparent',
+                mb: 2,
+                display: 'flex',
+                justifyContent: 'flex-start',
+                ml: 2
+            }}>
                 <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToAllLeagues}
                     sx={{
-                        mb: 2, color: 'white', backgroundColor: '#1f673b',
+                        color: 'white', 
+                        backgroundColor: '#43a047',
                         '&:hover': { backgroundColor: '#388e3c' },
-                        mt: {xs: 2, sm: 2, md: 0}
+                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                        px: { xs: 1, sm: 1.5 },
+                        py: 0.5,
+                        minWidth: 'auto',
+                        flexShrink: 0
                     }}
                 >
-                    Back to All Leagues
+                    Back To All Leagues
                 </Button>
+            </Box>
+            
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
                 <Paper sx={{ p: 3, backgroundColor: '#1f673b', color: 'white' }}>
                     <Box
                         sx={{
                             display: 'flex',
-                            alignItems: 'center', // Always align items in a row
-                            flexDirection: 'row', // Always keep elements in a row
-                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexDirection: { xs: 'column', md: 'row' },
+                            justifyContent: { xs: 'center', md: 'space-between' },
                             mb: 2,
-                            flexWrap: 'wrap', // Allow wrapping if content is too long, but prioritize horizontal
-                            gap: { xs: 1, sm: 2 } // Add gap for better spacing
+                            gap: { xs: 2, md: 0 }
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 0 }}> {/* minWidth: 0 allows it to shrink */}
+                        {/* League Name - Centered on large screens */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2, 
+                            flex: 1, 
+                            minWidth: 0,
+                            justifyContent: { xs: 'flex-start', md: 'flex-start' }
+                        }}>
                             <Trophy size={32} />
                             <Typography
                                 textTransform="uppercase"
                                 component="h1"
                                 sx={{
-                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' }, // More aggressive shrinking for xs
+                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
                                     fontWeight: 'bold',
                                     lineHeight: 1.2,
-                                    wordBreak: 'break-word', // Handle long league names
-                                    overflow: 'hidden', // Hide overflow if text is too long
-                                    textOverflow: 'ellipsis', // Add ellipsis for truncated text
-                                    whiteSpace: 'wrap', // Keep text on one line initially
-                                    flexShrink: 1, // Allow shrinking
-                                    minWidth: 0 // Allow shrinking below content size
+                                    wordBreak: 'break-word',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'wrap',
+                                    flexShrink: 1,
+                                    minWidth: 0,
+                                    textAlign: { xs: 'left', md: 'left' }
                                 }}
                             >
                                 {league.name}
                             </Typography>
                         </Box>
+                        
+                        {/* Right side controls */}
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1,
-                                flexShrink: 0, // Prevent shrinking of this container
-                                ml: { xs: 0, sm: 'auto' }, // Push to right on larger screens, no margin on xs
-                                mt: { xs: 1, sm: 0 }, // Add top margin on xs if it wraps
-                                width: { xs: 'auto', sm: 'auto' }, // Take full width on xs if it wraps
-                                justifyContent: { xs: 'flex-end', sm: 'flex-end' }, // Align to end on xs if it wraps
+                                flexShrink: 0,
+                                ml: { xs: 0, md: 'auto' },
+                                mt: { xs: 1, md: 0 },
+                                width: { xs: 'auto', md: 'auto' },
+                                justifyContent: { xs: 'flex-end', md: 'flex-end' },
                             }}
                         >
                             {isMember && (
@@ -845,7 +1019,13 @@ export default function LeagueDetailPage() {
                 )}
                 {section === 'matches' && (
                     // Matches Section
-                    <Box sx={{ maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' }, p: 2 }}>
+                    <Box sx={{ 
+                        height: 'auto',
+                        overflowY: 'visible', 
+                        scrollbarWidth: 'none', 
+                        '&::-webkit-scrollbar': { display: 'none' }, 
+                        p: 2 
+                    }}>
                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Matches
@@ -1045,13 +1225,34 @@ export default function LeagueDetailPage() {
                                                             }}
                                                                     disabled={!league.active}
                                                         >
-                                                                    {isAdmin ? 'Update Score Card' : 'View Team'}
+                                                                    {isAdmin ? 'Update Score Card' : 'MOMT'}
                                                         </Button>
                                                             </Link>
                                                         )
                                                     )}
                                                 </Box>
-                                                
+                                                {match.status === 'completed' && (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                        <Button
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: '#43a047',
+                                                                color: 'white',
+                                                                '&:hover': { bgcolor: '#388e3c' },
+                                                                fontSize: '0.75rem',
+                                                                py: 0.5
+                                                            }}
+                                                            onClick={() => {
+                                                                setActiveMatchId(match.id);
+                                                                setStatsDialogOpen(true);
+                                                                fetchExistingStats(match.id);
+                                                            }}
+                                                        >
+                                                            Add Your Stats
+                                                        </Button>
+                                                    </Box>
+                                                )}
+                                               {match.status === 'schdule' && (
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                     {/* Combined Available & Pending count as professional button */}
                                                             <Button
@@ -1079,6 +1280,7 @@ export default function LeagueDetailPage() {
                                                     {/* View/Update button */}
                                                   
                                                 </Box>
+                                              )}
                                                 </Box>
                                             </CardContent>
                                         </Card>
@@ -1268,6 +1470,15 @@ export default function LeagueDetailPage() {
                     Admin have disabled the points option. You will not see the points in the table.
                 </Alert>
             </Snackbar>
+            <PlayerStatsDialog
+                open={statsDialogOpen}
+                onClose={() => setStatsDialogOpen(false)}
+                onSave={handleSaveStats}
+                isSubmitting={isSubmittingStats}
+                stats={stats}
+                handleStatChange={handleStatChange}
+                teamGoals={getMatchGoals()}
+            />
         </Box>
     );
 } 

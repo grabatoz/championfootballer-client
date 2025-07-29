@@ -249,7 +249,7 @@ export default function MatchDetailsPage() {
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
          <Button
       startIcon={<ArrowLeft />}
-      onClick={() => router.push(`/dashboard`)}
+      onClick={() => router.push(`/league/${match?.leagueId}`)}
       sx={{
         color: "white",
         backgroundColor: "#1f673b",
@@ -265,7 +265,7 @@ export default function MatchDetailsPage() {
         mb: 2,
       }}
     >
-      Back to Dashboard
+      Back to Current Match League
     </Button>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
