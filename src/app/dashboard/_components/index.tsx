@@ -47,8 +47,8 @@ export default function PlayerDashboard() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { token } = useAuth();
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLeagues] = useState<League[]>([]);
+  const [, setLoading] = useState(true);
 
 
 

@@ -266,7 +266,7 @@ export default function LeagueDetailPage() {
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
-    const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
+    const [, setCheckedCommonLeague] = useState(false);
     const [, setUserLeagueXP] = useState<Record<string, number>>({});
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
