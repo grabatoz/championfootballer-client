@@ -163,7 +163,7 @@ const DreamTeamPage = () => {
         >
           <Button
             startIcon={<ArrowLeft />}
-            onClick={() => router.push(`/dashboard`)}
+            onClick={() => router.push(`/home`)}
             sx={{
               color: "white",
               backgroundColor: "#1f673b",
@@ -239,7 +239,7 @@ const DreamTeamPage = () => {
     {/* Left: Back Button */}
     <Button
       startIcon={<ArrowLeft />}
-      onClick={() => router.push(`/dashboard`)}
+      onClick={() => router.push(`/home`)}
       sx={{
         color: "white",
         backgroundColor: "#1f673b",
@@ -303,7 +303,7 @@ const DreamTeamPage = () => {
   >
     <Button
       startIcon={<ArrowLeft />}
-      onClick={() => router.push(`/dashboard`)}
+      onClick={() => router.push(`/home`)}
       sx={{
         color: "white",
         backgroundColor: "#1f673b",

@@ -658,7 +658,7 @@ function AllLeagues() {
     }
   };
   const handleBackToAllLeagues = () => {
-    router.push('/dashboard');
+    router.push('/home');
   };
   return (
     <Box

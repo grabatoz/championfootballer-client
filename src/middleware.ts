@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
 
   // If user is logged in and tries to access auth pages, redirect to dashboard
   if (token && (pathname === '/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/home', request.url));
   }
 
   // If user is not logged in and tries to access protected pages, redirect to login

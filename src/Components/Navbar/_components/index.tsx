@@ -141,7 +141,7 @@ export default function NavigationBar() {
         sx={{ backgroundColor: '#0a3e1e', boxShadow: 3, px: { xs: 2, md: 6 } }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
-          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link href="/home" style={{ display: 'flex', alignItems: 'center' }}>
             <Image
               src={cflogo}
               alt="Champion Footballer Logo"

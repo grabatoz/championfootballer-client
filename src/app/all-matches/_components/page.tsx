@@ -174,7 +174,7 @@ export default function AllMatches() {
     }, [selectedLeague, token, fetchMatchesByLeague]);
 
     const handleBackToDashboard = () => {
-        router.push('/dashboard');
+        router.push('/home');
     };
 
     const handleLeagueChange = (event: SelectChangeEvent<string>) => {

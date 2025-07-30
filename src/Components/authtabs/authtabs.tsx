@@ -106,7 +106,7 @@ const AuthTabs = () => {
       if (result.success) {
         toast.success('Login successful!');
         console.log('Redirecting to /dashboard');
-        window.location.href = '/dashboard';
+        window.location.href = '/home';
       } else {
         toast.error(result.error || 'Login failed.');
       }
@@ -154,7 +154,7 @@ const AuthTabs = () => {
         }
         localStorage.setItem('user', JSON.stringify(result.data));
         toast.success('Registration successful!');
-        window.location.href = '/dashboard';
+        window.location.href = '/home';
       }
     } catch (err: unknown) {
       console.error('[AuthTabs] Register submission error:', err);

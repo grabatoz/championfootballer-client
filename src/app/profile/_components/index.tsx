@@ -262,7 +262,7 @@ const PlayerProfileCard = () => {
       }
       
       toast.success("Profile updated successfully!")
-      router.push("/dashboard")
+      router.push("/home")
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message)
@@ -467,7 +467,7 @@ const PlayerProfileCard = () => {
               <Button
                   variant="contained"
                   size="large"
-                  onClick={()=>router.push('/dashboard')}
+                  onClick={()=>router.push('/home')}
                   startIcon={<ArrowBack />}
                   sx={{
                     background: "#43a047",
