@@ -27,10 +27,13 @@ import {
     Switch,
     TextField,
     Alert,
+    Menu,
+    ListItemIcon,
+    ListItemText,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, Table2Icon, Shield } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Calendar, Copy, Edit, Settings, Table2Icon, Shield, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
@@ -249,7 +252,6 @@ interface TableData {
 export default function LeagueDetailPage() {
     const [league, setLeague] = useState<League | null>(null);
     console.log('leagues matches', league?.matches)
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
@@ -279,6 +281,11 @@ export default function LeagueDetailPage() {
         impact: 0,
     });
     const [isSubmittingStats, setIsSubmittingStats] = React.useState(false);
+    
+    // Leagues dropdown state
+    const [allLeagues, setAllLeagues] = useState<League[]>([]);
+    const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+    const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
     // Example stat change handler
     const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
@@ -434,7 +441,6 @@ export default function LeagueDetailPage() {
 
     const fetchLeagueDetails = useCallback(async () => {
         try {
-            setLoading(true);
             console.log("Token before fetch:", token); // Debug log
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
@@ -458,8 +464,6 @@ export default function LeagueDetailPage() {
         } catch (error) {
             console.error('Error fetching league details:', error);
             setError('Failed to fetch league details');
-        } finally {
-            setLoading(false);
         }
     }, [leagueId, token]);
     useEffect(() => {
@@ -498,6 +502,32 @@ export default function LeagueDetailPage() {
         });
     }, [user, profilePlayerId, token]);
 
+    // Fetch all user leagues for dropdown
+    const fetchAllLeagues = useCallback(async () => {
+        if (!token) return;
+        
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            if (data.success && data.user) {
+                // Combine joined and managed leagues
+                const userLeagues = [
+                    ...(data.user.leagues || []),
+                    ...(data.user.administeredLeagues || [])
+                ];
+                // Remove duplicates
+                const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
+                setAllLeagues(uniqueLeagues);
+            }
+        } catch (error) {
+            console.error('Error fetching leagues:', error);
+        }
+    }, [token]);
+
     // Fetch XP for all users in this league
     useEffect(() => {
         async function fetchXP() {
@@ -511,9 +541,59 @@ export default function LeagueDetailPage() {
         fetchXP();
     }, [league]);
 
+    // Fetch all leagues for dropdown
+    useEffect(() => {
+        fetchAllLeagues();
+    }, [fetchAllLeagues]);
+
 
     const handleBackToAllLeagues = () => {
         router.push('/all-leagues');
+    };
+
+    // Handle league dropdown open/close
+    const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setLeaguesDropdownAnchor(event.currentTarget);
+        setLeaguesDropdownOpen(true);
+    };
+
+    const handleLeaguesDropdownClose = () => {
+        setLeaguesDropdownOpen(false);
+        setLeaguesDropdownAnchor(null);
+    };
+
+    // Handle league selection
+    const handleLeagueSelect = async (selectedLeagueId: string) => {
+        if (selectedLeagueId !== leagueId) {
+            // Fetch the new league data first, then update URL and state
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeagueId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.league) {
+                        // Update league data first
+                        setLeague(data.league);
+                        setError(null);
+                        
+                        // Update URL after data is set
+                        router.replace(`/league/${selectedLeagueId}`, { scroll: false });
+                    } else {
+                        setError('Failed to load league data');
+                    }
+                } else {
+                    setError('Failed to load league data');
+                }
+            } catch (error) {
+                console.error('Error fetching league:', error);
+                setError('Failed to load league data');
+            }
+        }
+        handleLeaguesDropdownClose();
     };
 
     const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
@@ -679,20 +759,9 @@ export default function LeagueDetailPage() {
     };
 
 
-    if (loading || !checkedCommonLeague) {
-        return (
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-            }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
 
-    if (error || !league) {
+
+    if (error) {
         return (
             <Box sx={{
                 p: 4,
@@ -707,30 +776,33 @@ export default function LeagueDetailPage() {
                     Back to All Leagues
                 </Button>
                 <Typography variant="h6" color="error">
-                    {error || 'League not found'}
+                    {error}
                 </Typography>
             </Box>
         );
     }
 
-    // Access control for non-members
-    if (!isMember && !hasCommonLeague) {
-        return (
-            <Box sx={{ p: 4, minHeight: '100vh' }}>
-                <Typography color="error" variant="h6">
-                    You don&apos;t have access to this league.
-                </Typography>
-            </Box>
-        );
-    }
+
 
     return (
         <Box sx={{ minHeight: '100vh' }} className='sm:p-8'>
-            {!league.active && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                    This league is currently inactive. All actions are disabled until an admin reactivates it.
-                </Alert>
-            )}
+            {/* Show page structure immediately */}
+
+            {/* Access control for non-members - only show when league data is available */}
+            {league && !isMember && !hasCommonLeague ? (
+                <Box sx={{ p: 4, minHeight: '100vh' }}>
+                    <Typography color="error" variant="h6">
+                        You don&apos;t have access to this league.
+                    </Typography>
+                </Box>
+            ) : (
+                <>
+                    {/* League inactive warning - only show when league data is available */}
+                    {league && !league.active && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            This league is currently inactive. All actions are disabled until an admin reactivates it.
+                        </Alert>
+                    )}
             
             {/* Sticky Back Button - Positioned at far left */}
             <Box sx={{ 
@@ -774,7 +846,6 @@ export default function LeagueDetailPage() {
                             gap: { xs: 2, md: 0 }
                         }}
                     >
-                        {/* League Name - Centered on large screens */}
                         <Box sx={{ 
                             display: 'flex', 
                             alignItems: 'center', 
@@ -784,24 +855,107 @@ export default function LeagueDetailPage() {
                             justifyContent: { xs: 'flex-start', md: 'flex-start' }
                         }}>
                             <Trophy size={32} />
-                            <Typography
-                                textTransform="uppercase"
-                                component="h1"
-                                sx={{
-                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
-                                    fontWeight: 'bold',
-                                    lineHeight: 1.2,
-                                    wordBreak: 'break-word',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'wrap',
-                                    flexShrink: 1,
-                                    minWidth: 0,
-                                    textAlign: { xs: 'left', md: 'left' }
+                            {league ? (
+                                <Button
+                                    onClick={handleLeaguesDropdownOpen}
+                                    sx={{
+                                        textTransform: 'uppercase',
+                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+                                        fontWeight: 'bold',
+                                        lineHeight: 1.2,
+                                        wordBreak: 'break-word',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'wrap',
+                                        flexShrink: 1,
+                                        minWidth: 0,
+                                        textAlign: { xs: 'left', md: 'left' },
+                                        color: 'white',
+                                        backgroundColor: 'rgba(255,255,255,0.1)',
+                                        borderRadius: 2,
+                                        px: 2,
+                                        py: 1,
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                        },
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        border: '1px solid rgba(255,255,255,0.3)',
+                                    }}
+                                    endIcon={<ChevronDown size={20} />}
+                                >
+                                    {league.name}
+                                </Button>
+                            ) : (
+                                <Typography
+                                    sx={{
+                                        textTransform: 'uppercase',
+                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
+                                        fontWeight: 'bold',
+                                        color: 'white',
+                                    }}
+                                >
+                                    Loading...
+                                </Typography>
+                            )}
+                            
+                            {/* Leagues Dropdown Menu */}
+                            <Menu
+                                anchorEl={leaguesDropdownAnchor}
+                                open={leaguesDropdownOpen}
+                                onClose={handleLeaguesDropdownClose}
+                                PaperProps={{
+                                    sx: {
+                                        backgroundColor: '#1f673b',
+                                        color: 'white',
+                                        border: '1px solid rgba(255,255,255,0.3)',
+                                        borderRadius: 2,
+                                        mt: 1,
+                                        minWidth: 200,
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                    }
                                 }}
                             >
-                                {league.name}
-                            </Typography>
+                                {allLeagues.map((leagueItem) => (
+                                    <MenuItem
+                                        key={leagueItem.id}
+                                        onClick={() => handleLeagueSelect(leagueItem.id)}
+                                        sx={{
+                                            color: 'white',
+                                            backgroundColor: leagueItem.id === leagueId ? 'rgba(255,255,255,0.2)' : 'transparent',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                            },
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            py: 1.5,
+                                            px: 2,
+                                        }}
+                                    >
+                                        <ListItemIcon sx={{ minWidth: 36 }}>
+                                            <Trophy size={16} color="white" />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={leagueItem.name}
+                                            sx={{
+                                                '& .MuiListItemText-primary': {
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: leagueItem.id === leagueId ? 'bold' : 'normal',
+                                                }
+                                            }}
+                                        />
+                                        {leagueItem.id === leagueId && (
+                                            <Box sx={{ ml: 'auto' }}>
+                                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                                    Current
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </MenuItem>
+                                ))}
+                            </Menu>
                         </Box>
                         
                         {/* Right side controls */}
@@ -892,7 +1046,7 @@ export default function LeagueDetailPage() {
                                 router.replace(`/league/${leagueId}?tab=members`);
                             }}
                         >
-                            {`${league.members?.length || 0} Members`}
+                            {`${league?.members?.length || 0} Members`}
                         </Button>
 
                         <Button
@@ -913,7 +1067,7 @@ export default function LeagueDetailPage() {
                                 router.replace(`/league/${leagueId}?tab=matches`);
                             }}
                         >
-                            {`${league.matches?.length || 0} Matches`}
+                            {`${league?.matches?.length || 0} Matches`}
                         </Button>
 
                         <Button
@@ -996,7 +1150,7 @@ export default function LeagueDetailPage() {
                             League Members
                         </Typography>
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-                        {league.members && league.members.length > 0 ? (
+                        {league?.members && league.members.length > 0 ? (
                             <Box sx={{
                                 display: 'grid',
                                 gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
@@ -1057,7 +1211,7 @@ export default function LeagueDetailPage() {
                        </Box>
 
                         <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-                        {league.matches && league.matches.length > 0 ? (
+                        {league?.matches && league.matches.length > 0 ? (
                             <Box sx={{
                                 display: 'grid',
                                 gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr' },
@@ -1226,7 +1380,7 @@ export default function LeagueDetailPage() {
                                                                         fontSize: '0.75rem',
                                                                         py: 0.5
                                                             }}
-                                                                    disabled={!league.active}
+                                                                    disabled={!league?.active}
                                                         >
                                                                     {isAdmin ? 'Update Score Card' : 'MOMT'}
                                                         </Button>
@@ -1482,6 +1636,8 @@ export default function LeagueDetailPage() {
                 handleStatChange={handleStatChange}
                 teamGoals={getMatchGoals()}
             />
+                </>
+            )}
         </Box>
     );
 } 

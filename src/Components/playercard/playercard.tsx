@@ -39,6 +39,69 @@ function getLevelInfo(points: number) {
   return LEVELS.find(lvl => points >= lvl.min && points < lvl.max) || LEVELS[LEVELS.length - 1];
 }
 
+// Function to convert position to short form
+function getPositionShortForm(position: string): string {
+  // First try to extract from parentheses
+  const match = position.match(/\(([^)]+)\)/);
+  if (match) {
+    return match[1]; // Return the text inside parentheses
+  }
+  
+  // If no parentheses, check for common position patterns
+  const positionMap: Record<string, string> = {
+    'Center-Back (CB)': 'CB',
+    'Right-Back (RB)': 'RB',
+    'Left-Back (LB)': 'LB',
+    'Right Wing-back (RWB)': 'RWB',
+    'Left Wing-back (LWB)': 'LWB',
+    'Central Midfielder (CM)': 'CM',
+    'Defensive Midfielder (CDM)': 'CDM',
+    'Attacking Midfielder (CAM)': 'CAM',
+    'Right Midfielder (RM)': 'RM',
+    'Left Midfielder (LM)': 'LM',
+    'Striker (ST)': 'ST',
+    'Center Forward (CF)': 'CF',
+    'Right Forward (RF)': 'RF',
+    'Left Forward (LF)': 'LF',
+    'Right Winger (RW)': 'RW',
+    'Left Winger (LW)': 'LW',
+    'goalkeeper': 'GK',
+  };
+  
+  const lowerPosition = position.toLowerCase();
+  if (positionMap[lowerPosition]) {
+    return positionMap[lowerPosition];
+  }
+  
+  // Final fallback: return first 3 characters in uppercase
+  return position.toUpperCase().substring(0, 3);
+}
+
+// Function to calculate skills percentage
+function calculateSkillsPercentage(stats: {
+  DRI: string;
+  SHO: string;
+  PAS: string;
+  PAC: string;
+  DEF: string;
+  PHY: string;
+}): number {
+  const skills = [
+    parseInt(stats.DRI) || 50,
+    parseInt(stats.SHO) || 50,
+    parseInt(stats.PAS) || 50,
+    parseInt(stats.PAC) || 50,
+    parseInt(stats.DEF) || 50,
+    parseInt(stats.PHY) || 50
+  ];
+  
+  const total = skills.reduce((sum, skill) => sum + skill, 0);
+  const average = total / skills.length;
+  
+  // Convert to percentage (assuming max skill value is 99)
+  return Math.round((average / 99) * 100);
+}
+
 interface PlayerCardProps {
   name: string;
   number: string;
@@ -57,6 +120,7 @@ interface PlayerCardProps {
   children?: React.ReactNode;
   width?: number | string;
   height?: number | string;
+  position: string;
 }
 
 // Import all possible vector images
@@ -67,6 +131,7 @@ import vectorSilver from '@/Components/images/silver.svg';
 import vectorGold from '@/Components/images/golden.svg';
 import vectorBlack from '@/Components/images/Vector.svg';
 import vectorDefault from '@/Components/images/Vector.svg';
+import vectorImg from '@/Components/images/Vector.svg'
 
 const vectorMap: Record<string, StaticImageData> = {
   Green: vectorGreen,
@@ -79,7 +144,6 @@ const vectorMap: Record<string, StaticImageData> = {
 
 const PlayerCard = ({
   name,
-  number,
   points,
   foot,
   stats,
@@ -87,14 +151,15 @@ const PlayerCard = ({
   children,
   width,
   height,
+  position,
 }: PlayerCardProps) => {
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
   const { title, color } = levelInfo;
   // Pick the correct vector image based on color
-  const vectorImg = vectorMap[color] || vectorDefault;
+  const Title = vectorMap[color] || vectorDefault;
   // Set text color: black for Silver/Gold, white otherwise
-  const textColor = (color === 'Silver' || color === 'Gold') ? 'black' : 'white';
+  // const textColor = (color === 'Silver' || color === 'Gold') ? 'black' : 'white';
   return (
     <Box
       sx={{
@@ -102,7 +167,7 @@ const PlayerCard = ({
         height: height || 430,
         position: 'relative',
         fontWeight: 'bold',
-        color: textColor,
+        color: '#fff',
         }}
     >
       {/* Background Image */}
@@ -126,15 +191,15 @@ const PlayerCard = ({
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
-          color: textColor,
+          color: '#fff',
         }}
       >
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
-          <Typography fontWeight={'bold'} fontSize="15px" color={textColor}>NO. <span className='font-bold text-[22px]'> {number} </span></Typography>
+          <Typography fontWeight={'bold'} fontSize="15px" color={'#fff'}><span className='font-bold text-[22px]'> {points} xp </span></Typography>
      <Button variant="contained" color="success">
     <Link href={'/profile'}>
-      edit profile
+      edit profile  
     </Link>
      </Button>
         </Box>
@@ -149,27 +214,33 @@ const PlayerCard = ({
 >
   {/* Left: Number, XXX, Foot */}
   <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
-    <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'} color={textColor}>{number}</Typography>
-    <Divider sx={{ bgcolor: textColor}}/>
-    <Typography fontSize="15px" fontWeight={'bold'} color={textColor}>{points} <span>xp</span></Typography>
-    <Divider sx={{ bgcolor: textColor}}/>
+  <Image
+          src={Title}
+          alt="Shoe"
+          width={22}
+          height={10}
+          style={{ marginLeft: '7px' }}
+        />
+    {/* <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'} color={'#fff'}>{number}</Typography> */}
+    <Divider sx={{ bgcolor: '#fff'}}/>
+    <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>{getPositionShortForm(position)}</Typography>
+    <Divider sx={{ bgcolor: '#fff'}}/>
     <Box
       display="flex"
       alignItems="center"
       gap={0.5}
       mt={0.5}
     >
-      {/* Render Foot SVG in black if textColor is black, else normal */}
-      <Box sx={{ display: 'inline-block', verticalAlign: 'middle', ...(textColor === 'black' ? { filter: 'invert(0)' } : {}) }}>
+      {/* Render Foot SVG in black if '#fff' is black, else normal */}
+      <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
         <Image
           src={Foot}
           alt="Shoe"
           width={22}
           height={10}
-          style={textColor === 'black' ? { filter: 'brightness(0) saturate(100%)' } : {}}
         />
       </Box>
-      <Typography fontSize="16px" fontWeight={'bold'} color={textColor}>{foot}</Typography>
+      <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
     </Box>
   </Box>
 
@@ -179,7 +250,7 @@ const PlayerCard = ({
       position: 'relative',
       width: 100,
       height: 100,
-      border: `2px solid ${textColor}`,
+      border: `2px solid ${'#fff'}`,
       borderRadius: '10px',
       display: 'flex',
       alignItems: 'center',
@@ -205,17 +276,17 @@ const PlayerCard = ({
             fontSize="18px"
             fontWeight="bold"
             sx={{ textTransform: 'uppercase' }}
-            color={textColor}
+            color='#fff'
           >
-            {name}
+          {calculateSkillsPercentage(stats)} {name}
           </Typography>
-          <Typography fontSize="12px" fontWeight={'bold'} color={textColor}>{title}</Typography>
+          <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
         </Box>
 
         {/* Divider */}
         <Divider
           sx={{
-            bgcolor: textColor,
+            bgcolor: '#fff',
             width: '50%',
             mx: 'auto',
             my: 1,
@@ -227,9 +298,9 @@ const PlayerCard = ({
 <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
   {/* Left Side Stats */}
   <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-    <Typography fontSize="14px" color={textColor}>{stats?.DRI} DRI</Typography>
-    <Typography fontSize="14px" color={textColor}>{stats?.SHO} SHO</Typography>
-    <Typography fontSize="14px" color={textColor}>{stats?.PAS} PAS</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.DRI} DRI</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.SHO} SHO</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.PAS} PAS</Typography>
   </Box>
 
   {/* Vertical Line */}
@@ -237,23 +308,23 @@ const PlayerCard = ({
     sx={{
       width: '1px',
       height: '80px',
-      bgcolor: textColor,
+      bgcolor: '#fff',
       mx: 1,
     }}
   />
 
   {/* Right Side Stats */}
   <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
-    <Typography fontSize="14px" color={textColor}>{stats?.PAC} PAC</Typography>
-    <Typography fontSize="14px" color={textColor}>{stats?.DEF} DEF</Typography>
-    <Typography fontSize="14px" color={textColor}>{stats?.PHY} PHY</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.PAC} PAC</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.DEF} DEF</Typography>
+    <Typography fontSize="14px" color={'#fff'}>{stats?.PHY} PHY</Typography>
   </Box>
 </Box>
 
         {/* Bottom Divider */}
         <Divider
           sx={{
-            bgcolor: textColor,
+            bgcolor: '#fff',
             width: '30%',
             mx: 'auto',
             mt: 2,

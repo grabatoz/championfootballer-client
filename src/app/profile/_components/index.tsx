@@ -210,17 +210,7 @@ const PlayerProfileCard = () => {
     }
   }, [user?.position])
 
-  useEffect(() => {
-    if (positionType === "Goalkeeper") {
-      setPosition("Goalkeeper (GK)")
-    } else if (positionType === "Defender") {
-      setPosition("Center-Back (CB)")
-    } else if (positionType === "Midfielder") {
-      setPosition("Central Midfielder (CM)")
-    } else if (positionType === "Forward") {
-      setPosition("Striker (ST)")
-    }
-  }, [positionType])
+
 
   const handleNext = () => {
     setStep((prev) => prev + 1)
