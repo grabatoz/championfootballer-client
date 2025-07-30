@@ -5,11 +5,9 @@ import {
   Typography,
   Avatar,
   Divider,
-  Button,
 } from '@mui/material';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
-import Link from 'next/link';
 
 // Static mapping for levels, milestone titles, colors, and point ranges
 const LEVELS = [
