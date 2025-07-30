@@ -124,13 +124,13 @@ interface PlayerCardProps {
 }
 
 // Import all possible vector images
-import vectorGreen from '@/Components/images/Vector.svg';
-import vectorBlue from '@/Components/images/blue.svg';
-import vectorBronze from '@/Components/images/bronze.svg';
+import vectorGreen from '@/Components/images/green.svg';
+import vectorBlue from '@/Components/images/sky.svg';
+import vectorBronze from '@/Components/images/brown.svg';
 import vectorSilver from '@/Components/images/silver.svg';
 import vectorGold from '@/Components/images/golden.svg';
 import vectorBlack from '@/Components/images/Vector.svg';
-import vectorDefault from '@/Components/images/Vector.svg';
+import vectorDefault from '@/Components/images/green.svg';
 import vectorImg from '@/Components/images/Vector.svg'
 
 const vectorMap: Record<string, StaticImageData> = {
@@ -164,7 +164,7 @@ const PlayerCard = ({
     <Box
       sx={{
         width: width || 260,
-        height: height || 430,
+        height: height || 390,
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
@@ -197,11 +197,11 @@ const PlayerCard = ({
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
           <Typography fontWeight={'bold'} fontSize="15px" color={'#fff'}><span className='font-bold text-[22px]'> {points} xp </span></Typography>
-     <Button variant="contained" color="success">
+     {/* <Button variant="contained" color="success">
     <Link href={'/profile'}>
       edit profile  
     </Link>
-     </Button>
+     </Button> */}
         </Box>
 
 <Box
