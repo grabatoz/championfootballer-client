@@ -424,7 +424,7 @@ function AllLeagues() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [leagueName, setLeagueName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -789,7 +789,11 @@ function AllLeagues() {
           </Box>
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
-              {leagues.length === 0 ? (
+              {loading ? (
+                <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
+                  <Typography variant="h6" color="black">Loading leagues...</Typography>
+                </Box>
+              ) : leagues.length === 0 ? (
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <Paper
                     elevation={0}
