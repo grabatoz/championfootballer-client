@@ -14,6 +14,7 @@ import {
   IconButton,
   DialogActions,
   DialogContent,
+  Divider,
 } from '@mui/material';
 import PlayerCard from '@/Components/playercard/playercard';
 import Link from 'next/link';
@@ -35,7 +36,172 @@ import { joinLeague } from '@/lib/features/leagueSlice';
 import { CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import { cacheManager } from '@/lib/cacheManager';
+import { Trophy } from 'lucide-react';
 // import { joinLeague } from '@/lib/features/leagueSlice';
+
+// League Selection Component
+const LeagueSelectionComponent = ({ user }: { user: User }) => {
+  const [userLeagues, setUserLeagues] = useState<League[]>([]);
+  const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
+
+  // Function to format league name
+  const formatLeagueName = (name: string) => {
+    if (!name) return '';
+    
+    // Split the name into words
+    const words = name.split(' ');
+    
+    // Capitalize first letter of each word
+    const capitalizedWords = words.map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    );
+    
+    // Get first character of each word
+    const firstChars = words.map(word => word.charAt(0).toUpperCase());
+    
+    // Create the formatted name
+    const formattedName = capitalizedWords.join(' ');
+    const abbreviation = `(${firstChars.join('')})`;
+    
+    return `${formattedName} ${abbreviation}`;
+  };
+
+  // Fetch user's leagues
+  useEffect(() => {
+    const fetchUserLeagues = async () => {
+      if (!token) return;
+      
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            // Combine joined and managed leagues
+            const leagues = [
+              ...(data.user.leagues || []),
+              ...(data.user.administeredLeagues || [])
+            ];
+            
+            // Remove duplicates
+            const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
+            setUserLeagues(uniqueLeagues);
+            
+            // Set the most recent league as default
+            if (uniqueLeagues.length > 0) {
+              setSelectedLeague(uniqueLeagues[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching leagues:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserLeagues();
+  }, [token]);
+
+  // If user has no leagues
+  if (!loading && userLeagues.length === 0) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 2 
+      }}>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: '#666',
+            mb: 2,
+            fontSize: { xs: '0.9rem', sm: '1rem' },
+            textAlign: 'center'
+          }}
+        >
+          You haven't joined any league yet.
+        </Typography>
+        <Link href="/all-leagues" passHref>
+          <Button 
+            variant="contained"
+            sx={{ 
+              bgcolor: '#43a047',
+              color: 'white',
+              '&:hover': { bgcolor: '#388e3c' },
+              minWidth: { xs: '280px', sm: '320px' },
+              height: { xs: '60px', sm: '70px' },
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 'bold'
+            }}
+          >
+            Join a League
+          </Button>
+        </Link>
+      </Box>
+    );
+  }
+
+  // If user has leagues
+  return (
+    <Box sx={{ 
+      width: '100%', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <Button
+        variant="contained"
+        sx={{
+          bgcolor: '#43a047',
+          color: 'white',
+          '&:hover': { bgcolor: '#388e3c' },
+          minHeight: { xs: '60px', sm: '70px' },
+          minWidth: { xs: '280px', sm: '320px' },
+          fontSize: { xs: '1rem', sm: '1.1rem' },
+          fontWeight: 'bold',
+          textTransform: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 2 },
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
+          border: '2px solid #fff',
+        }}
+        onClick={() => {
+          // Navigate to the selected league
+          if (selectedLeague) {
+            window.location.href = `/league/${selectedLeague.id}`;
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Trophy size={24} color="white" />
+          <Typography 
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.1rem' , md: '1.4rem' },
+              fontWeight: 'bold'
+            }}
+          >
+            {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+          </Typography>
+        </Box>
+        {/* <RiArrowRightLine size={20} color="white" /> */}
+      </Button>
+    </Box>
+  );
+};
 
 export default function PlayerDashboard() {
   const [inviteCode, setInviteCode] = useState('');
@@ -50,13 +216,6 @@ export default function PlayerDashboard() {
   const [, setLeagues] = useState<League[]>([]);
   const [, setLoading] = useState(true);
 
-
-
-
-
-
-
-  // Add state for window width
   const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   useEffect(() => {
@@ -194,7 +353,7 @@ export default function PlayerDashboard() {
   ];
 
   return (
-    <Box sx={{ px: 3, py: 4,  minHeight: '100vh' }}>
+    <Box sx={{ px: {xs:1,md:3}, py: {xs:1,md:4},  minHeight: '100vh' }}>
       <Toaster position="top-center" reverseOrder={false} />
       <Paper
         elevation={3}
@@ -202,23 +361,28 @@ export default function PlayerDashboard() {
           backgroundImage: `url(${dash.src})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          borderRadius: 2,
+          borderRadius: { xs: 0, md: 2 }, // No border radius on mobile
           overflow: 'hidden',
-          p: 3,
-          mb: 4,
+          p: { xs: 0, md: 3 }, // No padding on mobile
+          mb: { xs: 0, md: 4 }, // No margin on mobile
+          minHeight: { xs: '100vh', md: 'auto' }, // Full height on mobile
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
   <Box sx={{ 
     display: 'flex', 
-    alignItems: { xs: 'stretch', md: 'center' }, // Changed alignment for mobile
-    gap: 4,
-    flexDirection: { xs: 'column', md: 'row' } // Stack vertically on mobile, horizontally on desktop
+    alignItems: { xs: 'stretch', md: 'center' },
+    gap: { xs: 2, md: 4 },
+    flexDirection: { xs: 'column', md: 'row' }
   }}>
+    {/* Player Card - Top on mobile, left on desktop */}
     <Box sx={{ 
-      flex: { xs: 'none', md: '0 0 300px' }, // Remove fixed width on mobile
-      width: { xs: '100%', md: '90%' }, // Full width on mobile
+      flex: { xs: 'none', md: '0 0 300px' },
+      width: { xs: '100%', md: '90%' },
       display: 'flex',
-      justifyContent: { xs: 'center', md: 'flex-start' } // Center on mobile
+      justifyContent: { xs: 'center', md: 'flex-start' },
+      mb: { xs: 2, md: 0 } // Add margin bottom on mobile
     }}>
             <PlayerCard
               name={user?.firstName || ''}
@@ -233,41 +397,64 @@ export default function PlayerDashboard() {
                 PHY: user?.skills?.physical?.toString() || ''
               }}
               foot={user?.preferredFoot === "right" ? "R" : "L"}
-        // profileImage={user?.profilePicture ? (user.profilePicture.startsWith('http') ? user.profilePicture : `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture.startsWith('/') ? user.profilePicture : `/${user.profilePicture}`}`) : undefined}
         profileImage={user?.profilePicture || undefined}
               shirtIcon={''}
-              position={user?.position || ''}
+              position={user?.position || 'XXX'}
             />
           </Box>
 
-    {/* <Box 
+    {/* White Card - Bottom on mobile, right on desktop */}
+    <Box 
       sx={{ 
         flex: 1, 
-        backgroundColor: 'rgba(255,255,255,0.85)', 
-        p: 3, 
-        borderRadius: 2,
-        maxWidth: { xs: '100%', md: '41%' }, // Full width on mobile, limited on desktop
-        width: { xs: '100%', md: 'auto' } // Ensure full width on mobile
+        backgroundColor: '#fff', 
+        p: { xs: 3, sm: 2, md: 1.5}, 
+        borderRadius: { xs: '16px 16px 16px 16px', md: 2 }, // Rounded top corners on mobile
+        maxWidth: { xs: '100%', md: '41%' , lg: '33%' },
+        width: { xs: '96%' , sm: '70%', md: 'auto' , lg: '33%' },
+        textAlign:'center',
+        mt: { xs: 'auto', md: 0 },
+        minHeight: { xs: 'auto', md: 'auto' },
+        mb: {xs:2,md:0},
+        // Center the card on screens below 900px
+        alignSelf: { xs: 'center' },
+        // mx: { xs: 'auto', md: 0 } // Auto margins for centering
       }}
     >
-            <Typography variant="h6" gutterBottom>
-              Welcome, {user?.firstName}
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {`You haven't setup your Player Card yet. Let's change that!`}
-            </Typography>
-            <Link href="/profile" passHref>
-        <Button 
-          variant="outlined" 
-          sx={{ 
-            mt: 2,
-            width: { xs: '100%', sm: 'auto' } // Full width button on mobile
-          }}
-        >
-                Edit Profile & Player Card
-              </Button>
-            </Link>
-          </Box> */}
+      <Box sx={{display: 'inline-flex',gap:1}}>
+      <Typography 
+        variant="h5" 
+        gutterBottom 
+        sx={{ 
+          fontWeight: 'bold',
+          fontSize: { xs: '1.2rem', sm: '1.5rem' },
+          color: 'black',
+        }}
+      >
+        Welcome,
+      </Typography>
+      <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' },fontWeight:'semibold'}}>{user?.firstName}</Typography>
+      </Box>
+
+      <Divider sx={{ mb: 1.5 , width:'100%' , height:2 , bgcolor:'green' }}/>
+      <Box sx={{justifyContent:'center' , textAlign:'center'}}>
+        
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          color: 'black',
+          mb: 1.5,
+          fontSize: { xs: '0.9rem', sm: '1rem' }
+        }}
+      >
+        Your Current League In Which You Stand
+      </Typography>
+
+      {/* League Selection Component */}
+      <LeagueSelectionComponent user={user} />
+      </Box>
+
+    </Box>
         </Box>
 </Paper>
     
@@ -282,6 +469,7 @@ export default function PlayerDashboard() {
         p: { xs: 0.5, sm: 3 }, // Less padding on mobile
         width: '100%', // Always full width
         boxShadow: { xs: 0, sm: 3 }, // Remove shadow on mobile for flush look
+        mt: {xs:2,md:0}
       }}
     >
          <Button

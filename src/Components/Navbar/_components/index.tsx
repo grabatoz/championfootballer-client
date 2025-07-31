@@ -88,6 +88,10 @@ export default function NavigationBar() {
     handleProfileMenuClose();
     router.push('/profile');
   };
+  const handleDashboardClick = () => {
+    handleProfileMenuClose();
+    router.push('/dashboard');
+  };
   const handleSignOutClick = () => {
     handleProfileMenuClose();
     handleSignOut();
@@ -201,6 +205,9 @@ export default function NavigationBar() {
                   <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
                     Profile
                   </MenuItem>
+                  <MenuItem onClick={handleDashboardClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    Dashboard
+                  </MenuItem>
                   <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
                     Sign out
                   </MenuItem>
@@ -283,6 +290,9 @@ export default function NavigationBar() {
                 >
                   <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
                     Profile
+                  </MenuItem>
+                  <MenuItem onClick={handleDashboardClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    Dashboard
                   </MenuItem>
                   <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
                     Sign out
