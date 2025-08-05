@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAuth } from '@/lib/hooks';
-import { login, register, clearError } from '@/lib/features/authSlice';
+import { login, register } from '@/lib/features/authSlice';
 import { LoginCredentials, RegisterCredentials } from '@/types/api';
 import { authAPI } from '@/lib/api';
 import {
@@ -16,10 +16,10 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 interface AuthTabsProps {
   showLogin?: boolean;
-  onToggleForm?: () => void;
+  // onToggleForm?: () => void;
 }
 
-const AuthTabs = ({ showLogin = true, onToggleForm }: AuthTabsProps) => {
+const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { dispatch: authDispatch } = useAuth();
