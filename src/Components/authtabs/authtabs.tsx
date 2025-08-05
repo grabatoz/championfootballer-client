@@ -16,7 +16,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 interface AuthTabsProps {
   showLogin?: boolean;
-  // onToggleForm?: () => void;
+  onToggleForm?: () => void;
 }
 
 const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
