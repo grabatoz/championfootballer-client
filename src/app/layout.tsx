@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/Components/Navbar/navbar";
-import Footer from "@/Components/footer/footer";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
-import Mainbg from '@/Components/images/mainbg.webp'
+// import Mainbg from '@/Components/images/mainbg.webp'
+import LayoutContent from './LayoutContent';
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -29,21 +28,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body style={{
-        backgroundImage: `url(${Mainbg.src})`,
-        backgroundPosition: 'center',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-      }}
-        // style={{ backgroundColor: '#d5ffd1'}}
+      <body 
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           <AuthCheck />
-          <Navbar />
-          {children}
-          <Footer />
+          <LayoutContent>
+            {children}
+          </LayoutContent>
         </Providers>
       </body>
     </html>

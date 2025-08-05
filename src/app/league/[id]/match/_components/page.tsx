@@ -418,8 +418,10 @@ export default function ScheduleMatchPage() {
                             onSubmit={handleScheduleMatch}
                             sx={{
                                 p: 3,
-                                backgroundColor: "#1f673b",
+                                // backgroundColor: "#1f673b",
+                                backgroundColor: "#48ab4c",
                                 color: "white",
+                                borderRadius: 6
                             }}
                         >
                             <Typography variant="h4" component="h1" gutterBottom>
@@ -773,14 +775,16 @@ export default function ScheduleMatchPage() {
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
                     <Paper sx={{ 
                         p: 2, 
-                        backgroundColor: '#1f673b', 
+                        // backgroundColor: '#1f673b', 
+                        backgroundColor: '#48ab4c', 
                         color: 'white', 
                         position: 'sticky', 
                         top: '20px',
                         height: { xs: 'auto', md: 'fit-content' },
                         minHeight: { xs: 'auto', md: '100%' },
                         display: { xs: 'block', md: 'flex' },
-                        flexDirection: { xs: 'column', md: 'column' }
+                        flexDirection: { xs: 'column', md: 'column' },
+                        borderRadius: 6
                     }}>
                             <Typography variant="h5" gutterBottom>Live Preview</Typography>
                         <Divider sx={{ mb: 2, borderColor: 'white' }} />

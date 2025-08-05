@@ -25,11 +25,11 @@ export default function Footer() {
     <Box component="footer" sx={{
       py: { xs: 5, md: 7 },
       mt: 10,
-      background: 'linear-gradient(90deg, #1f673b 0%, #0a3e1e 100%)',
+      background: '#00A77F',
       color: 'white',
       // borderTopLeftRadius: { xs: 24, md: 32 },
       // borderTopRightRadius: { xs: 24, md: 32 },
-      boxShadow: '0 -2px 24px 0 rgba(31, 103, 59, 0.12)',
+      boxShadow: '0 -2px 24px 0 rgba(30, 58, 138, 0.12)',
     }}>
       <Container maxWidth="md">
         <Stack spacing={4} alignItems="center" justifyContent="center">
@@ -42,10 +42,10 @@ export default function Footer() {
               rel="noopener noreferrer"
               sx={{
                 color: 'white',
-                bgcolor: '#1f673b',
-                border: '2px solid #43a047',
+                bgcolor: 'black',
+                // border: '2px solid #43a047',
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: '#43a047', color: '#fff', borderColor: '#fff' },
+                '&:hover': { bgcolor: 'black', color: '#fff'},
               }}
             >
               <FaXTwitter />
@@ -57,17 +57,17 @@ export default function Footer() {
               rel="noopener noreferrer"
               sx={{
                 color: '#fff',
-                bgcolor: '#1f673b',
-                border: '2px solid #E1306C',
+                bgcolor: 'black',
+                // border: '2px solid #E1306C',
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: '#E1306C', color: '#fff', borderColor: '#fff' },
+                '&:hover': { bgcolor: 'black', color: '#fff'},
               }}
             >
               <FaInstagram />
             </IconButton>
           </Stack>
 
-          <Divider sx={{ width: '100%', borderColor: 'rgba(255,255,255,0.12)' }} />
+          <Divider sx={{ width: '100%', borderColor: 'black' }} />
 
           {/* Footer Links */}
           <Stack direction="row" spacing={2} flexWrap="wrap" justifyContent="center" useFlexGap>
@@ -80,7 +80,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#43a047', bgcolor: 'transparent', textDecoration: 'underline' },
+                '&:hover': { color: '#00785A',textDecoration: 'underline' },
               }}
             >
               Terms & Conditions
@@ -94,7 +94,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#43a047', bgcolor: 'transparent', textDecoration: 'underline' },
+                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
               }}
             >
               Privacy Policy
@@ -108,7 +108,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#43a047', bgcolor: 'transparent', textDecoration: 'underline' },
+                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
               }}
             >
               Contact Us
@@ -122,7 +122,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#43a047', bgcolor: 'transparent', textDecoration: 'underline' },
+                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
               }}
             >
               About Us
@@ -136,10 +136,10 @@ export default function Footer() {
                   fontWeight: 500,
                   fontSize: 16,
                   px: 2,
-                  bgcolor: '#d32f2f',
+                  bgcolor: '#1f3e90',
                   borderRadius: 2,
                   ml: 2,
-                  '&:hover': { bgcolor: '#b71c1c', color: '#fff' },
+                  '&:hover': { bgcolor: '#1f3e90', color: '#fff' },
                 }}
               >
                 Sign Out

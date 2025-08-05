@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import {
   Box,
   Typography,
   Avatar,
   Divider,
+  Modal,
+  Button,
 } from '@mui/material';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
+import EditIcon from '@mui/icons-material/Edit';
+import IconButton from '@mui/material/IconButton';
+import { cacheManager } from "@/lib/cacheManager"
+import toast from 'react-hot-toast';
+import { useAuth } from '@/lib/hooks';
 
 // Static mapping for levels, milestone titles, colors, and point ranges
 const LEVELS = [
@@ -156,17 +163,114 @@ const PlayerCard = ({
   const { title, color } = levelInfo;
   // Pick the correct vector image based on color
   const Title = vectorMap[color] || vectorDefault;
-  // Set text color: black for Silver/Gold, white otherwise
-  // const textColor = (color === 'Silver' || color === 'Gold') ? 'black' : 'white';
+  
+  // State management
+  const [imgModalOpen, setImgModalOpen] = useState(false);
+  const [editOptionsOpen, setEditOptionsOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imgUrl, setImgUrl] = useState(profileImage);
+  const [imageKey,] = useState(0); // Add key for forcing re-render
+  const { token } = useAuth();
+
+  // Update imgUrl when profileImage prop changes
+  useEffect(() => {
+    if (profileImage) {
+      setImgUrl(profileImage);
+    }
+  }, [profileImage]);
+
+  // Function to force image reload
+  // const forceImageReload = (imageUrl: string) => {
+  //   const timestamp = new Date().getTime();
+  //   const newUrl = `${imageUrl}?t=${timestamp}`;
+    
+  //   // Clear browser cache for this image
+  //   if ('caches' in window) {
+  //     caches.keys().then(names => {
+  //       names.forEach(name => {
+  //         caches.delete(name);
+  //       });
+  //     });
+  //   }
+    
+  //   return newUrl;
+  // };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+      setImagePreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  const handleEditIconClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditOptionsOpen(true);
+  };
+
+  const handleEditOptionsClose = () => setEditOptionsOpen(false);
+
+  const handleUpdateOnlyImage = () => {
+    setEditOptionsOpen(false);
+    setImgModalOpen(true);
+  };
+
+  const handleProfileUpdate = () => {
+    window.location.href = '/profile';
+  };
+
+  const handleModalClose = () => {
+    setImgModalOpen(false);
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const handleUploadImage = async () => {
+    if (!imageFile || !token) return;
+    setUploading(true);
+    
+    const formData = new FormData();
+    formData.append("profilePicture", imageFile);
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      
+      
+      const data = await res.json()
+      if (data.success) {
+        // Update cache with new user data
+        if (data.user) {
+          cacheManager.updatePlayersCache(data.user);
+        }
+        toast.success("Profile picture updated!")
+        window.location.reload()
+      } else {
+        toast.error("Failed to upload image")
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
         width: width || 260,
-        height: height || 390,
+        height: height || 400,
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
-        }}
+        ml: 20,
+      }}
     >
       {/* Background Image */}
       <Image
@@ -175,7 +279,6 @@ const PlayerCard = ({
         layout="fill"
         objectFit="contain"
         className="z-0"
-        style={{ }}
       />
 
       {/* Overlay Content */}
@@ -194,79 +297,95 @@ const PlayerCard = ({
       >
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
-          <Typography fontWeight={'bold'} fontSize="15px" color={'#fff'}><span className='font-bold text-[22px]'> {points} xp </span></Typography>
-     {/* <Button variant="contained" color="success">
-    <Link href={'/profile'}>
-      edit profile  
-    </Link>
-     </Button> */}
+          <Typography fontWeight={'bold'} fontSize="15px" color={'#fff'}>
+            <span className='font-bold text-[22px]'> {points} xp </span>
+          </Typography>
         </Box>
 
-<Box
-  display="flex"
-  justifyContent="space-between"
-  alignItems="flex-start"
-  px={2}
-  mt={2}
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          px={2}
+          mt={2}
+        >
+          {/* Left: Number, XXX, Foot */}
+          <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
+            <Image
+              src={Title}
+              alt="Shoe"
+              width={22}
+              height={10}
+              style={{ marginLeft: '7px' }}
+            />
+            <Divider sx={{ bgcolor: '#fff'}}/>
+            <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>
+              {getPositionShortForm(position)}
+            </Typography>
+            <Divider sx={{ bgcolor: '#fff'}}/>
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={0.5}
+              mt={0.5}
+            >
+              <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                <Image
+                  src={Foot}
+                  alt="Shoe"
+                  width={22}
+                  height={10}
+                />
+              </Box>
+              <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
+            </Box>
+          </Box>
 
->
-  {/* Left: Number, XXX, Foot */}
-  <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
-  <Image
-          src={Title}
-          alt="Shoe"
-          width={22}
-          height={10}
-          style={{ marginLeft: '7px' }}
-        />
-    {/* <Typography fontSize="23px" marginLeft={'5px'} fontWeight={'bold'} color={'#fff'}>{number}</Typography> */}
-    <Divider sx={{ bgcolor: '#fff'}}/>
-    <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>{getPositionShortForm(position)}</Typography>
-    <Divider sx={{ bgcolor: '#fff'}}/>
-    <Box
-      display="flex"
-      alignItems="center"
-      gap={0.5}
-      mt={0.5}
-    >
-      {/* Render Foot SVG in black if '#fff' is black, else normal */}
-      <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
-        <Image
-          src={Foot}
-          alt="Shoe"
-          width={22}
-          height={10}
-        />
-      </Box>
-      <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
-    </Box>
-  </Box>
-
-  {/* Right: Avatar with edit icon */}
-  <Box
-    sx={{
-      position: 'relative',
-      width: 100,
-      height: 100,
-      border: `2px solid ${'#fff'}`,
-      borderRadius: '10px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <Avatar
-      src={typeof profileImage === 'string' ? profileImage : undefined}
-      sx={{ width: 85, height: 85 , borderRadius:'0'}}
-      alt="Profile"
-    >
-      {(!profileImage || typeof profileImage !== 'string') && (
-        <Image height={0} width={0} src={imgicon.src} alt="Profile" style={{ width: '100%', height: '100%' }} />
-      )}
-    </Avatar>
-  </Box>
-</Box>
-
+          {/* Right: Avatar with edit icon */}
+          <Box
+            sx={{
+              position: 'relative',
+              width: 100,
+              height: 100,
+              border: `2px solid ${'#fff'}`,
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Avatar
+                key={`${imgUrl}-${imageKey}`} // Force complete re-render when image changes
+                src={imgUrl || undefined}
+                sx={{ width: 85, height: 85, borderRadius: '0' }}
+                alt="Profile"
+                data-testid="profile-avatar"
+              >
+                {(!imgUrl || typeof imgUrl !== 'string') && (
+                  <Image height={0} width={0} src={imgicon.src} alt="Profile" style={{ width: '100%', height: '100%' }} />
+                )}
+              </Avatar>
+              <IconButton
+                size="small"
+                onClick={handleEditIconClick}
+                style={{
+                  position: 'absolute',
+                  bottom: 4,
+                  right: -8,
+                  background: '#fff',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                  top: -13,
+                  height: 20,
+                  width: 20,
+                }}
+                aria-label="edit profile image"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </div>
+          </Box>
+        </Box>
 
         {/* Name and Title (from static logic) */}
         <Box sx={{ mt: 2 }}>
@@ -276,7 +395,7 @@ const PlayerCard = ({
             sx={{ textTransform: 'uppercase' }}
             color='#fff'
           >
-          {calculateSkillsPercentage(stats)} {name}
+            {calculateSkillsPercentage(stats)} {name}
           </Typography>
           <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
         </Box>
@@ -293,31 +412,31 @@ const PlayerCard = ({
         />
 
         {/* Stats */}
-<Box display="flex" justifyContent="center" alignItems="center" gap={2}>
-  {/* Left Side Stats */}
-  <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.DRI} DRI</Typography>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.SHO} SHO</Typography>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.PAS} PAS</Typography>
-  </Box>
+        <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+          {/* Left Side Stats */}
+          <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.DRI} DRI</Typography>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.SHO} SHO</Typography>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.PAS} PAS</Typography>
+          </Box>
 
-  {/* Vertical Line */}
-  <Box
-    sx={{
-      width: '1px',
-      height: '80px',
-      bgcolor: '#fff',
-      mx: 1,
-    }}
-  />
+          {/* Vertical Line */}
+          <Box
+            sx={{
+              width: '1px',
+              height: '80px',
+              bgcolor: '#fff',
+              mx: 1,
+            }}
+          />
 
-  {/* Right Side Stats */}
-  <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.PAC} PAC</Typography>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.DEF} DEF</Typography>
-    <Typography fontSize="14px" color={'#fff'}>{stats?.PHY} PHY</Typography>
-  </Box>
-</Box>
+          {/* Right Side Stats */}
+          <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.PAC} PAC</Typography>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.DEF} DEF</Typography>
+            <Typography fontSize="14px" color={'#fff'}>{stats?.PHY} PHY</Typography>
+          </Box>
+        </Box>
 
         {/* Bottom Divider */}
         <Divider
@@ -329,6 +448,7 @@ const PlayerCard = ({
             height: '1px',
           }}
         />
+        
         {/* Render children (e.g. vote button) at the bottom */}
         {children && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
@@ -336,408 +456,145 @@ const PlayerCard = ({
           </Box>
         )}
       </Box>
+
+      {/* Edit Options Modal */}
+      <Modal open={editOptionsOpen} onClose={handleEditOptionsClose}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            minWidth: 300,
+            border: '2px solid #1976d2',
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 3, textAlign: 'center', color: '#1976d2' }}>
+            Edit Profile
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button 
+              fullWidth 
+              variant="contained" 
+              color="primary" 
+              onClick={handleUpdateOnlyImage}
+              sx={{ 
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                textTransform: 'none'
+              }}
+            >
+              Update Only Image
+            </Button>
+            <Button 
+              fullWidth 
+              variant="outlined" 
+              color="primary" 
+              onClick={handleProfileUpdate}
+              sx={{ 
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                textTransform: 'none'
+              }}
+            >
+              Edit Full Profile
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Image Upload Modal */}
+      <Modal open={imgModalOpen} onClose={handleModalClose}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            minWidth: 350,
+            border: '2px solid #1976d2',
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 3, textAlign: 'center', color: '#1976d2' }}>
+            Update Profile Image
+          </Typography>
+          
+          <Box sx={{ mb: 3 }}>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleFileChange}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '2px dashed #1976d2',
+                borderRadius: '8px',
+                backgroundColor: '#f5f5f5'
+              }}
+            />
+          </Box>
+          
+          {imagePreview && (
+            <Box sx={{ mb: 3, textAlign: 'center' }}>
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                style={{ 
+                  width: 120, 
+                  height: 120, 
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  border: '2px solid #1976d2'
+                }} 
+              />
+            </Box>
+          )}
+          
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button 
+              onClick={handleUploadImage} 
+              disabled={uploading || !imageFile}
+              variant="contained"
+              color="primary"
+              sx={{ 
+                px: 3,
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                textTransform: 'none'
+              }}
+            >
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+            <Button 
+              onClick={handleModalClose}
+              variant="outlined"
+              color="primary"
+              sx={{ 
+                px: 3,
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                textTransform: 'none'
+              }}
+            >
+              Cancel
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 };
 
 export default PlayerCard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React from 'react';
-// import Image from 'next/image';
-// import { Box, Typography, IconButton, Grid, Avatar } from '@mui/material';
-// import vector from '@/Components/images/Vector.svg';
-// import EditIcon from '@mui/icons-material/Edit';
-
-// interface PlayerCardProps {
-//   name: string;
-//   number: string;
-//   level: string;
-//   stats: {
-//     DRI: string;
-//     SHO: string;
-//     PAS: string;
-//     PAC: string;
-//     DEF: string;
-//     PHY: string;
-//   };
-//   foot: string;
-//   shirtIcon: string;
-//   profileImage?: string;
-// }
-
-// const PlayerCard = ({
-//   name,
-//   number,
-//   level,
-//   stats,
-//   foot,
-//   shirtIcon,
-//   profileImage,
-// }: PlayerCardProps) => {
-//   return (
-//     <Box
-//       sx={{
-//         width: 260,
-//         height: 430,
-//         position: 'relative',
-//         fontWeight: 'bold',
-//         color: 'white',
-//       }}
-//     >
-//       {/* Background */}
-//       <Image
-//         src={vector}
-//         alt="Card Background"
-//         layout="fill"
-//         objectFit="contain"
-//         className="z-0"
-//       />
-
-//       {/* Overlay Content */}
-//       <Box
-//         sx={{
-//           position: 'absolute',
-//           inset: 0,
-//           zIndex: 10,
-//           px: 2,
-//           py: 2,
-//           textAlign: 'center',
-//           display: 'flex',
-//           flexDirection: 'column',
-//           justifyContent: 'space-between',
-//         }}
-//       >
-//         {/* Shirt Number */}
-//         <Box>
-//           <Typography variant="body2">NO. {number}</Typography>
-//           <Typography variant="h5" fontWeight="bold" mt={1}>
-//             {number}
-//           </Typography>
-//         </Box>
-
-//         {/* XXX + Foot */}
-//         <Box>
-//           <Typography variant="caption" display="block">
-//             XXX
-//           </Typography>
-//           <Box display="flex" justifyContent="center" alignItems="center" gap={0.5}>
-//             <Image src={shirtIcon} alt="Foot icon" width={16} height={16} />
-//             <Typography variant="caption">{foot}</Typography>
-//           </Box>
-//         </Box>
-
-//         {/* Profile Picture + Edit */}
-//         <Box sx={{ position: 'relative', width: 80, height: 80, mx: 'auto' }}>
-//           <Avatar
-//             src={profileImage || shirtIcon}
-//             alt="Profile"
-//             sx={{
-//               width: 80,
-//               height: 80,
-//               border: '2px solid white',
-//             }}
-//           />
-//           <IconButton
-//             size="small"
-//             sx={{
-//               position: 'absolute',
-//               top: 0,
-//               right: 0,
-//               bgcolor: 'white',
-//               p: '2px',
-//               '&:hover': { bgcolor: '#f0f0f0' },
-//             }}
-//           >
-//             <EditIcon fontSize="small" sx={{ color: 'black' }} />
-//           </IconButton>
-//         </Box>
-
-//         {/* Name & Level */}
-//         <Box>
-//           <Typography variant="body1" sx={{ textTransform: 'uppercase' }}>
-//             {name}
-//           </Typography>
-//           <Typography variant="caption">{level}</Typography>
-//         </Box>
-
-//         {/* Stats Grid */}
-//         <Grid container spacing={0.5} justifyContent="center" mt={1}>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">DRI {stats.DRI}</Typography>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">PAC {stats.PAC}</Typography>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">SHO {stats.SHO}</Typography>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">DEF {stats.DEF}</Typography>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">PAS {stats.PAS}</Typography>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Typography variant="caption">PHY {stats.PHY}</Typography>
-//           </Grid>
-//         </Grid>
-//       </Box>
-//     </Box>
-//   );
-// };
-
-// export default PlayerCard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import Image from 'next/image'
-// import React from 'react'
-// import vector from '@/Components/images/Vector.svg'
-// import { IconButton } from '@mui/material';
-
-// interface PlayerCardProps {
-//   name: string;
-//   number: string;
-//   level: string;
-//   stats: {
-//     DRI: string;
-//     SHO: string;
-//     PAS: string;
-//     PAC: string;
-//     DEF: string;
-//     PHY: string;
-//   };
-//   foot: string;
-//   shirtIcon: string;
-//   profileImage?: string;
-// }
-
-// const PlayerCard = ({
-//   name,
-//   number,
-//   level,
-//   stats,
-//   foot,
-//   shirtIcon,
-//   profileImage
-// }: PlayerCardProps) => {
-//   return (
-//     <div className="relative w-[260px] h-[430px] font-bold text-white">
-//       {/* Background Image */}
-//       <Image
-//         src={vector}
-//         alt="Card background"
-//         layout="fill"
-//         objectFit="contain"
-//         className="z-0"
-//       />
-
-//       {/* Overlay Content */}
-//       <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-4 py-4 text-center">
-        
-//         {/* Top: Shirt Number */}
-//         <div>
-//           <p className="text-sm">NO. {number}</p>
-//           <p className="text-2xl font-bold mt-1">{number}</p>
-//         </div>
-
-//         {/* Middle Top: XXX + Foot */}
-//         <div className="flex flex-col items-center gap-1 text-xs mt-1">
-//           <p>XXX</p>
-//           <div className="flex items-center gap-1">
-//             <Image src={shirtIcon} alt="shoe" width={16} height={16} />
-//             <p>{foot}</p>
-//           </div>
-//         </div>
-
-//         {/* Profile Image + Edit Icon */}
-//         <div className="relative w-20 h-20 mt-2 mb-1">
-//           <Image
-//             src={profileImage || shirtIcon}
-//             alt="Profile"
-//             layout="fill"
-//             objectFit="cover"
-//             className="rounded-full border-2 border-white"
-//           />
-//           {/* Edit Icon */}
-//           <div className="absolute top-1 right-1 bg-white rounded-full p-1">
-//           <IconButton
-//               sx={{bgcolor: "white", p: 0.5 }}
-//               component="label"
-//             >
-//           </div>
-//         </div>
-
-//         {/* Name & Level */}
-//         <div>
-//           <p className="text-lg uppercase">{name}</p>
-//           <p className="text-xs tracking-wider">{level}</p>
-//         </div>
-
-//         {/* Attributes */}
-//         <div className="grid grid-cols-2 gap-y-1 text-xs mt-2">
-//           <p>DRI {stats.DRI}</p>
-//           <p>PAC {stats.PAC}</p>
-//           <p>SHO {stats.SHO}</p>
-//           <p>DEF {stats.DEF}</p>
-//           <p>PAS {stats.PAS}</p>
-//           <p>PHY {stats.PHY}</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default PlayerCard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import Image from 'next/image'
-// import React from 'react'
-// import vector from '@/Components/images/Vector.svg'
-
-// interface PlayerCardProps {
-//   name: string;
-//   number: string;
-//   level: string;
-//   stats: {
-//     DRI: string;
-//     SHO: string;
-//     PAS: string;
-//     PAC: string;
-//     DEF: string;
-//     PHY: string;
-//   };
-//   foot: string;
-//   shirtIcon: string;
-//   profileImage?: string;
-// }
-
-// const PlayerCard = ({
-//   name,
-//   number,
-//   level,
-//   stats,
-//   foot,
-//   shirtIcon,
-//   profileImage
-// }: PlayerCardProps) => {
-//   return (
-//     <div className="relative w-[260px] h-[430px]">
-//         <Image
-//         src={vector}
-//         alt='group img'
-//         width={210}
-//         height={210}
-//         // layout="fill"
-//         objectFit="contain"
-//         className="z-0"
-//         />
-//           <div className="absolute inset-0 flex flex-col items-center text-white px-2 py-4 z-10 font-bold text-center">
-
-// <p className="text-sm">NO. {number}</p>
-// <div className="mt-2 text-xl">{number}</div>
-
-// <div className="text-xs">XXX</div>
-// <div className="text-xs">{foot}</div>
-
-// <div className="w-20 h-20 rounded-full overflow-hidden mt-2 mb-1">
-//   <Image
-//     src={profileImage || shirtIcon}
-//     alt="Profile"
-//     width={80}
-//     height={80}
-//   />
-// </div>
-
-// <div className="text-md">{name}</div>
-// <div className="text-xs mb-2">{level}</div>
-
-// <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mt-2">
-//   <p>DRI {stats.DRI}</p>
-//   <p>PAC {stats.PAC}</p>
-//   <p>SHO {stats.SHO}</p>
-//   <p>DEF {stats.DEF}</p>
-//   <p>PAS {stats.PAS}</p>
-//   <p>PHY {stats.PHY}</p>
-// </div>
-// </div>
-//     </div>
-//   )
-// }
-
-// export default PlayerCard

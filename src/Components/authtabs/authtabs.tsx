@@ -6,7 +6,7 @@ import { login, register, clearError } from '@/lib/features/authSlice';
 import { LoginCredentials, RegisterCredentials } from '@/types/api';
 import { authAPI } from '@/lib/api';
 import {
-  Tabs, Tab, Box, TextField, Button, Typography, CircularProgress,
+  Box, TextField, Button, CircularProgress,
   Alert, FormControl, FormLabel, RadioGroup, FormControlLabel,
   Radio, Checkbox, Stack, IconButton} from '@mui/material';
 import { useSelector } from 'react-redux';
@@ -14,11 +14,16 @@ import { RootState } from '@/lib/store';
 import toast from 'react-hot-toast';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-const AuthTabs = () => {
+interface AuthTabsProps {
+  showLogin?: boolean;
+  onToggleForm?: () => void;
+}
+
+const AuthTabs = ({ showLogin = true, onToggleForm }: AuthTabsProps) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { dispatch: authDispatch } = useAuth();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(showLogin ? 0 : 1);
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const { isAuthenticated } = useSelector((state: RootState) => state.auth) as { isAuthenticated: boolean };
 
@@ -60,10 +65,17 @@ const AuthTabs = () => {
     // }
   }, [isAuthenticated, router]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
-    setTabValue(newValue);
-    authDispatch(clearError());
-  };
+  useEffect(() => {
+    setTabValue(showLogin ? 0 : 1);
+  }, [showLogin]);
+
+  // const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
+  //   setTabValue(newValue);
+  //   authDispatch(clearError());
+  //   if (onToggleForm) {
+  //     onToggleForm();
+  //   }
+  // };
 
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value });
@@ -185,142 +197,276 @@ const AuthTabs = () => {
 
   return (
     <>
-      <Tabs value={tabValue} onChange={handleTabChange} centered sx={{ mb: 3 }}>
-        <Tab label="Login" />
-        <Tab label="Register" />
-      </Tabs>
-
-      {tabValue === 0 && (
+      {tabValue === 0 ? (
+        // Login Form
         <Box component="form" onSubmit={handleLoginSubmit}>
-          <Typography variant="caption" sx={{ mb: 2, display: 'block' }}>
-            Server Status:{' '}
-            <span style={{ color: serverStatus === 'online' ? 'green' : serverStatus === 'offline' ? 'red' : 'orange' }}>
-              {serverStatus === 'checking' ? 'Checking...' : serverStatus === 'online' ? 'Online' : 'Offline'}
-            </span>
-          </Typography>
+          {loginError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {loginError}
+            </Alert>
+          )}
 
-          {loginError && <Alert severity="error" sx={{ mb: 2 }}>{loginError}</Alert>}
-
-          <Stack spacing={2}>
-            <TextField fullWidth label="Email" name="email" type="email" value={loginData.email} onChange={handleLoginChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
-              }} />
-            <TextField fullWidth label="Password" name="password" type={showLoginPassword ? "text" : "password"} value={loginData.password} onChange={handleLoginChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}InputProps={{
-              endAdornment: (
-                <IconButton
-                  onClick={() => setShowLoginPassword((show) => !show)}
-                  edge="end"
-                  size="small"
-                  tabIndex={-1}
-                >
-                  {showLoginPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              ),
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
+          <Stack spacing={3}>
+            <TextField 
+              fullWidth 
+              label="Email Address" 
+              name="email" 
+              type="email" 
+              value={loginData.email} 
+              onChange={handleLoginChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
               }}
-               />
-            <Button type="submit" variant="contained" color="success" fullWidth disabled={loginLoading || serverStatus === 'offline'}>
-              {loginLoading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
+            />
+
+            <TextField 
+              fullWidth 
+              label="Password" 
+              name="password" 
+              type={showLoginPassword ? "text" : "password"} 
+              value={loginData.password} 
+              onChange={handleLoginChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <IconButton
+                    onClick={() => setShowLoginPassword((show) => !show)}
+                    edge="end"
+                    size="small"
+                    sx={{ color: 'white' }}
+                  >
+                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                ),
+              }}
+            />
+
+            <Button 
+              type="submit" 
+              variant="contained" 
+              fullWidth 
+              disabled={loginLoading || serverStatus === 'offline'}
+              sx={{
+                backgroundColor: '#43a047',
+                color: 'white',
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#388e3c',
+                },
+                '&:disabled': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                }
+              }}
+            >
+              {loginLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
             </Button>
-            <Button variant="text" color="primary" fullWidth onClick={handleForgotPassword} sx={{ mt: -1 }}>
-              Forgot Password?
-            </Button>
-            {forgotMessage && <Alert severity={forgotError ? 'error' : 'success'} sx={{ mt: 1 }}>{forgotMessage}</Alert>}
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Button 
+                variant="text" 
+                onClick={handleForgotPassword} 
+                sx={{ 
+                  color: 'white',
+                  textTransform: 'none',
+                  fontSize: '0.9rem',
+                  backgroundColor: '#0B799D',
+                  '&:hover': {
+                    backgroundColor: '#0B799D',
+                  },
+                  width: 'fit-content',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  gap: 1,
+                  textAlign: 'center',
+                  textDecoration: 'underline',
+                }}
+              >
+                Forgot your password?
+              </Button>
+            </Box>
+
+            {forgotMessage && (
+              <Alert severity={forgotError ? 'error' : 'success'} sx={{ mt: 1 }}>
+                {forgotMessage}
+              </Alert>
+            )}
           </Stack>
         </Box>
-      )}
+              ) : (
+          // Register Form - Starts from same position as login form
+          <Box component="form" onSubmit={handleRegisterSubmit}>
+          {registerError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {registerError}
+            </Alert>
+          )}
 
-      {tabValue === 1 && (
-        <Box component="form" onSubmit={handleRegisterSubmit}>
-          {registerError && <Alert severity="error" sx={{ mb: 2 }}>{registerError}</Alert>}
+          <Stack spacing={3}>
+            <TextField 
+              fullWidth 
+              label="Email Address" 
+              name="email" 
+              type="email" 
+              value={registerData.email} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
+              }}
+            />
 
-          <Stack spacing={2}>
-            <TextField fullWidth label="Email" name="email" type="email" value={registerData.email} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
-              }} />
-            <TextField fullWidth label="Password" name="password" type={showRegisterPassword ? "text" : "password"} value={registerData.password} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
+            <TextField 
+              fullWidth 
+              label="Password" 
+              name="password" 
+              type={showRegisterPassword ? "text" : "password"} 
+              value={registerData.password} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
               }}
               InputProps={{
                 endAdornment: (
@@ -328,34 +474,57 @@ const AuthTabs = () => {
                     onClick={() => setShowRegisterPassword((show) => !show)}
                     edge="end"
                     size="small"
-                    tabIndex={-1}
+                    sx={{ color: 'white' }}
                   >
                     {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 ),
-              }} />
-            <TextField fullWidth label="Confirm Password" name="confirmPassword" type={showRegisterConfirmPassword ? "text" : "password"} value={registerData.confirmPassword} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
+              }}
+            />
+
+            <TextField 
+              fullWidth 
+              label="Confirm Password" 
+              name="confirmPassword" 
+              type={showRegisterConfirmPassword ? "text" : "password"} 
+              value={registerData.confirmPassword} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
               }}
               InputProps={{
                 endAdornment: (
@@ -363,93 +532,187 @@ const AuthTabs = () => {
                     onClick={() => setShowRegisterConfirmPassword((show) => !show)}
                     edge="end"
                     size="small"
-                    tabIndex={-1}
+                    sx={{ color: 'white' }}
                   >
                     {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 ),
-              }} />
-            <TextField fullWidth label="First Name" name="firstName" value={registerData.firstName} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
-              }} />
-            <TextField fullWidth label="Last Name" name="lastName" value={registerData.lastName} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
-              }} />
-            <TextField fullWidth label="Age" name="age" type="number" inputProps={{ min: 18, max: 65 }} value={registerData.age} onChange={handleRegisterChange} size="small" required sx={{
-              input: {
-                color: 'black',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: 1,
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitTextFillColor: 'black', // keeps white text in autofill
-              },
-              label: { color: '#ccc' },
-              '& .MuiInputLabel-root': {
-                color: '#ccc',
-              },
-              '& input:-webkit-autofill': {
-                transition: 'background-color 5000s ease-in-out 0s',
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.05) inset',
-                WebkitTextFillColor: 'black',
-              },
-            }}
-              InputLabelProps={{
-                sx: { color: '#ccc' },
-              }} />
+              }}
+            />
+
+            <TextField 
+              fullWidth 
+              label="First Name" 
+              name="firstName" 
+              value={registerData.firstName} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
+              }}
+            />
+
+            <TextField 
+              fullWidth 
+              label="Last Name" 
+              name="lastName" 
+              value={registerData.lastName} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
+              }}
+            />
+
+            <TextField 
+              fullWidth 
+              label="Age" 
+              name="age" 
+              type="number" 
+              inputProps={{ min: 18, max: 65 }} 
+              value={registerData.age} 
+              onChange={handleRegisterChange} 
+              required 
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0B799D',
+                  color: 'white',
+                  borderRadius: 1,
+                  '& fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#fff',
+                  },
+                  '& input': {
+                    color: 'white',
+                    fontSize: '1rem',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'white',
+                  fontSize: '1rem',
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
+                  WebkitTextFillColor: 'white',
+                },
+              }}
+            />
+
             <FormControl>
-              <FormLabel>Gender</FormLabel>
+              <FormLabel sx={{ color: '#fff' }}>Gender</FormLabel>
               <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
-                <FormControlLabel value="male" control={<Radio color="success" />} label="Male" />
-                <FormControlLabel value="female" control={<Radio color="success" />} label="Female" />
+                <FormControlLabel value="male" control={<Radio color="success" />} label="Male" sx={{ color: '#fff' }} />
+                <FormControlLabel value="female" control={<Radio color="success" />} label="Female" sx={{ color: '#fff' }} />
               </RadioGroup>
             </FormControl>
+
             <FormControlLabel
               control={<Checkbox color="success" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />}
               label="I accept the terms and conditions"
+              sx={{ color: '#fff' }}
             />
-            <Button type="submit" variant="contained" color="success" fullWidth disabled={registerLoading}>
+
+            <Button 
+              type="submit" 
+              variant="contained" 
+              fullWidth 
+              disabled={registerLoading}
+              sx={{
+                backgroundColor: '#43a047',
+                color: 'white',
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#388e3c',
+                },
+                '&:disabled': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                }
+              }}
+            >
               {registerLoading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
             </Button>
           </Stack>

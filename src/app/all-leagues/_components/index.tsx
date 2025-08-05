@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -17,6 +17,21 @@ import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
 
+// Helper function to format league name
+const formatLeagueName = (name: string): string => {
+  if (!name) return '';
+  
+  // Capitalize first letter of the name
+  const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+  
+  // Get first letter of each word and join them
+  const words = name.split(' ');
+  const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
+  
+  // Return formatted name with initials in brackets
+  return `${capitalizedName} (${initials})`;
+};
+
 
 interface LeagueMembersDialogProps {
   open: boolean
@@ -26,8 +41,6 @@ interface LeagueMembersDialogProps {
   onRemoveMember: (memberId: string) => void
   onLeaveLeague: () => void
 }
-
-
 
 const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
   return <Slide direction="up" ref={ref} {...props} />
@@ -80,7 +93,6 @@ function LeagueMembersDialog({
         },
       }}
     >
-      {/* Header */}
       <DialogTitle
         sx={{
           background: "linear-gradient(135deg, #0a3e1e 0%, #1b5e20 100%)",
@@ -127,7 +139,7 @@ function LeagueMembersDialog({
                 lineHeight: 1.2,
               }}
             >
-              {league.name}
+              {formatLeagueName(league.name)}
             </Typography>
             <Typography
               variant="body2"
@@ -202,30 +214,33 @@ function LeagueMembersDialog({
                     }}
                   >
                     <ListItemAvatar>
+                    {member.profilePicture ? (
+
                       <Avatar
+                    src={member.profilePicture || "/assets/placeholder.svg"}
                         sx={{
                           width: { xs: 44, sm: 52 },
                           height: { xs: 44, sm: 52 },
-                          bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
+                          // bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
                           color: "white",
                           fontWeight: 700,
                           fontSize: { xs: 16, sm: 18 },
                           border: isCurrentUser ? "3px solid #43a047" : "2px solid rgba(255, 255, 255, 0.2)",
                           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
                         }}
-                      >
-                        {member.profilePicture ? (
-                          <img
-                            src={member.profilePicture || "/placeholder.svg"}
-                            alt={memberName}
-                            width={48}
-                            height={48}
-                            style={{ borderRadius: "50%" }}
-                          />
-                        ) : (
+                      />
+                         ) : (
                           `${member.firstName[0]}${member.lastName[0] || ""}`
                         )}
-                      </Avatar>
+                          {/* <img
+                            src={member.profilePicture || "/placeholder.svg"}
+                            alt={memberName}
+                            width={52}
+                            height={52}
+                            style={{ borderRadius: "50%" }}
+                          />
+                       
+                      </Avatar> */}
                     </ListItemAvatar>
 
                     <ListItemText
@@ -367,58 +382,58 @@ function LeagueMembersDialog({
   )
 }
 
-const cardStyles = {
-  borderRadius: 3,
-  p: { xs: 1.5, md: 3 },
-  color: 'white',
-  background: '#1f673b',
-  border: '1px solid rgba(255,255,255,0.18)',
-  transition: 'transform 0.2s, box-shadow 0.2s',
-  '&:hover': {
-    transform: 'translateY(-4px) scale(1.03)',
-    boxShadow: '0 8px 32px 0 rgba(31,38,135,0.27)',
-  },
-  display: 'flex',
-  flexDirection: 'column',
-  gap: { xs: 1, md: 1 },
-  width: { xs: '100%', md: 'auto' }, // Full width on small screens, auto on large screens for two cards
-  minWidth: { xs: '100%', md: '300px' }, // Minimum width on large screens
-  boxSizing: 'border-box',
-};
+// const cardStyles = {
+//   borderRadius: 3,
+//   p: { xs: 1.5, md: 3 },
+//   color: 'white',
+//   background: '#1f673b',
+//   border: '1px solid rgba(255,255,255,0.18)',
+//   transition: 'transform 0.2s, box-shadow 0.2s',
+//   '&:hover': {
+//     transform: 'translateY(-4px) scale(1.03)',
+//     boxShadow: '0 8px 32px 0 rgba(31,38,135,0.27)',
+//   },
+//   display: 'flex',
+//   flexDirection: 'column',
+//   gap: { xs: 1, md: 1 },
+//   width: { xs: '100%', md: 'auto' }, // Full width on small screens, auto on large screens for two cards
+//   minWidth: { xs: '100%', md: '300px' }, // Minimum width on large screens
+//   boxSizing: 'border-box',
+// };
 
-const iconButtonStyles = {
-  position: 'absolute',
-  color: 'white',
-  border: '2px solid white',
-  borderRadius: 2,
-  right: { xs: 0, md: '0' },
-  p: { xs: 0.6, md: 1.2 },
-  '&:hover': {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-};
+// const iconButtonStyles = {
+//   position: 'absolute',
+//   color: 'white',
+//   border: '2px solid white',
+//   borderRadius: 2,
+//   right: { xs: 0, md: '0' },
+//   p: { xs: 0.6, md: 1.2 },
+//   '&:hover': {
+//     backgroundColor: 'rgba(255,255,255,0.1)',
+//   },
+// };
 
-const buttonStyles = {
-  base: {
-    color: 'white',
-    fontWeight: 'bold',
-    borderRadius: 2,
-    px: { xs: 2, md: 4 },
-    py: { xs: 1, md: 1 },
-    fontSize: { xs: '0.7rem', md: '0.875rem' },
-    textTransform: 'none',
-  },
-  outlined: {
-    bgcolor: '#43a047',
-    borderColor: '#43a047',
-    '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' },
-  },
-  contained: {
-    bgcolor: '#43a047',
-    boxShadow: '0 2px 8px rgba(0,200,83,0.12)',
-    '&:hover': { bgcolor: '#388e3c' },
-  },
-};
+// const buttonStyles = {
+//   base: {
+//     color: 'white',
+//     fontWeight: 'bold',
+//     borderRadius: 2,
+//     px: { xs: 2, md: 4 },
+//     py: { xs: 1, md: 1 },
+//     fontSize: { xs: '0.7rem', md: '0.875rem' },
+//     textTransform: 'none',
+//   },
+//   outlined: {
+//     bgcolor: '#43a047',
+//     borderColor: '#43a047',
+//     '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' },
+//   },
+//   contained: {
+//     bgcolor: '#43a047',
+//     boxShadow: '0 2px 8px rgba(0,200,83,0.12)',
+//     '&:hover': { bgcolor: '#388e3c' },
+//   },
+// };
 
 function AllLeagues() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -448,13 +463,12 @@ function AllLeagues() {
       toast.success('Successfully joined the league!');
       setIsJoining(false);
       setInviteCode('');
-      
-      // Update cache with joined league
+
       if (result) {
         cacheManager.updateLeaguesCacheOnJoin(result);
         console.log('Updated cache with joined league:', result.name);
       }
-      
+
       fetchUserLeagues();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
@@ -462,7 +476,6 @@ function AllLeagues() {
     }
   };
 
-  // Function to update leagues cache with new league
   const updateLeaguesCacheWithNewLeague = useCallback((newLeague: League) => {
     cacheManager.updateLeaguesCache(newLeague);
   }, []);
@@ -470,21 +483,18 @@ function AllLeagues() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file type
       if (!file.type.startsWith('image/')) {
         toast.error('Please select an image file');
         return;
       }
-      
-      // Check file size (max 5MB)
+
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size should be less than 5MB');
         return;
       }
-      
+
       setLeagueImage(file);
-      
-      // Create preview URL
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -560,7 +570,7 @@ function AllLeagues() {
         setLeagueName('');
         setLeagueImage(null);
         setImagePreview(null);
-        
+
         // Update the leagues cache with the new league
         if (data.league) {
           const newLeague = {
@@ -573,10 +583,10 @@ function AllLeagues() {
             maxGames: null,
             showPoints: true
           };
-          
+
           // Update cache with new league
           updateLeaguesCacheWithNewLeague(newLeague);
-          
+
           // Update local state
           setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
           console.log('Updated cache and local state with new league:', newLeague);
@@ -592,10 +602,6 @@ function AllLeagues() {
       setIsCreating(false);
       setLoading(false);
     }
-  };
-
-  const handleLeagueClick = (leagueId: string) => {
-    router.push(`/league/${leagueId}`);
   };
 
   const handleOpenMembers = async (league: League) => {
@@ -665,7 +671,7 @@ function AllLeagues() {
       sx={{
         minHeight: '100vh',
         // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
-        fontFamily: 'Sailec, Geist, Roboto, Arial, sans-serif',
+        fontFamily: '"League Spartan", sans-serif',
         py: 6,
       }}
     >
@@ -674,230 +680,389 @@ function AllLeagues() {
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
           sx={{
-            mb: 2, color: 'white', backgroundColor: '#1f673b',
+            mb: 2, color: 'white', backgroundColor: '#388e3c',
             '&:hover': { backgroundColor: '#388e3c' },
           }}
         >
           Back to Dashboard
         </Button>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h3"
-            fontWeight="bold"
-            align="center"
-            color="black"
-            sx={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
-          >
-            All Leagues
+        <Box sx={{ mb: { xs: 3, md: 5 } }}>
+          <Typography variant="h3" sx={{
+            mb: { xs: 3, md: 4 },
+            color: 'black',
+            // fontFamily: 'Arial Black, Arial, sans-serif',
+            fontFamily: 'Anton, sans-serif',
+            fontWeight: 'semibold',
+            fontSize: { xs: '32px', sm: '42px', md: '56px' },
+            textAlign: { xs: 'center', md: 'left' },
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}
+          className='all-leagues-heading'>
+            ALL LEAGUES
           </Typography>
-          <Typography
-            variant="subtitle1"
-            align="center"
-            color="black"
-            sx={{ mt: 1 }}
-          >
-            Manage and join football leagues. Create your own or join with an invite code.
-          </Typography>
-        </Box>
-        <Box sx={{ flexDirection: { xs: 'column', md: 'row' }, gap: 4, mb: 4 }}>
-          <Box sx={{ width: '100%' }}>
-            <Paper
-              elevation={6}
+
+          {/* Create/Join League Section */}
+          <Box sx={{
+            display: 'flex',
+            gap: { xs: 2, md: 3 },
+            mb: { xs: 3, md: 5 },
+            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' }
+          }}>
+            <Button
+              variant="contained"
+              onClick={() => setIsDialogOpen(true)}
               sx={{
-                background: '#1f673b',
-                backdropFilter: 'blur(10px)',
-                borderRadius: 3,
-                p: { xs: 2, sm: 3 },
+                bgcolor: 'rgb(31 62 144)',
                 color: 'white',
-                boxShadow: '0 8px 32px 0 rgba(31,38,135,0.37)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                mb: 4,
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontWeight: 'bold',
+                fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                '&:hover': { bgcolor: 'rgba(30, 58, 138, 1)' },
+                width: { xs: '100%', sm: 'fit-content' },
+                borderRadius: 2,
+                py: { xs: 1.5, md: 2 },
+                px: { xs: 3, md: 4 },
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                textTransform: 'none'
               }}
             >
-              <Box display="flex" alignItems="center" gap={2} mb={2}>
-                <Image src={leagueIcon} alt="League" width={40} height={40} />
-                <Typography variant="h5" fontWeight="bold">Create or Join League</Typography>
-              </Box>
+              Create New League
+            </Button>
 
-
+            <Box sx={{
+              display: 'flex',
+              gap: { xs: 1, md: 2 },
+              width: { xs: '100%', sm: '1' },
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' }
+            }}>
+              <TextField
+                label="Enter invite code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                sx={{
+                  flex: 1,
+                  width: { xs: '100%', sm: 'auto' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'black',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
+                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
+                  },
+                  '& .MuiInputLabel-root': { color: 'green' },
+                }}
+              />
               <Button
                 variant="contained"
-                fullWidth
-                onClick={() => setIsDialogOpen(true)}
+                onClick={handleJoinLeague}
+                disabled={isJoining}
                 sx={{
-                  bgcolor: '#43a047',
+                  bgcolor: 'rgb(74 176 78)',
                   color: 'white',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
                   fontWeight: 'bold',
-                  mb: 2,
+                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                  '&:hover': { bgcolor: 'rgb(74 176 78)' },
+                  '&:disabled': { bgcolor: 'rgba(255,255,255,0.12)' },
                   borderRadius: 2,
-                  boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
-                  '&:hover': { bgcolor: '#388e3c' },
-                  width: '300px'
+                  py: { xs: 1.5, md: 2 },
+                  px: { xs: 3, md: 4 },
+                  width: { xs: '100%', sm: 'fit-content' },
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  textTransform: 'none'
                 }}
               >
-                + Create New League
+                {isJoining ? <CircularProgress size={20} /> : 'Join League'}
               </Button>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <TextField
-                  placeholder="Enter invite code"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  size="small"
-                  sx={{
-                    backgroundColor: 'white',
-                    borderRadius: 1,
-                    flex: 1,
-                    maxWidth: 300,
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'white',
-                      borderRadius: 1,
-                      '& fieldset': { borderColor: '#43a047' },
-                      '&:hover fieldset': { borderColor: '#43a047' },
-                      '&.Mui-focused fieldset': { borderColor: '#43a047' },
-                      '& input': { color: '#222' },
-                      '& input:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px white inset !important',
-                        WebkitTextFillColor: '#222 !important',
-                        color: '#222 !important',
-                        transition: 'background-color 5000s ease-in-out 0s',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#43a047' },
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  sx={{
-                    bgcolor: '#43a047',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderRadius: 2,
-                    mt: 1,
-                    '&:hover': { bgcolor: '#388e3c' },
-                  }}
-                  onClick={handleJoinLeague}
-                  disabled={isJoining}
-                >
-                  <svg className="w-5 h-5 mr-2" fill="white" viewBox="0 0 24 24">
-                    <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
-                  </svg>
-                  {isJoining ? 'Joining...' : 'Join League'}
-                </Button>
-              </Box>
-            </Paper>
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
-              {loading ? (
-                <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
-                  <Typography variant="h6" color="black">Loading leagues...</Typography>
-                </Box>
-              ) : leagues.length === 0 ? (
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      background: '#1f673b',
-                      borderRadius: 3,
-                      p: 4,
-                      textAlign: 'center',
-                      color: '#b0bec5',
-                    }}
-                  >
-                    <Typography variant="h6">No leagues found.</Typography>
-                    <Typography variant="body2">Create a new league to get started!</Typography>
-                  </Paper>
-                </Box>
-              ) : (
-                leagues.map((league) => (
-                  <Paper
-                    key={league.id}
-                    elevation={4}
-                    sx={cardStyles}
-                    role="region"
-                    aria-label={`League: ${league.name}`}
-                  >
-                    <Box display="flex" position="relative" alignItems="center" gap={{ xs: 1, md: 2 }} mb={{ xs: 0.5, md: 1 }}>
-                      <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={32} height={32} priority />
-                      <Typography
-                        textTransform="uppercase"
-                        variant="h6"
-                        fontWeight="bold"
-                        sx={{ fontSize: { xs: '0.9rem', md: '1.25rem' } }}
-                      >
-                        {league.name}
-                      </Typography>
-                      <IconButton
-                        sx={iconButtonStyles}
-                        onClick={() => handleOpenMembers(league)}
-                        aria-label={`Open settings for ${league.name}`}
-                      >
-                        <SettingsIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      color="white"
-                      mb={{ xs: 0.5, md: 1 }}
-                      sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
-                    >
-                      Invite Code: <span style={{ color: '#43a047', fontWeight: 600 }}>{league.inviteCode}</span>
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="white"
-                      mb={{ xs: 1, md: 2 }}
-                      sx={{ fontSize: { xs: '0.65rem', md: '0.875rem' } }}
-                    >
-                      Created: {new Date(league.createdAt).toLocaleString()}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: { xs: 0.5, md: 1 },
-                        mt: { xs: 1, md: 2 },
-                        flexWrap: 'wrap',
-                        justifyContent: { xs: 'center', md: 'flex-start' },
-                      }}
-                    >
-                      <Button
-                        variant="outlined"
-                        sx={{ ...buttonStyles.base, ...buttonStyles.outlined }}
-                        onClick={() => {
-                          if (league.showPoints === false) {
-                            toast.error('Points are hidden for this league.');
-                            return;
-                          }
-                          router.push(`/league/${league.id}?tab=table`);
-                        }}
-                        aria-label={`View table for ${league.name}`}
-                      >
-                        Table
-                      </Button>
-                      <Button
-                        variant="contained"
-                        sx={{ ...buttonStyles.base, ...buttonStyles.contained }}
-                        onClick={() => router.push(`/league/${league.id}?tab=awards`)}
-                        aria-label={`View awards for ${league.name}`}
-                      >
-                        Award
-                      </Button>
-                      <Button
-                        variant="contained"
-                        sx={{ ...buttonStyles.base, ...buttonStyles.contained }}
-                        onClick={() => handleLeagueClick(league.id)}
-                        aria-label={`View details for ${league.name}`}
-                      >
-                        View League
-                      </Button>
-                    </Box>
-                  </Paper>
-                ))
-              )}
             </Box>
           </Box>
+        </Box>
+
+        {/* Leagues List - Card Format */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
+          {loading ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <CircularProgress sx={{ color: 'rgba(96, 165, 250, 0.8)' }} />
+              <Typography sx={{ mt: 2, color: 'white', fontSize: { xs: '14px', md: '16px' } }}>Loading leagues...</Typography>
+            </Box>
+          ) : leagues.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
+                Create a new league or join an existing one to get started.
+              </Typography>
+            </Box>
+          ) : (
+            leagues.map((league) => (
+              <Box
+                key={league.id}
+                onClick={() => router.push(`/league/${league.id}`)}
+                sx={{
+                  p: { xs: 3, md: 2 },
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  border: '2px solid rgba(255,255,255,0.1)',
+                  // backgroundColor: '#02A880',
+                  // backdropFilter: 'blur(10px)',
+                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                  position: 'relative',
+                  '&:hover': {
+                    backgroundColor: 'rgba(30, 58, 138, 1)',
+                    transform: 'translateY(-3px)',
+                    // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
+                    border: '2px solid rgba(255,255,255,0.2)'
+                  }
+                }}
+              >
+                {/* Settings Icon - Top Right */}
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    color: 'white',
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                    zIndex: 2
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle settings click
+                  }}
+                >
+                  <SettingsIcon
+                    onClick={() => handleOpenMembers(league)}
+                    aria-label={`Open settings for ${formatLeagueName(league.name)}`}
+                    size={20} />
+                </IconButton>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
+                  {/* League Logo - Green Shield */}
+                  <Box sx={{
+                    width: { xs: 60, sm: 60, md: 60 },
+                    height: { xs: 60, sm: 60, md: 60 },
+                    // borderRadius: 2,
+                    // overflow: 'hidden',
+                    // backgroundColor: '#43a047',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    // border: '2px solid rgba(255,255,255,0.2)',
+                    // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    position: 'relative'
+                  }}>
+                    <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={60} height={60} priority />
+                  </Box>
+
+                  {/* League Info */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {/* League Title */}
+                    <Typography sx={{
+                      color: 'white',
+                      fontFamily: '"League Spartan", sans-serif',
+                      // fontWeight: 'bold',
+                      fontSize: { xs: '18px', sm: '20px', md: '16px' },
+                      mb: 2,
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {formatLeagueName(league.name)}
+                    </Typography>
+
+                    {/* League Details - Two Column Layout */}
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: { xs: 2, sm: 5 }
+                    }}>
+                      {/* Left Column */}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            flexShrink: 0,
+                            position: 'relative'
+                          }}>
+                            <Box sx={{
+                              width: 10,
+                              height: 10,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: '50%',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)'
+                            }} />
+                          </Box>
+                          <Typography sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontFamily: '"League Spartan", sans-serif',
+                            fontWeight: 200,
+                            fontSize: { xs: '13px', sm: '13px' }
+                          }}>
+                            Players {league.members.length}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            flexShrink: 0,
+                            position: 'relative'
+                          }}>
+                            <Box sx={{
+                              width: 10,
+                              height: 10,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: '50%',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)'
+                            }} />
+                          </Box>
+                          <Typography sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontFamily: '"League Spartan", sans-serif',
+                            fontWeight: 200,
+                            fontSize: { xs: '14px', sm: '16px' }
+                          }}>
+                            Created At {new Date(league.createdAt).toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Right Column */}
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        alignItems: { xs: 'flex-start', sm: 'flex-start' }
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            flexShrink: 0,
+                            position: 'relative'
+                          }}>
+                            <Box sx={{
+                              width: 10,
+                              height: 10,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: '50%',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)'
+                            }} />
+                          </Box>
+                          <Typography sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontFamily: '"League Spartan", sans-serif',
+                            fontWeight: 200,
+                            fontSize: { xs: '13px', sm: '13px' }
+                          }}>
+                            Invite Code: {league.inviteCode}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            sx={{
+                              color: 'white',
+                              p: 0.5,
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(league.inviteCode);
+                              toast.success('Invite code copied!');
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                            </svg>
+                          </IconButton>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            flexShrink: 0,
+                            position: 'relative'
+                          }}>
+                            <Box sx={{
+                              width: 10,
+                              height: 10,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: '50%',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)'
+                            }} />
+                          </Box>
+                          <Typography sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontFamily: '"League Spartan", sans-serif',
+                            fontWeight: 200,
+                            fontSize: { xs: '13px', sm: '13px' }
+                          }}>
+                            Matches: {league.matches.length}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            ))
+          )}
         </Box>
 
         {/* Create League Dialog */}
@@ -971,18 +1136,18 @@ function AllLeagues() {
               }}
               InputLabelProps={{ sx: { color: '#fff' } }}
             />
-            
+
             {/* League Image Upload Section */}
             <Box sx={{ mt: 2, mb: 2 }}>
               <Typography variant="subtitle1" sx={{ color: '#fff', mb: 1, fontWeight: 'bold' }}>
                 League Image (Optional)
               </Typography>
-              
+
               {/* Image Preview */}
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 2, 
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
                 mb: 2,
                 p: 2,
                 border: '2px dashed #43a047',
@@ -993,9 +1158,9 @@ function AllLeagues() {
                 <Avatar
                   src={imagePreview || '/assets/league.png'}
                   alt="League Image"
-                  sx={{ 
-                    width: 60, 
-                    height: 60, 
+                  sx={{
+                    width: 60,
+                    height: 60,
                     border: '2px solid #43a047',
                     background: '#1f673b'
                   }}
@@ -1010,7 +1175,7 @@ function AllLeagues() {
                   </Typography>
                 </Box>
               </Box>
-              
+
               {/* Upload Buttons */}
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
@@ -1023,7 +1188,7 @@ function AllLeagues() {
                     borderRadius: 2,
                     px: 2,
                     fontWeight: 'bold',
-                    '&:hover': { 
+                    '&:hover': {
                       borderColor: '#388e3c',
                       backgroundColor: 'rgba(67,160,71,0.1)'
                     },
@@ -1037,7 +1202,7 @@ function AllLeagues() {
                     onChange={handleImageUpload}
                   />
                 </Button>
-                
+
                 {imagePreview && (
                   <Button
                     variant="outlined"
@@ -1048,7 +1213,7 @@ function AllLeagues() {
                       borderRadius: 2,
                       px: 2,
                       fontWeight: 'bold',
-                      '&:hover': { 
+                      '&:hover': {
                         borderColor: '#ff5252',
                         backgroundColor: 'rgba(255,107,107,0.1)'
                       },

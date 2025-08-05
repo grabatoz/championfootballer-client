@@ -7,7 +7,8 @@ import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
 import Image from 'next/image';
-import leagueIcon from '@/Components/images/league.png';
+import homeTeamIcon from '@/Components/images/matches.png';
+import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 import { User } from '@/types/user';
 import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
@@ -652,7 +653,7 @@ export default function AllMatches() {
                                                 mt: 3
                                             }}>
                                                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={match.homeTeamImage || leagueIcon.src || '/assets/default-team.png'} alt={match.homeTeamName || match.homeTeam || 'Home Team'} width={48} height={48} />
+                                                    <Image src={match.homeTeamImage || homeTeamIcon.src } alt={match.homeTeamName || match.homeTeam || 'Home Team'} width={48} height={48} />
                                                     <Typography
                                                         textTransform="uppercase"
                                                         variant="h6"
@@ -679,7 +680,7 @@ export default function AllMatches() {
                                                     VS
                                                 </Typography>
                                                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                                    <Image src={match.awayTeamImage || leagueIcon.src || '/assets/default-team.png'} alt={match.awayTeamName || match.awayTeam || 'Away Team'} width={48} height={48} />
+                                                    <Image src={match.awayTeamImage || awayTeamIcon.src} alt={match.awayTeamName || match.awayTeam || 'Away Team'} width={48} height={48} />
                                                     <Typography
                                                         textTransform="uppercase"
                                                         variant="h6"

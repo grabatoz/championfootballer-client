@@ -1,11 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import "tailwindcss";
+
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-
+/* Font Guidelines Implementation */
 @font-face {
   font-family: 'Sailec';
   src: url('/fonts/Sailec-Regular.woff2') format('woff2');
@@ -18,6 +20,55 @@
   font-family: 'Sailec', sans-serif;
 }
 
+/* Main Title Styles - Arial Black, Bold, 36-48px */
+.main-title {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(36px, 4vw, 48px);
+  line-height: 1.2;
+}
+
+/* Section Headings - Franklin Gothic Demi, SemiBold, 24-32px */
+.section-heading {
+  font-family: 'Franklin Gothic Demi', 'Franklin Gothic Medium', Arial, sans-serif;
+  font-weight: 600;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.3;
+}
+
+/* Body Text - Arial, Regular, 16-18px */
+.body-text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  font-size: clamp(16px, 1.2vw, 18px);
+  line-height: 1.5;
+}
+
+/* Buttons/Labels - Arial Bold, Bold, 14-16px */
+.button-label {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.4;
+}
+
+/* Stats/Numbers - Arial Semibold, Regular, 16pt */
+.stats-numbers {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  font-size: 16pt;
+  line-height: 1.4;
+}
+
+
+
+.all-leagues-heading {
+  font-family: 'Anton', sans-serif;
+  font-size: 58px; /* Adjust as needed */
+  color: #000000;  /* Match your blue color */
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -30,6 +81,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(16px, 1.2vw, 18px);
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 input::selection,

@@ -19,7 +19,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
-import cflogo from '@/Components/images/logo.png';
+// import cflogo from '@/Components/images/logo.png';
+import cflogo from '@/Components/images/champion football logo 3.png';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -100,31 +101,90 @@ export default function NavigationBar() {
   const renderNavLinks = () => (
     <>
       <Button
-        onClick={() => setHowToPlayOpen(true)}
+        onClick={() => router.push('/all-leagues')}
         sx={{
           textTransform: 'none',
-          fontWeight: 600,
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
           color: 'white',
-          fontSize: '1rem',
+          fontSize: { xs: '14px', md: '16px' },
           transition: '0.3s',
-          '&:hover': { color: '#43a047' },
+          '&:hover': { textDecoration: 'underline' },
         }}
       >
-        How to play
+       Leagues
       </Button>
       <Button
-        onClick={() => setGameRulesOpen(true)}
+        onClick={() => router.push('/all-matches')}
         sx={{
           textTransform: 'none',
-          fontWeight: 600,
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
           color: 'white',
-          fontSize: '1rem',
+          fontSize: { xs: '14px', md: '16px' },
           transition: '0.3s',
-          '&:hover': { color: '#43a047' },
+          '&:hover': { textDecoration: 'underline' },
         }}
       >
-        Game rules
+       Matches
       </Button>
+      <Button
+        onClick={() => router.push('/dream-team')}
+        sx={{
+          textTransform: 'none',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
+          color: 'white',
+          fontSize: { xs: '14px', md: '16px' },
+          transition: '0.3s',
+          '&:hover': { textDecoration: 'underline' },
+        }}
+      >
+       Dream Team
+      </Button>
+      <Button
+        onClick={() => router.push('/all-player')}
+        sx={{
+          textTransform: 'none',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
+          color: 'white',
+          fontSize: { xs: '14px', md: '16px' },
+          transition: '0.3s',
+          '&:hover': { textDecoration: 'underline' },
+        }}
+      >
+        Player
+      </Button>
+      <Button
+        onClick={() => router.push('/trophy-room')}
+        sx={{
+          textTransform: 'none',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
+          color: 'white',
+          fontSize: { xs: '14px', md: '16px' },
+          transition: '0.3s',
+          '&:hover': { textDecoration: 'underline' },
+        }}
+      >
+        Trophy Room
+      </Button>
+      <Button
+        onClick={() => router.push('/leaderboard')}
+        sx={{
+          textTransform: 'none',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 'bold',
+          color: 'white',
+          fontSize: { xs: '14px', md: '16px' },
+          transition: '0.3s',
+          '&:hover': { textDecoration: 'underline' },
+        }}
+      >
+        Leaderboard
+      </Button>
+     
     </>
   );
 
@@ -142,14 +202,18 @@ export default function NavigationBar() {
     <>
       <AppBar
         position="static"
-        sx={{ backgroundColor: '#0a3e1e', boxShadow: 3, px: { xs: 2, md: 6 } }}
+        sx={{ 
+          background: '#00A77F',
+          boxShadow: 3, 
+          px: { xs: 2, md: 2 } 
+        }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
           <Link href="/home" style={{ display: 'flex', alignItems: 'center' }}>
             <Image
               src={cflogo}
               alt="Champion Footballer Logo"
-              width={600}
+              width={200}
               height={40}
               className="w-auto"
               priority
@@ -157,7 +221,7 @@ export default function NavigationBar() {
             />
           </Link>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
             {isAuthenticated && renderNavLinks()}
             {isAuthenticated && (
               <>
@@ -166,16 +230,17 @@ export default function NavigationBar() {
                   startIcon={<AccountCircleIcon />}
                   sx={{
                     textTransform: 'none',
-                    fontWeight: 600,
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontWeight: 'bold',
                     color: '#fff',
-                    bgcolor: '#43a047',
+                    bgcolor: '#1f3e90',
                     borderRadius: 2,
                     px: 2.5,
-                    fontSize: '1rem',
+                    fontSize: { xs: '14px', md: '16px' },
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#388e3c',
+                      bgcolor: '#1f3e90',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
@@ -191,8 +256,8 @@ export default function NavigationBar() {
                   TransitionComponent={SlideFade}
                   PaperProps={{
                     sx: {
-                      bgcolor: '#1f673b',
-                      color: '#fff',
+                      bgcolor: '#fff',
+                      color: 'black',
                       borderRadius: 2,
                       boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
                       mt: 1.5,
@@ -202,13 +267,19 @@ export default function NavigationBar() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                  <MenuItem onClick={handleProfileClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
                     Profile
                   </MenuItem>
-                  <MenuItem onClick={handleDashboardClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                  <MenuItem onClick={handleDashboardClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
                     Dashboard
                   </MenuItem>
-                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                    How to play
+                  </MenuItem>
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                    Game rules
+                  </MenuItem>
+                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#43a047', color: '#fff' } }}>
                     Sign out
                   </MenuItem>
                 </Menu>
@@ -255,13 +326,13 @@ export default function NavigationBar() {
                     px: 3,
                     py: 1.5,
                     color: '#fff',
-                    bgcolor: '#43a047',
+                    bgcolor: '#1f3e90',
                     borderRadius: 2,
                     fontWeight: 600,
                     mb: 1,
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#388e3c',
+                      bgcolor: '#1f3e90',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
@@ -293,6 +364,12 @@ export default function NavigationBar() {
                   </MenuItem>
                   <MenuItem onClick={handleDashboardClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
                     Dashboard
+                  </MenuItem>
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    How to play
+                  </MenuItem>
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
+                    Game rules
                   </MenuItem>
                   <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
                     Sign out
@@ -328,7 +405,13 @@ export default function NavigationBar() {
         </Box>
       </Drawer>
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#1f673b', color: 'white', fontWeight: 700, fontSize: 22 }}>
+        <DialogTitle sx={{ 
+          bgcolor: '#1f673b', 
+          color: 'white', 
+          fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+          fontWeight: 600, 
+          fontSize: { xs: '24px', md: '32px' }
+        }}>
           How to Play
           <IconButton
             aria-label="close"
@@ -340,10 +423,20 @@ export default function NavigationBar() {
         </DialogTitle>
         <DialogContent sx={{ color: '#222', mt: 2 }}>
           {/* Step 1: Player Card */}
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" sx={{ 
+            fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+            fontWeight: 600,
+            fontSize: { xs: '24px', md: '32px' },
+            mb: 2
+          }}>
             1. Set Up Your Player Card
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ 
+            mb: 2,
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontWeight: 400,
+            fontSize: { xs: '16px', md: '18px' }
+          }}>
             After registering, your Player Card stats will be set to zero by default. Before joining a match, update your Player Card by adjusting your skill levels using the sliders. These stats help balance teams and improve match predictions.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
@@ -351,10 +444,20 @@ export default function NavigationBar() {
           </Box>
 
           {/* Step 2: Join or Create a League */}
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" sx={{ 
+            fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+            fontWeight: 600,
+            fontSize: { xs: '24px', md: '32px' },
+            mb: 2
+          }}>
             2. Join or Create a League
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ 
+            mb: 2,
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontWeight: 400,
+            fontSize: { xs: '16px', md: '18px' }
+          }}>
             To play matches, you need to be part of a league. You can join an existing league using an <b>invite code</b> or the <b>join league</b> link. To create your own league, click the <b>Create New League</b> button on the home page and enter a league name.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
@@ -447,7 +550,13 @@ export default function NavigationBar() {
         </DialogContent>
       </Dialog>
       <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#1f673b', color: 'white', fontWeight: 700, fontSize: 22 }}>
+        <DialogTitle sx={{ 
+          bgcolor: '#1f673b', 
+          color: 'white', 
+          fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+          fontWeight: 600, 
+          fontSize: { xs: '24px', md: '32px' }
+        }}>
           Game rules
           <IconButton
             aria-label="close"
