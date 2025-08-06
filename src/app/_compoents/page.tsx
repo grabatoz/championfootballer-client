@@ -63,10 +63,10 @@ export default function LandingPage() {
             <Box
               sx={{
                 p: 2,
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-5px)',
-                }
+                // transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                // '&:hover': {
+                //   transform: 'translateY(-5px)',
+                // }
               }}
             >
               <Image 
@@ -94,14 +94,14 @@ export default function LandingPage() {
               color: 'white',
             }}
           >
-            Your Game. Your Stats. Your Glory
+            Your Game. Your Stats. <br/>Your Glory
           </Typography>
           
           {/* Description */}
           <Typography
             variant="body1"
             sx={{
-              maxWidth: 450,
+              maxWidth: 320,
               lineHeight: 1.6,
               color: '#f0f0f0',
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
