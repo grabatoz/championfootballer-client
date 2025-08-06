@@ -20,14 +20,14 @@ import Slide, { SlideProps } from '@mui/material/Slide';
 // Helper function to format league name
 const formatLeagueName = (name: string): string => {
   if (!name) return '';
-  
+
   // Capitalize first letter of the name
   const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-  
+
   // Get first letter of each word and join them
   const words = name.split(' ');
   const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
-  
+
   // Return formatted name with initials in brackets
   return `${capitalizedName} (${initials})`;
 };
@@ -214,25 +214,25 @@ function LeagueMembersDialog({
                     }}
                   >
                     <ListItemAvatar>
-                    {member.profilePicture ? (
+                      {member.profilePicture ? (
 
-                      <Avatar
-                    src={member.profilePicture || "/assets/placeholder.svg"}
-                        sx={{
-                          width: { xs: 44, sm: 52 },
-                          height: { xs: 44, sm: 52 },
-                          // bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
-                          color: "white",
-                          fontWeight: 700,
-                          fontSize: { xs: 16, sm: 18 },
-                          border: isCurrentUser ? "3px solid #43a047" : "2px solid rgba(255, 255, 255, 0.2)",
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-                        }}
-                      />
-                         ) : (
-                          `${member.firstName[0]}${member.lastName[0] || ""}`
-                        )}
-                          {/* <img
+                        <Avatar
+                          src={member.profilePicture || "/assets/placeholder.svg"}
+                          sx={{
+                            width: { xs: 44, sm: 52 },
+                            height: { xs: 44, sm: 52 },
+                            // bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: { xs: 16, sm: 18 },
+                            border: isCurrentUser ? "3px solid #43a047" : "2px solid rgba(255, 255, 255, 0.2)",
+                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                          }}
+                        />
+                      ) : (
+                        `${member.firstName[0]}${member.lastName[0] || ""}`
+                      )}
+                      {/* <img
                             src={member.profilePicture || "/placeholder.svg"}
                             alt={memberName}
                             width={52}
@@ -699,7 +699,7 @@ function AllLeagues() {
             letterSpacing: '2px',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
-          className='all-leagues-heading'>
+            className='all-leagues-heading'>
             ALL LEAGUES
           </Typography>
 
@@ -741,7 +741,7 @@ function AllLeagues() {
               >
                 Create New League
               </Button>
-              <TextField
+              {/* <TextField
                 label="Enter invite code"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
@@ -752,6 +752,30 @@ function AllLeagues() {
                     color: 'black',
                     backgroundColor: 'rgba(255,255,255,0.1)',
                     borderRadius: 2,
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
+                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
+                  },
+                  '& .MuiInputLabel-root': { color: 'green' },
+                  
+                }}
+              /> */}
+              <TextField
+                label="Enter invite code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                size="medium"
+                sx={{
+                  flex: 1,
+                  width: { xs: '100%', sm: 'auto' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'black',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderRadius: 2,
+                    padding: '0', // Remove extra padding
+                    '& input': {
+                      padding: '13px 12px', // Reduce input height
+                    },
                     '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
                     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
                     '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },

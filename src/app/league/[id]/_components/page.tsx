@@ -1265,7 +1265,8 @@ export default function LeagueDetailPage() {
                         </Box>
                         {/* Section Content */}
                         <Paper sx={{
-                            backgroundColor: '#388e3c',
+                            // backgroundColor: '#388e3c',
+                            backgroundColor: '#43a047',
                             color: 'white',
                             minHeight: 400,
                             backdropFilter: 'blur(10px)',
@@ -1294,10 +1295,10 @@ export default function LeagueDetailPage() {
                                             }}>
                                                 {/* Header */}
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
-                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
+                                                    <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
                                                     <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
-                                                        <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } , mr:10 }}>Position</Typography>
-                                                        <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>shirtNumber</Typography>
+                                                        <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } , mr:10 }}>Position</Typography>
+                                                        <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>shirtNumber</Typography>
                                                     </Box>
                                                 </Box>
 
@@ -1325,6 +1326,7 @@ export default function LeagueDetailPage() {
                                                                         py: { xs: 1, sm: 2 },
                                                                         px: { xs: 1, sm: 2 },
                                                                         alignItems: 'center',
+                                                                        backgroundColor:'#388e3c'
                                                                     }}
                                                                 >
                                                                     <ListItemAvatar>
@@ -1384,11 +1386,11 @@ export default function LeagueDetailPage() {
                                         {isAdmin && (
                                             <Link href={`/league/${leagueId}/match`} passHref>
                                                 <Button
-                                                    variant="contained"
+                                                    // variant="contained"
                                                     size="small"
                                                     sx={{
-                                                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                                                        '&:hover': { backgroundColor: 'rgba(59, 130, 246, 1)' },
+                                                        background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
+                                                        // '&:hover': { backgroundColor: 'rgba(59, 130, 246, 1)' },
                                                         color: 'white',
                                                         fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                                         px: { xs: 1, sm: 1.5 },
@@ -1418,16 +1420,20 @@ export default function LeagueDetailPage() {
 
                                                     <Card key={match.id} sx={{
                                                         // backgroundColor: 'rgba(30, 58, 138, 0.6)',
-                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                //   background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                //   background: 'linear-gradient(178deg,rgba(255, 255, 255, 1) 0%, rgba(212, 212, 212, 1) 91%);',
+                  background: ' linear-gradient(178deg,rgba(255, 255, 255, 1) 0%, rgba(204, 204, 204, 1) 91%);',
 
                                                         position: 'relative',
-                                                        border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                        // border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                        border: '2px solid rgba(255,255,255,0.1)',
+
                                                         borderRadius: 3,
                                                         backdropFilter: 'blur(10px)',
                                                         '&:hover': {
-                                                            border: '2px solid rgba(96, 165, 250, 0.8)',
+                                                            border: '2px solid green',
                                                             transform: 'translateY(-2px)',
-                                                            boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
+                                                            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                                         }
                                                     }}>
                                                         <CardContent sx={{ p: 2 }}>
@@ -1435,7 +1441,7 @@ export default function LeagueDetailPage() {
                                                                 <Link href={`/league/${league?.id}/match/${match.id}/edit`} passHref>
                                                                     <IconButton
                                                                         size="small"
-                                                                        sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                                        sx={{ position: 'absolute', top: 8, right: 8, color: 'black', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
                                                                         disabled={!league?.active}
                                                                     >
                                                                         <Edit size={16} />
@@ -1497,7 +1503,7 @@ export default function LeagueDetailPage() {
                                                                             <Typography
                                                                                 variant="body2"
                                                                                 sx={{
-                                                                                    color: 'white',
+                                                                                    color: 'black',
                                                                                     fontWeight: 'bold',
                                                                                     fontSize: { xs: '0.85rem', sm: '0.85rem', md: '1.5rem' },
                                                                                     ml: 2
@@ -1533,7 +1539,7 @@ export default function LeagueDetailPage() {
                                                                             <Typography
                                                                                 variant="body2"
                                                                                 sx={{
-                                                                                    color: 'white',
+                                                                                    color: 'black',
                                                                                     fontWeight: 'bold',
                                                                                     fontSize: { xs: '0.85rem', sm: '0.85rem', md: '1.5rem' },
                                                                                     ml: 2
@@ -1557,19 +1563,19 @@ export default function LeagueDetailPage() {
                                                                         right: 8
                                                                     }}>
                                                                         <Typography variant="body2" sx={{
-                                                                            color: 'rgba(255,255,255,0.9)',
+                                                                            color: 'black',
                                                                             fontWeight: 'bold',
                                                                             fontSize: '0.9rem'
                                                                         }}>
                                                                             {formatMatchDate(match.date)}
                                                                         </Typography>
                                                                         <Typography variant="body2" sx={{
-                                                                            color: 'rgba(255,255,255,0.7)',
+                                                                            color: 'black',
                                                                             fontSize: '0.8rem'
                                                                         }}>
                                                                             {formatMatchTime(match.date)}
                                                                         </Typography>
-                                                                        <Divider sx={{ height: '18vh', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                        <Divider sx={{ height: '18vh', width: '0.5px', color: 'white', bgcolor: 'black', mr: 8.5, mt: -6 }} />
                                                                     </Box>
                                                                 </Box>
                                                                 {/* <Box sx={{
@@ -1936,16 +1942,18 @@ export default function LeagueDetailPage() {
 
                                                 <Card key={match.id} sx={{
                                                     // backgroundColor: 'rgba(30, 58, 138, 0.6)',
-                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                //   background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                //   background: 'linear-gradient(178deg,rgba(255, 255, 255, 1) 0%, rgba(212, 212, 212, 1) 91%);',
+                  background: 'linear-gradient(178deg,rgba(255, 255, 255, 1) 0%, rgba(204, 204, 204, 1) 91%)',
 
                                                     position: 'relative',
-                                                    border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                    border: '2px solid rgba(255,255,255,0.1)',
                                                     borderRadius: 3,
                                                     backdropFilter: 'blur(10px)',
                                                     '&:hover': {
-                                                        border: '2px solid rgba(96, 165, 250, 0.8)',
+                                                        border: '2px solid green',
                                                         transform: 'translateY(-2px)',
-                                                        boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
+                                                       boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                                     }
                                                 }}>
                                                     <CardContent sx={{ p: 2 }}>
@@ -1979,7 +1987,7 @@ export default function LeagueDetailPage() {
                                                                         <Typography
                                                                             variant="body2"
                                                                             sx={{
-                                                                                color: 'white',
+                                                                                color: 'black',
                                                                                 fontWeight: 'bold',
                                                                                 fontSize: '0.85rem'
                                                                             }}
@@ -1991,7 +1999,7 @@ export default function LeagueDetailPage() {
                                                                     <Typography
                                                                         variant="h6"
                                                                         sx={{
-                                                                            color: 'white',
+                                                                            color: 'black',
                                                                             fontWeight: 'bold',
                                                                             fontSize: '1.1rem',
                                                                             minWidth: 20,
@@ -2026,7 +2034,7 @@ export default function LeagueDetailPage() {
                                                                         <Typography
                                                                             variant="body2"
                                                                             sx={{
-                                                                                color: 'white',
+                                                                                color: 'black',
                                                                                 fontWeight: 'bold',
                                                                                 fontSize: '0.85rem'
                                                                             }}
@@ -2039,7 +2047,7 @@ export default function LeagueDetailPage() {
                                                                     <Typography
                                                                         variant="h6"
                                                                         sx={{
-                                                                            color: 'white',
+                                                                            color: 'black',
                                                                             fontWeight: 'bold',
                                                                             fontSize: '1.1rem',
                                                                             minWidth: 20,
@@ -2062,19 +2070,19 @@ export default function LeagueDetailPage() {
                                                                     right: 8
                                                                 }}>
                                                                     <Typography variant="body2" sx={{
-                                                                        color: 'rgba(255,255,255,0.9)',
+                                                                        color: 'black',
                                                                         fontWeight: 'bold',
                                                                         fontSize: '0.75rem'
                                                                     }}>
                                                                         {formatMatchDate(match.date)}
                                                                     </Typography>
                                                                     <Typography variant="body2" sx={{
-                                                                        color: 'rgba(255,255,255,0.6)',
+                                                                        color: 'black',
                                                                         fontSize: '0.65rem'
                                                                     }}>
                                                                         Full time
                                                                     </Typography>
-                                                                    <Divider sx={{ height: '13vh', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                    <Divider sx={{ height: '13vh', width: '0.5px', color: 'black', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
                                                                 </Box>
                                                             </Box>
                                                         </Link>
