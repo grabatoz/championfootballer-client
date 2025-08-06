@@ -47,7 +47,7 @@ import TrophyRoom from '@/Components/TrophyRoom';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
-import PlayerCard from '@/Components/league player card/leaguememberplayercard';
+// import PlayerCard from '@/Components/league player card/leaguememberplayercard';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';

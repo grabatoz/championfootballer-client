@@ -1,6 +1,5 @@
 "use client"
-import { Card, Typography, Box, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from "@mui/material"
-import { styled } from "@mui/material/styles"
+import { Typography, Box, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from "@mui/material"
 import Link from "next/link"
 
 // import Group from '@/Components/images/group451.png'
