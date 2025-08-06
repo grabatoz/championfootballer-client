@@ -374,7 +374,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                         fontSize: '1rem',
                         py: 2,
                         px: 3,
-                        color:'white',
+                        color:'black',
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         ...(filter === 'all' && { backgroundColor: '#43a047', color: 'white' })
@@ -385,7 +385,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                     color={filter === 'my' ? 'success' : 'default'}
                     variant="outlined"
                     onClick={() => setFilter('my')}
-                    sx={{ fontSize: '1rem', py: 2, color:'white', px: 3, fontWeight: 'bold', cursor: 'pointer',
+                    sx={{ fontSize: '1rem', py: 2, color:'black', px: 3, fontWeight: 'bold', cursor: 'pointer',
                         ...(filter === 'my' && { backgroundColor: '#43a047', color: 'white' })
                      }}
                 />

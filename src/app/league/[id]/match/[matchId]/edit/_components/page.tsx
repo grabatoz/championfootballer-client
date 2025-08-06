@@ -11,15 +11,17 @@ import {
     Checkbox,
     Chip,
     Divider,
+    IconButton,
+    Avatar,
 } from '@mui/material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import Image from 'next/image';
+// import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { cacheManager } from "@/lib/cacheManager"
@@ -47,6 +49,8 @@ interface Match {
     awayTeamUsers: User[];
     homeCaptainId?: string;
     awayCaptainId?: string;
+    homeTeamImage?:string;
+    awayTeamImage?:string;
 }
 
 interface League {
@@ -76,6 +80,11 @@ export default function EditMatchPage() {
     // Add state for captains
     const [homeCaptain, setHomeCaptain] = useState<User | null>(null);
     const [awayCaptain, setAwayCaptain] = useState<User | null>(null);
+
+    const [homeTeamImage , setHomeTeamImage] = useState<File | null>(null);
+    const [awayTeamImage , setAwayTeamImage] = useState<File | null>(null);
+    const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
+    const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
 
     const { token } = useAuth();
     const params = useParams();
@@ -115,6 +124,14 @@ export default function EditMatchPage() {
                 setAwayTeamUsers(fetchedMatch.awayTeamUsers || []);
                 setHomeCaptain(fetchedMatch.homeTeamUsers?.find((u: User) => u.id === fetchedMatch.homeCaptainId) || null);
                 setAwayCaptain(fetchedMatch.awayTeamUsers?.find((u: User) => u.id === fetchedMatch.awayCaptainId) || null);
+
+                  if (fetchedMatch.homeTeamImage) {
+                    setHomeTeamImagePreview(`${process.env.NEXT_PUBLIC_API_URL}${fetchedMatch.homeTeamImage}`);
+                }
+                if (fetchedMatch.awayTeamImage) {
+                    setAwayTeamImagePreview(`${process.env.NEXT_PUBLIC_API_URL}${fetchedMatch.awayTeamImage}`);
+                }
+
             } else {
                 throw new Error(matchData.message || 'Failed to fetch match details');
             }
@@ -132,6 +149,56 @@ export default function EditMatchPage() {
             fetchLeagueAndMatchDetails();
         }
     }, [leagueId, matchId, token, fetchLeagueAndMatchDetails]);
+
+      const handleHomeTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                    setHomeTeamImage(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setHomeTeamImagePreview(e.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    toast.error('File size should be less than 5MB');
+                }
+            } else {
+                toast.error('Please select an image file');
+            }
+        }
+    };
+
+    const handleAwayTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                    setAwayTeamImage(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setAwayTeamImagePreview(e.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    toast.error('File size should be less than 5MB');
+                }
+            } else {
+                toast.error('Please select an image file');
+            }
+        }
+    };
+
+    const handleRemoveHomeTeamImage = () => {
+        setHomeTeamImage(null);
+        setHomeTeamImagePreview(null);
+    };
+
+    const handleRemoveAwayTeamImage = () => {
+        setAwayTeamImage(null);
+        setAwayTeamImagePreview(null);
+    };
 
     const handleUpdateMatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -153,6 +220,14 @@ export default function EditMatchPage() {
             awayTeamUsers: awayTeamUsers.map(u => u.id),
             homeCaptainId: homeCaptain?.id, // <-- use correct key
             awayCaptainId: awayCaptain?.id, // <-- use correct key
+            //   if (homeTeamImage) {
+            //     formData.append('homeTeamImage', homeTeamImage);
+            // }
+            // if (awayTeamImage) {
+            //     formData.append('awayTeamImage', awayTeamImage);
+            // }
+            homeTeamImage: homeTeamImage,
+            awayTeamImage: awayTeamImage
         };
         console.log('first', matchData)
 
@@ -247,6 +322,69 @@ export default function EditMatchPage() {
                                 <TextField {...params} label="Select Home Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
                             )}
                         />
+                          <Box sx={{ mt: 2, mb: 2 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
+                                Home Team Image (Optional)
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <input
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    id="home-team-image-upload"
+                                    type="file"
+                                    onChange={handleHomeTeamImageUpload}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Upload Home Team Image"
+                                    value={homeTeamImage ? homeTeamImage.name : ''}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <label htmlFor="home-team-image-upload">
+                                                    <Button
+                                                        component="span"
+                                                        variant="outlined"
+                                                        size="small"
+                                                        sx={{
+                                                            color: '#43a047',
+                                                            borderColor: '#43a047',
+                                                            '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' }
+                                                        }}
+                                                    >
+                                                        Browse
+                                                    </Button>
+                                                </label>
+                                                {homeTeamImage && (
+                                                    <IconButton
+                                                        onClick={handleRemoveHomeTeamImage}
+                                                        size="small"
+                                                        sx={{ color: '#f44336' }}
+                                                    >
+                                                        <X />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        )
+                                    }}
+                                    sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
+                                />
+                            </Box>
+                            {homeTeamImagePreview && (
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar
+                                        src={homeTeamImagePreview}
+                                        alt="Home Team Preview"
+                                        sx={{ width: 40, height: 40, border: '2px solid #43a047' }}
+                                    />
+                                    <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
+                                        Image preview
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
                         {homeTeamUsers.length > 0 && (
                             <Autocomplete
                                 options={homeTeamUsers}
@@ -296,6 +434,68 @@ export default function EditMatchPage() {
                                 <TextField {...params} label="Select Away Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
                             )}
                         />
+                          <Box sx={{ mt: 2, mb: 2 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
+                                Away Team Image (Optional)
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <input
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    id="away-team-image-upload"
+                                    type="file"
+                                    onChange={handleAwayTeamImageUpload}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Upload Away Team Image"
+                                    value={awayTeamImage ? awayTeamImage.name : ''}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <label htmlFor="away-team-image-upload">
+                                                    <Button
+                                                        component="span"
+                                                        variant="outlined"
+                                                        size="small"
+                                                        sx={{
+                                                            color: '#ef5350',
+                                                            borderColor: '#ef5350',
+                                                            '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' }
+                                                        }}
+                                                    >
+                                                        Browse
+                                                    </Button>
+                                                </label>
+                                                {awayTeamImage && (
+                                                    <IconButton
+                                                        onClick={handleRemoveAwayTeamImage}
+                                                        size="small"
+                                                        sx={{ color: '#f44336' }}
+                                                    >
+                                                        <X />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        )
+                                    }}
+                                    sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
+                                />
+                            </Box>
+                            {awayTeamImagePreview && (
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar
+                                        src={awayTeamImagePreview}
+                                        alt="Away Team Preview"
+                                        sx={{ width: 40, height: 40, border: '2px solid #ef5350' }}
+                                    />
+                                    <Typography variant="caption" sx={{ color: '#EF9A9A' }}>
+                                        Image preview
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
                         {awayTeamUsers.length > 0 && (
                             <Autocomplete
                                 options={awayTeamUsers}
@@ -351,7 +551,7 @@ export default function EditMatchPage() {
                                         {homeCaptain && (
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <Image
+                                                    <img
                                                         src={homeCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={homeCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
@@ -402,7 +602,7 @@ export default function EditMatchPage() {
                                         {awayCaptain && (
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                                 <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <Image
+                                                    <img
                                                         src={awayCaptain.profilePicture || '/assets/group.svg'}
                                                         alt={awayCaptain.firstName}
                                                         style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}

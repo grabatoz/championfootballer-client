@@ -152,7 +152,6 @@ export default function LandingPage() {
                 {showLogin ? 'Join' : 'Login'}
               </Button>
             </Box>
-
             {/* Auth Form */}
             <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
           </Paper>

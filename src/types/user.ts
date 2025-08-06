@@ -76,4 +76,6 @@ export interface Match {
   awayTeamUsers: User[];
   end: string;
   active: boolean;
+  awayTeamImage : string;
+  homeTeamImage : string;
 } 

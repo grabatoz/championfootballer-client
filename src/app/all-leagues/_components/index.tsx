@@ -672,7 +672,7 @@ function AllLeagues() {
         minHeight: '100vh',
         // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
         fontFamily: '"League Spartan", sans-serif',
-        py: 6,
+        py: 4,
       }}
     >
       <Container maxWidth="lg">
@@ -712,27 +712,6 @@ function AllLeagues() {
             flexDirection: { xs: 'column', sm: 'row' },
             alignItems: { xs: 'stretch', sm: 'center' }
           }}>
-            <Button
-              variant="contained"
-              onClick={() => setIsDialogOpen(true)}
-              sx={{
-                bgcolor: 'rgb(31 62 144)',
-                color: 'white',
-                fontFamily: 'Arial, Helvetica, sans-serif',
-                fontWeight: 'bold',
-                fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                '&:hover': { bgcolor: 'rgba(30, 58, 138, 1)' },
-                width: { xs: '100%', sm: 'fit-content' },
-                borderRadius: 2,
-                py: { xs: 1.5, md: 2 },
-                px: { xs: 3, md: 4 },
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                textTransform: 'none'
-              }}
-            >
-              Create New League
-            </Button>
 
             <Box sx={{
               display: 'flex',
@@ -741,6 +720,27 @@ function AllLeagues() {
               alignItems: 'center',
               flexDirection: { xs: 'column', sm: 'row' }
             }}>
+              <Button
+                variant="contained"
+                onClick={() => setIsDialogOpen(true)}
+                sx={{
+                  bgcolor: 'rgb(31 62 144)',
+                  color: 'white',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                  '&:hover': { bgcolor: 'rgba(30, 58, 138, 1)' },
+                  width: { xs: '100%', sm: 'fit-content' },
+                  borderRadius: 2,
+                  py: { xs: 1.5, md: 1 },
+                  px: { xs: 3, md: 3 },
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  textTransform: 'none'
+                }}
+              >
+                Create New League
+              </Button>
               <TextField
                 label="Enter invite code"
                 value={inviteCode}
@@ -772,8 +772,8 @@ function AllLeagues() {
                   '&:hover': { bgcolor: 'rgb(74 176 78)' },
                   '&:disabled': { bgcolor: 'rgba(255,255,255,0.12)' },
                   borderRadius: 2,
-                  py: { xs: 1.5, md: 2 },
-                  px: { xs: 3, md: 4 },
+                  py: { xs: 1.5, md: 1 },
+                  px: { xs: 3, md: 3 },
                   width: { xs: '100%', sm: 'fit-content' },
                   boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   border: '1px solid rgba(255,255,255,0.1)',

@@ -31,6 +31,10 @@ import {
     ListItemIcon,
     ListItemText,
     Container,
+    List,
+    ListItem,
+    ListItemAvatar,
+    Avatar,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -74,6 +78,7 @@ interface User {
     lastName: string;
     email: string;
     profilePicture?: string | null;
+    position?: string;
 }
 
 interface Match {
@@ -828,16 +833,8 @@ export default function LeagueDetailPage() {
                         startIcon={<ArrowLeft />}
                         onClick={handleBackToAllLeagues}
                         sx={{
-                            mb: { xs: 1, md: 2 }, 
-                            color: 'white', 
-                            backgroundColor: 'rgba(30, 58, 138, 0.8)',
-                            fontFamily: 'Arial, Helvetica, sans-serif',
-                            fontWeight: 'bold',
-                            fontSize: { xs: '12px', sm: '14px', md: '16px' },
-                            '&:hover': { backgroundColor: 'rgba(30, 58, 138, 1)' },
-                            borderRadius: 2,
-                            px: { xs: 1.5, md: 2 },
-                            py: { xs: 0.5, md: 1 },
+                            mb: 2, color: 'white', backgroundColor: '#388e3c',
+                            '&:hover': { backgroundColor: '#388e3c' },
                         }}
                     >
                         Back to All Leagues
@@ -859,7 +856,7 @@ export default function LeagueDetailPage() {
                 fontFamily: 'Sailec, Geist, Roboto, Arial, sans-serif',
                 py: { xs: 2, md: 4 },
                 px: { xs: 1, md: 0 },
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
+                background: 'transparent',
                 backgroundAttachment: 'fixed',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -889,16 +886,9 @@ export default function LeagueDetailPage() {
                             startIcon={<ArrowLeft />}
                             onClick={handleBackToAllLeagues}
                             sx={{
-                                mb: { xs: 1, md: 2 }, 
-                                color: 'white', 
-                                backgroundColor: 'rgba(30, 58, 138, 0.8)',
-                                fontFamily: 'Arial, Helvetica, sans-serif',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '12px', sm: '14px', md: '16px' },
-                                '&:hover': { backgroundColor: 'rgba(30, 58, 138, 1)' },
-                                borderRadius: 2,
-                                px: { xs: 1.5, md: 2 },
-                                py: { xs: 0.5, md: 1 },
+                                mb: 2, color: 'white', backgroundColor: '#388e3c',
+                                '&:hover': { backgroundColor: '#388e3c' },
+                                borderRadius: 2
                             }}
                         >
                             Back to All Leagues
@@ -906,9 +896,9 @@ export default function LeagueDetailPage() {
 
                         {/* Header */}
                         <Box sx={{ mb: 4 }}>
-                            <Paper sx={{ 
-                                p: 3, 
-                                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
+                            <Paper sx={{
+                                p: 3,
+                                background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
                                 color: 'white',
                                 borderRadius: 3,
                                 border: '2px solid rgba(59, 130, 246, 0.3)',
@@ -1063,8 +1053,10 @@ export default function LeagueDetailPage() {
                                                                 backgroundColor: '#43a047',
                                                                 '&:hover': { backgroundColor: '#388e3c' },
                                                                 minWidth: 'auto',
-                                                                height: '20px',
-                                                                '& .MuiChip-label': { px: 0.5 }
+                                                                height: '40px',
+                                                                '& .MuiChip-label': { px: 0.5 },
+                                                                
+                                                                //  borderRadius: '4px', 
                                                             }}
                                                         />
                                                     </Box>
@@ -1077,6 +1069,7 @@ export default function LeagueDetailPage() {
                                                     width: 'auto',
                                                     minWidth: 'auto',
                                                     height: 'auto',
+                                                      borderRadius: '7px',
                                                 }}
                                             />
                                         )}
@@ -1121,7 +1114,7 @@ export default function LeagueDetailPage() {
                                             textTransform: 'none',
                                             borderBottom: section === 'members' ? '3px solid white' : '3px solid transparent',
                                             borderRadius: 0,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(255,255,255,0.1)',
                                                 borderBottom: '3px solid rgba(255,255,255,0.7)'
                                             }
@@ -1147,7 +1140,7 @@ export default function LeagueDetailPage() {
                                             textTransform: 'none',
                                             borderBottom: section === 'matches' ? '3px solid white' : '3px solid transparent',
                                             borderRadius: 0,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(255,255,255,0.1)',
                                                 borderBottom: '3px solid rgba(255,255,255,0.7)'
                                             }
@@ -1173,7 +1166,7 @@ export default function LeagueDetailPage() {
                                             textTransform: 'none',
                                             borderBottom: section === 'results' ? '3px solid white' : '3px solid transparent',
                                             borderRadius: 0,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(255,255,255,0.1)',
                                                 borderBottom: '3px solid rgba(255,255,255,0.7)'
                                             }
@@ -1199,7 +1192,7 @@ export default function LeagueDetailPage() {
                                             textTransform: 'none',
                                             borderBottom: section === 'table' ? '3px solid white' : '3px solid transparent',
                                             borderRadius: 0,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(255,255,255,0.1)',
                                                 borderBottom: '3px solid rgba(255,255,255,0.7)'
                                             }
@@ -1230,7 +1223,7 @@ export default function LeagueDetailPage() {
                                             textTransform: 'none',
                                             borderBottom: section === 'awards' ? '3px solid white' : '3px solid transparent',
                                             borderRadius: 0,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(255,255,255,0.1)',
                                                 borderBottom: '3px solid rgba(255,255,255,0.7)'
                                             }
@@ -1271,9 +1264,9 @@ export default function LeagueDetailPage() {
                             </Paper>
                         </Box>
                         {/* Section Content */}
-                        <Paper sx={{ 
-                            backgroundColor: 'rgba(30, 58, 138, 0.4)', 
-                            color: 'white', 
+                        <Paper sx={{
+                            backgroundColor: '#388e3c',
+                            color: 'white',
                             minHeight: 400,
                             backdropFilter: 'blur(10px)',
                             border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -1282,26 +1275,91 @@ export default function LeagueDetailPage() {
                             {section === 'members' && (
                                 // Members Section
                                 <Box sx={{ p: 2, maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-                                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }} gutterBottom>
-                                        League Players
-                                    </Typography>
-                                    <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                                    {/* <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} /> */}
                                     {league?.members && league.members.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
-                                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                                            // gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 2
                                         }}>
-                                            {league.members.map((member) => (
-                                                <PlayerCard key={member.id} member={{
-                                                    id: member.id || '',
-                                                    firstName: member.firstName || '',
-                                                    lastName: member.lastName || '',
-                                                    profilePicture: member?.profilePicture || '',
-                                                    position: member.positionType || undefined,
-                                                    shirtNumber: member.shirtNumber || 22,
-                                                }} />
-                                            ))}
+                                            {/* {league.members.map((member) => ( */}
+
+                                            <Paper elevation={0} sx={{
+                                                p: { xs: 1, sm: 3 },
+                                                borderRadius: { xs: 2, sm: 3 },
+                                                backgroundColor: 'transparent',
+                                                minHeight: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                            }}>
+                                                {/* Header */}
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
+                                                    <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
+                                                        <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } , mr:10 }}>Position</Typography>
+                                                        <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>shirtNumber</Typography>
+                                                    </Box>
+                                                </Box>
+
+                                                <Box sx={{
+                                                    flex: 1,
+                                                    overflow: 'auto',
+                                                    borderRadius: { xs: 2, sm: 3 },
+                                                    '&::-webkit-scrollbar': {
+                                                        display: 'none'
+                                                    },
+                                                    scrollbarWidth: 'none',
+                                                    msOverflowStyle: 'none',
+                                                    px: { xs: 0, sm: 1 },
+                                                }}>
+                                                    <List>
+                                                        {league.members.map((member) => (
+                                                            <React.Fragment key={member.id}>
+                                                                <ListItem
+                                                                    onClick={() => {
+                                                                        router.push(`/player/${member.id}`);
+                                                                    }}
+                                                                    sx={{
+                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                                                        cursor: 'pointer',
+                                                                        py: { xs: 1, sm: 2 },
+                                                                        px: { xs: 1, sm: 2 },
+                                                                        alignItems: 'center',
+                                                                    }}
+                                                                >
+                                                                    <ListItemAvatar>
+                                                                        <Avatar src={member?.profilePicture || '/assets/group.svg'} sx={{ width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }} />
+                                                                    </ListItemAvatar>
+                                                                    <ListItemText className={'text-white'} primary={member.firstName + ' ' + member.lastName} />
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            flexDirection: 'column',
+                                                                            alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
+                                                                            minWidth: { xs: 24, sm: 40 },
+                                                                            width: { xs: 100, sm: 150 }, // Added fixed width
+                                                                            color: 'white'
+                                                                        }}>
+                                                                            {member?.position}
+                                                                        </Box>
+                                                                        <Typography variant="h6" component="span" sx={{
+                                                                            fontWeight: 'bold',
+                                                                            minWidth: { xs: 36, sm: 60 },
+                                                                            textAlign: 'center',
+                                                                            fontSize: { xs: 13, sm: 20 },
+                                                                            color: 'white'
+                                                                        }}>
+                                                                            {member.shirtNumber}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </ListItem>
+                                                                <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </List>
+                                                </Box>
+                                                {/* )} */}
+                                            </Paper>
                                         </Box>
                                     ) : (
                                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -1357,10 +1415,13 @@ export default function LeagueDetailPage() {
                                                 const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                                                 const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                 return (
-                                                    <Card key={match.id} sx={{ 
-                                                        backgroundColor: 'rgba(30, 58, 138, 0.6)', 
-                                                        position: 'relative', 
-                                                        border: '2px solid rgba(59, 130, 246, 0.5)', 
+
+                                                    <Card key={match.id} sx={{
+                                                        // backgroundColor: 'rgba(30, 58, 138, 0.6)',
+                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+
+                                                        position: 'relative',
+                                                        border: '2px solid rgba(59, 130, 246, 0.5)',
                                                         borderRadius: 3,
                                                         backdropFilter: 'blur(10px)',
                                                         '&:hover': {
@@ -1383,7 +1444,7 @@ export default function LeagueDetailPage() {
                                                             )}
 
                                                             {/* Match Date and Time */}
-                                                            <Box sx={{
+                                                            {/* <Box sx={{
                                                                 position: 'absolute',
                                                                 top: 8,
                                                                 left: 8,
@@ -1403,10 +1464,115 @@ export default function LeagueDetailPage() {
                                                                 >
                                                                     {formatMatchDate(match.date)} | {formatMatchTime(match.date)}
                                                                 </Typography>
-                                                            </Box>
+                                                            </Box> */}
 
                                                             <Link href={`/match/${match?.id}`}>
                                                                 <Box sx={{
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: 1,
+                                                                    minHeight: 80,
+                                                                    mb: 3
+                                                                }}>
+
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        // justifyContent: 'space-evenly',
+                                                                        width: '100%'
+                                                                    }}>
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 1,
+                                                                            flex: 1,
+                                                                        }}>
+                                                                            <Image
+                                                                                src={match.homeTeamImage || leagueIcon}
+                                                                                alt={match.homeTeamName}
+                                                                                width={40}
+                                                                                height={40}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{
+                                                                                    color: 'white',
+                                                                                    fontWeight: 'bold',
+                                                                                    fontSize: { xs: '0.85rem', sm: '0.85rem', md: '1.5rem' },
+                                                                                    ml: 2
+                                                                                }}
+                                                                                title={match.homeTeamName}
+                                                                            >
+                                                                                {match.homeTeamName}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </Box>
+
+                                                                    {/* Bottom Row - Away Team */}
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'space-between',
+                                                                        width: '100%'
+                                                                    }}>
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 1,
+                                                                            flex: 1,
+                                                                            mt: 2,
+                                                                        }}>
+                                                                            <Image
+                                                                                src={match.awayTeamImage || leagueIcon}
+                                                                                alt={match.awayTeamName}
+                                                                                width={40}
+                                                                                height={40}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{
+                                                                                    color: 'white',
+                                                                                    fontWeight: 'bold',
+                                                                                    fontSize: { xs: '0.85rem', sm: '0.85rem', md: '1.5rem' },
+                                                                                    ml: 2
+                                                                                }}
+                                                                                title={match.awayTeamName}
+                                                                            >
+                                                                                {match.awayTeamName}
+                                                                            </Typography>
+
+                                                                        </Box>
+                                                                    </Box>
+
+
+                                                                    {/* Date and Status - Right Side */}
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        alignItems: 'flex-end',
+                                                                        position: 'absolute',
+                                                                        top: 32,
+                                                                        right: 8
+                                                                    }}>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'rgba(255,255,255,0.9)',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '0.9rem'
+                                                                        }}>
+                                                                            {formatMatchDate(match.date)}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'rgba(255,255,255,0.7)',
+                                                                            fontSize: '0.8rem'
+                                                                        }}>
+                                                                            {formatMatchTime(match.date)}
+                                                                        </Typography>
+                                                                        <Divider sx={{ height: '18vh', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                    </Box>
+                                                                </Box>
+                                                                {/* <Box sx={{
                                                                     display: 'flex',
                                                                     flexDirection: 'column',
                                                                     alignItems: 'center',
@@ -1417,7 +1583,7 @@ export default function LeagueDetailPage() {
                                                                     minHeight: 120,
                                                                     mt: 3
                                                                 }}>
-                                                                    {/* Home Team - Top */}
+                                                                    
                                                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                                                                         <Image src={match.homeTeamImage || leagueIcon} alt={match.homeTeamName} width={48} height={48} />
                                                                         <Typography
@@ -1444,12 +1610,12 @@ export default function LeagueDetailPage() {
                                                                         </Typography>
                                                                     </Box>
 
-                                                                    {/* VS in the middle */}
+
                                                                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', my: 1 }}>
                                                                         VS
                                                                     </Typography>
 
-                                                                    {/* Away Team - Bottom */}
+
                                                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                                                                         <Image src={match.awayTeamImage || leagueIcon} alt={match.awayTeamName} width={48} height={48} />
                                                                         <Typography
@@ -1475,25 +1641,25 @@ export default function LeagueDetailPage() {
                                                                             {match.awayTeamName}
                                                                         </Typography>
                                                                     </Box>
-                                                                </Box>
+                                                                </Box> */}
                                                             </Link>
 
                                                             {/* Date and Time */}
-                                                            <Box sx={{ textAlign: 'center', mt: 2 }}>
-                                                                <Typography variant="body2" sx={{ 
-                                                                    color: 'rgba(255,255,255,0.9)', 
+                                                            {/* <Box sx={{ textAlign: 'center', mt: 2 }}>
+                                                                <Typography variant="body2" sx={{
+                                                                    color: 'rgba(255,255,255,0.9)',
                                                                     fontWeight: 'bold',
                                                                     fontSize: '0.9rem'
                                                                 }}>
                                                                     {formatMatchDate(match.date)}
                                                                 </Typography>
-                                                                <Typography variant="body2" sx={{ 
-                                                                    color: 'rgba(255,255,255,0.7)', 
+                                                                <Typography variant="body2" sx={{
+                                                                    color: 'rgba(255,255,255,0.7)',
                                                                     fontSize: '0.8rem'
                                                                 }}>
                                                                     {formatMatchTime(match.date)}
                                                                 </Typography>
-                                                            </Box>
+                                                            </Box> */}
 
                                                             {/* Action buttons and availability info */}
                                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
@@ -1546,6 +1712,196 @@ export default function LeagueDetailPage() {
                                                             </Box>
                                                         </CardContent>
                                                     </Card>
+
+                                                    // <Card key={match.id} sx={{
+                                                    //     backgroundColor: 'rgba(30, 58, 138, 0.6)',
+                                                    //     position: 'relative',
+                                                    //     border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                    //     borderRadius: 3,
+                                                    //     backdropFilter: 'blur(10px)',
+                                                    //     '&:hover': {
+                                                    //         border: '2px solid rgba(96, 165, 250, 0.8)',
+                                                    //         transform: 'translateY(-2px)',
+                                                    //         boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
+                                                    //     }
+                                                    // }}>
+                                                    //     <CardContent sx={{ p: 2 }}>
+                                                    //         {isAdmin && (
+                                                    //             <Link href={`/league/${league?.id}/match/${match.id}/edit`} passHref>
+                                                    //                 <IconButton
+                                                    //                     size="small"
+                                                    //                     sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                    //                     disabled={!league?.active}
+                                                    //                 >
+                                                    //                     <Edit size={16} />
+                                                    //                 </IconButton>
+                                                    //             </Link>
+                                                    //         )}
+
+                                                    //         {/* Match Date and Time */}
+                                                    //         <Box sx={{
+                                                    //             position: 'absolute',
+                                                    //             top: 8,
+                                                    //             left: 8,
+                                                    //             zIndex: 2
+                                                    //         }}>
+                                                    //             <Typography
+                                                    //                 variant="caption"
+                                                    //                 sx={{
+                                                    //                     color: 'rgba(255,255,255,0.9)',
+                                                    //                     fontWeight: 'bold',
+                                                    //                     fontSize: '0.7rem',
+                                                    //                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                    //                     px: 1.5,
+                                                    //                     py: 0.5,
+                                                    //                     borderRadius: 1
+                                                    //                 }}
+                                                    //             >
+                                                    //                 {formatMatchDate(match.date)} | {formatMatchTime(match.date)}
+                                                    //             </Typography>
+                                                    //         </Box>
+
+                                                    //         <Link href={`/match/${match?.id}`}>
+                                                    //             <Box sx={{
+                                                    //                 display: 'flex',
+                                                    //                 flexDirection: 'column',
+                                                    //                 alignItems: 'center',
+                                                    //                 justifyContent: 'center',
+                                                    //                 gap: 2,
+                                                    //                 textAlign: 'center',
+                                                    //                 p: 2,
+                                                    //                 minHeight: 120,
+                                                    //                 mt: 3
+                                                    //             }}>
+                                                    //                 {/* Home Team - Top */}
+                                                    //                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                                    //                     <Image src={match.homeTeamImage || leagueIcon} alt={match.homeTeamName} width={48} height={48} />
+                                                    //                     <Typography
+                                                    //                         textTransform="uppercase"
+                                                    //                         variant="h6"
+                                                    //                         sx={{
+                                                    //                             color: 'white',
+                                                    //                             fontWeight: 'bold',
+                                                    //                             minHeight: 32,
+                                                    //                             display: 'flex',
+                                                    //                             alignItems: 'center',
+                                                    //                             justifyContent: 'center',
+                                                    //                             px: 1,
+                                                    //                             textAlign: 'center',
+                                                    //                             whiteSpace: 'nowrap',
+                                                    //                             overflow: 'hidden',
+                                                    //                             textOverflow: 'ellipsis',
+                                                    //                             width: '100%',
+                                                    //                             fontSize: { xs: '0.9rem', sm: '1rem' }
+                                                    //                         }}
+                                                    //                         title={match.homeTeamName}
+                                                    //                     >
+                                                    //                         {match.homeTeamName}
+                                                    //                     </Typography>
+                                                    //                 </Box>
+
+                                                    //                 {/* VS in the middle */}
+                                                    //                 <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', my: 1 }}>
+                                                    //                     VS
+                                                    //                 </Typography>
+
+                                                    //                 {/* Away Team - Bottom */}
+                                                    //                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                                    //                     <Image src={match.awayTeamImage || leagueIcon} alt={match.awayTeamName} width={48} height={48} />
+                                                    //                     <Typography
+                                                    //                         textTransform="uppercase"
+                                                    //                         variant="h6"
+                                                    //                         sx={{
+                                                    //                             color: 'white',
+                                                    //                             fontWeight: 'bold',
+                                                    //                             minHeight: 32,
+                                                    //                             display: 'flex',
+                                                    //                             alignItems: 'center',
+                                                    //                             justifyContent: 'center',
+                                                    //                             px: 1,
+                                                    //                             textAlign: 'center',
+                                                    //                             whiteSpace: 'nowrap',
+                                                    //                             overflow: 'hidden',
+                                                    //                             textOverflow: 'ellipsis',
+                                                    //                             width: '100%',
+                                                    //                             fontSize: { xs: '0.9rem', sm: '1rem' }
+                                                    //                         }}
+                                                    //                         title={match.awayTeamName}
+                                                    //                     >
+                                                    //                         {match.awayTeamName}
+                                                    //                     </Typography>
+                                                    //                 </Box>
+                                                    //             </Box>
+                                                    //         </Link>
+
+                                                    //         {/* Date and Time */}
+                                                    //         <Box sx={{ textAlign: 'center', mt: 2 }}>
+                                                    //             <Typography variant="body2" sx={{
+                                                    //                 color: 'rgba(255,255,255,0.9)',
+                                                    //                 fontWeight: 'bold',
+                                                    //                 fontSize: '0.9rem'
+                                                    //             }}>
+                                                    //                 {formatMatchDate(match.date)}
+                                                    //             </Typography>
+                                                    //             <Typography variant="body2" sx={{
+                                                    //                 color: 'rgba(255,255,255,0.7)',
+                                                    //                 fontSize: '0.8rem'
+                                                    //             }}>
+                                                    //                 {formatMatchTime(match.date)}
+                                                    //             </Typography>
+                                                    //         </Box>
+
+                                                    //         {/* Action buttons and availability info */}
+                                                    //         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                                    //             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                    //                 {/* Availability button */}
+                                                    //                 {isMember && (
+                                                    //                     <Button
+                                                    //                         variant="contained"
+                                                    //                         onClick={() => handleToggleAvailability(match.id, isUserAvailable)}
+                                                    //                         disabled={availabilityLoading[match.id] || !league?.active}
+                                                    //                         size="small"
+                                                    //                         sx={{
+                                                    //                             backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)',
+                                                    //                             '&:hover': {
+                                                    //                                 backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)'
+                                                    //                             },
+                                                    //                             '&.Mui-disabled': {
+                                                    //                                 backgroundColor: 'rgba(255,255,255,0.3)',
+                                                    //                                 color: 'rgba(255,255,255,0.5)'
+                                                    //                             },
+                                                    //                             fontSize: '0.75rem',
+                                                    //                             py: 0.5
+                                                    //                         }}
+                                                    //                     >
+                                                    //                         {availabilityLoading[match.id]
+                                                    //                             ? <CircularProgress size={16} color="inherit" />
+                                                    //                             : (isUserAvailable ? 'Unavailable' : 'Available')}
+                                                    //                     </Button>
+                                                    //                 )}
+                                                    //             </Box>
+                                                    //             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                    //                 <Button
+                                                    //                     size="small"
+                                                    //                     sx={{
+                                                    //                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                    //                         color: 'white',
+                                                    //                         '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
+                                                    //                         fontSize: '0.75rem',
+                                                    //                         py: 0.5,
+                                                    //                         px: 1.5,
+                                                    //                         fontWeight: 'bold',
+                                                    //                         borderRadius: 2,
+                                                    //                         minWidth: 'auto',
+                                                    //                         textTransform: 'none'
+                                                    //                     }}
+                                                    //                 >
+                                                    //                     Available: {availableCount} | Pending: {pendingCount}
+                                                    //                 </Button>
+                                                    //             </Box>
+                                                    //         </Box>
+                                                    //     </CardContent>
+                                                    // </Card>
                                                 );
                                             })}
                                         </Box>
@@ -1577,10 +1933,13 @@ export default function LeagueDetailPage() {
                                             gap: 2
                                         }}>
                                             {league.matches.filter(match => match.status === 'completed').slice(0, 6).map((match) => (
-                                                <Card key={match.id} sx={{ 
-                                                    backgroundColor: 'rgba(30, 58, 138, 0.6)', 
-                                                    position: 'relative', 
-                                                    border: '2px solid rgba(59, 130, 246, 0.5)', 
+
+                                                <Card key={match.id} sx={{
+                                                    // backgroundColor: 'rgba(30, 58, 138, 0.6)',
+                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+
+                                                    position: 'relative',
+                                                    border: '2px solid rgba(59, 130, 246, 0.5)',
                                                     borderRadius: 3,
                                                     backdropFilter: 'blur(10px)',
                                                     '&:hover': {
@@ -1597,23 +1956,23 @@ export default function LeagueDetailPage() {
                                                                 gap: 1,
                                                                 minHeight: 80
                                                             }}>
-                                                                {/* Top Row - Home Team */}
+
                                                                 <Box sx={{
                                                                     display: 'flex',
                                                                     alignItems: 'center',
-                                                                    justifyContent: 'space-between',
+                                                                    // justifyContent: 'space-evenly',
                                                                     width: '100%'
                                                                 }}>
-                                                                    <Box sx={{ 
-                                                                        display: 'flex', 
-                                                                        alignItems: 'center', 
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
                                                                         gap: 1,
-                                                                        flex: 1
+                                                                        flex: 1,
                                                                     }}>
-                                                                        <Image 
-                                                                            src={match.homeTeamImage || leagueIcon} 
-                                                                            alt={match.homeTeamName} 
-                                                                            width={24} 
+                                                                        <Image
+                                                                            src={match.homeTeamImage || leagueIcon}
+                                                                            alt={match.homeTeamName}
+                                                                            width={24}
                                                                             height={24}
                                                                             style={{ borderRadius: '2px' }}
                                                                         />
@@ -1636,7 +1995,8 @@ export default function LeagueDetailPage() {
                                                                             fontWeight: 'bold',
                                                                             fontSize: '1.1rem',
                                                                             minWidth: 20,
-                                                                            textAlign: 'right'
+                                                                            textAlign: 'right',
+                                                                            mr: 9
                                                                         }}
                                                                     >
                                                                         {match.homeTeamGoals || 0}
@@ -1650,16 +2010,16 @@ export default function LeagueDetailPage() {
                                                                     justifyContent: 'space-between',
                                                                     width: '100%'
                                                                 }}>
-                                                                    <Box sx={{ 
-                                                                        display: 'flex', 
-                                                                        alignItems: 'center', 
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
                                                                         gap: 1,
                                                                         flex: 1
                                                                     }}>
-                                                                        <Image 
-                                                                            src={match.awayTeamImage || leagueIcon} 
-                                                                            alt={match.awayTeamName} 
-                                                                            width={24} 
+                                                                        <Image
+                                                                            src={match.awayTeamImage || leagueIcon}
+                                                                            alt={match.awayTeamName}
+                                                                            width={24}
                                                                             height={24}
                                                                             style={{ borderRadius: '2px' }}
                                                                         />
@@ -1674,6 +2034,7 @@ export default function LeagueDetailPage() {
                                                                         >
                                                                             {match.awayTeamName}
                                                                         </Typography>
+
                                                                     </Box>
                                                                     <Typography
                                                                         variant="h6"
@@ -1682,35 +2043,38 @@ export default function LeagueDetailPage() {
                                                                             fontWeight: 'bold',
                                                                             fontSize: '1.1rem',
                                                                             minWidth: 20,
-                                                                            textAlign: 'right'
+                                                                            textAlign: 'right',
+                                                                            mr: 9
                                                                         }}
                                                                     >
                                                                         {match.awayTeamGoals || 0}
                                                                     </Typography>
                                                                 </Box>
 
+
                                                                 {/* Date and Status - Right Side */}
-                                                                <Box sx={{ 
-                                                                    display: 'flex', 
-                                                                    flexDirection: 'column', 
+                                                                <Box sx={{
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
                                                                     alignItems: 'flex-end',
                                                                     position: 'absolute',
-                                                                    top: 8,
+                                                                    top: 32,
                                                                     right: 8
                                                                 }}>
-                                                                    <Typography variant="body2" sx={{ 
-                                                                        color: 'rgba(255,255,255,0.9)', 
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: 'rgba(255,255,255,0.9)',
                                                                         fontWeight: 'bold',
                                                                         fontSize: '0.75rem'
                                                                     }}>
                                                                         {formatMatchDate(match.date)}
                                                                     </Typography>
-                                                                    <Typography variant="body2" sx={{ 
-                                                                        color: 'rgba(255,255,255,0.6)', 
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: 'rgba(255,255,255,0.6)',
                                                                         fontSize: '0.65rem'
                                                                     }}>
                                                                         Full time
                                                                     </Typography>
+                                                                    <Divider sx={{ height: '13vh', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
                                                                 </Box>
                                                             </Box>
                                                         </Link>
@@ -1758,6 +2122,189 @@ export default function LeagueDetailPage() {
                                                         </Box>
                                                     </CardContent>
                                                 </Card>
+
+
+                                                // <Card key={match.id} sx={{
+                                                //     backgroundColor: 'rgba(30, 58, 138, 0.6)',
+                                                //     position: 'relative',
+                                                //     border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                //     borderRadius: 3,
+                                                //     backdropFilter: 'blur(10px)',
+                                                //     '&:hover': {
+                                                //         border: '2px solid rgba(96, 165, 250, 0.8)',
+                                                //         transform: 'translateY(-2px)',
+                                                //         boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
+                                                //     }
+                                                // }}>
+                                                //     <CardContent sx={{ p: 2 }}>
+                                                //         <Link href={`/match/${match?.id}`}>
+                                                //             <Box sx={{
+                                                //                 display: 'flex',
+                                                //                 flexDirection: 'column',
+                                                //                 gap: 1,
+                                                //                 minHeight: 80
+                                                //             }}>
+                                                //                 {/* Top Row - Home Team */}
+                                                //                 <Box sx={{
+                                                //                     display: 'flex',
+                                                //                     alignItems: 'center',
+                                                //                     justifyContent: 'space-between',
+                                                //                     width: '100%'
+                                                //                 }}>
+                                                //                     <Box sx={{
+                                                //                         display: 'flex',
+                                                //                         alignItems: 'center',
+                                                //                         gap: 1,
+                                                //                         flex: 1
+                                                //                     }}>
+                                                //                         <Image
+                                                //                             src={match.homeTeamImage || leagueIcon}
+                                                //                             alt={match.homeTeamName}
+                                                //                             width={24}
+                                                //                             height={24}
+                                                //                             style={{ borderRadius: '2px' }}
+                                                //                         />
+                                                //                         <Typography
+                                                //                             variant="body2"
+                                                //                             sx={{
+                                                //                                 color: 'white',
+                                                //                                 fontWeight: 'bold',
+                                                //                                 fontSize: '0.85rem'
+                                                //                             }}
+                                                //                             title={match.homeTeamName}
+                                                //                         >
+                                                //                             {match.homeTeamName}
+                                                //                         </Typography>
+                                                //                     </Box>
+                                                //                     <Typography
+                                                //                         variant="h6"
+                                                //                         sx={{
+                                                //                             color: 'white',
+                                                //                             fontWeight: 'bold',
+                                                //                             fontSize: '1.1rem',
+                                                //                             minWidth: 20,
+                                                //                             textAlign: 'right'
+                                                //                         }}
+                                                //                     >
+                                                //                         {match.homeTeamGoals || 0}
+                                                //                     </Typography>
+                                                //                 </Box>
+
+                                                //                 {/* Bottom Row - Away Team */}
+                                                //                 <Box sx={{
+                                                //                     display: 'flex',
+                                                //                     alignItems: 'center',
+                                                //                     justifyContent: 'space-between',
+                                                //                     width: '100%'
+                                                //                 }}>
+                                                //                     <Box sx={{
+                                                //                         display: 'flex',
+                                                //                         alignItems: 'center',
+                                                //                         gap: 1,
+                                                //                         flex: 1
+                                                //                     }}>
+                                                //                         <Image
+                                                //                             src={match.awayTeamImage || leagueIcon}
+                                                //                             alt={match.awayTeamName}
+                                                //                             width={24}
+                                                //                             height={24}
+                                                //                             style={{ borderRadius: '2px' }}
+                                                //                         />
+                                                //                         <Typography
+                                                //                             variant="body2"
+                                                //                             sx={{
+                                                //                                 color: 'white',
+                                                //                                 fontWeight: 'bold',
+                                                //                                 fontSize: '0.85rem'
+                                                //                             }}
+                                                //                             title={match.awayTeamName}
+                                                //                         >
+                                                //                             {match.awayTeamName}
+                                                //                         </Typography>
+                                                //                     </Box>
+                                                //                     <Typography
+                                                //                         variant="h6"
+                                                //                         sx={{
+                                                //                             color: 'white',
+                                                //                             fontWeight: 'bold',
+                                                //                             fontSize: '1.1rem',
+                                                //                             minWidth: 20,
+                                                //                             textAlign: 'right'
+                                                //                         }}
+                                                //                     >
+                                                //                         {match.awayTeamGoals || 0}
+                                                //                     </Typography>
+                                                //                 </Box>
+
+                                                //                 {/* Date and Status - Right Side */}
+                                                //                 <Box sx={{
+                                                //                     display: 'flex',
+                                                //                     flexDirection: 'column',
+                                                //                     alignItems: 'flex-end',
+                                                //                     position: 'absolute',
+                                                //                     top: 8,
+                                                //                     right: 8
+                                                //                 }}>
+                                                //                     <Typography variant="body2" sx={{
+                                                //                         color: 'rgba(255,255,255,0.9)',
+                                                //                         fontWeight: 'bold',
+                                                //                         fontSize: '0.75rem'
+                                                //                     }}>
+                                                //                         {formatMatchDate(match.date)}
+                                                //                     </Typography>
+                                                //                     <Typography variant="body2" sx={{
+                                                //                         color: 'rgba(255,255,255,0.6)',
+                                                //                         fontSize: '0.65rem'
+                                                //                     }}>
+                                                //                         Full time
+                                                //                     </Typography>
+                                                //                 </Box>
+                                                //             </Box>
+                                                //         </Link>
+
+                                                //         {/* Action buttons */}
+                                                //         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                                                //             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                //                 {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                //                     <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
+                                                //                         <Button
+                                                //                             size="small"
+                                                //                             sx={{
+                                                //                                 backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                //                                 color: 'white',
+                                                //                                 '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
+                                                //                                 fontSize: '0.75rem',
+                                                //                                 py: 0.5
+                                                //                             }}
+                                                //                             disabled={!league?.active}
+                                                //                         >
+                                                //                             {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                //                         </Button>
+                                                //                     </Link>
+                                                //                 )}
+                                                //             </Box>
+                                                //             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                //                 <Button
+                                                //                     size="small"
+                                                //                     sx={{
+                                                //                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                //                         color: 'white',
+                                                //                         '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
+                                                //                         fontSize: '0.75rem',
+                                                //                         py: 0.5
+                                                //                     }}
+                                                //                     onClick={() => {
+                                                //                         setActiveMatchId(match.id);
+                                                //                         setStatsDialogOpen(true);
+                                                //                         fetchExistingStats(match.id);
+                                                //                     }}
+                                                //                 >
+                                                //                     Add Your Stats
+                                                //                 </Button>
+                                                //             </Box>
+                                                //         </Box>
+                                                //     </CardContent>
+                                                // </Card>
                                             ))}
                                         </Box>
                                     ) : (
@@ -1770,7 +2317,7 @@ export default function LeagueDetailPage() {
 
                             {section === 'table' && (
                                 <div className="w-full mx-auto">
-                                    <Card sx={{ 
+                                    <Card sx={{
                                         backgroundColor: 'rgba(30, 58, 138, 0.6)',
                                         border: '2px solid rgba(59, 130, 246, 0.5)',
                                         borderRadius: 3,
