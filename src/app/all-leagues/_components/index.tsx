@@ -693,7 +693,7 @@ function AllLeagues() {
             mb: { xs: 3, md: 4 },
             color: 'black',
             // fontFamily: 'Arial Black, Arial, sans-serif',
-            // fontFamily: 'Anton, sans-serif',
+            fontFamily: '"Anton", sans-serif',
             fontWeight: 'semibold',
             fontSize: { xs: '32px', sm: '42px', md: '56px' },
             textAlign: { xs: 'center', md: 'left' },
