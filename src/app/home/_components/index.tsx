@@ -32,7 +32,7 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { League, User } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
-import { CloudUpload, X } from 'lucide-react';
+import { ChevronRight, CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import { cacheManager } from '@/lib/cacheManager';
 import { Trophy } from 'lucide-react';
@@ -116,13 +116,13 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        py: 2
+        // py: 2
       }}>
         <Typography
           variant="body1"
           sx={{
             color: '#666',
-            mb: 2,
+            mb: 1,
             fontSize: { xs: '0.9rem', sm: '1rem' },
             textAlign: 'center'
           }}
@@ -136,10 +136,11 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
               bgcolor: '#43a047',
               color: 'white',
               '&:hover': { bgcolor: '#388e3c' },
-              minWidth: { xs: '280px', sm: '320px' },
-              height: { xs: '60px', sm: '70px' },
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              fontWeight: 'bold'
+              minHeight: { xs: '60px', sm: '70px', md: '50px' },
+          minWidth: { xs: '280px', sm: '320px' },
+          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
+              fontWeight: 'bold',
+              mb:-1.5
             }}
           >
             Join a League
@@ -185,7 +186,35 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
           }
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 6 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+  {/* Trophy and league name */}
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <Trophy size={24} color="white" />
+    <Typography
+      sx={{
+        fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+        fontWeight: 'semibold'
+      }}
+    >
+      {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+    </Typography>
+  </Box>
+
+  {/* Right arrow to show all leagues */}
+  <IconButton 
+    onClick={() => setSelectedLeague(null)} // Reset selected league to show all
+    sx={{ 
+      color: 'white',
+      ml: 2, // Add some margin
+      '&:hover': {
+        backgroundColor: 'rgba(255,255,255,0.1)'
+      }
+    }}
+  >
+    <ChevronRight size={24} /> {/* Right arrow icon */}
+  </IconButton>
+</Box>
+        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 6 }}>
           <Trophy size={24} color="white" />
           <Typography
             sx={{
@@ -195,7 +224,7 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
           >
             {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
           </Typography>
-        </Box>
+        </Box> */}
         {/* <RiArrowRightLine size={20} color="white" /> */}
       </Button>
     </Box>
@@ -520,8 +549,7 @@ export default function PlayerDashboard() {
                 mb: 2,
                 mt: 3,
                 borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
-                '&:hover': { bgcolor: '#388e3c' },
+                '&:hover': { bgcolor: '#1f3e90' , boxShadow: '0 2px 8px rgba(25,118,210,0.2)', },
                 width: '300px',
                 mx: 'auto',
                 display: 'block'
