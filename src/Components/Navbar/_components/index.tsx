@@ -143,7 +143,7 @@ export default function NavigationBar() {
        Dream Team
       </Button>
       <Button
-        onClick={() => router.push('/all-player')}
+        onClick={() => router.push('/all-players')}
         sx={{
           textTransform: 'none',
           fontFamily: 'Arial, Helvetica, sans-serif',

@@ -681,7 +681,9 @@ function AllLeagues() {
           onClick={handleBackToAllLeagues}
           sx={{
             mb: 2, color: 'white', backgroundColor: '#388e3c',
-            '&:hover': { backgroundColor: '#388e3c' },
+            '&:hover': { backgroundColor: '#388e3c' ,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            },
           }}
         >
           Back to Dashboard
@@ -691,7 +693,7 @@ function AllLeagues() {
             mb: { xs: 3, md: 4 },
             color: 'black',
             // fontFamily: 'Arial Black, Arial, sans-serif',
-            fontFamily: 'Anton, sans-serif',
+            // fontFamily: 'Anton, sans-serif',
             fontWeight: 'semibold',
             fontSize: { xs: '32px', sm: '42px', md: '56px' },
             textAlign: { xs: 'center', md: 'left' },
@@ -788,13 +790,14 @@ function AllLeagues() {
                 onClick={handleJoinLeague}
                 disabled={isJoining}
                 sx={{
-                  bgcolor: 'rgb(74 176 78)',
+                  // backgroundColor: '#388e3c',
+                  bgcolor: '#388e3c',
                   color: 'white',
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontWeight: 'bold',
                   fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  '&:hover': { bgcolor: 'rgb(74 176 78)' },
-                  '&:disabled': { bgcolor: 'rgba(255,255,255,0.12)' },
+                  '&:hover': { bgcolor: '#388e3c' },
+                  '&:disabled': { bgcolor: '#388e3c' },
                   borderRadius: 2,
                   py: { xs: 1.5, md: 1 },
                   px: { xs: 3, md: 3 },

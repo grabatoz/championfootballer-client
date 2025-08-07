@@ -36,6 +36,13 @@ import { updateProfile, deleteProfile } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
+import Dribbling from '@/Components/images/Dribbling.png'
+import Pace from '@/Components/images/pace.png'
+import Physical from '@/Components/images/physical.png'
+import Passing from '@/Components/images/passing.png'
+import Shooting from '@/Components/images/shooting.png'
+import Defending from '@/Components/images/defending.png'
+import Image from "next/image"
 
 // Styled components for better design
 const StyledPaper = styled(Paper)(({ }) => ({
@@ -123,13 +130,13 @@ const StyledTextField = styled(TextField)(({ }) => ({
     color: '#fff',
   },
   '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
-  WebkitAppearance: 'none',
-  margin: 0,
-},
-'& input[type=number]': {
-  MozAppearance: 'textfield',
-  appearance: 'textfield',
-},
+    WebkitAppearance: 'none',
+    margin: 0,
+  },
+  '& input[type=number]': {
+    MozAppearance: 'textfield',
+    appearance: 'textfield',
+  },
 }))
 
 // Styled Radio for green accent and white label
@@ -255,12 +262,12 @@ const PlayerProfileCard = () => {
       if (!ok) {
         throw new Error(data.message || "Failed to update profile")
       }
-      
+
       // Update cache with new user data
       if (data.user) {
         cacheManager.updatePlayersCache(data.user);
       }
-      
+
       toast.success("Profile updated successfully!")
       router.push("/home")
     } catch (error: unknown) {
@@ -464,10 +471,10 @@ const PlayerProfileCard = () => {
               </Card>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <Button
+                <Button
                   variant="contained"
                   size="large"
-                  onClick={()=>router.push('/home')}
+                  onClick={() => router.push('/home')}
                   startIcon={<ArrowBack />}
                   sx={{
                     background: "#43a047",
@@ -714,9 +721,9 @@ const PlayerProfileCard = () => {
                           InputProps={{ sx: { height: 70 } }}
                         />
                       </Grid>
-                      
+
                       {/* Bottom Row: Gender and Preferred Foot (move below on small screens) */}
-                      <Grid item xs={12} sm={4} sx={{ 
+                      <Grid item xs={12} sm={4} sx={{
                         order: { xs: 3, sm: 3 },
                         mt: { xs: 2, sm: 0 }
                       }}>
@@ -742,7 +749,7 @@ const PlayerProfileCard = () => {
                           </FormControl>
                         </Card>
                       </Grid>
-                      <Grid item xs={12} sm={4} sx={{ 
+                      <Grid item xs={12} sm={4} sx={{
                         order: { xs: 4, sm: 4 },
                         mt: { xs: 2, sm: 0 }
                       }}>
@@ -920,12 +927,12 @@ const PlayerProfileCard = () => {
   // Step 3: Skills
   if (step === 3) {
     const skills = [
-      { name: "Dribbling", value: dribbling, setter: setDribbling, icon: "⚽" },
-      { name: "Shooting", value: shooting, setter: setShooting, icon: "🎯" },
-      { name: "Passing", value: passing, setter: setPassing, icon: "🎪" },
-      { name: "Pace", value: pace, setter: setPace, icon: "💨" },
-      { name: "Defending", value: defending, setter: setDefending, icon: "🛡️" },
-      { name: "Physical", value: physical, setter: setPhysical, icon: "💪" },
+      { name: "Dribbling", value: dribbling, setter: setDribbling, icon: Dribbling},
+      { name: "Shooting", value: shooting, setter: setShooting, icon: Shooting},
+      { name: "Passing", value: passing, setter: setPassing, icon: Passing},
+      { name: "Pace", value: pace, setter: setPace, icon: Pace},
+      { name: "Defending", value: defending, setter: setDefending, icon: Defending},
+      { name: "Physical", value: physical, setter: setPhysical, icon: Physical},
     ]
 
     return (
@@ -951,6 +958,7 @@ const PlayerProfileCard = () => {
               </Typography>
               <Grid container spacing={3} sx={{ mt: 2 }}>
                 {skills.map((skill) => (
+
                   <Grid item xs={12} sm={6} key={skill.name}>
                     <SkillCard
                       sx={{
@@ -960,51 +968,111 @@ const PlayerProfileCard = () => {
                         boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
                         border: '1.5px solid rgba(67,160,71,0.3)',
                         transition: 'transform 0.2s, box-shadow 0.2s',
+                        height: '100%', // Ensure all cards take full height of grid item
+                        display: 'flex',
+                        flexDirection: 'column',
                         '&:hover': {
                           transform: 'scale(1.025)',
                           boxShadow: '0 12px 40px 0 rgba(67,160,71,0.28)',
                         }
                       }}
                     >
-                      <CardContent>
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold', letterSpacing: 0.5, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>{skill.icon}</Typography>
+                          <Image src={skill.icon} alt="icon" width={40} height={40} />
                           <Typography variant="h6" fontWeight="bold" sx={{ color: '#fff', letterSpacing: 0.5, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
                             {skill.name}
                           </Typography>
                         </Box>
-                        <StyledSlider
-                          value={skill.value ?? 50}
-                          onChange={(e, value) => skill.setter(value as number)}
-                          min={50}
-                          max={99}
-                          step={1}
-                          sx={{
-                            "& .MuiSlider-thumb": {
-                              backgroundColor: getSkillColor(skill.value ?? 50),
-                            },
-                            "& .MuiSlider-track": {
-                              backgroundColor: getSkillColor(skill.value ?? 50),
-                            },
-                          }}
-                        />
-                        <Box sx={{ textAlign: "center", mt: 1 }}>
-                          <Chip
-                            label={getSkillLabel(skill.value ?? 50).text}
+                        <Box sx={{ mt: 'auto' }}> {/* This pushes content to take available space */}
+                          <StyledSlider
+                            value={skill.value ?? 50}
+                            onChange={(e, value) => skill.setter(value as number)}
+                            min={50}
+                            max={99}
+                            step={1}
                             sx={{
-                              backgroundColor: getSkillLabel(skill.value ?? 50).color,
-                              color: "white",
-                              fontWeight: "bold",
-                              fontSize: '1rem',
-                              px: 2,
-                              boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
-                              border: '1.5px solid #fff',
+                              "& .MuiSlider-thumb": {
+                                backgroundColor: getSkillColor(skill.value ?? 50),
+                              },
+                              "& .MuiSlider-track": {
+                                backgroundColor: getSkillColor(skill.value ?? 50),
+                              },
                             }}
                           />
+                          <Box sx={{ textAlign: "center", mt: 1 }}>
+                            <Chip
+                              label={getSkillLabel(skill.value ?? 50).text}
+                              sx={{
+                                backgroundColor: getSkillLabel(skill.value ?? 50).color,
+                                color: "white",
+                                fontWeight: "bold",
+                                fontSize: '1rem',
+                                px: 2,
+                                boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                                border: '1.5px solid #fff',
+                              }}
+                            />
+                          </Box>
                         </Box>
                       </CardContent>
                     </SkillCard>
                   </Grid>
+
+                  // <Grid item xs={12} sm={6} key={skill.name}>
+                  //   <SkillCard
+                  //     sx={{
+                  //       background: 'linear-gradient(135deg, #1f673b 0%, #1f673b 100%)',
+                  //       color: '#fff',
+                  //       borderRadius: 4,
+                  //       boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
+                  //       border: '1.5px solid rgba(67,160,71,0.3)',
+                  //       transition: 'transform 0.2s, box-shadow 0.2s',
+                  //       '&:hover': {
+                  //         transform: 'scale(1.025)',
+                  //         boxShadow: '0 12px 40px 0 rgba(67,160,71,0.28)',
+                  //       }
+                  //     }}
+                  //   >
+                  //     <CardContent>
+                  //       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  //         <Image src={skill.icon} alt="icon" width={40} height={40} />
+                  //         <Typography variant="h6" fontWeight="bold" sx={{ color: '#fff', letterSpacing: 0.5, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+                  //           {skill.name}
+                  //         </Typography>
+                  //       </Box>
+                  //       <StyledSlider
+                  //         value={skill.value ?? 50}
+                  //         onChange={(e, value) => skill.setter(value as number)}
+                  //         min={50}
+                  //         max={99}
+                  //         step={1}
+                  //         sx={{
+                  //           "& .MuiSlider-thumb": {
+                  //             backgroundColor: getSkillColor(skill.value ?? 50),
+                  //           },
+                  //           "& .MuiSlider-track": {
+                  //             backgroundColor: getSkillColor(skill.value ?? 50),
+                  //           },
+                  //         }}
+                  //       />
+                  //       <Box sx={{ textAlign: "center", mt: 1 }}>
+                  //         <Chip
+                  //           label={getSkillLabel(skill.value ?? 50).text}
+                  //           sx={{
+                  //             backgroundColor: getSkillLabel(skill.value ?? 50).color,
+                  //             color: "white",
+                  //             fontWeight: "bold",
+                  //             fontSize: '1rem',
+                  //             px: 2,
+                  //             boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
+                  //             border: '1.5px solid #fff',
+                  //           }}
+                  //         />
+                  //       </Box>
+                  //     </CardContent>
+                  //   </SkillCard>
+                  // </Grid>
                 ))}
               </Grid>
 
