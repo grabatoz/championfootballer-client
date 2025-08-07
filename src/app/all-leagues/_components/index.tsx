@@ -701,8 +701,7 @@ function AllLeagues() {
             letterSpacing: '2px',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
-            // className='all-leagues-heading'
-            className={anton.className}
+            className='all-leagues-heading'
             >
             ALL LEAGUES
           </Typography>
