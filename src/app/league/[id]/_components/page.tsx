@@ -1331,7 +1331,8 @@ export default function LeagueDetailPage() {
                                                                         py: { xs: 1, sm: 2 },
                                                                         px: { xs: 1, sm: 2 },
                                                                         alignItems: 'center',
-                                                                        backgroundColor: '#3B8271',
+                                                                        // backgroundColor: '#3B8271',
+                                                                        backgroundColor: 'rgba(255,255,255,0.1)',
                                                                     }}
                                                                 >
                                                                     <ListItemAvatar>
@@ -1348,7 +1349,8 @@ export default function LeagueDetailPage() {
                                                                             width: { xs: 100, sm: 150 }, // Added fixed width
                                                                             color: 'white'
                                                                         }}>
-                                                                            <SignalCellularAltIcon sx={{ color: '#00C853', fontSize: { xs: 16, sm: 24 } }} />
+                                                                            {/* #00C853 */}
+                                                                            <SignalCellularAltIcon sx={{ color: 'green', fontSize: { xs: 16, sm: 24 } }} />
 
                                                                             {/* {member?.position} */}
                                                                         </Box>
