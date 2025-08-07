@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Anton, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
 // import Mainbg from '@/Components/images/mainbg.webp'
 import LayoutContent from './LayoutContent';
+
+const anton = Anton({ 
+  weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
+  subsets: ['latin'],
+});
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -29,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body 
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.className}`}
       >
         <Providers>
           <AuthCheck />
