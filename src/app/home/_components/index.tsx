@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -15,6 +15,7 @@ import {
   DialogActions,
   DialogContent,
   Divider,
+  MenuItem,
 } from '@mui/material';
 import PlayerCard from '@/Components/playercard/playercard';
 import Link from 'next/link';
@@ -38,33 +39,40 @@ import { cacheManager } from '@/lib/cacheManager';
 import { Trophy } from 'lucide-react';
 // import { joinLeague } from '@/lib/features/leagueSlice';
 
-// League Selection Component
+
+
+
 const LeagueSelectionComponent = ({}: { user: User }) => {
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
 
-  // Function to format league name
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Format league name function
   const formatLeagueName = (name: string) => {
     if (!name) return '';
-
-    // Split the name into words
     const words = name.split(' ');
-
-    // Capitalize first letter of each word
     const capitalizedWords = words.map(word =>
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     );
-
-    // Get first character of each word
     const firstChars = words.map(word => word.charAt(0).toUpperCase());
-
-    // Create the formatted name
-    const formattedName = capitalizedWords.join(' ');
-    const abbreviation = `(${firstChars.join('')})`;
-
-    return `${formattedName} ${abbreviation}`;
+    return `${capitalizedWords.join(' ')} (${firstChars.join('')})`;
   };
 
   // Fetch user's leagues
@@ -82,19 +90,15 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
-            // Combine joined and managed leagues
             const leagues = [
               ...(data.user.leagues || []),
               ...(data.user.administeredLeagues || [])
             ];
-
-            // Remove duplicates
             const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
-            setUserLeagues(uniqueLeagues);
+            setUserLeagues(Array.from(uniqueLeagues));
 
-            // Set the most recent league as default
             if (uniqueLeagues.length > 0) {
-              setSelectedLeague(uniqueLeagues[0]);
+              setSelectedLeague(Array.from(uniqueLeagues)[0]);
             }
           }
         }
@@ -108,7 +112,6 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
     fetchUserLeagues();
   }, [token]);
 
-  // If user has no leagues
   if (!loading && userLeagues.length === 0) {
     return (
       <Box sx={{
@@ -116,7 +119,6 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        // py: 2
       }}>
         <Typography
           variant="body1"
@@ -127,7 +129,7 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
             textAlign: 'center'
           }}
         >
-         {` You haven't joined any league yet.`}
+          {`You haven't joined any league yet.`}
         </Typography>
         <Link href="/all-leagues" passHref>
           <Button
@@ -137,10 +139,10 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
               color: 'white',
               '&:hover': { bgcolor: '#388e3c' },
               minHeight: { xs: '60px', sm: '70px', md: '50px' },
-          minWidth: { xs: '280px', sm: '320px' },
-          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
+              minWidth: { xs: '280px', sm: '320px' },
+              fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
               fontWeight: 'bold',
-              mb:-1.5
+              mb: -1.5
             }}
           >
             Join a League
@@ -150,15 +152,15 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
     );
   }
 
-  // If user has leagues
   return (
     <Box sx={{
       width: '100%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center'
-    }}>
+      justifyContent: 'center',
+      position: 'relative'
+    }} ref={dropdownRef}>
       <Button
         variant="contained"
         sx={{
@@ -167,69 +169,297 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
           '&:hover': { bgcolor: '#388e3c' },
           minHeight: { xs: '60px', sm: '70px', md: '50px' },
           minWidth: { xs: '280px', sm: '320px' },
-          fontSize: { xs: '1rem', sm: '1.1rem', md: '0.5rem' },
+          fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
           fontWeight: 'bold',
           textTransform: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          // px: { xs: 2, sm: 3 },
-          // py: { xs: 1.5, sm: 2 },
           borderRadius: 2,
           boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
           border: '2px solid #fff',
         }}
         onClick={() => {
-          // Navigate to the selected league
           if (selectedLeague) {
             window.location.href = `/league/${selectedLeague.id}`;
           }
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-  {/* Trophy and league name */}
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    <Trophy size={24} color="white" />
-    <Typography
-      sx={{
-        fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-        fontWeight: 'semibold'
-      }}
-    >
-      {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
-    </Typography>
-  </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
+            <Trophy size={24} color="white" />
+            <Typography
+              sx={{
+                fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+                fontWeight: 'semibold'
+              }}
+            >
+              {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+            </Typography>
+          </Box>
 
-  {/* Right arrow to show all leagues */}
-  <IconButton 
-    onClick={() => setSelectedLeague(null)} // Reset selected league to show all
-    sx={{ 
-      color: 'white',
-      ml: 2, // Add some margin
-      '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.1)'
-      }
-    }}
-  >
-    <ChevronRight size={24} /> {/* Right arrow icon */}
-  </IconButton>
-</Box>
-        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 6 }}>
-          <Trophy size={24} color="white" />
-          <Typography
-            sx={{
-              fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-              fontWeight: 'semibold'
+          <IconButton 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDropdown(!showDropdown);
+            }}
+            sx={{ 
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.1)'
+              }
             }}
           >
-            {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
-          </Typography>
-        </Box> */}
-        {/* <RiArrowRightLine size={20} color="white" /> */}
+            <ChevronRight size={24} />
+          </IconButton>
+        </Box>
       </Button>
+
+      {/* Dropdown menu */}
+      {showDropdown && (
+        <Box sx={{
+          position: 'absolute',
+          top: '100%',
+          width: '100%',
+          maxWidth: { xs: '280px', sm: '320px' },
+          maxHeight: '300px',
+          overflowY: 'auto',
+          bgcolor: 'background.paper',
+          borderRadius: 1,
+          boxShadow: 3,
+          mt: 1,
+          zIndex: 9999
+        }}>
+          {userLeagues.map((league) => (
+            <MenuItem 
+              key={league.id}
+              onClick={() => {
+                setSelectedLeague(league);
+                setShowDropdown(false);
+              }}
+              sx={{
+                '&:hover': { bgcolor: '#f5f5f5' },
+                borderBottom: '1px solid #eee'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Trophy size={20} color="#43a047" />
+                <Typography>{formatLeagueName(league.name)}</Typography>
+              </Box>
+            </MenuItem>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // League Selection Component
+// const LeagueSelectionComponent = ({}: { user: User }) => {
+//   const [userLeagues, setUserLeagues] = useState<League[]>([]);
+//   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+//   const [loading, setLoading] = useState(true);
+//   const { token } = useAuth();
+
+//   // Function to format league name
+//   const formatLeagueName = (name: string) => {
+//     if (!name) return '';
+
+//     // Split the name into words
+//     const words = name.split(' ');
+
+//     // Capitalize first letter of each word
+//     const capitalizedWords = words.map(word =>
+//       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+//     );
+
+//     // Get first character of each word
+//     const firstChars = words.map(word => word.charAt(0).toUpperCase());
+
+//     // Create the formatted name
+//     const formattedName = capitalizedWords.join(' ');
+//     const abbreviation = `(${firstChars.join('')})`;
+
+//     return `${formattedName} ${abbreviation}`;
+//   };
+
+//   // Fetch user's leagues
+//   useEffect(() => {
+//     const fetchUserLeagues = async () => {
+//       if (!token) return;
+
+//       try {
+//         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+//           headers: {
+//             'Authorization': `Bearer ${token}`
+//           }
+//         });
+
+//         if (response.ok) {
+//           const data = await response.json();
+//           if (data.success && data.user) {
+//             // Combine joined and managed leagues
+//             const leagues = [
+//               ...(data.user.leagues || []),
+//               ...(data.user.administeredLeagues || [])
+//             ];
+
+//             // Remove duplicates
+//             const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
+//             setUserLeagues(uniqueLeagues);
+
+//             // Set the most recent league as default
+//             if (uniqueLeagues.length > 0) {
+//               setSelectedLeague(uniqueLeagues[0]);
+//             }
+//           }
+//         }
+//       } catch (error) {
+//         console.error('Error fetching leagues:', error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchUserLeagues();
+//   }, [token]);
+
+//   // If user has no leagues
+//   if (!loading && userLeagues.length === 0) {
+//     return (
+//       <Box sx={{
+//         display: 'flex',
+//         flexDirection: 'column',
+//         alignItems: 'center',
+//         justifyContent: 'center',
+//         // py: 2
+//       }}>
+//         <Typography
+//           variant="body1"
+//           sx={{
+//             color: '#666',
+//             mb: 1,
+//             fontSize: { xs: '0.9rem', sm: '1rem' },
+//             textAlign: 'center'
+//           }}
+//         >
+//          {` You haven't joined any league yet.`}
+//         </Typography>
+//         <Link href="/all-leagues" passHref>
+//           <Button
+//             variant="contained"
+//             sx={{
+//               bgcolor: '#43a047',
+//               color: 'white',
+//               '&:hover': { bgcolor: '#388e3c' },
+//               minHeight: { xs: '60px', sm: '70px', md: '50px' },
+//           minWidth: { xs: '280px', sm: '320px' },
+//           fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
+//               fontWeight: 'bold',
+//               mb:-1.5
+//             }}
+//           >
+//             Join a League
+//           </Button>
+//         </Link>
+//       </Box>
+//     );
+//   }
+
+//   // If user has leagues
+//   return (
+//     <Box sx={{
+//       width: '100%',
+//       display: 'flex',
+//       flexDirection: 'column',
+//       alignItems: 'center',
+//       justifyContent: 'center'
+//     }}>
+//       <Button
+//         variant="contained"
+//         sx={{
+//           bgcolor: '#43a047',
+//           color: 'white',
+//           '&:hover': { bgcolor: '#388e3c' },
+//           minHeight: { xs: '60px', sm: '70px', md: '50px' },
+//           minWidth: { xs: '280px', sm: '320px' },
+//           fontSize: { xs: '1rem', sm: '1.1rem', md: '0.5rem' },
+//           fontWeight: 'bold',
+//           textTransform: 'none',
+//           display: 'flex',
+//           alignItems: 'center',
+//           justifyContent: 'space-between',
+//           // px: { xs: 2, sm: 3 },
+//           // py: { xs: 1.5, sm: 2 },
+//           borderRadius: 2,
+//           boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
+//           border: '2px solid #fff',
+//         }}
+//         onClick={() => {
+//           // Navigate to the selected league
+//           if (selectedLeague) {
+//             window.location.href = `/league/${selectedLeague.id}`;
+//           }
+//         }}
+//       >
+//         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//   {/* Trophy and league name */}
+//   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//     <Trophy size={24} color="white" />
+//     <Typography
+//       sx={{
+//         fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+//         fontWeight: 'semibold'
+//       }}
+//     >
+//       {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+//     </Typography>
+//   </Box>
+
+//   {/* Right arrow to show all leagues */}
+//   <IconButton 
+//     onClick={() => setSelectedLeague(null)} // Reset selected league to show all
+//     sx={{ 
+//       color: 'white',
+//       ml: 2, // Add some margin
+//       '&:hover': {
+//         backgroundColor: 'rgba(255,255,255,0.1)'
+//       }
+//     }}
+//   >
+//     <ChevronRight size={24} /> {/* Right arrow icon */}
+//   </IconButton>
+// </Box>
+//       </Button>
+//     </Box>
+//         // {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 6 }}>
+//         //   <Trophy size={24} color="white" />
+//         //   <Typography
+//         //     sx={{
+//         //       fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+//         //       fontWeight: 'semibold'
+//         //     }}
+//         //   >
+//         //     {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+//         //   </Typography>
+//         // </Box> */}
+//         // {/* <RiArrowRightLine size={20} color="white" /> */}
+//   );
+// };
 
 export default function PlayerDashboard() {
   const [inviteCode, setInviteCode] = useState('');
