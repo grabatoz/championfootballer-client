@@ -827,7 +827,7 @@ export default function LeagueDetailPage() {
                     fontFamily: 'Sailec, Geist, Roboto, Arial, sans-serif',
                     py: { xs: 2, md: 4 },
                     px: { xs: 1, md: 0 },
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
+                    background: 'transparent',
                     backgroundAttachment: 'fixed',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
