@@ -14,21 +14,25 @@ export default function LandingPage() {
 
   return (
     <Box
-      sx={{
-        width: '100vw',
-        minHeight: '100vh',
-        backgroundImage: `url(${NewImg.src})`,
-        backgroundAttachment: 'fixed',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: { xs: 2, md: 4 },
-        py: 6,
-        overflow: 'auto',
-      }}
+    sx={{
+    width: '100vw',
+    minHeight: '100vh',
+    backgroundImage: {
+      xs: `url(${mobile.src})`, // Only shows on xs (mobile)
+      sm: `url(${mobile.src})`,               // Hidden on sm and larger
+      md: `url(${NewImg.src})`,               // Hidden on sm and larger
+    },
+    backgroundAttachment: 'fixed',
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    px: { xs: 2, md: 4 },
+    py: 6,
+    overflow: 'auto',
+  }}
     >
       <Box 
         sx={{ 
@@ -38,7 +42,8 @@ export default function LandingPage() {
           justifyContent: 'center',
           maxWidth: '3000px',
           width: '100%',
-          gap: { xs: 4, md: 8 }
+          gap: { xs: 4, md: 8 },
+          mt:{xs:-8,sm:-8,md:0}
         }}
       >
         {/* Left Side - Branding - Fixed position */}
