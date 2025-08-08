@@ -293,11 +293,12 @@ const PlayerCard = ({
           display: 'flex',
           flexDirection: 'column',
           color: '#fff',
+          mt:{xs:2,sm:2,md:0}
         }}
       >
         {/* Top: Shirt Number */}
         <Box sx={{ mt: 1 }}>
-          <Typography fontWeight={'bold'} fontSize="15px" color={'#fff'}>
+          <Typography fontWeight={'bold'} fontSize="18px" color={'#fff'}>
             <span className='font-bold text-[22px]'> {points} xp </span>
           </Typography>
         </Box>
@@ -307,7 +308,7 @@ const PlayerCard = ({
           justifyContent="space-between"
           alignItems="flex-start"
           px={2}
-          mt={2}
+         sx={{mt:{xs:2,sm:2,md:2}}} 
         >
           {/* Left: Number, XXX, Foot */}
           <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
@@ -345,8 +346,8 @@ const PlayerCard = ({
           <Box
             sx={{
               position: 'relative',
-              width: 100,
-              height: 100,
+              width: {xs:70,sm:70,md:100},
+              height: {xs:70,sm:70,md:100},
               border: `2px solid ${'#fff'}`,
               borderRadius: '10px',
               display: 'flex',
@@ -358,7 +359,7 @@ const PlayerCard = ({
               <Avatar
                 key={`${imgUrl}-${imageKey}`} // Force complete re-render when image changes
                 src={imgUrl || undefined}
-                sx={{ width: 85, height: 85, borderRadius: '0' }}
+                sx={{ width: {xs:70,sm:70,md:85}, height: {xs:70,sm:70,md:85}, borderRadius: '0' }}
                 alt="Profile"
                 data-testid="profile-avatar"
               >
@@ -388,7 +389,7 @@ const PlayerCard = ({
         </Box>
 
         {/* Name and Title (from static logic) */}
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: {xs:0,sm:0,md:2 }}}>
           <Typography
             fontSize="18px"
             fontWeight="bold"

@@ -903,7 +903,8 @@ function AllLeagues() {
                       mb: 2,
                       textOverflow: 'ellipsis',
                       overflow: 'hidden',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      fontWeight:'bold'
                     }}>
                       {formatLeagueName(league.name)}
                     </Typography>
