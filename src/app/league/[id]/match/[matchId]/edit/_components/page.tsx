@@ -280,7 +280,7 @@ export default function EditMatchPage() {
             <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, p: 4, minHeight: '100vh', color: 'white' }}>
                 {/* Edit Form Section - right on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
-                    <Paper component="form" onSubmit={handleUpdateMatch} sx={{ p: 3, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', border: '1px solid #235235', maxWidth: 700, mx: 'auto' }}>
+                    <Paper component="form" onSubmit={handleUpdateMatch} sx={{ p: 3, background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', color: 'white', borderRadius: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', border: '1px solid #235235', maxWidth: 700, mx: 'auto' }}>
                     <Typography variant="h4" component="h1" gutterBottom>
                         Edit Match for {league.name}
                     </Typography>
@@ -538,7 +538,7 @@ export default function EditMatchPage() {
                 </Box>
                 {/* Live Preview Section - left on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                    <Paper sx={{ p: 2, backgroundColor: '#1f673b', color: 'white', position: 'sticky', top: '20px' }}>
+                    <Paper sx={{ p: 2, background: '#1flinear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)3b', color: 'white', position: 'sticky', top: '20px' }}>
                         <Typography variant="h5" gutterBottom>Live Preview</Typography>
                         <Divider sx={{ mb: 2, borderColor: 'white' }} />
                         <Box sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: 4, minHeight: 250, width: '100%' }}>
