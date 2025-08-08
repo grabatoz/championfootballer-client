@@ -664,60 +664,6 @@ export default function PlayerDashboard() {
             />
           </Box>
 
-          {/* White Card - Bottom on mobile, right on desktop */}
-          {/* <Box 
-      sx={{ 
-        flex: 1, 
-        backgroundColor: '#fff', 
-        p: { xs: 3, sm: 2, md: 1.5}, 
-        borderRadius: { xs: '20px 20px 20px 20px', md: 2 }, // Rounded top corners on mobile
-        maxWidth: { xs: '100%', md: '41%' , lg: '33%' },
-        width: { xs: '96%' , sm: '70%', md: 'auto' , lg: '33%' },
-        textAlign:'flex',
-        mt: { xs: 'auto', md: 0 },
-        minHeight: { xs: 'auto', md: 'auto' },
-        mb: {xs:2,md:0},
-        // Center the card on screens below 900px
-        alignSelf: { xs: 'center' },
-        ml:-2,
-        // mt:-36,
-        // mt:6,
-        // mx: { xs: 'auto', md: 0 } // Auto margins for centering
-      }}
-    >
-      <Box sx={{display: 'inline-flex',gap:1}}>
-      <Typography 
-        variant="h5" 
-        gutterBottom 
-        sx={{ 
-          fontWeight: 'bold',
-          fontSize: { xs: '1.2rem', sm: '1.5rem' , md: '1.2rem' },
-          color: 'black',
-        }}
-      >
-        Welcome,
-      </Typography>
-      <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' , md: '1.2rem' },fontWeight:'semibold'}}>{user?.firstName}</Typography>
-      </Box>
-
-      <Divider sx={{ mb: 1.5 , width:'100%' , height:2 , bgcolor:'green' }}/>
-      <Box sx={{justifyContent:'center' , textAlign:'center'}}>
-        
-      <Typography 
-        variant="body2" 
-        sx={{ 
-          color: 'black',
-          mb: 1.5,
-          fontSize: { xs: '0.9rem', sm: '1rem' }
-        }}
-      >
-        Your Current League In Which You Stand
-      </Typography>
-
-      <LeagueSelectionComponent user={user} />
-      </Box>
-
-    </Box> */}
           <Box
             sx={{
               flex: 1,
@@ -767,7 +713,6 @@ export default function PlayerDashboard() {
 
               {/* League Selection Component */}
               <LeagueSelectionComponent user={user} />
-            </Box>
 
             {/* Add New League Button */}
             <Button
@@ -782,7 +727,7 @@ export default function PlayerDashboard() {
                 mt: 3,
                 borderRadius: 2,
                 '&:hover': { bgcolor: '#0388e3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)', },
-                width: '300px',
+                width: '320px',
                 mx: 'auto',
                 display: {
                   xs: 'none',  // Show on extra small screens
@@ -796,10 +741,12 @@ export default function PlayerDashboard() {
 
             {/* Invite Code Join Section */}
             <Box sx={{
+               mx: 'auto',
               alignItems: 'center', justifyContent: 'center', display: {
                 xs: 'none',  // Show on extra small screens
                 sm: 'none',  // Show on small screens
-                md: 'flex',   // Hide on medium screens and up
+                md: 'block',   // Hide on medium screens and up
+                maxWidth:'320px'
               }
             }}>
               <TextField
@@ -839,6 +786,7 @@ export default function PlayerDashboard() {
               >
                 Join League
               </Button>
+            </Box>
             </Box>
 
           </Box>
