@@ -1006,7 +1006,7 @@ export default function PlayerDashboard() {
           <Button
             variant="contained"
             // color="success"
-            sx={{ background: '#00a77f', borderRadius: 2, '&:hover': { background: '#00a77f' }, ml: -3, py: 1 }}
+            sx={{ background: '#00a77f', borderRadius: 2, '&:hover': { background: '#00a77f' }, ml: -5, py: 1 }}
             onClick={handleJoinLeague}
             startIcon={
               <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
