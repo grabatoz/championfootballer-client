@@ -37,7 +37,7 @@ import { ChevronRight, CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import { cacheManager } from '@/lib/cacheManager';
 import { Trophy } from 'lucide-react';
-import { Block } from '@mui/icons-material';
+// import { Block } from '@mui/icons-material';
 // import { joinLeague } from '@/lib/features/leagueSlice';
 import Dashbg from '@/Components/images/dashbg.jpg'
 
