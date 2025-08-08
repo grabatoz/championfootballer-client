@@ -265,7 +265,7 @@ const PlayerCard = ({
     <Box
       sx={{
         width: width || 260,
-        height: height || 400,
+        height: height || 420,
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
