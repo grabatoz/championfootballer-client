@@ -538,7 +538,7 @@ export default function EditMatchPage() {
                 </Box>
                 {/* Live Preview Section - left on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                    <Paper sx={{ p: 2, background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)3b', color: 'white', position: 'sticky', top: '20px' }}>
+                    <Paper sx={{ p: 2, background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', color: 'white', position: 'sticky', top: '20px' }}>
                         <Typography variant="h5" gutterBottom>Live Preview</Typography>
                         <Divider sx={{ mb: 2, borderColor: 'white' }} />
                         <Box sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: 4, minHeight: 250, width: '100%' }}>
