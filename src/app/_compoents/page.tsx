@@ -43,7 +43,7 @@ export default function LandingPage() {
           maxWidth: '3000px',
           width: '100%',
           gap: { xs: 4, md: 8 },
-          mt:{xs:-8,sm:-8,md:0}
+          mt:{xs:-6,sm:-6,md:0}
         }}
       >
         {/* Left Side - Branding - Fixed position */}
