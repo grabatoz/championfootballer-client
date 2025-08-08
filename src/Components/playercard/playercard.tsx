@@ -155,7 +155,6 @@ const PlayerCard = ({
   profileImage,
   children,
   width,
-  height,
   position,
 }: PlayerCardProps) => {
   // Find the level info based on points
@@ -265,7 +264,7 @@ const PlayerCard = ({
     <Box
       sx={{
         width: width || 260,
-        height: height || 420,
+        height: {xs:440,sm:440, ms:400},
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
