@@ -70,7 +70,7 @@ export default function ScheduleMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     // Form state
     const [homeTeamName, setHomeTeamName] = useState('');
     const [awayTeamName, setAwayTeamName] = useState('');
@@ -113,7 +113,7 @@ export default function ScheduleMatchPage() {
             setLoading(false);
         }
     }, [leagueId, token]);
-    
+
     useEffect(() => {
         if (leagueId && token) {
             fetchLeagueMembers();
@@ -283,10 +283,14 @@ export default function ScheduleMatchPage() {
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
-    
+
     if (error || !league) {
         return <Box sx={{ p: 4, minHeight: '100vh', color: 'white' }}>
-            <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'white' }}>
+            <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
+                mb: 2, color: 'white', backgroundColor: '#388e3c',
+                '&:hover': { backgroundColor: '#388e3c' },
+                borderRadius: 2
+            }}>
                 Back to League
             </Button>
             <Typography color="error">{error || 'Could not load league data.'}</Typography>
@@ -406,10 +410,10 @@ export default function ScheduleMatchPage() {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box sx={{ p: 4, minHeight: '100vh', color: 'white' }}>
-                <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)}   sx={{ mb: 2, color: 'white' , backgroundColor:'#1f673b' , '&:hover': { backgroundColor: '#388e3c' },}}>
+                <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'white', backgroundColor: '#1f673b', '&:hover': { backgroundColor: '#388e3c' }, }}>
                     Back to League
                 </Button>
-                
+
                 <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Form Section */}
                     <Box sx={{ width: { xs: "100%", md: "58.33%" } }}>
@@ -419,7 +423,7 @@ export default function ScheduleMatchPage() {
                             sx={{
                                 p: 3,
                                 // backgroundColor: "#1f673b",
-                                backgroundColor: "#48ab4c",
+                                background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
                                 color: "white",
                                 borderRadius: 6
                             }}
@@ -427,7 +431,7 @@ export default function ScheduleMatchPage() {
                             <Typography variant="h4" component="h1" gutterBottom>
                                 {league.name} Create a New Match
                             </Typography>
-                            
+
                             {/* Home Team Fields */}
                             <TextField
                                 label="Home Team Name"
@@ -501,7 +505,7 @@ export default function ScheduleMatchPage() {
                                     </Box>
                                 )}
                             </Box>
-                            
+
                             <Autocomplete
                                 multiple
                                 options={league.members.filter((m) => !awayTeamUsers.find((p) => p.id === m.id))}
@@ -542,12 +546,12 @@ export default function ScheduleMatchPage() {
                             />
 
                             {homeTeamUsers.length > 0 && (
-                              <Autocomplete
-                                options={homeTeamUsers}
-                                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                                value={homeCaptain}
-                                onChange={(event, newValue) => setHomeCaptain(newValue)}
-                                renderInput={(params) => (
+                                <Autocomplete
+                                    options={homeTeamUsers}
+                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                                    value={homeCaptain}
+                                    onChange={(event, newValue) => setHomeCaptain(newValue)}
+                                    renderInput={(params) => (
                                         <TextField {...params} sx={{ mt: 2, mb: 1, ...inputStyles }} label="Select Home Team Captain" required />
                                     )}
                                     sx={{
@@ -558,7 +562,7 @@ export default function ScheduleMatchPage() {
                                             color: "white",
                                         },
                                     }}
-                              />
+                                />
                             )}
 
                             {/* Away Team Fields */}
@@ -734,7 +738,7 @@ export default function ScheduleMatchPage() {
                                 fullWidth
                                 sx={{ mt: 2, mb: 1, ...inputStyles }}
                             />
-                            
+
                             <TextField
                                 label="Location"
                                 value={location}
@@ -773,154 +777,154 @@ export default function ScheduleMatchPage() {
                     </Box>
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                    <Paper sx={{ 
-                        p: 2, 
-                        // backgroundColor: '#1f673b', 
-                        backgroundColor: '#48ab4c', 
-                        color: 'white', 
-                        position: 'sticky', 
-                        top: '20px',
-                        height: { xs: 'auto', md: 'fit-content' },
-                        minHeight: { xs: 'auto', md: '100%' },
-                        display: { xs: 'block', md: 'flex' },
-                        flexDirection: { xs: 'column', md: 'column' },
-                        borderRadius: 6
-                    }}>
-                            <Typography variant="h5" gutterBottom>Live Preview</Typography>
-                        <Divider sx={{ mb: 2, borderColor: 'white' }} />
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'stretch', 
-                            justifyContent: 'center', 
-                            gap: 4, 
-                            minHeight: { xs: 250, md: 'calc(100vh - 300px)' },
-                            width: '100%',
-                            flex: 1
+                        <Paper sx={{
+                            p: 2,
+                            // backgroundColor: '#1f673b', 
+                            background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                            color: 'white',
+                            position: 'sticky',
+                            top: '20px',
+                            height: { xs: 'auto', md: 'fit-content' },
+                            minHeight: { xs: 'auto', md: '100%' },
+                            display: { xs: 'block', md: 'flex' },
+                            flexDirection: { xs: 'column', md: 'column' },
+                            borderRadius: 6
                         }}>
-                            {/* Home Team Preview */}
-                            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                    <Avatar
-                                        src={homeTeamImagePreview || '/assets/default-team.png'}
-                                        alt="Home Team"
-                                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #66bb6a' }}
-                                    />
-                                    <Typography variant="h6" sx={{ color: '#66bb6a', textAlign: 'center' }}>
-                                        {homeTeamName || 'Home Team'}
-                                    </Typography>
-                                </Box>
-                                {homeTeamUsers.length > 0 ? (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
-                                        {/* Captain at top */}
-                                        {homeCaptain && (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                                <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <img
-                                                        src={homeCaptain.profilePicture || '/assets/group.svg'}
-                                                        alt={homeCaptain.firstName}
-                                                        style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
-                                                        width={56} height={56}
-                                                    />
-                                                    <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                        <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
-                                                        <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                    </Box>
-                                                </Link>
-                                            </Box>
-                                        )}
-                                        {/* Other players */}
-                                        {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
-                                            <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                                <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                    <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                                        <img
-                                                            src={user.profilePicture || '/assets/group.svg'}
-                                                            alt={user.firstName}
-                                                            style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === homeCaptain?.id ? '2px solid gold' : 'none' }}
-                                                        />
-                                                    </Box>
-                                                    <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                        <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                            {user.firstName} {user.lastName}
-                                                        </Typography>
-                                                        {user.id === homeCaptain?.id && (
-                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                                                Captain
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Link>
-                                            </Box>
-                                        ))}
+                            <Typography variant="h5" gutterBottom>Live Preview</Typography>
+                            <Divider sx={{ mb: 2, borderColor: 'white' }} />
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'stretch',
+                                justifyContent: 'center',
+                                gap: 4,
+                                minHeight: { xs: 250, md: 'calc(100vh - 300px)' },
+                                width: '100%',
+                                flex: 1
+                            }}>
+                                {/* Home Team Preview */}
+                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <Avatar
+                                            src={homeTeamImagePreview || '/assets/default-team.png'}
+                                            alt="Home Team"
+                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #66bb6a' }}
+                                        />
+                                        <Typography variant="h6" sx={{ color: '#66bb6a', textAlign: 'center' }}>
+                                            {homeTeamName || 'Home Team'}
+                                        </Typography>
                                     </Box>
-                                ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
-                            </Box>
-                            {/* Center Line */}
-                            <Box sx={{ width: 2, bgcolor: 'white', minHeight: 180, borderRadius: 1, mx: 2, display: { xs: 'none', md: 'block' } }} />
-                             {/* Away Team Preview */}
-                            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                    <Avatar
-                                        src={awayTeamImagePreview || '/assets/default-team.png'}
-                                        alt="Away Team"
-                                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }}
-                                    />
-                                    <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>
-                                        {awayTeamName || 'Away Team'}
-                                    </Typography>
-                                </Box>
-                                {awayTeamUsers.length > 0 ? (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
-                                        {/* Captain at top */}
-                                        {awayCaptain && (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                                <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                    <img
-                                                        src={awayCaptain.profilePicture || '/assets/group.svg'}
-                                                        alt={awayCaptain.firstName}
-                                                        style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
-                                                        width={56} height={56}
-                                                    />
-                                                    <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                        <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
-                                                        <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                    </Box>
-                                                </Link>
-                                            </Box>
-                                        )}
-                                        {/* Other players */}
-                                        {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
-                                            <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                                <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                    <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    {homeTeamUsers.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
+                                            {/* Captain at top */}
+                                            {homeCaptain && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                                                    <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
                                                         <img
-                                                            src={user.profilePicture || '/assets/group.svg'}
-                                                            alt={user.firstName}
-                                                            style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === awayCaptain?.id ? '2px solid gold' : 'none' }}
+                                                            src={homeCaptain.profilePicture || '/assets/group.svg'}
+                                                            alt={homeCaptain.firstName}
+                                                            style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
+                                                            width={56} height={56}
                                                         />
-                                                    </Box>
-                                                    <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                        <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                            {user.firstName} {user.lastName}
-                                                        </Typography>
-                                                        {user.id === awayCaptain?.id && (
-                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                                                Captain
+                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                            <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
+                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                        </Box>
+                                                    </Link>
+                                                </Box>
+                                            )}
+                                            {/* Other players */}
+                                            {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
+                                                <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                                                    <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                                                        <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                            <img
+                                                                src={user.profilePicture || '/assets/group.svg'}
+                                                                alt={user.firstName}
+                                                                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === homeCaptain?.id ? '2px solid gold' : 'none' }}
+                                                            />
+                                                        </Box>
+                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                            <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                                                {user.firstName} {user.lastName}
                                                             </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Link>
-                                            </Box>
-                                        ))}
+                                                            {user.id === homeCaptain?.id && (
+                                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
+                                                                    Captain
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Link>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
+                                </Box>
+                                {/* Center Line */}
+                                <Box sx={{ width: 2, bgcolor: 'white', minHeight: 180, borderRadius: 1, mx: 2, display: { xs: 'none', md: 'block' } }} />
+                                {/* Away Team Preview */}
+                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <Avatar
+                                            src={awayTeamImagePreview || '/assets/default-team.png'}
+                                            alt="Away Team"
+                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }}
+                                        />
+                                        <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>
+                                            {awayTeamName || 'Away Team'}
+                                        </Typography>
                                     </Box>
-                                ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
-                            </Box>
+                                    {awayTeamUsers.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
+                                            {/* Captain at top */}
+                                            {awayCaptain && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                                                    <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                                                        <img
+                                                            src={awayCaptain.profilePicture || '/assets/group.svg'}
+                                                            alt={awayCaptain.firstName}
+                                                            style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
+                                                            width={56} height={56}
+                                                        />
+                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                            <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
+                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                        </Box>
+                                                    </Link>
+                                                </Box>
+                                            )}
+                                            {/* Other players */}
+                                            {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
+                                                <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                                                    <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                                                        <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                            <img
+                                                                src={user.profilePicture || '/assets/group.svg'}
+                                                                alt={user.firstName}
+                                                                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === awayCaptain?.id ? '2px solid gold' : 'none' }}
+                                                            />
+                                                        </Box>
+                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                            <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                                                {user.firstName} {user.lastName}
+                                                            </Typography>
+                                                            {user.id === awayCaptain?.id && (
+                                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
+                                                                    Captain
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Link>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
+                                </Box>
                             </Box>
                         </Paper>
                     </Box>
                 </Box>
             </Box>
-            <Toaster position="top-center" reverseOrder={false} />            
+            <Toaster position="top-center" reverseOrder={false} />
         </LocalizationProvider>
     );
 } 
