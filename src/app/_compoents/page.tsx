@@ -5,6 +5,8 @@ import AuthTabs from '@/Components/authtabs/authtabs';
 import Image from 'next/image';
 import Layer from '@/Components/images/championfootballnewlogo.png';
 import NewImg from '@/Components/images/desktoppic.png'
+import mobile from '@/Components/images/mobile.png'
+
 import { useState } from 'react';
 
 export default function LandingPage() {

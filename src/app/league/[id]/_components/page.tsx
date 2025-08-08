@@ -1272,16 +1272,25 @@ export default function LeagueDetailPage() {
                             // backgroundColor: '#388e3c',
                             // backgroundColor: '#43a047',
                             // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-                            background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                            // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                            background: 'none',
                             color: 'white',
                             minHeight: 400,
-                            backdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(59, 130, 246, 0.3)',
-                            borderRadius: 3
+                            // backdropFilter: 'blur(10px)',
+                            // border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: 3,
+                            boxShadow: 'none'
                         }}>
                             {section === 'members' && (
                                 // Members Section
-                                <Box sx={{ mt: 3, p: 0, maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                                <Box sx={{
+                                    mt: 3, p: 0, maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
+                                    background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                                    borderRadius: 3,
+
+                                }}>
                                     {league?.members && league.members.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
@@ -1296,7 +1305,7 @@ export default function LeagueDetailPage() {
                                                 flexDirection: 'column',
                                             }}>
                                                 {/* Header */}
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1, mt: 2 }}>
                                                     <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
                                                     <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
                                                         {/* <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, mr: 10 }}>Position</Typography> */}
@@ -1434,13 +1443,15 @@ export default function LeagueDetailPage() {
 
                                                     <Card key={match.id} sx={{
                                                         // background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
-                                                        background: 'rgba(255,255,255,0.1)',
+                                                        // background: 'rgba(255,255,255,0.1)',
                                                         position: 'relative',
-                                                        border: '2px solid rgba(255,255,255,0.1)',
+                                                        // border: '2px solid rgba(255,255,255,0.1)',
                                                         borderRadius: 3,
                                                         backdropFilter: 'blur(10px)',
+                                                        background: '#01c697',
+                                                        border: '2px solid #02a880',
                                                         '&:hover': {
-                                                            border: '1px solid black',
+                                                            border: '3px solid #02a880',
                                                             transform: 'translateY(-2px)',
                                                             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                                         }
@@ -1577,7 +1588,8 @@ export default function LeagueDetailPage() {
                                                                             sx={{
                                                                                 backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)',
                                                                                 '&:hover': {
-                                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)'
+                                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)',
+                                                                                    transform: 'translateY(-1px)',
                                                                                 },
                                                                                 '&.Mui-disabled': {
                                                                                     backgroundColor: 'rgba(255,255,255,0.3)',
@@ -1585,6 +1597,11 @@ export default function LeagueDetailPage() {
                                                                                 },
                                                                                 fontSize: '0.75rem',
                                                                                 py: 0.5
+                                                                                ,
+                                                                                transition: 'all 0.2s ease-in-out', // Smooth hover effects
+                                                                                '&:active': {
+                                                                                  transform: 'translateY(0)', // Reset when clicked
+                                                                                },
                                                                             }}
                                                                         >
                                                                             {availabilityLoading[match.id]
@@ -1597,17 +1614,23 @@ export default function LeagueDetailPage() {
                                                                     <Button
                                                                         size="small"
                                                                         sx={{
-                                                                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                                            backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
                                                                             color: 'white',
-                                                                            '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
                                                                             fontSize: '0.75rem',
                                                                             py: 0.5,
-                                                                            px: 1.5,
-                                                                            fontWeight: 'bold',
-                                                                            borderRadius: 2,
-                                                                            minWidth: 'auto',
-                                                                            textTransform: 'none'
-                                                                        }}
+                                                                            px: 1.5, // Add horizontal padding for better proportions
+                                                                            borderRadius: 1, // Slightly rounded corners
+                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
+                                                                            transition: 'all 0.2s ease-in-out', // Smooth hover effects
+                                                                            '&:hover': {
+                                                                              bgcolor: 'rgba(59, 130, 246, 1)',
+                                                                              boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
+                                                                              transform: 'translateY(-1px)', // Slight lift effect
+                                                                            },
+                                                                            '&:active': {
+                                                                              transform: 'translateY(0)', // Reset when clicked
+                                                                            },
+                                                                          }}
                                                                     >
                                                                         Available: {availableCount} | Pending: {pendingCount}
                                                                     </Button>
@@ -1650,13 +1673,14 @@ export default function LeagueDetailPage() {
                                                 <Card key={match.id} sx={{
                                                     // background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
                                                     // background: '#3B8271',
-                                                    background: 'rgba(255,255,255,0.1)',
+                                                    // background: 'rgba(255,255,255,0.1)',
                                                     position: 'relative',
-                                                    border: '2px solid rgba(255,255,255,0.1)',
                                                     borderRadius: 3,
                                                     backdropFilter: 'blur(10px)',
+                                                    background: '#01c697',
+                                                    border: '2px solid #02a880',
                                                     '&:hover': {
-                                                        border: '1px solid black',
+                                                        border: '3px solid #02a880',
                                                         transform: 'translateY(-2px)',
                                                         boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                                     }
@@ -1799,12 +1823,23 @@ export default function LeagueDetailPage() {
                                                                         <Button
                                                                             size="small"
                                                                             sx={{
-                                                                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                                                backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
                                                                                 color: 'white',
-                                                                                '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
                                                                                 fontSize: '0.75rem',
-                                                                                py: 0.5
-                                                                            }}
+                                                                                py: 0.5,
+                                                                                px: 1, // Add horizontal padding for better proportions
+                                                                                borderRadius: 1, // Slightly rounded corners
+                                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
+                                                                                transition: 'all 0.2s ease-in-out', // Smooth hover effects
+                                                                                '&:hover': {
+                                                                                  bgcolor: 'rgba(59, 130, 246, 1)',
+                                                                                  boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
+                                                                                  transform: 'translateY(-1px)', // Slight lift effect
+                                                                                },
+                                                                                '&:active': {
+                                                                                  transform: 'translateY(0)', // Reset when clicked
+                                                                                },
+                                                                              }}
                                                                             disabled={!league?.active}
                                                                         >
                                                                             {isAdmin ? 'Update Score Card' : 'MOMT'}
@@ -1815,13 +1850,31 @@ export default function LeagueDetailPage() {
                                                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                 <Button
                                                                     size="small"
+                                                                    // sx={{
+                                                                    //     backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                                    //     color: 'white',
+                                                                    //     '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
+                                                                    //     fontSize: '0.75rem',
+                                                                    //     py: 0.5,
+                                                                    // }}
                                                                     sx={{
-                                                                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                                                        backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
                                                                         color: 'white',
-                                                                        '&:hover': { bgcolor: 'rgba(59, 130, 246, 1)' },
                                                                         fontSize: '0.75rem',
-                                                                        py: 0.5
-                                                                    }}
+                                                                        py: 0.5,
+                                                                        px: 1, // Add horizontal padding for better proportions
+                                                                        borderRadius: 1, // Slightly rounded corners
+                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
+                                                                        transition: 'all 0.2s ease-in-out', // Smooth hover effects
+                                                                        '&:hover': {
+                                                                          bgcolor: 'rgba(59, 130, 246, 1)',
+                                                                          boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
+                                                                          transform: 'translateY(-1px)', // Slight lift effect
+                                                                        },
+                                                                        '&:active': {
+                                                                          transform: 'translateY(0)', // Reset when clicked
+                                                                        },
+                                                                      }}
                                                                     onClick={() => {
                                                                         setActiveMatchId(match.id);
                                                                         setStatsDialogOpen(true);
@@ -1847,7 +1900,10 @@ export default function LeagueDetailPage() {
                             {section === 'table' && (
                                 <div className="w-full mx-auto">
                                     <Card sx={{
-                                        backgroundColor: 'transparent',
+                                        // backgroundColor: 'transparent',
+                                        background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                                        backdropFilter: 'blur(10px)',
+                                        border: '1px solid rgba(59, 130, 246, 0.3)',
                                         // border: '2px solid rgba(59, 130, 246, 0.5)',
                                         borderRadius: 3,
                                         boxShadow: 'none',
