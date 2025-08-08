@@ -871,101 +871,121 @@ export default function PlayerDashboard() {
         </Box>
 
       </Paper> */}
-      <Paper
-        elevation={3}
-        sx={{
-          backgroundImage: `url(${Dashbg.src})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          borderRadius: 2,
-          overflow: 'hidden',
-          p: { xs: 0.5, sm: 3 },
-          width: '98%',
-          boxShadow: { xs: 0, sm: 3 },
-          mt: { xs: 2, md: 0 },
-          display: {
-            xs: 'flex',  // Changed to flex for centering
-            sm: 'flex',
-            md: 'none',
-          },
-          flexDirection: 'column',
-          alignItems: 'center', // Centers children horizontally
-        }}
-      >
-        {/* Centered "Create New League" Button - Now matches Join League width */}
-        <Box sx={{
-          width: { xs: '100%', sm: '380px' }, // Match Join League's max width
-          display: 'flex',
-          justifyContent: 'center',
-          mb: 2
-        }}>
-          <Button
-            variant="contained"
-            onClick={() => setIsDialogOpen(true)}
-            sx={{
-              bgcolor: '#0388e3',
-              color: 'white',
-              fontWeight: 'bold',
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
-              '&:hover': { bgcolor: '#0388e3' },
-              width: '85%', // Now fills the container
-            }}
-          >
-            + Create New League
-          </Button>
-        </Box>
+ <Paper
+  elevation={3}
+  sx={{
+    backgroundImage: `url(${Dashbg.src})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    borderRadius: 2,
+    overflow: 'hidden',
+    p: { xs: 0.5, sm: 3 },
+    width: '98%',
+    boxShadow: { xs: 0, sm: 3 },
+    mt: { xs: 2, md: 0 },
+    display: {
+      xs: 'flex',
+      sm: 'flex',
+      md: 'none',
+    },
+    flexDirection: 'column',
+    alignItems: 'center',
+  }}
+>
+  {/* Create New League Button - Now matching Join League section width */}
+  <Box sx={{
+    width: { xs: '100%', sm: '380px' },
+    display: 'flex',
+    justifyContent: 'center',
+    mb: 2
+  }}>
+    <Button
+      variant="contained"
+      onClick={() => setIsDialogOpen(true)}
+      sx={{
+        bgcolor: '#0388e3',
+        color: 'white',
+        fontWeight: 'bold',
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
+        '&:hover': { bgcolor: '#0388e3' },
+        width: { xs: '100%', sm: '315px' },
+        height: '40px', // Fixed height to match Join button
+        fontSize: { xs: '0.875rem', sm: '1rem' }
+      }}
+    >
+      + Create New League
+    </Button>
+  </Box>
 
-        {/* Join League Section (unchanged) */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            mb: 3,
-            width: { xs: '100%', sm: '380px' }, // Explicit width to match
-            justifyContent: 'center',
-          }}
-        >
-          <TextField
-            placeholder="Enter invite code"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            size="small"
-            variant="outlined"
-            sx={{
-              backgroundColor: '#fff',
-              borderRadius: 3,
-              flex: 1,
-              maxWidth: 190,
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  border: 'none',
-                },
-                '&:hover fieldset': {
-                  border: 'none',
-                },
-                '&.Mui-focused fieldset': {
-                  border: 'none',
-                },
-              },
-            }}
-          />
-          <Button
-            variant="contained"
-            // color="success"
-            sx={{ background: '#00a77f', borderRadius: 2, '&:hover': { background: '#00a77f' }, ml: -5, py: 1 }}
-            onClick={handleJoinLeague}
-            startIcon={
-              <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-                <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
-              </svg>
-            }
-          >
-            Join League
-          </Button>
-        </Box>
-      </Paper>
+  {/* Join League Section */}
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      mb: 3,
+      width: { xs: '100%', sm: '380px' },
+      justifyContent: 'center',
+    }}
+  >
+    <TextField
+      placeholder="Enter invite code"
+      value={inviteCode}
+      onChange={(e) => setInviteCode(e.target.value)}
+      size="small"
+      variant="outlined"
+      sx={{
+        backgroundColor: '#fff',
+        borderRadius: 3,
+        flex: 1,
+        maxWidth: 190,
+        '& .MuiOutlinedInput-root': {
+          '& fieldset': { border: 'none' },
+          '&:hover fieldset': { border: 'none' },
+          '&.Mui-focused fieldset': { border: 'none' },
+        },
+        '& .MuiInputBase-input': {
+          height: '40px', // Match button height
+          padding: '0 14px',
+          fontSize: '0.875rem'
+        }
+      }}
+    />
+    <Button
+      variant="contained"
+      sx={{ 
+        background: '#00a77f', 
+        borderRadius: 2, 
+        '&:hover': { background: '#00a77f' },
+        ml: -5, 
+        py: 1,
+        height: '40px', // Fixed height
+        minWidth: '120px', // Minimum width
+        fontSize: '0.875rem'
+      }}
+      onClick={handleJoinLeague}
+      startIcon={
+        <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
+          <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
+        </svg>
+      }
+    >
+      Join League
+    </Button>
+  </Box>
+</Paper>
+
+
+
+
+
+
+
+
+
+
+      
       <Dialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}

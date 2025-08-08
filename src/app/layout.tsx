@@ -9,6 +9,7 @@ import LayoutContent from './LayoutContent';
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
   subsets: ['latin'],
+  variable: '--font-geist-anton'
 });
 
 const geistSans = Geist({
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body 
-        className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.className}`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.variable}`}
       >
         <Providers>
           <AuthCheck />

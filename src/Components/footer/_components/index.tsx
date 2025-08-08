@@ -136,10 +136,10 @@ export default function Footer() {
                   fontWeight: 500,
                   fontSize: 16,
                   px: 2,
-                  bgcolor: '#1f3e90',
+                  bgcolor: '#0388e3',
                   borderRadius: 2,
                   ml: 2,
-                  '&:hover': { bgcolor: '#1f3e90', color: '#fff' },
+                  '&:hover': { bgcolor: '#0388e3', color: '#fff' },
                 }}
               >
                 Sign Out

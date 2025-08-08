@@ -233,14 +233,14 @@ export default function NavigationBar() {
                     fontFamily: 'Arial, Helvetica, sans-serif',
                     fontWeight: 'bold',
                     color: '#fff',
-                    bgcolor: '#1f3e90',
+                    bgcolor: '#0388e3',
                     borderRadius: 2,
                     px: 2.5,
                     fontSize: { xs: '14px', md: '16px' },
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#1f3e90',
+                      bgcolor: '#0388e3',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
@@ -308,7 +308,7 @@ export default function NavigationBar() {
         sx={{
           '& .MuiDrawer-paper': {
             width: 260,
-            backgroundColor: '#0a3e1e',
+            backgroundColor: '#00A77F ',
             boxShadow: 3,
           },
         }}
