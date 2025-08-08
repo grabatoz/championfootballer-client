@@ -133,7 +133,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
         >
           {`You haven't joined any league yet.`}
         </Typography>
-        <Link href="/all-leagues" passHref>
+        {/* <Link href="/all-leagues" passHref>
           <Button
             variant="contained"
             sx={{
@@ -149,7 +149,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
           >
             Join a League
           </Button>
-        </Link>
+        </Link> */}
       </Box>
     );
   }

@@ -87,7 +87,7 @@ const AllPlayersPage = () => {
   return (
     <Container maxWidth="md" sx={{
       py: { xs: 2, sm: 4 },
-      backgroundColor: '#1f673b',
+      background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
       minHeight: '100vh',
       color: 'white',
       borderRadius: { xs: 2, sm: 5 },
@@ -116,7 +116,7 @@ const AllPlayersPage = () => {
             mb: 1,
             '& .MuiOutlinedInput-root': {
               borderRadius: '25px',
-              backgroundColor: '#0a3e1e',
+              background: 'rgba(255,255,255,0.1)',
               color: 'white',
               '& fieldset': {
                 borderColor: '#43a047',
@@ -194,13 +194,13 @@ const AllPlayersPage = () => {
               {sortedPlayers.map((player: Player, idx: number) => {
                 const isSelected = selectedPlayerId === player.id;
                 // Gold, silver, bronze backgrounds
-                let rowBg = '#0a4822';
+                let rowBg = 'rgba(255,255,255,0.1)';
                 let textColor = '#fff';
                 let fontWeight = 500;
                 let badgeImg = null;
                 let rowGradient = null;
                 if (idx === 0) {
-                  rowGradient = '#0a3e1e'; // gold/orange
+                  rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                   textColor = '#fff';
                   fontWeight = 700;
                   badgeImg = FirstBadge;
@@ -249,14 +249,14 @@ const AllPlayersPage = () => {
                       <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium', fontSize: { xs: 13, sm: 16 } }} />
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: { xs: 24, sm: 40 } }}>
-                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : '#00C853', fontSize: { xs: 16, sm: 24 } }} />
+                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : 'green', fontSize: { xs: 16, sm: 24 } }} />
                         </Box>
                         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: { xs: 36, sm: 60 }, textAlign: 'center', fontSize: { xs: 13, sm: 20 } }}>
                           {player.rating}
                         </Typography>
                       </Box>
                     </ListItem>
-                    <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                    <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
                   </React.Fragment>
                 );
               })}

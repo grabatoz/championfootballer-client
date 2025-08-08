@@ -707,7 +707,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.homeTeamImage || homeTeamIcon}
-                                                                alt={match.homeTeamName}
+                                                                alt={match.homeTeamName || ''}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -721,7 +721,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.homeTeamName}
                                                             >
-                                                                {formatMatchName(match.homeTeamName)}
+                                                                {formatMatchName(match.homeTeamName || '')}
                                                             </Typography>
                                                         </Box>
                                                         <Typography
@@ -754,7 +754,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.awayTeamImage || awayTeamIcon}
-                                                                alt={match.awayTeamName}
+                                                                alt={match.awayTeamName || ''}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -768,7 +768,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.awayTeamName}
                                                             >
-                                                                {formatMatchName(match.awayTeamName)}
+                                                                {formatMatchName(match.awayTeamName || '')}
                                                             </Typography>
 
                                                         </Box>
@@ -939,7 +939,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.homeTeamImage || homeTeamIcon}
-                                                                alt={match.homeTeamName}
+                                                                alt={match.homeTeamName || ''}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -954,7 +954,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.homeTeamName}
                                                             >
-                                                                {formatMatchName(match.homeTeamName)}
+                                                                {formatMatchName(match.homeTeamName || '')}
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -975,7 +975,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.awayTeamImage || awayTeamIcon}
-                                                                alt={match.awayTeamName}
+                                                                alt={match.awayTeamName || ''}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -990,7 +990,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.awayTeamName}
                                                             >
-                                                                {formatMatchName(match.awayTeamName)}
+                                                                {formatMatchName(match.awayTeamName || '')}
                                                             </Typography>
 
                                                         </Box>
