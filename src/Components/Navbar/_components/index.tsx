@@ -171,7 +171,7 @@ export default function NavigationBar() {
         Trophy Room
       </Button>
       <Button
-        onClick={() => router.push('/leaderboard')}
+        onClick={() => router.push('/leader-board')}
         sx={{
           textTransform: 'none',
           fontFamily: 'Arial, Helvetica, sans-serif',

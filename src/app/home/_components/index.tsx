@@ -641,9 +641,9 @@ export default function PlayerDashboard() {
             flex: { xs: 'none', md: '0 0 300px' },
             width: { xs: '100%', md: '90%' },
             display: 'flex',
-            justifyContent: { xs: 'flex-start', sm: 'center', md: 'center' },
+            justifyContent: { xs: 'center', sm: 'center', md: 'center' },
             mb: { xs: 2, md: 0 }, // Add margin bottom on mobile
-            ml: { xs: -10 }
+            mt: { xs: 1 }
           }}>
             <PlayerCard
               name={user?.firstName || ''}

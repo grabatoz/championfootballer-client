@@ -265,11 +265,11 @@ const PlayerCard = ({
     <Box
       sx={{
         width: width || 260,
-        height: height || 400,
+        height: height || 380,
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
-        ml: 20,
+        // ml: 20,
       }}
     >
       {/* Background Image */}
@@ -293,7 +293,7 @@ const PlayerCard = ({
           display: 'flex',
           flexDirection: 'column',
           color: '#fff',
-          mt:{xs:2,sm:2,md:0}
+          // mt:{md:0}
         }}
       >
         {/* Top: Shirt Number */}
@@ -346,8 +346,10 @@ const PlayerCard = ({
           <Box
             sx={{
               position: 'relative',
-              width: {xs:85,sm:85,md:100},
-              height: {xs:85,sm:85,md:100},
+              // width: {xs:85,sm:85,md:100},
+              // height: {xs:85,sm:85,md:100},
+              width: 100,
+              height: 100,
               border: `2px solid ${'#fff'}`,
               borderRadius: '10px',
               display: 'flex',
@@ -359,7 +361,7 @@ const PlayerCard = ({
               <Avatar
                 key={`${imgUrl}-${imageKey}`} // Force complete re-render when image changes
                 src={imgUrl || undefined}
-                sx={{ width: {xs:70,sm:70,md:85}, height: {xs:70,sm:70,md:85}, borderRadius: '0' }}
+                sx={{ width:85, height: 85, borderRadius: '0' }}
                 alt="Profile"
                 data-testid="profile-avatar"
               >

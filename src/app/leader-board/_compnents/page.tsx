@@ -97,7 +97,7 @@ export default function LeaderBoardPage() {
           gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
           gap: 2,
           mb: 3,
-          background: '#1f673b',
+          background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
           borderRadius: 2,
           boxShadow: 1,
           p: 2,
@@ -109,19 +109,22 @@ export default function LeaderBoardPage() {
             onClick={() => setSelectedMetric(m.key)}
             variant={selectedMetric === m.key ? 'contained' : 'outlined'}
             sx={{
-              bgcolor: selectedMetric === m.key ? '#43a047' : 'white',
-              color: selectedMetric === m.key ? 'white' : 'black',
+              bgcolor: selectedMetric === m.key ? '#43a047' : 'rgba(255,255,255,0.1)',
+              color: selectedMetric === m.key ? 'white' : 'white',
               fontWeight: 'bold',
               mt: 1,
               flexDirection: 'column',
               borderRadius: 2,
               boxShadow: selectedMetric === m.key ? 2 : 0,
               minHeight: 80,
+              border:'1px solid #00785A',
               transition: 'all 0.2s',
               '&:hover': {
                 background: selectedMetric === m.key
                   ? '#388e3c'
-                  : '#f5f5f5',
+                  : 'rgba(255,255,255,0.1)',
+              border:'1px solid #00785A',
+
               },
             }}
             disabled={!selectedLeague}
@@ -137,6 +140,7 @@ export default function LeaderBoardPage() {
               color: 'white',
               '&.Mui-focused': { color: 'white' },
               '&.MuiInputLabel-shrink': { color: 'white' },
+              
             }}
           >
             Select League
