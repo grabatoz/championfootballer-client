@@ -1,7 +1,7 @@
 'use client';
 
 import Navbar from "@/Components/Navbar/navbar";
-import Footer from "@/Components/footer/footer";
+// import Footer from "@/Components/footer/footer";
 // import Mainbg from '@/Components/images/mainbg.webp'
 import Mainbg from '@/Components/images/newbg.png'
 import { usePathname } from 'next/navigation';

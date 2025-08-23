@@ -6,7 +6,7 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconBut
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, SettingsIcon } from 'lucide-react';
+import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
 import { User, League } from '@/types/user';
@@ -663,9 +663,9 @@ function AllLeagues() {
       toast.error('Failed to leave league');
     }
   };
-  const handleBackToAllLeagues = () => {
-    router.push('/home');
-  };
+  // const handleBackToAllLeagues = () => {
+  //   router.push('/home');
+  // };
   return (
     <Box
       sx={{
