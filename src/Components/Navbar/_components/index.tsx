@@ -112,7 +112,7 @@ export default function NavigationBar() {
           '&:hover': { textDecoration: 'underline' },
         }}
       >
-       Leagues
+        Leagues
       </Button>
       <Button
         onClick={() => router.push('/all-matches')}
@@ -126,7 +126,7 @@ export default function NavigationBar() {
           '&:hover': { textDecoration: 'underline' },
         }}
       >
-       Matches
+        Matches
       </Button>
       <Button
         onClick={() => router.push('/dream-team')}
@@ -140,7 +140,7 @@ export default function NavigationBar() {
           '&:hover': { textDecoration: 'underline' },
         }}
       >
-       Dream Team
+        Dream Team
       </Button>
       <Button
         onClick={() => router.push('/all-players')}
@@ -184,7 +184,7 @@ export default function NavigationBar() {
       >
         Leaderboard
       </Button>
-     
+
     </>
   );
 
@@ -202,10 +202,11 @@ export default function NavigationBar() {
     <>
       <AppBar
         position="static"
-        sx={{ 
-          background: '#00A77F',
-          boxShadow: 3, 
-          px: { xs: 2, md: 2 } 
+        sx={{
+          // background: '#00A77F',
+          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+          boxShadow: 3,
+          px: { xs: 2, md: 2 }
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
@@ -233,14 +234,14 @@ export default function NavigationBar() {
                     fontFamily: 'Arial, Helvetica, sans-serif',
                     fontWeight: 'bold',
                     color: '#fff',
-                    bgcolor: '#0388e3',
+                    bgcolor: '#2B2B2B',
                     borderRadius: 2,
                     px: 2.5,
                     fontSize: { xs: '14px', md: '16px' },
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#0388e3',
+                      bgcolor: '#2B2B2B',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
@@ -267,16 +268,16 @@ export default function NavigationBar() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                  <MenuItem onClick={handleProfileClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
                     Profile
                   </MenuItem>
-                  <MenuItem onClick={handleDashboardClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                  <MenuItem onClick={handleDashboardClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
                     Dashboard
                   </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
                     How to play
                   </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047' , color: 'white' } }}>
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
                     Game rules
                   </MenuItem>
                   <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#43a047', color: '#fff' } }}>
@@ -405,11 +406,11 @@ export default function NavigationBar() {
         </Box>
       </Drawer>
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ 
-          bgcolor: '#1f673b', 
-          color: 'white', 
+        <DialogTitle sx={{
+          bgcolor: '#1f673b',
+          color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
-          fontWeight: 600, 
+          fontWeight: 600,
           fontSize: { xs: '24px', md: '32px' }
         }}>
           How to Play
@@ -423,7 +424,7 @@ export default function NavigationBar() {
         </DialogTitle>
         <DialogContent sx={{ color: '#222', mt: 2 }}>
           {/* Step 1: Player Card */}
-          <Typography variant="h6" sx={{ 
+          <Typography variant="h6" sx={{
             fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
             fontWeight: 600,
             fontSize: { xs: '24px', md: '32px' },
@@ -431,7 +432,7 @@ export default function NavigationBar() {
           }}>
             1. Set Up Your Player Card
           </Typography>
-          <Typography variant="body1" sx={{ 
+          <Typography variant="body1" sx={{
             mb: 2,
             fontFamily: 'Arial, Helvetica, sans-serif',
             fontWeight: 400,
@@ -444,7 +445,7 @@ export default function NavigationBar() {
           </Box>
 
           {/* Step 2: Join or Create a League */}
-          <Typography variant="h6" sx={{ 
+          <Typography variant="h6" sx={{
             fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
             fontWeight: 600,
             fontSize: { xs: '24px', md: '32px' },
@@ -452,7 +453,7 @@ export default function NavigationBar() {
           }}>
             2. Join or Create a League
           </Typography>
-          <Typography variant="body1" sx={{ 
+          <Typography variant="body1" sx={{
             mb: 2,
             fontFamily: 'Arial, Helvetica, sans-serif',
             fontWeight: 400,
@@ -467,13 +468,13 @@ export default function NavigationBar() {
             If you are in multiple leagues, the all league among them will be displayed as your primary league in the Join League section.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          By default, once you have created a new league you will be assigned as league<b> admin</b>. The league admin will be given full control over selecting teams, creating new matches and adding in match scores. You can always switch the league admin anytime with another player in the same league by going through the league setting option
+            By default, once you have created a new league you will be assigned as league<b> admin</b>. The league admin will be given full control over selecting teams, creating new matches and adding in match scores. You can always switch the league admin anytime with another player in the same league by going through the league setting option
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Image src={leaguesetting.src} alt='leaguesetting' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          In the league setting as the league admin, it is good practice to enter the total number of matches to be played in the league. Once you have reached the maximum number of games in the league, virtual awards will be finalised on the home page.
+            In the league setting as the league admin, it is good practice to enter the total number of matches to be played in the league. Once you have reached the maximum number of games in the league, virtual awards will be finalised on the home page.
           </Typography>
           {/* Step 3: Play Matches & Track Progress */}
           <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -510,13 +511,13 @@ export default function NavigationBar() {
             5. Creating Matches and Selecting Teams
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          As a league admin you can create matches and select teams. 
+            As a league admin you can create matches and select teams.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          {`To create a new match, select `}<b>Matches</b> {`> click on to`} <b>Schedule New Match </b>{`and enter the relevant match details >`} <b>Schedule Match</b>{`. The new match will be visible to all players in the league. `} 
+            {`To create a new match, select `}<b>Matches</b> {`> click on to`} <b>Schedule New Match </b>{`and enter the relevant match details >`} <b>Schedule Match</b>{`. The new match will be visible to all players in the league. `}
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          {`Players can select their availability to play the match by logging in to their home page > click on to`} Matches {`>`}<b> Mark yourself as available</b>. 
+            {`Players can select their availability to play the match by logging in to their home page > click on to`} Matches {`>`}<b> Mark yourself as available</b>.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             {/* Replace progressimg with your actual image import */}
@@ -526,10 +527,10 @@ export default function NavigationBar() {
             6. League Table
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          Once a match has been played and scores has been uploaded by the league admin, players on the <b>winning</b> team will be allocated 3 points and 1 for drawing. All players can view match results. The player with the most matches won in a league becomes the <b>Champion Footballer</b>. 
+            Once a match has been played and scores has been uploaded by the league admin, players on the <b>winning</b> team will be allocated 3 points and 1 for drawing. All players can view match results. The player with the most matches won in a league becomes the <b>Champion Footballer</b>.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          {`You can track each player’s game stats by clicking onto player name from league table. `} 
+            {`You can track each player’s game stats by clicking onto player name from league table. `}
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             {/* Replace progressimg with your actual image import */}
@@ -539,22 +540,22 @@ export default function NavigationBar() {
             7. League Admin
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          League admin will have a slightly different view on Champion Football to the rest of the players in the league. League admin can be interchangeable between league players.
+            League admin will have a slightly different view on Champion Football to the rest of the players in the league. League admin can be interchangeable between league players.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          The league admin will act as the league manager and will be passed on the responsibility to keep the league running by creating matches, selecting teams, adding scores. 
+            The league admin will act as the league manager and will be passed on the responsibility to keep the league running by creating matches, selecting teams, adding scores.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-          The league admin can alter changes to the league such as league/team names, number of games to be played  
+            The league admin can alter changes to the league such as league/team names, number of games to be played
           </Typography>
         </DialogContent>
       </Dialog>
       <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ 
-          bgcolor: '#1f673b', 
-          color: 'white', 
+        <DialogTitle sx={{
+          bgcolor: '#1f673b',
+          color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
-          fontWeight: 600, 
+          fontWeight: 600,
           fontSize: { xs: '24px', md: '32px' }
         }}>
           Game rules
@@ -569,25 +570,25 @@ export default function NavigationBar() {
         <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
           <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
-            <li style={{listStyleType: 'disc'}}>Play fair</li>
-            <li style={{listStyleType: 'disc'}}>Play safe</li>
-            <li style={{listStyleType: 'disc'}}>Show respect</li>
-            <li style={{listStyleType: 'disc'}}>Play as a team</li>
-            <li style={{listStyleType: 'disc'}}>Commit to play</li>
-            <li style={{listStyleType: 'disc'}}>Pick balance teams</li>
-            <li style={{listStyleType: 'disc'}}>Rise to the challenge</li>
-            <li style={{listStyleType: 'disc'}}>Have fun!</li>
+            <li style={{ listStyleType: 'disc' }}>Play fair</li>
+            <li style={{ listStyleType: 'disc' }}>Play safe</li>
+            <li style={{ listStyleType: 'disc' }}>Show respect</li>
+            <li style={{ listStyleType: 'disc' }}>Play as a team</li>
+            <li style={{ listStyleType: 'disc' }}>Commit to play</li>
+            <li style={{ listStyleType: 'disc' }}>Pick balance teams</li>
+            <li style={{ listStyleType: 'disc' }}>Rise to the challenge</li>
+            <li style={{ listStyleType: 'disc' }}>Have fun!</li>
           </ul>
           <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Characteristics of a champion</Typography>
-          <ul style={{ marginLeft: 20, color: '#222' , fontSize: '1.1rem' }}>
-            <li><span style={{fontWeight: 900}}>C</span>ourageous</li>
-            <li><span style={{fontWeight: 900}}>H</span>opeful</li>
-            <li><span style={{fontWeight: 900}}>A</span>ppreciative</li>
-            <li><span style={{fontWeight: 900}}>M</span>odest</li>
-            <li><span style={{fontWeight: 900}}>P</span>erseverant</li>
-            <li><span style={{fontWeight: 900}}>I</span>nspired</li>
-            <li><span style={{fontWeight: 900}}>O</span>ptimistic</li>
-            <li><span style={{fontWeight: 900}}>N</span>oble</li>
+          <ul style={{ marginLeft: 20, color: '#222', fontSize: '1.1rem' }}>
+            <li><span style={{ fontWeight: 900 }}>C</span>ourageous</li>
+            <li><span style={{ fontWeight: 900 }}>H</span>opeful</li>
+            <li><span style={{ fontWeight: 900 }}>A</span>ppreciative</li>
+            <li><span style={{ fontWeight: 900 }}>M</span>odest</li>
+            <li><span style={{ fontWeight: 900 }}>P</span>erseverant</li>
+            <li><span style={{ fontWeight: 900 }}>I</span>nspired</li>
+            <li><span style={{ fontWeight: 900 }}>O</span>ptimistic</li>
+            <li><span style={{ fontWeight: 900 }}>N</span>oble</li>
           </ul>
         </DialogContent>
       </Dialog>

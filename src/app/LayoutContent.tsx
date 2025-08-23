@@ -2,7 +2,8 @@
 
 import Navbar from "@/Components/Navbar/navbar";
 import Footer from "@/Components/footer/footer";
-import Mainbg from '@/Components/images/mainbg.webp'
+// import Mainbg from '@/Components/images/mainbg.webp'
+import Mainbg from '@/Components/images/newbg.png'
 import { usePathname } from 'next/navigation';
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       >
         {!isMainPage && <Navbar />}
         {children}
-        {!isMainPage && <Footer />}
+        {/* {!isMainPage && <Footer />} */}
       </div>
     </>
   );

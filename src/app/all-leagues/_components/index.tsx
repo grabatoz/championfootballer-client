@@ -676,7 +676,7 @@ function AllLeagues() {
       }}
     >
       <Container maxWidth="lg">
-        <Button
+        {/* <Button
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
           sx={{
@@ -687,11 +687,11 @@ function AllLeagues() {
           }}
         >
           Back to Dashboard
-        </Button>
+        </Button> */}
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
           <Typography variant="h3" sx={{
             mb: { xs: 3, md: 4 },
-            color: 'black',
+            color: '#404040',
             // fontFamily: 'Arial Black, Arial, sans-serif',
             fontFamily: '"Anton", sans-serif',
             fontWeight: 'semibold',
@@ -702,7 +702,7 @@ function AllLeagues() {
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
             className='all-leagues-heading'
-            >
+          >
             ALL LEAGUES
           </Typography>
 
@@ -727,12 +727,12 @@ function AllLeagues() {
                 variant="contained"
                 onClick={() => setIsDialogOpen(true)}
                 sx={{
-                  bgcolor: 'rgb(31 62 144)',
+                  bgcolor: '#0388E3',
                   color: 'white',
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontWeight: 'bold',
                   fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  '&:hover': { bgcolor: 'rgba(30, 58, 138, 1)' },
+                  '&:hover': { bgcolor: '#0388E3' },
                   width: { xs: '100%', sm: 'fit-content' },
                   borderRadius: 2,
                   py: { xs: 1.5, md: 1 },
@@ -779,11 +779,11 @@ function AllLeagues() {
                     '& input': {
                       padding: '13px 12px', // Reduce input height
                     },
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
-                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
+                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
                   },
-                  '& .MuiInputLabel-root': { color: 'green' },
+                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
                 }}
               />
               <Button
@@ -792,13 +792,13 @@ function AllLeagues() {
                 disabled={isJoining}
                 sx={{
                   // backgroundColor: '#388e3c',
-                  bgcolor: '#388e3c',
+                  background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                   color: 'white',
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontWeight: 'bold',
                   fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  '&:hover': { bgcolor: '#388e3c' },
-                  '&:disabled': { bgcolor: '#388e3c' },
+                  '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
+                  '&:disabled': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
                   borderRadius: 2,
                   py: { xs: 1.5, md: 1 },
                   px: { xs: 3, md: 3 },
@@ -838,16 +838,17 @@ function AllLeagues() {
                   borderRadius: 3,
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  border: '2px solid rgba(255,255,255,0.1)',
+                  // border: '2px solid rgba(255,255,255,0.1)',
                   // backgroundColor: '#02A880',
                   // backdropFilter: 'blur(10px)',
-                  background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                  // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+                  background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                   position: 'relative',
                   '&:hover': {
                     backgroundColor: 'rgba(30, 58, 138, 1)',
                     transform: 'translateY(-3px)',
                     // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
-                    border: '2px solid rgba(255,255,255,0.2)'
+                    // border: '2px solid rgba(255,255,255,0.2)'
                   }
                 }}
               >
@@ -858,8 +859,8 @@ function AllLeagues() {
                     top: 12,
                     right: 12,
                     color: 'white',
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+                    '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
                     zIndex: 2
                   }}
                   onClick={(e) => {
@@ -876,8 +877,8 @@ function AllLeagues() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
                   {/* League Logo - Green Shield */}
                   <Box sx={{
-                    width: { xs: 60, sm: 60, md: 60 },
-                    height: { xs: 60, sm: 60, md: 60 },
+                    width: { xs: 60, sm: 80, md: 80 },
+                    height: { xs: 60, sm: 80, md: 80 },
                     // borderRadius: 2,
                     // overflow: 'hidden',
                     // backgroundColor: '#43a047',
@@ -889,22 +890,40 @@ function AllLeagues() {
                     // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                     position: 'relative'
                   }}>
-                    <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={60} height={60} priority />
+                    <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={80} height={80} priority />
                   </Box>
 
                   {/* League Info */}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     {/* League Title */}
-                    <Typography sx={{
+                    {/* <Typography sx={{
                       color: 'white',
                       fontFamily: '"League Spartan", sans-serif',
                       // fontWeight: 'bold',
                       fontSize: { xs: '18px', sm: '20px', md: '16px' },
                       mb: 2,
+                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                       textOverflow: 'ellipsis',
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       fontWeight:'bold'
+                    }}>
+                      {formatLeagueName(league.name)}
+                    </Typography> */}
+
+                    <Typography sx={{
+                      color: 'white',
+                      fontFamily: '"League Spartan", sans-serif',
+                      fontSize: { xs: '18px', sm: '20px', md: '20px' },
+                      mb: 2,
+                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                      display: 'inline-block', // Only background behind text
+                      px: 2, // Horizontal padding for extra background
+                      borderRadius: 0.8, // Rounded corners
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      fontWeight: 'bold'
                     }}>
                       {formatLeagueName(league.name)}
                     </Typography>
@@ -915,7 +934,7 @@ function AllLeagues() {
                       justifyContent: 'flex-start',
                       alignItems: 'flex-start',
                       flexDirection: { xs: 'column', sm: 'row' },
-                      gap: { xs: 2, sm: 5 }
+                      gap: { xs: 2, sm: 15 }
                     }}>
                       {/* Left Column */}
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, justifyContent: 'space-between' }}>

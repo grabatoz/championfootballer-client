@@ -40,6 +40,8 @@ import { Trophy } from 'lucide-react';
 // import { Block } from '@mui/icons-material';
 // import { joinLeague } from '@/lib/features/leagueSlice';
 import Dashbg from '@/Components/images/dashbg.jpg'
+import trophy from '@/Components/images/cup.png'
+import Image from 'next/image';
 
 
 
@@ -166,13 +168,13 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
       <Button
         variant="contained"
         sx={{
-          bgcolor: '#43a047',
+          bgcolor: '#00A77F',
           color: 'white',
-          '&:hover': { bgcolor: '#388e3c' },
+          '&:hover': { bgcolor: '#00A77F' },
           minHeight: { xs: '60px', sm: '70px', md: '50px' },
           minWidth: { xs: '280px', sm: '320px' },
-          fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-          fontWeight: 'bold',
+          fontSize: { xs: '1rem', sm: '1.1rem', md: '15px' },
+          fontWeight: 'normal',
           textTransform: 'none',
           display: 'flex',
           alignItems: 'center',
@@ -189,7 +191,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-            <Trophy size={24} color="white" />
+            <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{height:24,width:24}} />
             <Typography
               sx={{
                 fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
@@ -627,7 +629,10 @@ export default function PlayerDashboard() {
           mb: { xs: 0, md: 4 }, // No margin on mobile
           minHeight: { xs: '100vh', md: '100vh' }, // Full height on mobile
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          justifyContent: 'center',
+          mx: 'auto', 
+          alignItems: 'center',
         }}
       >
         <Box sx={{
@@ -637,6 +642,169 @@ export default function PlayerDashboard() {
           flexDirection: { xs: 'column', md: 'row' }
         }}>
           {/* Player Card - Top on mobile, left on desktop */}
+          <Box sx={{
+            flex: { xs: 'none', md: '0 0 300px' },
+            width: { xs: '100%', md: '90%' },
+            display: 'flex',
+            justifyContent: { xs: 'center', sm: 'center', md: 'center' },
+            mb: { xs: 2, md: 0 }, // Add margin bottom on mobile
+            mt: { xs: 1 }
+          }}>
+            <PlayerCard
+              name={user?.firstName || ''}
+              number={user?.shirtNumber || '00'}
+              points={user?.xp || 0}
+              stats={{
+                DRI: user?.skills?.dribbling?.toString() || '',
+                SHO: user?.skills?.shooting?.toString() || '',
+                PAS: user?.skills?.passing?.toString() || '',
+                PAC: user?.skills?.pace?.toString() || '',
+                DEF: user?.skills?.defending?.toString() || '',
+                PHY: user?.skills?.physical?.toString() || ''
+              }}
+              foot={user?.preferredFoot === "right" ? "R" : "L"}
+              profileImage={user?.profilePicture || undefined}
+              shirtIcon={''}
+              position={user?.position || 'XXX'}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              backgroundColor: '#fff',
+              p: { xs: 3, sm: 2, md: 1.5 },
+              borderRadius: { xs: '20px 20px 20px 20px', md: 2 },
+              maxWidth: { xs: '100%', md: '65%', lg: '65%' },
+              width: { xs: '96%', sm: '100%', md: '100%', lg: '33%' },
+              textAlign: 'flex',
+              mt: { xs: 'auto', md: -3 },
+              minHeight: { xs: 'auto', md: 'auto' },
+              mb: { xs: 2, md: 0 },
+              alignSelf: { xs: 'center' },
+              ml: { md: -2 },
+            }}
+          >
+            <Box sx={{ display: 'inline-flex', gap: 1 }}>
+              <Typography
+                variant="h5"
+                gutterBottom
+                sx={{
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' },
+                  color: 'black',
+                }}
+              >
+                Welcome,
+              </Typography>
+              <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 'semibold' }}>
+                {user?.firstName}
+              </Typography>
+            </Box>
+
+            <Divider sx={{ mb: 1.5, width: '100%', height: 2, bgcolor: 'green' }} />
+
+            <Box sx={{ justifyContent: 'center', textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'black',
+                  mb: 1.5,
+                  fontSize: { xs: '0.9rem', sm: '1rem' }
+                }}
+              >
+                Your Current League In Which You Stand
+              </Typography>
+
+              {/* League Selection Component */}
+              <LeagueSelectionComponent user={user} />
+
+            {/* Add New League Button */}
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => setIsDialogOpen(true)}
+              sx={{
+                bgcolor: '#0388E3',
+                color: 'white',
+                fontWeight: 'bold',
+                mb: 2,
+                mt: 3,
+                borderRadius: 2,
+                '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)', },
+                width: '320px',
+                mx: 'auto',
+                display: {
+                  xs: 'none',  // Show on extra small screens
+                  sm: 'none',  // Show on small screens
+                  md: 'block',   // Hide on medium screens and up
+                }
+              }}
+            >
+              + Create New League
+            </Button>
+
+            {/* Invite Code Join Section */}
+            <Box sx={{
+               mx: 'auto',
+              alignItems: 'center', justifyContent: 'center', display: {
+                xs: 'none',  // Show on extra small screens
+                sm: 'none',  // Show on small screens
+                md: 'block',   // Hide on medium screens and up
+                maxWidth:'320px'
+              }
+            }}>
+              <TextField
+                placeholder="Enter invite code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                size="small"
+                variant="outlined"
+                sx={{
+                  backgroundColor: '#DEDCDC',
+                  borderRadius: 3,
+                  flex: 1,
+                  maxWidth: 190,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                    '&:hover fieldset': {
+                      border: 'none',
+                    },
+                    '&.Mui-focused fieldset': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
+              <Button
+                variant="contained"
+                // color="success"
+                sx={{ background: '#00A77F', borderRadius: 2, '&:hover': { background: '#00A77F' }, ml: -3, py: 1 }}
+                onClick={handleJoinLeague}
+                startIcon={
+                  <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
+                    <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
+                  </svg>
+                }
+              >
+                Join League
+              </Button>
+            </Box>
+            </Box>
+
+          </Box>
+
+        </Box>
+      </Paper>
+
+        {/* <Box sx={{
+          display: 'flex',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 2, md: 4 },
+          flexDirection: { xs: 'column', md: 'row' }
+        }}>
           <Box sx={{
             flex: { xs: 'none', md: '0 0 300px' },
             width: { xs: '100%', md: '90%' },
@@ -711,10 +879,8 @@ export default function PlayerDashboard() {
                 Your Current League In Which You Stand
               </Typography>
 
-              {/* League Selection Component */}
               <LeagueSelectionComponent user={user} />
 
-            {/* Add New League Button */}
             <Button
               variant="contained"
               fullWidth
@@ -738,8 +904,6 @@ export default function PlayerDashboard() {
             >
               + Create New League
             </Button>
-
-            {/* Invite Code Join Section */}
             <Box sx={{
                mx: 'auto',
               alignItems: 'center', justifyContent: 'center', display: {
@@ -791,9 +955,7 @@ export default function PlayerDashboard() {
 
           </Box>
 
-        </Box>
-      </Paper>
-
+        </Box> */}
       {/* <Paper
         elevation={3}
         sx={{
@@ -903,12 +1065,12 @@ export default function PlayerDashboard() {
       variant="contained"
       onClick={() => setIsDialogOpen(true)}
       sx={{
-        bgcolor: '#0388e3',
+        bgcolor: '#0388E3',
         color: 'white',
         fontWeight: 'bold',
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
-        '&:hover': { bgcolor: '#0388e3' },
+        '&:hover': { bgcolor: '#0388E3' },
         width: { xs: '100%', sm: '315px' },
         height: '40px', // Fixed height to match Join button
         fontSize: { xs: '0.875rem', sm: '1rem' }

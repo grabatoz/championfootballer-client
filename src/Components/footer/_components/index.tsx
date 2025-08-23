@@ -24,8 +24,11 @@ export default function Footer() {
   return (
     <Box component="footer" sx={{
       py: { xs: 5, md: 7 },
-      mt: 10,
-      background: '#00A77F',
+      // mt: 10,
+      // background: '#00A77F',
+      // background: 'linear-gradient(90deg, #E56A16 0%, #CF2326 100%)', // <-- updated to linear gradient
+      // background: 'linear-gradient(90deg, #E56A16 0%, #CF2326 100%)',
+      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
       color: 'white',
       // borderTopLeftRadius: { xs: 24, md: 32 },
       // borderTopRightRadius: { xs: 24, md: 32 },
@@ -45,7 +48,7 @@ export default function Footer() {
                 bgcolor: 'black',
                 // border: '2px solid #43a047',
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'black', color: '#fff'},
+                '&:hover': { bgcolor: 'black', color: '#fff' },
               }}
             >
               <FaXTwitter />
@@ -60,7 +63,7 @@ export default function Footer() {
                 bgcolor: 'black',
                 // border: '2px solid #E1306C',
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'black', color: '#fff'},
+                '&:hover': { bgcolor: 'black', color: '#fff' },
               }}
             >
               <FaInstagram />
@@ -80,7 +83,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#00785A',textDecoration: 'underline' },
+                '&:hover': { color: '#00785A', textDecoration: 'underline' },
               }}
             >
               Terms & Conditions
@@ -136,10 +139,10 @@ export default function Footer() {
                   fontWeight: 500,
                   fontSize: 16,
                   px: 2,
-                  bgcolor: '#0388e3',
+                  bgcolor: '#2B2B2B',
                   borderRadius: 2,
                   ml: 2,
-                  '&:hover': { bgcolor: '#0388e3', color: '#fff' },
+                  '&:hover': { bgcolor: '#2B2B2B', color: '#fff' },
                 }}
               >
                 Sign Out
@@ -147,7 +150,7 @@ export default function Footer() {
             )}
           </Stack>
 
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 2, fontWeight: 400, letterSpacing: 1, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: 'white', mt: 2, fontWeight: 400, letterSpacing: 1, textAlign: 'center' }}>
             &copy; {new Date().getFullYear()} Champion Footballer. All rights reserved.
           </Typography>
         </Stack>
