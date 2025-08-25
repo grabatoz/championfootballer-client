@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Box, Typography, Button, CircularProgress, Avatar, Divider, Card } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
@@ -14,7 +14,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
-import { ArrowLeft } from "lucide-react";
+// import { ArrowLeft } from "lucide-react";
 
 const getBadgeForPosition = (position: number) => {
   switch (position) {
@@ -243,11 +243,11 @@ export default function MatchDetailsPage() {
     }
   };
 
-  const router = useRouter();
+  // const router = useRouter();
 
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
-      <Button
+      {/* <Button
         startIcon={<ArrowLeft />}
         onClick={() => router.push(`/league/${match?.leagueId}`)}
         sx={{
@@ -257,7 +257,7 @@ export default function MatchDetailsPage() {
         }}
       >
         Back to Current Match League
-      </Button>
+      </Button> */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
@@ -333,7 +333,8 @@ export default function MatchDetailsPage() {
                           scrollbarWidth: "none",
                           "&::-webkit-scrollbar": { display: "none" },
                           // background: '#185c34', // Add a distinct table background color
-                          background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
+                          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
+                           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                           borderRadius: 3,
                           p: 1,
                           fontSize: { xs: 11, sm: 13, md: 15 },
@@ -347,7 +348,7 @@ export default function MatchDetailsPage() {
 
                           <Box
                             sx={{
-                              bgcolor: "rgba(255,255,255,0.1)",
+                          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                               borderRadius: 3,
                               px: 2,
                               py: 1,
@@ -375,23 +376,23 @@ export default function MatchDetailsPage() {
                             {match.awayTeamUsers.map((player, idx) => {
                               const stats = player.statistics?.[0] || {}
                               let badgeImg = null;
-                              let rowBg = 'rgba(255,255,255,0.1)';
-                              let rowGradient = null;
+                              // let rowBg = 'rgba(255,255,255,0.1)';
+                              // let rowGradient = null;
                               let textColor = '#fff';
                               let fontWeight = 500;
                               if (idx === 0) {
-                                rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
+                                // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                                 textColor = '#fff';
                                 fontWeight = 700;
                                 badgeImg = FirstBadge;
                               } else if (idx === 1) {
-                                rowBg = 'rgba(255,255,255,0.1)'; // silver
+                                // rowBg = 'rgba(255,255,255,0.1)'; // silver
                                 badgeImg = SecondBadge;
                               } else if (idx === 2) {
-                                rowBg = 'rgba(255,255,255,0.1)'; // bronze
+                                // rowBg = 'rgba(255,255,255,0.1)'; // bronze
                                 badgeImg = ThirdBadge;
                               } else {
-                                rowBg = 'rgba(255,255,255,0.1)';
+                                // rowBg = 'rgba(255,255,255,0.1)';
                               }
                               return (
                                 <React.Fragment key={player.id}>
@@ -401,7 +402,8 @@ export default function MatchDetailsPage() {
                                         display: "flex",
                                         alignItems: "center",
                                         p: 2,
-                                        background: rowGradient ? rowGradient : rowBg,
+                                        // background: rowGradient ? rowGradient : rowBg,
+                                         background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                                         color: textColor,
                                         fontWeight,
                                         boxShadow: 3,
@@ -481,7 +483,8 @@ export default function MatchDetailsPage() {
                           scrollbarWidth: "none",
                           "&::-webkit-scrollbar": { display: "none" },
                           // background: '#185c34', // Add a distinct table background color
-                          background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
+                          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
+                           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                           borderRadius: 3,
                           p: 1,
                           fontSize: { xs: 11, sm: 13, md: 15 },
@@ -495,7 +498,8 @@ export default function MatchDetailsPage() {
                           {/* Header */}
                           <Box
                             sx={{
-                              bgcolor: "rgba(255,255,255,0.1)",
+                              // bgcolor: "rgba(255,255,255,0.1)",
+                               background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                               borderRadius: 3,
                               px: 2,
                               py: 1,
@@ -523,23 +527,23 @@ export default function MatchDetailsPage() {
                             {match.homeTeamUsers.map((player, idx) => {
                               const stats = player.statistics?.[0] || {}
                               let badgeImg = null;
-                              let rowBg = 'rgba(255,255,255,0.1)';
-                              let rowGradient = null;
+                              // let rowBg = 'rgba(255,255,255,0.1)';
+                              // let rowGradient = null;
                               let textColor = '#fff';
                               let fontWeight = 500;
                               if (idx === 0) {
-                                rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
+                                // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                                 textColor = '#fff';
                                 fontWeight = 700;
                                 badgeImg = FirstBadge;
                               } else if (idx === 1) {
-                                rowBg = 'rgba(255,255,255,0.1)'; // silver
+                                // rowBg = 'rgba(255,255,255,0.1)'; // silver
                                 badgeImg = SecondBadge;
                               } else if (idx === 2) {
-                                rowBg = 'rgba(255,255,255,0.1)'; // bronze
+                                // rowBg = 'rgba(255,255,255,0.1)'; // bronze
                                 badgeImg = ThirdBadge;
                               } else {
-                                rowBg = 'rgba(255,255,255,0.1)';
+                                // rowBg = 'rgba(255,255,255,0.1)';
                               }
                               return (
                                 <React.Fragment key={player.id}>
@@ -549,8 +553,9 @@ export default function MatchDetailsPage() {
                                         display: "flex",
                                         alignItems: "center",
                                         p: 2,
-                                        background: rowGradient ? rowGradient : rowBg,
+                                        // background: rowGradient ? rowGradient : rowBg,
                                         color: textColor,
+                                         background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                                         fontWeight,
                                         boxShadow: 3,
                                         minHeight: 70,

@@ -218,7 +218,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           justifyContent: "space-between",
           p: { xs: 2, md: 3 },
           // background: "#1f673b",
-          background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
+          // background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
+          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
           boxShadow: "0 4px 24px 0 rgba(0,0,0,0.06)",
           borderRadius: 3,
           width: "100%",
@@ -240,7 +241,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography 
               variant="caption" 
               sx={{ 
-                color: '#B2DFDB',
+                color: '#fff',
                 fontWeight: 'bold',
                 fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
               }}
@@ -252,7 +253,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               sx={{ 
                 color: 'white',
                 fontWeight: 'bold',
-                backgroundColor: matchStatus === 'completed' ? '#43a047' : '#ff9800',
+                //  bgcolor: '#2B2B2B',
+                backgroundColor: matchStatus === 'completed' ? '#2B2B2B' : '#2B2B2B',
                 px: { xs: 1, sm: 1.5, md: 2 },
                 py: { xs: 0.3, sm: 0.5, md: 0.7 },
                 borderRadius: 1,
@@ -340,7 +342,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#14c38e", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#fff", lineHeight: 1 }}
               >
                 {homeGoals}
               </Typography>
@@ -401,7 +403,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#14c38e", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#fff", lineHeight: 1 }}
               >
                 {awayGoals}
               </Typography>
@@ -484,10 +486,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     color="secondary"
                     startIcon={<Add />}
                     sx={{
-                      bgcolor: "#43a047",
+                      bgcolor: "#2B2B2B",
                       color: "white",
                       fontWeight: "bold",
-                      "&:hover": { bgcolor: "#388e3c" },
+                      "&:hover": { bgcolor: "#2B2B2B" },
                       fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                       px: { xs: 1, sm: 1.5, md: 2 },
                       py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
@@ -506,10 +508,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     fetchExistingStats(matchId)
                   }}
                   sx={{
-                    bgcolor: "#43a047",
+                    bgcolor: "#2B2B2B",
                     color: "white",
                     fontWeight: "bold",
-                    "&:hover": { bgcolor: "#388e3c" },
+                    "&:hover": { bgcolor: "#2B2B2B" },
                     fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                     px: { xs: 1, sm: 1.5, md: 2 },
                     py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },

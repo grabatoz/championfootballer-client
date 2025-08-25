@@ -83,7 +83,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: '#00785A', textDecoration: 'underline' },
+                '&:hover': { color: 'white', textDecoration: 'underline' },
               }}
             >
               Terms & Conditions
@@ -97,7 +97,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
+                '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
             >
               Privacy Policy
@@ -111,7 +111,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
+                '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
             >
               Contact Us
@@ -125,7 +125,7 @@ export default function Footer() {
                 fontWeight: 500,
                 fontSize: 16,
                 px: 2,
-                '&:hover': { color: ' #00785A', textDecoration: 'underline' },
+                '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
             >
               About Us
