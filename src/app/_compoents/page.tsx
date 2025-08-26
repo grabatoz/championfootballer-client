@@ -14,264 +14,134 @@ export default function LandingPage() {
 
   return (
     <Box
-    sx={{
-    width: '100vw',
-    minHeight: '100vh',
-    backgroundImage: {
-      xs: `url(${mobile.src})`, // Only shows on xs (mobile)
-      sm: `url(${mobile.src})`,               // Hidden on sm and larger
-      md: `url(${NewImg.src})`,               // Hidden on sm and larger
-    },
-    backgroundAttachment: 'fixed',
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    px: { xs: 2, md: 4 },
-    py: 6,
-    overflow: 'auto',
-  }}
+      sx={{
+        width: '100vw',
+        minHeight: '100vh',
+        backgroundImage: {
+          xs: `url(${mobile.src})`,
+          sm: `url(${mobile.src})`,
+          md: `url(${NewImg.src})`,
+        },
+        backgroundSize: '100% 120%', // <-- Image will stretch to full width and height
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        px: { xs: 2, md: 4 },
+        py: 0,
+        overflow: 'auto',
+       backgroundAttachment: 'fixed',
+      }}
     >
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'center', md: 'flex-start' }, 
-          justifyContent: 'center',
-          maxWidth: '3000px',
-          width: '100%',
-          gap: { xs: 4, md: 8 },
-          mt:{xs:-6,sm:-6,md:0}
+      {/* Left Side - Logo & Content fixed at top */}
+      <Box
+        sx={{
+          flex: { xs: 'none', md: '1' },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: { xs: 'center', md: 'flex-start' },
+          justifyContent: 'flex-start',
+          pt: { xs: 2, md: 1 },
+          pl: { xs: 0, md: 0 },
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
         }}
       >
-        {/* Left Side - Branding - Fixed position */}
-        <Box
+        {/* Logo */}
+        <Image
+          src={Layer || "/placeholder.svg"}
+          alt="Champion Footballer Logo"
+          width={250}
+          height={80}
+          style={{
+            maxWidth: '100%',
+            height: 'auto',
+            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+          }}
+        />
+        {/* Tagline & Description */}
+        <Typography
+          variant="h5"
           sx={{
-            flex: { xs: 'none', md: '1' },
-            textAlign: { xs: 'center', md: 'left' },
+            fontWeight: 'bold',
+            mt: 3,
+            mb: 2,
+            fontSize: { xs: '1.2rem', md: '1.5rem' },
+            textShadow: '0 2px 4px rgba(0,0,0,0.6)',
             color: 'white',
-            px: { xs: 2, md: 0 },
-            alignSelf: { xs: 'center', md: 'flex-start' },
-            // Branding stays in same position for both login and register
+            textAlign: { xs: 'center', md: 'left' },
           }}
         >
-          {/* Logo */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'center', md: 'flex-start' },
-              mb: 3,
-              gap: 2
-            }}
-          >
-            <Box
+          Your Game. Your Stats.<br />Your Glory
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            maxWidth: 320,
+            lineHeight: 1.6,
+            color: '#f0f0f0',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+            fontSize: { xs: '1rem', md: '1.1rem' },
+            mb: 2,
+            textAlign: { xs: 'center', md: 'left' },
+          }}
+        >
+          Create your personalised matches, track your performance, and climb the ranks. Champion Footballer is your home for casual football made competitive!
+        </Typography>
+      </Box>
+
+      {/* Right Side - Auth Form centered vertically */}
+      <Box
+        sx={{
+          flex: { xs: 'none', md: '1' },
+          maxWidth: 380,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <Paper
+          elevation={0} // Remove shadow for transparency
+          sx={{
+            p: { xs: 3, sm: 4, md: 4 },
+            borderRadius: 3,
+            backgroundColor: 'transparent', // Remove background color
+            mx: 'auto',
+            position: 'relative',
+            overflow: 'hidden',
+            width: '100%',
+            // boxShadow: 'none',
+          }}
+        >
+          {/* Dynamic Button */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => setShowLogin(!showLogin)}
               sx={{
-                p: 2,
-                // transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                // '&:hover': {
-                //   transform: 'translateY(-5px)',
-                // }
+                color: 'white',
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                backgroundColor: '#000000',
+                '&:hover': {
+                  backgroundColor: '#000000',
+                },
+                borderRadius: 2,
               }}
             >
-              <Image 
-                src={Layer || "/placeholder.svg"} 
-                alt="ground" 
-                width={250} 
-                height={250}
-                style={{
-                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-                }}
-              />
-            </Box>
-            <Box>
-            </Box>
+              {showLogin ? 'Join' : 'Login'}
+            </Button>
           </Box>
-
-          {/* Tagline */}
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 'bold',
-              mb: 3,
-              fontSize: { xs: '1.2rem', md: '1.5rem' },
-              textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-              color: 'white',
-            }}
-          >
-            Your Game. Your Stats. <br/>Your Glory
-          </Typography>
-          
-          {/* Description */}
-          <Typography
-            variant="body1"
-            sx={{
-              maxWidth: 320,
-              lineHeight: 1.6,
-              color: '#f0f0f0',
-              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-              fontSize: { xs: '1rem', md: '1.1rem' },
-            }}
-          >
-            Create your personalised matches, track your performance, and climb the ranks. Champion Footballer is your home for casual football made competitive!
-          </Typography>
-        </Box>
-
-        {/* Right Side - Auth Form - Fixed size */}
-        <Box
-          sx={{
-            flex: { xs: 'none', md: '1' },
-            maxWidth: 480,
-            width: '100%',
-            alignSelf: { xs: 'center', md: 'flex-start' },
-            // Fixed size to prevent layout shifts
-          }}
-        >
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 3, sm: 4, md: 4 },
-              borderRadius: 0,
-              backgroundColor: 'transparent',
-              mx: 'auto',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Dynamic Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button
-                variant="text"
-                onClick={() => setShowLogin(!showLogin)}
-                sx={{
-                  color: 'white',
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: 'black',
-                  },
-                  backgroundColor: 'black',
-                }}
-              >
-                {showLogin ? 'Join' : 'Login'}
-              </Button>
-            </Box>
-            {/* Auth Form */}
-            <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
-          </Paper>
-        </Box>
+          {/* Auth Form */}
+          <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
+        </Paper>
       </Box>
     </Box>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 'use client';
-// import { Box, Paper, Typography } from '@mui/material';
-// import AuthTabs from '@/Components/authtabs/authtabs';
-// import Image from 'next/image';
-// import Layer from '@/Components/images/Layer.svg';
-
-// export default function LandingPage() {
-//   return (
-//     <Box
-//       sx={{
-//         width: '100vw',
-//         minHeight: '100vh',
-//         // backgroundImage: `url(${ground.src})`,
-//         backgroundAttachment: 'fixed',
-//         backgroundSize: 'cover',
-//         backgroundRepeat: 'no-repeat',
-//         backgroundPosition: 'center',
-//         display: 'flex',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//         px: { xs: 2, md: 4 },
-//         py: 6,
-//         overflow: 'auto',
-//       }}
-//     >
-//       <Image src={Layer} alt="ground" width={100} height={100} />
-//         <Box 
-//           sx={{ 
-//             display: 'flex', 
-//             flexDirection: { xs: 'column', md: 'row' },
-//             gap: 16,
-//             alignItems: 'center', 
-//             justifyContent: 'center' 
-//           }}
-//         >
-//           {/* Left Side - Intro */}
-//             <Box
-//               sx={{
-//               flex: { xs: 'none', md: '1' },
-//                 textAlign: { xs: 'center', md: 'left' },
-//                 color: 'white',
-//                 px: { xs: 2, md: 0 },
-//               }}
-//             >
-//               <Typography
-//                 variant="h3"
-//                 component="h1"
-//                 sx={{
-//                   fontWeight: 'bold',
-//                   mb: 2,
-//                   fontSize: { xs: '2rem', md: '3rem' },
-//                   textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-//                 }}
-//               >
-//                 Champion Footballer
-//               </Typography>
-//               <Typography
-//                 variant="h6"
-//                 sx={{
-//                   maxWidth: 450,
-//                   lineHeight: 1.6,
-//                   color: '#f0f0f0',
-//                   textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-//                 }}
-//               >
-//                 Track your progress, set availability, and dive into matches and leagues — all from here. Join now and elevate your football experience!
-//               </Typography>
-//             </Box>
-
-//           {/* Right Side - Auth Form */}
-//           <Box
-//             sx={{
-//               flex: { xs: 'none', md: '1' },
-//               maxWidth: 480,
-//               width: '100%',
-//             }}
-//           >
-//             <Paper
-//               elevation={6}
-//               sx={{
-//                 p: { xs: 3, sm: 4 },
-//                 borderRadius: 3,
-//                 backgroundColor: 'rgba(255, 255, 255, 0.08)',
-//                 backdropFilter: 'blur(10px)',
-//                 border: '1px solid rgba(255, 255, 255, 0.2)',
-//                 mx: 'auto',
-//               }}
-//             >
-//               <AuthTabs />
-//             </Paper>
-//           </Box>
-//         </Box>
-//     </Box>
-//   );
-// }

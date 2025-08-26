@@ -217,38 +217,41 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               required 
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
             />
@@ -261,40 +264,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               value={loginData.password} 
               onChange={handleLoginChange} 
               required 
-              sx={{
+               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
               InputProps={{
@@ -317,7 +323,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               fullWidth 
               disabled={loginLoading || serverStatus === 'offline'}
               sx={{
-                backgroundColor: '#43a047',
+                 background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                 color: 'white',
                 py: 1.5,
                 fontSize: '1.1rem',
@@ -325,10 +331,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 borderRadius: 2,
                 textTransform: 'none',
                 '&:hover': {
-                  backgroundColor: '#388e3c',
+                  background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                 },
                 '&:disabled': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                   background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                   color: 'rgba(255, 255, 255, 0.5)',
                 }
               }}
@@ -344,10 +350,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   color: 'white',
                   textTransform: 'none',
                   fontSize: '0.9rem',
-                  backgroundColor: '#0B799D',
-                  '&:hover': {
-                    backgroundColor: '#0B799D',
-                  },
+                  // backgroundColor: '#0B799D',
+                  // '&:hover': {
+                  //   backgroundColor: '#0B799D',
+                  // },
                   width: 'fit-content',
                   justifyContent: 'center',
                   alignItems: 'center',
