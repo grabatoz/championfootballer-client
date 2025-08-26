@@ -149,7 +149,7 @@ export default function LandingPage() {
             </Box>
 
             {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
-            <Box sx={{ width: '100%', overflow: 'hidden' }}>
+            <Box sx={{ width: '100%', overflow: 'visible' }}>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
           </Paper>
