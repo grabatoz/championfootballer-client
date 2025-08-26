@@ -35,6 +35,7 @@ export default function LandingPage() {
         justifyContent: 'space-between',
         px: { xs: 2, md: 3 },
         py: { xs: 3, md: 4 },
+        // backgroundAttachment:'fixed'
         // width: '100%',
         // minHeight: '100vh',
         // position: 'relative',
@@ -164,6 +165,7 @@ export default function LandingPage() {
           justifyContent: 'center',
           px: { xs: 2, md: 0 },
           pointerEvents: 'none',
+          // mt:{sx:0,sm:0,md:20}
         }}
       >
         <Box sx={{ display: 'flex', gap: 0, pointerEvents: 'auto', alignItems: 'center' }}>
