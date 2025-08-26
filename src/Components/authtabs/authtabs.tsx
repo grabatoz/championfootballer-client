@@ -199,7 +199,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     <>
       {tabValue === 0 ? (
         // Login Form
-        <Box component="form" onSubmit={handleLoginSubmit}>
+        <Box component="form" onSubmit={handleLoginSubmit} sx={{width: '100%', maxWidth: 280, ml:{sx:0,sm:0,md:12.5}}}>
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {loginError}
@@ -376,7 +376,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         </Box>
               ) : (
           // Register Form - Starts from same position as login form
-          <Box component="form" onSubmit={handleRegisterSubmit}>
+          <Box component="form" onSubmit={handleRegisterSubmit} sx={{width: '100%', maxWidth: 280, ml:{sx:0,sm:0,md:12.5}}}>
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {registerError}
@@ -394,38 +394,41 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               required 
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
             />
@@ -438,40 +441,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               value={registerData.password} 
               onChange={handleRegisterChange} 
               required 
-              sx={{
+               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
               InputProps={{
@@ -498,38 +504,41 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               required 
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
               InputProps={{
@@ -553,40 +562,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               value={registerData.firstName} 
               onChange={handleRegisterChange} 
               required 
-              sx={{
+               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
             />
@@ -598,40 +610,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               value={registerData.lastName} 
               onChange={handleRegisterChange} 
               required 
-              sx={{
+               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
             />
@@ -645,40 +660,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               value={registerData.age} 
               onChange={handleRegisterChange} 
               required 
-              sx={{
+               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#0B799D',
-                  color: 'white',
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
                   borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
                   '& fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent', // No border
                   },
                   '&:hover fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#fff',
+                    borderColor: 'transparent',
                   },
                   '& input': {
-                    color: 'white',
+                    color: '#A7A7A7',
                     fontSize: '1rem',
+                    // fontWeight: 400,
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'white',
-                  fontSize: '1rem',
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
                   '&.Mui-focused': {
                     color: '#fff',
                   },
                 },
                 '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                   transition: 'background-color 5000s ease-in-out 0s',
                 },
                 '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #0B799D inset',
-                  WebkitTextFillColor: 'white',
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
                 },
               }}
             />
@@ -703,7 +721,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               fullWidth 
               disabled={registerLoading}
               sx={{
-                backgroundColor: '#43a047',
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                 color: 'white',
                 py: 1.5,
                 fontSize: '1.1rem',
@@ -711,10 +729,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 borderRadius: 2,
                 textTransform: 'none',
                 '&:hover': {
-                  backgroundColor: '#388e3c',
+                   background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                 },
                 '&:disabled': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                   background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                   color: 'rgba(255, 255, 255, 0.5)',
                 }
               }}
