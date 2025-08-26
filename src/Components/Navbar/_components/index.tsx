@@ -39,6 +39,10 @@ import progressimg from '@/Components/images/progressimg.png';
 import leaguesetting from '@/Components/images/leaguesetting.png';
 import matchdetails from '@/Components/images/matchdetails.png';
 import palyerstats from '@/Components/images/palyerstats.png';
+import player from '@/Components/images/profile-user.png'
+import play from '@/Components/images/play.png'
+import gamification from '@/Components/images/gamification.png'
+import logoutpic from '@/Components/images/logout.png'
 
 // Custom SlideFade transition
 const SlideFade = forwardRef(function SlideFade(
@@ -88,10 +92,6 @@ export default function NavigationBar() {
   const handleProfileClick = () => {
     handleProfileMenuClose();
     router.push('/profile');
-  };
-  const handleDashboardClick = () => {
-    handleProfileMenuClose();
-    router.push('/dashboard');
   };
   const handleSignOutClick = () => {
     handleProfileMenuClose();
@@ -268,20 +268,41 @@ export default function NavigationBar() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
-                    Profile
+                  <MenuItem
+                    onClick={handleProfileClick}
+                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={player} alt="profile" width={20} height={20} />
+                      <Box>Profile</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={handleDashboardClick} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
-                    Dashboard
+                  <MenuItem
+                    onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }}
+                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={play} alt="how to play" width={20} height={20} />
+                      <Box>How to play</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
-                    How to play
+                  <MenuItem
+                    onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }}
+                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={gamification} alt="rules" width={20} height={20} />
+                      <Box>Game rules</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#43a047', color: 'white' } }}>
-                    Game rules
-                  </MenuItem>
-                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#43a047', color: '#fff' } }}>
-                    Sign out
+                  <MenuItem
+                    onClick={handleSignOutClick}
+                    sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#00a77f', color: '#fff' } }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={logoutpic} alt="sign out" width={20} height={20} />
+                      <Box>Sign out</Box>
+                    </Box>
                   </MenuItem>
                 </Menu>
               </>
@@ -360,20 +381,29 @@ export default function NavigationBar() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
-                    Profile
+                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={player} alt="profile" width={20} height={20} />
+                      <Box>Profile</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={handleDashboardClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
-                    Dashboard
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={play} alt="how to play" width={20} height={20} />
+                      <Box>How to play</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
-                    How to play
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={gamification} alt="rules" width={20} height={20} />
+                      <Box>Game rules</Box>
+                    </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#388e3c' } }}>
-                    Game rules
-                  </MenuItem>
-                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#388e3c', color: '#fff' } }}>
-                    Sign out
+                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#00a77f', color: '#fff' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Image src={logoutpic} alt="sign out" width={20} height={20} />
+                      <Box>Sign out</Box>
+                    </Box>
                   </MenuItem>
                 </Menu>
               </ListItem>
