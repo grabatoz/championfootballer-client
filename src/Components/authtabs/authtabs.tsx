@@ -7,7 +7,7 @@ import { LoginCredentials, RegisterCredentials } from '@/types/api';
 import { authAPI } from '@/lib/api';
 import {
   Box, TextField, Button, CircularProgress,
-  Alert, FormControl, FormLabel, RadioGroup, FormControlLabel,
+  Alert, FormControl, RadioGroup, FormControlLabel,
   Radio, Checkbox, Stack, IconButton,
   Typography} from '@mui/material';
 import { useSelector } from 'react-redux';
