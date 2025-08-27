@@ -14,7 +14,7 @@ import image12 from '@/Components/images/image12.png';
 import { useState } from 'react';
 
 export default function LandingPage() {
-  const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
 
   return (
     <Box
