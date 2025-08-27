@@ -330,7 +330,7 @@ export default function NavigationBar() {
         sx={{
           '& .MuiDrawer-paper': {
             width: 260,
-            backgroundColor: '#00A77F ',
+            background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
             boxShadow: 3,
           },
         }}
@@ -348,13 +348,13 @@ export default function NavigationBar() {
                     px: 3,
                     py: 1.5,
                     color: '#fff',
-                    bgcolor: '#1f3e90',
+                    bgcolor: '#2b2b2b',
                     borderRadius: 2,
                     fontWeight: 600,
                     mb: 1,
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#1f3e90',
+                      bgcolor: '#2b2b2b',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
@@ -370,8 +370,8 @@ export default function NavigationBar() {
                   TransitionComponent={SlideFade}
                   PaperProps={{
                     sx: {
-                      bgcolor: '#1f673b',
-                      color: '#fff',
+                      bgcolor: '#fff',
+                      color: 'black',
                       borderRadius: 2,
                       boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
                       mt: 1.5,
@@ -381,19 +381,19 @@ export default function NavigationBar() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={handleProfileClick} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Image src={player} alt="profile" width={20} height={20} />
                       <Box>Profile</Box>
                     </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Image src={play} alt="how to play" width={20} height={20} />
                       <Box>How to play</Box>
                     </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#fff', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Image src={gamification} alt="rules" width={20} height={20} />
                       <Box>Game rules</Box>
