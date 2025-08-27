@@ -97,7 +97,8 @@ export default function LeaderBoardPage() {
           gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
           gap: 2,
           mb: 3,
-          background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
           borderRadius: 2,
           boxShadow: 1,
           p: 2,
@@ -109,7 +110,7 @@ export default function LeaderBoardPage() {
             onClick={() => setSelectedMetric(m.key)}
             variant={selectedMetric === m.key ? 'contained' : 'outlined'}
             sx={{
-              bgcolor: selectedMetric === m.key ? '#43a047' : 'rgba(255,255,255,0.1)',
+              background: selectedMetric === m.key ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);' : 'rgba(255,255,255,0.1)',
               color: selectedMetric === m.key ? 'white' : 'white',
               fontWeight: 'bold',
               mt: 1,
@@ -117,13 +118,13 @@ export default function LeaderBoardPage() {
               borderRadius: 2,
               boxShadow: selectedMetric === m.key ? 2 : 0,
               minHeight: 80,
-              border:'1px solid #00785A',
+              border:'1px solid #e56a16',
               transition: 'all 0.2s',
               '&:hover': {
                 background: selectedMetric === m.key
-                  ? '#388e3c'
+                  ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);'
                   : 'rgba(255,255,255,0.1)',
-              border:'1px solid #00785A',
+              border:'1px solid #e56a16',
 
               },
             }}
@@ -153,13 +154,13 @@ export default function LeaderBoardPage() {
             sx={{
               color: 'white',
               '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
               '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
               '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
             }}
           >
@@ -181,7 +182,7 @@ export default function LeaderBoardPage() {
           return (
             <React.Fragment key={player.id}>
               <Link href={`/player/${player.id}`} passHref> 
-              <Paper sx={{ p: 2, display: 'flex', color:'white' , alignItems: 'center', background: '#0a3e1e', borderRadius: 0 }}>
+              <Paper sx={{ p: 2, display: 'flex', color:'white' , alignItems: 'center', background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', borderRadius: 0 }}>
                 {/* Ranking badge or number */}
                 <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
                   {badgeImg ? (

@@ -87,13 +87,16 @@ const AllPlayersPage = () => {
   return (
     <Container maxWidth="md" sx={{
       py: { xs: 2, sm: 4 },
-      background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+      // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+      // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
       minHeight: '100vh',
       color: 'white',
       borderRadius: { xs: 2, sm: 5 },
       overflow: 'hidden',
       mt: { xs: 1, sm: 3 },
       px: { xs: 0.5, sm: 2 },
+      mb: { xs: 1, sm: 3 },
     }}>
       <Paper elevation={0} sx={{
         p: { xs: 1, sm: 3 },
@@ -119,13 +122,13 @@ const AllPlayersPage = () => {
               background: 'rgba(255,255,255,0.1)',
               color: 'white',
               '& fieldset': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
               '&:hover fieldset': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
               '&.Mui-focused fieldset': {
-                borderColor: '#43a047',
+                borderColor: '#e56a16',
               },
               // Autofill fix for Chrome, Safari, Edge
               '& input:-webkit-autofill': {
@@ -161,14 +164,14 @@ const AllPlayersPage = () => {
         />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
           <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, minWidth: 40, textAlign: 'center' }}>Pos</Typography>
-          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1 , ml: 3 }}>Name</Typography>
+          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Stats</Typography>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>XP Points</Typography>
           </Box>
         </Box>
-          {searchQuery && filteredPlayers.length === 0 && (
-          <Typography sx={{ color: 'white', background: '#0a3e1e', borderRadius: 2, px: 2, py: 1, mt: 1, textAlign: 'center', fontWeight: 500 }}>
+        {searchQuery && filteredPlayers.length === 0 && (
+          <Typography sx={{ color: 'white', borderRadius: 2, px: 2, py: 1, mt: 1, textAlign: 'center', fontWeight: 500 }}>
             User not found
           </Typography>
         )}
@@ -222,7 +225,9 @@ const AllPlayersPage = () => {
                       }}
                       sx={{
                         boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                        background: rowGradient ? rowGradient : rowBg,
+                        // background: rowGradient ? rowGradient : rowBg,
+                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',

@@ -295,7 +295,7 @@ const DreamTeamPage = () => {
   </Box>
 
   {/* Desktop Layout: Back Button (Left) */}
-  <Box
+  {/* <Box
     sx={{
       display: { xs: "none", md: "flex" }, // Only show on desktop
       justifyContent: "flex-start",
@@ -319,7 +319,7 @@ const DreamTeamPage = () => {
     >
       Back to Dashboard
     </Button>
-  </Box>
+  </Box> */}
 
   {/* Center: Dream Team Logo + Text */}
   <Box
