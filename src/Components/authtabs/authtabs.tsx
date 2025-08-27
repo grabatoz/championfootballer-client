@@ -8,7 +8,8 @@ import { authAPI } from '@/lib/api';
 import {
   Box, TextField, Button, CircularProgress,
   Alert, FormControl, FormLabel, RadioGroup, FormControlLabel,
-  Radio, Checkbox, Stack, IconButton} from '@mui/material';
+  Radio, Checkbox, Stack, IconButton,
+  Typography} from '@mui/material';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import toast from 'react-hot-toast';
@@ -702,7 +703,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             />
 
             <FormControl>
-              <FormLabel sx={{ color: '#fff' }}>Gender</FormLabel>
+              <Typography sx={{ color: '#fff' }}>Gender</Typography>
               <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
                 <FormControlLabel value="male" control={<Radio color="success" />} label="Male" sx={{ color: '#fff' }} />
                 <FormControlLabel value="female" control={<Radio color="success" />} label="Female" sx={{ color: '#fff' }} />
