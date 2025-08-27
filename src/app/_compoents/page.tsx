@@ -4,7 +4,8 @@ import { Box, Paper, Typography, Button, Card } from '@mui/material';
 import AuthTabs from '@/Components/authtabs/authtabs';
 import Image from 'next/image';
 import Layer from '@/Components/images/championfootballnewlogo.png';
-import NewImg from '@/Components/images/desktoppicccc.png';
+// import NewImg from '@/Components/images/desktoppicccc.png';
+import NewImg from '@/Components/images/dspic.png';
 import mobile from '@/Components/images/mobile.png';
 import image9 from '@/Components/images/image9.png';
 import image10 from '@/Components/images/image10.png';
@@ -35,7 +36,7 @@ export default function LandingPage() {
         justifyContent: 'space-between',
         px: { xs: 2, md: 3 },
         py: { xs: 3, md: 4 },
-        // backgroundAttachment:'fixed'
+        backgroundAttachment:'fixed'
         // width: '100%',
         // minHeight: '100vh',
         // position: 'relative',
@@ -165,7 +166,7 @@ export default function LandingPage() {
           justifyContent: 'center',
           px: { xs: 2, md: 0 },
           pointerEvents: 'none',
-          // mt:{sx:0,sm:0,md:20}
+          mt:{sx:0,sm:0,md:20}
         }}
       >
         <Box sx={{ display: 'flex', gap: 0, pointerEvents: 'auto', alignItems: 'center' }}>

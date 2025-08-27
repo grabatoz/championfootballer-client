@@ -199,7 +199,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     <>
       {tabValue === 0 ? (
         // Login Form
-        <Box component="form" onSubmit={handleLoginSubmit} sx={{width: '100%', maxWidth: 280, ml:{sx:0,sm:0,md:12.5}}}>
+        <Box component="form" onSubmit={handleLoginSubmit} sx={{width: {sx:'100%',sm:'100%',md:'80%'}, maxWidth: 325, ml:{sx:0,sm:0,md:9.5}}}>
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {loginError}
@@ -376,7 +376,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         </Box>
               ) : (
           // Register Form - Starts from same position as login form
-          <Box component="form" onSubmit={handleRegisterSubmit} sx={{width: '100%', maxWidth: 280, ml:{sx:0,sm:0,md:12.5}}}>
+          <Box component="form" onSubmit={handleRegisterSubmit} sx={{width: {sx:'100%',sm:'100%',md:'80%'}, maxWidth: 325, ml:{sx:0,sm:0,md:9.5}}}>
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {registerError}
