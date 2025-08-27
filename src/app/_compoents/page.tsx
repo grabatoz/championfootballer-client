@@ -55,9 +55,9 @@ export default function LandingPage() {
           width: '100%',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'center', md: 'flex-start' },
+          alignItems: { xs: 'space', md: 'flex-start' },
           justifyContent: 'space-between',
-          gap: 3,
+          // gap: 3,
         }}
       >
         {/* Logo + Copy (left side inside top group) */}
@@ -114,11 +114,14 @@ export default function LandingPage() {
             justifyContent: 'center',
             alignItems: 'center',
             background: 'transparent',
-            mt: '13%'
+            mt: '13%',              // md: ensure Paper itself is centered
+            // ml: { sm: '50%' }
           }}
+          
         >
           <Paper
             elevation={8}
+            // className='sm:ml-[50%] ml-0'
             sx={{
               width: '100%',
               // p: { xs: 2, md: 3 },
@@ -127,10 +130,15 @@ export default function LandingPage() {
               bgcolor: 'transparent',
               // ensure paper itself is transparent and doesn't force white backgrounds on children
               boxShadow: 'none',
+                alignSelf: { md: 'center' }, 
               '& .MuiPaper-root': { background: 'transparent' },
+              ml:{xs:'10%' , sm:'30%' , md:0}
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+
+            {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
+            <Box sx={{ width: '100%', overflow: 'visible' , mb:4}}>
+            <Box sx={{ display: 'flex', justifyContent: {xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
               <Button
                 variant="contained"
                 onClick={() => setShowLogin(!showLogin)}
@@ -148,9 +156,6 @@ export default function LandingPage() {
                 {showLogin ? 'Join' : 'Login'}
               </Button>
             </Box>
-
-            {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
-            <Box sx={{ width: '100%', overflow: 'visible' }}>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
           </Paper>
@@ -166,17 +171,27 @@ export default function LandingPage() {
           justifyContent: 'center',
           px: { xs: 2, md: 0 },
           pointerEvents: 'none',
-          mt:{sx:0,sm:0,md:20}
+          mt:{sx:0,sm:0,md:20},
+          mb:4,
         }}
       >
-        <Box sx={{ display: 'flex', gap: 0, pointerEvents: 'auto', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr',sm: 'repeat(4, 1fr)', md: 'repeat(4, 1fr)' }, // xs: 1 column, md+: 4 columns
+            gap: { xs: 2, md: 2 },
+            pointerEvents: 'auto',
+            alignItems: 'stretch',
+            width: '100%',
+          }}
+        >
           {[image9, image10, image11, image12].map((img, i) => (
             <Card
               key={i}
               elevation={0}
               sx={{
-                width: { xs: 100, sm: 140, md: 280 },
-                height: { xs: 100, sm: 140, md: 280 },
+                width: '100%',
+                height: { xs: 'auto', sm: 280, md: 280 },
                 borderRadius: 0,           // remove rounded corners
                 overflow: 'visible',       // show full image without cropping
                 display: 'flex',
@@ -185,7 +200,6 @@ export default function LandingPage() {
                 boxShadow: 'none',        // remove shadow
                 bgcolor: 'transparent',   // no background color
                 border: 'none',
-                flex: '0 0 auto',
               }}
             >
               <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'transparent' }}>
@@ -195,11 +209,9 @@ export default function LandingPage() {
                   width={800}
                   height={800}
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    width: 'auto',
-                    height: '100%',
-                    objectFit: 'contain', // show whole image, no crop
+                    width: '100%',         // full width in grid cell
+                    height: 'auto',        // keep aspect ratio
+                    objectFit: 'contain',  // show whole image, no crop
                     background: 'transparent',
                   }}
                 />

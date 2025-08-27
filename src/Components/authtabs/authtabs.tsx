@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import toast from 'react-hot-toast';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import Link from 'next/link';
 
 interface AuthTabsProps {
   showLogin?: boolean;
@@ -200,7 +201,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     <>
       {tabValue === 0 ? (
         // Login Form
-        <Box component="form" onSubmit={handleLoginSubmit} sx={{width: {sx:'100%',sm:'100%',md:'80%'}, maxWidth: 325, ml:{sx:0,sm:0,md:9.5}}}>
+        <Box component="form" onSubmit={handleLoginSubmit} sx={{width: {sx:'100%',sm:'60%',md:'80%'}, maxWidth: 360, ml:{sx:0,sm:-3.5,md:9.5}}}>
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {loginError}
@@ -377,7 +378,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         </Box>
               ) : (
           // Register Form - Starts from same position as login form
-          <Box component="form" onSubmit={handleRegisterSubmit} sx={{width: {sx:'100%',sm:'100%',md:'80%'}, maxWidth: 325, ml:{sx:0,sm:0,md:9.5}}}>
+          <Box component="form" onSubmit={handleRegisterSubmit} sx={{width: {sx:'100%',sm:'60%',md:'80%'}, maxWidth: 360, ml:{sx:0,sm:-3.5,md:9.5}}}>
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {registerError}
@@ -702,17 +703,60 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               }}
             />
 
+            {/* Active (checked) color set to orange (#E56A16) */}
             <FormControl>
               <Typography sx={{ color: '#fff' }}>Gender</Typography>
               <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
-                <FormControlLabel value="male" control={<Radio color="success" />} label="Male" sx={{ color: '#fff' }} />
-                <FormControlLabel value="female" control={<Radio color="success" />} label="Female" sx={{ color: '#fff' }} />
+                <FormControlLabel
+                  value="male"
+                  control={
+                    <Radio
+                      sx={{
+                        color: '#fff',
+                        '&.Mui-checked': { color: '#E56A16' }
+                      }}
+                    />
+                  }
+                  label="Male"
+                  sx={{ color: '#fff' }}
+                />
+                <FormControlLabel
+                  value="female"
+                  control={
+                    <Radio
+                      sx={{
+                        color: '#fff',
+                        '&.Mui-checked': { color: '#E56A16' }
+                      }}
+                    />
+                  }
+                  label="Female"
+                  sx={{ color: '#fff' }}
+                />
               </RadioGroup>
             </FormControl>
 
             <FormControlLabel
-              control={<Checkbox color="success" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />}
-              label="I accept the terms and conditions"
+              control={
+                <Checkbox
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  sx={{
+                    color: '#fff',
+                    '&.Mui-checked': { color: '#E56A16' }
+                  }}
+                />
+              }
+              // Label contains a link to the terms page
+              label={
+                <span>
+                  I accept the{' '}
+                  <Link href="/terms" style={{ color: '#fff', textDecoration: 'underline' }}>
+                    terms and conditions
+                  </Link>
+                </span>
+              }
+
               sx={{ color: '#fff' }}
             />
 
