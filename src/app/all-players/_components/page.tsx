@@ -197,24 +197,24 @@ const AllPlayersPage = () => {
               {sortedPlayers.map((player: Player, idx: number) => {
                 const isSelected = selectedPlayerId === player.id;
                 // Gold, silver, bronze backgrounds
-                let rowBg = 'rgba(255,255,255,0.1)';
+                // let rowBg = 'rgba(255,255,255,0.1)';
                 let textColor = '#fff';
                 let fontWeight = 500;
                 let badgeImg = null;
-                let rowGradient = null;
+                // let rowGradient = null;
                 if (idx === 0) {
-                  rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
+                  // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                   textColor = '#fff';
                   fontWeight = 700;
                   badgeImg = FirstBadge;
                 } else if (idx === 1) {
-                  rowBg = '#0a4822'; // silver
+                  // rowBg = '#0a4822'; // silver
                   badgeImg = SecondBadge;
                 } else if (idx === 2) {
-                  rowBg = '#094420'; // bronze
+                  // rowBg = '#094420'; // bronze
                   badgeImg = ThirdBadge;
                 } else {
-                  rowBg = '#0a4822';
+                  // rowBg = '#0a4822';
                 }
                 return (
                   <React.Fragment key={player.id}>

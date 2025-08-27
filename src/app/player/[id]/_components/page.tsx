@@ -325,7 +325,7 @@ const PlayerStatsPage = () => {
         <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh' }}>
             <Box sx={{ width: '100%', mb: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {/* Back Button - Left side */}
-                <Button
+                {/* <Button
                     variant="outlined"
                     color="inherit"
                     sx={{
@@ -350,7 +350,7 @@ const PlayerStatsPage = () => {
                     }}
                 >
                     ← Back to All Players
-                </Button>
+                </Button> */}
 
                 <Box
                     sx={{
