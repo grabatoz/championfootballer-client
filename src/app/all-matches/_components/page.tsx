@@ -63,7 +63,7 @@ interface User {
     age?: number | string;
     password?: string;
     gender?: string;
-    level?:string;
+    level?: string;
     joinedLeagues?: League[];
     managedLeagues?: League[];
     homeTeamMatches?: Match[];
@@ -80,16 +80,16 @@ interface User {
     positionType: string;
     skills?: Skills;
     xp?: number;
-  }
-  
-  interface Skills {
+}
+
+interface Skills {
     dribbling: number;
     shooting: number;
     passing: number;
     pace: number;
     defending: number;
     physical: number;
-  }
+}
 
 interface PlayerCardProps {
     id: string;
@@ -563,7 +563,8 @@ export default function AllMatches() {
                         fullWidth
                         sx={{
                             maxWidth: 400,
-                            background: 'linear-gradient(90deg, #1f673b 0%, #43a047 100%)',
+                            // Orange -> Black gradient on the selector too
+                            background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, #000000 100%)',
                             borderRadius: 3,
                             boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
                             '& .MuiOutlinedInput-root': {
@@ -571,13 +572,13 @@ export default function AllMatches() {
                                 background: 'transparent',
                                 borderRadius: 3,
                                 '& fieldset': {
-                                    borderColor: '#43a047',
+                                    borderColor: 'rgba(255,255,255,0.2)',
                                 },
                                 '&:hover fieldset': {
-                                    borderColor: '#388e3c',
+                                    borderColor: 'rgba(255,255,255,0.35)',
                                 },
                                 '&.Mui-focused fieldset': {
-                                    borderColor: '#43a047',
+                                    borderColor: '#fff',
                                 },
                             },
                             '& .MuiInputLabel-root': {
@@ -625,7 +626,7 @@ export default function AllMatches() {
                     gap: 3,
                 }}>
                     {loading ? (
-                        <Typography color="black" align="center">Loading matches...</Typography>
+                        <Typography color="#fff" align="center">Loading matches...</Typography>
                     ) : selectedLeague === 'all' ? (
                         <Paper
                             elevation={0}
@@ -634,7 +635,7 @@ export default function AllMatches() {
                                 borderRadius: 3,
                                 p: 4,
                                 textAlign: 'center',
-                                color: 'black',
+                                color: '#fff',
                             }}
                         >
                             <Typography variant="h6">Select a League</Typography>
@@ -677,10 +678,11 @@ export default function AllMatches() {
                                         position: 'relative',
                                         borderRadius: 3,
                                         backdropFilter: 'blur(10px)',
-                                        background: '#01c697',
-                                        border: '2px solid #02a880',
+                                        // background: '#01c697',
+                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                        // border: '2px solid #02a880',
                                         '&:hover': {
-                                            border: '3px solid #02a880',
+                                            // border: '3px solid #02a880',
                                             transform: 'translateY(-2px)',
                                             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                         }
@@ -707,7 +709,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.homeTeamImage || homeTeamIcon}
-                                                                alt={match.homeTeamName || ''}
+                                                                alt={match.homeTeamName || match.homeTeam}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -721,7 +723,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.homeTeamName}
                                                             >
-                                                                {formatMatchName(match.homeTeamName || '')}
+                                                                {formatMatchName(match.homeTeamName || match.homeTeam)}
                                                             </Typography>
                                                         </Box>
                                                         <Typography
@@ -754,7 +756,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.awayTeamImage || awayTeamIcon}
-                                                                alt={match.awayTeamName || ''}
+                                                                alt={match.awayTeamName || match.homeTeam}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -768,7 +770,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.awayTeamName}
                                                             >
-                                                                {formatMatchName(match.awayTeamName || '')}
+                                                                {formatMatchName(match.awayTeamName || match.homeTeam)}
                                                             </Typography>
 
                                                         </Box>
@@ -823,7 +825,7 @@ export default function AllMatches() {
                                                             <Button
                                                                 size="small"
                                                                 sx={{
-                                                                    backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
+                                                                    backgroundColor: '#0388E3', // Slightly more opaque
                                                                     color: 'white',
                                                                     fontSize: '0.75rem',
                                                                     py: 0.5,
@@ -832,7 +834,7 @@ export default function AllMatches() {
                                                                     boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
                                                                     transition: 'all 0.2s ease-in-out', // Smooth hover effects
                                                                     '&:hover': {
-                                                                        bgcolor: 'rgba(59, 130, 246, 1)',
+                                                                        bgcolor: '#0388E3',
                                                                         boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
                                                                         transform: 'translateY(-1px)', // Slight lift effect
                                                                     },
@@ -858,7 +860,7 @@ export default function AllMatches() {
                                                         //     py: 0.5,
                                                         // }}
                                                         sx={{
-                                                            backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
+                                                            backgroundColor: '#FA5836', // Slightly more opaque
                                                             color: 'white',
                                                             fontSize: '0.75rem',
                                                             py: 0.5,
@@ -867,8 +869,8 @@ export default function AllMatches() {
                                                             boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
                                                             transition: 'all 0.2s ease-in-out', // Smooth hover effects
                                                             '&:hover': {
-                                                                bgcolor: 'rgba(59, 130, 246, 1)',
-                                                                boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
+                                                                bgcolor: '#FA5836',
+                                                                boxShadow: '0 4px 8px #FA5836', // Stronger glow on hover
                                                                 transform: 'translateY(-1px)', // Slight lift effect
                                                             },
                                                             '&:active': {
@@ -895,10 +897,11 @@ export default function AllMatches() {
                                         // border: '2px solid rgba(255,255,255,0.1)',
                                         borderRadius: 3,
                                         backdropFilter: 'blur(10px)',
-                                        background: '#01c697',
-                                        border: '2px solid #02a880',
+                                        // background: '#01c697',
+                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                        // border: '2px solid #02a880',
                                         '&:hover': {
-                                            border: '3px solid #02a880',
+                                            // border: '3px solid #02a880',
                                             transform: 'translateY(-2px)',
                                             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                         }
@@ -939,7 +942,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.homeTeamImage || homeTeamIcon}
-                                                                alt={match.homeTeamName || ''}
+                                                                alt={match.homeTeamName || match.homeTeam}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -954,7 +957,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.homeTeamName}
                                                             >
-                                                                {formatMatchName(match.homeTeamName || '')}
+                                                                {formatMatchName(match.homeTeamName || match.homeTeam)}
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -975,7 +978,7 @@ export default function AllMatches() {
                                                         }}>
                                                             <Image
                                                                 src={match.awayTeamImage || awayTeamIcon}
-                                                                alt={match.awayTeamName || ''}
+                                                                alt={match.awayTeamName || match.homeTeam}
                                                                 width={24}
                                                                 height={24}
                                                                 style={{ borderRadius: '2px' }}
@@ -990,7 +993,7 @@ export default function AllMatches() {
                                                                 }}
                                                                 title={match.awayTeamName}
                                                             >
-                                                                {formatMatchName(match.awayTeamName || '')}
+                                                                {formatMatchName(match.awayTeamName || match.homeTeam)}
                                                             </Typography>
 
                                                         </Box>
@@ -1033,9 +1036,9 @@ export default function AllMatches() {
                                                             disabled={availabilityLoading[match.id] || !league?.active}
                                                             size="small"
                                                             sx={{
-                                                                backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)',
+                                                                backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : '#0388E3',
                                                                 '&:hover': {
-                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)',
+                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : '#0388E3',
                                                                     transform: 'translateY(-1px)',
                                                                 },
                                                                 '&.Mui-disabled': {
@@ -1061,7 +1064,7 @@ export default function AllMatches() {
                                                     <Button
                                                         size="small"
                                                         sx={{
-                                                            backgroundColor: 'rgba(59, 130, 246, 0.9)', // Slightly more opaque
+                                                            backgroundColor: '#FA5836', // Slightly more opaque
                                                             color: 'white',
                                                             fontSize: '0.75rem',
                                                             py: 0.5,
@@ -1070,8 +1073,8 @@ export default function AllMatches() {
                                                             boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
                                                             transition: 'all 0.2s ease-in-out', // Smooth hover effects
                                                             '&:hover': {
-                                                                bgcolor: 'rgba(59, 130, 246, 1)',
-                                                                boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
+                                                                bgcolor: '#FA5836',
+                                                                boxShadow: '0 4px 8px #FA5836', // Stronger glow on hover
                                                                 transform: 'translateY(-1px)', // Slight lift effect
                                                             },
                                                             '&:active': {
@@ -1138,4 +1141,4 @@ export default function AllMatches() {
             />
         </Box>
     );
-} 
+}

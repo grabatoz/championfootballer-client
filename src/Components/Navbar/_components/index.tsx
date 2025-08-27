@@ -123,7 +123,7 @@ export default function NavigationBar() {
               textTransform: 'none',
               fontFamily: 'Arial, Helvetica, sans-serif',
               fontWeight: 700,
-              color: active ? '#00a77f' : '#fff',
+              color: active ? '#fff' : '#fff',
               fontSize: { xs: '14px', md: '16px' },
               px: 1.25,
               mx: 0.5,
