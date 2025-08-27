@@ -16,7 +16,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
 // import cflogo from '@/Components/images/logo.png';
@@ -68,6 +68,7 @@ export default function NavigationBar() {
   const openProfileMenu = Boolean(profileMenuAnchor);
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   const [gameRulesOpen, setGameRulesOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -98,93 +99,62 @@ export default function NavigationBar() {
     handleSignOut();
   };
 
+  const navItems: { label: string; href: string }[] = [
+    { label: 'Leagues', href: '/all-leagues' },
+    { label: 'Matches', href: '/all-matches' },
+    { label: 'Dream Team', href: '/dream-team' },
+    { label: 'Player', href: '/all-players' },
+    { label: 'Trophy Room', href: '/trophy-room' },
+    { label: 'Leaderboard', href: '/leader-board' },
+  ];
+
   const renderNavLinks = () => (
     <>
-      <Button
-        onClick={() => router.push('/all-leagues')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Leagues
-      </Button>
-      <Button
-        onClick={() => router.push('/all-matches')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Matches
-      </Button>
-      <Button
-        onClick={() => router.push('/dream-team')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Dream Team
-      </Button>
-      <Button
-        onClick={() => router.push('/all-players')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Player
-      </Button>
-      <Button
-        onClick={() => router.push('/trophy-room')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Trophy Room
-      </Button>
-      <Button
-        onClick={() => router.push('/leader-board')}
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 'bold',
-          color: 'white',
-          fontSize: { xs: '14px', md: '16px' },
-          transition: '0.3s',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        Leaderboard
-      </Button>
-
+      {navItems.map(({ label, href }) => {
+        const active = pathname?.startsWith(href);
+        return (
+          <Button
+            key={href}
+            component={Link}
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            disableRipple
+            sx={{
+              textTransform: 'none',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              fontWeight: 700,
+              color: active ? '#00a77f' : '#fff',
+              fontSize: { xs: '14px', md: '16px' },
+              px: 1.25,
+              mx: 0.5,
+              position: 'relative',
+              transition: 'color .2s ease',
+              '&:hover': { color: '#fff', backgroundColor: 'transparent' },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: -6,
+                height: '2px',
+                width: active ? '100%' : 0,
+                margin: '0 auto',
+                backgroundColor: '#fff',
+                transition: 'width .25s ease',
+              },
+              '&:hover::after': {
+                width: '100%',
+              },
+              '&:focus-visible': {
+                outline: '2px solid #00a77f',
+                outlineOffset: 2,
+              },
+            }}
+          >
+            {label}
+          </Button>
+        );
+      })}
     </>
   );
 
