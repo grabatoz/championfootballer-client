@@ -132,13 +132,13 @@ export default function LandingPage() {
               boxShadow: 'none',
                 alignSelf: { md: 'center' }, 
               '& .MuiPaper-root': { background: 'transparent' },
-              ml:{xs:'10%' , sm:'30%' , md:0}
+              ml:{xs:'6%' , sm:'30%' , md:0}
             }}
           >
 
             {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
             <Box sx={{ width: '100%', overflow: 'visible' , mb:4}}>
-            <Box sx={{ display: 'flex', justifyContent: {xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: {xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 , mr:{xs:2, sm:0, md:0} }}>
               <Button
                 variant="contained"
                 onClick={() => setShowLogin(!showLogin)}
