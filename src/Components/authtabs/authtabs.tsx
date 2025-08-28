@@ -209,7 +209,40 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           )}
 
           <Stack spacing={3}>
+
+             <TextField 
+              fullWidth 
+              label="Email Address" 
+              name="email" 
+              type="email" 
+             autoComplete="email"
+              value={loginData.email} 
+              onChange={handleLoginChange} 
+              required 
+             InputLabelProps={{ shrink: true }}
+              sx={{
+                // ...existing code...
+              }}
+            />
+
             <TextField 
+              fullWidth 
+              label="Password" 
+              name="password" 
+              type={showLoginPassword ? "text" : "password"} 
+          autoComplete="current-password"
+              value={loginData.password} 
+              onChange={handleLoginChange} 
+              required 
+             InputLabelProps={{ shrink: true }}
+               sx={{
+                // ...existing code...
+              }}
+              InputProps={{
+                // ...existing code...
+              }}
+            />
+            {/* <TextField 
               fullWidth 
               label="Email Address" 
               name="email" 
@@ -317,7 +350,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   </IconButton>
                 ),
               }}
-            />
+            /> */}
 
             <Button 
               type="submit" 

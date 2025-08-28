@@ -9,15 +9,23 @@ import NewImg from '@/Components/images/Done1.jpg';
 // import NewImg from '@/Components/images/Done2.jpg';
 // import NewImg from '@/Components/images/dspic.png';
 import mobile from '@/Components/images/mobile.png';
-import image9 from '@/Components/images/image9.png';
-import image10 from '@/Components/images/image10.png';
-import image11 from '@/Components/images/image11.png';
+import image9 from '@/Components/images/1stpic.png';
+import image10 from '@/Components/images/2ndpic.png';
+import image11 from '@/Components/images/3rdpic.png';
 import image12 from '@/Components/images/image12.png';
 
 import { useState } from 'react';
 
 export default function LandingPage() {
   const [showLogin, setShowLogin] = useState(true);
+
+  // Feature cards (id, title, image)
+  const features = [
+    { id: '1', title: ' Design your player card', img: image9 },
+    { id: '2', title: 'Create and track your matches', img: image10 },
+    { id: '3', title: 'View your game stats', img: image11 },
+    { id: '4', title: 'Win awards', img: image12 },
+  ];
 
   return (
     <Box
@@ -199,40 +207,48 @@ export default function LandingPage() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr',sm: 'repeat(4, 1fr)', md: 'repeat(4, 1fr)' }, // xs: 1 column, md+: 4 columns
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)', md: 'repeat(4, 1fr)' },
             gap: { xs: 2, md: 2 },
             pointerEvents: 'auto',
             alignItems: 'stretch',
             width: '100%',
           }}
         >
-          {[image9, image10, image11, image12].map((img, i) => (
+          {features.map((f) => (
             <Card
-              key={i}
+              key={f.id}
               elevation={0}
               sx={{
                 width: '100%',
                 height: { xs: 'auto', sm: 280, md: 280 },
-                borderRadius: 0,           // remove rounded corners
-                overflow: 'visible',       // show full image without cropping
+                borderRadius: 2,
+                overflow: 'hidden',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 'none',        // remove shadow
-                bgcolor: 'transparent',   // no background color
-                border: 'none',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                boxShadow: 'none',
+                bgcolor: '#eaeae8',
+                border: '1px solid rgba(255,255,255,0.2)',
+                p: 2,
+               
               }}
             >
-              <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'transparent' }}>
+              {/* <Typography variant="overline" sx={{ color: '#000000', letterSpacing: 1, fontWeight: 700 }}>
+                {f.id}
+              </Typography> */}
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', md: '1.5rem' }, color: '#000000', fontWeight: 700, mt: 0.5 }}>
+             {f.id}. {f.title}
+              </Typography>
+              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                 <Image
-                  src={img}
-                  alt={`feature-${i}`}
+                  src={f.img}
+                  alt={f.title}
                   width={800}
                   height={800}
                   style={{
-                    width: '100%',         // full width in grid cell
-                    height: 'auto',        // keep aspect ratio
-                    objectFit: 'contain',  // show whole image, no crop
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
                     background: 'transparent',
                   }}
                 />

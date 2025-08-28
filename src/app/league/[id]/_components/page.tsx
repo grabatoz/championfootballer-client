@@ -1574,7 +1574,7 @@ export default function LeagueDetailPage() {
                                                                         }}>
                                                                             {formatMatchTime(match.date)}
                                                                         </Typography>
-                                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 8.5, mt: -7 }} />
+                                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
                                                                     </Box>
                                                                 </Box>
                                                             </Link>
