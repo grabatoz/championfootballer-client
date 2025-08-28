@@ -221,7 +221,43 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               required 
              InputLabelProps={{ shrink: true }}
               sx={{
-                // ...existing code...
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
+                  borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
+                  '& fieldset': {
+                    borderColor: 'transparent', // No border
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '& input': {
+                    color: '#A7A7A7',
+                    fontSize: '1rem',
+                    // fontWeight: 400,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
+                },
               }}
             />
 
@@ -235,11 +271,56 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               onChange={handleLoginChange} 
               required 
              InputLabelProps={{ shrink: true }}
-               sx={{
-                // ...existing code...
+                sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#e4e4e4',
+                  color: '#A7A7A7',
+                  borderRadius: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
+                  '& fieldset': {
+                    borderColor: 'transparent', // No border
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '& input': {
+                    color: '#A7A7A7',
+                    fontSize: '1rem',
+                    // fontWeight: 400,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#A7A7A7',
+                  // fontSize: '1.5rem',
+                  // fontWeight: 400,
+                  '&.Mui-focused': {
+                    color: '#fff',
+                  },
+                },
+                '& input:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '& input:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+                  WebkitTextFillColor: '#A7A7A7',
+                },
               }}
               InputProps={{
-                // ...existing code...
+                endAdornment: (
+                  <IconButton
+                    onClick={() => setShowLoginPassword((show) => !show)}
+                    edge="end"
+                    size="small"
+                    sx={{ color: 'white' }}
+                  >
+                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                ),
               }}
             />
             {/* <TextField 
