@@ -354,7 +354,8 @@ const PlayerStatsPage = () => {
 
                 <Box
                     sx={{
-                        background: '#1f673b',
+                        // background: '#1f673b',
+                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                         borderRadius: 3,
                         px: { xs: 1, sm: 2, md: 3 },
                         py: 0.5,
@@ -379,13 +380,13 @@ const PlayerStatsPage = () => {
                                 width: 'auto',
                                 px: { xs: 1, sm: 1.5, md: 2 },
                                 textTransform: 'none',
-                                '&.Mui-selected': {
-                                    color: '#4caf50',
-                                    backgroundColor: '#1f673b'
-                                }
+                                // '&.Mui-selected': {
+                                //     color: '#4caf50',
+                                //     backgroundColor: '#1f673b'
+                                // }
                             },
                             '& .MuiTabs-indicator': {
-                                backgroundColor: '#4caf50',
+                                backgroundColor: '#fff',
                                 height: 3
                             }
                         }}
@@ -423,7 +424,8 @@ const PlayerStatsPage = () => {
             </Box>
             <Paper elevation={4} sx={{
                 p: { xs: 2, md: 4 },
-                backgroundColor: '#1f673b',
+                // backgroundColor: '#1f673b',
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
                 borderRadius: 4,
                 position: 'relative',
                 overflow: 'hidden',
@@ -459,7 +461,7 @@ const PlayerStatsPage = () => {
                             sx={{
                                 width: '100%',
                                 maxWidth: '100%',
-                                background: '#1f673b',
+                                background: 'transparent',
                                 borderRadius: 4,
                                 boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
                                 display: 'flex',
@@ -476,7 +478,7 @@ const PlayerStatsPage = () => {
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 // scrollbarWidth: 'none',
                                 // msOverflowStyle: 'none',
-                                border: '2px solid green'
+                                border: '2px solid #e56a16'
                             }}
                         >
                             <Avatar
@@ -563,7 +565,7 @@ const PlayerStatsPage = () => {
                             elevation={4}
                             sx={{
                                 p: 3,
-                                backgroundColor: '#1f673b',
+                                backgroundColor: 'transparent',
                                 borderRadius: 4,
                                 height: 370,
                                 overflowY: 'auto',
@@ -576,7 +578,7 @@ const PlayerStatsPage = () => {
                                 '&::-webkit-scrollbar': { display: 'none' },
                                 scrollbarWidth: 'none',
                                 msOverflowStyle: 'none',
-                                border: '2px solid green',
+                                border: '2px solid #e56a16',
                                 display: { xs: 'none', md: 'block' },
 
                             }}
@@ -591,30 +593,30 @@ const PlayerStatsPage = () => {
                                         label="League"
                                         onChange={e => setSelectedLeaderboardLeague(e.target.value)}
                                         sx={{
-                                            background: '#0a3e1e',
+                                            background: '#df571a',
                                             color: '#fff',
                                             '& .MuiSelect-icon': { color: '#fff' },
                                             '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#4caf50',
+                                                borderColor: '#e56a16',
                                             },
                                             '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#388e3c',
+                                                borderColor: '#e56a16',
                                             },
                                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#43a047',
+                                                borderColor: '#e56a16',
                                             },
                                         }}
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
-                                                    background: '#0a3e1e',
-                                                    color: '#fff',
+                                                    background: '#fff',
+                                                    color: '#000000',
                                                 }
                                             }
                                         }}
                                     >
                                         {leagues.map((l) => (
-                                            <MenuItem key={l.id} value={l.id} sx={{ color: '#fff' }}>{l.name}</MenuItem>
+                                            <MenuItem key={l.id} value={l.id} sx={{ color: '#000000' }}>{l.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
@@ -625,24 +627,24 @@ const PlayerStatsPage = () => {
                                         label="Metric"
                                         onChange={e => setSelectedMetric(e.target.value)}
                                         sx={{
-                                            background: '#0a3e1e',
+                                            background: '#dd501c',
                                             color: '#fff',
                                             '& .MuiSelect-icon': { color: '#fff' },
                                             '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#4caf50',
+                                                borderColor: '#e56a16',
                                             },
                                             '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#388e3c',
+                                                borderColor: '#e56a16',
                                             },
                                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#43a047',
+                                                borderColor: '#e56a16',
                                             },
                                         }}
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
-                                                    background: '#0a3e1e',
-                                                    color: '#fff',
+                                                    background: '#fff',
+                                                    color: '#000000',
                                                 }
                                             }
                                         }}
@@ -659,24 +661,24 @@ const PlayerStatsPage = () => {
                                         label="Position Type"
                                         onChange={e => setPositionFilter(e.target.value)}
                                         sx={{
-                                            background: '#0a3e1e',
+                                            background: '#da471e',
                                             color: '#fff',
                                             '& .MuiSelect-icon': { color: '#fff' },
                                             '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#4caf50',
+                                                borderColor: '#e56a16',
                                             },
                                             '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#388e3c',
+                                                borderColor: '#e56a16',
                                             },
                                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#43a047',
+                                                borderColor: '#e56a16',
                                             },
                                         }}
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
-                                                    background: '#0a3e1e',
-                                                    color: '#fff',
+                                                    background: '#fff',
+                                                    color: '#000000',
                                                 }
                                             }
                                         }}
@@ -766,7 +768,7 @@ const PlayerStatsPage = () => {
                                 </Box>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
                                     <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
-                                        <InputLabel sx={{ color: '#1f673b' }}>League</InputLabel>
+                                        <InputLabel sx={{ color: '#fff' }}>League</InputLabel>
                                         <Select
                                             value={selectedLeaderboardLeague}
                                             label="League"
@@ -1002,7 +1004,7 @@ const PlayerStatsPage = () => {
                                 <Divider sx={{ mb: 2, backgroundColor: '#fff', display: { xs: 'none', sm: 'none', md: 'block' } }} />
                                 <Paper elevation={0} sx={{
                                     p: { xs: 0, sm: 0, md: 3 },
-                                    background: '#1f673b',
+                                    background: 'transparent',
                                     mt: { xs: -5, sm: -5, md: 0 }
                                 }}>
                                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>Leagues Played</Typography>
@@ -1058,7 +1060,7 @@ const PlayerStatsPage = () => {
                                     <FormControl size="small" sx={{
                                         minWidth: 140,
                                         flex: 1,
-                                        backgroundColor: '#1f673b',
+                                        backgroundColor: '#e56a16',
                                         borderRadius: '8px',
                                         '.MuiOutlinedInput-notchedOutline': { border: '1.5px solid #43a047 !important' },
                                         '& .MuiInputBase-input': { color: '#fff' },
@@ -1070,15 +1072,15 @@ const PlayerStatsPage = () => {
                                             views={['year']}
                                             value={year && year !== 'all' ? dayjs(year, 'YYYY') : null}
                                             onChange={handleYearChange}
-                                            slotProps={{ textField: { size: 'small', fullWidth: true, InputLabelProps: { sx: { color: '#fff' } }, sx: { '& .MuiOutlinedInput-root': { color: '#fff', background: 'transparent', borderRadius: 2, '& fieldset': { borderColor: '#43a047 !important' }, '&:hover fieldset': { borderColor: '#43a047 !important' }, '&.Mui-focused fieldset': { borderColor: '#43a047 !important' } }, '& .MuiInputLabel-root': { color: '#fff !important' }, '& .MuiInputBase-input': { color: '#fff' } } } }}
+                                            slotProps={{ textField: { size: 'small', fullWidth: true, InputLabelProps: { sx: { color: '#fff' } }, sx: { '& .MuiOutlinedInput-root': { color: '#fff', background: 'transparent', borderRadius: 2, '& fieldset': { borderColor: '#dc4c1d !important' }, '&:hover fieldset': { borderColor: '#dc4c1d !important' }, '&.Mui-focused fieldset': { borderColor: '#dc4c1d !important' } }, '& .MuiInputLabel-root': { color: '#fff !important' }, '& .MuiInputBase-input': { color: '#fff' } } } }}
                                         />
                                     </FormControl>
                                     <FormControl size="small" sx={{
                                         minWidth: 180,
                                         flex: 2,
-                                        backgroundColor: '#1f673b',
+                                        backgroundColor: '#e56a16',
                                         borderRadius: '8px',
-                                        '.MuiOutlinedInput-notchedOutline': { border: '1.5px solid #43a047 !important' },
+                                        '.MuiOutlinedInput-notchedOutline': { border: '1.5px solid #dc4c1d !important' },
                                         '& .MuiInputBase-input': { color: '#fff' },
                                         '& .MuiInputLabel-root': { color: '#fff !important' },
                                         '& .MuiSelect-icon': { color: '#fff' },
@@ -1088,7 +1090,7 @@ const PlayerStatsPage = () => {
                                             value={leagueId || 'all'}
                                             label="League"
                                             onChange={handleLeagueChange}
-                                            sx={{ color: '#fff', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#43a047 !important' } }}
+                                            sx={{ color: '#fff', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#dc4c1d !important' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#dc4c1d !important' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#dc4c1d !important' } }}
                                             renderValue={(selected) => {
                                                 if (selected === 'all') {
                                                     return 'All Leagues';

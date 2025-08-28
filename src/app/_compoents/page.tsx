@@ -5,7 +5,9 @@ import AuthTabs from '@/Components/authtabs/authtabs';
 import Image from 'next/image';
 import Layer from '@/Components/images/championfootballnewlogo.png';
 // import NewImg from '@/Components/images/desktoppicccc.png';
-import NewImg from '@/Components/images/dspic.png';
+import NewImg from '@/Components/images/Done1.jpg';
+// import NewImg from '@/Components/images/Done2.jpg';
+// import NewImg from '@/Components/images/dspic.png';
 import mobile from '@/Components/images/mobile.png';
 import image9 from '@/Components/images/image9.png';
 import image10 from '@/Components/images/image10.png';
@@ -23,20 +25,39 @@ export default function LandingPage() {
         width: '100%',
         minHeight: '100vh',
         position: 'relative',
-        // ✅ Responsive background images
+        // Fallback color fills any area not covered by the background image
+        // backgroundColor: '#000000',
+        // ✅ Responsive background images with gradient underlay
         backgroundImage: {
-          xs: `url(${mobile.src})`, // small screens par mobile bg
-          sm: `url(${NewImg.src})`, // tablet aur upar par desktop bg
+          xs: `url(${mobile.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
+          sm: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
         },
-        backgroundSize: { xs: 'cover', md: 'cover' }, // full coverage
-        backgroundPosition: { xs: 'center top', md: 'center center' }, // positioning
-        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'contain, cover',
+        backgroundPosition: 'top center, top center',
+        backgroundRepeat: 'no-repeat, no-repeat',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         px: { xs: 2, md: 3 },
         py: { xs: 3, md: 4 },
-        backgroundAttachment:'fixed'
+        backgroundAttachment: 'scroll',
+        // width: '100%',
+        // minHeight: '100vh',
+        // position: 'relative',
+        // // ✅ Responsive background images
+        // backgroundImage: {
+        //   xs: `url(${mobile.src})`, // small screens par mobile bg
+        //   sm: `url(${NewImg.src})`, // tablet aur upar par desktop bg
+        // },
+        // backgroundSize: { xs: 'cover', md: 'cover' }, // full coverage
+        // backgroundPosition: { xs: 'center top', md: 'center center' }, // positioning
+        // backgroundRepeat: 'no-repeat',
+        // display: 'flex',
+        // flexDirection: 'column',
+        // justifyContent: 'space-between',
+        // px: { xs: 2, md: 3 },
+        // py: { xs: 3, md: 4 },
+        // backgroundAttachment:'fixed'
         // width: '100%',
         // minHeight: '100vh',
         // position: 'relative',
@@ -220,7 +241,6 @@ export default function LandingPage() {
           ))}
         </Box>
       </Box>
-
     </Box>
   );
 }
