@@ -1,7 +1,7 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, IconButton, CircularProgress, TextField, Menu, ListItemIcon, ListItemText } from '@mui/material';
-import { ArrowLeft, ChevronDown, Edit, Trophy } from 'lucide-react';
+import { Box, Button, Container, Typography, Paper,  MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { ChevronDown, Edit, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -208,23 +208,6 @@ export default function AllMatches() {
             setLoading(false);
         }
     }, [selectedLeague, token, fetchMatchesByLeague]);
-
-    const handleBackToDashboard = () => {
-        router.push('/home');
-    };
-
-    const handleLeagueChange = (event: SelectChangeEvent<string>) => {
-        const newLeagueId = event.target.value as string;
-        console.log('League selection changed to:', newLeagueId);
-        console.log('Available leagues:', leagues);
-        const selectedLeagueInfo = leagues.find(l => l.id === newLeagueId);
-        console.log('Selected league info:', selectedLeagueInfo);
-        setSelectedLeague(newLeagueId);
-        // Set loading to true when league changes to show loading state
-        if (newLeagueId !== 'all') {
-            setLoading(true);
-        }
-    };
 
     // Get the name of the selected league for display
     const selectedLeagueName = selectedLeague === 'all'

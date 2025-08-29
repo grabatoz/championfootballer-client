@@ -102,10 +102,16 @@ const DreamTeamPage = () => {
     return (pos || '').toUpperCase().slice(0, 3);
   };
 
+  type JerseyValue = number | string;
+  type WithJerseyFields = {
+    jerseyNumber?: JerseyValue;
+    shirtNumber?: JerseyValue;
+    number?: JerseyValue;
+  };
+
   // Jersey number helper (uses player.jerseyNumber/shirtNumber/number if present; otherwise sensible defaults)
-  const getJerseyNumber = (p: Player | undefined, type: string) => {
-    const anyP = p as any;
-    const num = anyP?.jerseyNumber ?? anyP?.shirtNumber ?? anyP?.number;
+  const getJerseyNumber = (p: (Player & WithJerseyFields) | undefined, type: string): string => {
+    const num: JerseyValue | undefined = p?.jerseyNumber ?? p?.shirtNumber ?? p?.number;
     if (typeof num === 'number' || typeof num === 'string') return String(num);
     const defaults: Record<string, string> = { goalkeeper: '1', defenders: '4', midfielders: '8', forwards: '9' };
     return defaults[type] || '?';
