@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Avatar, Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
+import { Box, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Button } from '@mui/material';
 import { useAuth } from '@/lib/useAuth';
 import fieldImg from '@/Components/images/ground.webp'; // Place your field image in public/assets/field.png
-import PersonIcon from '@mui/icons-material/Person';
-import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dreamteam from '@/Components/images/dream.png'
+import { Trophy, ChevronDown } from 'lucide-react';
+import ShirtImg from '@/Components/images/shirtimg.png';
+import Image from 'next/image';
 
 
 interface Player {
@@ -54,6 +55,64 @@ const DreamTeamPage = () => {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
+  const leaguesDropdownOpen = Boolean(leaguesDropdownAnchor);
+
+  const handleLeaguesDropdownOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setLeaguesDropdownAnchor(e.currentTarget);
+  };
+  const handleLeaguesDropdownClose = () => setLeaguesDropdownAnchor(null);
+  const handleLeagueSelect = (id: string) => {
+    setSelectedLeague(id);
+    handleLeaguesDropdownClose();
+  };
+
+  const formatLeagueName = (name: string) => {
+    if (!name) return '';
+    const words = name.trim().split(/\s+/);
+    const caps = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    return caps;
+  };
+
+  const sortedLeagues = React.useMemo(() => {
+    if (!leagues?.length) return [];
+    const arr = [...leagues];
+    const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague) : -1;
+    if (idx > 0) {
+      const [curr] = arr.splice(idx, 1);
+      arr.unshift(curr);
+    }
+    return arr;
+  }, [leagues, selectedLeague]);
+
+  // Flatten Dream Team players for lists
+  const dreamTeamPlayers = React.useMemo(() => {
+    const list: Player[] = [];
+    if (dreamTeam?.goalkeeper?.length) list.push(...dreamTeam.goalkeeper);
+    if (dreamTeam?.defenders?.length) list.push(...dreamTeam.defenders);
+    if (dreamTeam?.midfielders?.length) list.push(...dreamTeam.midfielders);
+    if (dreamTeam?.forwards?.length) list.push(...dreamTeam.forwards);
+    return list;
+  }, [dreamTeam]);
+
+  // Position abbreviation for UI (GK, DF, MD, ST)
+  const posAbbr = (pos: string) => {
+    const p = (pos || '').toLowerCase();
+    if (p.startsWith('goal')) return 'GK';
+    if (p.startsWith('def')) return 'DF';
+    if (p.startsWith('mid')) return 'MD';
+    if (p.startsWith('for') || p.startsWith('str')) return 'ST';
+    return (pos || '').toUpperCase().slice(0, 3);
+  };
+
+  // Jersey number helper (uses player.jerseyNumber/shirtNumber/number if present; otherwise sensible defaults)
+  const getJerseyNumber = (p: Player | undefined, type: string) => {
+    const anyP = p as any;
+    const num = anyP?.jerseyNumber ?? anyP?.shirtNumber ?? anyP?.number;
+    if (typeof num === 'number' || typeof num === 'string') return String(num);
+    const defaults: Record<string, string> = { goalkeeper: '1', defenders: '4', midfielders: '8', forwards: '9' };
+    return defaults[type] || '?';
+  };
 
   const fetchLeagues = useCallback(async () => {
     console.log('🔍 Fetching leagues...');
@@ -129,287 +188,228 @@ const DreamTeamPage = () => {
   }, [leagues, selectedLeague, dreamTeam, loading]);
 
   const fieldPositions = [
-    { type: 'goalkeeper', left: '47%', top: '80%' },
-    { type: 'defenders', left: '30%', top: '60%' },
-    { type: 'defenders', left: '65%', top: '60%' },
-    { type: 'midfielders', left: '47%', top: '40%' },
-    { type: 'forwards', left: '47%', top: '15%' },
+    // Nudged inside a bit to avoid clipping with larger shirts
+    { type: 'goalkeeper', left: '47%', top: '75%' },
+    { type: 'defenders', left: '30%', top: '62%' },
+    { type: 'defenders', left: '65%', top: '62%' },
+    { type: 'midfielders', left: '47%', top: '44%' },
+    { type: 'forwards', left: '47%', top: '18%' },
   ];
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      {/* <Box
+      <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", sm: "row" }, // Stack vertically on xs, row on sm+
-          alignItems: "center", // Center items horizontally when stacked, vertically when in row
-          justifyContent: { xs: "space-between", sm: "center" }, // Space between on xs, center on sm+
+          flexDirection: { xs: "column", md: "row" }, // Stack vertically on xs/sm, row on md+
+          alignItems: { xs: "stretch", md: "center" }, // Stretch on mobile, center on desktop
+          justifyContent: "space-between",
           mb: 4,
-          gap: { xs: 2, sm: 2 }, // Gap between stacked items on xs, or between columns on sm+
-          width: "100%", // Ensure it takes full width
+          gap: { xs: 3, md: 2 }, // Larger gap on mobile for better separation
+          width: "100%",
         }}
       >
-        
+        {/* Mobile: League selector button */}
         <Box
           sx={{
-            display: "flex",
+            display: { xs: "flex", md: "none" },
+            justifyContent: "space-between",
             alignItems: "center",
-            justifyContent: { xs: "space-between", sm: "flex-start" }, // Space between on xs, flex-start on sm+
-            width: { xs: "100%", sm: "auto" }, // Take full width on xs, auto on sm+
-            gap: { xs: 1, sm: 2 }, // Gap between button and select
-            order: { xs: 1, sm: "unset" }, // Ensures this box is always first on xs screens
-            mr: { sm: "auto" }, // Pushes this box to the left on sm+ screens
+            width: "100%",
           }}
         >
+          {/* Right: Form Control */}
           <Button
-            startIcon={<ArrowLeft />}
-            onClick={() => router.push(`/home`)}
+            onClick={handleLeaguesDropdownOpen}
+            endIcon={<ChevronDown size={18} />}
             sx={{
-              color: "white",
-              backgroundColor: "#1f673b",
-              "&:hover": { backgroundColor: "#388e3c" },
-              minWidth: "fit-content",
-              fontSize: { xs: "0.75rem", sm: "0.875rem" }, // Responsive font size
-              px: { xs: 1, sm: 2 }, // Responsive padding
-              py: { xs: 0.5, sm: 1 }, // Responsive padding
+              textTransform: 'uppercase',
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 'bold',
+              lineHeight: 1.2,
+              minWidth: 0,
+              textAlign: 'left',
+              color: 'white',
+              backgroundColor: '#2B2B2B',
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': { backgroundColor: '#2B2B2B' },
             }}
           >
-            Back to Dashboard
+            {formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
           </Button>
-          <Typography
-          variant="h3"
-          component="h1"
+        </Box>
+
+        {/* Center: Dream Team Logo + Text */}
+        <Box
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 2,
-            flex: { xs: "0 0 auto", sm: 1 }, // On sm+, it grows to take available space
-            textAlign: "center",
-            order: { xs: 2, sm: "unset" }, // Ensures this box is second on xs screens
-            mt: { xs: 2, sm: 0 }, // Add top margin on xs to separate from the top row
-            fontSize: { xs: "1.8rem", sm: "2.2rem", md: "3rem" }, // Responsive font size for title
-            whiteSpace: "nowrap", // Prevent wrapping of "Dream Team" text
+            width: { xs: "100%", md: "auto" },
+            mt: { xs: 2, md: 0 }, // Top margin on mobile
+            mb: { xs: 2, md: 0 }, // Bottom margin on mobile
           }}
         >
-          <Image src={dreamteam.src}alt="Dream Team Logo" height={80} width={80} />
-          Dream Team
-        </Typography>
-          <FormControl sx={{ minWidth: { xs: 160, sm: 200, md: 240 } }}>
-           
-            <InputLabel id="league-select-label">
-              Select League
-            </InputLabel>
-            <Select
-              labelId="league-select-label"
-              value={selectedLeague}
-              label="Select League"
-              onChange={(e) => setSelectedLeague(e.target.value as string)}
+          <Image
+            src={dreamteam.src}
+            alt="Dream Team Logo"
+            height={80}
+            width={80}
+            style={{
+              display: "block",
+              objectFit: "contain"
+            }}
+          />
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2.2rem" },
+              fontWeight: "bold",
+              color: "black",
+              textAlign: "center",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Dream Team
+          </Typography>
+        </Box>
+
+        {/* Desktop: League selector button */}
+        <Box
+          sx={{
+            display: { xs: "none", md: "flex" },
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button
+            onClick={handleLeaguesDropdownOpen}
+            endIcon={<ChevronDown size={20} />}
+            sx={{
+              textTransform: 'uppercase',
+              fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+              fontWeight: 'bold',
+              lineHeight: 1.2,
+              wordBreak: 'break-word',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'wrap',
+              flexShrink: 1,
+              minWidth: 0,
+              textAlign: { xs: 'left', md: 'left' },
+              color: 'white',
+              backgroundColor: '#2B2B2B',
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': { backgroundColor: '#2B2B2B' },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            {formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Shared dropdown menu */}
+      <Menu
+        anchorEl={leaguesDropdownAnchor}
+        open={leaguesDropdownOpen}
+        onClose={handleLeaguesDropdownClose}
+        PaperProps={{
+          sx: {
+            p: 0.5,
+            mt: 1,
+            minWidth: 240,
+            bgcolor: 'rgba(15,15,15,0.92)',
+            color: '#E5E7EB',
+            borderRadius: 2.5,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+            overflow: 'hidden',
+          }
+        }}
+      >
+        {sortedLeagues.map((leagueItem) => {
+          const isActive = leagueItem.id === selectedLeague;
+          return (
+            <MenuItem
+              key={leagueItem.id}
+              onClick={() => handleLeagueSelect(leagueItem.id)}
+              sx={{
+                borderRadius: 1.5,
+                mx: 0.5,
+                my: 0.25,
+                py: 1.25,
+                px: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                color: '#E5E7EB',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                },
+                ...(isActive && {
+                  background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
+                  border: '1px solid rgba(3,136,227,0.35)',
+                }),
+              }}
             >
-              {leagues.map((league) => (
-                <MenuItem key={league.id} value={league.id}>
-                  {league.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>       
-      </Box> */}
-    
- <Box
-  sx={{
-    display: "flex",
-    flexDirection: { xs: "column", md: "row" }, // Stack vertically on xs/sm, row on md+
-    alignItems: { xs: "stretch", md: "center" }, // Stretch on mobile, center on desktop
-    justifyContent: "space-between",
-    mb: 4,
-    gap: { xs: 3, md: 2 }, // Larger gap on mobile for better separation
-    width: "100%",
-  }}
->
-  {/* Top Row for Mobile: Back Button + Form Control */}
-  <Box
-    sx={{
-      display: { xs: "flex", md: "none" }, // Only show on mobile
-      justifyContent: "space-between",
-      alignItems: "center",
-      width: "100%",
-    }}
-  >
-    {/* Left: Back Button */}
-    <Button
-      startIcon={<ArrowLeft />}
-      onClick={() => router.push(`/home`)}
-      sx={{
-        color: "white",
-        backgroundColor: "#1f673b",
-        "&:hover": { backgroundColor: "#388e3c" },
-        minWidth: "fit-content",
-        fontSize: { xs: "0.75rem", sm: "0.875rem" },
-        px: { xs: 2, sm: 3 },
-        py: { xs: 1, sm: 1.5 },
-        borderRadius: 2,
-        fontWeight: "bold",
-        textTransform: "none",
-        height: 55,
-      }}
-    >
-      Back to Dashboard
-    </Button>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+              </ListItemIcon>
+              <ListItemText
+                primary={leagueItem.name}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? 700 : 500,
+                    letterSpacing: 0.2,
+                    color: isActive ? '#FFFFFF' : '#E5E7EB',
+                  }
+                }}
+              />
+              {isActive ? (
+                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box
+                    sx={{
+                      px: 1,
+                      py: 0.25,
+                      bgcolor: '#0388E3',
+                      color: 'white',
+                      borderRadius: '9999px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: 0.3,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Current
+                  </Box>
+                </Box>
+              ) : null}
+            </MenuItem>
+          );
+        })}
+      </Menu>
 
-    {/* Right: Form Control */}
-    <FormControl
-      sx={{
-        minWidth: { xs: 160, sm: 200, md: 240 }, // Responsive minWidth
-        ml: { xs: 1, sm: "auto" }, // Push to right on sm+ screens
-      }}
-    >
-      <InputLabel id="league-select-label">Select League</InputLabel>
-      <Select
-        labelId="league-select-label"
-        value={selectedLeague}
-        label="Select League"
-        onChange={(e) => setSelectedLeague(e.target.value as string)}
-        // MenuProps={{
-        //   PaperProps: {
-        //     sx: {
-        //       backgroundColor: "#0a3e1e",
-        //       color: "white",
-        //       "& .MuiMenuItem-root": {
-        //         color: "white",
-        //         "&:hover": {
-        //           backgroundColor: "#1f673b",
-        //         },
-        //       },
-        //     },
-        //   },
-        // }}
-      >
-        {leagues.map((league) => (
-          <MenuItem key={league.id} value={league.id}>
-            {league.name}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  </Box>
-
-  {/* Desktop Layout: Back Button (Left) */}
-  {/* <Box
-    sx={{
-      display: { xs: "none", md: "flex" }, // Only show on desktop
-      justifyContent: "flex-start",
-    }}
-  >
-    <Button
-      startIcon={<ArrowLeft />}
-      onClick={() => router.push(`/home`)}
-      sx={{
-        color: "white",
-        backgroundColor: "#1f673b",
-        "&:hover": { backgroundColor: "#388e3c" },
-        minWidth: "fit-content",
-        fontSize: "0.875rem",
-        px: 3,
-        py: 1.5,
-        borderRadius: 2,
-        fontWeight: "bold",
-        textTransform: "none",
-      }}
-    >
-      Back to Dashboard
-    </Button>
-  </Box> */}
-
-  {/* Center: Dream Team Logo + Text */}
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 2,
-      width: { xs: "100%", md: "auto" },
-      mt: { xs: 2, md: 0 }, // Top margin on mobile
-      mb: { xs: 2, md: 0 }, // Bottom margin on mobile
-    }}
-  >
-    <Image
-      src={dreamteam.src}
-      alt="Dream Team Logo"
-      height={80}
-      width={80}
-      style={{ 
-        display: "block",
-        objectFit: "contain"
-      }}
-    />
-    <Typography
-      variant="h3"
-      component="h1"
-      sx={{
-        fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2.2rem" },
-        fontWeight: "bold",
-        color: "black",
-        textAlign: "center",
-        whiteSpace: "nowrap",
-      }}
-    >
-      Dream Team
-    </Typography>
-  </Box>
-
-  {/* Desktop Layout: Form Control (Right) */}
-  <Box
-    sx={{
-      display: { xs: "none", md: "flex" }, // Only show on desktop
-      justifyContent: "flex-end",
-    }}
-  >
-    <FormControl
-      sx={{
-        minWidth: { xs: 160, sm: 200, md: 240 }, // Responsive minWidth
-        ml: { xs: 0, sm: "auto" }, // Push to right on sm+ screens
-      }}
-    >
-      <InputLabel id="league-select-label-desktop">Select League</InputLabel>
-      <Select
-        labelId="league-select-label-desktop"
-        value={selectedLeague}
-        label="Select League"
-        onChange={(e) => setSelectedLeague(e.target.value as string)}
-        // MenuProps={{
-        //   PaperProps: {
-        //     sx: {
-        //       backgroundColor: "#0a3e1e",
-        //       color: "white",
-        //       "& .MuiMenuItem-root": {
-        //         color: "white",
-        //         "&:hover": {
-        //           backgroundColor: "#1f673b",
-        //         },
-        //       },
-        //     },
-        //   },
-        // }}
-      >
-        {leagues.map((league) => (
-          <MenuItem key={league.id} value={league.id}>
-            {league.name}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  </Box>
-</Box>
       {loading ? (
         <Box sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h6">Loading Dream Team...</Typography>
         </Box>
       ) : (
         <>
-          <Box sx={{ position: 'relative', width: '100%', maxWidth: 900, mx: 'auto', aspectRatio: '2.1', mb: 4 }}>
-        {/* Dream Team Title and Logo - centered, moves below on small screens */}
-      <Image fill src={fieldImg} alt="Football Field" style={{ width: '100%', borderRadius: 16 }} />
+          <Box sx={{ position: 'relative', width: '100%', maxWidth: 1200, mx: 'auto', aspectRatio: '2.1', mb: 4, overflow: 'hidden' }}>
+            {/* Dream Team Title and Logo - centered, moves below on small screens */}
+            <Image fill src={fieldImg} alt="Football Field" style={{ width: '100%', borderRadius: 16 }} />
             {/* Overlay players */}
             {fieldPositions.map((pos, idx) => {
               let player: Player | undefined;
@@ -430,29 +430,64 @@ const DreamTeamPage = () => {
                     zIndex: 2,
                   }}
                 >
-                  <Avatar
-                    src={player.profilePicture}
-                    sx={{ width: 64, height: 64, bgcolor: '#1976d2', border: '3px solid #fff', mx: 'auto', mb: 1 }}
-                  >
-                    <PersonIcon sx={{ fontSize: 48, color: 'white' }} />
-                  </Avatar>
+                  {/* Shirt with centered jersey number */}
                   <Box
                     sx={{
                       position: 'relative',
-                      top: '-36px',
-                      width: 64,
+                      width: { xs: 64, sm: 80, md: 94 },   // responsive shirt size
+                      height: { xs: 64, sm: 80, md: 94 },
                       mx: 'auto',
-                      background: 'rgba(0,0,0,0.7)',
-                      color: 'white',
-                      borderRadius: 2,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      py: 0.5,
-                      px: 1,
-                      textShadow: '0 1px 2px #000',
                     }}
                   >
-                    {player.firstName}
+                    <Image
+                      src={ShirtImg.src}
+                      alt="Player Shirt"
+                      width={94}
+                      height={94}
+                      style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: { xs: 14, sm: 16, md: 18 },
+                          lineHeight: 1,
+                          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        }}
+                      >
+                        {getJerseyNumber(player, pos.type)}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{
+                          mt: 0.25,
+                          px: 0.5,
+                          maxWidth: { xs: 48, sm: 52, md: 56 },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          fontSize: { xs: 9, sm: 10, md: 10 },
+                          lineHeight: 1.1,
+                          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        }}
+                      >
+                        {player.firstName} {player.lastName}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
               );
@@ -460,8 +495,89 @@ const DreamTeamPage = () => {
           </Box>
         </>
       )}
+
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Player stats
+        </Typography>
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            border: '1.5px solid #22C55E',              // green border
+            bgcolor: 'rgba(34,197,94,0.06)',            // light green bg
+          }}
+        >
+          {dreamTeamPlayers.length ? (
+            <Box
+              component="ul"
+              sx={{
+                listStyle: 'none',
+                p: 0,
+                m: 0,
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 1.25,
+              }}
+            >
+              {dreamTeamPlayers.map((p) => (
+                <Box
+                  key={p.id}
+                  component="li"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    position: 'relative',
+                    pl: 2,
+                  }}
+                >
+                  {/* bullet dot */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 6,
+                      height: 6,
+                      bgcolor: '#065F46',
+                      borderRadius: '50%',
+                    }}
+                  />
+                  {/* green shirt */}
+                  <Image
+                    src={ShirtImg.src}
+                    alt="Shirt"
+                    width={18}
+                    height={18}
+                    style={{
+                      filter:
+                        'brightness(0) saturate(100%) invert(41%) sepia(86%) saturate(520%) hue-rotate(86deg) brightness(95%) contrast(95%)',
+                    }}
+                  />
+                  <Typography component="span" sx={{ fontWeight: 700 }}>
+                    {p.firstName} {p.lastName}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{ ml: 0.5, color: '#065F46', fontWeight: 700 }}
+                  >
+                    ({posAbbr(p.position)})
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No players in this Dream Team yet.
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
     </Box>
   );
 };
 
-export default DreamTeamPage; 
+export default DreamTeamPage;

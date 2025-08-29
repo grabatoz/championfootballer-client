@@ -1,7 +1,7 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, IconButton, CircularProgress } from '@mui/material';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { Box, Button, Container, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, IconButton, CircularProgress, TextField, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { ArrowLeft, ChevronDown, Edit, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -280,6 +280,9 @@ export default function AllMatches() {
     const [league, setLeague] = useState<League | null>(null);
     const [, setToastMessage] = useState<string | null>(null);
     const [isSubmittingStats, setIsSubmittingStats] = React.useState(false);
+    const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+    const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
+
 
 
     const fetchLeagueDetails = useCallback(async () => {
@@ -534,8 +537,54 @@ export default function AllMatches() {
         });
     };
 
+
+    const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setLeaguesDropdownAnchor(event.currentTarget);
+        setLeaguesDropdownOpen(true);
+    };
+
+    const handleLeaguesDropdownClose = () => {
+        setLeaguesDropdownOpen(false);
+        setLeaguesDropdownAnchor(null);
+    };
+
+    const formatLeagueName = (name: string): string => {
+        if (!name) return '';
+
+        // Capitalize first letter of the name
+        const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+
+        // Get first letter of each word and join them
+        const words = name.split(' ');
+        const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
+
+        // Return formatted name with initials in brackets
+        return `${capitalizedName} (${initials})`;
+    };
+
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
+
+    // Replace handleLeagueSelect to only update state and close the menu
+    const handleLeagueSelect = (selectedLeagueId: string) => {
+        if (selectedLeagueId !== selectedLeague) {
+            setSelectedLeague(selectedLeagueId);
+            setLoading(true); // effects will fetch matches and league details
+        }
+        handleLeaguesDropdownClose();
+    };
+
+    // Keep the selected league at the top of the dropdown
+    const sortedLeagues = React.useMemo(() => {
+        if (!leagues?.length) return [];
+        const arr = [...leagues];
+        const idx = arr.findIndex(l => l.id === selectedLeague);
+        if (idx > 0) {
+            const [sel] = arr.splice(idx, 1);
+            arr.unshift(sel);
+        }
+        return arr;
+    }, [leagues, selectedLeague]);
 
     return (
         <Box
@@ -547,7 +596,7 @@ export default function AllMatches() {
             }}
         >
             <Container maxWidth="lg">
-                <Button
+                {/* <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToDashboard}
                     sx={{
@@ -556,68 +605,237 @@ export default function AllMatches() {
                     }}
                 >
                     Back to Dashboard
-                </Button>
+                </Button> */}
 
-                <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
-                    <FormControl
-                        fullWidth
-                        sx={{
-                            maxWidth: 400,
-                            // Orange -> Black gradient on the selector too
-                            background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, #000000 100%)',
-                            borderRadius: 3,
-                            boxShadow: '0 2px 12px 0 rgba(67,160,71,0.10)',
-                            '& .MuiOutlinedInput-root': {
-                                color: '#fff',
-                                background: 'transparent',
-                                borderRadius: 3,
-                                '& fieldset': {
-                                    borderColor: 'rgba(255,255,255,0.2)',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'rgba(255,255,255,0.35)',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#fff',
-                                },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#fff !important',
-                                '&.Mui-focused': {
-                                    color: '#fff !important'
-                                },
-                                '&.MuiFormLabel-filled': {
-                                    color: '#fff !important'
-                                },
-                                transform: 'translate(14px, 16px) scale(1)',
-                                '&.MuiInputLabel-shrink': {
-                                    transform: 'translate(14px, 6px) scale(0.75)',
-                                    backgroundColor: 'transparent',
-                                    padding: '0 4px'
-                                }
-                            },
-                            '& .MuiSelect-icon': {
-                                color: '#fff',
-                            },
-                        }}
+                <Box sx={{ mb: { xs: 3, md: 5 } }}>
+                    <Typography variant="h3" sx={{
+                        mb: { xs: 3, md: 4 },
+                        color: '#404040',
+                        // fontFamily: 'Arial Black, Arial, sans-serif',
+                        fontFamily: '"Anton", sans-serif',
+                        fontWeight: 'semibold',
+                        fontSize: { xs: '32px', sm: '42px', md: '56px' },
+                        textAlign: { xs: 'center', md: 'left' },
+                        textTransform: 'uppercase',
+                        letterSpacing: '2px',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                        className='all-leagues-heading'
                     >
-                        <InputLabel sx={{ mt: -0.7 }} id="league-select-label">Select League</InputLabel>
-                        <Select
-                            labelId="league-select-label"
-                            id="league-select"
-                            value={selectedLeague}
-                            label="Select League"
-                            onChange={handleLeagueChange}
-                            sx={{ color: '#fff' }}
-                        >
-                            <MenuItem value="all" sx={{ color: '#1f673b', fontWeight: 600 }}>All Leagues</MenuItem>
-                            {leagues.map((league) => (
-                                <MenuItem key={league.id} value={league.id} sx={{ color: '#1f673b', fontWeight: 600 }}>
-                                    {league.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                        ALL LEAGUES
+                    </Typography>
+
+                    {/* Create/Join League Section */}
+                    <Box sx={{
+                        display: 'flex',
+                        gap: { xs: 2, md: 3 },
+                        mb: { xs: 3, md: 5 },
+                        flexWrap: 'wrap',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' }
+                    }}>
+
+                        <Box sx={{
+                            display: 'flex',
+                            gap: { xs: 1, md: 2 },
+                            width: { xs: '100%', sm: '1' },
+                            alignItems: 'center',
+                            flexDirection: { xs: 'column', sm: 'row' }
+                        }}>
+                            <Button
+                                variant="contained"
+                                // onClick={() => setIsDialogOpen(true)}
+                                sx={{
+                                    bgcolor: '#0388E3',
+                                    color: 'white',
+                                    fontFamily: 'Arial, Helvetica, sans-serif',
+                                    fontWeight: 'bold',
+                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                                    '&:hover': { bgcolor: '#0388E3' },
+                                    width: { xs: '100%', sm: 'fit-content' },
+                                    borderRadius: 2,
+                                    py: { xs: 1.5, md: 1 },
+                                    px: { xs: 3, md: 3 },
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    textTransform: 'none'
+                                }}
+                            >
+                                <Link href={`/league/${league?.id}/match`}>
+                                Create New Match
+                                </Link>
+                            </Button>
+                            {/* <TextField
+                                label="Enter invite code"
+                                value={inviteCode}
+                                onChange={(e) => setInviteCode(e.target.value)}
+                                sx={{
+                                  flex: 1,
+                                  width: { xs: '100%', sm: 'auto' },
+                                  '& .MuiOutlinedInput-root': {
+                                    color: 'black',
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    borderRadius: 2,
+                                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
+                                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
+                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
+                                  },
+                                  '& .MuiInputLabel-root': { color: 'green' },
+                                  
+                                }}
+                              /> */}
+                            {/* <TextField
+                                label="Enter invite code"
+                                // value={inviteCode}
+                                // onChange={(e) => setInviteCode(e.target.value)}
+                                size="medium"
+                                sx={{
+                                  flex: 1,
+                                  width: { xs: '100%', sm: 'auto' },
+                                  '& .MuiOutlinedInput-root': {
+                                    color: 'black',
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    borderRadius: 2,
+                                    padding: '0', // Remove extra padding
+                                    '& input': {
+                                      padding: '13px 12px', // Reduce input height
+                                    },
+                                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                                  },
+                                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
+                                }}
+                              /> */}
+                            {league ? (
+                                <Button
+                                    onClick={handleLeaguesDropdownOpen}
+                                    sx={{
+                                        textTransform: 'uppercase',
+                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+                                        fontWeight: 'bold',
+                                        lineHeight: 1.2,
+                                        wordBreak: 'break-word',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'wrap',
+                                        flexShrink: 1,
+                                        minWidth: 0,
+                                        textAlign: { xs: 'left', md: 'left' },
+                                        color: 'white',
+                                        backgroundColor: '#2B2B2B',
+                                        borderRadius: 2,
+                                        px: 2,
+                                        py: 1,
+                                        '&:hover': {
+                                            backgroundColor: '#2B2B2B',
+                                        },
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        // border: '1px solid rgba(255,255,255,0.3)',
+                                    }}
+                                    endIcon={<ChevronDown size={20} />}
+                                >
+                                    {formatLeagueName(league.name)}
+                                </Button>
+                            ) : (
+                                <Typography
+                                    sx={{
+                                        textTransform: 'uppercase',
+                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
+                                        fontWeight: 'bold',
+                                        color: 'white',
+                                    }}
+                                >
+                                    Loading...
+                                </Typography>
+                            )}
+                            <Menu
+                                anchorEl={leaguesDropdownAnchor}
+                                open={leaguesDropdownOpen}
+                                onClose={handleLeaguesDropdownClose}
+                                PaperProps={{
+                                    sx: {
+                                      p: 0.5,
+                                      mt: 1,
+                                      minWidth: 240,
+                                      bgcolor: 'rgba(15,15,15,0.92)',
+                                      color: '#E5E7EB',
+                                      borderRadius: 2.5,
+                                      border: '1px solid rgba(255,255,255,0.08)',
+                                      backdropFilter: 'blur(10px)',
+                                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                      overflow: 'hidden',
+                                    }
+                                  }}
+                            >
+                                {sortedLeagues.map((leagueItem) => {
+                                  const isActive = leagueItem.id === selectedLeague;
+                                  return (
+                                    <MenuItem
+                                      key={leagueItem.id}
+                                      onClick={() => handleLeagueSelect(leagueItem.id)}
+                                      sx={{
+                                        borderRadius: 1.5,
+                                        mx: 0.5,
+                                        my: 0.25,
+                                        py: 1.25,
+                                        px: 1.5,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        color: '#E5E7EB',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                          transform: 'translateY(-1px)',
+                                          background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                                        },
+                                        ...(isActive && {
+                                          background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
+                                          border: '1px solid rgba(3,136,227,0.35)',
+                                        }),
+                                      }}
+                                    >
+                                      <ListItemIcon sx={{ minWidth: 36 }}>
+                                        <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                                      </ListItemIcon>
+                                      <ListItemText
+                                        primary={leagueItem.name}
+                                        sx={{
+                                          '& .MuiListItemText-primary': {
+                                            fontSize: '0.95rem',
+                                            fontWeight: isActive ? 700 : 500,
+                                            letterSpacing: 0.2,
+                                            color: isActive ? '#FFFFFF' : '#E5E7EB',
+                                          }
+                                        }}
+                                      />
+                                      {isActive ? (
+                                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          <Box
+                                            sx={{
+                                              px: 1,
+                                              py: 0.25,
+                                              bgcolor: '#0388E3',
+                                              color: 'white',
+                                              borderRadius: '9999px',
+                                              fontSize: 10,
+                                              fontWeight: 700,
+                                              letterSpacing: 0.3,
+                                              textTransform: 'uppercase',
+                                            }}
+                                          >
+                                            Current
+                                          </Box>
+                                        </Box>
+                                      ) : null}
+                                    </MenuItem>
+                                  );
+                                })}
+                            </Menu>
+                        </Box>
+                    </Box>
                 </Box>
                 {/* Match Cards */}
                 <Box sx={{
@@ -647,7 +865,7 @@ export default function AllMatches() {
                         <Paper
                             elevation={0}
                             sx={{
-                                background: '#1f673b',
+                               background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                 borderRadius: 3,
                                 p: 4,
                                 textAlign: 'center',
@@ -864,7 +1082,7 @@ export default function AllMatches() {
                                                             color: 'white',
                                                             fontSize: '0.75rem',
                                                             py: 0.5,
-                                                            px: 1, // Add horizontal padding for better proportions
+                                                            px: 1.5, // Add horizontal padding for better proportions
                                                             borderRadius: 1, // Slightly rounded corners
                                                             boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
                                                             transition: 'all 0.2s ease-in-out', // Smooth hover effects
@@ -1020,7 +1238,7 @@ export default function AllMatches() {
                                                         }}>
                                                             {formatMatchTime(match.date)}
                                                         </Typography>
-                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 8.5, mt: -7 }} />
+                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
                                                     </Box>
                                                 </Box>
                                             </Link>

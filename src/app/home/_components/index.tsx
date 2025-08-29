@@ -116,6 +116,18 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
     fetchUserLeagues();
   }, [token]);
 
+  // Keep selected league at top
+  const sortedUserLeagues = React.useMemo(() => {
+    if (!userLeagues?.length) return [];
+    const arr = [...userLeagues];
+    const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague.id) : -1;
+    if (idx > 0) {
+      const [sel] = arr.splice(idx, 1);
+      arr.unshift(sel);
+    }
+    return arr;
+  }, [userLeagues, selectedLeague]);
+
   if (!loading && userLeagues.length === 0) {
     return (
       <Box sx={{
@@ -221,37 +233,89 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
 
       {/* Dropdown menu */}
       {showDropdown && (
-        <Box sx={{
-          position: 'absolute',
-          top: '100%',
-          width: '100%',
-          maxWidth: { xs: '280px', sm: '320px' },
-          maxHeight: '300px',
-          overflowY: 'auto',
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-          boxShadow: 3,
-          mt: 1,
-          zIndex: 9999
-        }}>
-          {userLeagues.map((league) => (
-            <MenuItem
-              key={league.id}
-              onClick={() => {
-                setSelectedLeague(league);
-                setShowDropdown(false);
-              }}
-              sx={{
-                '&:hover': { bgcolor: '#f5f5f5' },
-                borderBottom: '1px solid #eee'
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Trophy size={20} color="#43a047" />
-                <Typography>{formatLeagueName(league.name)}</Typography>
-              </Box>
-            </MenuItem>
-          ))}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '100%',
+            width: '100%',
+            maxWidth: { xs: '280px', sm: '320px' },
+            maxHeight: 300,
+            overflowY: 'auto',
+            p: 0.5,
+            mt: 1,
+            zIndex: 9999,
+            bgcolor: '#00A77F',
+            color: '#FFFFFF',
+            borderRadius: 2,
+            border: '2px solid #FFFFFF',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          }}
+        >
+          {sortedUserLeagues.map((league) => {
+            const isActive = league.id === selectedLeague?.id;
+            return (
+              <MenuItem
+                key={league.id}
+                onClick={() => {
+                  setSelectedLeague(league);
+                  setShowDropdown(false);
+                }}
+                sx={{
+                  borderRadius: 1.5,
+                  mx: 0.5,
+                  my: 0.25,
+                  py: 1.25,
+                  px: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  color: '#FFFFFF',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    backgroundColor: 'rgba(255,255,255,0.12)',
+                  },
+                  ...(isActive && {
+                    backgroundColor: 'rgba(255,255,255,0.20)',
+                    border: '1px solid rgba(255,255,255,0.65)',
+                  }),
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                  <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
+                  <Typography
+                    sx={{
+                      fontSize: '0.95rem',
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: 0.2,
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {formatLeagueName(league.name)}
+                  </Typography>
+                </Box>
+                {isActive && (
+                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: '#FFFFFF',
+                        color: '#00A77F',
+                        borderRadius: '9999px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: 0.3,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Current
+                    </Box>
+                  </Box>
+                )}
+              </MenuItem>
+            );
+          })}
         </Box>
       )}
     </Box>

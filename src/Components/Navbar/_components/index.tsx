@@ -227,12 +227,16 @@ export default function NavigationBar() {
                   TransitionComponent={SlideFade}
                   PaperProps={{
                     sx: {
-                      bgcolor: '#fff',
-                      color: 'black',
-                      borderRadius: 2,
-                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
+                      p: 0.5,
                       mt: 1.5,
-                      minWidth: 140,
+                      minWidth: 200,
+                      bgcolor: 'rgba(15,15,15,0.92)',
+                      color: '#E5E7EB',
+                      borderRadius: 2.5,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                      overflow: 'hidden',
                     },
                   }}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -240,37 +244,93 @@ export default function NavigationBar() {
                 >
                   <MenuItem
                     onClick={handleProfileClick}
-                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 600,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        color: '#FFFFFF',
+                      },
+                    }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={player} alt="profile" width={20} height={20} />
+                      <Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Profile</Box>
                     </Box>
                   </MenuItem>
                   <MenuItem
                     onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }}
-                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 600,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        color: '#FFFFFF',
+                      },
+                    }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={play} alt="how to play" width={20} height={20} />
+                      <Image src={play} alt="how to play" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>How to play</Box>
                     </Box>
                   </MenuItem>
                   <MenuItem
                     onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }}
-                    sx={{ color: 'black', fontWeight: 500, '&:hover': { bgcolor: '#00a77f', color: 'white' } }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 600,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        color: '#FFFFFF',
+                      },
+                    }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={gamification} alt="rules" width={20} height={20} />
+                      <Image src={gamification} alt="rules" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Game rules</Box>
                     </Box>
                   </MenuItem>
                   <MenuItem
                     onClick={handleSignOutClick}
-                    sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#00a77f', color: '#fff' } }}
+                    sx={{
+                      color: '#F87171',
+                      fontWeight: 700,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(239,68,68,0.25), rgba(239,68,68,0.10))',
+                        color: '#FFFFFF',
+                      },
+                    }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={logoutpic} alt="sign out" width={20} height={20} />
+                      <Image src={logoutpic} alt="sign out" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Sign out</Box>
                     </Box>
                   </MenuItem>
@@ -340,38 +400,42 @@ export default function NavigationBar() {
                   TransitionComponent={SlideFade}
                   PaperProps={{
                     sx: {
-                      bgcolor: '#fff',
-                      color: 'black',
-                      borderRadius: 2,
-                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.18)',
+                      p: 0.5,
                       mt: 1.5,
-                      minWidth: 140,
+                      minWidth: 200,
+                      bgcolor: 'rgba(15,15,15,0.92)',
+                      color: '#E5E7EB',
+                      borderRadius: 2.5,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                      overflow: 'hidden',
                     },
                   }}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={handleProfileClick} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={player} alt="profile" width={20} height={20} />
+                      <Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Profile</Box>
                     </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={play} alt="how to play" width={20} height={20} />
+                      <Image src={play} alt="how to play" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>How to play</Box>
                     </Box>
                   </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#000000', fontWeight: 500, '&:hover': { bgcolor: '#00a77f' } }}>
+                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={gamification} alt="rules" width={20} height={20} />
+                      <Image src={gamification} alt="rules" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Game rules</Box>
                     </Box>
                   </MenuItem>
-                  <MenuItem onClick={handleSignOutClick} sx={{ color: 'red', fontWeight: 600, '&:hover': { bgcolor: '#00a77f', color: '#fff' } }}>
+                  <MenuItem onClick={handleSignOutClick} sx={{ color: '#F87171', fontWeight: 700, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(239,68,68,0.25), rgba(239,68,68,0.10))', color: '#FFFFFF' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={logoutpic} alt="sign out" width={20} height={20} />
+                      <Image src={logoutpic} alt="sign out" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
                       <Box>Sign out</Box>
                     </Box>
                   </MenuItem>

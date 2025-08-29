@@ -297,7 +297,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   // fontSize: '1.5rem',
                   // fontWeight: 400,
                   '&.Mui-focused': {
-                    color: '#fff',
+                    color: '#A7A7A7',
                   },
                 },
                 '& input:-webkit-autofill': {

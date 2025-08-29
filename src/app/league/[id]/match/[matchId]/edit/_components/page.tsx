@@ -201,64 +201,63 @@ export default function EditMatchPage() {
     };
 
     const handleUpdateMatch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        setError(null);
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
 
-        if (!matchDate) {
-            setError("Please select a valid date for the match.");
-            setIsSubmitting(false);
-            return;
-        }
+    if (!matchDate) {
+      setError('Please select a valid date for the match.');
+      setIsSubmitting(false);
+      return;
+    }
 
-        const matchData = {
-            homeTeamName,
-            awayTeamName,
-            date: matchDate.toISOString(),
-            location,
-            homeTeamUsers: homeTeamUsers.map(u => u.id),
-            awayTeamUsers: awayTeamUsers.map(u => u.id),
-            homeCaptainId: homeCaptain?.id, // <-- use correct key
-            awayCaptainId: awayCaptain?.id, // <-- use correct key
-            //   if (homeTeamImage) {
-            //     formData.append('homeTeamImage', homeTeamImage);
-            // }
-            // if (awayTeamImage) {
-            //     formData.append('awayTeamImage', awayTeamImage);
-            // }
-            homeTeamImage: homeTeamImage,
-            awayTeamImage: awayTeamImage
-        };
-        console.log('first', matchData)
+    // ensure captains belong to current selections
+    const homeCaptainId = homeTeamUsers.find(u => u.id === homeCaptain?.id)?.id || null;
+    const awayCaptainId = awayTeamUsers.find(u => u.id === awayCaptain?.id)?.id || null;
 
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(matchData),
-            });
+    try {
+      // Always multipart/form-data
+      const formData = new FormData();
+      formData.set('homeTeamName', homeTeamName);
+      formData.set('awayTeamName', awayTeamName);
+      formData.set('date', matchDate.toISOString());
+      formData.set('location', location);
 
-            const result = await response.json();
-            if (result.success) {
-                // Update cache with new match data
-                if (result.match) {
-                    cacheManager.updateMatchesCache(result.match);
-                }
-                toast.success('Match updated successfully!'); // Or use a toast notification
-                router.push(`/league/${leagueId}`);
-            } else {
-                throw new Error(result.message || 'Failed to update match.');
-            }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-            setError(errorMessage);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      // Server JSON.parse's these fields
+      formData.set('homeTeamUsers', JSON.stringify(homeTeamUsers.map(u => u.id)));
+      formData.set('awayTeamUsers', JSON.stringify(awayTeamUsers.map(u => u.id)));
+
+      if (homeCaptainId) formData.set('homeCaptainId', homeCaptainId);
+      if (awayCaptainId) formData.set('awayCaptainId', awayCaptainId);
+
+      if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
+      if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }, // do not set Content-Type manually
+        body: formData,
+      });
+
+      const ct = response.headers.get('content-type') || '';
+      const result = ct.includes('application/json')
+        ? await response.json()
+        : { success: false, message: await response.text() };
+
+      if (result.success) {
+        if (result.match) cacheManager.updateMatchesCache(result.match);
+        toast.success('Match updated successfully!');
+        router.push(`/league/${leagueId}`);
+      } else {
+        throw new Error(result.message || 'Failed to update match.');
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
@@ -280,7 +279,11 @@ export default function EditMatchPage() {
             <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, p: 4, minHeight: '100vh', color: 'white' }}>
                 {/* Edit Form Section - right on desktop */}
                 <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
-                    <Paper component="form" onSubmit={handleUpdateMatch} sx={{ p: 3, background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', color: 'white', borderRadius: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', border: '1px solid #235235', maxWidth: 700, mx: 'auto' }}>
+                    <Paper
+                      component="form"
+                      onSubmit={handleUpdateMatch}
+                     encType="multipart/form-data"
+                      sx={{ p: 3, background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', color: 'white', borderRadius: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', border: '1px solid #235235', maxWidth: 700, mx: 'auto' }}>
                     <Typography variant="h4" component="h1" gutterBottom>
                         Edit Match for {league.name}
                     </Typography>
@@ -649,4 +652,4 @@ export default function EditMatchPage() {
             </Box>
         </LocalizationProvider>
     );
-} 
+}

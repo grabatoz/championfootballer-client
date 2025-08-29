@@ -52,6 +52,7 @@ import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
+import ShirtImg from '@/Components/images/shirtimg.png'
 
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
@@ -980,13 +981,17 @@ export default function LeagueDetailPage() {
                                             onClose={handleLeaguesDropdownClose}
                                             PaperProps={{
                                                 sx: {
-                                                    backgroundColor: '#1f673b',
-                                                    color: 'white',
-                                                    border: '1px solid rgba(255,255,255,0.3)',
-                                                    borderRadius: 2,
+                                                    p: 0.5,
                                                     mt: 1,
-                                                    minWidth: 200,
-                                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                                    minWidth: 240,
+                                                    bgcolor: 'rgba(15,15,15,0.92)',
+                                                    color: '#E5E7EB',
+                                                    borderRadius: 2.5,
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    backdropFilter: 'blur(10px)',
+                                                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                                    overflow: 'hidden',
+
                                                 }
                                             }}
                                         >
@@ -995,35 +1000,57 @@ export default function LeagueDetailPage() {
                                                     key={leagueItem.id}
                                                     onClick={() => handleLeagueSelect(leagueItem.id)}
                                                     sx={{
-                                                        color: 'white',
-                                                        backgroundColor: leagueItem.id === leagueId ? 'rgba(255,255,255,0.2)' : 'transparent',
-                                                        '&:hover': {
-                                                            backgroundColor: 'rgba(255,255,255,0.1)',
-                                                        },
+                                                        borderRadius: 1.5,
+                                                        mx: 0.5,
+                                                        my: 0.25,
+                                                        py: 1.25,
+                                                        px: 1.5,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 1,
-                                                        py: 1.5,
-                                                        px: 2,
+                                                        color: '#E5E7EB',
+                                                        transition: 'all 0.2s ease',
+
+                                                        background: leagueItem.id === leagueId ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                                                        border: leagueItem.id === leagueId ? '1px solid rgba(3,136,227,0.35)' : 'none',
+                                                        '&:hover': {
+                                                            transform: 'translateY(-1px)',
+                                                            background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                                                        },
+
                                                     }}
                                                 >
                                                     <ListItemIcon sx={{ minWidth: 36 }}>
-                                                        <Trophy size={16} color="white" />
+                                                        <Trophy size={16} color={leagueItem.id === leagueId ? '#FFFFFF' : '#9CA3AF'} />
                                                     </ListItemIcon>
                                                     <ListItemText
                                                         primary={leagueItem.name}
                                                         sx={{
                                                             '& .MuiListItemText-primary': {
-                                                                fontSize: '0.9rem',
-                                                                fontWeight: leagueItem.id === leagueId ? 'bold' : 'normal',
+                                                                fontSize: '0.95rem',
+                                                                fontWeight: leagueItem.id === leagueId ? 700 : 500,
+                                                                letterSpacing: 0.2,
+                                                                color: leagueItem.id === leagueId ? '#FFFFFF' : '#E5E7EB'
                                                             }
                                                         }}
                                                     />
                                                     {leagueItem.id === leagueId && (
-                                                        <Box sx={{ ml: 'auto' }}>
-                                                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                            <Box
+                                                                sx={{
+                                                                    px: 1,
+                                                                    py: 0.25,
+                                                                    bgcolor: '#0388E3',
+                                                                    color: 'white',
+                                                                    borderRadius: '9999px',
+                                                                    fontSize: 10,
+                                                                    fontWeight: 700,
+                                                                    letterSpacing: 0.3,
+                                                                    textTransform: 'uppercase',
+                                                                }}
+                                                            >
                                                                 Current
-                                                            </Typography>
+                                                            </Box>
                                                         </Box>
                                                     )}
                                                 </MenuItem>
@@ -1212,7 +1239,7 @@ export default function LeagueDetailPage() {
                                             router.replace(`/league/${leagueId}?tab=table`);
                                         }}
                                     >
-                                        Table
+                                      Points Table
                                     </Button>
 
                                     <Button
@@ -1293,7 +1320,7 @@ export default function LeagueDetailPage() {
                                     borderRadius: 3,
 
                                 }}>
-                                    {league?.members && league.members.length > 0 ? (
+                                    {league?.members && league.members.length > 0 && (
                                         <Box sx={{
                                             display: 'grid',
                                             gap: 2
@@ -1348,7 +1375,20 @@ export default function LeagueDetailPage() {
                                                                     }}
                                                                 >
                                                                     <ListItemAvatar>
-                                                                        <Avatar src={member?.profilePicture || '/assets/group.svg'} sx={{ width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }} />
+                                                                      <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
+                                                                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
+                                                                        <Box
+                                                                          sx={{
+                                                                            position: 'absolute',
+                                                                            top: 0, left: 0, right: 0, bottom: 0,
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                            color: '#000', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 },
+                                                                            // textShadow: '0 1px 2px rgba(255,255,255,0.5)'
+                                                                          }}
+                                                                        >
+                                                                          {member?.shirtNumber ?? '00'}
+                                                                        </Box>
+                                                                      </Box>
                                                                     </ListItemAvatar>
                                                                     <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
                                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
@@ -1389,10 +1429,6 @@ export default function LeagueDetailPage() {
                                                 {/* )} */}
                                             </Paper>
                                         </Box>
-                                    ) : (
-                                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                            No members yet
-                                        </Typography>
                                     )}
                                 </Box>
                             )}
@@ -1961,12 +1997,29 @@ export default function LeagueDetailPage() {
                                                                 </div>
                                                                 <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
                                                                     <div className="max-[500px]:mb-2">
-                                                                        <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden bg-white border-2 border-white flex-shrink-0">
-                                                                            <img
-                                                                                src={player.profilePicture || "/placeholder.svg"}
-                                                                                alt={player.name}
-                                                                                className="w-full h-full object-cover"
+                                                                        <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden flex-shrink-0">
+                                                                          <div className="relative w-full h-full">
+                                                                            {/* Colored shirt using mask */}
+                                                                            <div
+                                                                              style={{
+                                                                                position: 'absolute',
+                                                                                inset: 0,
+                                                                                backgroundColor: '#00A77F',
+                                                                                WebkitMaskImage: `url(${ShirtImg.src})`,
+                                                                                maskImage: `url(${ShirtImg.src})`,
+                                                                                WebkitMaskRepeat: 'no-repeat',
+                                                                                maskRepeat: 'no-repeat',
+                                                                                WebkitMaskPosition: 'center',
+                                                                                maskPosition: 'center',
+                                                                                WebkitMaskSize: 'contain',
+                                                                                maskSize: 'contain',
+                                                                              }}
                                                                             />
+                                                                            {/* Number overlay */}
+                                                                            <span className="absolute inset-0 flex items-center justify-content-center text-black font-bold text-xs sm:text-sm flex items-center justify-center">
+                                                                              {((league?.members || []).find(m => m.id === player.id)?.shirtNumber ?? '')}
+                                                                            </span>
+                                                                          </div>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-0.5 mt-3 max-[500px]:-ml-8 min-[500px]:ml-2">
