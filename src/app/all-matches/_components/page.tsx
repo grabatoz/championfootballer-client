@@ -1,8 +1,7 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper,  MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, SelectChangeEvent, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Button, Container, Typography, Paper,  MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronDown, Edit, Trophy } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
@@ -110,7 +109,6 @@ interface PlayerCardProps {
 }
 
 export default function AllMatches() {
-    const router = useRouter();
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<string>('all');
