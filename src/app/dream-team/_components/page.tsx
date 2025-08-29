@@ -4,8 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Button } from '@mui/material';
 import { useAuth } from '@/lib/useAuth';
 import fieldImg from '@/Components/images/ground.webp'; // Place your field image in public/assets/field.png
-import { ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import dreamteam from '@/Components/images/dream.png'
 import { Trophy, ChevronDown } from 'lucide-react';
 import ShirtImg from '@/Components/images/shirtimg.png';
@@ -45,7 +43,6 @@ interface League {
 
 const DreamTeamPage = () => {
   const { token } = useAuth();
-  const router = useRouter();
   const [dreamTeam, setDreamTeam] = useState<DreamTeam>({
     goalkeeper: [],
     defenders: [],

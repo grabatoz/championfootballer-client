@@ -34,7 +34,6 @@ import {
     List,
     ListItem,
     ListItemAvatar,
-    Avatar,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
