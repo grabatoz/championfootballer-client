@@ -76,77 +76,55 @@ const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueNam
 
 // --- Reusable Trophy Card Component ---
 const TrophyCard = ({ title, description, image, color, leagueName, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
-    <Paper
-      elevation={4}
-      sx={{
-        width: '100%',
-        height: { xs: 190, sm: 280, md: 320 },
-        maxWidth: { xs: 160, sm: 240, md: 280 },
-        margin: '0 auto',
-        textAlign: 'center',
-        borderRadius: '16px',
-        border: `2px solid ${color}`,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        px: { xs: 1, sm: 1.5, md: 2 },
-        py: { xs: 1.5, sm: 2, md: 3 },
-      }}
-    >
-      <Box>
-        <Typography variant="h6" sx={{ 
-          fontWeight: 'bold', 
-          color: '#333', 
-          mb: { xs: 0.5, sm: 1 },
-          fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' }
-        }}>
-          {title}
-        </Typography>
-        <Typography variant="body2" sx={{ 
-          color: '#666', 
-          mb: { xs: 1, sm: 1.5, md: 2 },
-          fontSize: { xs: '0.7rem', sm: '0.875rem', md: '1rem' },
-          lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 }
-        }}>
-          {description}
-        </Typography>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center',
-          height: { xs: 45, sm: 60, md: 80 },
-          width: { xs: 45, sm: 60, md: 80 },
-          margin: '0 auto'
-        }}>
-          <Image 
-            src={image} 
-            alt={title} 
-            height={60} 
-            width={60} 
-            style={{ 
-              height: '100%',
-              width: '100%',
-              objectFit: 'contain'
-            }}
-          />
-        </Box>
+  <Paper
+    elevation={4}
+    sx={{
+      width: '100%',
+      height: { xs: 190, sm: 280, md: 320 },
+      maxWidth: { xs: 160, sm: 240, md: 280 },
+      margin: '0 auto',
+      textAlign: 'center',
+      borderRadius: '16px',
+      border: `2px solid ${color}`,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      px: { xs: 1, sm: 1.5, md: 2 },
+      py: { xs: 1.5, sm: 2, md: 3 },
+    }}
+  >
+    <Box>
+      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333', mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' } }}>
+        {title}
+      </Typography>
+      <Typography variant="body2" sx={{ color: '#666', mb: { xs: 1, sm: 1.5, md: 2 }, fontSize: { xs: '0.7rem', sm: '0.875rem', md: '1rem' }, lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 } }}>
+        {description}
+      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', height: { xs: 45, sm: 60, md: 80 }, width: { xs: 45, sm: 60, md: 80 }, margin: '0 auto' }}>
+        <Image src={image} alt={title} height={60} width={60} style={{ height: '100%', width: '100%', objectFit: 'contain' }} />
       </Box>
-  
-      <Button 
-        variant="contained" 
-        sx={{ 
-          backgroundColor: color, 
-          color: 'white', 
-          fontWeight: 'bold',
-          fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-          py: { xs: 0.5, sm: 0.75, md: 1 },
-          px: { xs: 1, sm: 1.5, md: 2 }
-        }}
-        onClick={onButtonClick}
-        disabled={!onButtonClick}
-      >
-        {leagueName || 'TBC'}
-      </Button>
-    </Paper>
+    </Box>
+
+    <Button
+      variant="contained"
+      sx={{
+        backgroundColor: color,
+        color: '#ffffff',
+        fontWeight: 'bold',
+        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+        py: { xs: 0.5, sm: 0.75, md: 1 },
+        px: { xs: 1, sm: 1.5, md: 2 },
+        boxShadow: 'none',
+        '&:hover': { backgroundColor: color, boxShadow: 'none', filter: 'brightness(0.95)' },
+        '&:active': { backgroundColor: color, boxShadow: 'none', filter: 'brightness(0.9)' },
+        '&.Mui-disabled': { backgroundColor: `${color} !important`, boxShadow: 'none' },
+      }}
+      onClick={onButtonClick}
+      disabled={!onButtonClick}
+    >
+      {leagueName || 'TBC'}
+    </Button>
+  </Paper>
 );
 
 // --- Helper function to calculate player stats for a single league ---
@@ -324,7 +302,7 @@ export default function GlobalTrophyRoom() {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', mb: 4, gap: 2 }}>
                 <Chip
                     label="All Trophies"
-                    color={filter === 'all' ? 'primary' : 'default'}
+                    color={filter === 'all' ? 'success' : 'default'}
                     onClick={() => setFilter('all')}
                     sx={{
                         fontSize: '1rem',
@@ -332,12 +310,12 @@ export default function GlobalTrophyRoom() {
                         px: 3,
                         fontWeight: 'bold',
                         cursor: 'pointer',
-                        ...(filter === 'all' && { backgroundColor: '#0a3e1e', color: 'white' }),
+                        ...(filter === 'all' && { backgroundColor: '#00A77F', color: 'white' }),
                     }}
                 />
                 <Chip
                     label="My Achievements"
-                    color={filter === 'my' ? 'primary' : 'default'}
+                    color={filter === 'my' ? 'success' : 'default'}
                     variant="outlined"
                     onClick={() => setFilter('my')}
                     sx={{
@@ -346,7 +324,7 @@ export default function GlobalTrophyRoom() {
                         px: 3,
                         fontWeight: 'bold',
                         cursor: 'pointer',
-                        ...(filter === 'my' && { backgroundColor: '#0a3e1e', color: 'white' }),
+                        ...(filter === 'my' && { backgroundColor: '#00A77F', color: 'white' }),
                     }}
                 />
             </Box>
@@ -367,4 +345,4 @@ export default function GlobalTrophyRoom() {
             </Box>
         </Box>
     );
-} 
+}

@@ -12,7 +12,7 @@ import mobile from '@/Components/images/mobile.png';
 import image9 from '@/Components/images/1stpic.png';
 import image10 from '@/Components/images/2ndpic.png';
 import image11 from '@/Components/images/3rdpic.png';
-import image12 from '@/Components/images/image12.png';
+import image12 from '@/Components/images/4thpic.png';
 
 import { useState } from 'react';
 
@@ -220,7 +220,7 @@ export default function LandingPage() {
               elevation={0}
               sx={{
                 width: '100%',
-                height: { xs: 'auto', sm: 280, md: 280 },
+                height: { xs: 260, sm: 280, md: 280 }, // consistent height
                 borderRadius: 2,
                 overflow: 'hidden',
                 display: 'flex',
@@ -239,19 +239,46 @@ export default function LandingPage() {
               <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', md: '1.5rem' }, color: '#000000', fontWeight: 700, mt: 0.5 }}>
              {f.id}. {f.title}
               </Typography>
-              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                <Image
-                  src={f.img}
-                  alt={f.title}
-                  width={800}
-                  height={800}
-                  style={{
+              <Box
+                sx={{
+                  mt: 1,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {/* Square container to normalize image aspect ratio */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    aspectRatio: '1 / 1',  // make all images square
                     width: '100%',
-                    height: 'auto',
-                    objectFit: 'contain',
-                    background: 'transparent',
+                    maxWidth: 280,
                   }}
-                />
+                >
+                  {/* Inner box to control "zoom out" (adjust 0.8 -> 0.9 as needed) */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      m: 'auto',
+                      width: '85%',   // zoom out factor
+                      height: '85%',  // zoom out factor
+                    }}
+                  >
+                    <Image
+                      src={f.img}
+                      alt={f.title}
+                      fill
+                      sizes="(max-width: 600px) 90vw, 25vw"
+                      style={{
+                        objectFit: 'contain',
+                        background: 'transparent',
+                      }}
+                    />
+                  </Box>
+                </Box>
               </Box>
             </Card>
           ))}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Avatar, Divider, Card } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, Card } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -10,6 +10,7 @@ import { useTheme } from '@mui/material/styles';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
+import ShirtImg from '@/Components/images/shirtimg.png';
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -360,7 +361,6 @@ export default function MatchDetailsPage() {
                             <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
                             <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                             <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
-                              <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
@@ -425,16 +425,24 @@ export default function MatchDetailsPage() {
                                           )}
                                         </Box>
 
-                                        <Avatar
-                                          src={
-                                            player.profilePicture
-                                              ? player.profilePicture.startsWith("http")
-                                                ? player.profilePicture
-                                                : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                              : undefined
-                                          }
-                                          sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                        />
+                                        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+                                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                          <Box
+                                            sx={{
+                                              position: 'absolute',
+                                              inset: 0,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              color: '#000',
+                                              fontWeight: 800,
+                                              fontSize: 14,
+                                              lineHeight: 1,
+                                            }}
+                                          >
+                                            {player.shirtNumber || "0"}
+                                          </Box>
+                                        </Box>
                                       </Box>
                                       <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
                                         <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
@@ -442,9 +450,6 @@ export default function MatchDetailsPage() {
                                         </Typography>
                                       </Box>
                                       <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                        <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
-                                          {player.shirtNumber || "0"}
-                                        </Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
@@ -511,7 +516,6 @@ export default function MatchDetailsPage() {
                             <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
                             <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                             <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
-                              <Box sx={{ minWidth: 50, textAlign: "center" }}>Shirt No</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
@@ -575,17 +579,24 @@ export default function MatchDetailsPage() {
                                             }}>{`${idx + 1}th`}</Box>
                                           )}
                                         </Box>
-                                        {/* Player image */}
-                                        <Avatar
-                                          src={
-                                            player.profilePicture
-                                              ? player.profilePicture.startsWith("http")
-                                                ? player.profilePicture
-                                                : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith("/") ? player.profilePicture : `/${player.profilePicture}`}`
-                                              : undefined
-                                          }
-                                          sx={{ width: 40, height: 40, bgcolor: "#174d2c" }}
-                                        />
+                                        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+                                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                          <Box
+                                            sx={{
+                                              position: 'absolute',
+                                              inset: 0,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              color: '#000',
+                                              fontWeight: 800,
+                                              fontSize: 14,
+                                              lineHeight: 1,
+                                            }}
+                                          >
+                                            {player.shirtNumber || "0"}
+                                          </Box>
+                                        </Box>
                                       </Box>
                                       <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
                                         <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
@@ -593,9 +604,6 @@ export default function MatchDetailsPage() {
                                         </Typography>
                                       </Box>
                                       <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                        <Box sx={{ minWidth: 50, textAlign: "center", fontSize: 14 }}>
-                                          {player.shirtNumber || "0"}
-                                        </Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
@@ -685,7 +693,6 @@ export default function MatchDetailsPage() {
                               <div className="text-white font-bold text-xs sm:text-sm md:text-base">Pos</div>
                               <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base">Player</div>
                               <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">No</div>
                                 <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Gs</div>
                                 <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">As</div>
                                 <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">CS</div>
@@ -718,12 +725,11 @@ export default function MatchDetailsPage() {
                                       </div>
                                       <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
                                         <div className="max-[500px]:mb-2">
-                                          <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden bg-white border-2 border-white flex-shrink-0">
-                                            <img
-                                              src={player.profilePicture || "/placeholder.svg"}
-                                              alt={player.firstName + " " + player.lastName}
-                                              className="w-full h-full object-cover"
-                                            />
+                                          <div className="relative w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 flex-shrink-0">
+                                            <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                            <div className="absolute inset-0 flex items-center justify-center text-black font-extrabold text-xs sm:text-sm leading-none">
+                                              {player.shirtNumber || "0"}
+                                            </div>
                                           </div>
                                         </div>
                                         <div className="flex flex-col gap-0.5 max-[500px]:-ml-8 min-[500px]:ml-2">
@@ -737,9 +743,6 @@ export default function MatchDetailsPage() {
                                       </div>
 
                                       <div className="flex gap-0.5 sm:gap-1 md:gap-2 ml-auto items-center max-[500px]:mt-4">
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player.shirtNumber || "0"}
-                                        </div>
                                         <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
                                           {player.statistics?.[0]?.goals ?? 0}
                                         </div>
@@ -788,12 +791,11 @@ export default function MatchDetailsPage() {
                       {/* Mobile layout: Image on top center */}
                       <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 bg-[#0a4822] rounded-lg border border-[#43a047] min-h-[80px] sm:min-h-[100px] hover:bg-[#1f673b] hover:-translate-y-1 transition-all duration-200 ease-in-out">
                         {/* Profile Image */}
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-[#43a047] mb-3 sm:mb-0 sm:mr-4 flex-shrink-0">
-                          <img
-                            src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"}
-                            alt={`${player.firstName} ${player.lastName}`}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0">
+                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                          <div className="absolute inset-0 flex items-center justify-center text-black font-extrabold text-sm sm:text-base leading-none">
+                            {player.shirtNumber || "0"}
+                          </div>
                         </div>
 
                         {/* Player Info */}
@@ -838,4 +840,4 @@ export default function MatchDetailsPage() {
       )}
     </Box>
   );
-} 
+}

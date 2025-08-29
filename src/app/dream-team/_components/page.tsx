@@ -410,9 +410,19 @@ const DreamTeamPage = () => {
         </Box>
       ) : (
         <>
-          <Box sx={{ position: 'relative', width: '100%', maxWidth: 1200, mx: 'auto', aspectRatio: '2.1', mb: 4, overflow: 'hidden' }}>
-            {/* Dream Team Title and Logo - centered, moves below on small screens */}
-            <Image fill src={fieldImg} alt="Football Field" style={{ width: '100%', borderRadius: 16 }} />
+          {/* Field (image) */}
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '2.1',
+              overflow: 'hidden',
+              borderRadius: 2,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03)',
+              mb: 2,
+            }}
+          >
+            <Image fill src={fieldImg} alt="Football Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             {/* Overlay players */}
             {fieldPositions.map((pos, idx) => {
               let player: Player | undefined;
@@ -437,7 +447,7 @@ const DreamTeamPage = () => {
                   <Box
                     sx={{
                       position: 'relative',
-                      width: { xs: 64, sm: 80, md: 94 },   // responsive shirt size
+                      width: { xs: 64, sm: 80, md: 94 },
                       height: { xs: 64, sm: 80, md: 94 },
                       mx: 'auto',
                     }}
@@ -496,88 +506,103 @@ const DreamTeamPage = () => {
               );
             })}
           </Box>
+
+          {/* Player stats panel (always below the image) */}
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              color: '#E5E7EB',
+              bgcolor: 'rgba(15,15,15,0.92)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03)',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              mb: 4,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2, color: '#E5E7EB' }}>
+              Player stats
+            </Typography>
+            {dreamTeamPlayers.length ? (
+              <Box
+                component="ul"
+                sx={{
+                  listStyle: 'none',
+                  p: 0,
+                  m: 0,
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(2, 1fr)',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(2, 1fr)',
+                  },
+                  gap: 1.25,
+                }}
+              >
+                {dreamTeamPlayers.map((p) => (
+                  <Box
+                    key={p.id}
+                    component="li"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      position: 'relative',
+                      pl: 2.25,
+                      pr: 1.25,
+                      py: 0.75,
+                      borderRadius: 1.5,
+                      transition: 'all 0.18s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                      },
+                    }}
+                  >
+                    {/* bullet dot */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 6,
+                        height: 6,
+                        bgcolor: '#22C55E',
+                        borderRadius: '50%',
+                      }}
+                    />
+                    {/* green shirt */}
+                    <Image
+                      src={ShirtImg.src}
+                      alt="Shirt"
+                      width={18}
+                      height={18}
+                      style={{
+                        filter:
+                          'brightness(0) saturate(100%) invert(41%) sepia(86%) saturate(520%) hue-rotate(86deg) brightness(95%) contrast(95%)',
+                      }}
+                    />
+                    <Typography component="span" sx={{ fontWeight: 700, color: '#E5E7EB' }}>
+                      {p.firstName} {p.lastName}
+                    </Typography>
+                    <Typography component="span" sx={{ ml: 0.5, color: '#22C55E', fontWeight: 700 }}>
+                      ({posAbbr(p.position)})
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                No players in this Dream Team yet.
+              </Typography>
+            )}
+          </Box>
         </>
       )}
-
-      <Box>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Player stats
-        </Typography>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            border: '1.5px solid #22C55E',              // green border
-            bgcolor: 'rgba(34,197,94,0.06)',            // light green bg
-          }}
-        >
-          {dreamTeamPlayers.length ? (
-            <Box
-              component="ul"
-              sx={{
-                listStyle: 'none',
-                p: 0,
-                m: 0,
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                gap: 1.25,
-              }}
-            >
-              {dreamTeamPlayers.map((p) => (
-                <Box
-                  key={p.id}
-                  component="li"
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    position: 'relative',
-                    pl: 2,
-                  }}
-                >
-                  {/* bullet dot */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: 6,
-                      height: 6,
-                      bgcolor: '#065F46',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  {/* green shirt */}
-                  <Image
-                    src={ShirtImg.src}
-                    alt="Shirt"
-                    width={18}
-                    height={18}
-                    style={{
-                      filter:
-                        'brightness(0) saturate(100%) invert(41%) sepia(86%) saturate(520%) hue-rotate(86deg) brightness(95%) contrast(95%)',
-                    }}
-                  />
-                  <Typography component="span" sx={{ fontWeight: 700 }}>
-                    {p.firstName} {p.lastName}
-                  </Typography>
-                  <Typography
-                    component="span"
-                    sx={{ ml: 0.5, color: '#065F46', fontWeight: 700 }}
-                  >
-                    ({posAbbr(p.position)})
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No players in this Dream Team yet.
-            </Typography>
-          )}
-        </Box>
-      </Box>
 
     </Box>
   );

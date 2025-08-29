@@ -377,7 +377,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                         color:'black',
                         fontWeight: 'bold',
                         cursor: 'pointer',
-                        ...(filter === 'all' && { backgroundColor: '#43a047', color: 'white' })
+                        ...(filter === 'all' && { backgroundColor: '#00A77F', color: 'white' })
                     }}
                 />
                 <Chip
@@ -386,7 +386,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                     variant="outlined"
                     onClick={() => setFilter('my')}
                     sx={{ fontSize: '1rem', py: 2, color:'black', px: 3, fontWeight: 'bold', cursor: 'pointer',
-                        ...(filter === 'my' && { backgroundColor: '#43a047', color: 'white' })
+                        ...(filter === 'my' && { backgroundColor: '#00A77F', color: 'white' })
                      }}
                 />
             </Box>

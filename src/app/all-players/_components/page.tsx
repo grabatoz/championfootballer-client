@@ -7,7 +7,7 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  Avatar,
+  // Avatar,
   ListItemText,
   Paper,
   Box,
@@ -23,7 +23,8 @@ import { useRouter } from 'next/navigation';
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
-// import Link from 'next/link';
+import Image from 'next/image';
+import ShirtImg from '@/Components/images/shirtimg.png';
 
 interface Player {
   id: string;
@@ -32,6 +33,7 @@ interface Player {
   rating: number;
   xpPoints?: number; // Added for XP points
   statsSum?: number; // Added for stats sum
+  shirtNumber?: string; // Optional shirt number
 }
 
 const AllPlayersPage = () => {
@@ -61,6 +63,7 @@ const AllPlayersPage = () => {
   const filteredPlayers = playedWithPlayers.filter((player: Player) =>
     player.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  console.log('Filtered Players:', filteredPlayers);
 
   // Helper to get XP points and stats sum for sorting
   function getXpPoints(player: Player) {
@@ -83,6 +86,8 @@ const AllPlayersPage = () => {
     const statsB = getStatsSum(b);
     return statsB - statsA;
   });
+
+  console.log('Sorted Players:', sortedPlayers);
 
   return (
     <Container maxWidth="md" sx={{
@@ -249,7 +254,25 @@ const AllPlayersPage = () => {
                         )}
                       </Box>
                       <ListItemAvatar>
-                        <Avatar src={player?.profilePicture || '/assets/group.svg'} sx={{ width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }} />
+                        {/* Replaced Avatar with jersey + number */}
+                        <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
+                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#000',
+                              fontWeight: 800,
+                              fontSize: { xs: 12, sm: 14 },
+                              lineHeight: 1,
+                            }}
+                          >
+                            {player.shirtNumber || '0'}
+                          </Box>
+                        </Box>
                       </ListItemAvatar>
                       <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium', fontSize: { xs: 13, sm: 16 } }} />
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
@@ -273,4 +296,4 @@ const AllPlayersPage = () => {
   );
 };
 
-export default AllPlayersPage; 
+export default AllPlayersPage;

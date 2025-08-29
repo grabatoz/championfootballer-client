@@ -1474,7 +1474,7 @@ export default function LeagueDetailPage() {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 2
                                         }}>
-                                            {league.matches.filter(match => match.status === 'scheduled').slice(0, 6).map((match) => {
+                                            {league.matches.filter(match => match.status === 'scheduled').map((match) => {
                                                 const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                                                 const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                 return (
@@ -1707,7 +1707,7 @@ export default function LeagueDetailPage() {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 3
                                         }}>
-                                            {league.matches.filter(match => match.status === 'completed').slice(0, 6).map((match) => (
+                                            {league.matches.filter(match => match.status === 'completed').map((match) => (
 
                                                 <Card key={match.id} sx={{
                                                     // background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',

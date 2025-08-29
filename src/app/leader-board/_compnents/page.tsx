@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Avatar, CircularProgress, MenuItem, Select, FormControl, InputLabel, Divider } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, MenuItem, Divider, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { ChevronDown, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import Goals from '@/Components/images/goal.png'
@@ -14,14 +15,16 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import React from 'react';
 import Link from 'next/link';
+import ShirtImg from '@/Components/images/shirtimg.png';
 
 
 interface Player {
   id: string;
   name: string;
-  position: string;
+  positionType: string;
   profilePicture?: string;
   value: number;
+  shirtNumber?: string; // added
 }
 
 interface League {
@@ -44,6 +47,8 @@ export default function LeaderBoardPage() {
   const [loading, setLoading] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
+  const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+  const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
   const { token } = useAuth();
 
   // Fetch only the leagues where the current user is a member (like all-matches)
@@ -87,9 +92,44 @@ export default function LeaderBoardPage() {
         setLoading(false);
       });
   }, [selectedMetric, selectedLeague, token]);
+  console.log('Players:', players);
+
+  const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setLeaguesDropdownAnchor(event.currentTarget);
+    setLeaguesDropdownOpen(true);
+  };
+
+  const handleLeaguesDropdownClose = () => {
+    setLeaguesDropdownOpen(false);
+    setLeaguesDropdownAnchor(null);
+  };
+
+  const handleLeagueSelect = (leagueId: string) => {
+    if (leagueId !== selectedLeague) setSelectedLeague(leagueId);
+    handleLeaguesDropdownClose();
+  };
+
+  const sortedLeagues = React.useMemo(() => {
+    if (!leagues?.length) return [];
+    const arr = [...leagues];
+    const idx = arr.findIndex(l => l.id === selectedLeague);
+    if (idx > 0) {
+      const [sel] = arr.splice(idx, 1);
+      arr.unshift(sel);
+    }
+    return arr;
+  }, [leagues, selectedLeague]);
+
+  const formatLeagueName = (name: string): string => {
+    if (!name) return '';
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    const initials = name.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
+    return `${capitalizedName} (${initials})`;
+  };
 
   return (
     <Box sx={{ p: 2 }}>
+
       
       <Box
         sx={{
@@ -134,41 +174,94 @@ export default function LeaderBoardPage() {
             <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
           </Button>
         ))}
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel
-            id="league-select-label"
-            sx={{
-              color: 'white',
-              '&.Mui-focused': { color: 'white' },
-              '&.MuiInputLabel-shrink': { color: 'white' },
-              
-            }}
-          >
-            Select League
-          </InputLabel>
-          <Select
-            labelId="league-select-label"
-            value={selectedLeague}
-            label="Select League"
-            onChange={e => setSelectedLeague(e.target.value)}
-            sx={{
-              color: 'white',
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#e56a16',
-              },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#e56a16',
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#e56a16',
-              },
-            }}
-          >
-            {leagues.map(league => (
-              <MenuItem key={league.id} value={league.id}>{league.name}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            
+      {/* League dropdown (same style as All Leagues) */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+        <Button
+          onClick={handleLeaguesDropdownOpen}
+          disabled={!leagues.length}
+          endIcon={<ChevronDown size={18} />}
+          sx={{
+            textTransform: 'uppercase',
+            fontSize: { xs: '0.95rem', sm: '1.1rem' },
+            fontWeight: 'bold',
+            color: 'white',
+            backgroundColor: '#2B2B2B',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+            '&:hover': { backgroundColor: '#2B2B2B' },
+          }}
+        >
+          {selectedLeague
+            ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
+            : 'Select League'}
+        </Button>
+        <Menu
+          anchorEl={leaguesDropdownAnchor}
+          open={leaguesDropdownOpen}
+          onClose={handleLeaguesDropdownClose}
+          PaperProps={{
+            sx: {
+              p: 0.5,
+              mt: 1,
+              minWidth: 240,
+              bgcolor: 'rgba(15,15,15,0.92)',
+              color: '#E5E7EB',
+              borderRadius: 2.5,
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+              overflow: 'hidden',
+            }
+          }}
+        >
+          {sortedLeagues.map((leagueItem) => {
+            const isActive = leagueItem.id === selectedLeague;
+            return (
+              <MenuItem
+                key={leagueItem.id}
+                onClick={() => handleLeagueSelect(leagueItem.id)}
+                sx={{
+                  borderRadius: 1.5,
+                  mx: 0.5,
+                  my: 0.25,
+                  py: 1.25,
+                  px: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  color: '#E5E7EB',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                  },
+                  ...(isActive && {
+                    background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
+                    border: '1px solid rgba(3,136,227,0.35)',
+                  }),
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={leagueItem.name}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      fontSize: '0.95rem',
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: 0.2,
+                      color: isActive ? '#FFFFFF' : '#E5E7EB',
+                    }
+                  }}
+                />
+              </MenuItem>
+            );
+          })}
+        </Menu>
+      </Box>
       </Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Top Players</Typography>
       {loading ? (
@@ -194,19 +287,27 @@ export default function LeaderBoardPage() {
                     }}>{`${idx + 1}th`}</Box>
                   )}
                 </Box>
-                <Avatar
-                  src={
-                    player?.profilePicture
-                      ? (player.profilePicture || '/assets/group.svg'
-                          ? player.profilePicture
-                          : `${process.env.NEXT_PUBLIC_API_URL}${player.profilePicture.startsWith('/') ? player.profilePicture : '/' + player.profilePicture}`)
-                      : '/assets/group451.png'
-                  }
-                  sx={{ width: 64, height: 64, mr: 2 }}
-                />
+                <Box sx={{ position: 'relative', width: 64, height: 64, mr: 2 }}>
+                  <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#000',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {player.shirtNumber || '0'}
+                  </Box>
+                </Box>
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' , color:'white' }}>{player.name}</Typography>
-                  <Typography variant="body2">Position: {player.position}</Typography>
+                  <Typography variant="body2">Position: {player.positionType}</Typography>
                   <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
                 </Box>
               </Paper>
@@ -218,4 +319,4 @@ export default function LeaderBoardPage() {
       )}
     </Box>
   );
-} 
+}
