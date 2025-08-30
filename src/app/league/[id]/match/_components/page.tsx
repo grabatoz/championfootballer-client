@@ -363,7 +363,7 @@ export default function ScheduleMatchPage() {
     }
 
     // Shirt avatar with centered number (no external assets needed)
-    const ShirtAvatar = ({ number, size = 56, borderColor }: { number?: string | number; size?: number; borderColor?: string }) => (
+    const ShirtAvatar = ({ number, size = 56, }: { number?: string | number; size?: number;}) => (
         <Box
             sx={{
                 position: 'relative',
