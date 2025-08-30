@@ -863,7 +863,7 @@ export default function ScheduleMatchPage() {
                                     {awayCaptain && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                             <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                <ShirtAvatar number={awayCaptain.shirtNumber} size={56} borderColor="gold" />
+                                                <ShirtAvatar number={awayCaptain.shirtNumber} size={56} />
                                                 <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                                     <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
                                                     <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
