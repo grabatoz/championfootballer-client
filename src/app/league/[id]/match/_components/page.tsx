@@ -13,6 +13,8 @@ import {
     Divider,
     Avatar,
     IconButton,
+    Dialog, DialogTitle, DialogContent, DialogActions,
+    FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -52,20 +54,22 @@ interface League {
     active: boolean;
 }
 
-// Add PlayerCardProps interface for the preview
-// interface PlayerCardProps {
-//     name: string;
-//     number: string;
-//     level: string;
-//     stats: { DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string; };
-//     foot: string;
-//     shirtIcon: string;
-//     profileImage?: string;
-//     isCaptain?: boolean;
-// }
+// NEW: Guest player (staged for create)
+interface GuestPlayerInput {
+    team: 'home' | 'away';
+    firstName: string;
+    lastName: string;
+    shirtNumber?: string;
+}
 
-// const icon = <span style={{ width: 16, height: 16, border: "1px solid white", borderRadius: 2 }} />
-// const checkedIcon = <span style={{ width: 16, height: 16, backgroundColor: "white", borderRadius: 2 }} />
+// Persisted guest returned by API
+interface Guest {
+    id: string;
+    team: 'home' | 'away';
+    firstName: string;
+    lastName: string;
+    shirtNumber?: string;
+}
 
 export default function ScheduleMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
@@ -90,6 +94,15 @@ export default function ScheduleMatchPage() {
     const [awayTeamImage, setAwayTeamImage] = useState<File | null>(null);
     const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
     const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
+
+    // NEW: Guest dialog and staged guests for create
+    const [guestOpen, setGuestOpen] = useState(false);
+    const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
+    const [guestFirstName, setGuestFirstName] = useState('');
+    const [guestLastName, setGuestLastName] = useState('');
+    const [guestShirtNumber, setGuestShirtNumber] = useState('');
+    const [homeGuests, setHomeGuests] = useState<GuestPlayerInput[]>([]);
+    const [awayGuests, setAwayGuests] = useState<GuestPlayerInput[]>([]);
 
     const { token } = useAuth();
     const params = useParams();
@@ -172,24 +185,54 @@ export default function ScheduleMatchPage() {
         setAwayTeamImagePreview(null);
     };
 
-    // Mapper function for the preview cards
-    // const mapUserToCardProps = (user: User, isCaptain: boolean): PlayerCardProps => ({
-    //     name: `${user.firstName || ''} ${user.lastName || ''}`,
-    //     number: user.shirtNumber || '10',
-    //     level: user.level || '1',
-    //     stats: {
-    //         DRI: user.skills?.dribbling?.toString() || '50',
-    //         SHO: user.skills?.shooting?.toString() || '50',
-    //         PAS: user.skills?.passing?.toString() || '50',
-    //         PAC: user.skills?.pace?.toString() || '50',
-    //         DEF: user.skills?.defending?.toString() || '50',
-    //         PHY: user.skills?.physical?.toString() || '50'
-    //     },
-    //     foot: user.preferredFoot === 'right' ? 'R' : 'L',
-    //     profileImage: user.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : undefined,
-    //     isCaptain,
-    //     shirtIcon: ''
-    // });
+    // NEW: Stage a guest locally before match is created
+    const handleStageGuest = () => {
+        if (!guestFirstName.trim() || !guestLastName.trim()) {
+            toast.error('Enter first and last name');
+            return;
+        }
+        const g: GuestPlayerInput = {
+            team: guestTeam,
+            firstName: guestFirstName.trim(),
+            lastName: guestLastName.trim(),
+            shirtNumber: guestShirtNumber || undefined,
+        };
+        if (g.team === 'home') setHomeGuests(prev => [g, ...prev]);
+        else setAwayGuests(prev => [g, ...prev]);
+
+        setGuestOpen(false);
+        setGuestTeam('home');
+        setGuestFirstName('');
+        setGuestLastName('');
+        setGuestShirtNumber('');
+    };
+
+    // NEW: Remove staged guest
+    const removeStagedGuest = (team: 'home' | 'away', index: number) => {
+        if (team === 'home') setHomeGuests(prev => prev.filter((_, i) => i !== index));
+        else setAwayGuests(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // NEW: After match creation, push staged guests to server
+    const createGuestsForMatch = async (newMatchId: string): Promise<Guest[]> => {
+        const all = [...homeGuests, ...awayGuests];
+        if (!all.length) return [];
+        await Promise.allSettled(
+            all.map(g =>
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${newMatchId}/guests`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(g)
+                }).then(res => res.ok ? res.json() : res.json().then(j => Promise.reject(j?.message || 'Guest add failed')))
+            )
+        );
+        // Refetch match to get canonical guests array from API
+        const getRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${newMatchId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const j = await getRes.json().catch(() => ({}));
+        return (j?.match?.guests as Guest[] | undefined) || [];
+    };
 
     const handleScheduleMatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -201,39 +244,22 @@ export default function ScheduleMatchPage() {
             setIsSubmitting(false);
             return;
         }
-        if (!homeCaptain || !awayCaptain) { // require captains
+        if (!homeCaptain || !awayCaptain) {
             setError('Please select a captain for both teams.');
             setIsSubmitting(false);
             return;
         }
 
-        // Combine date and time
         const start = matchDate
             .hour(startTime.hour())
             .minute(startTime.minute())
             .second(0)
             .millisecond(0);
 
-        const matchDuration = duration || 90; // fallback to 90 if undefined
+        const matchDuration = duration || 90;
         const end = start.add(matchDuration, 'minute');
 
-        const matchData = {
-            homeTeamName,
-            awayTeamName,
-            date: start.toISOString(),
-            start: start.toISOString(),
-            end: end.toISOString(),
-            location,
-            homeTeamUsers: homeTeamUsers.map(u => u.id),
-            awayTeamUsers: awayTeamUsers.map(u => u.id),
-            homeCaptain: homeCaptain?.id, // send home captain
-            awayCaptain: awayCaptain?.id, // send away captain
-        };
-
-        console.log('match data', matchData)
-
         try {
-            // Create FormData for file uploads
             const formData = new FormData();
             formData.append('homeTeamName', homeTeamName);
             formData.append('awayTeamName', awayTeamName);
@@ -246,27 +272,22 @@ export default function ScheduleMatchPage() {
             formData.append('homeCaptain', homeCaptain?.id || '');
             formData.append('awayCaptain', awayCaptain?.id || '');
 
-            // Add team images if selected
-            if (homeTeamImage) {
-                formData.append('homeTeamImage', homeTeamImage);
-            }
-            if (awayTeamImage) {
-                formData.append('awayTeamImage', awayTeamImage);
-            }
+            if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
+            if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData,
             });
 
             const result = await response.json();
             if (result.success) {
-                // Update cache with new match data
-                if (result.match) {
-                    cacheManager.updateMatchesCache(result.match);
+                let updatedMatch = result.match;
+                if (updatedMatch?.id) {
+                    const guests = await createGuestsForMatch(updatedMatch.id);
+                    updatedMatch = { ...updatedMatch, guests };
+                    cacheManager.updateMatchesCache(updatedMatch);
                 }
                 toast.success('Match scheduled successfully!');
                 router.push(`/league/${leagueId}`);
@@ -298,9 +319,6 @@ export default function ScheduleMatchPage() {
         </Box>;
     }
 
-    // const availablePlayers = league.members.filter(
-    //     member => ![...homeTeamUsers, ...awayTeamUsers].find(p => p.id === member.id)
-    // );
     const inputStyles = {
         "& .MuiOutlinedInput-root": {
             color: "#E5E7EB",
@@ -357,8 +375,6 @@ export default function ScheduleMatchPage() {
                 borderRadius: 1,
                 overflow: 'hidden',
                 background: 'transparent',
-                // border: borderColor ? `2px solid ${borderColor}` : '1px solid rgba(255,255,255,0.2)',
-                // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
             }}
         >
             <img
@@ -412,6 +428,16 @@ export default function ScheduleMatchPage() {
                             <Typography variant="h4" component="h1" gutterBottom>
                                 {league.name} Create a New Match
                             </Typography>
+
+                            {/* NEW: Add Guest button */}
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setGuestOpen(true)}
+                                sx={{ justifyContent:'flex-end',mb: 2, borderColor: '#e56a16', color: '#e56a16', '&:hover': { borderColor: '#e56a16', backgroundColor: 'rgba(229,106,22,0.08)' } }}
+                            >
+                                Add Guest Player
+                            </Button>
 
                             {/* Home Team Fields */}
                             <TextField
@@ -517,12 +543,8 @@ export default function ScheduleMatchPage() {
                                     />
                                 )}
                                 sx={{
-                                    "& .MuiAutocomplete-popupIndicator": {
-                                        color: "white",
-                                    },
-                                    "& .MuiAutocomplete-clearIndicator": {
-                                        color: "white",
-                                    },
+                                    "& .MuiAutocomplete-popupIndicator": { color: "white" },
+                                    "& .MuiAutocomplete-clearIndicator": { color: "white" },
                                 }}
                             />
 
@@ -536,12 +558,8 @@ export default function ScheduleMatchPage() {
                                         <TextField {...params} sx={{ mt: 2, mb: 1, ...inputStyles }} label="Select Home Team Captain" required />
                                     )}
                                     sx={{
-                                        "& .MuiAutocomplete-popupIndicator": {
-                                            color: "white",
-                                        },
-                                        "& .MuiAutocomplete-clearIndicator": {
-                                            color: "white",
-                                        },
+                                        "& .MuiAutocomplete-popupIndicator": { color: "white" },
+                                        "& .MuiAutocomplete-clearIndicator": { color: "white" },
                                     }}
                                 />
                             )}
@@ -650,12 +668,8 @@ export default function ScheduleMatchPage() {
                                     />
                                 )}
                                 sx={{
-                                    "& .MuiAutocomplete-popupIndicator": {
-                                        color: "white",
-                                    },
-                                    "& .MuiAutocomplete-clearIndicator": {
-                                        color: "white",
-                                    },
+                                    "& .MuiAutocomplete-popupIndicator": { color: "white" },
+                                    "& .MuiAutocomplete-clearIndicator": { color: "white" },
                                 }}
                             />
 
@@ -669,12 +683,8 @@ export default function ScheduleMatchPage() {
                                         <TextField {...params} sx={{ mt: 2, mb: 1, ...inputStyles }} label="Select Away Team Captain" required />
                                     )}
                                     sx={{
-                                        "& .MuiAutocomplete-popupIndicator": {
-                                            color: "white",
-                                        },
-                                        "& .MuiAutocomplete-clearIndicator": {
-                                            color: "white",
-                                        },
+                                        "& .MuiAutocomplete-popupIndicator": { color: "white" },
+                                        "& .MuiAutocomplete-clearIndicator": { color: "white" },
                                     }}
                                 />
                             )}
@@ -685,12 +695,7 @@ export default function ScheduleMatchPage() {
                                 value={matchDate}
                                 onChange={(newValue) => setMatchDate(dayjs(newValue))}
                                 slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        margin: "normal",
-                                        required: true,
-                                        sx: inputStyles,
-                                    },
+                                    textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles },
                                 }}
                             />
 
@@ -699,12 +704,7 @@ export default function ScheduleMatchPage() {
                                 value={startTime}
                                 onChange={(newValue) => setStartTime(dayjs(newValue))}
                                 slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        margin: "normal",
-                                        required: true,
-                                        sx: inputStyles,
-                                    },
+                                    textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles },
                                 }}
                             />
 
@@ -761,135 +761,178 @@ export default function ScheduleMatchPage() {
 
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-    <Paper
-        sx={{
-            p: 2,
-            bgcolor: 'rgba(15,15,15,0.92)',
-            color: '#E5E7EB',
-            borderRadius: 3,
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-        }}
-    >
-        <Box
-            sx={{
-                // bgcolor: '#111',
-                borderRadius: 2,
-                p: 1,
-                mb: 1,
-                // boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}
-        >
-            <Typography variant="h5" gutterBottom sx={{ color: '#fff', fontWeight: 700 }}>
-                Live Preview
-            </Typography>
-        </Box>
-        <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.12)' }} />
-
-        <Box sx={{
-            display: { xs: 'block', md: 'flex' },
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-        }}>
-            {/* Home Team (left side) */}
-            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    <Avatar
-                        src={homeTeamImagePreview || '/assets/default-team.png'}
-                        alt="Home Team"
-                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
-                    />
-                    <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
-                        {homeTeamName || 'Home Team'}
-                    </Typography>
-                </Box>
-                {/* Captain */}
-                {homeCaptain && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                        <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                            <ShirtAvatar number={homeCaptain.shirtNumber} size={56}  />
-                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
-                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                            </Box>
-                        </Link>
-                    </Box>
-                )}
-                {/* Other players */}
-                {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
-                    <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                        <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                            <ShirtAvatar number={user.shirtNumber} size={48} />
-                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                    {user.firstName} {user.lastName}
+                        <Paper
+                            sx={{
+                                p: 2,
+                                bgcolor: 'rgba(15,15,15,0.92)',
+                                color: '#E5E7EB',
+                                borderRadius: 3,
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                backdropFilter: 'blur(10px)',
+                                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    borderRadius: 2,
+                                    p: 1,
+                                    mb: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Typography variant="h5" gutterBottom sx={{ color: '#fff', fontWeight: 700 }}>
+                                    Live Preview
                                 </Typography>
-                                {user.id === homeCaptain?.id && (
-                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                        Captain
-                                    </Typography>
-                                )}
                             </Box>
-                        </Link>
+                            <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.12)' }} />
+
+                            <Box sx={{ display: { xs: 'block', md: 'flex' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                                {/* Home Team (left side) */}
+                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <Avatar
+                                            src={homeTeamImagePreview || '/assets/default-team.png'}
+                                            alt="Home Team"
+                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
+                                        />
+                                        <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
+                                            {homeTeamName || 'Home Team'}
+                                        </Typography>
+                                    </Box>
+                                    {/* Captain */}
+                                    {homeCaptain && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                                            <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                                                <ShirtAvatar number={homeCaptain.shirtNumber} size={56} />
+                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
+                                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                </Box>
+                                            </Link>
+                                        </Box>
+                                    )}
+                                    {/* Other players */}
+                                    {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
+                                        <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                                            <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                                                <ShirtAvatar number={user.shirtNumber} size={48} />
+                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                                        {user.firstName} {user.lastName}
+                                                    </Typography>
+                                                </Box>
+                                            </Link>
+                                        </Box>
+                                    ))}
+
+                                    {/* NEW: Home team staged guest players */}
+                                    {homeGuests.map((g, i) => (
+                                        <Box key={`hg-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
+                                            <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                            <Box sx={{ ml: 2, flex: 1 }}>
+                                                <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
+                                                    {g.firstName} {g.lastName}
+                                                </Typography>
+                                                <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest (staged)</Typography>
+                                            </Box>
+                                            <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => removeStagedGuest('home', i)}>
+                                                <X size={16} />
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                </Box>
+
+                                {/* Center Line */}
+                                <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 180, borderRadius: 1, mx: 2, alignSelf: 'stretch' }} />
+
+                                {/* Away Team (right side) */}
+                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <Avatar
+                                            src={awayTeamImagePreview || '/assets/default-team.png'}
+                                            alt="Away Team"
+                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
+                                        />
+                                        <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
+                                            {awayTeamName || 'Away Team'}
+                                        </Typography>
+                                    </Box>
+                                    {/* Captain */}
+                                    {awayCaptain && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                                            <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                                                <ShirtAvatar number={awayCaptain.shirtNumber} size={56} borderColor="gold" />
+                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
+                                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                </Box>
+                                            </Link>
+                                        </Box>
+                                    )}
+                                    {/* Other players */}
+                                    {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
+                                        <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                                            <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                                                <ShirtAvatar number={user.shirtNumber} size={48} />
+                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                                        {user.firstName} {user.lastName}
+                                                    </Typography>
+                                                </Box>
+                                            </Link>
+                                        </Box>
+                                    ))}
+
+                                    {/* NEW: Away team staged guest players */}
+                                    {awayGuests.map((g, i) => (
+                                        <Box key={`ag-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
+                                            <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                            <Box sx={{ ml: 2, flex: 1 }}>
+                                                <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
+                                                    {g.firstName} {g.lastName}
+                                                </Typography>
+                                                <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest (staged)</Typography>
+                                            </Box>
+                                            <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => removeStagedGuest('away', i)}>
+                                                <X size={16} />
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                        </Paper>
                     </Box>
-                ))}
+                </Box>
             </Box>
 
-            {/* Center Line */}
-            <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 180, borderRadius: 1, mx: 2, alignSelf: 'stretch' }} />
+            {/* NEW: Add Guest dialog */}
+            <Dialog open={guestOpen} onClose={() => setGuestOpen(false)} fullWidth maxWidth="xs">
+                <DialogTitle>Add Guest Player</DialogTitle>
+                <DialogContent sx={{ pt: 1 }}>
+                    <FormControl fullWidth sx={{ mt: 1 }}>
+                        <InputLabel id="guest-team-label">Team</InputLabel>
+                        <Select
+                            labelId="guest-team-label"
+                            label="Team"
+                            value={guestTeam}
+                            onChange={(e) => setGuestTeam(e.target.value as 'home' | 'away')}
+                        >
+                            <MenuItem value="home">Home</MenuItem>
+                            <MenuItem value="away">Away</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField label="First name" fullWidth sx={{ mt: 2 }} value={guestFirstName} onChange={(e) => setGuestFirstName(e.target.value)} />
+                    <TextField label="Last name" fullWidth sx={{ mt: 2 }} value={guestLastName} onChange={(e) => setGuestLastName(e.target.value)} />
+                    <TextField label="Shirt number (optional)" fullWidth sx={{ mt: 2 }} value={guestShirtNumber} onChange={(e) => setGuestShirtNumber(e.target.value)} />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setGuestOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleStageGuest}>Add Guest</Button>
+                </DialogActions>
+            </Dialog>
 
-            {/* Away Team (right side) */}
-            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    <Avatar
-                        src={awayTeamImagePreview || '/assets/default-team.png'}
-                        alt="Away Team"
-                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
-                    />
-                    <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
-                        {awayTeamName || 'Away Team'}
-                    </Typography>
-                </Box>
-                {/* Captain */}
-                {awayCaptain && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                        <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                            <ShirtAvatar number={awayCaptain.shirtNumber} size={56} borderColor="gold" />
-                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
-                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                            </Box>
-                        </Link>
-                    </Box>
-                )}
-                {/* Other players */}
-                {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
-                    <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                        <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                            <ShirtAvatar number={user.shirtNumber} size={48} />
-                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                    {user.firstName} {user.lastName}
-                                </Typography>
-                                {user.id === awayCaptain?.id && (
-                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                        Captain
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Link>
-                    </Box>
-                ))}
-            </Box>
-        </Box>
-    </Paper>
-</Box>
-                </Box>
-            </Box>
             <Toaster position="top-center" reverseOrder={false} />
         </LocalizationProvider>
     );

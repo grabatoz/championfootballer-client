@@ -13,6 +13,8 @@ import {
     Divider,
     IconButton,
     Avatar,
+    Dialog, DialogTitle, DialogContent, DialogActions,
+    FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -41,6 +43,15 @@ interface User {
     awayCaptainId?: string;
 }
 
+// NEW: Guest player type
+interface Guest {
+    id?: string;
+    team: 'home' | 'away';
+    firstName: string;
+    lastName: string;
+    shirtNumber?: string;
+}
+
 interface Match {
     id: string;
     homeTeamName: string;
@@ -53,6 +64,10 @@ interface Match {
     awayCaptainId?: string;
     homeTeamImage?: string;
     awayTeamImage?: string;
+    // Optional guest fields depending on API shape
+    guests?: Guest[];
+    homeGuests?: Guest[];
+    awayGuests?: Guest[];
 }
 
 interface League {
@@ -79,20 +94,46 @@ export default function EditMatchPage() {
     const [awayTeamUsers, setAwayTeamUsers] = useState<User[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Add state for captains
+    // Captains
     const [homeCaptain, setHomeCaptain] = useState<User | null>(null);
     const [awayCaptain, setAwayCaptain] = useState<User | null>(null);
 
+    // Team images
     const [homeTeamImage, setHomeTeamImage] = useState<File | null>(null);
     const [awayTeamImage, setAwayTeamImage] = useState<File | null>(null);
     const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
     const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
+
+    // NEW: Guests state for existing match
+    const [homeGuests, setHomeGuests] = useState<Guest[]>([]);
+    const [awayGuests, setAwayGuests] = useState<Guest[]>([]);
+
+    // NEW: Guest dialog state
+    const [guestOpen, setGuestOpen] = useState(false);
+    const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
+    const [guestFirstName, setGuestFirstName] = useState('');
+    const [guestLastName, setGuestLastName] = useState('');
+    const [guestShirtNumber, setGuestShirtNumber] = useState('');
+    const [addingGuest, setAddingGuest] = useState(false);
 
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
     const matchId = params?.matchId ? String(params.matchId) : '';
+
+    // Safe response parser: JSON if possible, else fall back to text
+    const parseResponse = useCallback(async (res: Response) => {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            try {
+                return await res.json();
+            } catch {
+                return { success: res.ok, message: await res.text() };
+            }
+        }
+        return { success: res.ok, message: await res.text() };
+    }, []);
 
     const fetchLeagueAndMatchDetails = useCallback(async () => {
         try {
@@ -101,13 +142,14 @@ export default function EditMatchPage() {
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
+                // FIX: correct endpoint (remove `/n/`)
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
             ]);
 
-            const leagueData = await leagueRes.json();
-            const matchData = await matchRes.json();
+            const leagueData = await parseResponse(leagueRes);
+            const matchData = await parseResponse(matchRes);
 
             if (leagueData.success) {
                 setLeague(leagueData.league);
@@ -116,7 +158,7 @@ export default function EditMatchPage() {
             }
 
             if (matchData.success) {
-                const fetchedMatch = matchData.match;
+                const fetchedMatch: Match = matchData.match;
                 setMatch(fetchedMatch);
                 setHomeTeamName(fetchedMatch.homeTeamName);
                 setAwayTeamName(fetchedMatch.awayTeamName);
@@ -134,6 +176,12 @@ export default function EditMatchPage() {
                     setAwayTeamImagePreview(`${process.env.NEXT_PUBLIC_API_URL}${fetchedMatch.awayTeamImage}`);
                 }
 
+                // Initialize guests
+                const allGuests: Guest[] = (fetchedMatch.guests as Guest[] | undefined) || [];
+                const initHome = (fetchedMatch.homeGuests as Guest[] | undefined) || allGuests.filter(g => g.team === 'home');
+                const initAway = (fetchedMatch.awayGuests as Guest[] | undefined) || allGuests.filter(g => g.team === 'away');
+                setHomeGuests(initHome);
+                setAwayGuests(initAway);
             } else {
                 throw new Error(matchData.message || 'Failed to fetch match details');
             }
@@ -144,7 +192,7 @@ export default function EditMatchPage() {
         } finally {
             setLoading(false);
         }
-    }, [leagueId, matchId, token]);
+    }, [leagueId, matchId, token, parseResponse]);
 
     useEffect(() => {
         if (leagueId && matchId && token) {
@@ -202,6 +250,74 @@ export default function EditMatchPage() {
         setAwayTeamImagePreview(null);
     };
 
+    // NEW: Add a guest to existing match
+    const handleAddGuest = async () => {
+        if (!guestFirstName.trim() || !guestLastName.trim()) {
+            toast.error('Enter first and last name');
+            return;
+        }
+        setAddingGuest(true);
+        try {
+            const payload: Guest = {
+                team: guestTeam,
+                firstName: guestFirstName.trim(),
+                lastName: guestLastName.trim(),
+                shirtNumber: guestShirtNumber || undefined,
+            };
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const ct = res.headers.get('content-type') || '';
+            const data = ct.includes('application/json') ? await res.json() : { success: res.ok };
+
+            if (!res.ok || data.success === false) {
+                throw new Error(data.message || 'Failed to add guest.');
+            }
+
+            const saved: Guest = data.guest || payload;
+            if (saved.team === 'home') setHomeGuests(prev => [saved, ...prev]);
+            else setAwayGuests(prev => [saved, ...prev]);
+
+            toast.success('Guest added');
+            setGuestOpen(false);
+            setGuestTeam('home');
+            setGuestFirstName('');
+            setGuestLastName('');
+            setGuestShirtNumber('');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to add guest.');
+        } finally {
+            setAddingGuest(false);
+        }
+    };
+
+    // NEW: Remove guest (if API supports DELETE)
+    const handleRemoveGuest = async (guest: Guest, team: 'home' | 'away', index: number) => {
+        try {
+            if (guest.id) {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests/${guest.id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) {
+                    const j = await res.json().catch(() => ({}));
+                    throw new Error(j?.message || 'Failed to remove guest.');
+                }
+            }
+            if (team === 'home') setHomeGuests(prev => prev.filter((_, i) => i !== index));
+            else setAwayGuests(prev => prev.filter((_, i) => i !== index));
+            toast.success('Guest removed');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to remove guest.');
+        }
+    };
+
     const handleUpdateMatch = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -213,38 +329,30 @@ export default function EditMatchPage() {
             return;
         }
 
-        // ensure captains belong to current selections
         const homeCaptainId = homeTeamUsers.find(u => u.id === homeCaptain?.id)?.id || null;
         const awayCaptainId = awayTeamUsers.find(u => u.id === awayCaptain?.id)?.id || null;
 
         try {
-            // Always multipart/form-data
             const formData = new FormData();
             formData.set('homeTeamName', homeTeamName);
             formData.set('awayTeamName', awayTeamName);
             formData.set('date', matchDate.toISOString());
             formData.set('location', location);
-
-            // Server JSON.parse's these fields
             formData.set('homeTeamUsers', JSON.stringify(homeTeamUsers.map(u => u.id)));
             formData.set('awayTeamUsers', JSON.stringify(awayTeamUsers.map(u => u.id)));
-
             if (homeCaptainId) formData.set('homeCaptainId', homeCaptainId);
             if (awayCaptainId) formData.set('awayCaptainId', awayCaptainId);
-
             if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
             if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                 method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}` }, // do not set Content-Type manually
+                headers: { Authorization: `Bearer ${token}` },
                 body: formData,
             });
 
-            const ct = response.headers.get('content-type') || '';
-            const result = ct.includes('application/json')
-                ? await response.json()
-                : { success: false, message: await response.text() };
+            // Use safe parser here too to avoid JSON errors
+            const result = await parseResponse(response);
 
             if (result.success) {
                 if (result.match) cacheManager.updateMatchesCache(result.match);
@@ -288,8 +396,6 @@ export default function EditMatchPage() {
                 borderRadius: 1,
                 overflow: 'hidden',
                 background: 'transparent',
-                // border: borderColor ? `2px solid ${borderColor}` : '1px solid rgba(255,255,255,0.2)',
-                // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
             }}
         >
             <img
@@ -344,6 +450,17 @@ export default function EditMatchPage() {
                         <Typography variant="h4" component="h1" gutterBottom>
                             Edit Match for {league.name}
                         </Typography>
+
+                        {/* NEW: Add Guest button */}
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setGuestOpen(true)}
+                            sx={{ mb: 2, borderColor: '#e56a16', color: '#e56a16', '&:hover': { borderColor: '#e56a16', backgroundColor: 'rgba(229,106,22,0.08)' } }}
+                        >
+                            Add Guest Player
+                        </Button>
+
                         <TextField
                             label="Home Team Name"
                             value={homeTeamName}
@@ -352,10 +469,10 @@ export default function EditMatchPage() {
                             fullWidth
                             margin="normal"
                             sx={{
-                                 backgroundColor: "transparent",
-                                 border:'1px solid white',
+                                backgroundColor: "transparent",
+                                border:'1px solid white',
                                 color: 'white',
-                                input: { color: 'white' }, // <-- This makes entered text white
+                                input: { color: 'white' },
                             }}
                             InputLabelProps={{ style: { color: 'white' } }}
                         />
@@ -696,6 +813,21 @@ export default function EditMatchPage() {
                                         </Link>
                                     </Box>
                                 ))}
+                                {/* NEW: Home Guests */}
+                                {homeGuests.map((g, i) => (
+                                    <Box key={`home-guest-${g.id ?? i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
+                                        <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                        <Box sx={{ ml: 2, flex: 1 }}>
+                                            <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
+                                                {g.firstName} {g.lastName}
+                                            </Typography>
+                                            <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest</Typography>
+                                        </Box>
+                                        <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => handleRemoveGuest(g, 'home', i)}>
+                                            <X size={16} />
+                                        </IconButton>
+                                    </Box>
+                                ))}
                             </Box>
 
                             {/* Center Line */}
@@ -743,10 +875,121 @@ export default function EditMatchPage() {
                                         </Link>
                                     </Box>
                                 ))}
+                                {/* NEW: Away Guests */}
+                                {awayGuests.map((g, i) => (
+                                    <Box key={`away-guest-${g.id ?? i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
+                                        <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                        <Box sx={{ ml: 2, flex: 1 }}>
+                                            <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
+                                                {g.firstName} {g.lastName}
+                                            </Typography>
+                                            <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest</Typography>
+                                        </Box>
+                                        <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => handleRemoveGuest(g, 'away', i)}>
+                                            <X size={16} />
+                                        </IconButton>
+                                    </Box>
+                                ))}
                             </Box>
                         </Box>
                     </Paper>
                 </Box>
+
+                {/* NEW: Guest Dialog */}
+                <Dialog
+                    open={guestOpen}
+                    onClose={() => setGuestOpen(false)}
+                    PaperProps={{
+                        sx: {
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 3,
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{ color: 'white' }}>Add Guest Player</DialogTitle>
+                    <DialogContent>
+                        <FormControl fullWidth margin="normal" variant="outlined">
+                            <InputLabel id="guest-team-label" sx={{ color: 'white' }}>Team</InputLabel>
+                            <Select
+                                labelId="guest-team-label"
+                                id="guest-team"
+                                value={guestTeam}
+                                onChange={(e) => setGuestTeam(e.target.value as 'home' | 'away')}
+                                label="Team"
+                                sx={{ color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' } }}
+                            >
+                                <MenuItem value="home" sx={{ color: 'white' }}>Home</MenuItem>
+                                <MenuItem value="away" sx={{ color: 'white' }}>Away</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="First Name"
+                            value={guestFirstName}
+                            onChange={(e) => setGuestFirstName(e.target.value)}
+                            required
+                            fullWidth
+                            margin="normal"
+                            sx={{
+                                input: { color: 'white' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                            }}
+                            InputLabelProps={{ style: { color: 'white' } }}
+                        />
+                        <TextField
+                            label="Last Name"
+                            value={guestLastName}
+                            onChange={(e) => setGuestLastName(e.target.value)}
+                            required
+                            fullWidth
+                            margin="normal"
+                            sx={{
+                                input: { color: 'white' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                            }}
+                            InputLabelProps={{ style: { color: 'white' } }}
+                        />
+                        <TextField
+                            label="Shirt Number (Optional)"
+                            value={guestShirtNumber}
+                            onChange={(e) => setGuestShirtNumber(e.target.value)}
+                            fullWidth
+                            margin="normal"
+                            sx={{
+                                input: { color: 'white' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                            }}
+                            InputLabelProps={{ style: { color: 'white' } }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setGuestOpen(false)} sx={{ color: 'white' }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleAddGuest}
+                            disabled={addingGuest}
+                            sx={{
+                                color: 'white',
+                                backgroundColor: '#e56a16',
+                                '&:hover': {
+                                    backgroundColor: '#d32f2f',
+                                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                                },
+                            }}
+                        >
+                            {addingGuest ? <CircularProgress size={24} color="inherit" /> : 'Add Guest'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </LocalizationProvider>
     );
