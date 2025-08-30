@@ -23,6 +23,7 @@ import { ArrowLeft, X } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from "@/lib/cacheManager"
+import ShirtImg from '@/Components/images/shirtimg.png'; // Make sure this path is correct
 
 // Assuming User and League interfaces are available or defined here
 interface User {
@@ -302,118 +303,96 @@ export default function ScheduleMatchPage() {
     // );
     const inputStyles = {
         "& .MuiOutlinedInput-root": {
-            color: "white",
+            color: "#E5E7EB",
             backgroundColor: "transparent",
-            "& fieldset": {
-                borderColor: "white",
-            },
-            "&:hover fieldset": {
-                borderColor: "white",
-                borderWidth: "2px",
-            },
+            "& fieldset": { borderColor: "rgba(255,255,255,0.2)" },
+            "&:hover fieldset": { borderColor: "rgba(255,255,255,0.35)", borderWidth: "1px" },
             "&.Mui-focused": {
-                backgroundColor: "black",
-                "& fieldset": {
-                    borderColor: "#2196f3", // Blue color when focused
-                    borderWidth: "2px",
-                },
-                "& input": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
-                "& .MuiInputBase-input": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
+                "& fieldset": { borderColor: "#e56a16", borderWidth: "2px" },
             },
-            "& input": {
-                color: "white",
-                backgroundColor: "transparent",
-                "&:-webkit-autofill": {
-                    WebkitBoxShadow: "0 0 0 1000px #1f673b inset",
-                    WebkitTextFillColor: "white",
-                },
-                "&:focus": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
-            },
-            "& .MuiInputBase-input": {
-                color: "white",
-                backgroundColor: "transparent",
-                "&:focus": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
-            },
+            "& input": { color: "#E5E7EB", backgroundColor: "transparent" },
+            "& .MuiInputBase-input": { color: "#E5E7EB", backgroundColor: "transparent" },
         },
         "& .MuiInputLabel-root": {
-            color: "white",
-            "&.Mui-focused": {
-                color: "#2196f3", // Blue label when focused
-            },
+            color: "#9CA3AF",
+            "&.Mui-focused": { color: "#e56a16" },
         },
-        "& .MuiSvgIcon-root": {
-            color: "white",
-        },
+        "& .MuiSvgIcon-root": { color: "#E5E7EB" },
     }
 
     const autocompleteStyles = {
         "& .MuiOutlinedInput-root": {
-            color: "white",
+            color: "#E5E7EB",
             backgroundColor: "transparent",
-            "& fieldset": {
-                borderColor: "white",
-            },
-            "&:hover fieldset": {
-                borderColor: "white",
-                borderWidth: "2px",
-            },
+            "& fieldset": { borderColor: "rgba(255,255,255,0.2)" },
+            "&:hover fieldset": { borderColor: "rgba(255,255,255,0.35)", borderWidth: "1px" },
             "&.Mui-focused": {
-                backgroundColor: "black",
-                "& fieldset": {
-                    borderColor: "#2196f3", // Blue border when focused
-                    borderWidth: "2px",
-                },
-                "& .MuiInputBase-input": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
+                "& fieldset": { borderColor: "#e56a16", borderWidth: "2px" },
+                "& .MuiInputBase-input": { color: "#E5E7EB" },
             },
-            "& .MuiInputBase-input": {
-                color: "white",
-                backgroundColor: "transparent",
-                "&:focus": {
-                    backgroundColor: "black",
-                    color: "white",
-                },
-            },
+            "& .MuiInputBase-input": { color: "#E5E7EB", backgroundColor: "transparent" },
             "& .MuiChip-root": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                color: "white",
-                "& .MuiChip-deleteIcon": {
-                    color: "white",
-                },
+                backgroundColor: "rgba(255,255,255,0.12)",
+                color: "#E5E7EB",
+                "& .MuiChip-deleteIcon": { color: "#E5E7EB" },
             },
         },
         "& .MuiInputLabel-root": {
-            color: "white",
-            "&.Mui-focused": {
-                color: "#2196f3", // Blue label when focused
-            },
+            color: "#9CA3AF",
+            "&.Mui-focused": { color: "#e56a16" },
         },
-        "& .MuiSvgIcon-root": {
-            color: "white",
-        },
+        "& .MuiSvgIcon-root": { color: "#E5E7EB" },
     }
+
+    // Shirt avatar with centered number (no external assets needed)
+    const ShirtAvatar = ({ number, size = 56, borderColor }: { number?: string | number; size?: number; borderColor?: string }) => (
+        <Box
+            sx={{
+                position: 'relative',
+                width: size,
+                height: size,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 1,
+                overflow: 'hidden',
+                background: 'transparent',
+                // border: borderColor ? `2px solid ${borderColor}` : '1px solid rgba(255,255,255,0.2)',
+                // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            }}
+        >
+            <img
+                src={ShirtImg.src}
+                alt="Shirt"
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 0,
+                }}
+            />
+            <Typography
+                component="span"
+                sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    fontWeight: 800,
+                    fontSize: size >= 56 ? 16 : 14,
+                    color: '#111',
+                    textShadow: '0 1px 1px rgba(255,255,255,0.6)',
+                    lineHeight: 1,
+                }}
+            >
+                {number || '0'}
+            </Typography>
+        </Box>
+    );
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Box sx={{ p: 4, minHeight: '100vh', color: 'white' }}>
-                <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'white', backgroundColor: '#1f673b', '&:hover': { backgroundColor: '#388e3c' }, }}>
-                    Back to League
-                </Button>
-
+            <Box sx={{ p: 4, minHeight: '100vh', color: '#E5E7EB' }}>
                 <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Form Section */}
                     <Box sx={{ width: { xs: "100%", md: "58.33%" } }}>
@@ -422,10 +401,12 @@ export default function ScheduleMatchPage() {
                             onSubmit={handleScheduleMatch}
                             sx={{
                                 p: 3,
-                                // backgroundColor: "#1f673b",
-                                background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
-                                color: "white",
-                                borderRadius: 6
+                                bgcolor: 'rgba(15,15,15,0.92)',
+                                color: '#E5E7EB',
+                                borderRadius: 3,
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                backdropFilter: 'blur(10px)',
+                                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
                             }}
                         >
                             <Typography variant="h4" component="h1" gutterBottom>
@@ -754,20 +735,22 @@ export default function ScheduleMatchPage() {
                                 </Typography>
                             )}
 
+                            {/* Submit */}
                             <Button
                                 type="submit"
                                 variant="contained"
-                                color="primary"
                                 fullWidth
                                 sx={{
-                                    backgroundColor: "#43a047",
-                                    "&:hover": {
-                                        backgroundColor: "#388e3c",
-                                        transform: "translateY(-1px)",
-                                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                                    background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    '&:hover': {
+                                        background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                                     },
                                     mt: 2,
-                                    transition: "all 0.2s ease-in-out",
+                                    transition: 'all 0.2s ease-in-out',
                                 }}
                                 disabled={isSubmitting || league?.active === false}
                             >
@@ -775,156 +758,139 @@ export default function ScheduleMatchPage() {
                             </Button>
                         </Paper>
                     </Box>
+
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                        <Paper sx={{
-                            p: 2,
-                            // backgroundColor: '#1f673b', 
-                            background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-                            color: 'white',
-                            position: 'sticky',
-                            top: '20px',
-                            height: { xs: 'auto', md: 'fit-content' },
-                            minHeight: { xs: 'auto', md: '100%' },
-                            display: { xs: 'block', md: 'flex' },
-                            flexDirection: { xs: 'column', md: 'column' },
-                            borderRadius: 6
-                        }}>
-                            <Typography variant="h5" gutterBottom>Live Preview</Typography>
-                            <Divider sx={{ mb: 2, borderColor: 'white' }} />
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'stretch',
-                                justifyContent: 'center',
-                                gap: 4,
-                                minHeight: { xs: 250, md: 'calc(100vh - 300px)' },
-                                width: '100%',
-                                flex: 1
-                            }}>
-                                {/* Home Team Preview */}
-                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar
-                                            src={homeTeamImagePreview || '/assets/default-team.png'}
-                                            alt="Home Team"
-                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #66bb6a' }}
-                                        />
-                                        <Typography variant="h6" sx={{ color: '#66bb6a', textAlign: 'center' }}>
-                                            {homeTeamName || 'Home Team'}
-                                        </Typography>
-                                    </Box>
-                                    {homeTeamUsers.length > 0 ? (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
-                                            {/* Captain at top */}
-                                            {homeCaptain && (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                                    <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                        <img
-                                                            src={homeCaptain.profilePicture || '/assets/group.svg'}
-                                                            alt={homeCaptain.firstName}
-                                                            style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
-                                                            width={56} height={56}
-                                                        />
-                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                            <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
-                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                        </Box>
-                                                    </Link>
-                                                </Box>
-                                            )}
-                                            {/* Other players */}
-                                            {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
-                                                <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                                    <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                        <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                                            <img
-                                                                src={user.profilePicture || '/assets/group.svg'}
-                                                                alt={user.firstName}
-                                                                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === homeCaptain?.id ? '2px solid gold' : 'none' }}
-                                                            />
-                                                        </Box>
-                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                            <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                                {user.firstName} {user.lastName}
-                                                            </Typography>
-                                                            {user.id === homeCaptain?.id && (
-                                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                                                    Captain
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
-                                                    </Link>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
-                                </Box>
-                                {/* Center Line */}
-                                <Box sx={{ width: 2, bgcolor: 'white', minHeight: 180, borderRadius: 1, mx: 2, display: { xs: 'none', md: 'block' } }} />
-                                {/* Away Team Preview */}
-                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar
-                                            src={awayTeamImagePreview || '/assets/default-team.png'}
-                                            alt="Away Team"
-                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }}
-                                        />
-                                        <Typography variant="h6" sx={{ color: '#ef5350', textAlign: 'center' }}>
-                                            {awayTeamName || 'Away Team'}
-                                        </Typography>
-                                    </Box>
-                                    {awayTeamUsers.length > 0 ? (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, mt: 1, width: '100%' }}>
-                                            {/* Captain at top */}
-                                            {awayCaptain && (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                                    <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                        <img
-                                                            src={awayCaptain.profilePicture || '/assets/group.svg'}
-                                                            alt={awayCaptain.firstName}
-                                                            style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid gold', objectFit: 'cover' }}
-                                                            width={56} height={56}
-                                                        />
-                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                            <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
-                                                            <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                        </Box>
-                                                    </Link>
-                                                </Box>
-                                            )}
-                                            {/* Other players */}
-                                            {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
-                                                <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                                    <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                        <Box sx={{ minWidth: 48, maxWidth: 48, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                                            <img
-                                                                src={user.profilePicture || '/assets/group.svg'}
-                                                                alt={user.firstName}
-                                                                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: user.id === awayCaptain?.id ? '2px solid gold' : 'none' }}
-                                                            />
-                                                        </Box>
-                                                        <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                            <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                                {user.firstName} {user.lastName}
-                                                            </Typography>
-                                                            {user.id === awayCaptain?.id && (
-                                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
-                                                                    Captain
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
-                                                    </Link>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    ) : <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>Select players...</Typography>}
-                                </Box>
+    <Paper
+        sx={{
+            p: 2,
+            bgcolor: 'rgba(15,15,15,0.92)',
+            color: '#E5E7EB',
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+        }}
+    >
+        <Box
+            sx={{
+                // bgcolor: '#111',
+                borderRadius: 2,
+                p: 1,
+                mb: 1,
+                // boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
+        >
+            <Typography variant="h5" gutterBottom sx={{ color: '#fff', fontWeight: 700 }}>
+                Live Preview
+            </Typography>
+        </Box>
+        <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.12)' }} />
+
+        <Box sx={{
+            display: { xs: 'block', md: 'flex' },
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 2,
+        }}>
+            {/* Home Team (left side) */}
+            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    <Avatar
+                        src={homeTeamImagePreview || '/assets/default-team.png'}
+                        alt="Home Team"
+                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
+                    />
+                    <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
+                        {homeTeamName || 'Home Team'}
+                    </Typography>
+                </Box>
+                {/* Captain */}
+                {homeCaptain && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                        <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                            <ShirtAvatar number={homeCaptain.shirtNumber} size={56}  />
+                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
+                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
                             </Box>
-                        </Paper>
+                        </Link>
                     </Box>
+                )}
+                {/* Other players */}
+                {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
+                    <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                        <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                            <ShirtAvatar number={user.shirtNumber} size={48} />
+                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                    {user.firstName} {user.lastName}
+                                </Typography>
+                                {user.id === homeCaptain?.id && (
+                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
+                                        Captain
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Link>
+                    </Box>
+                ))}
+            </Box>
+
+            {/* Center Line */}
+            <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 180, borderRadius: 1, mx: 2, alignSelf: 'stretch' }} />
+
+            {/* Away Team (right side) */}
+            <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    <Avatar
+                        src={awayTeamImagePreview || '/assets/default-team.png'}
+                        alt="Away Team"
+                        sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
+                    />
+                    <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
+                        {awayTeamName || 'Away Team'}
+                    </Typography>
+                </Box>
+                {/* Captain */}
+                {awayCaptain && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
+                        <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                            <ShirtAvatar number={awayCaptain.shirtNumber} size={56} borderColor="gold" />
+                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
+                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                            </Box>
+                        </Link>
+                    </Box>
+                )}
+                {/* Other players */}
+                {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
+                    <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
+                        <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                            <ShirtAvatar number={user.shirtNumber} size={48} />
+                            <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
+                                    {user.firstName} {user.lastName}
+                                </Typography>
+                                {user.id === awayCaptain?.id && (
+                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>
+                                        Captain
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Link>
+                    </Box>
+                ))}
+            </Box>
+        </Box>
+    </Paper>
+</Box>
                 </Box>
             </Box>
             <Toaster position="top-center" reverseOrder={false} />
         </LocalizationProvider>
     );
-} 
+}

@@ -9,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
+import ShirtImg from '@/Components/images/shirtimg.png';
 import { User, League } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
@@ -84,19 +85,21 @@ function LeagueMembersDialog({
       TransitionComponent={Transition}
       PaperProps={{
         sx: {
-          background: "linear-gradient(135deg, #1f673b 0%, #2e7d32 100%)",
-          color: "white",
+          bgcolor: 'rgba(15,15,15,0.92)',
+          color: '#E5E7EB',
           borderRadius: isMobile ? 0 : 3,
-          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(31, 103, 59, 0.3)",
-          overflow: "hidden",
-          maxHeight: isMobile ? "100vh" : "80vh",
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+          overflow: 'hidden',
+          maxHeight: isMobile ? '100vh' : '80vh',
         },
       }}
     >
       <DialogTitle
         sx={{
-          background: "linear-gradient(135deg, #0a3e1e 0%, #1b5e20 100%)",
-          color: "white",
+          background: 'transparent',
+          color: '#E5E7EB',
           fontWeight: 700,
           fontSize: { xs: 18, sm: 22 },
           borderRadius: 0,
@@ -113,7 +116,7 @@ function LeagueMembersDialog({
             left: 0,
             right: 0,
             height: "2px",
-            background: "linear-gradient(90deg, #43a047, #66bb6a, #43a047)",
+            background: "linear-gradient(90deg, rgba(229,106,22,0.7), rgba(207,35,38,0.7))",
           },
         }}
       >
@@ -122,19 +125,19 @@ function LeagueMembersDialog({
             sx={{
               p: 1,
               borderRadius: 2,
-              bgcolor: "rgba(67, 160, 71, 0.2)",
+              bgcolor: "rgba(255,255,255,0.06)",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#43a047" }} />
+            <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#e56a16" }} />
           </Box>
           <Box>
             <Typography
               variant="h6"
               sx={{
                 fontWeight: 700,
-                color: "white",
+                color: "#E5E7EB",
                 fontSize: { xs: 16, sm: 20 },
                 lineHeight: 1.2,
               }}
@@ -144,7 +147,7 @@ function LeagueMembersDialog({
             <Typography
               variant="body2"
               sx={{
-                color: "rgba(255, 255, 255, 0.8)",
+                color: "#9CA3AF",
                 fontSize: { xs: 12, sm: 14 },
                 fontWeight: 500,
               }}
@@ -157,11 +160,11 @@ function LeagueMembersDialog({
         <IconButton
           onClick={onClose}
           sx={{
-            color: "rgba(255, 255, 255, 0.8)",
-            bgcolor: "rgba(255, 255, 255, 0.1)",
+            color: "#E5E7EB",
+            bgcolor: "rgba(255,255,255,0.08)",
             "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.2)",
-              color: "white",
+              bgcolor: "rgba(255,255,255,0.12)",
+              color: "#fff",
             },
             transition: "all 0.2s ease",
           }}
@@ -177,16 +180,9 @@ function LeagueMembersDialog({
           px: 0,
           py: 0,
           overflow: "auto",
-          "&::-webkit-scrollbar": {
-            width: "6px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "rgba(255, 255, 255, 0.1)",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "rgba(67, 160, 71, 0.5)",
-            borderRadius: "3px",
-          },
+          "&::-webkit-scrollbar": { width: "6px" },
+          "&::-webkit-scrollbar-track": { background: "rgba(255,255,255,0.06)" },
+          "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
         }}
       >
         <List sx={{ py: 0 }}>
@@ -205,42 +201,45 @@ function LeagueMembersDialog({
                       display: "flex",
                       alignItems: "center",
                       gap: 2,
-                      bgcolor: isCurrentUser ? "rgba(67, 160, 71, 0.1)" : "transparent",
-                      borderLeft: isCurrentUser ? "4px solid #43a047" : "none",
+                      bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
+                      borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
                       transition: "all 0.2s ease",
                       "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.05)",
+                        bgcolor: "rgba(255,255,255,0.06)",
                       },
                     }}
                   >
-                    <ListItemAvatar>
-                      {member.profilePicture ? (
-
-                        <Avatar
-                          src={member.profilePicture || "/assets/placeholder.svg"}
+                    <ListItemAvatar sx={{ minWidth: 56 }}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: { xs: 44, sm: 52 },
+                          height: { xs: 44, sm: 52 },
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          background:'transparent',
+                          // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
+                          // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        }}
+                      >
+                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                        <Box
                           sx={{
-                            width: { xs: 44, sm: 52 },
-                            height: { xs: 44, sm: 52 },
-                            // bgcolor: isLeagueAdmin ? "#43a047" : "#2e7d32",
-                            color: "white",
-                            fontWeight: 700,
-                            fontSize: { xs: 16, sm: 18 },
-                            border: isCurrentUser ? "3px solid #43a047" : "2px solid rgba(255, 255, 255, 0.2)",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#000',
+                            fontWeight: 800,
+                            fontSize: { xs: 14, sm: 16 },
+                            lineHeight: 1,
+                            textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                           }}
-                        />
-                      ) : (
-                        `${member.firstName[0]}${member.lastName[0] || ""}`
-                      )}
-                      {/* <img
-                            src={member.profilePicture || "/placeholder.svg"}
-                            alt={memberName}
-                            width={52}
-                            height={52}
-                            style={{ borderRadius: "50%" }}
-                          />
-                       
-                      </Avatar> */}
+                        >
+                          {member.shirtNumber || '0'}
+                        </Box>
+                      </Box>
                     </ListItemAvatar>
 
                     <ListItemText
@@ -249,7 +248,7 @@ function LeagueMembersDialog({
                           <Typography
                             sx={{
                               fontWeight: 600,
-                              color: "white",
+                              color: "#E5E7EB",
                               fontSize: { xs: 16, sm: 18 },
                             }}
                           >
@@ -260,11 +259,13 @@ function LeagueMembersDialog({
                               label="You"
                               size="small"
                               sx={{
-                                bgcolor: "#43a047",
-                                color: "white",
-                                fontWeight: 600,
-                                fontSize: 11,
-                                height: 20,
+                                bgcolor: "transparent",
+                                color: "#e56a16",
+                                border: '1px solid rgba(229,106,22,0.6)',
+                                 fontWeight: 600,
+                                 fontSize: 11,
+                                 height: 20,
+                                borderRadius: '9999px',
                               }}
                             />
                           )}
@@ -272,10 +273,10 @@ function LeagueMembersDialog({
                       }
                       secondary={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#43a047" }} />}
+                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
                           <Typography
                             sx={{
-                              color: isLeagueAdmin ? "#43a047" : "rgba(255, 255, 255, 0.7)",
+                              color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
                               fontWeight: 500,
                               fontSize: { xs: 13, sm: 14 },
                             }}
@@ -291,11 +292,11 @@ function LeagueMembersDialog({
                         <IconButton
                           onClick={() => handleRemoveMember(member.id, memberName)}
                           sx={{
-                            color: "#ff5252",
-                            bgcolor: "rgba(255, 82, 82, 0.1)",
+                            color: "#ff6b6b",
+                            bgcolor: "rgba(255, 107, 107, 0.12)",
                             "&:hover": {
-                              bgcolor: "rgba(255, 82, 82, 0.2)",
-                              transform: "scale(1.05)",
+                              bgcolor: "rgba(255, 107, 107, 0.2)",
+                               transform: "scale(1.05)",
                             },
                             transition: "all 0.2s ease",
                           }}
@@ -306,7 +307,7 @@ function LeagueMembersDialog({
                     )}
                   </ListItem>
                   {index < league.members.length - 1 && (
-                    <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.08)", mx: 2 }} />
+                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
                   )}
                 </Box>
               </Fade>
@@ -318,12 +319,12 @@ function LeagueMembersDialog({
       {/* Footer */}
       <DialogActions
         sx={{
-          background: "linear-gradient(135deg, #0a3e1e 0%, #1b5e20 100%)",
+         background: "transparent",
           p: { xs: 2, sm: 3 },
           display: "flex",
           justifyContent: "space-between",
           gap: 2,
-          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+         borderTop: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         {!isAdmin && (
@@ -356,22 +357,22 @@ function LeagueMembersDialog({
             onClick={onClose}
             sx={{
               fontWeight: 600,
-              color: "#43a047",
-              borderColor: "#43a047",
-              borderRadius: 2,
-              border: "2px solid",
-              bgcolor: "white",
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              "&:hover": {
-                bgcolor: "#e8f5e9",
-                borderColor: "#43a047",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              },
-              transition: "all 0.2s ease",
+              color: "#e56a16",
+              borderColor: "#e56a16",
+               borderRadius: 2,
+               border: "2px solid",
+              bgcolor: "transparent",
+               px: 3,
+               py: 1,
+               textTransform: "none",
+               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+               "&:hover": {
+                bgcolor: "rgba(229,106,22,0.12)",
+                borderColor: "#e56a16",
+                 transform: "translateY(-1px)",
+                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+               },
+               transition: "all 0.2s ease",
             }}
           >
             Close
@@ -612,7 +613,6 @@ function AllLeagues() {
       });
       const data = await response.json();
       if (data.success) {
-        // Find admin (first admin in administrators array)
         const admin = data.league.administrators[0];
         setSelectedLeague({
           ...league,
@@ -622,7 +622,8 @@ function AllLeagues() {
             firstName: m.firstName,
             lastName: m.lastName,
             profilePicture: m.profilePicture,
-            email: m.email
+            email: m.email,
+            shirtNumber: m.shirtNumber,
           })),
         });
         setOpenMembers(true);
