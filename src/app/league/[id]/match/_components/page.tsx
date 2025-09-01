@@ -592,8 +592,6 @@ export default function ScheduleMatchPage() {
                                     sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
                                 />
                             )}
-
-                            {/* Date, time, duration, location */}
                             <DatePicker
                                 label="Match Date"
                                 value={matchDate}
