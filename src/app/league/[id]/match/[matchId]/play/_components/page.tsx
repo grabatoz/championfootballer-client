@@ -37,6 +37,8 @@ import { cacheManager } from "@/lib/cacheManager"
 import { LeaderboardPlayer } from '@/types/api';
 import Check from '@/Components/images/check.png'
 import Coin from '@/Components/images/icon.png'
+import Shirt from '@/Components/images/shirtimg.png'
+import Image from 'next/image'
 
 interface User {
     id: string;
@@ -123,7 +125,7 @@ const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
                 opacity: disabled ? 0.5 : 1
             }}
         />
-        
+
         {/* Check Mark Overlay - Only show if voted */}
         {voted && (
             <Box
@@ -146,6 +148,54 @@ const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
                 />
             </Box>
         )}
+    </Box>
+);
+
+// Jersey avatar (shirt image with centered number)
+const JerseyAvatar = ({
+    number,
+    sx = {},
+}: {
+    number?: string | number;
+    sx?: SxProps<Theme>;
+}) => (
+    <Box
+        sx={{
+            position: 'relative',
+            width: 60,
+            height: 60,
+            overflow: 'hidden',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...sx,
+        }}
+    >
+        <Image
+            src={Shirt}
+            alt="Shirt"
+            fill
+            sizes="(max-width: 600px) 48px, 60px"
+            quality={100}
+            style={{ objectFit: 'contain' }}
+            priority
+        />
+        <Typography
+            component="span"
+            sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#fff',
+                fontWeight: 800,
+                textShadow: '0 2px 4px rgba(0,0,0,0.6)',
+                fontSize: { xs: 10, sm: 12, md: 18 },
+                lineHeight: 1,
+            }}
+        >
+            {number ?? '0'}
+        </Typography>
     </Box>
 );
 
@@ -239,10 +289,10 @@ export default function PlayMatchPage() {
                     body: JSON.stringify({ note }),
                 })
             ]);
-            
+
             const goalsData = await goalsResponse.json();
             const notesData = await notesResponse.json();
-            
+
             // Update cache with new match data
             if (goalsData.success && goalsData.match) {
                 cacheManager.updateMatchesCache(goalsData.match);
@@ -250,7 +300,7 @@ export default function PlayMatchPage() {
             if (notesData.success && notesData.match) {
                 cacheManager.updateMatchesCache(notesData.match);
             }
-            
+
             fetchLeagueAndMatchDetails();
         } catch {
             console.error('Failed to save details');
@@ -262,10 +312,10 @@ export default function PlayMatchPage() {
     const fetchVotes = useCallback(async () => {
         if (!token) return;
         try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-            
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, use default values
@@ -273,11 +323,11 @@ export default function PlayMatchPage() {
                 setVotedForId(null);
                 return;
             }
-            
-        const data = await response.json();
-        if (data.success) {
-            setPlayerVotes(data.votes || {});
-            setVotedForId(data.userVote || null); // <-- Always set from backend only!
+
+            const data = await response.json();
+            if (data.success) {
+                setPlayerVotes(data.votes || {});
+                setVotedForId(data.userVote || null); // <-- Always set from backend only!
             }
         } catch (error) {
             console.error('Failed to fetch votes:', error);
@@ -302,7 +352,7 @@ export default function PlayMatchPage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(voteData),
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 // Update leaderboard cache for MOTM votes
@@ -324,31 +374,31 @@ export default function PlayMatchPage() {
 
     const handleOpenStatsModal = async () => {
         if (!user) return;
-        
+
         try {
             // Fetch existing stats for the current user
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, use default stats
-                setStats({ 
-                    goals: 0, 
-                    assists: 0, 
-                    cleanSheets: 0, 
-                    penalties: 0, 
-                    freeKicks: 0, 
-                    defence: 0, 
-                    impact: 0 
+                setStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0
                 });
                 setIsStatsModalOpen(true);
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success && data.stats) {
                 // Use existing stats if available
                 setStats({
@@ -362,30 +412,30 @@ export default function PlayMatchPage() {
                 });
             } else {
                 // Reset to 0 if no existing stats
-                setStats({ 
-                    goals: 0, 
-                    assists: 0, 
-                    cleanSheets: 0, 
-                    penalties: 0, 
-                    freeKicks: 0, 
-                    defence: 0, 
-                    impact: 0 
+                setStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0
                 });
             }
         } catch (error) {
             console.error('Failed to fetch existing stats:', error);
             // Reset to 0 on error
-            setStats({ 
-                goals: 0, 
-                assists: 0, 
-                cleanSheets: 0, 
-                penalties: 0, 
-                freeKicks: 0, 
-                defence: 0, 
-                impact: 0 
+            setStats({
+                goals: 0,
+                assists: 0,
+                cleanSheets: 0,
+                penalties: 0,
+                freeKicks: 0,
+                defence: 0,
+                impact: 0
             });
         }
-        
+
         setIsStatsModalOpen(true);
     };
 
@@ -415,7 +465,7 @@ export default function PlayMatchPage() {
                     impact: stats.impact,
                 }),
             });
-            
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, show error message
@@ -423,7 +473,7 @@ export default function PlayMatchPage() {
                 setIsStatsModalOpen(false);
                 return;
             }
-            
+
             const data = await response.json();
             if (data.success) {
                 // Update leaderboard cache with new stats
@@ -447,13 +497,13 @@ export default function PlayMatchPage() {
     // Admin Stats Functions
     const handleOpenAdminStatsModal = async (player: User) => {
         setSelectedPlayerForAdmin(player);
-        
+
         try {
             // Fetch existing stats for the selected player
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${player.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, use default stats
@@ -469,9 +519,9 @@ export default function PlayMatchPage() {
                 setIsAdminStatsModalOpen(true);
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success && data.stats) {
                 // Use existing stats if available
                 setAdminStats({
@@ -508,7 +558,7 @@ export default function PlayMatchPage() {
                 impact: 0,
             });
         }
-        
+
         setIsAdminStatsModalOpen(true);
     };
 
@@ -526,7 +576,7 @@ export default function PlayMatchPage() {
 
     const handleSaveAdminStats = async () => {
         if (!selectedPlayerForAdmin) return;
-        
+
         setIsSubmittingAdminStats(true);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
@@ -540,7 +590,7 @@ export default function PlayMatchPage() {
                     ...adminStats
                 })
             });
-            
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, show error message
@@ -593,16 +643,17 @@ export default function PlayMatchPage() {
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
             {!league.active && <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>}
             <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
-                color: 'white', backgroundColor: '#1f673b',
+                color: 'white',
+                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                 fontWeight: 'bold',
                 mb: 1,
                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 px: { xs: 1, sm: 2 },
                 py: { xs: 0.5, sm: 1 },
-                '&:hover': { backgroundColor: '#388e3c' },
+                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
             }}>Back to League</Button>
 
-           <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, backgroundColor: '#1f673b', color: 'white', borderRadius: 3, boxShadow: 3 }}>
+            <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3 }}>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'row' }, gap: { xs: 0.5, sm: 1, md: 3 } }}>
                     {/* Home Team Section */}
@@ -632,7 +683,7 @@ export default function PlayMatchPage() {
                                         variant="contained"
                                         size="small"
                                         sx={{
-                                            bgcolor: '#43a047',
+                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                             color: 'white',
                                             fontWeight: 'bold',
                                             borderRadius: 1.5,
@@ -642,16 +693,16 @@ export default function PlayMatchPage() {
                                             minWidth: { xs: 'auto', sm: 'auto' },
                                             height: { xs: 19, sm: 32, md: 36 },
                                             whiteSpace: 'nowrap',
-                                            '&:hover': { bgcolor: '#388e3c' },
+                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                                             mr: { xs: 0.5, sm: 1, md: 1 }
                                         }}
                                     >
                                         Add Stats
                                     </Button>
                                 )}
-                            </Box>
+                        </Box>
 
-                        <Card sx={{ backgroundColor: '#0a3e1e', borderRadius: 3, border: '2px solid #43a047' }}>
+                        <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
                             <CardContent sx={{
                                 p: { xs: 0.5, sm: 2 },
                                 maxHeight: { xs: 250, sm: 400 },
@@ -665,18 +716,22 @@ export default function PlayMatchPage() {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
-                                                    display: 'flex',
+                                                        display: 'flex',
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
                                                         p: { xs: 0.5, sm: 1, md: 2 },
-                                                        background: '#0a4822',
+                                                        // -                                                        background: '#0a4822',
+                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                         borderRadius: 0,
-                                                        border: '1px solid #43a047',
-                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        // -                                                        border: '1px solid #43a047',
+                                                        // -                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        border: '1px solid #4b4b4b',
+                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #4b4b4b' : 'none',
                                                         minHeight: { xs: 40, sm: 60, md: 100 },
                                                         position: 'relative',
                                                         '&:hover': {
-                                                            backgroundColor: '#1f673b',
+                                                            // -                                                            backgroundColor: '#1f673b',
+                                                            background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
                                                             transform: 'translateY(-1px)',
                                                             transition: 'all 0.2s ease'
                                                         }
@@ -703,28 +758,17 @@ export default function PlayMatchPage() {
                                                                 />
                                                             </Box>
                                                         )}
-                                                        
+
                                                         <Link href={`/player/${player.id}`}>
-                                                            {/* Player Profile Picture */}
-                                                            <Box sx={{
-                                                                width: { xs: 25, sm: 35, md: 60 },
-                                                                height: { xs: 25, sm: 35, md: 60 },
-                                                                borderRadius: '50%',
-                                                                overflow: 'hidden',
-                                                                border: '2px solid #43a047',
-                                                                mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                flexShrink: 0
-                                                            }}>
-                                                                <img
-                                                                    src={player.profilePicture || "/placeholder.svg"}
-                                                                    alt={player.firstName + " " + player.lastName}
-                                                                    style={{
-                                            width: '100%',
-                                                                        height: '100%',
-                                                                        objectFit: 'cover'
-                                                                    }}
+                                                            <JerseyAvatar
+                                                                number={player.shirtNumber || '0'}
+                                                                sx={{
+                                                                    width: { xs: 25, sm: 35, md: 74 },
+                                                                    height: { xs: 25, sm: 35, md: 74 },
+                                                                    mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                    flexShrink: 0,
+                                                                }}
                                                             />
-                                                            </Box>
                                                         </Link>
 
                                                         {/* Player Info */}
@@ -746,7 +790,7 @@ export default function PlayMatchPage() {
                                                                 </Typography>
 
                                                                 <Typography variant="body2" sx={{
-                                                                    color: '#B2DFDB',
+                                                                    color: '#D1D5DB',
                                                                     fontSize: { xs: 6, sm: 8, md: 14 },
                                                                     mb: { xs: 0.25, sm: 0.5, md: 1 },
                                                                     lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
@@ -755,11 +799,11 @@ export default function PlayMatchPage() {
                                                                 </Typography>
                                                             </Link>
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
-                                                                <Button
+                                                                {/* <Button
                                                                     variant="contained"
                                                                     size="small"
                                                                     sx={{
-                                                                        background: 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)',
+                                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                                         color: 'white',
                                                                         borderRadius: 1.5,
                                                                         px: { xs: 0.25, sm: 0.5, md: 2 },
@@ -770,14 +814,14 @@ export default function PlayMatchPage() {
                                                                         height: { xs: 15, sm: 20, md: 28 },
                                                                         minWidth: { xs: 'auto', sm: 'auto' },
                                                                         '&:hover': {
-                                                                            background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'
+                                                                            background: 'linear-gradient(90deg, #000000 0%, #767676 100%)'
                                                                         },
                                                                         mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                                     }}
                                                                 >
                                                                     Shirt No {player.shirtNumber || "0"}
-                                                                </Button>
-                                                                
+                                                                </Button> */}
+
                                                                 {/* Admin Stats Button */}
                                                                 {isAdmin && match.status === 'completed' && league.active && (
                                                                     <Button
@@ -786,7 +830,7 @@ export default function PlayMatchPage() {
                                                                         variant="contained"
                                                                         size="small"
                                                                         sx={{
-                                                                            bgcolor: '#43a047',
+                                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                                             color: 'white',
                                                                             fontWeight: 'bold',
                                                                             borderRadius: 1.5,
@@ -796,18 +840,18 @@ export default function PlayMatchPage() {
                                                                             minWidth: { xs: 'auto', sm: 'auto' },
                                                                             height: { xs: 16, sm: 20, md: 28 },
                                                                             whiteSpace: 'nowrap',
-                                                                            '&:hover': { bgcolor: '#388e3c' },
+                                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                                                                             mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                                         }}
                                                                     >
                                                                         Admin Stats
                                                                     </Button>
-                                                )}
-                                            </Box>
-                                    </Box>
+                                                                )}
+                                                            </Box>
+                                                        </Box>
                                                     </Box>
                                                     {index < match.homeTeamUsers.length - 1 && (
-                                                        <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
+                                                        <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
                                                 </React.Fragment>
                                             );
@@ -849,7 +893,7 @@ export default function PlayMatchPage() {
                                         variant="contained"
                                         size="small"
                                         sx={{
-                                            bgcolor: '#43a047',
+                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                             color: 'white',
                                             fontWeight: 'bold',
                                             borderRadius: 1.5,
@@ -859,16 +903,16 @@ export default function PlayMatchPage() {
                                             minWidth: { xs: 'auto', sm: 'auto' },
                                             height: { xs: 19, sm: 32, md: 36 },
                                             whiteSpace: 'nowrap',
-                                            '&:hover': { bgcolor: '#388e3c' },
+                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                                             mr: { xs: 0.5, sm: 1, md: 1 }
                                         }}
                                     >
                                         Add Stats
                                     </Button>
                                 )}
-                            </Box>
+                        </Box>
 
-                        <Card sx={{ backgroundColor: '#0a3e1e', borderRadius: 3, border: '2px solid #43a047' }}>
+                        <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
                             <CardContent sx={{
                                 p: { xs: 0.5, sm: 2 },
                                 maxHeight: { xs: 250, sm: 400 },
@@ -882,18 +926,22 @@ export default function PlayMatchPage() {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
-                                                    display: 'flex',
+                                                        display: 'flex',
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
                                                         p: { xs: 0.5, sm: 1, md: 2 },
-                                                        background: '#0a4822',
+                                                        // -                                                        background: '#0a4822',
+                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                         borderRadius: 0,
-                                                        border: '1px solid #43a047',
-                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        // -                                                        border: '1px solid #43a047',
+                                                        // -                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
+                                                        border: '1px solid #4b4b4b',
+                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #4b4b4b' : 'none',
                                                         minHeight: { xs: 40, sm: 60, md: 100 },
                                                         position: 'relative',
                                                         '&:hover': {
-                                                            backgroundColor: '#1f673b',
+                                                            // -                                                            backgroundColor: '#1f673b',
+                                                            background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
                                                             transform: 'translateY(-1px)',
                                                             transition: 'all 0.2s ease'
                                                         }
@@ -920,29 +968,17 @@ export default function PlayMatchPage() {
                                                                 />
                                                             </Box>
                                                         )}
-                                                        
-                                                        <Link href={`/player/${player.id}`}>
 
-                                                            {/* Player Profile Picture */}
-                                                            <Box sx={{
-                                                                width: { xs: 25, sm: 35, md: 60 },
-                                                                height: { xs: 25, sm: 35, md: 60 },
-                                                                borderRadius: '50%',
-                                                                overflow: 'hidden',
-                                                                border: '2px solid #43a047',
-                                                                mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                flexShrink: 0
-                                                            }}>
-                                                                <img
-                                                                    src={player.profilePicture || "/placeholder.svg"}
-                                                                    alt={player.firstName + " " + player.lastName}
-                                                                    style={{
-                                            width: '100%',
-                                                                        height: '100%',
-                                                                        objectFit: 'cover'
-                                                                    }}
+                                                        <Link href={`/player/${player.id}`}>
+                                                            <JerseyAvatar
+                                                                number={player.shirtNumber || '0'}
+                                                                sx={{
+                                                                    width: { xs: 25, sm: 35, md: 74 },
+                                                                    height: { xs: 25, sm: 35, md: 74 },
+                                                                    mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                    flexShrink: 0,
+                                                                }}
                                                             />
-                                                            </Box>
                                                         </Link>
                                                         {/* Player Info */}
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -963,7 +999,7 @@ export default function PlayMatchPage() {
                                                                 </Typography>
 
                                                                 <Typography variant="body2" sx={{
-                                                                    color: '#B2DFDB',
+                                                                    color: '#D1D5DB',
                                                                     fontSize: { xs: 6, sm: 8, md: 14 },
                                                                     mb: { xs: 0.25, sm: 0.5, md: 1 },
                                                                     lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
@@ -972,11 +1008,11 @@ export default function PlayMatchPage() {
                                                                 </Typography>
                                                             </Link>
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
-                                                                <Button
+                                                                {/* <Button
                                                                     variant="contained"
                                                                     size="small"
                                                                     sx={{
-                                                                        background: 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)',
+                                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                                         color: 'white',
                                                                         borderRadius: 1.5,
                                                                         px: { xs: 0.25, sm: 0.5, md: 2 },
@@ -987,14 +1023,14 @@ export default function PlayMatchPage() {
                                                                         height: { xs: 16, sm: 20, md: 28 },
                                                                         minWidth: { xs: 'auto', sm: 'auto' },
                                                                         '&:hover': {
-                                                                            background: 'linear-gradient(90deg, #388e3c 0%, #2e7d32 100%)'
+                                                                            background: 'linear-gradient(90deg, #000000 0%, #767676 100%)'
                                                                         },
                                                                         mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                                     }}
                                                                 >
                                                                     Shirt No {player.shirtNumber || "0"}
-                                                                </Button>
-                                                                
+                                                                </Button> */}
+
                                                                 {/* Admin Stats Button */}
                                                                 {isAdmin && match.status === 'completed' && league.active && (
                                                                     <Button
@@ -1003,7 +1039,7 @@ export default function PlayMatchPage() {
                                                                         variant="contained"
                                                                         size="small"
                                                                         sx={{
-                                                                            bgcolor: '#43a047',
+                                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                                                             color: 'white',
                                                                             fontWeight: 'bold',
                                                                             borderRadius: 1.5,
@@ -1013,18 +1049,18 @@ export default function PlayMatchPage() {
                                                                             minWidth: { xs: 'auto', sm: 'auto' },
                                                                             height: { xs: 16, sm: 20, md: 28 },
                                                                             whiteSpace: 'nowrap',
-                                                                            '&:hover': { bgcolor: '#388e3c' },
+                                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                                                                             mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                                         }}
                                                                     >
                                                                         Admin Stats
                                                                     </Button>
-                                                )}
-                                            </Box>
-                                    </Box>
+                                                                )}
+                                                            </Box>
+                                                        </Box>
                                                     </Box>
                                                     {index < match.awayTeamUsers.length - 1 && (
-                                                        <Divider sx={{ borderColor: '#43a047', borderWidth: 1 }} />
+                                                        <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
                                                 </React.Fragment>
                                             );
@@ -1045,8 +1081,8 @@ export default function PlayMatchPage() {
                 sx={{
                     p: { xs: 1, sm: 2 },
                     my: 2,
-                    background: '#1f673b',
-                    borderLeft: '4px solid #1976d2',
+                    background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                    borderLeft: '4px solid #4b4b4b',
                     maxWidth: '100%',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
@@ -1054,42 +1090,49 @@ export default function PlayMatchPage() {
             >
                 <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', mb: 1, fontSize: 20 }}>
                     Match Note :
-                    </Typography>
+                </Typography>
                 <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                        {match.notes}
-                    </Typography>
+                    {match.notes}
+                </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                            Start Time:
-                        </Typography>
+                        Start Time:
+                    </Typography>
                     <Typography variant="body1" sx={{ color: '#fff' }}>
-                            {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
-                        </Typography>
-                    </Box>
-                </Paper>
+                        {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
+                    </Typography>
+                </Box>
+            </Paper>
 
-            <div className="p-6 mt-8 bg-[#1f673b] text-white rounded-lg">
+            <div className="p-6 mt-8 text-white rounded-lg" style={{ background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
                 <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
                 <div className="w-full h-px bg-white mb-6"></div>
 
                 {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
                 <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                        {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                            .filter(player => playerVotes[player.id] > 0)
-                            .map((player) => (
+                    {[...match.homeTeamUsers, ...match.awayTeamUsers]
+                        .filter(player => playerVotes[player.id] > 0)
+                        .map((player) => (
                             <Link key={player.id} href={`/player/${player.id}`}>
                                 <div className="group">
                                     {/* Mobile layout: Image on top center */}
-                                    <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 bg-[#0a4822] rounded-lg border border-[#43a047] min-h-[80px] sm:min-h-[100px] hover:bg-[#1f673b] hover:-translate-y-1 transition-all duration-200 ease-in-out">
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
                                         {/* Profile Image */}
-                                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-[#43a047] mb-3 sm:mb-0 sm:mr-4 flex-shrink-0">
-                                            <img
-                                                src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"}
-                                                alt={`${player.firstName} ${player.lastName}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-
+                                        {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
+                                        {/* -                                           <img */}
+                                        {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
+                                        {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
+                                        {/* -                                               className="w-full h-full object-cover" */}
+                                        {/* -                                           /> */}
+                                        {/* -                                       </div> */}
+                                        <JerseyAvatar
+                                            number={player.shirtNumber || '0'}
+                                            sx={{
+                                                width: { xs: 25, sm: 35, md: 74 },
+                                                height: { xs: 25, sm: 35, md: 74 },
+                                                mr: { xs: 1, sm: 1.5 },
+                                            }}
+                                        />
                                         {/* Player Info */}
                                         <div className="flex-1 min-w-0 text-center sm:text-left">
                                             <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
@@ -1097,7 +1140,7 @@ export default function PlayMatchPage() {
                                                 {player.id === match.homeCaptainId ? " (C)" : ""}
                                             </h3>
 
-                                            <p className="text-[#B2DFDB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
+                                            <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
                                                 {player.positionType || "Player"}
                                             </p>
 
@@ -1106,15 +1149,7 @@ export default function PlayMatchPage() {
                                                 <Button
                                                     variant="contained"
                                                     size="small"
-                                                    className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                                                >
-                                                    Shirt No {player.shirtNumber || "0"}
-                                                </Button>
-
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                                                    className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
                                                 >
                                                     {typeof playerVotes[player.id] === "number" &&
                                                         playerVotes[player.id] > 0 &&
@@ -1131,13 +1166,13 @@ export default function PlayMatchPage() {
             {isAdmin && (
                 <Box sx={{
                     mt: 4,
-                    mb: 4, // margin below
-                    backgroundColor: '#1f673b',
+                    mb: 4,
+                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
                     color: 'white',
-                    p: { xs: 2, sm: 3 }, // padding
+                    p: { xs: 2, sm: 3 },
                     borderRadius: 3,
                     boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
-                    border: '1px solid #235235',
+                    border: '1px solid #3a3a3a',
                     maxWidth: 700,
                     mx: 'auto',
                 }}>
@@ -1223,10 +1258,10 @@ export default function PlayMatchPage() {
                         />
                     </Box>
                     <Button sx={{
-                        bgcolor: '#43a047',
+                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                         color: 'white',
                         fontWeight: 'bold',
-                        '&:hover': { bgcolor: '#388e3c' },
+                        '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                     }}
                         variant="contained" color="primary" onClick={handleSaveDetails} disabled={!league.active}>Save Match Details</Button>
                 </Box>
@@ -1245,8 +1280,29 @@ export default function PlayMatchPage() {
                 </DialogContent>
                 {/* FreeKick */}
                 <DialogActions>
-                    <Button onClick={handleCloseStatsModal}>Cancel</Button>
-                    <Button onClick={handleSaveStats} variant="contained" disabled={isSubmittingStats}>{isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}</Button>
+                    <Button
+                        onClick={handleCloseStatsModal}
+                        variant="outlined"
+                        sx={{
+                            color: '#111',
+                            borderColor: '#bdbdbd',
+                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSaveStats}
+                        variant="contained"
+                        disabled={isSubmittingStats}
+                        sx={{
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            color: 'white',
+                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                        }}
+                    >
+                        {isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 
@@ -1254,59 +1310,78 @@ export default function PlayMatchPage() {
             <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
                 <DialogContent>
-                    <StatCounter 
-                        icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} 
-                        label="Goals Scored" 
-                        value={adminStats.goals} 
-                        onIncrement={() => handleAdminStatChange('goals', 1, 10)} 
-                        onDecrement={() => handleAdminStatChange('goals', -1, 10)} 
+                    <StatCounter
+                        icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />}
+                        label="Goals Scored"
+                        value={adminStats.goals}
+                        onIncrement={() => handleAdminStatChange('goals', 1, 10)}
+                        onDecrement={() => handleAdminStatChange('goals', -1, 10)}
                     />
-                    <StatCounter 
-                        icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} 
-                        label="Assists" 
-                        value={adminStats.assists} 
-                        onIncrement={() => handleAdminStatChange('assists', 1, 10)} 
-                        onDecrement={() => handleAdminStatChange('assists', -1, 10)} 
+                    <StatCounter
+                        icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />}
+                        label="Assists"
+                        value={adminStats.assists}
+                        onIncrement={() => handleAdminStatChange('assists', 1, 10)}
+                        onDecrement={() => handleAdminStatChange('assists', -1, 10)}
                     />
-                    <StatCounter 
-                        icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} 
-                        label="Clean Sheets" 
-                        value={adminStats.cleanSheets} 
-                        onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)} 
-                        onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)} 
+                    <StatCounter
+                        icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />}
+                        label="Clean Sheets"
+                        value={adminStats.cleanSheets}
+                        onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)}
+                        onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)}
                     />
-                    <StatCounter 
-                        icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} 
-                        label="Penalties" 
-                        value={adminStats.penalties} 
-                        onIncrement={() => handleAdminStatChange('penalties', 1, 5)} 
-                        onDecrement={() => handleAdminStatChange('penalties', -1, 5)} 
+                    <StatCounter
+                        icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />}
+                        label="Penalties"
+                        value={adminStats.penalties}
+                        onIncrement={() => handleAdminStatChange('penalties', 1, 5)}
+                        onDecrement={() => handleAdminStatChange('penalties', -1, 5)}
                     />
-                    <StatCounter 
-                        icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} 
-                        label="Free Kicks" 
-                        value={adminStats.freeKicks} 
-                        onIncrement={() => handleAdminStatChange('freeKicks', 1, 5)} 
-                        onDecrement={() => handleAdminStatChange('freeKicks', -1, 5)} 
+                    <StatCounter
+                        icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />}
+                        label="Free Kicks"
+                        value={adminStats.freeKicks}
+                        onIncrement={() => handleAdminStatChange('freeKicks', 1, 5)}
+                        onDecrement={() => handleAdminStatChange('freeKicks', -1, 5)}
                     />
-                    <StatCounter 
-                        icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} 
-                        label="Defence" 
-                        value={adminStats.defence} 
-                        onIncrement={() => handleAdminStatChange('defence', 1, 1)} 
-                        onDecrement={() => handleAdminStatChange('defence', -1, 1)} 
+                    <StatCounter
+                        icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />}
+                        label="Defence"
+                        value={adminStats.defence}
+                        onIncrement={() => handleAdminStatChange('defence', 1, 1)}
+                        onDecrement={() => handleAdminStatChange('defence', -1, 1)}
                     />
-                    <StatCounter 
-                        icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />} 
-                        label="Impact" 
-                        value={adminStats.impact} 
-                        onIncrement={() => handleAdminStatChange('impact', 1, 1)} 
-                        onDecrement={() => handleAdminStatChange('impact', -1, 1)} 
+                    <StatCounter
+                        icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />}
+                        label="Impact"
+                        value={adminStats.impact}
+                        onIncrement={() => handleAdminStatChange('impact', 1, 1)}
+                        onDecrement={() => handleAdminStatChange('impact', -1, 1)}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseAdminStatsModal}>Cancel</Button>
-                    <Button onClick={handleSaveAdminStats} variant="contained" disabled={isSubmittingAdminStats}>
+                    <Button
+                        onClick={handleCloseAdminStatsModal}
+                        variant="outlined"
+                        sx={{
+                            color: '#111',
+                            borderColor: '#bdbdbd',
+                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSaveAdminStats}
+                        variant="contained"
+                        disabled={isSubmittingAdminStats}
+                        sx={{
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            color: 'white',
+                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                        }}
+                    >
                         {isSubmittingAdminStats ? <CircularProgress size={24} /> : 'Upload'}
                     </Button>
                 </DialogActions>
@@ -1327,4 +1402,4 @@ const StatCounter = ({ label, value, onIncrement, onDecrement, icon }: { label: 
             <IconButton onClick={onIncrement} size="small"><Add /></IconButton>
         </Box>
     </Box>
-); 
+);
