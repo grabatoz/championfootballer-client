@@ -603,7 +603,7 @@ export default function AllMatches() {
                     }}
                         className='all-leagues-heading'
                     >
-                        ALL LEAGUES
+                        ALL MATCHES
                     </Typography>
 
                     {/* Create/Join League Section */}
