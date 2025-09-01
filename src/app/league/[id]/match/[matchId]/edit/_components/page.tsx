@@ -245,7 +245,7 @@ export default function EditMatchPage() {
         setAwayTeamImagePreview(null);
     };
 
-    // Inline: Add a guest by full name (immediate API call)
+    // Inline: Add a guest by full name (now only updates local state; saved on Update Match)
     const addGuestByName = async (team: 'home' | 'away') => {
         const raw = team === 'home' ? homeGuestName : awayGuestName;
         const name = raw.trim();
@@ -259,33 +259,22 @@ export default function EditMatchPage() {
         const setAdding = team === 'home' ? setAddingHomeGuest : setAddingAwayGuest;
         setAdding(true);
         try {
-            const payload: Guest = { team, firstName, lastName };
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
+            const newGuest: Guest = {
+                id: 'tmp-' + Math.random().toString(36).slice(2),
+                team,
+                firstName,
+                lastName,
+            };
 
-            const ct = res.headers.get('content-type') || '';
-            const data = ct.includes('application/json') ? await res.json() : { success: res.ok };
-
-            if (!res.ok || data.success === false) {
-                throw new Error(data.message || 'Failed to add guest.');
-            }
-
-            const saved: Guest = data.guest || payload;
             if (team === 'home') {
-                setHomeGuests(prev => [saved, ...prev]);
+                setHomeGuests(prev => [newGuest, ...prev]);
                 setHomeGuestName('');
             } else {
-                setAwayGuests(prev => [saved, ...prev]);
+                setAwayGuests(prev => [newGuest, ...prev]);
                 setAwayGuestName('');
             }
 
-            toast.success('Guest added');
+            toast.success('Guest added (will be saved on Update)');
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Failed to add guest.';
             toast.error(msg);
@@ -294,10 +283,10 @@ export default function EditMatchPage() {
         }
     };
 
-    // Remove guest (if API supports DELETE)
+    // Remove guest (avoid API call for temporary guests)
     const handleRemoveGuest = async (guest: Guest, team: 'home' | 'away', index: number) => {
         try {
-            if (guest.id) {
+            if (guest.id && !guest.id.startsWith('tmp-')) {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests/${guest.id}`, {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` },
@@ -343,13 +332,33 @@ export default function EditMatchPage() {
             if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
             if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
+            // Include guests in the PATCH payload
+            const normalizedHomeGuests = homeGuests.map(g => ({
+                id: g.id?.startsWith('tmp-') ? undefined : g.id,
+                team: 'home' as const,
+                firstName: g.firstName,
+                lastName: g.lastName,
+                shirtNumber: g.shirtNumber,
+            }));
+            const normalizedAwayGuests = awayGuests.map(g => ({
+                id: g.id?.startsWith('tmp-') ? undefined : g.id,
+                team: 'away' as const,
+                firstName: g.firstName,
+                lastName: g.lastName,
+                shirtNumber: g.shirtNumber,
+            }));
+
+            // Send both split and combined forms to match different API shapes (backend can ignore extras)
+            formData.set('homeGuests', JSON.stringify(normalizedHomeGuests));
+            formData.set('awayGuests', JSON.stringify(normalizedAwayGuests));
+            formData.set('guests', JSON.stringify([...normalizedHomeGuests, ...normalizedAwayGuests]));
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
             });
 
-            // Use safe parser here too to avoid JSON errors
             const result = await parseResponse(response);
 
             if (result.success) {
