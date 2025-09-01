@@ -13,8 +13,6 @@ import {
     Divider,
     Avatar,
     IconButton,
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -25,9 +23,8 @@ import { ArrowLeft, X } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from "@/lib/cacheManager"
-import ShirtImg from '@/Components/images/shirtimg.png'; // Make sure this path is correct
+import ShirtImg from '@/Components/images/shirtimg.png';
 
-// Assuming User and League interfaces are available or defined here
 interface User {
     id: string;
     firstName: string;
@@ -54,7 +51,6 @@ interface League {
     active: boolean;
 }
 
-// NEW: Guest player (staged for create)
 interface GuestPlayerInput {
     team: 'home' | 'away';
     firstName: string;
@@ -62,7 +58,6 @@ interface GuestPlayerInput {
     shirtNumber?: string;
 }
 
-// Persisted guest returned by API
 interface Guest {
     id: string;
     team: 'home' | 'away';
@@ -81,28 +76,25 @@ export default function ScheduleMatchPage() {
     const [awayTeamName, setAwayTeamName] = useState('');
     const [matchDate, setMatchDate] = useState<Dayjs | null>(dayjs());
     const [startTime, setStartTime] = useState<Dayjs | null>(dayjs());
-    const [duration, setDuration] = useState<number | ''>(90); // default 90 minutes
+    const [duration, setDuration] = useState<number | ''>(90);
     const [location, setLocation] = useState('');
     const [homeTeamUsers, setHomeTeamUsers] = useState<User[]>([]);
     const [awayTeamUsers, setAwayTeamUsers] = useState<User[]>([]);
-    const [homeCaptain, setHomeCaptain] = useState<User | null>(null); // captain for home team
-    const [awayCaptain, setAwayCaptain] = useState<User | null>(null); // captain for away team
+    const [homeCaptain, setHomeCaptain] = useState<User | null>(null);
+    const [awayCaptain, setAwayCaptain] = useState<User | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Team image upload states
+    // Team image upload
     const [homeTeamImage, setHomeTeamImage] = useState<File | null>(null);
     const [awayTeamImage, setAwayTeamImage] = useState<File | null>(null);
     const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
     const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
 
-    // NEW: Guest dialog and staged guests for create
-    const [guestOpen, setGuestOpen] = useState(false);
-    const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
-    const [guestFirstName, setGuestFirstName] = useState('');
-    const [guestLastName, setGuestLastName] = useState('');
-    const [guestShirtNumber, setGuestShirtNumber] = useState('');
+    // Staged guests and inline guest inputs
     const [homeGuests, setHomeGuests] = useState<GuestPlayerInput[]>([]);
     const [awayGuests, setAwayGuests] = useState<GuestPlayerInput[]>([]);
+    const [homeGuestName, setHomeGuestName] = useState('');
+    const [awayGuestName, setAwayGuestName] = useState('');
 
     const { token } = useAuth();
     const params = useParams();
@@ -134,86 +126,71 @@ export default function ScheduleMatchPage() {
         }
     }, [leagueId, token, fetchLeagueMembers]);
 
-    // Team image upload functions
+    // Image uploads
     const handleHomeTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             if (file.type.startsWith('image/')) {
-                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                if (file.size <= 5 * 1024 * 1024) {
                     setHomeTeamImage(file);
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        setHomeTeamImagePreview(e.target?.result as string);
-                    };
+                    reader.onload = (e) => setHomeTeamImagePreview(e.target?.result as string);
                     reader.readAsDataURL(file);
-                } else {
-                    toast.error('File size should be less than 5MB');
-                }
-            } else {
-                toast.error('Please select an image file');
-            }
+                } else toast.error('File size should be less than 5MB');
+            } else toast.error('Please select an image file');
         }
     };
-
     const handleAwayTeamImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             if (file.type.startsWith('image/')) {
-                if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+                if (file.size <= 5 * 1024 * 1024) {
                     setAwayTeamImage(file);
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        setAwayTeamImagePreview(e.target?.result as string);
-                    };
+                    reader.onload = (e) => setAwayTeamImagePreview(e.target?.result as string);
                     reader.readAsDataURL(file);
-                } else {
-                    toast.error('File size should be less than 5MB');
-                }
-            } else {
-                toast.error('Please select an image file');
-            }
+                } else toast.error('File size should be less than 5MB');
+            } else toast.error('Please select an image file');
         }
     };
-
     const handleRemoveHomeTeamImage = () => {
         setHomeTeamImage(null);
         setHomeTeamImagePreview(null);
     };
-
     const handleRemoveAwayTeamImage = () => {
         setAwayTeamImage(null);
         setAwayTeamImagePreview(null);
     };
 
-    // NEW: Stage a guest locally before match is created
-    const handleStageGuest = () => {
-        if (!guestFirstName.trim() || !guestLastName.trim()) {
-            toast.error('Enter first and last name');
+    // Inline guest add/remove
+    const addGuestByName = (team: 'home' | 'away') => {
+        const raw = team === 'home' ? homeGuestName : awayGuestName;
+        const name = raw.trim();
+        if (!name) {
+            toast.error('Enter guest name');
             return;
         }
-        const g: GuestPlayerInput = {
-            team: guestTeam,
-            firstName: guestFirstName.trim(),
-            lastName: guestLastName.trim(),
-            shirtNumber: guestShirtNumber || undefined,
-        };
-        if (g.team === 'home') setHomeGuests(prev => [g, ...prev]);
-        else setAwayGuests(prev => [g, ...prev]);
+        const parts = name.split(/\s+/);
+        const firstName = parts[0];
+        const lastName = parts.slice(1).join(' ') || 'Guest';
+        const g: GuestPlayerInput = { team, firstName, lastName };
 
-        setGuestOpen(false);
-        setGuestTeam('home');
-        setGuestFirstName('');
-        setGuestLastName('');
-        setGuestShirtNumber('');
+        if (team === 'home') {
+            setHomeGuests(prev => [g, ...prev]);
+            setHomeGuestName('');
+        } else {
+            setAwayGuests(prev => [g, ...prev]);
+            setAwayGuestName('');
+        }
+        toast.success('Guest added');
     };
 
-    // NEW: Remove staged guest
     const removeStagedGuest = (team: 'home' | 'away', index: number) => {
         if (team === 'home') setHomeGuests(prev => prev.filter((_, i) => i !== index));
         else setAwayGuests(prev => prev.filter((_, i) => i !== index));
     };
 
-    // NEW: After match creation, push staged guests to server
+    // After match creation, push staged guests to server
     const createGuestsForMatch = async (newMatchId: string): Promise<Guest[]> => {
         const all = [...homeGuests, ...awayGuests];
         if (!all.length) return [];
@@ -226,7 +203,6 @@ export default function ScheduleMatchPage() {
                 }).then(res => res.ok ? res.json() : res.json().then(j => Promise.reject(j?.message || 'Guest add failed')))
             )
         );
-        // Refetch match to get canonical guests array from API
         const getRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${newMatchId}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -271,7 +247,6 @@ export default function ScheduleMatchPage() {
             formData.append('awayTeamUsers', JSON.stringify(awayTeamUsers.map(u => u.id)));
             formData.append('homeCaptain', homeCaptain?.id || '');
             formData.append('awayCaptain', awayCaptain?.id || '');
-
             if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
             if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
@@ -336,7 +311,7 @@ export default function ScheduleMatchPage() {
             "&.Mui-focused": { color: "#e56a16" },
         },
         "& .MuiSvgIcon-root": { color: "#E5E7EB" },
-    }
+    };
 
     const autocompleteStyles = {
         "& .MuiOutlinedInput-root": {
@@ -360,47 +335,12 @@ export default function ScheduleMatchPage() {
             "&.Mui-focused": { color: "#e56a16" },
         },
         "& .MuiSvgIcon-root": { color: "#E5E7EB" },
-    }
+    };
 
-    // Shirt avatar with centered number (no external assets needed)
-    const ShirtAvatar = ({ number, size = 56, }: { number?: string | number; size?: number;}) => (
-        <Box
-            sx={{
-                position: 'relative',
-                width: size,
-                height: size,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 1,
-                overflow: 'hidden',
-                background: 'transparent',
-            }}
-        >
-            <img
-                src={ShirtImg.src}
-                alt="Shirt"
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 0,
-                }}
-            />
-            <Typography
-                component="span"
-                sx={{
-                    position: 'relative',
-                    zIndex: 1,
-                    fontWeight: 800,
-                    fontSize: size >= 56 ? 16 : 14,
-                    color: '#111',
-                    textShadow: '0 1px 1px rgba(255,255,255,0.6)',
-                    lineHeight: 1,
-                }}
-            >
+    const ShirtAvatar = ({ number, size = 56 }: { number?: string | number; size?: number; }) => (
+        <Box sx={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1, overflow: 'hidden', background: 'transparent' }}>
+            <img src={ShirtImg.src} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, zIndex: 0 }} />
+            <Typography component="span" sx={{ position: 'relative', zIndex: 1, fontWeight: 800, fontSize: size >= 56 ? 16 : 14, color: '#111', textShadow: '0 1px 1px rgba(255,255,255,0.6)', lineHeight: 1 }}>
                 {number || '0'}
             </Typography>
         </Box>
@@ -412,49 +352,30 @@ export default function ScheduleMatchPage() {
                 <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Form Section */}
                     <Box sx={{ width: { xs: "100%", md: "58.33%" } }}>
-                        <Paper
-                            component="form"
-                            onSubmit={handleScheduleMatch}
-                            sx={{
-                                p: 3,
-                                bgcolor: 'rgba(15,15,15,0.92)',
-                                color: '#E5E7EB',
-                                borderRadius: 3,
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                backdropFilter: 'blur(10px)',
-                                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                            }}
-                        >
+                        <Paper component="form" onSubmit={handleScheduleMatch} sx={{
+                            p: 3,
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 3,
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                        }}>
                             <Typography variant="h4" component="h1" gutterBottom>
                                 {league.name} Create a New Match
                             </Typography>
 
-                            {/* NEW: Add Guest button */}
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => setGuestOpen(true)}
-                                sx={{ justifyContent:'flex-end',mb: 2, borderColor: '#e56a16', color: '#e56a16', '&:hover': { borderColor: '#e56a16', backgroundColor: 'rgba(229,106,22,0.08)' } }}
-                            >
-                                Add Guest Player
-                            </Button>
-
-                            {/* Home Team Fields */}
-                            <TextField
-                                label="Home Team Name"
-                                value={homeTeamName}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHomeTeamName(e.target.value)}
-                                required
-                                fullWidth
-                                sx={{ mt: 2, mb: 1, ...inputStyles }}
-                            />
-
-                            {/* Home Team Image Upload */}
-                            <Box sx={{ mt: 2, mb: 2 }}>
-                                <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                                    Home Team Image (Optional)
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* Home team: name + image in one row */}
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mt: 2 }}>
+                                <TextField
+                                    label="Home Team Name"
+                                    value={homeTeamName}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHomeTeamName(e.target.value)}
+                                    required
+                                    fullWidth
+                                    sx={{ ...inputStyles, flex: 1 }}
+                                />
+                                <Box sx={{ flex: 1 }}>
                                     <input
                                         accept="image/*"
                                         style={{ display: 'none' }}
@@ -464,7 +385,7 @@ export default function ScheduleMatchPage() {
                                     />
                                     <TextField
                                         fullWidth
-                                        label="Upload Home Team Image"
+                                        label="Home Team Image"
                                         value={homeTeamImage ? homeTeamImage.name : ''}
                                         InputProps={{
                                             readOnly: true,
@@ -485,11 +406,7 @@ export default function ScheduleMatchPage() {
                                                         </Button>
                                                     </label>
                                                     {homeTeamImage && (
-                                                        <IconButton
-                                                            onClick={handleRemoveHomeTeamImage}
-                                                            size="small"
-                                                            sx={{ color: '#f44336' }}
-                                                        >
+                                                        <IconButton onClick={handleRemoveHomeTeamImage} size="small" sx={{ color: '#f44336' }}>
                                                             <X />
                                                         </IconButton>
                                                     )}
@@ -499,20 +416,29 @@ export default function ScheduleMatchPage() {
                                         sx={{ ...inputStyles }}
                                     />
                                 </Box>
-                                {homeTeamImagePreview && (
-                                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Avatar
-                                            src={homeTeamImagePreview}
-                                            alt="Home Team Preview"
-                                            sx={{ width: 40, height: 40, border: '2px solid #43a047' }}
-                                        />
-                                        <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
-                                            Image preview
-                                        </Typography>
-                                    </Box>
-                                )}
+                            </Box>
+                            {homeTeamImagePreview && (
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar src={homeTeamImagePreview} alt="Home Team Preview" sx={{ width: 40, height: 40, border: '2px solid #43a047' }} />
+                                    <Typography variant="caption" sx={{ color: '#B2DFDB' }}>Image preview</Typography>
+                                </Box>
+                            )}
+
+                            {/* Inline add guest for Home */}
+                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                                <TextField
+                                    label="Add guest name (Home)"
+                                    value={homeGuestName}
+                                    onChange={(e) => setHomeGuestName(e.target.value)}
+                                    fullWidth
+                                    sx={inputStyles}
+                                />
+                                <Button variant="contained" onClick={() => addGuestByName('home')} sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}>
+                                    Add
+                                </Button>
                             </Box>
 
+                            {/* Home players */}
                             <Autocomplete
                                 multiple
                                 options={league.members.filter((m) => !awayTeamUsers.find((p) => p.id === m.id))}
@@ -535,19 +461,10 @@ export default function ScheduleMatchPage() {
                                     </li>
                                 )}
                                 renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Select Home Team Players"
-                                        placeholder="Players"
-                                        sx={{ mt: 1, mb: 1, ...autocompleteStyles }}
-                                    />
+                                    <TextField {...params} label="Select Home Team Players" placeholder="Players" sx={{ mt: 2, ...autocompleteStyles }} />
                                 )}
-                                sx={{
-                                    "& .MuiAutocomplete-popupIndicator": { color: "white" },
-                                    "& .MuiAutocomplete-clearIndicator": { color: "white" },
-                                }}
+                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
                             />
-
                             {homeTeamUsers.length > 0 && (
                                 <Autocomplete
                                     options={homeTeamUsers}
@@ -555,31 +472,25 @@ export default function ScheduleMatchPage() {
                                     value={homeCaptain}
                                     onChange={(event, newValue) => setHomeCaptain(newValue)}
                                     renderInput={(params) => (
-                                        <TextField {...params} sx={{ mt: 2, mb: 1, ...inputStyles }} label="Select Home Team Captain" required />
+                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Home Team Captain" required />
                                     )}
-                                    sx={{
-                                        "& .MuiAutocomplete-popupIndicator": { color: "white" },
-                                        "& .MuiAutocomplete-clearIndicator": { color: "white" },
-                                    }}
+                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
                                 />
                             )}
 
-                            {/* Away Team Fields */}
-                            <TextField
-                                label="Away Team Name"
-                                value={awayTeamName}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAwayTeamName(e.target.value)}
-                                required
-                                fullWidth
-                                sx={{ mt: 2, mb: 1, ...inputStyles }}
-                            />
+                            <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.12)' }} />
 
-                            {/* Away Team Image Upload */}
-                            <Box sx={{ mt: 2, mb: 2 }}>
-                                <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                                    Away Team Image (Optional)
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* Away team: name + image in one row */}
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                                <TextField
+                                    label="Away Team Name"
+                                    value={awayTeamName}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAwayTeamName(e.target.value)}
+                                    required
+                                    fullWidth
+                                    sx={{ ...inputStyles, flex: 1 }}
+                                />
+                                <Box sx={{ flex: 1 }}>
                                     <input
                                         accept="image/*"
                                         style={{ display: 'none' }}
@@ -589,7 +500,7 @@ export default function ScheduleMatchPage() {
                                     />
                                     <TextField
                                         fullWidth
-                                        label="Upload Away Team Image"
+                                        label="Away Team Image"
                                         value={awayTeamImage ? awayTeamImage.name : ''}
                                         InputProps={{
                                             readOnly: true,
@@ -610,11 +521,7 @@ export default function ScheduleMatchPage() {
                                                         </Button>
                                                     </label>
                                                     {awayTeamImage && (
-                                                        <IconButton
-                                                            onClick={handleRemoveAwayTeamImage}
-                                                            size="small"
-                                                            sx={{ color: '#f44336' }}
-                                                        >
+                                                        <IconButton onClick={handleRemoveAwayTeamImage} size="small" sx={{ color: '#f44336' }}>
                                                             <X />
                                                         </IconButton>
                                                     )}
@@ -624,20 +531,29 @@ export default function ScheduleMatchPage() {
                                         sx={{ ...inputStyles }}
                                     />
                                 </Box>
-                                {awayTeamImagePreview && (
-                                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Avatar
-                                            src={awayTeamImagePreview}
-                                            alt="Away Team Preview"
-                                            sx={{ width: 40, height: 40, border: '2px solid #ef5350' }}
-                                        />
-                                        <Typography variant="caption" sx={{ color: '#EF9A9A' }}>
-                                            Image preview
-                                        </Typography>
-                                    </Box>
-                                )}
+                            </Box>
+                            {awayTeamImagePreview && (
+                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar src={awayTeamImagePreview} alt="Away Team Preview" sx={{ width: 40, height: 40, border: '2px solid #ef5350' }} />
+                                    <Typography variant="caption" sx={{ color: '#EF9A9A' }}>Image preview</Typography>
+                                </Box>
+                            )}
+
+                            {/* Inline add guest for Away */}
+                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                                <TextField
+                                    label="Add guest name (Away)"
+                                    value={awayGuestName}
+                                    onChange={(e) => setAwayGuestName(e.target.value)}
+                                    fullWidth
+                                    sx={inputStyles}
+                                />
+                                <Button variant="contained" onClick={() => addGuestByName('away')} sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}>
+                                    Add
+                                </Button>
                             </Box>
 
+                            {/* Away players */}
                             <Autocomplete
                                 multiple
                                 options={league.members.filter((m) => !homeTeamUsers.find((p) => p.id === m.id))}
@@ -660,19 +576,10 @@ export default function ScheduleMatchPage() {
                                     </li>
                                 )}
                                 renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Select Away Team Players"
-                                        placeholder="Players"
-                                        sx={{ mt: 1, mb: 1, ...autocompleteStyles }}
-                                    />
+                                    <TextField {...params} label="Select Away Team Players" placeholder="Players" sx={{ mt: 2, ...autocompleteStyles }} />
                                 )}
-                                sx={{
-                                    "& .MuiAutocomplete-popupIndicator": { color: "white" },
-                                    "& .MuiAutocomplete-clearIndicator": { color: "white" },
-                                }}
+                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
                             />
-
                             {awayTeamUsers.length > 0 && (
                                 <Autocomplete
                                     options={awayTeamUsers}
@@ -680,34 +587,25 @@ export default function ScheduleMatchPage() {
                                     value={awayCaptain}
                                     onChange={(event, newValue) => setAwayCaptain(newValue)}
                                     renderInput={(params) => (
-                                        <TextField {...params} sx={{ mt: 2, mb: 1, ...inputStyles }} label="Select Away Team Captain" required />
+                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Away Team Captain" required />
                                     )}
-                                    sx={{
-                                        "& .MuiAutocomplete-popupIndicator": { color: "white" },
-                                        "& .MuiAutocomplete-clearIndicator": { color: "white" },
-                                    }}
+                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
                                 />
                             )}
 
-                            {/* Date and Time Pickers */}
+                            {/* Date, time, duration, location */}
                             <DatePicker
                                 label="Match Date"
                                 value={matchDate}
                                 onChange={(newValue) => setMatchDate(dayjs(newValue))}
-                                slotProps={{
-                                    textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles },
-                                }}
+                                slotProps={{ textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles } }}
                             />
-
                             <TimePicker
                                 label="Start Time"
                                 value={startTime}
                                 onChange={(newValue) => setStartTime(dayjs(newValue))}
-                                slotProps={{
-                                    textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles },
-                                }}
+                                slotProps={{ textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles } }}
                             />
-
                             <TextField
                                 label="Match Duration (minutes)"
                                 type="number"
@@ -719,7 +617,6 @@ export default function ScheduleMatchPage() {
                                 fullWidth
                                 sx={{ mt: 2, mb: 1, ...inputStyles }}
                             />
-
                             <TextField
                                 label="Location"
                                 value={location}
@@ -729,13 +626,8 @@ export default function ScheduleMatchPage() {
                                 sx={{ mt: 2, mb: 1, ...inputStyles }}
                             />
 
-                            {error && (
-                                <Typography color="error" sx={{ my: 2 }}>
-                                    {error}
-                                </Typography>
-                            )}
+                            {error && <Typography color="error" sx={{ my: 2 }}>{error}</Typography>}
 
-                            {/* Submit */}
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -761,27 +653,16 @@ export default function ScheduleMatchPage() {
 
                     {/* Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-                        <Paper
-                            sx={{
-                                p: 2,
-                                bgcolor: 'rgba(15,15,15,0.92)',
-                                color: '#E5E7EB',
-                                borderRadius: 3,
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                backdropFilter: 'blur(10px)',
-                                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    borderRadius: 2,
-                                    p: 1,
-                                    mb: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
+                        <Paper sx={{
+                            p: 2,
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 3,
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                        }}>
+                            <Box sx={{ borderRadius: 2, p: 1, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Typography variant="h5" gutterBottom sx={{ color: '#fff', fontWeight: 700 }}>
                                     Live Preview
                                 </Typography>
@@ -789,19 +670,14 @@ export default function ScheduleMatchPage() {
                             <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.12)' }} />
 
                             <Box sx={{ display: { xs: 'block', md: 'flex' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
-                                {/* Home Team (left side) */}
+                                {/* Home */}
                                 <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar
-                                            src={homeTeamImagePreview || '/assets/default-team.png'}
-                                            alt="Home Team"
-                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
-                                        />
+                                        <Avatar src={homeTeamImagePreview || '/assets/default-team.png'} alt="Home Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }} />
                                         <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
                                             {homeTeamName || 'Home Team'}
                                         </Typography>
                                     </Box>
-                                    {/* Captain */}
                                     {homeCaptain && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                             <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
@@ -813,7 +689,6 @@ export default function ScheduleMatchPage() {
                                             </Link>
                                         </Box>
                                     )}
-                                    {/* Other players */}
                                     {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
                                         <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
                                             <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
@@ -826,8 +701,6 @@ export default function ScheduleMatchPage() {
                                             </Link>
                                         </Box>
                                     ))}
-
-                                    {/* NEW: Home team staged guest players */}
                                     {homeGuests.map((g, i) => (
                                         <Box key={`hg-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
                                             <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
@@ -844,22 +717,17 @@ export default function ScheduleMatchPage() {
                                     ))}
                                 </Box>
 
-                                {/* Center Line */}
+                                {/* Divider */}
                                 <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 180, borderRadius: 1, mx: 2, alignSelf: 'stretch' }} />
 
-                                {/* Away Team (right side) */}
+                                {/* Away */}
                                 <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar
-                                            src={awayTeamImagePreview || '/assets/default-team.png'}
-                                            alt="Away Team"
-                                            sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }}
-                                        />
+                                        <Avatar src={awayTeamImagePreview || '/assets/default-team.png'} alt="Away Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }} />
                                         <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
                                             {awayTeamName || 'Away Team'}
                                         </Typography>
                                     </Box>
-                                    {/* Captain */}
                                     {awayCaptain && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
                                             <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
@@ -871,7 +739,6 @@ export default function ScheduleMatchPage() {
                                             </Link>
                                         </Box>
                                     )}
-                                    {/* Other players */}
                                     {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
                                         <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
                                             <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
@@ -884,8 +751,6 @@ export default function ScheduleMatchPage() {
                                             </Link>
                                         </Box>
                                     ))}
-
-                                    {/* NEW: Away team staged guest players */}
                                     {awayGuests.map((g, i) => (
                                         <Box key={`ag-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
                                             <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
@@ -906,32 +771,6 @@ export default function ScheduleMatchPage() {
                     </Box>
                 </Box>
             </Box>
-
-            {/* NEW: Add Guest dialog */}
-            <Dialog open={guestOpen} onClose={() => setGuestOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Add Guest Player</DialogTitle>
-                <DialogContent sx={{ pt: 1 }}>
-                    <FormControl fullWidth sx={{ mt: 1 }}>
-                        <InputLabel id="guest-team-label">Team</InputLabel>
-                        <Select
-                            labelId="guest-team-label"
-                            label="Team"
-                            value={guestTeam}
-                            onChange={(e) => setGuestTeam(e.target.value as 'home' | 'away')}
-                        >
-                            <MenuItem value="home">Home</MenuItem>
-                            <MenuItem value="away">Away</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <TextField label="First name" fullWidth sx={{ mt: 2 }} value={guestFirstName} onChange={(e) => setGuestFirstName(e.target.value)} />
-                    <TextField label="Last name" fullWidth sx={{ mt: 2 }} value={guestLastName} onChange={(e) => setGuestLastName(e.target.value)} />
-                    <TextField label="Shirt number (optional)" fullWidth sx={{ mt: 2 }} value={guestShirtNumber} onChange={(e) => setGuestShirtNumber(e.target.value)} />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setGuestOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleStageGuest}>Add Guest</Button>
-                </DialogActions>
-            </Dialog>
 
             <Toaster position="top-center" reverseOrder={false} />
         </LocalizationProvider>

@@ -13,8 +13,6 @@ import {
     Divider,
     IconButton,
     Avatar,
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -104,17 +102,15 @@ export default function EditMatchPage() {
     const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
     const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
 
-    // NEW: Guests state for existing match
+    // Guests state for existing match
     const [homeGuests, setHomeGuests] = useState<Guest[]>([]);
     const [awayGuests, setAwayGuests] = useState<Guest[]>([]);
 
-    // NEW: Guest dialog state
-    const [guestOpen, setGuestOpen] = useState(false);
-    const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
-    const [guestFirstName, setGuestFirstName] = useState('');
-    const [guestLastName, setGuestLastName] = useState('');
-    const [guestShirtNumber, setGuestShirtNumber] = useState('');
-    const [addingGuest, setAddingGuest] = useState(false);
+    // Inline guest inputs (replace dialog)
+    const [homeGuestName, setHomeGuestName] = useState('');
+    const [awayGuestName, setAwayGuestName] = useState('');
+    const [addingHomeGuest, setAddingHomeGuest] = useState(false);
+    const [addingAwayGuest, setAddingAwayGuest] = useState(false);
 
     const { token } = useAuth();
     const params = useParams();
@@ -142,7 +138,6 @@ export default function EditMatchPage() {
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                // FIX: correct endpoint (remove `/n/`)
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
@@ -250,20 +245,21 @@ export default function EditMatchPage() {
         setAwayTeamImagePreview(null);
     };
 
-    // NEW: Add a guest to existing match
-    const handleAddGuest = async () => {
-        if (!guestFirstName.trim() || !guestLastName.trim()) {
-            toast.error('Enter first and last name');
+    // Inline: Add a guest by full name (immediate API call)
+    const addGuestByName = async (team: 'home' | 'away') => {
+        const raw = team === 'home' ? homeGuestName : awayGuestName;
+        const name = raw.trim();
+        if (!name) {
+            toast.error('Enter guest name');
             return;
         }
-        setAddingGuest(true);
+        const [firstName, ...rest] = name.split(/\s+/);
+        const lastName = rest.join(' ') || 'Guest';
+
+        const setAdding = team === 'home' ? setAddingHomeGuest : setAddingAwayGuest;
+        setAdding(true);
         try {
-            const payload: Guest = {
-                team: guestTeam,
-                firstName: guestFirstName.trim(),
-                lastName: guestLastName.trim(),
-                shirtNumber: guestShirtNumber || undefined,
-            };
+            const payload: Guest = { team, firstName, lastName };
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, {
                 method: 'POST',
                 headers: {
@@ -281,24 +277,24 @@ export default function EditMatchPage() {
             }
 
             const saved: Guest = data.guest || payload;
-            if (saved.team === 'home') setHomeGuests(prev => [saved, ...prev]);
-            else setAwayGuests(prev => [saved, ...prev]);
+            if (team === 'home') {
+                setHomeGuests(prev => [saved, ...prev]);
+                setHomeGuestName('');
+            } else {
+                setAwayGuests(prev => [saved, ...prev]);
+                setAwayGuestName('');
+            }
 
             toast.success('Guest added');
-            setGuestOpen(false);
-            setGuestTeam('home');
-            setGuestFirstName('');
-            setGuestLastName('');
-            setGuestShirtNumber('');
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Failed to add guest.';
             toast.error(msg);
         } finally {
-            setAddingGuest(false);
+            setAdding(false);
         }
     };
 
-    // NEW: Remove guest (if API supports DELETE)
+    // Remove guest (if API supports DELETE)
     const handleRemoveGuest = async (guest: Guest, team: 'home' | 'away', index: number) => {
         try {
             if (guest.id) {
@@ -453,31 +449,120 @@ export default function EditMatchPage() {
                             Edit Match for {league.name}
                         </Typography>
 
-                        {/* NEW: Add Guest button */}
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setGuestOpen(true)}
-                            sx={{ mb: 2, borderColor: '#e56a16', color: '#e56a16', '&:hover': { borderColor: '#e56a16', backgroundColor: 'rgba(229,106,22,0.08)' } }}
-                        >
-                            Add Guest Player
-                        </Button>
+                        {/* HOME: team name + image in one row */}
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mt: 2 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <TextField
+                                    label="Home Team Name"
+                                    value={homeTeamName}
+                                    onChange={(e) => setHomeTeamName(e.target.value)}
+                                    required
+                                    fullWidth
+                                    margin="none"
+                                    sx={{
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        }
+                                    }}
+                                    InputLabelProps={{ style: { color: 'white' } }}
+                                />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <input
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    id="home-team-image-upload"
+                                    type="file"
+                                    onChange={handleHomeTeamImageUpload}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Home Team Image"
+                                    value={homeTeamImage ? homeTeamImage.name : ''}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <label htmlFor="home-team-image-upload">
+                                                    <Button
+                                                        component="span"
+                                                        variant="outlined"
+                                                        size="small"
+                                                        sx={{
+                                                            color: '#43a047',
+                                                            borderColor: '#43a047',
+                                                            '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67,160,71,0.1)' }
+                                                        }}
+                                                    >
+                                                        Browse
+                                                    </Button>
+                                                </label>
+                                                {homeTeamImage && (
+                                                    <IconButton
+                                                        onClick={handleRemoveHomeTeamImage}
+                                                        size="small"
+                                                        sx={{ color: '#f44336' }}
+                                                    >
+                                                        <X />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        )
+                                    }}
+                                    sx={{
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        }
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+                        {homeTeamImagePreview && (
+                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar
+                                    src={homeTeamImagePreview}
+                                    alt="Home Team Preview"
+                                    sx={{ width: 40, height: 40, border: '2px solid #43a047' }}
+                                />
+                                <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
+                                    Image preview
+                                </Typography>
+                            </Box>
+                        )}
 
-                        <TextField
-                            label="Home Team Name"
-                            value={homeTeamName}
-                            onChange={(e) => setHomeTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
-                            sx={{
-                                backgroundColor: "transparent",
-                                border:'1px solid white',
-                                color: 'white',
-                                input: { color: 'white' },
-                            }}
-                            InputLabelProps={{ style: { color: 'white' } }}
-                        />
+                        {/* Inline add guest for Home */}
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                            <TextField
+                                label="Add guest name (Home)"
+                                value={homeGuestName}
+                                onChange={(e) => setHomeGuestName(e.target.value)}
+                                fullWidth
+                                sx={{
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' } }
+                                }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                            />
+                            <Button
+                                variant="contained"
+                                onClick={() => addGuestByName('home')}
+                                disabled={addingHomeGuest}
+                                sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}
+                            >
+                                {addingHomeGuest ? <CircularProgress size={18} color="inherit" /> : 'Add'}
+                            </Button>
+                        </Box>
+
+                        {/* Home players select */}
                         <Autocomplete
                             multiple
                             options={league.members.filter(m => !awayTeamUsers.find(p => p.id === m.id))}
@@ -503,72 +588,24 @@ export default function EditMatchPage() {
                                 </li>
                             )}
                             renderInput={(params) => (
-                                <TextField {...params} label="Select Home Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
+                                <TextField
+                                    {...params}
+                                    label="Select Home Team Players"
+                                    InputLabelProps={{ style: { color: 'white' } }}
+                                    sx={{
+                                        mt: 2,
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        },
+                                        '.MuiSvgIcon-root': { color: 'white' }
+                                    }}
+                                />
                             )}
                         />
-                        <Box sx={{ mt: 2, mb: 2 }}>
-                            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                                Home Team Image (Optional)
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <input
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    id="home-team-image-upload"
-                                    type="file"
-                                    onChange={handleHomeTeamImageUpload}
-                                />
-                                <TextField
-                                    fullWidth
-                                    label="Upload Home Team Image"
-                                    value={homeTeamImage ? homeTeamImage.name : ''}
-                                    InputProps={{
-                                        readOnly: true,
-                                        endAdornment: (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <label htmlFor="home-team-image-upload">
-                                                    <Button
-                                                        component="span"
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{
-                                                            color: '#43a047',
-                                                            borderColor: '#43a047',
-                                                            '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' }
-                                                        }}
-                                                    >
-                                                        Browse
-                                                    </Button>
-                                                </label>
-                                                {homeTeamImage && (
-                                                    <IconButton
-                                                        onClick={handleRemoveHomeTeamImage}
-                                                        size="small"
-                                                        sx={{ color: '#f44336' }}
-                                                    >
-                                                        <X />
-                                                    </IconButton>
-                                                )}
-                                            </Box>
-                                        )
-                                    }}
-                                    sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
-                                />
-                            </Box>
-                            {homeTeamImagePreview && (
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar
-                                        src={homeTeamImagePreview}
-                                        alt="Home Team Preview"
-                                        sx={{ width: 40, height: 40, border: '2px solid #43a047' }}
-                                    />
-                                    <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
-                                        Image preview
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-
                         {homeTeamUsers.length > 0 && (
                             <Autocomplete
                                 options={homeTeamUsers}
@@ -576,53 +613,47 @@ export default function EditMatchPage() {
                                 value={homeCaptain}
                                 onChange={(event, newValue) => setHomeCaptain(newValue)}
                                 renderInput={(params) => (
-                                    <TextField {...params} sx={{ mt: 2, mb: 1, input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }} label="Select Home Team Captain" required />
+                                    <TextField
+                                        {...params}
+                                        sx={{
+                                            mt: 2, mb: 1,
+                                            input: { color: 'white' }, label: { color: 'white' },
+                                            '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } },
+                                            '& .MuiInputLabel-root': { color: 'white' },
+                                            '& .MuiInputLabel-root.Mui-focused': { color: 'white' }
+                                        }}
+                                        label="Select Home Team Captain"
+                                        required
+                                    />
                                 )}
                             />
                         )}
-                        <TextField
-                            label="Away Team Name"
-                            value={awayTeamName}
-                            onChange={(e) => setAwayTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
-                            InputLabelProps={{ style: { color: 'white' } }}
-                            sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
-                        />
-                        <Autocomplete
-                            multiple
-                            options={league.members.filter(m => !homeTeamUsers.find(p => p.id === m.id))}
-                            disableCloseOnSelect
-                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                            value={awayTeamUsers}
-                            onChange={(event, newValue) => { setAwayTeamUsers(newValue); }}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip
-                                        {...getTagProps({ index })}
-                                        key={option.id}
-                                        label={`${option.firstName} ${option.lastName}`}
-                                        sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
-                                    />
-                                ))
-                            }
-                            renderOption={(props, option, { selected }) => (
-                                <li {...props} style={{ color: 'black' }}>
-                                    <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
-                                    {`${option.firstName} ${option.lastName}`}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Select Away Team Players" InputLabelProps={{ style: { color: 'white' } }} sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, '.MuiSvgIcon-root': { color: 'white' } }} />
-                            )}
-                        />
-                        <Box sx={{ mt: 2, mb: 2 }}>
-                            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                                Away Team Image (Optional)
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+
+                        <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.12)' }} />
+
+                        {/* AWAY: team name + image in one row */}
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <TextField
+                                    label="Away Team Name"
+                                    value={awayTeamName}
+                                    onChange={(e) => setAwayTeamName(e.target.value)}
+                                    required
+                                    fullWidth
+                                    margin="none"
+                                    InputLabelProps={{ style: { color: 'white' } }}
+                                    sx={{
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        }
+                                    }}
+                                />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <input
                                     accept="image/*"
                                     style={{ display: 'none' }}
@@ -632,7 +663,7 @@ export default function EditMatchPage() {
                                 />
                                 <TextField
                                     fullWidth
-                                    label="Upload Away Team Image"
+                                    label="Away Team Image"
                                     value={awayTeamImage ? awayTeamImage.name : ''}
                                     InputProps={{
                                         readOnly: true,
@@ -664,22 +695,99 @@ export default function EditMatchPage() {
                                             </Box>
                                         )
                                     }}
-                                    sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
+                                    sx={{
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        }
+                                    }}
                                 />
                             </Box>
-                            {awayTeamImagePreview && (
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar
-                                        src={awayTeamImagePreview}
-                                        alt="Away Team Preview"
-                                        sx={{ width: 40, height: 40, border: '2px solid #ef5350' }}
-                                    />
-                                    <Typography variant="caption" sx={{ color: '#EF9A9A' }}>
-                                        Image preview
-                                    </Typography>
-                                </Box>
-                            )}
                         </Box>
+                        {awayTeamImagePreview && (
+                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar
+                                    src={awayTeamImagePreview}
+                                    alt="Away Team Preview"
+                                    sx={{ width: 40, height: 40, border: '2px solid #ef5350' }}
+                                />
+                                <Typography variant="caption" sx={{ color: '#EF9A9A' }}>
+                                    Image preview
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {/* Inline add guest for Away */}
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                            <TextField
+                                label="Add guest name (Away)"
+                                value={awayGuestName}
+                                onChange={(e) => setAwayGuestName(e.target.value)}
+                                fullWidth
+                                sx={{
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' } }
+                                }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                            />
+                            <Button
+                                variant="contained"
+                                onClick={() => addGuestByName('away')}
+                                disabled={addingAwayGuest}
+                                sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}
+                            >
+                                {addingAwayGuest ? <CircularProgress size={18} color="inherit" /> : 'Add'}
+                            </Button>
+                        </Box>
+
+                        {/* Away players select */}
+                        <Autocomplete
+                            multiple
+                            options={league.members.filter(m => !homeTeamUsers.find(p => p.id === m.id))}
+                            disableCloseOnSelect
+                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            value={awayTeamUsers}
+                            onChange={(event, newValue) => { setAwayTeamUsers(newValue); }}
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                    <Chip
+                                        {...getTagProps({ index })}
+                                        key={option.id}
+                                        label={`${option.firstName} ${option.lastName}`}
+                                        sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
+                                    />
+                                ))
+                            }
+                            renderOption={(props, option, { selected }) => (
+                                <li {...props} style={{ color: 'white' }}>
+                                    <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
+                                    {`${option.firstName} ${option.lastName}`}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Select Away Team Players"
+                                    InputLabelProps={{ style: { color: 'white' } }}
+                                    sx={{
+                                        mt: 2,
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': { borderColor: 'white' },
+                                            '&:hover fieldset': { borderColor: 'white' },
+                                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                                        },
+                                        '.MuiSvgIcon-root': { color: 'white' }
+                                    }}
+                                />
+                            )}
+                        />
                         {awayTeamUsers.length > 0 && (
                             <Autocomplete
                                 options={awayTeamUsers}
@@ -687,10 +795,22 @@ export default function EditMatchPage() {
                                 value={awayCaptain}
                                 onChange={(event, newValue) => setAwayCaptain(newValue)}
                                 renderInput={(params) => (
-                                    <TextField {...params} sx={{ mt: 2, mb: 1, input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }} label="Select Away Team Captain" required />
+                                    <TextField
+                                        {...params}
+                                        sx={{
+                                            mt: 2, mb: 1,
+                                            input: { color: 'white' }, label: { color: 'white' },
+                                            '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } },
+                                            '& .MuiInputLabel-root': { color: 'white' },
+                                            '& .MuiInputLabel-root.Mui-focused': { color: 'white' }
+                                        }}
+                                        label="Select Away Team Captain"
+                                        required
+                                    />
                                 )}
                             />
                         )}
+
                         <DateTimePicker
                             label="Match Date & Time"
                             value={matchDate}
@@ -700,7 +820,14 @@ export default function EditMatchPage() {
                                     fullWidth: true,
                                     margin: "normal",
                                     required: true,
-                                    sx: { svg: { color: 'white' }, input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }
+                                    sx: {
+                                        svg: { color: 'white' },
+                                        input: { color: 'white' },
+                                        label: { color: 'white' },
+                                        '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } },
+                                        '& .MuiInputLabel-root': { color: 'white' },
+                                        '& .MuiInputLabel-root.Mui-focused': { color: 'white' }
+                                    }
                                 }
                             }}
                         />
@@ -712,7 +839,13 @@ export default function EditMatchPage() {
                             fullWidth
                             margin="normal"
                             InputLabelProps={{ style: { color: 'white' } }}
-                            sx={{ input: { color: 'white' }, label: { color: 'white' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } }, '& .MuiInputLabel-root': { color: 'white' }, '& .MuiInputLabel-root.Mui-focused': { color: 'white' } }}
+                            sx={{
+                                input: { color: 'white' },
+                                label: { color: 'white' },
+                                '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'white' }, '&:hover fieldset': { borderColor: 'white' }, '&.Mui-focused fieldset': { borderColor: 'white' } },
+                                '& .MuiInputLabel-root': { color: 'white' },
+                                '& .MuiInputLabel-root.Mui-focused': { color: 'white' }
+                            }}
                         />
                         {error && <Typography color="error" sx={{ my: 2 }}>{error}</Typography>}
                         <Button
@@ -752,11 +885,9 @@ export default function EditMatchPage() {
                     >
                         <Box
                             sx={{
-                                // bgcolor: '#111',
                                 borderRadius: 2,
                                 p: 1,
                                 mb: 1,
-                                // boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -815,7 +946,7 @@ export default function EditMatchPage() {
                                         </Link>
                                     </Box>
                                 ))}
-                                {/* NEW: Home Guests */}
+                                {/* Home Guests */}
                                 {homeGuests.map((g, i) => (
                                     <Box key={`home-guest-${g.id ?? i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
                                         <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
@@ -877,7 +1008,7 @@ export default function EditMatchPage() {
                                         </Link>
                                     </Box>
                                 ))}
-                                {/* NEW: Away Guests */}
+                                {/* Away Guests */}
                                 {awayGuests.map((g, i) => (
                                     <Box key={`away-guest-${g.id ?? i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
                                         <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
@@ -896,102 +1027,6 @@ export default function EditMatchPage() {
                         </Box>
                     </Paper>
                 </Box>
-
-                {/* NEW: Guest Dialog */}
-                <Dialog
-                    open={guestOpen}
-                    onClose={() => setGuestOpen(false)}
-                    PaperProps={{
-                        sx: {
-                            bgcolor: 'rgba(15,15,15,0.92)',
-                            color: '#E5E7EB',
-                            borderRadius: 3,
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                        }
-                    }}
-                >
-                    <DialogTitle sx={{ color: 'white' }}>Add Guest Player</DialogTitle>
-                    <DialogContent>
-                        <FormControl fullWidth margin="normal" variant="outlined">
-                            <InputLabel id="guest-team-label" sx={{ color: 'white' }}>Team</InputLabel>
-                            <Select
-                                labelId="guest-team-label"
-                                id="guest-team"
-                                value={guestTeam}
-                                onChange={(e) => setGuestTeam(e.target.value as 'home' | 'away')}
-                                label="Team"
-                                sx={{ color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' } }}
-                            >
-                                <MenuItem value="home" sx={{ color: 'white' }}>Home</MenuItem>
-                                <MenuItem value="away" sx={{ color: 'white' }}>Away</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <TextField
-                            label="First Name"
-                            value={guestFirstName}
-                            onChange={(e) => setGuestFirstName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
-                            sx={{
-                                input: { color: 'white' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                            }}
-                            InputLabelProps={{ style: { color: 'white' } }}
-                        />
-                        <TextField
-                            label="Last Name"
-                            value={guestLastName}
-                            onChange={(e) => setGuestLastName(e.target.value)}
-                            required
-                            fullWidth
-                            margin="normal"
-                            sx={{
-                                input: { color: 'white' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                            }}
-                            InputLabelProps={{ style: { color: 'white' } }}
-                        />
-                        <TextField
-                            label="Shirt Number (Optional)"
-                            value={guestShirtNumber}
-                            onChange={(e) => setGuestShirtNumber(e.target.value)}
-                            fullWidth
-                            margin="normal"
-                            sx={{
-                                input: { color: 'white' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                            }}
-                            InputLabelProps={{ style: { color: 'white' } }}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setGuestOpen(false)} sx={{ color: 'white' }}>
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleAddGuest}
-                            disabled={addingGuest}
-                            sx={{
-                                color: 'white',
-                                backgroundColor: '#e56a16',
-                                '&:hover': {
-                                    backgroundColor: '#d32f2f',
-                                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                },
-                            }}
-                        >
-                            {addingGuest ? <CircularProgress size={24} color="inherit" /> : 'Add Guest'}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
             </Box>
         </LocalizationProvider>
     );
