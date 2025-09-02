@@ -380,10 +380,9 @@ const PlayerStatsPage = () => {
                                 width: 'auto',
                                 px: { xs: 1, sm: 1.5, md: 2 },
                                 textTransform: 'none',
-                                // '&.Mui-selected': {
-                                //     color: '#4caf50',
-                                //     backgroundColor: '#1f673b'
-                                // }
+                                '&.Mui-selected': {
+                                    color: '#fff',
+                                }
                             },
                             '& .MuiTabs-indicator': {
                                 backgroundColor: '#fff',
@@ -709,9 +708,10 @@ const PlayerStatsPage = () => {
                                                     display: 'flex',
                                                     color: 'white',
                                                     alignItems: 'center',
-                                                    background: '#1f673b',
                                                     cursor: 'pointer',
                                                     boxShadow: 'none',
+                                                    background: '#df571a',
+                                                    border:'1px solid #e56a16'
                                                 }}
                                                 onClick={() => handleLeaderboardPlayerClick(player.id)}
                                             >
@@ -927,12 +927,12 @@ const PlayerStatsPage = () => {
                         <Box
                             sx={{
                                 display: 'inline-flex',
-                                background: '#1f673b',
+                               background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                 borderRadius: 3,
                                 px: { xs: 1, sm: 2, md: 3 },
                                 py: 0.5,
                                 boxShadow: 1,
-                                border: '2px solid green',
+                                // border: '2px solid white',
                                 overflow: 'hidden',
                                 maxWidth: '100%'
                             }}
@@ -950,12 +950,11 @@ const PlayerStatsPage = () => {
                                         px: { xs: 0.5, sm: 1, md: 2 },
                                         textTransform: 'none',
                                         '&.Mui-selected': {
-                                            color: '#4caf50',
-                                            backgroundColor: '#1f673b'
+                                            color: '#fff',
                                         }
                                     },
                                     '& .MuiTabs-indicator': {
-                                        backgroundColor: '#4caf50',
+                                        backgroundColor: '#fff',
                                         height: 3
                                     }
                                 }}

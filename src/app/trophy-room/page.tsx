@@ -274,7 +274,7 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
 // - else: any completed match exists
 const isLeagueCompleted = (league: League) => {
   const completedCount = (league.matches ?? []).filter(m => m.status === 'completed').length;
-  const max = Number((league as any)?.maxGames ?? 0);
+  const max = Number((league as League)?.maxGames ?? 0);
   return max > 0 ? completedCount >= max : completedCount > 0;
 };
 
@@ -369,9 +369,9 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
   const acrossAll = Object.values(byLeague).flat();
 
   // Base tallies already used
-  const totalGoals = summaries.reduce((s, m) => s + m.goals, 0);
-  const totalVotes = summaries.reduce((s, m) => s + m.motmVotes, 0);
-  const cleanSheets = summaries.filter(m => m.conceded === 0).length;
+//   const totalGoals = summaries.reduce((s, m) => s + m.goals, 0);
+//   const totalVotes = summaries.reduce((s, m) => s + m.motmVotes, 0);
+//   const cleanSheets = summaries.filter(m => m.conceded === 0).length;
   const hatTricks = summaries.filter(m => m.goals >= 3).length;
 
   // Streaks/league-scoped metrics
@@ -388,7 +388,7 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
 
   const toNext = (best: number, target: number) => (target - (best % target || target));
 
-  const isDefOrGk = ['defender','goalkeeper'].includes((user.position ?? '').toLowerCase());
+//   const isDefOrGk = ['defender','goalkeeper'].includes((user.position ?? '').toLowerCase());
 
   const badges: Badge[] = [
     // 1) Hat-trick in 3 separate matches (single league)
