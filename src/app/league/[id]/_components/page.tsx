@@ -2078,7 +2078,6 @@ export default function LeagueDetailPage() {
                                         <div className="p-3 px-2 pb-2">
                                             {/* bg-[rgba(59,130,246,0.8)] */}
                                             <div className=" rounded-lg px-2 py-1 mb-4 flex items-center">
-                                                <div className="text-white font-bold text-xs sm:text-sm md:text-base">Pos</div>
                                                 <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Player</div>
                                                 <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">P</div>
@@ -2092,9 +2091,9 @@ export default function LeagueDetailPage() {
                                             </div>
 
                                             <div className="space-y-[1px]">
-                                                {tableData.map((player, index) => {
-                                                    const position = index + 1;
-                                                    const badge = getBadgeForPosition(position);
+                                                {tableData.map((player) => {
+                                                    // const position = index + 1;
+                                                    // const badge = getBadgeForPosition(position);
                                                     const points = player.wins * 3 + player.draws;
                                                     const firstName = player.name.split(" ")[0] || player.name; // Ensure first name exists
                                                     const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
@@ -2105,15 +2104,7 @@ export default function LeagueDetailPage() {
                                                             <div style={{
                                                                 background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)'
                                                             }} className={`px-2 py-1.5 min-h-[70px] flex items-center`}>
-                                                                <div className="w-9 flex items-center mt-2 justify-center mr-1">
-                                                                    {index < 3 ? (
-                                                                        <div className="w-8 h-8 flex items-center justify-center">{badge}</div>
-                                                                    ) : (
-                                                                        <div className="w-7 h-7 flex items-center justify-center font-bold text-white text-xs sm:text-sm md:text-base">
-                                                                            {badge}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                              
                                                                 <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
                                                                     <div className="max-[500px]:mb-2">
                                                                         <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden flex-shrink-0">

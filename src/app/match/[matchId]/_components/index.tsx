@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Divider, Card } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, Card, SxProps, Theme } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -246,6 +246,54 @@ export default function MatchDetailsPage() {
 
   // const router = useRouter();
 
+
+  const JerseyAvatar = ({
+    number,
+    sx = {},
+}: {
+    number?: string | number;
+    sx?: SxProps<Theme>;
+}) => (
+    <Box
+        sx={{
+            position: 'relative',
+            width: 60,
+            height: 60,
+            overflow: 'hidden',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...sx,
+        }}
+    >
+        <Image
+            src={ShirtImg}
+            alt="Shirt"
+            fill
+            sizes="(max-width: 600px) 48px, 60px"
+            quality={100}
+            style={{ objectFit: 'contain' }}
+            priority
+        />
+        <Typography
+            component="span"
+            sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#fff',
+                fontWeight: 800,
+                textShadow: '0 2px 4px rgba(0,0,0,0.6)',
+                fontSize: { xs: 10, sm: 12, md: 18 },
+                lineHeight: 1,
+            }}
+        >
+            {number ?? '0'}
+        </Typography>
+    </Box>
+);
+
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
       {/* <Button
@@ -358,7 +406,6 @@ export default function MatchDetailsPage() {
                               alignItems: "center",
                             }}
                           >
-                            <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
                             <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                             <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -413,18 +460,6 @@ export default function MatchDetailsPage() {
                                     >
 
                                       <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-
-                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                          {badgeImg ? (
-                                            <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
-                                          ) : (
-                                            <Box sx={{
-                                              width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
-                                              alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
-                                            }}>{`${idx + 1}th`}</Box>
-                                          )}
-                                        </Box>
-
                                         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
                                           <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           <Box
@@ -513,7 +548,6 @@ export default function MatchDetailsPage() {
                               alignItems: "center",
                             }}
                           >
-                            <Box sx={{ color: 'white', fontWeight: 'bold' }}>Pos</Box>
                             <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
                             <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
@@ -568,17 +602,7 @@ export default function MatchDetailsPage() {
                                     >
                                       {/* Position badge above player image */}
                                       <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                        {/* Badge on the left */}
-                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                          {badgeImg ? (
-                                            <img src={badgeImg.src} alt={`${idx + 1}st`} width={30} height={45} style={{ minWidth: 30, minHeight: 45, maxWidth: 32, maxHeight: 32 }} />
-                                          ) : (
-                                            <Box sx={{
-                                              width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex',
-                                              alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a3e1e', fontSize: 16
-                                            }}>{`${idx + 1}th`}</Box>
-                                          )}
-                                        </Box>
+                                      
                                         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
                                           <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           <Box
@@ -690,7 +714,6 @@ export default function MatchDetailsPage() {
 
                           <div className="px-2 pb-2">
                             <div className="bg-[#43a047] rounded-lg px-2 py-1 mb-2 flex items-center">
-                              <div className="text-white font-bold text-xs sm:text-sm md:text-base">Pos</div>
                               <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base">Player</div>
                               <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
                                 <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Gs</div>
@@ -714,15 +737,6 @@ export default function MatchDetailsPage() {
                                 return (
                                   <Link key={player.id} href={`/player/${player.id}`} className="block">
                                     <div className={`${getRowStyles(index)} px-2 py-1.5 min-h-[60px] flex items-start`}>
-                                      <div className="w-9 flex items-center justify-center mr-1">
-                                        {index < 3 ? (
-                                          <div className="w-8 h-8 flex items-center justify-center">{badge}</div>
-                                        ) : (
-                                          <div className="w-7 h-7 flex items-center justify-center font-bold text-white text-xs sm:text-sm md:text-base">
-                                            {badge}
-                                          </div>
-                                        )}
-                                      </div>
                                       <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
                                         <div className="max-[500px]:mb-2">
                                           <div className="relative w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 flex-shrink-0">
@@ -777,65 +791,65 @@ export default function MatchDetailsPage() {
             </Box>
           </Box>
 
-          <div style={{ background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)' }} className="p-6 mt-8 text-white rounded-lg">
-            <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
-            <div className="w-full h-px bg-white mb-6"></div>
-
-            {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
-            <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-              {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                .filter(player => playerVotes[player.id] > 0)
-                .map((player) => (
-                  <Link key={player.id} href={`/player/${player.id}`}>
-                    <div className="group">
-                      {/* Mobile layout: Image on top center */}
-                      <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 bg-[#0a4822] rounded-lg border border-[#43a047] min-h-[80px] sm:min-h-[100px] hover:bg-[#1f673b] hover:-translate-y-1 transition-all duration-200 ease-in-out">
-                        {/* Profile Image */}
-                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0">
-                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                          <div className="absolute inset-0 flex items-center justify-center text-black font-extrabold text-sm sm:text-base leading-none">
-                            {player.shirtNumber || "0"}
-                          </div>
-                        </div>
-
-                        {/* Player Info */}
-                        <div className="flex-1 min-w-0 text-center sm:text-left">
-                          <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
-                            {player.firstName} {player.lastName}
-                            {player.id === match.homeCaptainId ? " (C)" : ""}
-                          </h3>
-
-                          <p className="text-[#B2DFDB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
-                            {player.positionType || "Player"}
-                          </p>
-
-                          {/* Buttons */}
-                          <div className="flex justify-center sm:justify-start gap-2 items-center">
-                            <Button
-                              variant="contained"
-                              size="small"
-                              className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                            >
-                              Shirt No {player.shirtNumber || "0"}
-                            </Button>
-
-                            <Button
-                              variant="contained"
-                              size="small"
-                              className="bg-gradient-to-r from-[#43a047] to-[#388e3c] hover:from-[#388e3c] hover:to-[#2e7d32] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                            >
-                              {typeof playerVotes[player.id] === "number" &&
-                                playerVotes[player.id] > 0 &&
-                                `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
-                            </Button>
-                          </div>
-                        </div>
+       <div className="p-6 mt-8 text-white rounded-lg" style={{ background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
+                      <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
+                      <div className="w-full h-px bg-white mb-6"></div>
+      
+                      {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
+                      <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
+                          {[...match.homeTeamUsers, ...match.awayTeamUsers]
+                              .filter(player => playerVotes[player.id] > 0)
+                              .map((player) => (
+                                  <Link key={player.id} href={`/player/${player.id}`}>
+                                      <div className="group">
+                                          {/* Mobile layout: Image on top center */}
+                                          <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
+                                              {/* Profile Image */}
+                                              {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
+                                              {/* -                                           <img */}
+                                              {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
+                                              {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
+                                              {/* -                                               className="w-full h-full object-cover" */}
+                                              {/* -                                           /> */}
+                                              {/* -                                       </div> */}
+                                              <JerseyAvatar
+                                                  number={player.shirtNumber || '0'}
+                                                  sx={{
+                                                      width: { xs: 25, sm: 35, md: 74 },
+                                                      height: { xs: 25, sm: 35, md: 74 },
+                                                      mr: { xs: 1, sm: 1.5 },
+                                                  }}
+                                              />
+                                              {/* Player Info */}
+                                              <div className="flex-1 min-w-0 text-center sm:text-left">
+                                                  <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
+                                                      {player.firstName} {player.lastName}
+                                                      {player.id === match.homeCaptainId ? " (C)" : ""}
+                                                  </h3>
+      
+                                                  <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
+                                                      {player.positionType || "Player"}
+                                                  </p>
+      
+                                                  {/* Buttons */}
+                                                  <div className="flex justify-center sm:justify-start gap-2 items-center">
+                                                      <Button
+                                                          variant="contained"
+                                                          size="small"
+                                                          className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                                                      >
+                                                          {typeof playerVotes[player.id] === "number" &&
+                                                              playerVotes[player.id] > 0 &&
+                                                              `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
+                                                      </Button>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </Link>
+                              ))}
                       </div>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          </div>
+                  </div>
         </>
       )}
     </Box>

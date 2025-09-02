@@ -403,8 +403,8 @@ const PlayerStatsPage = () => {
                         onClick={() => setFilterDialogOpen(true)}
                         sx={{
                             color: 'white',
-                            bgcolor: 'rgba(31,103,59,0.9)',
-                            '&:hover': { bgcolor: 'rgba(31,103,59,1)' },
+                            background: '#df571a',
+                            '&:hover': { background: '#dc4c1d' },
                             boxShadow: 2,
                             borderRadius: 0,
                             fontSize: { xs: '10px', sm: '12px' },
@@ -609,13 +609,13 @@ const PlayerStatsPage = () => {
                                             PaperProps: {
                                                 sx: {
                                                     background: '#fff',
-                                                    color: '#000000',
+                                                    color: '#000',
                                                 }
                                             }
                                         }}
                                     >
                                         {leagues.map((l) => (
-                                            <MenuItem key={l.id} value={l.id} sx={{ color: '#000000' }}>{l.name}</MenuItem>
+                                            <MenuItem key={l.id} value={l.id} sx={{ color: '#000' }}>{l.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
@@ -643,7 +643,7 @@ const PlayerStatsPage = () => {
                                             PaperProps: {
                                                 sx: {
                                                     background: '#fff',
-                                                    color: '#000000',
+                                                    color: '#000',
                                                 }
                                             }
                                         }}
@@ -677,7 +677,7 @@ const PlayerStatsPage = () => {
                                             PaperProps: {
                                                 sx: {
                                                     background: '#fff',
-                                                    color: '#000000',
+                                                    color: '#000',
                                                 }
                                             }
                                         }}
@@ -743,8 +743,8 @@ const PlayerStatsPage = () => {
                             onClose={() => setFilterDialogOpen(false)}
                             sx={{
                                 '& .MuiDrawer-paper': {
-                                    bgcolor: '#1f673b',
-                                    color: 'white',
+                                    background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                    color: '#fff',
                                     width: 340,
                                     maxWidth: '100vw',
                                     height: '100%',
@@ -774,58 +774,58 @@ const PlayerStatsPage = () => {
                                             label="League"
                                             onChange={e => setSelectedLeaderboardLeague(e.target.value)}
                                             sx={{
-                                                background: '#0a3e1e',
+                                                background: '#df571a',
                                                 color: '#fff',
                                                 '& .MuiSelect-icon': { color: '#fff' },
                                                 '& .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#4caf50',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#388e3c',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#43a047',
+                                                    borderColor: '#e56a16',
                                                 },
                                             }}
                                             MenuProps={{
                                                 PaperProps: {
                                                     sx: {
-                                                        background: '#0a3e1e',
-                                                        color: '#fff',
+                                                        background: '#fff',
+                                                        color: '#000',
                                                     }
                                                 }
                                             }}
                                         >
                                             {leagues.map((l) => (
-                                                <MenuItem key={l.id} value={l.id} sx={{ color: '#fff' }}>{l.name}</MenuItem>
+                                                <MenuItem key={l.id} value={l.id} sx={{ color: '#000' }}>{l.name}</MenuItem>
                                             ))}
                                         </Select>
                                     </FormControl>
                                     <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
-                                        <InputLabel sx={{ color: '#1f673b' }}>Metric</InputLabel>
+                                        <InputLabel sx={{ color: '#fff' }}>Metric</InputLabel>
                                         <Select
                                             value={selectedMetric}
                                             label="Metric"
                                             onChange={e => setSelectedMetric(e.target.value)}
                                             sx={{
-                                                background: '#0a3e1e',
+                                                background: '#dd501c',
                                                 color: '#fff',
                                                 '& .MuiSelect-icon': { color: '#fff' },
                                                 '& .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#4caf50',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#388e3c',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#43a047',
+                                                    borderColor: '#e56a16',
                                                 },
                                             }}
                                             MenuProps={{
                                                 PaperProps: {
                                                     sx: {
-                                                        background: '#0a3e1e',
-                                                        color: '#fff',
+                                                        background: '#fff',
+                                                        color: '#000',
                                                     }
                                                 }
                                             }}
@@ -836,30 +836,30 @@ const PlayerStatsPage = () => {
                                         </Select>
                                     </FormControl>
                                     <FormControl size="small" sx={{ background: 'white', borderRadius: 1 }}>
-                                        <InputLabel sx={{ color: '#1f673b' }}>Position Type</InputLabel>
+                                        <InputLabel sx={{ color: '#fff' }}>Position Type</InputLabel>
                                         <Select
                                             value={positionFilter || ''}
                                             label="Position Type"
                                             onChange={e => setPositionFilter(e.target.value)}
                                             sx={{
-                                                background: '#0a3e1e',
+                                                background: '#da471e',
                                                 color: '#fff',
                                                 '& .MuiSelect-icon': { color: '#fff' },
                                                 '& .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#4caf50',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#388e3c',
+                                                    borderColor: '#e56a16',
                                                 },
                                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: '#43a047',
+                                                    borderColor: '#e56a16',
                                                 },
                                             }}
                                             MenuProps={{
                                                 PaperProps: {
                                                     sx: {
-                                                        background: '#0a3e1e',
-                                                        color: '#fff',
+                                                        background: '#fff',
+                                                        color: '#000',
                                                     }
                                                 }
                                             }}
@@ -891,9 +891,10 @@ const PlayerStatsPage = () => {
                                                             display: 'flex',
                                                             color: 'white',
                                                             alignItems: 'center',
-                                                            background: '#1f673b',
                                                             cursor: 'pointer',
                                                             boxShadow: 'none',
+                                                            background: '#df571a',
+                                                            border: '1px solid #e56a16',
                                                         }}
                                                         onClick={() => {
                                                             handleLeaderboardPlayerClick(player.id);

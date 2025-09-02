@@ -1,6 +1,7 @@
 import { User, League, Match } from './user';
 
 export interface ApiResponse<T> {
+  message: string;
   success: boolean;
   data?: T;
   token?: string;

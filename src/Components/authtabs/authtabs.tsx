@@ -16,10 +16,24 @@ import toast from 'react-hot-toast';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import Link from 'next/link';
 
+
 interface AuthTabsProps {
   showLogin?: boolean;
   onToggleForm?: () => void;
 }
+
+// Prefer server-provided message (works with Axios, fetch, or thunk payloads)
+const extractApiMessage = (e: any): string => {
+  const axiosMsg = e?.response?.data?.message || e?.response?.data?.error;
+  const fetchMsg = e?.data?.message || e?.data?.error;
+  const thunkMsg = e?.message || e?.error;
+  const str = typeof e === 'string' ? e : undefined;
+  return axiosMsg || fetchMsg || thunkMsg || str || 'Something went wrong. Please try again.';
+};
+
+// Helper for success payloads that may carry message in different places
+const extractSuccessMessage = (r: any, fallback: string) =>
+  r?.message || r?.data?.message || fallback;
 
 const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const router = useRouter();
@@ -36,7 +50,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [registerData, setRegisterData] = useState<RegisterCredentials>({
     email: '', password: '', confirmPassword: '', username: '',
     firstName: '', lastName: '', age: '', gender: ''
-  });
+  }); 
   const [registerError, setRegisterError] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -47,6 +61,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+
+  // Shared input styling for white bg + black text + visible placeholder
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: '#fff',
+      color: '#000',
+      borderRadius: 1,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      '& fieldset': { borderColor: 'transparent' },
+      '&:hover fieldset': { borderColor: 'transparent' },
+      '&.Mui-focused fieldset': { borderColor: 'transparent' },
+      '& input': { color: '#000', fontSize: '1rem' },
+    },
+    '& input::placeholder': { color: '#757575', opacity: 1 },
+    // disable autofill yellow
+    '& input:-webkit-autofill': {
+      WebkitBoxShadow: '0 0 0 1000px #fff inset',
+      WebkitTextFillColor: '#000',
+      transition: 'background-color 9999s ease-in-out 0s',
+    },
+  } as const;
 
   useEffect(() => {
     const checkServerConnection = async () => {
@@ -94,14 +129,18 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setLoginLoading(true);
 
     if (!loginData.email || !loginData.password) {
-      setLoginError('Please fill in all fields');
+      const msg = 'Please fill in all fields';
+      setLoginError(msg);
+      toast.error(msg);
       setLoginLoading(false);
       return;
     }
 
     // Check if user is entering email in password field
     if (loginData.password === loginData.email) {
-      setLoginError('It looks like you entered your email in the password field. Please enter your actual password.');
+      const msg = 'It looks like you entered your email in the password field. Please enter your actual password.';
+      setLoginError(msg);
+      toast.error(msg);
       setLoginLoading(false);
       return;
     }
@@ -109,7 +148,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     // Check if password looks like an email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (emailRegex.test(loginData.password)) {
-      setLoginError('It looks like you entered an email address in the password field. Please enter your actual password.');
+      const msg = 'It looks like you entered an email address in the password field. Please enter your actual password.';
+      setLoginError(msg);
+      toast.error(msg);
       setLoginLoading(false);
       return;
     }
@@ -118,16 +159,14 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       const result = await authDispatch(login(loginData)).unwrap();
       console.log('[AuthTabs] Login result from server:', result);
       if (result.success) {
-        toast.success('Login successful!');
-        console.log('Redirecting to /dashboard');
+        toast.success(result.message || 'Login successful!');
         window.location.href = '/home';
       } else {
-        toast.error(result.error || 'Login failed.');
+        toast.error(extractApiMessage(result));
       }
     } catch (err: unknown) {
       console.error('[AuthTabs] Login submission error:', err);
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred during login.';
-      toast.error(message);
+      toast.error(extractApiMessage(err));
     } finally {
       setLoginLoading(false);
     }
@@ -135,18 +174,21 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const validateRegisterForm = () => {
     const age = parseInt(registerData.age);
-    if (!registerData.email || !registerData.password || !registerData.confirmPassword || !registerData.firstName || !registerData.lastName || !registerData.gender || !registerData.age)
-      return setRegisterError('Please fill in all fields'), false;
-    if (registerData.password !== registerData.confirmPassword)
-      return setRegisterError('Passwords do not match'), false;
-    if (registerData.password.length < 6)
-      return setRegisterError('Password must be at least 6 characters'), false;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email))
-      return setRegisterError('Invalid email'), false;
-    if (isNaN(age) || age < 18 || age > 65)
-      return setRegisterError('Age must be between 18 and 65'), false;
-    if (!acceptTerms)
-      return setRegisterError('Please accept the terms'), false;
+    let msg = '';
+    if (
+      !registerData.email || !registerData.password || !registerData.confirmPassword ||
+      !registerData.firstName || !registerData.lastName || !registerData.gender || !registerData.age
+    ) msg = 'Please fill in all fields';
+    else if (registerData.password !== registerData.confirmPassword) msg = 'Passwords do not match';
+    else if (registerData.password.length < 6) msg = 'Password must be at least 6 characters';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) msg = 'Invalid email';
+    else if (isNaN(age) || age < 18 || age > 65) msg = 'Age must be between 18 and 65';
+    else if (!acceptTerms) msg = 'Please accept the terms';
+    if (msg) {
+      setRegisterError(msg);
+      toast.error(msg);
+      return false;
+    }
     return true;
   };
 
@@ -163,17 +205,16 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       const result = await dispatch(register(registerData)).unwrap();
       console.log('[AuthTabs] Register result from server:', result);
       if (result.success && result.data) {
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-        }
+        if (result.token) localStorage.setItem('token', result.token);
         localStorage.setItem('user', JSON.stringify(result.data));
-        toast.success('Registration successful!');
+        toast.success(result.message || 'Registration successful!');
         window.location.href = '/home';
+      } else {
+        toast.error(extractApiMessage(result));
       }
     } catch (err: unknown) {
       console.error('[AuthTabs] Register submission error:', err);
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred during registration.';
-      toast.error(message);
+      toast.error(extractApiMessage(err));
     } finally {
       setRegisterLoading(false);
     }
@@ -183,17 +224,23 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setForgotMessage('');
     setForgotError(false);
     if (!loginData.email) {
-      setForgotMessage('Please enter your email above first.');
+      const msg = 'Please enter your email above first.';
+      setForgotMessage(msg);
       setForgotError(true);
+      toast.error(msg);
       return;
     }
     const res = await authAPI.resetPassword(loginData.email);
     if (res.success) {
-      setForgotMessage('Password reset link sent! Check your email.');
+      const msg = extractSuccessMessage(res, 'Password reset link sent! Check your email.');
+      setForgotMessage(msg);
+      toast.success(msg);
       setForgotError(false);
     } else {
-      setForgotMessage(res.error || 'Failed to send reset link.');
+      const msg = extractApiMessage(res);
+      setForgotMessage(msg);
       setForgotError(true);
+      toast.error(msg);
     }
   };
 
@@ -212,117 +259,119 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
              <TextField 
               fullWidth 
-              label="Email Address" 
-              name="email" 
-              type="email" 
-             autoComplete="email"
+              placeholder="Email address"
+               name="email" 
+               type="email" 
+              autoComplete="email"
               value={loginData.email} 
               onChange={handleLoginChange} 
               required 
-             InputLabelProps={{ shrink: true }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-            />
+// -             InputLabelProps={{ shrink: true }}
+// -              sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
+// -                  '& fieldset': {
+// -                    borderColor: 'transparent', // No border
+// -                  },
+// -                  '&:hover fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '&.Mui-focused fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '& input': {
+// -                    color: '#A7A7A7',
+// -                    fontSize: '1rem',
+// -                    // fontWeight: 400,
+// -                  },
+// -                },
+// -                '& .MuiInputLabel-root': {
+// -                  color: '#A7A7A7',
+// -                  // fontSize: '1.5rem',
+// -                  // fontWeight: 400,
+// -                  '&.Mui-focused': {
+// -                    color: '#fff',
+// -                  },
+// -                },
+// -                '& input:-webkit-autofill': {
+// -                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+// -                  WebkitTextFillColor: '#A7A7A7',
+// -                  transition: 'background-color 5000s ease-in-out 0s',
+// -                },
+// -                '& input:-webkit-autofill:focus': {
+// -                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+// -                  WebkitTextFillColor: '#A7A7A7',
+// -                },
+// -              }}
+              sx={inputSx}
+             />
 
             <TextField 
               fullWidth 
-              label="Password" 
-              name="password" 
-              type={showLoginPassword ? "text" : "password"} 
+              placeholder="Password"
+               name="password" 
+               type={showLoginPassword ? "text" : "password"} 
           autoComplete="current-password"
               value={loginData.password} 
               onChange={handleLoginChange} 
               required 
-             InputLabelProps={{ shrink: true }}
-                sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#A7A7A7',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowLoginPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: 'white' }}
-                  >
-                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
-            />
+// -             InputLabelProps={{ shrink: true }}
+// -                sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
+// -                  '& fieldset': {
+// -                    borderColor: 'transparent', // No border
+// -                  },
+// -                  '&:hover fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '&.Mui-focused fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '& input': {
+// -                    color: '#A7A7A7',
+// -                    fontSize: '1rem',
+// -                    // fontWeight: 400,
+// -                  },
+// -                },
+// -                '& .MuiInputLabel-root': {
+// -                  color: '#A7A7A7',
+// -                  // fontSize: '1.5rem',
+// -                  // fontWeight: 400,
+// -                  '&.Mui-focused': {
+// -                    color: '#A7A7A7',
+// -                  },
+// -                },
+// -                '& input:-webkit-autofill': {
+// -                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+// -                  WebkitTextFillColor: '#A7A7A7',
+// -                  transition: 'background-color 5000s ease-in-out 0s',
+// -                },
+// -                '& input:-webkit-autofill:focus': {
+// -                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+// -                  WebkitTextFillColor: '#A7A7A7',
+// -                },
+// -              }}
+              sx={inputSx}
+               InputProps={{
+                 endAdornment: (
+                   <IconButton
+                     onClick={() => setShowLoginPassword((show) => !show)}
+                     edge="end"
+                     size="small"
+                     sx={{ color: 'white' }}
+                   >
+                     {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                   </IconButton>
+                 ),
+               }}
+             />
             {/* <TextField 
               fullWidth 
               label="Email Address" 
@@ -502,320 +551,151 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           <Stack spacing={3}>
             <TextField 
               fullWidth 
-              label="Email Address" 
-              name="email" 
-              type="email" 
-              value={registerData.email} 
-              onChange={handleRegisterChange} 
-              required 
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-            />
+              placeholder="Email address"
+               name="email" 
+               type="email" 
+               value={registerData.email} 
+               onChange={handleRegisterChange} 
+               required 
+// -              sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
+// -                  '& fieldset': {
+// -                    borderColor: 'transparent', // No border
+// -                  },
+// -                  '&:hover fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '&.Mui-focused fieldset': {
+// -                    borderColor: 'transparent',
+// -                  },
+// -                  '& input': {
+// -                    color: '#A7A7A7',
+// -                    fontSize: '1rem',
+// -                  },
+// -                },
+// -                '& .MuiInputLabel-root': { color: '#A7A7A7', '&.Mui-focused': { color: '#fff' } },
+// -                '& input:-webkit-autofill': {
+// -                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
+// -                  WebkitTextFillColor: '#A7A7A7',
+// -                  transition: 'background-color 5000s ease-in-out 0s',
+// -                },
+// -              }}
+              sx={inputSx}
+             />
 
             <TextField 
               fullWidth 
-              label="Password" 
-              name="password" 
-              type={showRegisterPassword ? "text" : "password"} 
-              value={registerData.password} 
-              onChange={handleRegisterChange} 
-              required 
-               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowRegisterPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: 'white' }}
-                  >
-                    {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
-            />
+              placeholder="Password"
+               name="password" 
+               type={showRegisterPassword ? "text" : "password"} 
+               value={registerData.password} 
+               onChange={handleRegisterChange} 
+               required 
+// -               sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+// -                  '& fieldset': { borderColor: 'transparent' },
+// -                },
+// -                '& .MuiInputLabel-root': { color: '#A7A7A7', '&.Mui-focused': { color: '#fff' } },
+// -              }}
+              sx={inputSx}
+               InputProps={{
+                 endAdornment: (
+                   <IconButton
+                     onClick={() => setShowRegisterPassword((show) => !show)}
+                     edge="end"
+                     size="small"
+                     sx={{ color: 'white' }}
+                   >
+                     {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
+                   </IconButton>
+                 ),
+               }}
+             />
 
             <TextField 
               fullWidth 
-              label="Confirm Password" 
-              name="confirmPassword" 
-              type={showRegisterConfirmPassword ? "text" : "password"} 
-              value={registerData.confirmPassword} 
-              onChange={handleRegisterChange} 
-              required 
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowRegisterConfirmPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: 'white' }}
-                  >
-                    {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
-            />
+              placeholder="Confirm password"
+               name="confirmPassword" 
+               type={showRegisterConfirmPassword ? "text" : "password"} 
+               value={registerData.confirmPassword} 
+               onChange={handleRegisterChange} 
+               required 
+// -              sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+// -                  '& fieldset': { borderColor: 'transparent' },
+// -                },
+// -              }}
+              sx={inputSx}
+               InputProps={{
+                 endAdornment: (
+                   <IconButton
+                     onClick={() => setShowRegisterConfirmPassword((show) => !show)}
+                     edge="end"
+                     size="small"
+                     sx={{ color: 'white' }}
+                   >
+                     {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                   </IconButton>
+                 ),
+               }}
+             />
 
             <TextField 
               fullWidth 
-              label="First Name" 
-              name="firstName" 
-              value={registerData.firstName} 
-              onChange={handleRegisterChange} 
-              required 
-               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-            />
-
+              placeholder="First name"
+               name="firstName" 
+               value={registerData.firstName} 
+               onChange={handleRegisterChange} 
+               required 
+// -               sx={{
+// -                '& .MuiOutlinedInput-root': { backgroundColor: '#e4e4e4', color: '#A7A7A7', borderRadius: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+// -              }}
+              sx={inputSx}
+             />
             <TextField 
               fullWidth 
-              label="Last Name" 
-              name="lastName" 
-              value={registerData.lastName} 
-              onChange={handleRegisterChange} 
-              required 
-               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-            />
-
+              placeholder="Last name"
+               name="lastName" 
+               value={registerData.lastName} 
+               onChange={handleRegisterChange} 
+               required 
+// -               sx={{
+// -                '& .MuiOutlinedInput-root': { backgroundColor: '#e4e4e4', color: '#A7A7A7', borderRadius: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+// -              }}
+              sx={inputSx}
+             />
             <TextField 
               fullWidth 
-              label="Age" 
-              name="age" 
-              type="number" 
-              inputProps={{ min: 18, max: 65 }} 
-              value={registerData.age} 
-              onChange={handleRegisterChange} 
-              required 
-               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#e4e4e4',
-                  color: '#A7A7A7',
-                  borderRadius: 1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // soft shadow
-                  '& fieldset': {
-                    borderColor: 'transparent', // No border
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '& input': {
-                    color: '#A7A7A7',
-                    fontSize: '1rem',
-                    // fontWeight: 400,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#A7A7A7',
-                  // fontSize: '1.5rem',
-                  // fontWeight: 400,
-                  '&.Mui-focused': {
-                    color: '#fff',
-                  },
-                },
-                '& input:-webkit-autofill': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                  transition: 'background-color 5000s ease-in-out 0s',
-                },
-                '& input:-webkit-autofill:focus': {
-                  WebkitBoxShadow: '0 0 0 1000px #e4e4e4 inset',
-                  WebkitTextFillColor: '#A7A7A7',
-                },
-              }}
-            />
+              placeholder="Age"
+               name="age" 
+               type="number" 
+               inputProps={{ min: 18, max: 65 }} 
+               value={registerData.age} 
+               onChange={handleRegisterChange} 
+               required 
+// -               sx={{
+// -                '& .MuiOutlinedInput-root': {
+// -                  backgroundColor: '#e4e4e4',
+// -                  color: '#A7A7A7',
+// -                  borderRadius: 1,
+// -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+// -                  '& fieldset': { borderColor: 'transparent' },
+// -                },
+// -              }}
+              sx={inputSx}
+             />
 
             {/* Active (checked) color set to orange (#E56A16) */}
             <FormControl>

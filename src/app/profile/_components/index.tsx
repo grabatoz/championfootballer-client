@@ -43,6 +43,8 @@ import Passing from '@/Components/images/passing.png'
 import Shooting from '@/Components/images/shooting.png'
 import Defending from '@/Components/images/defending.png'
 import Image from "next/image"
+import type { StaticImageData } from "next/image"
+import imgicon from "@/Components/images/imgicon.png"
 
 // Styled components for better design
 const StyledPaper = styled(Paper)(({ }) => ({
@@ -178,14 +180,20 @@ const PlayerProfileCard = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imgSrc, setImgSrc] = useState(user?.profilePicture || "/assets/group451.png?height=120&width=120")
+  // Helper: fallback asset URL from static import
+  const fallbackImgSrc = (imgicon as StaticImageData).src
+  const safeSrc = (v: unknown) =>
+    typeof v === "string" && v.trim().length ? v : fallbackImgSrc
+
+  // Keep Avatar src as a string with a robust fallback
+  const [imgSrc, setImgSrc] = useState<string>(safeSrc(user?.profilePicture))
 
   const router = useRouter()
 
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
 
   useEffect(() => {
-    setImgSrc(user?.profilePicture || "/assets/group451.png?height=120&width=120")
+    setImgSrc(safeSrc(user?.profilePicture))
   }, [user?.profilePicture])
 
   useEffect(() => {
@@ -365,14 +373,21 @@ const PlayerProfileCard = () => {
                 <Avatar
                   src={imgSrc}
                   alt="Profile"
+                  imgProps={{
+                    onError: () => setImgSrc(fallbackImgSrc),
+                    referrerPolicy: 'no-referrer',
+                    crossOrigin: 'anonymous',
+                    style: { objectFit: 'cover' },
+                  }}
                   sx={{
                     width: 110,
                     height: 150,
                     border: '4px solid green',
                     borderRadius: 2,
-                    background: '#fff',
+                    background: '#bdbdbd',
                     boxShadow: 'none',
-                    objectFit: 'cover'
+                    // Ensure inner <img> uses cover
+                    '& img': { objectFit: 'cover', width: '100%', height: '100%' },
                   }}
                 >
                   <Person sx={{ fontSize: 60, color: '#111' }} />
@@ -583,6 +598,12 @@ const PlayerProfileCard = () => {
                         <Avatar
                           src={imagePreview || imgSrc}
                           alt="Profile"
+                          imgProps={{
+                            onError: () => setImgSrc(fallbackImgSrc),
+                            referrerPolicy: 'no-referrer',
+                            crossOrigin: 'anonymous',
+                            style: { objectFit: 'cover', width: '100%', height: '100%' },
+                          }}
                           sx={{
                             width: { xs: 110, sm: 130, md: 150 },
                             height: { xs: 130, sm: 160, md: 215 },
@@ -590,8 +611,8 @@ const PlayerProfileCard = () => {
                             borderRadius: 2,
                             background: '#fff',
                             boxShadow: 'none',
-                            objectFit: 'cover',
-                            mx: 'auto',
+                            // Ensure inner <img> fills and covers
+                            '& img': { objectFit: 'cover', width: '100%', height: '100%' },
                           }}
                         >
                           <Person sx={{ fontSize: 60, color: '#111' }} />

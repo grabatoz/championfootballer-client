@@ -8,6 +8,7 @@ import dreamteam from '@/Components/images/dream.png'
 import { Trophy, ChevronDown } from 'lucide-react';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import Image from 'next/image';
+import Link from 'next/link';
 
 
 interface Player {
@@ -270,11 +271,15 @@ const DreamTeamPage = () => {
             variant="h3"
             component="h1"
             sx={{
-              fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2.2rem" },
-              fontWeight: "bold",
+              fontWeight: 'semibold',
+              fontSize: { xs: '32px', sm: '42px', md: '56px' },
               color: "black",
               textAlign: "center",
               whiteSpace: "nowrap",
+              letterSpacing: '2px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              fontFamily: '"Anton", sans-serif',
+
             }}
           >
             Dream Team
@@ -452,6 +457,7 @@ const DreamTeamPage = () => {
                       mx: 'auto',
                     }}
                   >
+                    <Link href={`/player/${player.id}`} prefetch={false} >
                     <Image
                       src={ShirtImg.src}
                       alt="Player Shirt"
@@ -459,6 +465,8 @@ const DreamTeamPage = () => {
                       height={94}
                       style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
                     />
+                    </Link>
+
                     <Box
                       sx={{
                         position: 'absolute',
@@ -575,23 +583,31 @@ const DreamTeamPage = () => {
                         borderRadius: '50%',
                       }}
                     />
-                    {/* green shirt */}
-                    <Image
-                      src={ShirtImg.src}
-                      alt="Shirt"
-                      width={18}
-                      height={18}
-                      style={{
-                        filter:
-                          'brightness(0) saturate(100%) invert(41%) sepia(86%) saturate(520%) hue-rotate(86deg) brightness(95%) contrast(95%)',
-                      }}
-                    />
-                    <Typography component="span" sx={{ fontWeight: 700, color: '#E5E7EB' }}>
-                      {p.firstName} {p.lastName}
-                    </Typography>
-                    <Typography component="span" sx={{ ml: 0.5, color: '#22C55E', fontWeight: 700 }}>
-                      ({posAbbr(p.position)})
-                    </Typography>
+                    {/* Link to player details (keeps same design) */}
+                    <Link
+                      href={`/player/${p.id}`}
+                      prefetch={false}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <Image
+                          src={ShirtImg.src}
+                          alt="Shirt"
+                          width={18}
+                          height={18}
+                          style={{
+                            filter:
+                              'brightness(0) saturate(100%) invert(41%) sepia(86%) saturate(520%) hue-rotate(86deg) brightness(95%) contrast(95%)',
+                          }}
+                        />
+                        <Typography component="span" sx={{ fontWeight: 700, color: '#E5E7EB' }}>
+                          {p.firstName} {p.lastName}
+                        </Typography>
+                        <Typography component="span" sx={{ ml: 0.5, color: '#22C55E', fontWeight: 700 }}>
+                          ({posAbbr(p.position)})
+                        </Typography>
+                      </Box>
+                    </Link>
                   </Box>
                 ))}
               </Box>
