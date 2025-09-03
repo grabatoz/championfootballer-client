@@ -43,9 +43,9 @@ import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import TrophyRoom from '@/Components/TrophyRoom';
-import FirstBadge from '@/Components/images/1st.png';
-import SecondBadge from '@/Components/images/2nd.png';
-import ThirdBadge from '@/Components/images/3rd.png';
+// import FirstBadge from '@/Components/images/1st.png';
+// import SecondBadge from '@/Components/images/2nd.png';
+// import ThirdBadge from '@/Components/images/3rd.png';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
@@ -107,18 +107,18 @@ interface LeagueSettingsDialogProps {
     onDelete: () => void;
 }
 
-const getBadgeForPosition = (position: number) => {
-    switch (position) {
-        case 1:
-            return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
-        case 2:
-            return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
-        case 3:
-            return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
-        default:
-            return `${position}th`
-    }
-}
+// const getBadgeForPosition = (position: number) => {
+//     switch (position) {
+//         case 1:
+//             return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
+//         case 2:
+//             return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
+//         case 3:
+//             return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
+//         default:
+//             return `${position}th`
+//     }
+// }
 
 // const getRowStyles = (index: number) => {
 //     if (index === 0) {

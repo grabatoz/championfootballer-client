@@ -22,18 +22,50 @@ interface AuthTabsProps {
   onToggleForm?: () => void;
 }
 
+// Server payload shapes
+type ApiMessagePayload = { message?: string; error?: string };
+
+type AxiosErrorLike = { response?: { data?: ApiMessagePayload } };
+type FetchErrorLike = { data?: ApiMessagePayload };
+type ThunkErrorLike = { message?: string; error?: string };
+
+type ExtractableError = string | AxiosErrorLike | FetchErrorLike | ThunkErrorLike;
+
 // Prefer server-provided message (works with Axios, fetch, or thunk payloads)
-const extractApiMessage = (e: any): string => {
-  const axiosMsg = e?.response?.data?.message || e?.response?.data?.error;
-  const fetchMsg = e?.data?.message || e?.data?.error;
-  const thunkMsg = e?.message || e?.error;
-  const str = typeof e === 'string' ? e : undefined;
-  return axiosMsg || fetchMsg || thunkMsg || str || 'Something went wrong. Please try again.';
+const extractApiMessage = (e: unknown): string => {
+  if (typeof e === 'string') return e;
+  const axios = (e as AxiosErrorLike).response?.data;
+  const fetch = (e as FetchErrorLike).data;
+  const thunk = e as ThunkErrorLike;
+  return (
+    axios?.message ??
+    axios?.error ??
+    fetch?.message ??
+    fetch?.error ??
+    thunk?.message ??
+    thunk?.error ??
+    'Something went wrong. Please try again.'
+  );
 };
 
 // Helper for success payloads that may carry message in different places
-const extractSuccessMessage = (r: any, fallback: string) =>
-  r?.message || r?.data?.message || fallback;
+type WithMessage = { message?: string };
+type WithDataMessage = { data?: { message?: string } };
+
+const hasMessage = (v: unknown): v is WithMessage =>
+  typeof v === 'object' && v !== null && 'message' in v;
+
+const hasDataMessage = (v: unknown): v is WithDataMessage =>
+  typeof v === 'object' && v !== null && 'data' in v;
+
+const extractSuccessMessage = (r: unknown, fallback: string): string => {
+  if (hasMessage(r) && r.message) return r.message;
+  if (hasDataMessage(r)) {
+    const msg = r.data?.message;
+    if (msg) return msg;
+  }
+  return fallback;
+};
 
 const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const router = useRouter();
