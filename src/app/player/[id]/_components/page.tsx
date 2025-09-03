@@ -29,11 +29,11 @@ import Image, { StaticImageData } from 'next/image';
 import dayjs from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import FootballImg from '@/Components/images/football.png';
-import GoatImg from '@/Components/images/goat.png';               // NEW
-import GoldenBootImg from '@/Components/images/goldenboot.png';   // NEW
-import KingPlayMakerImg from '@/Components/images/kingplaymaker.png'; // NEW
-import ShieldImg from '@/Components/images/shield.png';           // NEW
-import DarkHorseImg from '@/Components/images/darkhourse.png';    // NEW
+import GoatImg from '@/Components/images/goat.png';
+import GoldenBootImg from '@/Components/images/goldenboot.png';
+import KingPlayMakerImg from '@/Components/images/kingplaymaker.png';
+import ShieldImg from '@/Components/images/shield.png';
+import DarkHorseImg from '@/Components/images/darkhourse.png';
 
 // Gradients
 const ORANGE_GRAD = 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)';
@@ -86,24 +86,24 @@ function hasMatches(l: unknown): l is LeagueWithMatchesTyped {
 }
 
 const trophyDetails: Record<string, { image: StaticImageData; label: string }> = {
-    'Champion Footballer': { image: TrophyImg, label: 'Titles' },
-    'Runner Up': { image: RunnerUpImg, label: 'Runner Up' },
-    "Ballon d'Or": { image: BaloonDImg, label: "Ballon d'Or" },
-};
+    // Champion (legacy + new)
+    'Champion Footballer': { image: TrophyImg, label: 'League Champion' },
+    'League Champion': { image: TrophyImg, label: 'League Champion' },
 
-// Map trophy names to images (covers Trophy Room titles + legacy keys)
-const trophyImageMap: Record<string, StaticImageData> = {
-    'League Champion': TrophyImg,
-    'Champion Footballer': TrophyImg,      // legacy
-    'Runner-Up': RunnerUpImg,
-    'Runner Up': RunnerUpImg,              // legacy
-    "Ballon D'or": BaloonDImg,
-    "Ballon d'Or": BaloonDImg,            // legacy
-    'GOAT': GoatImg,
-    'Golden Boot': GoldenBootImg,
-    'King Playmaker': KingPlayMakerImg,
-    'Legendary Shield': ShieldImg,
-    'The Dark Horse': DarkHorseImg,
+    // Runner-up (both spellings)
+    'Runner Up': { image: RunnerUpImg, label: 'Runner-Up' },
+    'Runner-Up': { image: RunnerUpImg, label: 'Runner-Up' },
+
+    // Ballon d'Or (both apostrophe casings)
+    "Ballon d'Or": { image: BaloonDImg, label: "Ballon d'Or" },
+    "Ballon D'or": { image: BaloonDImg, label: "Ballon d'Or" },
+
+    // Other Trophy Room titles
+    'GOAT': { image: GoatImg, label: 'GOAT' },
+    'Golden Boot': { image: GoldenBootImg, label: 'Golden Boot' },
+    'King Playmaker': { image: KingPlayMakerImg, label: 'King Playmaker' },
+    'Legendary Shield': { image: ShieldImg, label: 'Legendary Shield' },
+    'The Dark Horse': { image: DarkHorseImg, label: 'The Dark Horse' },
 };
 
 type StatTotals = {
@@ -237,9 +237,96 @@ export default function PlayerStatsPage() {
         return arr;
     }, []);
 
+    // Latest year present in data (fallback: current year)
+    const latestYearInData = useMemo(() => {
+        const years = (data?.leagues || [])
+            .flatMap((l: any) => (hasMatches(l) ? (l.matches || []) : []))
+            .map((m: LeagueMatch) => dayjs(m.date).year());
+        return years.length ? Math.max(...years) : dayjs().year();
+    }, [data]);
+
+    // Filter leagues by selected year (uses matches' date)
+    const leaguesForYear = useMemo<LeagueWithMatchesTyped[]>(() => {
+        const list = (data?.leagues || []) as LeagueWithMatchesTyped[];
+        if (!list.length) return [];
+        const effectiveYear = !year || year === 'all' ? String(latestYearInData) : year;
+        return list.filter(l =>
+            hasMatches(l) &&
+            (l.matches || []).some(m => dayjs(m.date).year().toString() === effectiveYear)
+        );
+    }, [data, year, latestYearInData]);
+
+    // Helper: get latest league (by latest match date within the selected year)
+    const getLatestLeagueIdForYear = (list: LeagueWithMatchesTyped[], y: string) => {
+        let bestId: string | undefined;
+        let bestTs = -Infinity;
+        for (const l of list) {
+            const ts = Math.max(
+                ...((l.matches || [])
+                    .filter(m => dayjs(m.date).year().toString() === y)
+                    .map(m => dayjs(m.date).valueOf())),
+            );
+            if (Number.isFinite(ts) && ts > bestTs) {
+                bestTs = ts;
+                bestId = l.id;
+            }
+        }
+        return bestId || list[0]?.id;
+    };
+
+    // On initial load (or when year is 'all'), set latest year and latest league
+    useEffect(() => {
+        if (!data) return;
+        const targetYear = String(latestYearInData);
+        if (!year || year === 'all') {
+            const list = (data?.leagues || []) as LeagueWithMatchesTyped[];
+            const filtered = list.filter(l =>
+                hasMatches(l) &&
+                (l.matches || []).some(m => dayjs(m.date).year().toString() === targetYear)
+            );
+            const latestLeagueId = filtered.length ? getLatestLeagueIdForYear(filtered, targetYear) : 'all';
+            dispatch(setYearFilter(targetYear));
+            dispatch(setLeagueFilter(latestLeagueId || 'all'));
+        }
+    }, [data, latestYearInData, year, dispatch]);
+
+    // Keep current league if still valid after year change; else pick latest league for that year or 'all'
+    useEffect(() => {
+        const list = leaguesForYear;
+        if (!list.length) {
+            if (leagueId !== 'all') dispatch(setLeagueFilter('all'));
+            return;
+        }
+        if (leagueId === 'all') return;
+        const stillValid = list.some(l => l.id === leagueId);
+        if (!stillValid) {
+            const effectiveYear = !year || year === 'all' ? String(latestYearInData) : year;
+            dispatch(setLeagueFilter(getLatestLeagueIdForYear(list, effectiveYear) || 'all'));
+        }
+    }, [leaguesForYear, leagueId, year, latestYearInData, dispatch]);
+
     const handleYearSelect = (e: SelectChangeEvent<string>) => {
-        const val = e.target.value;
+        const val = e.target.value as string;
+
+        // compute valid leagues for the selected year
+        const list = ((data?.leagues || []) as LeagueWithMatchesTyped[]).filter(l =>
+            val === 'all'
+                ? true
+                : hasMatches(l) && (l.matches || []).some(m => dayjs(m.date).year().toString() === val)
+        );
+
+        // preserve league if possible, else select latest league for that year (or 'all')
+        let nextLeague = leagueId;
+        if (val !== 'all') {
+            if (nextLeague === 'all' || !list.some(l => l.id === nextLeague)) {
+                nextLeague = list.length ? getLatestLeagueIdForYear(list, val) || 'all' : 'all';
+            }
+        } else if (!list.some(l => l.id === nextLeague)) {
+            nextLeague = 'all';
+        }
+
         dispatch(setYearFilter(val));
+        if (nextLeague !== leagueId) dispatch(setLeagueFilter(nextLeague));
     };
 
     const handleLeagueChange = (e: SelectChangeEvent<string>) => {
@@ -255,8 +342,16 @@ export default function PlayerStatsPage() {
     const playerShirt = fullPlayerData?.player?.shirtNo || '';
     const playerPositionType = fullPlayerData?.player?.positionType || fullPlayerData?.player?.position || 'Player';
 
+    // Count only trophies this player actually won
     const awardCount = (key: keyof typeof trophyDetails) =>
         allTrophyAwards.filter(a => a.key === key).length;
+
+    // Show only earned trophies with counts
+    const earnedTrophies = useMemo(() => {
+        return (Object.entries(trophyDetails) as [keyof typeof trophyDetails, { image: StaticImageData; label: string }][])
+            .map(([key, details]) => ({ key, ...details, count: awardCount(key) }))
+            .filter(t => t.count > 0);
+    }, [allTrophyAwards]);
 
     // Icon-style item now uses football.png with value centered, label below
     const StatItem = ({ label, value }: { label: string; value: number }) => (
@@ -311,32 +406,126 @@ export default function PlayerStatsPage() {
                 mb: 5
             }}
         >
-                <FormControl size="small" sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 } }}>
-                    <InputLabel>League</InputLabel>
+            {/* Top Filters Row (desktop: 3 columns incl. search) */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gap: 1,
+                    gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1.5fr' },
+                    alignItems: 'center',
+                }}
+            >
+                {/* Year */}
+                <FormControl
+                    size="small"
+                    sx={{
+                        minWidth: 0,
+                        '& .MuiOutlinedInput-root': {
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 2,
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                        },
+                        '& .MuiInputLabel-root': { color: '#9CA3AF' },
+                        '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
+                    }}
+                >
+                    {/* <InputLabel>Year</InputLabel> */}
+                    <Select
+                        label="Year"
+                        value={year || String(latestYearInData)}
+                        onChange={handleYearSelect}
+                        sx={{
+                            color: '#E5E7EB',
+                            '& .MuiSelect-icon': { color: '#E5E7EB' },
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                                sx: {
+                                    bgcolor: 'rgba(15,15,15,0.92)',
+                                    color: '#E5E7EB',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                },
+                            },
+                        }}
+                    >
+                        {yearsOptions.map(y => (
+                            <MenuItem key={y} value={y}>
+                                {y === 'all' ? 'All Years' : y}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                {/* League */}
+                <FormControl
+                    size="small"
+                    sx={{
+                        minWidth: 0,
+                        '& .MuiOutlinedInput-root': {
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 2,
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                        },
+                        '& .MuiInputLabel-root': { color: '#9CA3AF' },
+                        '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
+                    }}
+                >
+                    {/* <InputLabel>League</InputLabel> */}
                     <Select
                         label="League"
                         value={leagueId || 'all'}
                         onChange={handleLeagueChange}
                         renderValue={(selected) => {
-                            if (selected === 'all') return 'All Leagues';
-                            const l = (data?.leagues || []).find((x: LeagueWithMatchesTyped) => x.id === selected);
-                            return l?.name || 'League';
+                            const effectiveYear = year && year !== 'all' ? year : String(latestYearInData);
+                            if (selected === 'all') return `All Leagues (${effectiveYear})`;
+                            const l = (leaguesForYear || []).find((x: LeagueWithMatchesTyped) => x.id === selected);
+                            return l ? `${l.name} (${effectiveYear})` : 'League';
+                        }}
+                        sx={{
+                            color: '#E5E7EB',
+                            '& .MuiSelect-icon': { color: '#E5E7EB' },
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                                sx: {
+                                    bgcolor: 'rgba(15,15,15,0.92)',
+                                    color: '#E5E7EB',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                },
+                            },
                         }}
                     >
                         <MenuItem value="all">All Leagues</MenuItem>
-                        {(data?.leagues || []).map((l: LeagueWithMatchesTyped) => (
+                        {(leaguesForYear || []).map((l: LeagueWithMatchesTyped) => (
                             <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
 
+                {/* Search */}
                 <TextField
                     size="small"
                     placeholder="Search Players"
                     fullWidth
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 } }}
+                    sx={{
+                        '& .MuiOutlinedInput-root': {
+                            bgcolor: 'rgba(15,15,15,0.92)',
+                            color: '#E5E7EB',
+                            borderRadius: 2,
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                        },
+                        '& input::placeholder': { color: '#9CA3AF', opacity: 1 },
+                    }}
                 />
             </Box>
 
@@ -486,23 +675,29 @@ export default function PlayerStatsPage() {
                                     border: '1px solid rgba(255,255,255,0.12)',
                                 }}
                             >
-                                <Grid container spacing={2}>
-                                    {Object.entries(trophyDetails).map(([key, { image, label }]) => (
-                                        <Grid key={key} item xs={6} sm={4} md={3}>
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                                <Box sx={{ width: 40, height: 40 }}>
-                                                    <Image src={image} alt={label} width={40} height={40} style={{ objectFit: 'contain' }} />
+                                {earnedTrophies.length === 0 ? (
+                                    <Typography sx={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>
+                                        No trophies won yet.
+                                    </Typography>
+                                ) : (
+                                    <Grid container spacing={2} columns={{ xs: 3, sm: 4, md: 6, lg: 6 }}>
+                                        {earnedTrophies.map((t) => (
+                                            <Grid key={t.key} item xs={1} sm={1} md={1} lg={1}>
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ width: 40, height: 40 }}>
+                                                        <Image src={t.image} alt={t.label} width={40} height={40} style={{ objectFit: 'contain' }} />
+                                                    </Box>
+                                                    <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
+                                                        {t.label}
+                                                    </Typography>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>
+                                                        {t.count}
+                                                    </Typography>
                                                 </Box>
-                                                <Typography sx={{ color: '#0b5e49', fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
-                                                    {label}
-                                                </Typography>
-                                                <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>
-                                                    {awardCount(key as keyof typeof trophyDetails)}
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                )}
                             </Paper>
                         </Box>
                     </Paper>
