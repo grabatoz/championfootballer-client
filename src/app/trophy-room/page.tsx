@@ -22,42 +22,59 @@ import UnbeatenBadge from '@/Components/images/brown.svg'
 import CaptainsTriumphsBadge from '@/Components/images/brown.svg'
 import TripleImpactBadge from '@/Components/images/brown.svg'
 import ChartTopperBadge from '@/Components/images/brown.svg'
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Divider,
+  Avatar,
+  Stack,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import PlayerCard from '@/Components/playercard/playercard';
+import Goals from "@/Components/images/goal.png"
+import Assist from "@/Components/images/Assist.png"
+import Cleansheet from "@/Components/images/cleansheet.png"
+import Momt from "@/Components/images/MOTM.png"
+
+
 // --- Interfaces ---
 interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    position?: string; // align with app-wide User type
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  position?: string; // align with app-wide User type
+} 
 
 interface Match {
-    id: string;
-    homeTeamGoals: number;
-    awayTeamGoals: number;
-    homeTeamUsers: User[];
-    awayTeamUsers: User[];
-    manOfTheMatchVotes: Record<string, string>;
-    playerStats: Record<string, { goals: number; assists: number }>;
-    status: 'completed' | 'scheduled' | 'ongoing';
+  id: string;
+  homeTeamGoals: number;
+  awayTeamGoals: number;
+  homeTeamUsers: User[];
+  awayTeamUsers: User[];
+  manOfTheMatchVotes: Record<string, string>;
+  playerStats: Record<string, { goals: number; assists: number }>;
+  status: 'completed' | 'scheduled' | 'ongoing';
 }
 
 interface League {
-    id: string;
-    name: string;
-    members: User[];
-    matches: Match[];
-    maxGames: number;
+  id: string;
+  name: string;
+  members: User[];
+  matches: Match[];
+  maxGames: number;
 }
 
 interface PlayerStats {
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goals: number;
-    assists: number;
-    motmVotes: number;
-    teamGoalsConceded: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: number;
+  assists: number;
+  motmVotes: number;
+  teamGoalsConceded: number;
 }
 
 interface TrophyType {
@@ -73,15 +90,15 @@ interface TrophyType {
 
 // --- Static Trophy Data ---
 const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
-    // Renamed per spec: League Champion
-    { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
-    { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
-    { title: 'Ballon D\'or', description: 'Player With The Most MOTM Awards', image: BaloonDImg, color: '#FFC107' },
-    { title: 'GOAT', description: 'Player With The Highest Win Ratio & Total MOTM Votes', image: GoatImg, color: '#F44336' },
-    { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
-    { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
-    { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
-    { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' }
+  // Renamed per spec: League Champion
+  { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
+  { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
+  { title: 'Ballon D\'or', description: 'Player With The Most MOTM Awards', image: BaloonDImg, color: '#FFC107' },
+  { title: 'GOAT', description: 'Player With The Highest Win Ratio & Total MOTM Votes', image: GoatImg, color: '#F44336' },
+  { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
+  { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
+  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
+  { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' }
 ];
 
 // Unified card dimensions (used by both TrophyCard and BadgeCard)
@@ -174,99 +191,99 @@ const TrophyCard = ({ title, description, image, color, winner, onButtonClick }:
 
 // --- Helper function to calculate player stats for a single league ---
 const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
-    const stats: Record<string, PlayerStats> = {};
-    league.members.forEach(p => {
-        stats[p.id] = { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
+  const stats: Record<string, PlayerStats> = {};
+  league.members.forEach(p => {
+    stats[p.id] = { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
+  });
+
+  league.matches.filter(m => m.status === 'completed').forEach(match => {
+    const homePlayers = match.homeTeamUsers.map(p => p.id);
+    const awayPlayers = match.awayTeamUsers.map(p => p.id);
+
+    [...homePlayers, ...awayPlayers].forEach(playerId => {
+      if (!stats[playerId]) return;
+      stats[playerId].played++;
+      if (match.playerStats && match.playerStats[playerId]) {
+        stats[playerId].goals += match.playerStats[playerId].goals || 0;
+        stats[playerId].assists += match.playerStats[playerId].assists || 0;
+      }
     });
 
-    league.matches.filter(m => m.status === 'completed').forEach(match => {
-        const homePlayers = match.homeTeamUsers.map(p => p.id);
-        const awayPlayers = match.awayTeamUsers.map(p => p.id);
+    if (match.manOfTheMatchVotes) {
+      Object.values(match.manOfTheMatchVotes).forEach(votedForId => {
+        if (stats[votedForId]) stats[votedForId].motmVotes++;
+      });
+    }
 
-        [...homePlayers, ...awayPlayers].forEach(playerId => {
-            if (!stats[playerId]) return;
-            stats[playerId].played++;
-            if (match.playerStats && match.playerStats[playerId]) {
-                stats[playerId].goals += match.playerStats[playerId].goals || 0;
-                stats[playerId].assists += match.playerStats[playerId].assists || 0;
-            }
-        });
+    const homeWon = match.homeTeamGoals > match.awayTeamGoals;
+    const isDraw = match.homeTeamGoals === match.awayTeamGoals;
 
-        if (match.manOfTheMatchVotes) {
-            Object.values(match.manOfTheMatchVotes).forEach(votedForId => {
-                if (stats[votedForId]) stats[votedForId].motmVotes++;
-            });
-        }
-
-        const homeWon = match.homeTeamGoals > match.awayTeamGoals;
-        const isDraw = match.homeTeamGoals === match.awayTeamGoals;
-
-        homePlayers.forEach(pId => {
-            if (!stats[pId]) return;
-            if(homeWon) stats[pId].wins++;
-            else if(isDraw) stats[pId].draws++;
-            else stats[pId].losses++;
-            stats[pId].teamGoalsConceded += match.awayTeamGoals;
-        });
-        awayPlayers.forEach(pId => {
-            if (!stats[pId]) return;
-            if(!homeWon && !isDraw) stats[pId].wins++;
-            else if(isDraw) stats[pId].draws++;
-            else stats[pId].losses++;
-            stats[pId].teamGoalsConceded += match.homeTeamGoals;
-        });
+    homePlayers.forEach(pId => {
+      if (!stats[pId]) return;
+      if (homeWon) stats[pId].wins++;
+      else if (isDraw) stats[pId].draws++;
+      else stats[pId].losses++;
+      stats[pId].teamGoalsConceded += match.awayTeamGoals;
     });
-    return stats;
+    awayPlayers.forEach(pId => {
+      if (!stats[pId]) return;
+      if (!homeWon && !isDraw) stats[pId].wins++;
+      else if (isDraw) stats[pId].draws++;
+      else stats[pId].losses++;
+      stats[pId].teamGoalsConceded += match.homeTeamGoals;
+    });
+  });
+  return stats;
 };
 
 // --- Helper function to calculate winners for a single league ---
 const calculateLeagueWinners = (league: League, playerStats: Record<string, PlayerStats>): TrophyType[] => {
-    if (!Object.keys(playerStats).length) return [];
+  if (!Object.keys(playerStats).length) return [];
 
-    const getPlayerName = (playerId: string) => {
-        const player = league.members.find(p => p.id === playerId);
-        return player ? `${player.firstName} ${player.lastName}` : 'Unknown';
-    }
+  const getPlayerName = (playerId: string) => {
+    const player = league.members.find(p => p.id === playerId);
+    return player ? `${player.firstName} ${player.lastName}` : 'Unknown';
+  }
 
-    if (!league || !league.members || !Array.isArray(league.members)) return [];
+  if (!league || !league.members || !Array.isArray(league.members)) return [];
 
-    const allPlayerIds = Object.keys(playerStats);
-    if (allPlayerIds.length === 0) return [];
+  const allPlayerIds = Object.keys(playerStats);
+  if (allPlayerIds.length === 0) return [];
 
-    const sortedLeagueTable = [...allPlayerIds].sort((a, b) => (playerStats[b].wins * 3 + playerStats[b].draws) - (playerStats[a].wins * 3 + playerStats[a].draws));
+  const sortedLeagueTable = [...allPlayerIds].sort((a, b) => (playerStats[b].wins * 3 + playerStats[b].draws) - (playerStats[a].wins * 3 + playerStats[a].draws));
 
-    const awards: Record<string, string | null> = {
-       'League Champion': sortedLeagueTable[0] || null,
-        'Runner-Up': sortedLeagueTable[1] || null,
-        'Ballon D\'or': [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
-        'GOAT': [...allPlayerIds].sort((a, b) => {
-            const ratioA = playerStats[a].played > 0 ? playerStats[a].wins / playerStats[a].played : 0;
-            const ratioB = playerStats[b].played > 0 ? playerStats[b].wins / playerStats[b].played : 0;
-            return ratioB - ratioA || playerStats[b].motmVotes - playerStats[a].motmVotes;
-        })[0] || null,
-        'Golden Boot': [...allPlayerIds].sort((a, b) => playerStats[b].goals - playerStats[a].goals)[0] || null,
-        'King Playmaker': [...allPlayerIds].sort((a, b) => playerStats[b].assists - playerStats[a].assists)[0] || null,
-        'Legendary Shield': league.members
-            .filter(p => ['defender','goalkeeper'].includes((p.position ?? '').toLowerCase()))
-            .map(p => p.id)
-            .sort((a, b) => {
-                const avgA = playerStats[a]?.played > 0 ? (playerStats[a].teamGoalsConceded / playerStats[a].played) : Infinity;
-                const avgB = playerStats[b]?.played > 0 ? (playerStats[b].teamGoalsConceded / playerStats[b].played) : Infinity;
-                return avgA - avgB;
-            })[0] || null,
-        'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null
+  const awards: Record<string, string | null> = {
+    'League Champion': sortedLeagueTable[0] || null,
+    'Runner-Up': sortedLeagueTable[1] || null,
+    'Ballon D\'or': [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
+    'GOAT': [...allPlayerIds].sort((a, b) => {
+      const ratioA = playerStats[a].played > 0 ? playerStats[a].wins / playerStats[a].played : 0;
+      const ratioB = playerStats[b].played > 0 ? playerStats[b].wins / playerStats[b].played : 0;
+      return ratioB - ratioA || playerStats[b].motmVotes - playerStats[a].motmVotes;
+    })[0] || null,
+    'Golden Boot': [...allPlayerIds].sort((a, b) => playerStats[b].goals - playerStats[a].goals)[0] || null,
+    'King Playmaker': [...allPlayerIds].sort((a, b) => playerStats[b].assists - playerStats[a].assists)[0] || null,
+    'Legendary Shield': league.members
+      .filter(p => ['defender', 'goalkeeper'].includes((p.position ?? '').toLowerCase()))
+      .map(p => p.id)
+      .sort((a, b) => {
+        const avgA = playerStats[a]?.played > 0 ? (playerStats[a].teamGoalsConceded / playerStats[a].played) : Infinity;
+        const avgB = playerStats[b]?.played > 0 ? (playerStats[b].teamGoalsConceded / playerStats[b].played) : Infinity;
+        return avgA - avgB;
+      })[0] || null,
+    'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null
+  };
+
+  return trophies.map(trophy => {
+    const winnerId = awards[trophy.title];
+    return {
+      ...trophy,
+      winnerId: winnerId || null,
+      winner: winnerId ? getPlayerName(winnerId) : 'No Winner',
+      leagueId: league.id,
+      leagueName: league.name,
     };
-
-    return trophies.map(trophy => {
-        const winnerId = awards[trophy.title];
-        return {
-            ...trophy,
-            winnerId: winnerId || null,
-            winner: winnerId ? getPlayerName(winnerId) : 'No Winner',
-            leagueId: league.id,
-            leagueName: league.name,
-        };
-    });
+  });
 };
 
 // Helper: treat league as "completed" if
@@ -369,9 +386,9 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
   const acrossAll = Object.values(byLeague).flat();
 
   // Base tallies already used
-//   const totalGoals = summaries.reduce((s, m) => s + m.goals, 0);
-//   const totalVotes = summaries.reduce((s, m) => s + m.motmVotes, 0);
-//   const cleanSheets = summaries.filter(m => m.conceded === 0).length;
+  //   const totalGoals = summaries.reduce((s, m) => s + m.goals, 0);
+  //   const totalVotes = summaries.reduce((s, m) => s + m.motmVotes, 0);
+  //   const cleanSheets = summaries.filter(m => m.conceded === 0).length;
   const hatTricks = summaries.filter(m => m.goals >= 3).length;
 
   // Streaks/league-scoped metrics
@@ -388,7 +405,7 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
 
   const toNext = (best: number, target: number) => (target - (best % target || target));
 
-//   const isDefOrGk = ['defender','goalkeeper'].includes((user.position ?? '').toLowerCase());
+  //   const isDefOrGk = ['defender','goalkeeper'].includes((user.position ?? '').toLowerCase());
 
   const badges: Badge[] = [
     // 1) Hat-trick in 3 separate matches (single league)
@@ -600,273 +617,365 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
   </Paper>
 );
 
+// Add this helper (used to show XP on PlayerCard)
+const computeXPFromStats = (s?: PlayerStats): number => {
+  if (!s) return 0;
+  const base = s.played * 10;
+  const results = s.wins * 50 + s.draws * 20;
+  const contrib = s.goals * 100 + s.assists * 70 + s.motmVotes * 120;
+  return base + results + contrib;
+};
+
+// --- Skills model + generator for PlayerCard UI ---
+type Skills = {
+  dribbling: number;
+  shooting: number;
+  passing: number;
+  pace: number;
+  defending: number;
+  physical: number;
+};
+
+const clamp = (v: number, min = 0, max = 99) => Math.max(min, Math.min(max, Math.round(v)));
+const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
+
+const computeSkillsFromStats = (s?: PlayerStats, user?: User): Skills => {
+  const stats: PlayerStats = s ?? { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
+  const gpg = safeDiv(stats.goals, stats.played);
+  const apg = safeDiv(stats.assists, stats.played);
+  const winRate = safeDiv(stats.wins, stats.played);
+  const motmRate = safeDiv(stats.motmVotes, stats.played);
+  const conc = safeDiv(stats.teamGoalsConceded, stats.played);
+  const pos = (user?.position ?? '').toLowerCase();
+
+  const shooting = clamp(45 + gpg * 40 + motmRate * 15, 30, 99);
+  const passing = clamp(45 + apg * 40 + motmRate * 10, 30, 99);
+  const dribbling = clamp(45 + (gpg + apg) * 20 + motmRate * 20, 30, 99);
+  const pace = clamp(50 + (gpg + apg) * 15 + winRate * 20, 30, 99);
+  let defending = clamp(60 - conc * 15 + winRate * 15, 25, 99);
+  if (['defender', 'goalkeeper'].includes(pos)) defending = clamp(50 - conc * 25 + winRate * 15, 25, 99);
+  const physical = clamp(45 + winRate * 30 + stats.played * 2, 30, 99);
+
+  return { dribbling, shooting, passing, pace, defending, physical };
+};
+
+// Helpers to feed PlayerCard's required props
+const posToShort = (pos?: string) => {
+  const p = (pos ?? '').toLowerCase();
+  if (p.includes('keeper') || p === 'gk') return 'GK';
+  if (p.includes('def')) return 'DF';
+  if (p.includes('mid')) return 'MF';
+  if (p.includes('wing')) return 'WG';
+  if (p.includes('striker') || p.includes('forward') || p === 'st' || p === 'cf') return 'ST';
+  return 'ST';
+};
+const getPreferredFoot = (u?: any): 'R' | 'L' => (u?.preferredFoot === 'left' ? 'L' : 'R');
+const getShirtNumber = (u?: any): string => String(u?.shirtNumber ?? '00');
+const getProfileImage = (u?: any): string | undefined => u?.profilePicture ?? u?.avatarUrl ?? undefined;
+
+// UI helper: color for match result
+const resultColor = (r: 'W' | 'D' | 'L') =>
+  r === 'W' ? '#16a34a' : r === 'D' ? '#6b7280' : '#ef4444';
+
 // --- Main Page Component ---
 export default function GlobalTrophyRoom() {
-    const [leagues, setLeagues] = useState<League[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [filter, setFilter] = useState<'all' | 'my'>('all');
-    const { user, token } = useAuth();
-    const router = useRouter();
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'my'>('all');
+  const { user, token } = useAuth();
+  const router = useRouter();
+  // Quick-view modal state
+  const [openQuickView, setOpenQuickView] = useState(false);
+  const [quickView, setQuickView] = useState<{
+    player?: User;
+    league?: League;
+    lastFive?: UserMatchSummary[];
+    stats?: PlayerStats;
+    trophyTitle?: string;
+    skills?: Skills;
+    cleanSheets?: number;   // all matches in this league
+    motmCount?: number;     // matches with any MOTM vote in this league
+  }>({});
 
-    // League filter dropdown (like league page)
-    const [selectedLeagueId, setSelectedLeagueId] = useState<string | 'all'>('all');
-    const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
-    const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
+  // League filter dropdown (like league page)
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | 'all'>('all');
+  const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+  const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
-    useEffect(() => {
-        const fetchLeagues = async () => {
-            if (!token) return;
-            setLoading(true);
-            try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    setLeagues(data.leagues || []);
-                } else {
-                    setError(data.message || 'Failed to fetch leagues.');
-                }
-            } catch {
-                setError('An error occurred while fetching league data.');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchLeagues();
-    }, [token]);
-
-    // Auto-select a default league (prefer a completed league, else first)
-    useEffect(() => {
-      if (!leagues?.length) return;
-      // Don't override if user has already selected a league that exists
-      if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
-
-      const completed = leagues.find(l => isLeagueCompleted(l));
-      const defaultId = completed?.id ?? leagues[0].id;
-      setSelectedLeagueId(defaultId);
-    }, [leagues]);
-
-    const myAchievements = useMemo(() => {
-        if (!user || !leagues.length) return [];
-        console.log("Calculating achievements for user:", user.id);
-        console.log("Leagues data:", leagues);
-
-        const achievements: TrophyType[] = [];
-        leagues.forEach(league => {
-            if (!league || !league.matches) {
-                console.warn("Skipping league due to incomplete data:", league?.id);
-                return;
-            }
-
-            // Only calculate for completed leagues (robust)
-            if (!isLeagueCompleted(league)) return;
-            
-            console.log(`Processing completed league ${league.id} for achievements.`);
-            const playerStats = calculatePlayerStats(league);
-            const leagueTrophies = calculateLeagueWinners(league, playerStats);
-            
-            const userWonTrophies = leagueTrophies.filter(trophy => trophy.winnerId === user.id);
-            if(userWonTrophies.length > 0) {
-              console.log(`User won ${userWonTrophies.length} trophies in league ${league.id}:`, userWonTrophies);
-            }
-            achievements.push(...userWonTrophies);
+  useEffect(() => {
+    const fetchLeagues = async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        console.log("Final achievements:", achievements);
-        return achievements;
-    }, [leagues, user]);
-
-    // Compute ALL trophies across every completed league (for the "All Trophies" tab)
-    const allTrophyWinners = useMemo(() => {
-      if (!leagues.length) return [] as TrophyType[];
-      const all: TrophyType[] = [];
-      leagues.forEach(league => {
-        if (!league || !league.matches) return;
-
-        // Only completed leagues (robust)
-        if (!isLeagueCompleted(league)) return;
-
-        const stats = calculatePlayerStats(league);
-        const winners = calculateLeagueWinners(league, stats);
-        all.push(...winners);
-      });
-      return all;
-    }, [leagues]);
-
-    const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setLeaguesDropdownAnchor(event.currentTarget);
-        setLeaguesDropdownOpen(true);
-    };
-    const handleLeaguesDropdownClose = () => {
-        setLeaguesDropdownOpen(false);
-        setLeaguesDropdownAnchor(null);
-    };
-    const handleLeagueSelect = (id: string | 'all') => {
-        setSelectedLeagueId(id);
-        handleLeaguesDropdownClose();
-    };
-
-    // Hide/close league menu when viewing My Achievements (overall, not league-based)
-    useEffect(() => {
-      if (filter === 'my') {
-        setLeaguesDropdownOpen(false);
-        setLeaguesDropdownAnchor(null);
+        const data = await response.json();
+        if (data.success) {
+          setLeagues(data.leagues || []);
+        } else {
+          setError(data.message || 'Failed to fetch leagues.');
+        }
+      } catch {
+        setError('An error occurred while fetching league data.');
+      } finally {
+        setLoading(false);
       }
-    }, [filter]);
-
-    const formatLeagueName = (name: string): string => {
-        if (!name) return '';
-        const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-        const words = name.split(' ');
-        const initials = words.map(w => w.charAt(0).toUpperCase()).join('');
-        return `${capitalizedName} (${initials})`;
     };
+    fetchLeagues();
+  }, [token]);
 
-    const baseTrophies: TrophyType[] = filter === 'all' ? allTrophyWinners : myAchievements;
-    const trophiesToDisplayBase: TrophyType[] =
-      selectedLeagueId === 'all'
-        ? baseTrophies
-        : baseTrophies.filter(t => t.leagueId === selectedLeagueId);
- 
-    const selectedLeague =
-      selectedLeagueId === 'all' ? null : leagues.find(l => l.id === selectedLeagueId);
- 
-    // Helper to build placeholder trophies for a league (winners TBC)
-    const buildPlaceholders = (league: League): TrophyType[] =>
-      trophies.map(t => ({
-        ...t,
-        winner: null,
-        winnerId: null,
-        leagueId: league.id,
-        leagueName: league.name,
-      }));
- 
-    // If a specific league is selected but there are no trophies (e.g., league not completed), show placeholders.
-    const trophiesToDisplay: TrophyType[] =
-      selectedLeague && trophiesToDisplayBase.length === 0
-        ? buildPlaceholders(selectedLeague)
-        : trophiesToDisplayBase;
- 
-    // Build My Achievements (badges) for the current user
-    const myBadges: Badge[] = user ? computeBadges(user, leagues) : [];
+  // Auto-select a default league (prefer a completed league, else first)
+  useEffect(() => {
+    if (!leagues?.length) return;
+    // Don't override if user has already selected a league that exists
+    if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
 
-    if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+    const completed = leagues.find(l => isLeagueCompleted(l));
+    const defaultId = completed?.id ?? leagues[0].id;
+    setSelectedLeagueId(defaultId);
+  }, [leagues]);
+
+  const myAchievements = useMemo(() => {
+    if (!user || !leagues.length) return [];
+    console.log("Calculating achievements for user:", user.id);
+    console.log("Leagues data:", leagues);
+
+    const achievements: TrophyType[] = [];
+    leagues.forEach(league => {
+      if (!league || !league.matches) {
+        console.warn("Skipping league due to incomplete data:", league?.id);
+        return;
+      }
+
+      // Only calculate for completed leagues (robust)
+      if (!isLeagueCompleted(league)) return;
+
+      console.log(`Processing completed league ${league.id} for achievements.`);
+      const playerStats = calculatePlayerStats(league);
+      const leagueTrophies = calculateLeagueWinners(league, playerStats);
+
+      const userWonTrophies = leagueTrophies.filter(trophy => trophy.winnerId === user.id);
+      if (userWonTrophies.length > 0) {
+        console.log(`User won ${userWonTrophies.length} trophies in league ${league.id}:`, userWonTrophies);
+      }
+      achievements.push(...userWonTrophies);
+    });
+    console.log("Final achievements:", achievements);
+    return achievements;
+  }, [leagues, user]);
+
+  // Compute ALL trophies across every completed league (for the "All Trophies" tab)
+  const allTrophyWinners = useMemo(() => {
+    if (!leagues.length) return [] as TrophyType[];
+    const all: TrophyType[] = [];
+    leagues.forEach(league => {
+      if (!league || !league.matches) return;
+
+      // Only completed leagues (robust)
+      if (!isLeagueCompleted(league)) return;
+
+      const stats = calculatePlayerStats(league);
+      const winners = calculateLeagueWinners(league, stats);
+      all.push(...winners);
+    });
+    return all;
+  }, [leagues]);
+
+  const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setLeaguesDropdownAnchor(event.currentTarget);
+    setLeaguesDropdownOpen(true);
+  };
+  const handleLeaguesDropdownClose = () => {
+    setLeaguesDropdownOpen(false);
+    setLeaguesDropdownAnchor(null);
+  };
+  const handleLeagueSelect = (id: string | 'all') => {
+    setSelectedLeagueId(id);
+    handleLeaguesDropdownClose();
+  };
+
+  // Hide/close league menu when viewing My Achievements (overall, not league-based)
+  useEffect(() => {
+    if (filter === 'my') {
+      setLeaguesDropdownOpen(false);
+      setLeaguesDropdownAnchor(null);
     }
+  }, [filter]);
 
-    if (error) {
-        return <Box sx={{ p: 4 }}><Alert severity="error">{error}</Alert></Box>;
-    }
+  const formatLeagueName = (name: string): string => {
+    if (!name) return '';
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    const words = name.split(' ');
+    const initials = words.map(w => w.charAt(0).toUpperCase()).join('');
+    return `${capitalizedName} (${initials})`;
+  };
 
-    // UI
-    return (
-        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gridTemplateRows: 'auto auto',
-                gridTemplateAreas: '"center" "left"',
-                alignItems: 'center',
-                rowGap: 2, // spacing between chips and dropdown
-                mb: 4,
-              }}
-            >
-               <Box sx={{ gridArea: 'left', justifySelf: 'start', ml: 2 }}>
-                  {filter === 'all' && (
-                    <>
-                      <Button
-                        onClick={handleLeaguesDropdownOpen}
-                        sx={{
-                          textTransform: 'uppercase',
-                          fontSize: { xs: '1rem', sm: '1.1rem' },
-                          fontWeight: 'bold',
-                          lineHeight: 1.2,
-                          color: 'white',
-                          backgroundColor: '#2B2B2B',
-                          borderRadius: 2,
-                          px: 2,
-                          py: 1,
-                          '&:hover': { backgroundColor: '#2B2B2B' },
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                        endIcon={<ChevronDown size={20} />}
-                      >
-                        {selectedLeague ? formatLeagueName(selectedLeague.name) : 'All Leagues'}
-                      </Button>
-                      <Menu
-                        anchorEl={leaguesDropdownAnchor}
-                        open={leaguesDropdownOpen}
-                        onClose={handleLeaguesDropdownClose}
-                      >
-                        <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem>
-                        {leagues.map(l => (
-                          <MenuItem key={l.id} onClick={() => handleLeagueSelect(l.id)}>
-                            {l.name}
-                          </MenuItem>
-                        ))}
-                      </Menu>
-                    </>
-                  )}
-                </Box>
-               <Box
-                 sx={{
-                   gridArea: 'center',
-                   justifySelf: 'center',
-                   display: 'flex',
-                   alignItems: 'center',
-                   flexWrap: 'nowrap',
-                   columnGap: { xs: 1, sm: 2 },
-                   minWidth: 0, // allow children to shrink
-                 }}
-               >
-                 <Chip
-                   label="All Trophies"
-                   color={filter === 'all' ? 'success' : 'default'}
-                   onClick={() => setFilter('all')}
-                   sx={{
-                     fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
-                     py: { xs: 1, sm: 1.5, md: 2 },
-                     // keep on one line and shrink with ellipsis on small screens
-                     whiteSpace: 'nowrap',
-                     maxWidth: { xs: '42vw', sm: 'unset' },
-                     overflow: 'hidden',
-                     textOverflow: 'ellipsis',
-                     '& .MuiChip-label': {
-                       px: { xs: 1.25, sm: 1.75, md: 2.5 },
-                     },
-                     fontWeight: 'bold',
-                     cursor: 'pointer',
-                     ...(filter === 'all' && { backgroundColor: '#00A77F', color: 'white' }),
-                   }}
-                 />
-                 <Chip
-                   label="My Achievements"
-                   color={filter === 'my' ? 'success' : 'default'}
-                   variant="outlined"
-                   onClick={() => setFilter('my')}
-                   sx={{
-                     fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
-                     py: { xs: 1, sm: 1.5, md: 2 },
-                     whiteSpace: 'nowrap',
-                     maxWidth: { xs: '42vw', sm: 'unset' },
-                     overflow: 'hidden',
-                     textOverflow: 'ellipsis',
-                     '& .MuiChip-label': {
-                       px: { xs: 1.25, sm: 1.75, md: 2.5 },
-                     },
-                     fontWeight: 'bold',
-                     cursor: 'pointer',
-                     ...(filter === 'my' && { backgroundColor: '#00A77F', color: 'white' }),
-                   }}
-                 />
-               </Box>
-             </Box>
- 
-            {filter === 'my' ? (
+  const baseTrophies: TrophyType[] = filter === 'all' ? allTrophyWinners : myAchievements;
+  const trophiesToDisplayBase: TrophyType[] =
+    selectedLeagueId === 'all'
+      ? baseTrophies
+      : baseTrophies.filter(t => t.leagueId === selectedLeagueId);
+
+  const selectedLeague =
+    selectedLeagueId === 'all' ? null : leagues.find(l => l.id === selectedLeagueId);
+
+  // Helper to build placeholder trophies for a league (winners TBC)
+  const buildPlaceholders = (league: League): TrophyType[] =>
+    trophies.map(t => ({
+      ...t,
+      winner: null,
+      winnerId: null,
+      leagueId: league.id,
+      leagueName: league.name,
+    }));
+
+  // If a specific league is selected but there are no trophies (e.g., league not completed), show placeholders.
+  const trophiesToDisplay: TrophyType[] =
+    selectedLeague && trophiesToDisplayBase.length === 0
+      ? buildPlaceholders(selectedLeague)
+      : trophiesToDisplayBase;
+
+  // Build My Achievements (badges) for the current user
+  const myBadges: Badge[] = user ? computeBadges(user, leagues) : [];
+
+  // Open modal for a trophy winner (uses the league of that trophy)
+  const openPlayerQuickView = (trophy: TrophyType) => {
+    if (!trophy.winnerId || !trophy.leagueId) return;
+    const league = leagues.find(l => l.id === trophy.leagueId);
+    if (!league) return;
+    const player = league.members.find(m => m.id === trophy.winnerId);
+    if (!player) return;
+
+    const perLeague = summarizeUserMatchesByLeague(player.id, [league]);
+    const allMatches = perLeague[league.id] ?? [];
+    const list = allMatches.slice(-5).reverse();
+    const stats = calculatePlayerStats(league)[player.id];
+    const skills = computeSkillsFromStats(stats, player);
+    const cleanSheets = allMatches.filter(m => m.conceded === 0).length;
+    const motmCount = allMatches.filter(m => m.motmVotes > 0).length;
+
+    setQuickView({ player, league, lastFive: list, stats, trophyTitle: trophy.title, skills, cleanSheets, motmCount });
+    setOpenQuickView(true);
+  };
+
+  if (loading) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+  }
+
+  if (error) {
+    return <Box sx={{ p: 4 }}><Alert severity="error">{error}</Alert></Box>;
+  }
+
+  // UI
+  return (
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gridTemplateRows: 'auto auto',
+          gridTemplateAreas: '"center" "left"',
+          alignItems: 'center',
+          rowGap: 2, // spacing between chips and dropdown
+          mb: 4,
+        }}
+      >
+        <Box sx={{ gridArea: 'left', justifySelf: 'start', ml: 2 }}>
+          {filter === 'all' && (
+            <>
+              <Button
+                onClick={handleLeaguesDropdownOpen}
+                sx={{
+                  textTransform: 'uppercase',
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  fontWeight: 'bold',
+                  lineHeight: 1.2,
+                  color: 'white',
+                  backgroundColor: '#2B2B2B',
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1,
+                  '&:hover': { backgroundColor: '#2B2B2B' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+                endIcon={<ChevronDown size={20} />}
+              >
+                {selectedLeague ? formatLeagueName(selectedLeague.name) : 'All Leagues'}
+              </Button>
+              <Menu
+                anchorEl={leaguesDropdownAnchor}
+                open={leaguesDropdownOpen}
+                onClose={handleLeaguesDropdownClose}
+              >
+                <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem>
+                {leagues.map(l => (
+                  <MenuItem key={l.id} onClick={() => handleLeagueSelect(l.id)}>
+                    {l.name}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
+        </Box>
+        <Box
+          sx={{
+            gridArea: 'center',
+            justifySelf: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'nowrap',
+            columnGap: { xs: 1, sm: 2 },
+            minWidth: 0, // allow children to shrink
+          }}
+        >
+          <Chip
+            label="All Trophies"
+            color={filter === 'all' ? 'success' : 'default'}
+            onClick={() => setFilter('all')}
+            sx={{
+              fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
+              py: { xs: 1, sm: 1.5, md: 2 },
+              // keep on one line and shrink with ellipsis on small screens
+              whiteSpace: 'nowrap',
+              maxWidth: { xs: '42vw', sm: 'unset' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              '& .MuiChip-label': {
+                px: { xs: 1.25, sm: 1.75, md: 2.5 },
+              },
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              ...(filter === 'all' && { backgroundColor: '#00A77F', color: 'white' }),
+            }}
+          />
+          <Chip
+            label="My Achievements"
+            color={filter === 'my' ? 'success' : 'default'}
+            variant="outlined"
+            onClick={() => setFilter('my')}
+            sx={{
+              fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
+              py: { xs: 1, sm: 1.5, md: 2 },
+              whiteSpace: 'nowrap',
+              maxWidth: { xs: '42vw', sm: 'unset' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              '& .MuiChip-label': {
+                px: { xs: 1.25, sm: 1.75, md: 2.5 },
+              },
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              ...(filter === 'my' && { backgroundColor: '#00A77F', color: 'white' }),
+            }}
+          />
+        </Box>
+      </Box>
+
+      {filter === 'my' ? (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
           {myBadges.length > 0 ? myBadges.map(b => (
             <Box key={b.id} sx={{ height: '100%' }}>
@@ -884,7 +993,7 @@ export default function GlobalTrophyRoom() {
             <Box key={`${trophy.title}-${trophy.leagueId || 'global'}-${index}`} sx={{ height: '100%' }}>
               <TrophyCard
                 {...trophy}
-                onButtonClick={trophy.leagueId ? () => router.push(`/league/${trophy.leagueId}`) : undefined}
+                onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
               />
             </Box>
           )) : (
@@ -894,6 +1003,158 @@ export default function GlobalTrophyRoom() {
           )}
         </Box>
       )}
-     </Box>
-   );
- }
+
+      {/* Player Quick View Modal */}
+      <Dialog
+        open={openQuickView}
+        onClose={() => setOpenQuickView(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+          {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton onClick={() => setOpenQuickView(false)} edge="end">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <Divider />
+        <DialogContent sx={{ p: 2.5 }}>
+          {quickView.player && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 2,
+                alignItems: 'stretch',
+              }}
+            >
+              {/* Left: PlayerCard with exact props */}
+              <Box sx={{ p: { xs: 0, sm: 1 } }}>
+                <PlayerCard
+                  name={`${quickView.player.firstName ?? ''} ${quickView.player.lastName ?? ''}`.trim()}
+                  number={getShirtNumber(quickView.player)}
+                  points={computeXPFromStats(quickView.stats)}
+                  stats={{
+                    DRI: String(quickView.skills?.dribbling ?? 0),
+                    SHO: String(quickView.skills?.shooting ?? 0),
+                    PAS: String(quickView.skills?.passing ?? 0),
+                    PAC: String(quickView.skills?.pace ?? 0),
+                    DEF: String(quickView.skills?.defending ?? 0),
+                    PHY: String(quickView.skills?.physical ?? 0),
+                  }}
+                  foot={getPreferredFoot(quickView.player)}
+                  profileImage={getProfileImage(quickView.player)}
+                  shirtIcon={''}
+                  position={posToShort(quickView.player.position)}
+                />
+                {/* Icons row under the player card */}
+                <Box
+                  sx={{
+                    mt: 1.75,
+                    px: 1,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                    justifyItems: 'center',
+                    alignItems: 'center',
+                    gap: 1,
+                    textAlign: 'center',
+                    minWidth: 0,
+                  }}
+                >
+                  {[
+                    { img: Goals,      label: 'Goals',        value: quickView.stats?.goals ?? 0 },
+                    { img: Assist,     label: 'Assists',      value: quickView.stats?.assists ?? 0 },
+                    { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
+                    { img: Momt,       label: 'MOTM',         value: quickView.motmCount ?? 0 },
+                  ].map((it, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateRows: '28px 16px', // fixed heights for perfect alignment
+                        justifyItems: 'center',
+                        alignItems: 'center',
+                        rowGap: 0.5,
+                        width: '100%',
+                        minWidth: 0,
+                      }}
+                    >
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, height: 28, lineHeight: 1 }}>
+                        <Image
+                          src={it.img}
+                          alt={it.label}
+                          width={22}
+                          height={22}
+                          style={{ objectFit: 'contain', display: 'block' }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {it.value}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#64748b',
+                          lineHeight: 1,
+                          height: 16,                // lock label height to avoid shift
+                          whiteSpace: 'nowrap',      // prevent wrapping (e.g., "Clean Sheets")
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          width: '100%',
+                        }}
+                      >
+                        {it.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Right: Last 5 Matches */}
+              <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
+                <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
+                <Stack direction="column" spacing={1}>
+                  {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
+                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 28,
+                          borderRadius: 1,
+                          backgroundColor: resultColor(m.result),
+                          color: '#fff',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        {m.result}
+                      </Box>
+                      {idx === 0 && (
+                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                          Latest
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                  {(quickView.lastFive ?? []).length === 0 && (
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      No recent matches.
+                    </Typography>
+                  )}
+                </Stack>
+              </Paper>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+}

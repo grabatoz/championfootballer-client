@@ -346,200 +346,64 @@ export default function MatchDetailsPage() {
           )}
           {/* <Divider sx={{ mb: 3 }} /> */}
           <Box sx={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            {/* Player Statistics Tables */}
+            {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
-              {isLargeScreen ? (
-                <Box
-                  sx={{
-                    width: "100%",
-                    overflowX: "auto",
-                    mt: 4,
-                    scrollbarWidth: "none",
-                    "&::-webkit-scrollbar": { display: "none" },
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Box sx={{ display: "flex", gap: 4, minWidth: 100 }}>
-                    {/* Away Team Table (left) */}
+              {(() => {
+                const allPlayers = [
+                  ...(match?.homeTeamUsers ?? []).map(p => ({ ...p, __team: 'home' as const })),
+                  ...(match?.awayTeamUsers ?? []).map(p => ({ ...p, __team: 'away' as const })),
+                ];
+
+                return (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      overflowX: "auto",
+                      mt: 4,
+                      scrollbarWidth: "none",
+                      "&::-webkit-scrollbar": { display: "none" },
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Box
                       sx={{
                         flex: 1,
-                        maxWidth: 610,
+                        maxWidth: 1260,
                         minWidth: 320,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                       }}
                     >
-
                       <Box
                         sx={{
                           width: "100%",
-                          maxHeight: 420,
+                          maxHeight: 520,
                           overflowY: "auto",
                           scrollbarWidth: "none",
                           "&::-webkit-scrollbar": { display: "none" },
-                          // background: '#185c34', // Add a distinct table background color
-                          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
-                           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                          background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                           borderRadius: 3,
                           p: 1,
                           fontSize: { xs: 11, sm: 13, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: 600 }}>
-                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
-                            {match.awayTeamName} Players
-                          </Typography>
-                          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-
-                          <Box
-                            sx={{
-                          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                              borderRadius: 3,
-                              px: 2,
-                              py: 1,
-                              mb: 2,
-                              display: "flex",
-                              alignItems: "center",
-                            }}
+                        <Box sx={{ minWidth: 720 }}>
+                          <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}
                           >
-                            <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
-                            <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Plt</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>FK</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Df</Box>
-                              <Box sx={{ minWidth: 35, textAlign: "center" }}>Imp</Box>
-                            </Box>
-                          </Box>
-
-
-                          <Box>
-                            {match.awayTeamUsers.map((player, idx) => {
-                              const stats = player.statistics?.[0] || {}
-                              // let badgeImg = null;
-                              // let rowBg = 'rgba(255,255,255,0.1)';
-                              // let rowGradient = null;
-                              let textColor = '#fff';
-                              let fontWeight = 500;
-                              if (idx === 0) {
-                                // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
-                                textColor = '#fff';
-                                fontWeight = 700;
-                                // badgeImg = FirstBadge;
-                              } else if (idx === 1) {
-                                // rowBg = 'rgba(255,255,255,0.1)'; // silver
-                                // badgeImg = SecondBadge;
-                              } else if (idx === 2) {
-                                // rowBg = 'rgba(255,255,255,0.1)'; // bronze
-                                // badgeImg = ThirdBadge;
-                              } else {
-                                // rowBg = 'rgba(255,255,255,0.1)';
-                              }
-                              return (
-                                <React.Fragment key={player.id}>
-                                  <Link href={`/player/${player.id}`} passHref>
-                                    <Box
-                                      sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        p: 2,
-                                        // background: rowGradient ? rowGradient : rowBg,
-                                         background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                                        color: textColor,
-                                        fontWeight,
-                                        boxShadow: 3,
-                                        minHeight: 70,
-                                        gap: 2,
-                                      }}
-                                    >
-
-                                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
-                                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                                          <Box
-                                            sx={{
-                                              position: 'absolute',
-                                              inset: 0,
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              color: '#000',
-                                              fontWeight: 800,
-                                              fontSize: 14,
-                                              lineHeight: 1,
-                                            }}
-                                          >
-                                            {player.shirtNumber || "0"}
-                                          </Box>
-                                        </Box>
-                                      </Box>
-                                      <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
-                                          {player.firstName} {player.lastName}{player.id === match.awayCaptainId ? '(C)' : ''}
-                                        </Typography>
-                                      </Box>
-                                      <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
-                                        <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
-                                      </Box>
-                                    </Box>
-                                    <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
-                                  </Link>
-                                </React.Fragment>
-                              )
-                            })}
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        flex: 1,
-                        maxWidth: 610,
-                        minWidth: 320,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
-                    >
-
-                      <Box
-                        sx={{
-                          width: "100%",
-                          maxHeight: 420,
-                          overflowY: "auto",
-                          scrollbarWidth: "none",
-                          "&::-webkit-scrollbar": { display: "none" },
-                          // background: '#185c34', // Add a distinct table background color
-                          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)', // Add a distinct table background color
-                           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                          borderRadius: 3,
-                          p: 1,
-                          fontSize: { xs: 11, sm: 13, md: 15 },
-                        }}
-                      >
-                        <Box sx={{ minWidth: 600 }}>
-                          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}>
-                            {match.homeTeamName} Players
+                            All Players
                           </Typography>
                           <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+
                           {/* Header */}
                           <Box
                             sx={{
-                              // bgcolor: "rgba(255,255,255,0.1)",
-                               background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                              background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                               borderRadius: 3,
                               px: 2,
                               py: 1,
@@ -548,8 +412,11 @@ export default function MatchDetailsPage() {
                               alignItems: "center",
                             }}
                           >
-                            <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>Player</Box>
-                            <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14 }}>
+                            <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>
+                              Player
+                            </Box>
+                           
+                            <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14, ml: 2 }}>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
                               <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
@@ -560,29 +427,15 @@ export default function MatchDetailsPage() {
                             </Box>
                           </Box>
 
-                          {/* Player Cards */}
+                          {/* Rows */}
                           <Box>
-                            {match.homeTeamUsers.map((player, idx) => {
-                              const stats = player.statistics?.[0] || {}
-                              // let badgeImg = null;
-                              // let rowBg = 'rgba(255,255,255,0.1)';
-                              // let rowGradient = null;
-                              let textColor = '#fff';
-                              let fontWeight = 500;
-                              if (idx === 0) {
-                                // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
-                                textColor = '#fff';
-                                fontWeight = 700;
-                                // badgeImg = FirstBadge;
-                              } else if (idx === 1) {
-                                // rowBg = 'rgba(255,255,255,0.1)'; // silver
-                                // badgeImg = SecondBadge;
-                              } else if (idx === 2) {
-                                // rowBg = 'rgba(255,255,255,0.1)'; // bronze
-                                // badgeImg = ThirdBadge;
-                              } else {
-                                // rowBg = 'rgba(255,255,255,0.1)';
-                              }
+                            {allPlayers.map((player, idx) => {
+                              const stats = player.statistics?.[0] || {};
+                              const isHome = (player as any).__team === 'home';
+                              const isCaptain = player.id === (isHome ? match.homeCaptainId : match.awayCaptainId);
+                              const textColor = '#fff';
+                              const fontWeight = idx === 0 ? 700 : 500;
+
                               return (
                                 <React.Fragment key={player.id}>
                                   <Link href={`/player/${player.id}`} passHref>
@@ -591,18 +444,16 @@ export default function MatchDetailsPage() {
                                         display: "flex",
                                         alignItems: "center",
                                         p: 2,
-                                        // background: rowGradient ? rowGradient : rowBg,
+                                        background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                                         color: textColor,
-                                         background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                                         fontWeight,
                                         boxShadow: 3,
                                         minHeight: 70,
                                         gap: 2,
                                       }}
                                     >
-                                      {/* Position badge above player image */}
+                                      {/* Shirt + Number */}
                                       <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                      
                                         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
                                           <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           <Box
@@ -622,11 +473,59 @@ export default function MatchDetailsPage() {
                                           </Box>
                                         </Box>
                                       </Box>
-                                      <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: "medium", color: "white", fontSize: 14 }}>
-                                          {player.firstName} {player.lastName}{player.id === match.homeCaptainId ? '(C)' : ''}
+
+                                      {/* Name */}
+                                      <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            fontWeight: "medium",
+                                            color: "white",
+                                            fontSize: 14,
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                          }}
+                                          title={`${player.firstName} ${player.lastName}`}
+                                        >
+                                          {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
                                         </Typography>
+                                          <Box
+                                    sx={{
+                                      minWidth: 8,
+                                      textAlign: "center",
+                                      fontSize: 12,
+                                      fontWeight: 800,
+                                      color: '#fff',
+                                      bgcolor: isHome ? '#16a34a' : '#2563eb',
+                                      px: 1,
+                                      py: 0.8,
+                                      borderRadius: 1,
+                                      ml: 2
+                                    }}
+                                  >
+                                    {/* {isHome ? 'H' : 'A'} */}
+                                  </Box>
                                       </Box>
+
+                                      {/* Team tag */}
+                                      {/* <Box
+                                        sx={{
+                                          minWidth: 38,
+                                          textAlign: "center",
+                                          fontSize: 12,
+                                          fontWeight: 800,
+                                          color: '#fff',
+                                          bgcolor: isHome ? '#16a34a' : '#2563eb',
+                                          px: 1,
+                                          py: 0.25,
+                                          borderRadius: 1,
+                                        }}
+                                      >
+                                        {isHome ? 'H' : 'A'}
+                                      </Box> */}
+
+                                      {/* Stats */}
                                       <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
                                         <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
@@ -640,154 +539,15 @@ export default function MatchDetailsPage() {
                                     <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
                                   </Link>
                                 </React.Fragment>
-                              )
+                              );
                             })}
                           </Box>
                         </Box>
                       </Box>
                     </Box>
                   </Box>
-                </Box>
-              ) : (
-                <>
-                  <Box sx={{ display: "flex", gap: 2, mb: 3, justifyContent: "center" }}>
-                    <Button
-                      variant={selectedTeam === "home" ? "contained" : "outlined"}
-                      onClick={() => setSelectedTeam("home")}
-                      sx={{
-                        minWidth: 120,
-                        fontWeight: "bold",
-                        bgcolor: selectedTeam === "home" ? "#43a047" : "white",
-                        color: selectedTeam === "home" ? "white" : "black",
-                        "&:hover": {
-                          bgcolor: selectedTeam === "home" ? "#388e3c" : "#f5f5f5",
-                        },
-                      }}
-                    >
-                      {match.homeTeamName} Team
-                    </Button>
-                    <Button
-                      variant={selectedTeam === "away" ? "contained" : "outlined"}
-                      onClick={() => setSelectedTeam("away")}
-                      sx={{
-                        minWidth: 120,
-                        fontWeight: "bold",
-                        bgcolor: selectedTeam === "away" ? "#43a047" : "white",
-                        color: selectedTeam === "away" ? "white" : "black",
-                        "&:hover": {
-                          bgcolor: selectedTeam === "away" ? "#388e3c" : "#f5f5f5",
-                        },
-                      }}
-                    >
-                      {match.awayTeamName} Team
-                    </Button>
-                  </Box>
-                  <Box
-                    sx={{
-                      // p: 1,
-                      borderRadius: 3,
-                      background: "#185c34",
-                      boxShadow: 2,
-                      overflowX: "auto",
-                      minWidth: 0,
-                      maxWidth: { xs: "100%", sm: 800 }, // width increased
-                      width: "100%",
-                      fontSize: { xs: 11, sm: 13, md: 15 },
-                      mx: "auto",
-                    }}
-                  >
-                    <Box sx={{ minWidth: 350 }}> {/* minWidth set */}
-                      <div className="w-full mx-auto">
-                        <Card sx={{ backgroundColor: '#185c34' }} className="bg-[#185c34] border-green-700 text-white overflow-hidden rounded-xl">
-                          <div className="p-3">
-                            <Typography
-                              variant="h6"
-                              fontWeight="bold"
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: 13, sm: 18 },
-                              }}
-                            >
-                              {selectedTeam === "home" ? match.homeTeamName : match.awayTeamName} Players
-                            </Typography>
-                          </div>
-
-                          <div className="px-2 pb-2">
-                            <div className="bg-[#43a047] rounded-lg px-2 py-1 mb-2 flex items-center">
-                              <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base">Player</div>
-                              <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Gs</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">As</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">CS</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Plt</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">FK</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Df</div>
-                                <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">Imp</div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-[1px]">
-                              {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, index) => {
-                                const position = index + 1;
-                                // const badge = getBadgeForPosition(position);
-                                // const points = player.wins * 3 + player.;
-                                const firstName = player.firstName.split(" ")[0] || player.firstName; // Ensure first name exists
-                                const lastName = player.lastName.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
-
-                                return (
-                                  <Link key={player.id} href={`/player/${player.id}`} className="block">
-                                    <div className={`${getRowStyles(index)} px-2 py-1.5 min-h-[60px] flex items-start`}>
-                                      <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
-                                        <div className="max-[500px]:mb-2">
-                                          <div className="relative w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 flex-shrink-0">
-                                            <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                                            <div className="absolute inset-0 flex items-center justify-center text-black font-extrabold text-xs sm:text-sm leading-none">
-                                              {player.shirtNumber || "0"}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="flex flex-col gap-0.5 max-[500px]:-ml-8 min-[500px]:ml-2">
-
-                                          <div className="flex items-center ">
-                                            <div className="text-white font-normal text-xs sm:text-sm md:text-base uppercase max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
-                                              {firstName + " " + lastName}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex gap-0.5 sm:gap-1 md:gap-2 ml-auto items-center max-[500px]:mt-4">
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player.statistics?.[0]?.goals ?? 0}
-                                        </div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player.statistics?.[0]?.assists ?? 0}
-                                        </div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player.statistics?.[0]?.cleanSheets ?? 0}
-                                        </div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player.statistics?.[0]?.penalties ?? 0}
-                                        </div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">{player?.statistics?.[0]?.freeKicks ?? 0}</div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
-                                          {player?.statistics?.[0]?.defence ?? 0}
-                                        </div>
-                                        <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">{player?.statistics?.[0]?.impact ?? 0}</div>
-                                      </div>
-                                    </div>
-                                    <div className="h-[1px] bg-white"></div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </Card>
-                      </div>
-                    </Box>
-                  </Box>
-                </>
-              )}
+                );
+              })()}
             </Box>
           </Box>
 
