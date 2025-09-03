@@ -422,7 +422,7 @@ export default function MatchDetailsPage() {
                           <Box>
                             {match.awayTeamUsers.map((player, idx) => {
                               const stats = player.statistics?.[0] || {}
-                              let badgeImg = null;
+                              // let badgeImg = null;
                               // let rowBg = 'rgba(255,255,255,0.1)';
                               // let rowGradient = null;
                               let textColor = '#fff';
@@ -431,13 +431,13 @@ export default function MatchDetailsPage() {
                                 // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                                 textColor = '#fff';
                                 fontWeight = 700;
-                                badgeImg = FirstBadge;
+                                // badgeImg = FirstBadge;
                               } else if (idx === 1) {
                                 // rowBg = 'rgba(255,255,255,0.1)'; // silver
-                                badgeImg = SecondBadge;
+                                // badgeImg = SecondBadge;
                               } else if (idx === 2) {
                                 // rowBg = 'rgba(255,255,255,0.1)'; // bronze
-                                badgeImg = ThirdBadge;
+                                // badgeImg = ThirdBadge;
                               } else {
                                 // rowBg = 'rgba(255,255,255,0.1)';
                               }
@@ -564,7 +564,7 @@ export default function MatchDetailsPage() {
                           <Box>
                             {match.homeTeamUsers.map((player, idx) => {
                               const stats = player.statistics?.[0] || {}
-                              let badgeImg = null;
+                              // let badgeImg = null;
                               // let rowBg = 'rgba(255,255,255,0.1)';
                               // let rowGradient = null;
                               let textColor = '#fff';
@@ -573,13 +573,13 @@ export default function MatchDetailsPage() {
                                 // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                                 textColor = '#fff';
                                 fontWeight = 700;
-                                badgeImg = FirstBadge;
+                                // badgeImg = FirstBadge;
                               } else if (idx === 1) {
                                 // rowBg = 'rgba(255,255,255,0.1)'; // silver
-                                badgeImg = SecondBadge;
+                                // badgeImg = SecondBadge;
                               } else if (idx === 2) {
                                 // rowBg = 'rgba(255,255,255,0.1)'; // bronze
-                                badgeImg = ThirdBadge;
+                                // badgeImg = ThirdBadge;
                               } else {
                                 // rowBg = 'rgba(255,255,255,0.1)';
                               }
@@ -729,7 +729,7 @@ export default function MatchDetailsPage() {
                             <div className="space-y-[1px]">
                               {(selectedTeam === "home" ? match.homeTeamUsers : match.awayTeamUsers).map((player, index) => {
                                 const position = index + 1;
-                                const badge = getBadgeForPosition(position);
+                                // const badge = getBadgeForPosition(position);
                                 // const points = player.wins * 3 + player.;
                                 const firstName = player.firstName.split(" ")[0] || player.firstName; // Ensure first name exists
                                 const lastName = player.lastName.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
