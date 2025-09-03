@@ -168,7 +168,6 @@ const AllPlayersPage = () => {
           }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
-          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, minWidth: 40, textAlign: 'center' }}>Pos</Typography>
           <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Stats</Typography>
@@ -205,19 +204,19 @@ const AllPlayersPage = () => {
                 // let rowBg = 'rgba(255,255,255,0.1)';
                 let textColor = '#fff';
                 let fontWeight = 500;
-                let badgeImg = null;
+                // let badgeImg = null;
                 // let rowGradient = null;
                 if (idx === 0) {
                   // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                   textColor = '#fff';
                   fontWeight = 700;
-                  badgeImg = FirstBadge;
+                  // badgeImg = FirstBadge;
                 } else if (idx === 1) {
                   // rowBg = '#0a4822'; // silver
-                  badgeImg = SecondBadge;
+                  // badgeImg = SecondBadge;
                 } else if (idx === 2) {
                   // rowBg = '#094420'; // bronze
-                  badgeImg = ThirdBadge;
+                  // badgeImg = ThirdBadge;
                 } else {
                   // rowBg = '#0a4822';
                 }
@@ -242,7 +241,7 @@ const AllPlayersPage = () => {
                       }}
                     >
                       {/* Ranking badge or number */}
-                      <Box sx={{ width: { xs: 28, sm: 36 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: { xs: 1, sm: 2 } }}>
+                      {/* <Box sx={{ width: { xs: 28, sm: 36 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: { xs: 1, sm: 2 } }}>
                         {badgeImg ? (
                           <img src={badgeImg.src} alt={`${idx + 1}st`} width={24} height={24} style={{ borderRadius: '50%' }} />
                         ) : (
@@ -252,7 +251,7 @@ const AllPlayersPage = () => {
                             borderRadius: '50%', background: 'rgba(255,255,255,0.15)'
                           }}>{`${idx + 1}th`}</Box>
                         )}
-                      </Box>
+                      </Box> */}
                       <ListItemAvatar>
                         {/* Replaced Avatar with jersey + number */}
                         <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>

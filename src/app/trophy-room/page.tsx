@@ -1085,13 +1085,13 @@ export default function GlobalTrophyRoom() {
                         <Image
                           src={it.img}
                           alt={it.label}
-                          width={22}
-                          height={22}
+                          width={35}
+                          height={35}
                           style={{ objectFit: 'contain', display: 'block' }}
                         />
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
+                          sx={{ fontWeight: 500, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
                         >
                           {it.value}
                         </Typography>
@@ -1104,7 +1104,7 @@ export default function GlobalTrophyRoom() {
                           height: 16,                // lock label height to avoid shift
                           whiteSpace: 'nowrap',      // prevent wrapping (e.g., "Clean Sheets")
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          // textOverflow: 'ellipsis',
                           width: '100%',
                         }}
                       >
