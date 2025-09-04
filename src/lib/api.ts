@@ -39,11 +39,13 @@ export const authAPI = {
         success: response.ok,
         data: data.user,
         token: data.token,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+         message: 'Login failed', 
         error: error instanceof Error ? error.message : 'Login failed'
       };
     }
@@ -65,11 +67,13 @@ export const authAPI = {
         success: response.ok,
         data: data.user,
         token: data.token,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+         message: 'Registration failed', 
         error: error instanceof Error ? error.message : 'Registration failed'
       };
     }
@@ -159,6 +163,7 @@ export const authAPI = {
       if (!token) {
         return {
           success: false,
+          message:'No token found',
           error: 'No token found'
         };
       }
@@ -176,11 +181,13 @@ export const authAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Authentication check failed',
         error: error instanceof Error ? error.message : 'Authentication check failed'
       };
     }
@@ -202,11 +209,13 @@ export const leagueAPI = {
       return {
         success: response.ok,
         data: data.leagues,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch leagues',
         error: error instanceof Error ? error.message : 'Failed to fetch leagues'
       };
     }
@@ -251,6 +260,7 @@ export const matchAPI = {
       if (!response.ok) {
         return {
           success: false,
+          message:`Server returned ${response.status}: ${response.statusText}`,
           error: `Server returned ${response.status}: ${response.statusText}`
         };
       }
@@ -259,11 +269,13 @@ export const matchAPI = {
       return {
         success: true,
         data: data.matches,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch matches',
         error: error instanceof Error ? error.message : 'Failed to fetch matches'
       };
     }
@@ -306,11 +318,13 @@ export const matchAPI = {
       return {
         success: response.ok,
         data: data.leagues,
-        error: data.error
+        error: data.error,
+        message:data.message,
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch leagues',
         error: error instanceof Error ? error.message : 'Failed to fetch leagues'
       };
     }
@@ -357,11 +371,13 @@ export const matchAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message: 'Failed to update profile picture',
         error: error instanceof Error ? error.message : 'Failed to update profile picture'
       };
     }
@@ -417,11 +433,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch profile',
         error: error instanceof Error ? error.message : 'Failed to fetch profile'
       };
     }
@@ -457,11 +475,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to update profile',
         error: error instanceof Error ? error.message : 'Failed to update profile'
       };
     }
@@ -490,11 +510,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message: data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to update skills',
         error: error instanceof Error ? error.message : 'Failed to update skills'
       };
     }
@@ -513,11 +535,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.statistics,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch statistics',
         error: error instanceof Error ? error.message : 'Failed to fetch statistics'
       };
     }
@@ -536,11 +560,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.leagues,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message: 'Failed to fetch leagues',
         error: error instanceof Error ? error.message : 'Failed to fetch leagues'
       };
     }
@@ -559,11 +585,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.matches,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch matches',
         error: error instanceof Error ? error.message : 'Failed to fetch matches'
       };
     }
@@ -587,11 +615,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message: 'Failed to update profile picture',
         error: error instanceof Error ? error.message : 'Failed to update profile picture'
       };
     }
@@ -688,14 +718,14 @@ export const playerAPI = {
 
       if (!response.ok) {
         const errorData = await response.json();
-        return { success: false, error: errorData.message || 'Failed to fetch players' };
+        return { success: false, message:'Failed to fetch players' , error: errorData.message || 'Failed to fetch players' };
       }
 
       const data = await response.json();
-      return { success: true, data: data.players };
+      return { success: true, data: data.players , message:data.message };
 
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' };
+      return { success: false, message:'An unexpected error occurred' ,error: error instanceof Error ? error.message : 'An unexpected error occurred' };
     }
   },
 
@@ -710,13 +740,13 @@ export const playerAPI = {
 
         if (!response.ok) {
             const errorData = await response.json();
-            return { success: false, error: errorData.message || 'Failed to fetch player stats' };
+            return { success: false, message: 'Failed to fetch player stats' , error: errorData.message || 'Failed to fetch player stats' };
         }
 
         const data = await response.json();
-        return { success: true, data: data.data };
+        return { success: true, data: data.data , message:data.message };
     } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' };
+        return { success: false, message:'An unexpected error occurred' ,error: error instanceof Error ? error.message : 'An unexpected error occurred' };
     }
   },
 }
