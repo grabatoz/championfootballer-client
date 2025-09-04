@@ -642,7 +642,7 @@ export default function PlayMatchPage() {
     return (
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
             {!league.active && <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>}
-            <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
+            {/* <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
                 color: 'white',
                 background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                 fontWeight: 'bold',
@@ -651,7 +651,7 @@ export default function PlayMatchPage() {
                 px: { xs: 1, sm: 2 },
                 py: { xs: 0.5, sm: 1 },
                 '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-            }}>Back to League</Button>
+            }}>Back to League</Button> */}
 
             <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3 }}>
 
