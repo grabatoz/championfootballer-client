@@ -43,6 +43,7 @@ interface User {
   firstName: string;
   lastName: string;
   position?: string; // align with app-wide User type
+  
 } 
 
 interface Match {
@@ -658,7 +659,21 @@ const computeSkillsFromStats = (s?: PlayerStats, user?: User): Skills => {
 };
 
 // Helpers to feed PlayerCard's required props
-const posToShort = (pos?: string) => {
+type Foot = 'L' | 'R';
+type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
+type FIFAStats = { DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string };
+type PlayerCardProps = {
+  name: string;
+  number: string;
+  points: number;
+  stats: FIFAStats;
+  foot: Foot;
+  profileImage?: string;
+  shirtIcon?: string;
+  position: ShortPosition;
+};
+
+const posToShort = (pos?: string): ShortPosition => {
   const p = (pos ?? '').toLowerCase();
   if (p.includes('keeper') || p === 'gk') return 'GK';
   if (p.includes('def')) return 'DF';
@@ -667,9 +682,26 @@ const posToShort = (pos?: string) => {
   if (p.includes('striker') || p.includes('forward') || p === 'st' || p === 'cf') return 'ST';
   return 'ST';
 };
-const getPreferredFoot = (u?: any): 'R' | 'L' => (u?.preferredFoot === 'left' ? 'L' : 'R');
-const getShirtNumber = (u?: any): string => String(u?.shirtNumber ?? '00');
-const getProfileImage = (u?: any): string | undefined => u?.profilePicture ?? u?.avatarUrl ?? undefined;
+
+// A minimal profile-like shape used by the UI helpers below
+type PlayerProfileLike = {
+  preferredFoot?: 'left' | 'right' | 'L' | 'R' | string | null;
+  shirtNumber?: number | string | null;
+  profilePicture?: string | null;
+  avatarUrl?: string | null;
+};
+
+const getPreferredFoot = (u?: PlayerProfileLike): Foot => {
+  const v = (u?.preferredFoot ?? '').toString().toLowerCase();
+  if (v === 'left' || v === 'l') return 'L';
+  if (v === 'right' || v === 'r') return 'R';
+  return 'R';
+};
+const getShirtNumber = (u?: PlayerProfileLike): string => {
+  const raw = u?.shirtNumber;
+  return raw === null || raw === undefined ? '00' : String(raw);
+};
+const getProfileImage = (u?: PlayerProfileLike): string | undefined => u?.profilePicture ?? u?.avatarUrl ?? undefined;
 
 // UI helper: color for match result
 const resultColor = (r: 'W' | 'D' | 'L') =>
@@ -685,7 +717,7 @@ export default function GlobalTrophyRoom() {
   // Quick-view modal state
   const [openQuickView, setOpenQuickView] = useState(false);
   const [quickView, setQuickView] = useState<{
-    player?: User;
+    player?: User & PlayerProfileLike;
     league?: League;
     lastFive?: UserMatchSummary[];
     stats?: PlayerStats;
@@ -1029,23 +1061,28 @@ export default function GlobalTrophyRoom() {
             >
               {/* Left: PlayerCard with exact props */}
               <Box sx={{ p: { xs: 0, sm: 1 } }}>
-                <PlayerCard
-                  name={`${quickView.player.firstName ?? ''} ${quickView.player.lastName ?? ''}`.trim()}
-                  number={getShirtNumber(quickView.player)}
-                  points={computeXPFromStats(quickView.stats)}
-                  stats={{
-                    DRI: String(quickView.skills?.dribbling ?? 0),
-                    SHO: String(quickView.skills?.shooting ?? 0),
-                    PAS: String(quickView.skills?.passing ?? 0),
-                    PAC: String(quickView.skills?.pace ?? 0),
-                    DEF: String(quickView.skills?.defending ?? 0),
-                    PHY: String(quickView.skills?.physical ?? 0),
-                  }}
-                  foot={getPreferredFoot(quickView.player)}
-                  profileImage={getProfileImage(quickView.player)}
-                  shirtIcon={''}
-                  position={posToShort(quickView.player.position)}
-                />
+                {(() => {
+                  const p = quickView.player as User & PlayerProfileLike;
+                  const playerCardProps = {
+                    name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+                    number: getShirtNumber(p),
+                    points: computeXPFromStats(quickView.stats),
+                    stats: {
+                      DRI: String(quickView.skills?.dribbling ?? 0),
+                      SHO: String(quickView.skills?.shooting ?? 0),
+                      PAS: String(quickView.skills?.passing ?? 0),
+                      PAC: String(quickView.skills?.pace ?? 0),
+                      DEF: String(quickView.skills?.defending ?? 0),
+                      PHY: String(quickView.skills?.physical ?? 0),
+                    },
+                    foot: getPreferredFoot(p),
+                    profileImage: getProfileImage(p),
+                    shirtIcon: '',
+                    position: posToShort(p.position),
+                  } satisfies PlayerCardProps;
+
+                  return <PlayerCard {...playerCardProps} />;
+                })()}
                 {/* Icons row under the player card */}
                 <Box
                   sx={{

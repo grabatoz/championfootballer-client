@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
-import FirstBadge from '@/Components/images/1st.png';
-import SecondBadge from '@/Components/images/2nd.png';
-import ThirdBadge from '@/Components/images/3rd.png';
+// import useMediaQuery from '@mui/material/useMediaQuery';
+// import { useTheme } from '@mui/material/styles';
+// import FirstBadge from '@/Components/images/1st.png';
+// import SecondBadge from '@/Components/images/2nd.png';
+// import ThirdBadge from '@/Components/images/3rd.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import React from "react";
 import Link from "next/link";
@@ -220,7 +220,7 @@ export default function MatchDetailsPage() {
     }
   }
 
-  const theme = useTheme();
+  // const theme = useTheme();
   // const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
 
   const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
