@@ -122,6 +122,7 @@ export const checkAuth = createAsyncThunk<ApiResponse<User>>(
     if (isSessionExpired()) {
       return {
         success: false,
+        message: 'Session expired',
         error: 'Session expired'
       };
     }
