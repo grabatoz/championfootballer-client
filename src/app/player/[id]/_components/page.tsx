@@ -926,7 +926,7 @@ export default function PlayerStatsPage() {
                                         py: 0.75,
                                         '&:hover': { background: '#0bb77f' },
                                     }}
-                                    onClick={() => router.push(`/player/${playerId}?tab=charts`)}
+                                    onClick={() => router.push(`/player/${playerId}/career`)}  // changed from ?tab=charts
                                 >
                                     View Chart
                                 </Button>
