@@ -1,5 +1,6 @@
-// 'use client';
+'use client';
 
+import React from 'react';
 // import React, { useEffect, useMemo, useState } from 'react';
 // import {
 //   Box,
@@ -195,8 +196,8 @@
 //   return d.startOf('week').format('YYYY-MM-DD');
 // }
 
-// // ---------- COMPONENT ----------
-// export default function CareerPage() {
+// ---------- COMPONENT ----------
+export default function CareerPage() {
 //   const params = useParams();
 //   const router = useRouter();
 //   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -618,507 +619,510 @@
 //     return () => { aborted = true; };
 //   }, [playerId, playerNameFromStats]);
 
-//   return (
-//     <Container
-//       maxWidth="xl"
-//       sx={{
-//         py: 5,
-//         minHeight: '100vh',
-//       }}
-//     >
-//       <Box
-//         sx={{
-//           maxWidth: '1500px',
-//           mx: 'auto',
-//           background: BG_GRAD,
-//           borderRadius: 6,
-//           p: { xs: 2, md: 3, lg: 4 },
-//           boxShadow: '0 14px 60px -18px rgba(0,0,0,0.55), 0 4px 18px -4px rgba(0,0,0,0.4)',
-//           border: `1px solid ${themeColors.border}`
-//         }}
-//       >
-//         <Typography
-//           variant="h5"
-//           sx={{
-//             fontWeight: 900,
-//             color: themeColors.text,
-//             mb: 3,
-//             textAlign: 'center',
-//             letterSpacing: .75,
-//             background: themeColors.gradient,
-//             WebkitBackgroundClip: 'text',
-//           }}
-//         >
-//           {playerName
-//             ? `${playerName} Performance Dashboard`
-//             : 'Performance Dashboard'}
-//         </Typography>
+  return (
+  <div>
+    hello
+  </div>
+    // <Container
+    //   maxWidth="xl"
+    //   sx={{
+    //     py: 5,
+    //     minHeight: '100vh',
+    //   }}
+    // >
+    //   <Box
+    //     sx={{
+    //       maxWidth: '1500px',
+    //       mx: 'auto',
+    //       background: BG_GRAD,
+    //       borderRadius: 6,
+    //       p: { xs: 2, md: 3, lg: 4 },
+    //       boxShadow: '0 14px 60px -18px rgba(0,0,0,0.55), 0 4px 18px -4px rgba(0,0,0,0.4)',
+    //       border: `1px solid ${themeColors.border}`
+    //     }}
+    //   >
+    //     <Typography
+    //       variant="h5"
+    //       sx={{
+    //         fontWeight: 900,
+    //         color: themeColors.text,
+    //         mb: 3,
+    //         textAlign: 'center',
+    //         letterSpacing: .75,
+    //         background: themeColors.gradient,
+    //         WebkitBackgroundClip: 'text',
+    //       }}
+    //     >
+    //       {playerName
+    //         ? `${playerName} Performance Dashboard`
+    //         : 'Performance Dashboard'}
+    //     </Typography>
 
-//         {loading ? (
-//           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
-//         ) : (
-//           <Box>
+    //     {loading ? (
+    //       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+    //     ) : (
+    //       <Box>
 
-//             <Grid container spacing={2}>
-//               {/* Performance Over Time */}
-//               <Grid item xs={12} lg={8}>
-//                 <GlassCard
-//                   sx={{
-//                     p:0,
-//                     height:{ xs:500, md:480 },
-//                     display:'flex',
-//                     flexDirection:'column',
-//                     borderRadius:4,
-//                     background:'linear-gradient(90deg,#767676 0%,#000000 100%)',
-//                     overflow:'hidden',
-//                     position:'relative',
-//                     border:'none'
-//                   }}
-//                 >
-//                   {/* Controls Row */}
-//                   <Box
-//                     sx={{
-//                       position:'absolute',
-//                       top:6,
-//                       left:56,
-//                       right:56,
-//                       display:'flex',
-//                       alignItems:'center',
-//                       gap:2,
-//                       zIndex:5
-//                     }}
-//                   >
-//                     <ToggleButtonGroup
-//                       size="small"
-//                       exclusive
-//                       value={groupMode}
-//                       onChange={(_,val)=> val && setGroupMode(val)}
-//                       sx={{
-//                         background:'rgba(255,255,255,0.08)',
-//                         borderRadius:2,
-//                         '& .MuiToggleButton-root': {
-//                           color:'#fff',
-//                           fontSize:11,
-//                           px:1.4,
-//                           borderColor:'rgba(255,255,255,0.2)'
-//                         },
-//                         '& .Mui-selected': {
-//                           background:themeColors.gradient,
-//                           color:'#fff',
-//                           fontWeight:700
-//                         }
-//                       }}
-//                     >
-//                       <ToggleButton value="auto">Auto</ToggleButton>
-//                       <ToggleButton value="weekly">Weekly</ToggleButton>
-//                       <ToggleButton value="monthly">Monthly</ToggleButton>
-//                     </ToggleButtonGroup>
-//                     <Box sx={{ ml:'auto', display:'flex', alignItems:'center', gap:1 }}>
-//                       <Typography sx={{ fontSize:10, color:'#eee' }}>Range</Typography>
-//                       <Box sx={{ width:160 }}>
-//                         <Slider
-//                           size="small"
-//                           value={range || [0, Math.max(0, performanceData.length-1)]}
-//                           min={0}
-//                           max={Math.max(0, performanceData.length-1)}
-//                           onChange={(_,val)=> Array.isArray(val) && setRange(val as number[])}
-//                           valueLabelDisplay="auto"
-//                           sx={{
-//                             '& .MuiSlider-thumb':{ boxShadow:'0 0 0 2px #000' },
-//                             '& .MuiSlider-track':{ background:themeColors.gradient },
-//                             '& .MuiSlider-rail':{ opacity:.3 }
-//                           }}
-//                         />
-//                       </Box>
-//                     </Box>
-//                   </Box>
+    //         <Grid container spacing={2}>
+    //           {/* Performance Over Time */}
+    //           <Grid item xs={12} lg={8}>
+    //             <GlassCard
+    //               sx={{
+    //                 p:0,
+    //                 height:{ xs:500, md:480 },
+    //                 display:'flex',
+    //                 flexDirection:'column',
+    //                 borderRadius:4,
+    //                 background:'linear-gradient(90deg,#767676 0%,#000000 100%)',
+    //                 overflow:'hidden',
+    //                 position:'relative',
+    //                 border:'none'
+    //               }}
+    //             >
+    //               {/* Controls Row */}
+    //               <Box
+    //                 sx={{
+    //                   position:'absolute',
+    //                   top:6,
+    //                   left:56,
+    //                   right:56,
+    //                   display:'flex',
+    //                   alignItems:'center',
+    //                   gap:2,
+    //                   zIndex:5
+    //                 }}
+    //               >
+    //                 <ToggleButtonGroup
+    //                   size="small"
+    //                   exclusive
+    //                   value={groupMode}
+    //                   onChange={(_,val)=> val && setGroupMode(val)}
+    //                   sx={{
+    //                     background:'rgba(255,255,255,0.08)',
+    //                     borderRadius:2,
+    //                     '& .MuiToggleButton-root': {
+    //                       color:'#fff',
+    //                       fontSize:11,
+    //                       px:1.4,
+    //                       borderColor:'rgba(255,255,255,0.2)'
+    //                     },
+    //                     '& .Mui-selected': {
+    //                       background:themeColors.gradient,
+    //                       color:'#fff',
+    //                       fontWeight:700
+    //                     }
+    //                   }}
+    //                 >
+    //                   <ToggleButton value="auto">Auto</ToggleButton>
+    //                   <ToggleButton value="weekly">Weekly</ToggleButton>
+    //                   <ToggleButton value="monthly">Monthly</ToggleButton>
+    //                 </ToggleButtonGroup>
+    //                 <Box sx={{ ml:'auto', display:'flex', alignItems:'center', gap:1 }}>
+    //                   <Typography sx={{ fontSize:10, color:'#eee' }}>Range</Typography>
+    //                   <Box sx={{ width:160 }}>
+    //                     <Slider
+    //                       size="small"
+    //                       value={range || [0, Math.max(0, performanceData.length-1)]}
+    //                       min={0}
+    //                       max={Math.max(0, performanceData.length-1)}
+    //                       onChange={(_,val)=> Array.isArray(val) && setRange(val as number[])}
+    //                       valueLabelDisplay="auto"
+    //                       sx={{
+    //                         '& .MuiSlider-thumb':{ boxShadow:'0 0 0 2px #000' },
+    //                         '& .MuiSlider-track':{ background:themeColors.gradient },
+    //                         '& .MuiSlider-rail':{ opacity:.3 }
+    //                       }}
+    //                     />
+    //                   </Box>
+    //                 </Box>
+    //               </Box>
 
-//                   {/* Left / Right ribbons (unchanged) */}
-//                   <Box sx={{ position:'absolute', top:22, bottom:22, left:10, width:38, background:themeColors.gradient, color:'#fff', borderRadius:'8px 0 0 8px', display:'flex', alignItems:'center', justifyContent:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:11, fontWeight:700, letterSpacing:.5, zIndex:3 }}>
-//                     Average XP Points
-//                   </Box>
-//                   <Box sx={{ position:'absolute', top:22, bottom:22, right:10, width:44, background:themeColors.primaryAlt, color:'#fff', borderRadius:'0 8px 8px 0', display:'flex', alignItems:'center', justifyContent:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:11, fontWeight:700, letterSpacing:.5, zIndex:3 }}>
-//                     Accumulative XP Points
-//                   </Box>
+    //               {/* Left / Right ribbons (unchanged) */}
+    //               <Box sx={{ position:'absolute', top:22, bottom:22, left:10, width:38, background:themeColors.gradient, color:'#fff', borderRadius:'8px 0 0 8px', display:'flex', alignItems:'center', justifyContent:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:11, fontWeight:700, letterSpacing:.5, zIndex:3 }}>
+    //                 Average XP Points
+    //               </Box>
+    //               <Box sx={{ position:'absolute', top:22, bottom:22, right:10, width:44, background:themeColors.primaryAlt, color:'#fff', borderRadius:'0 8px 8px 0', display:'flex', alignItems:'center', justifyContent:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:11, fontWeight:700, letterSpacing:.5, zIndex:3 }}>
+    //                 Accumulative XP Points
+    //               </Box>
 
-//                   {/* Chart */}
-//                   <Box sx={{ position:'relative', zIndex:4, flex:1, minHeight:0, px:6, pt:4, pb:1 }}>
-//                     <ResponsiveContainer width="100%" height="100%">
-//                       <ComposedChart
-//                         data={chartData}
-//                         margin={{ top: 10, left: 10, right: 10, bottom: 28 }}
-//                       >
-//                         <XAxis
-//                           dataKey="label"
-//                           stroke="#999"
-//                           tick={{ fontSize:11, fill:'#444' }}
-//                           interval={0}
-//                           tickLine={{ stroke:'#ccc' }}
-//                           axisLine={{ stroke:'#ccc' }}
-//                         />
-//                         <YAxis
-//                           yAxisId="avg"
-//                           stroke="#888"
-//                           tick={{ fontSize:11, fill:'#333' }}
-//                           width={42}
-//                           tickLine={{ stroke:'#ddd' }}
-//                           axisLine={{ stroke:'#ccc' }}
-//                         />
-//                         <YAxis
-//                           yAxisId="cum"
-//                           orientation="right"
-//                           stroke="#888"
-//                           tick={{ fontSize:11, fill:'#333' }}
-//                           width={54}
-//                           tickLine={{ stroke:'#ddd' }}
-//                           axisLine={{ stroke:'#ccc' }}
-//                         />
-//                         <Tooltip
-//                           contentStyle={{
-//                             background:'#ffffff',
-//                             border:'1px solid rgba(0,0,0,0.15)',
-//                             fontSize:11,
-//                             borderRadius:6,
-//                             boxShadow:'0 4px 12px rgba(0,0,0,0.12)'
-//                           }}
-//                           labelStyle={{ fontWeight:700, color:'#222' }}
-//                           formatter={(value: any, _name: any, item: any) => {
-//                             const key = item?.dataKey;
-//                             if (key === 'avgPoints')        return [value, `Avg (${groupingType==='weekly'?'Week':'Month'})`];
-//                             if (key === 'cumulativePoints') return [value, 'Cumulative XP'];
-//                             if (key === 'matchPoints')      return [value, 'Match Points'];
-//                             return [value, key || 'Value'];
-//                           }}
-//                           labelFormatter={(label: string, payload: any[]) => {
-//                             // Find a payload entry with a year (line / scatter share same x)
-//                             const withYear = payload?.find(p => p.payload?.year);
-//                             const yr = withYear?.payload?.year ? ` ${withYear.payload.year}` : '';
-//                             return `${label}${yr}`;
-//                           }}
-//                         />
-//                         <Line
-//                           yAxisId="avg"
-//                           type="monotone"
-//                           dataKey="avgPoints"
-//                           name={`Avg (${groupingType==='weekly'?'Week':'Month'})`}
-//                           stroke={themeColors.primary}
-//                           strokeWidth={3}
-//                           dot={{ r:3, stroke:'#fff', strokeWidth:1.2, fill:themeColors.primary }}
-//                           activeDot={{ r:6, stroke:'#000', strokeWidth:1, fill:themeColors.primary }}
-//                         />
-//                         <Line
-//                           yAxisId="cum"
-//                           type="monotone"
-//                           dataKey="cumulativePoints"
-//                           name="Cumulative"
-//                           stroke={themeColors.primaryAlt}
-//                           strokeWidth={3}
-//                           dot={{ r:3, stroke:'#fff', strokeWidth:1.2, fill:themeColors.primaryAlt }}
-//                           activeDot={{ r:6, stroke:'#000', strokeWidth:1, fill:themeColors.primaryAlt }}
-//                         />
-//                         <Scatter
-//                           data={scatterFiltered as any}
-//                           yAxisId="avg"
-//                           fill="#4b9fff"
-//                           dataKey="matchPoints"
-//                           name="Match Points"
-//                         />
-//                         <defs>
-//                           <linearGradient id="avgGradBrand" x1="0" x2="0" y1="0" y2="1">
-//                             <stop offset="0%" stopColor={themeColors.primary} />
-//                             <stop offset="100%" stopColor={themeColors.primaryAlt} />
-//                           </linearGradient>
-//                         </defs>
-//                       </ComposedChart>
-//                     </ResponsiveContainer>
-//                   </Box>
+    //               {/* Chart */}
+    //               <Box sx={{ position:'relative', zIndex:4, flex:1, minHeight:0, px:6, pt:4, pb:1 }}>
+    //                 <ResponsiveContainer width="100%" height="100%">
+    //                   <ComposedChart
+    //                     data={chartData}
+    //                     margin={{ top: 10, left: 10, right: 10, bottom: 28 }}
+    //                   >
+    //                     <XAxis
+    //                       dataKey="label"
+    //                       stroke="#999"
+    //                       tick={{ fontSize:11, fill:'#444' }}
+    //                       interval={0}
+    //                       tickLine={{ stroke:'#ccc' }}
+    //                       axisLine={{ stroke:'#ccc' }}
+    //                     />
+    //                     <YAxis
+    //                       yAxisId="avg"
+    //                       stroke="#888"
+    //                       tick={{ fontSize:11, fill:'#333' }}
+    //                       width={42}
+    //                       tickLine={{ stroke:'#ddd' }}
+    //                       axisLine={{ stroke:'#ccc' }}
+    //                     />
+    //                     <YAxis
+    //                       yAxisId="cum"
+    //                       orientation="right"
+    //                       stroke="#888"
+    //                       tick={{ fontSize:11, fill:'#333' }}
+    //                       width={54}
+    //                       tickLine={{ stroke:'#ddd' }}
+    //                       axisLine={{ stroke:'#ccc' }}
+    //                     />
+    //                     <Tooltip
+    //                       contentStyle={{
+    //                         background:'#ffffff',
+    //                         border:'1px solid rgba(0,0,0,0.15)',
+    //                         fontSize:11,
+    //                         borderRadius:6,
+    //                         boxShadow:'0 4px 12px rgba(0,0,0,0.12)'
+    //                       }}
+    //                       labelStyle={{ fontWeight:700, color:'#222' }}
+    //                       formatter={(value: any, _name: any, item: any) => {
+    //                         const key = item?.dataKey;
+    //                         if (key === 'avgPoints')        return [value, `Avg (${groupingType==='weekly'?'Week':'Month'})`];
+    //                         if (key === 'cumulativePoints') return [value, 'Cumulative XP'];
+    //                         if (key === 'matchPoints')      return [value, 'Match Points'];
+    //                         return [value, key || 'Value'];
+    //                       }}
+    //                       labelFormatter={(label: string, payload: any[]) => {
+    //                         // Find a payload entry with a year (line / scatter share same x)
+    //                         const withYear = payload?.find(p => p.payload?.year);
+    //                         const yr = withYear?.payload?.year ? ` ${withYear.payload.year}` : '';
+    //                         return `${label}${yr}`;
+    //                       }}
+    //                     />
+    //                     <Line
+    //                       yAxisId="avg"
+    //                       type="monotone"
+    //                       dataKey="avgPoints"
+    //                       name={`Avg (${groupingType==='weekly'?'Week':'Month'})`}
+    //                       stroke={themeColors.primary}
+    //                       strokeWidth={3}
+    //                       dot={{ r:3, stroke:'#fff', strokeWidth:1.2, fill:themeColors.primary }}
+    //                       activeDot={{ r:6, stroke:'#000', strokeWidth:1, fill:themeColors.primary }}
+    //                     />
+    //                     <Line
+    //                       yAxisId="cum"
+    //                       type="monotone"
+    //                       dataKey="cumulativePoints"
+    //                       name="Cumulative"
+    //                       stroke={themeColors.primaryAlt}
+    //                       strokeWidth={3}
+    //                       dot={{ r:3, stroke:'#fff', strokeWidth:1.2, fill:themeColors.primaryAlt }}
+    //                       activeDot={{ r:6, stroke:'#000', strokeWidth:1, fill:themeColors.primaryAlt }}
+    //                     />
+    //                     <Scatter
+    //                       data={scatterFiltered as any}
+    //                       yAxisId="avg"
+    //                       fill="#4b9fff"
+    //                       dataKey="matchPoints"
+    //                       name="Match Points"
+    //                     />
+    //                     <defs>
+    //                       <linearGradient id="avgGradBrand" x1="0" x2="0" y1="0" y2="1">
+    //                         <stop offset="0%" stopColor={themeColors.primary} />
+    //                         <stop offset="100%" stopColor={themeColors.primaryAlt} />
+    //                       </linearGradient>
+    //                     </defs>
+    //                   </ComposedChart>
+    //                 </ResponsiveContainer>
+    //               </Box>
 
-//                   {/* Legend */}
-//                   <Box sx={{ position:'relative', zIndex:4, display:'flex', justifyContent:'center', flexWrap:'wrap', gap:3, pb:1.5, mt:.5 }}>
-//                     <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
-//                       <Box sx={{ width:16, height:6, borderRadius:2, background:themeColors.primary }} />
-//                       <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Avg / {groupingType==='weekly'?'Week':'Month'}</Typography>
-//                     </Box>
-//                     <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
-//                       <Box sx={{ width:16, height:6, borderRadius:2, background:themeColors.primaryAlt }} />
-//                       <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Cumulative XP</Typography>
-//                     </Box>
-//                     <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
-//                       <Box sx={{ width:10, height:10, borderRadius:'50%', background:'#4b9fff' }} />
-//                       <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Match Points</Typography>
-//                     </Box>
-//                   </Box>
-//                 </GlassCard>
-//               </Grid>
-//               {/* Win/Loss + Radar (unchanged below) */}
-//               <Grid item xs={12} lg={4} container spacing={2}>
-//                 <Grid item xs={12} md={6} lg={12}>
-//                   <GlassCard
-//                     sx={{
-//                       p:2,
-//                       height:190,
-//                       display:'flex',
-//                       flexDirection:'column',
-//                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
-//                     }}
-//                   >
-//                     <SectionTitle sx={{ mb: .5 }}>Win / Loss</SectionTitle>
-//                     <Box sx={{ flex:1 }}>
-//                       <ResponsiveContainer width="100%" height="100%">
-//                         <PieChart>
-//                           <Tooltip contentStyle={{ background:'#161616', border:`1px solid ${themeColors.border}`, fontSize:11 }}/>
-//                           <Pie
-//                             data={[
-//                               { name:'Wins', value:wld.W },
-//                               { name:'Draws', value:wld.D },
-//                               { name:'Losses', value:wld.L }
-//                             ]}
-//                             dataKey="value"
-//                             innerRadius={35}
-//                             outerRadius={55}
-//                             paddingAngle={2}
-//                           >
-//                             <Cell fill="url(#winGrad)"/>
-//                             <Cell fill="#ffca28"/>
-//                             <Cell fill="#d32f2f"/>
-//                           </Pie>
-//                           <defs>
-//                             <linearGradient id="winGrad" x1="0" x2="1" y1="0" y2="1">
-//                               <stop offset="0%" stopColor="#E56A16"/>
-//                               <stop offset="100%" stopColor="#CF2326"/>
-//                             </linearGradient>
-//                           </defs>
-//                         </PieChart>
-//                       </ResponsiveContainer>
-//                     </Box>
-//                     <Box sx={{ display:'flex', gap:1, justifyContent:'center', mb:0.5 }}>
-//                       <Chip size="small" label={`W ${wld.W}`} sx={{ background:themeColors.gradient, color:'#fff', fontWeight:700 }} />
-//                       <Chip size="small" label={`D ${wld.D}`} sx={{ bgcolor:'#ffca28', color:'#000', fontWeight:700 }} />
-//                       <Chip size="small" label={`L ${wld.L}`} sx={{ bgcolor:themeColors.danger, color:'#fff', fontWeight:700 }} />
-//                     </Box>
-//                   </GlassCard>
-//                 </Grid>
-//                 <Grid item xs={12} md={6} lg={12}>
-//                   <GlassCard
-//                     sx={{
-//                       p:2,
-//                       height:190,
-//                       display:'flex',
-//                       flexDirection:'column',
-//                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
-//                     }}
-//                   >
-//                     <SectionTitle sx={{ mb:.5 }}>Influence (Radar)</SectionTitle>
-//                     <Box sx={{ flex:1 }}>
-//                       <ResponsiveContainer width="100%" height="100%">
-//                         <RadarChart data={influence}>
-//                           <PolarGrid stroke="#555"/>
-//                           <PolarAngleAxis
-//                             dataKey="metric"
-//                             tick={{ fill:'#fff', fontSize:9 }}
-//                             scale="point"
-//                             reversed={false}
-//                           />
-//                           <PolarRadiusAxis stroke="#777" tick={{ fill:'#ccc', fontSize:9 }}/>
-//                           <Radar name="Raw" dataKey="value" stroke="#E56A16" fill="#E56A16" fillOpacity={0.32}/>
-//                           <Radar name="Scaled" dataKey="scaled" stroke="#CF2326" fill="#CF2326" fillOpacity={0.18}/>
-//                           <Tooltip contentStyle={{ background:'#161616', border:`1px solid ${themeColors.border}`, fontSize:11 }}/>
-//                         </RadarChart>
-//                       </ResponsiveContainer>
-//                     </Box>
-//                   </GlassCard>
-//                 </Grid>
-//               </Grid>
-//             </Grid>
+    //               {/* Legend */}
+    //               <Box sx={{ position:'relative', zIndex:4, display:'flex', justifyContent:'center', flexWrap:'wrap', gap:3, pb:1.5, mt:.5 }}>
+    //                 <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
+    //                   <Box sx={{ width:16, height:6, borderRadius:2, background:themeColors.primary }} />
+    //                   <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Avg / {groupingType==='weekly'?'Week':'Month'}</Typography>
+    //                 </Box>
+    //                 <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
+    //                   <Box sx={{ width:16, height:6, borderRadius:2, background:themeColors.primaryAlt }} />
+    //                   <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Cumulative XP</Typography>
+    //                 </Box>
+    //                 <Box sx={{ display:'flex', alignItems:'center', gap:.6 }}>
+    //                   <Box sx={{ width:10, height:10, borderRadius:'50%', background:'#4b9fff' }} />
+    //                   <Typography sx={{ fontSize:11, color:themeColors.textDim, fontWeight:600 }}>Match Points</Typography>
+    //                 </Box>
+    //               </Box>
+    //             </GlassCard>
+    //           </Grid>
+    //           {/* Win/Loss + Radar (unchanged below) */}
+    //           <Grid item xs={12} lg={4} container spacing={2}>
+    //             <Grid item xs={12} md={6} lg={12}>
+    //               <GlassCard
+    //                 sx={{
+    //                   p:2,
+    //                   height:190,
+    //                   display:'flex',
+    //                   flexDirection:'column',
+    //                   background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
+    //                 }}
+    //               >
+    //                 <SectionTitle sx={{ mb: .5 }}>Win / Loss</SectionTitle>
+    //                 <Box sx={{ flex:1 }}>
+    //                   <ResponsiveContainer width="100%" height="100%">
+    //                     <PieChart>
+    //                       <Tooltip contentStyle={{ background:'#161616', border:`1px solid ${themeColors.border}`, fontSize:11 }}/>
+    //                       <Pie
+    //                         data={[
+    //                           { name:'Wins', value:wld.W },
+    //                           { name:'Draws', value:wld.D },
+    //                           { name:'Losses', value:wld.L }
+    //                         ]}
+    //                         dataKey="value"
+    //                         innerRadius={35}
+    //                         outerRadius={55}
+    //                         paddingAngle={2}
+    //                       >
+    //                         <Cell fill="url(#winGrad)"/>
+    //                         <Cell fill="#ffca28"/>
+    //                         <Cell fill="#d32f2f"/>
+    //                       </Pie>
+    //                       <defs>
+    //                         <linearGradient id="winGrad" x1="0" x2="1" y1="0" y2="1">
+    //                           <stop offset="0%" stopColor="#E56A16"/>
+    //                           <stop offset="100%" stopColor="#CF2326"/>
+    //                         </linearGradient>
+    //                       </defs>
+    //                     </PieChart>
+    //                   </ResponsiveContainer>
+    //                 </Box>
+    //                 <Box sx={{ display:'flex', gap:1, justifyContent:'center', mb:0.5 }}>
+    //                   <Chip size="small" label={`W ${wld.W}`} sx={{ background:themeColors.gradient, color:'#fff', fontWeight:700 }} />
+    //                   <Chip size="small" label={`D ${wld.D}`} sx={{ bgcolor:'#ffca28', color:'#000', fontWeight:700 }} />
+    //                   <Chip size="small" label={`L ${wld.L}`} sx={{ bgcolor:themeColors.danger, color:'#fff', fontWeight:700 }} />
+    //                 </Box>
+    //               </GlassCard>
+    //             </Grid>
+    //             <Grid item xs={12} md={6} lg={12}>
+    //               <GlassCard
+    //                 sx={{
+    //                   p:2,
+    //                   height:190,
+    //                   display:'flex',
+    //                   flexDirection:'column',
+    //                   background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
+    //                 }}
+    //               >
+    //                 <SectionTitle sx={{ mb:.5 }}>Influence (Radar)</SectionTitle>
+    //                 <Box sx={{ flex:1 }}>
+    //                   <ResponsiveContainer width="100%" height="100%">
+    //                     <RadarChart data={influence}>
+    //                       <PolarGrid stroke="#555"/>
+    //                       <PolarAngleAxis
+    //                         dataKey="metric"
+    //                         tick={{ fill:'#fff', fontSize:9 }}
+    //                         scale="point"
+    //                         reversed={false}
+    //                       />
+    //                       <PolarRadiusAxis stroke="#777" tick={{ fill:'#ccc', fontSize:9 }}/>
+    //                       <Radar name="Raw" dataKey="value" stroke="#E56A16" fill="#E56A16" fillOpacity={0.32}/>
+    //                       <Radar name="Scaled" dataKey="scaled" stroke="#CF2326" fill="#CF2326" fillOpacity={0.18}/>
+    //                       <Tooltip contentStyle={{ background:'#161616', border:`1px solid ${themeColors.border}`, fontSize:11 }}/>
+    //                     </RadarChart>
+    //                   </ResponsiveContainer>
+    //                 </Box>
+    //               </GlassCard>
+    //             </Grid>
+    //           </Grid>
+    //         </Grid>
 
-//             {/* Impact Table */}
-//             <Grid container spacing={2} sx={{ mt:2 }}>
-//               <Grid item xs={12} lg={8}>
-//                 <GlassCard
-//                   sx={{
-//                     p:2.2,
-//                     background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
-//                   }}
-//                 >
-//                   <SectionTitle sx={{ mb:.75 }}>Impact (Last {recent.length || 0} Matches)</SectionTitle>
-//                   <Typography sx={{ fontSize:11, color:themeColors.textFaint, mb:1 }}>
-//                     Recent match contributions. Average row included.
-//                   </Typography>
-//                   <Box sx={{ overflowX:'auto' }}>
-//                     <Table size="small" sx={{
-//                       minWidth:860,
-//                       '& th,& td':{ borderColor:themeColors.border, color:themeColors.text },
-//                       '& tbody tr:hover': {
-//                         background:'rgba(255,255,255,0.06)'
-//                       }
-//                     }}>
-//                       <TableHead>
-//                         <TableRow>
-//                           <TableCell>Date</TableCell>
-//                           <TableCell align="right">G</TableCell>
-//                           <TableCell align="right">A</TableCell>
-//                           <TableCell align="right">CS</TableCell>
-//                           <TableCell align="right">Impact</TableCell>
-//                           <TableCell align="right">Def</TableCell>
-//                           <TableCell align="right">FK</TableCell>
-//                           <TableCell align="right">Pen</TableCell>
-//                           <TableCell align="right">MOTM</TableCell>
-//                           <TableCell align="right">Pts</TableCell>
-//                           <TableCell align="center">Res</TableCell>
-//                         </TableRow>
-//                       </TableHead>
-//                       <TableBody>
-//                         {recent.map(r => (
-//                           <TableRow key={r.id}>
-//                             <TableCell>{r.date}</TableCell>
-//                             <TableCell align="right">{r.goals}</TableCell>
-//                             <TableCell align="right">{r.assists}</TableCell>
-//                             <TableCell align="right">{r.cleanSheets}</TableCell>
-//                             <TableCell align="right">{r.impact}</TableCell>
-//                             <TableCell align="right">{r.defence}</TableCell>
-//                             <TableCell align="right">{r.fk}</TableCell>
-//                             <TableCell align="right">{r.pens}</TableCell>
-//                             <TableCell align="right">{r.motm}</TableCell>
-//                             <TableCell align="right" style={{ fontWeight:600, color:themeColors.primaryAlt }}>{r.points}</TableCell>
-//                             <TableCell align="center">
-//                               <Chip
-//                                 size="small"
-//                                 label={r.result}
-//                                 sx={{
-//                                   height:20,
-//                                   background:
-//                                     r.result === 'W' ? themeColors.gradient :
-//                                     r.result === 'L' ? themeColors.danger :
-//                                     r.result === 'D' ? themeColors.warn : '#555',
-//                                   color: r.result === 'D' ? '#000' : '#fff',
-//                                   fontWeight:700
-//                                 }}
-//                               />
-//                             </TableCell>
-//                           </TableRow>
-//                         ))}
-//                         {!recent.length && (
-//                           <TableRow>
-//                             <TableCell colSpan={11} align="center" sx={{ color:themeColors.textDim }}>
-//                               No recent match data.
-//                             </TableCell>
-//                           </TableRow>
-//                         )}
-//                         {recentAverages && (
-//                           <TableRow>
-//                             <TableCell sx={{ fontWeight:700 }}>Avg</TableCell>
-//                             <TableCell align="right">{recentAverages.goals}</TableCell>
-//                             <TableCell align="right">{recentAverages.assists}</TableCell>
-//                             <TableCell align="right">{recentAverages.cleanSheets}</TableCell>
-//                             <TableCell align="right">{recentAverages.impact}</TableCell>
-//                             <TableCell align="right">{recentAverages.defence}</TableCell>
-//                             <TableCell align="right">{recentAverages.fk}</TableCell>
-//                             <TableCell align="right">{recentAverages.pens}</TableCell>
-//                             <TableCell align="right">{recentAverages.motm}</TableCell>
-//                             <TableCell align="right" sx={{ fontWeight:700, color:themeColors.primary }}>{recentAverages.points}</TableCell>
-//                             <TableCell />
-//                           </TableRow>
-//                         )}
-//                       </TableBody>
-//                     </Table>
-//                   </Box>
-//                 </GlassCard>
-//               </Grid>
+    //         {/* Impact Table */}
+    //         <Grid container spacing={2} sx={{ mt:2 }}>
+    //           <Grid item xs={12} lg={8}>
+    //             <GlassCard
+    //               sx={{
+    //                 p:2.2,
+    //                 background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
+    //               }}
+    //             >
+    //               <SectionTitle sx={{ mb:.75 }}>Impact (Last {recent.length || 0} Matches)</SectionTitle>
+    //               <Typography sx={{ fontSize:11, color:themeColors.textFaint, mb:1 }}>
+    //                 Recent match contributions. Average row included.
+    //               </Typography>
+    //               <Box sx={{ overflowX:'auto' }}>
+    //                 <Table size="small" sx={{
+    //                   minWidth:860,
+    //                   '& th,& td':{ borderColor:themeColors.border, color:themeColors.text },
+    //                   '& tbody tr:hover': {
+    //                     background:'rgba(255,255,255,0.06)'
+    //                   }
+    //                 }}>
+    //                   <TableHead>
+    //                     <TableRow>
+    //                       <TableCell>Date</TableCell>
+    //                       <TableCell align="right">G</TableCell>
+    //                       <TableCell align="right">A</TableCell>
+    //                       <TableCell align="right">CS</TableCell>
+    //                       <TableCell align="right">Impact</TableCell>
+    //                       <TableCell align="right">Def</TableCell>
+    //                       <TableCell align="right">FK</TableCell>
+    //                       <TableCell align="right">Pen</TableCell>
+    //                       <TableCell align="right">MOTM</TableCell>
+    //                       <TableCell align="right">Pts</TableCell>
+    //                       <TableCell align="center">Res</TableCell>
+    //                     </TableRow>
+    //                   </TableHead>
+    //                   <TableBody>
+    //                     {recent.map(r => (
+    //                       <TableRow key={r.id}>
+    //                         <TableCell>{r.date}</TableCell>
+    //                         <TableCell align="right">{r.goals}</TableCell>
+    //                         <TableCell align="right">{r.assists}</TableCell>
+    //                         <TableCell align="right">{r.cleanSheets}</TableCell>
+    //                         <TableCell align="right">{r.impact}</TableCell>
+    //                         <TableCell align="right">{r.defence}</TableCell>
+    //                         <TableCell align="right">{r.fk}</TableCell>
+    //                         <TableCell align="right">{r.pens}</TableCell>
+    //                         <TableCell align="right">{r.motm}</TableCell>
+    //                         <TableCell align="right" style={{ fontWeight:600, color:themeColors.primaryAlt }}>{r.points}</TableCell>
+    //                         <TableCell align="center">
+    //                           <Chip
+    //                             size="small"
+    //                             label={r.result}
+    //                             sx={{
+    //                               height:20,
+    //                               background:
+    //                                 r.result === 'W' ? themeColors.gradient :
+    //                                 r.result === 'L' ? themeColors.danger :
+    //                                 r.result === 'D' ? themeColors.warn : '#555',
+    //                               color: r.result === 'D' ? '#000' : '#fff',
+    //                               fontWeight:700
+    //                             }}
+    //                           />
+    //                         </TableCell>
+    //                       </TableRow>
+    //                     ))}
+    //                     {!recent.length && (
+    //                       <TableRow>
+    //                         <TableCell colSpan={11} align="center" sx={{ color:themeColors.textDim }}>
+    //                           No recent match data.
+    //                         </TableCell>
+    //                       </TableRow>
+    //                     )}
+    //                     {recentAverages && (
+    //                       <TableRow>
+    //                         <TableCell sx={{ fontWeight:700 }}>Avg</TableCell>
+    //                         <TableCell align="right">{recentAverages.goals}</TableCell>
+    //                         <TableCell align="right">{recentAverages.assists}</TableCell>
+    //                         <TableCell align="right">{recentAverages.cleanSheets}</TableCell>
+    //                         <TableCell align="right">{recentAverages.impact}</TableCell>
+    //                         <TableCell align="right">{recentAverages.defence}</TableCell>
+    //                         <TableCell align="right">{recentAverages.fk}</TableCell>
+    //                         <TableCell align="right">{recentAverages.pens}</TableCell>
+    //                         <TableCell align="right">{recentAverages.motm}</TableCell>
+    //                         <TableCell align="right" sx={{ fontWeight:700, color:themeColors.primary }}>{recentAverages.points}</TableCell>
+    //                         <TableCell />
+    //                       </TableRow>
+    //                     )}
+    //                   </TableBody>
+    //                 </Table>
+    //               </Box>
+    //             </GlassCard>
+    //           </Grid>
 
-//               {/* Strengths & Form Summary */}
-//               <Grid item xs={12} lg={4} container spacing={2}>
-//                 <Grid item xs={12}>
-//                   <GlassCard
-//                     sx={{
-//                       p:2.2,
-//                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
-//                     }}
-//                   >
-//                     <SectionTitle sx={{ mb:1 }}>Top Strengths</SectionTitle>
-//                     {strengths.length === 0 && (
-//                       <Typography sx={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>
-//                         Not enough data to determine strengths.
-//                       </Typography>
-//                     )}
-//                     {strengths.map(s => (
-//                       <Box key={s.metric} sx={{ mb:1.5 }}>
-//                         <Box sx={{ display:'flex', justifyContent:'space-between', mb:0.2 }}>
-//                           <Typography sx={{ color:'#fff', fontSize:12, fontWeight:700 }}>{s.metric}</Typography>
-//                           <Typography sx={{ color:'#E56A16', fontSize:12, fontWeight:800 }}>{s.value}</Typography>
-//                         </Box>
-//                         <LinearProgress
-//                           variant="determinate"
-//                           value={s.scaled}
-//                           sx={{
-//                             height:10,
-//                             borderRadius:5,
-//                             background:'rgba(255,255,255,0.12)',
-//                             '& .MuiLinearProgress-bar': {
-//                               background:'linear-gradient(90deg,#E56A16,#CF2326)'
-//                             }
-//                           }}
-//                         />
-//                       </Box>
-//                     ))}
-//                   </GlassCard>
-//                 </Grid>
-//                 <Grid item xs={12}>
-//                   <GlassCard
-//                     sx={{
-//                       p:2.2,
-//                       height:'100%',
-//                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
-//                     }}
-//                   >
-//                     <SectionTitle sx={{ mb:1 }}>Form & Insights</SectionTitle>
-//                     <Box component="ul" sx={{ pl:3, m:0 }}>
-//                       {insights.map((line,i)=>(
-//                         <Typography key={i} component="li" sx={{ color:'rgba(255,255,255,0.85)', fontSize:12, mb:0.5 }}>
-//                           {line}
-//                         </Typography>
-//                       ))}
-//                     </Box>
-//                     <Divider sx={{ my:1.5, borderColor:'rgba(255,255,255,0.15)' }}/>
-//                     <Typography sx={{ fontSize:11, color:'rgba(255,255,255,0.55)' }}>
-//                       Insights auto-generated from recent & career data.
-//                     </Typography>
-//                   </GlassCard>
-//                 </Grid>
-//               </Grid>
-//             </Grid>
+    //           {/* Strengths & Form Summary */}
+    //           <Grid item xs={12} lg={4} container spacing={2}>
+    //             <Grid item xs={12}>
+    //               <GlassCard
+    //                 sx={{
+    //                   p:2.2,
+    //                   background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
+    //                 }}
+    //               >
+    //                 <SectionTitle sx={{ mb:1 }}>Top Strengths</SectionTitle>
+    //                 {strengths.length === 0 && (
+    //                   <Typography sx={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>
+    //                     Not enough data to determine strengths.
+    //                   </Typography>
+    //                 )}
+    //                 {strengths.map(s => (
+    //                   <Box key={s.metric} sx={{ mb:1.5 }}>
+    //                     <Box sx={{ display:'flex', justifyContent:'space-between', mb:0.2 }}>
+    //                       <Typography sx={{ color:'#fff', fontSize:12, fontWeight:700 }}>{s.metric}</Typography>
+    //                       <Typography sx={{ color:'#E56A16', fontSize:12, fontWeight:800 }}>{s.value}</Typography>
+    //                     </Box>
+    //                     <LinearProgress
+    //                       variant="determinate"
+    //                       value={s.scaled}
+    //                       sx={{
+    //                         height:10,
+    //                         borderRadius:5,
+    //                         background:'rgba(255,255,255,0.12)',
+    //                         '& .MuiLinearProgress-bar': {
+    //                           background:'linear-gradient(90deg,#E56A16,#CF2326)'
+    //                         }
+    //                       }}
+    //                     />
+    //                   </Box>
+    //                 ))}
+    //               </GlassCard>
+    //             </Grid>
+    //             <Grid item xs={12}>
+    //               <GlassCard
+    //                 sx={{
+    //                   p:2.2,
+    //                   height:'100%',
+    //                   background: 'linear-gradient(90deg, #767676 0%, #000000 100%)'
+    //                 }}
+    //               >
+    //                 <SectionTitle sx={{ mb:1 }}>Form & Insights</SectionTitle>
+    //                 <Box component="ul" sx={{ pl:3, m:0 }}>
+    //                   {insights.map((line,i)=>(
+    //                     <Typography key={i} component="li" sx={{ color:'rgba(255,255,255,0.85)', fontSize:12, mb:0.5 }}>
+    //                       {line}
+    //                     </Typography>
+    //                   ))}
+    //                 </Box>
+    //                 <Divider sx={{ my:1.5, borderColor:'rgba(255,255,255,0.15)' }}/>
+    //                 <Typography sx={{ fontSize:11, color:'rgba(255,255,255,0.55)' }}>
+    //                   Insights auto-generated from recent & career data.
+    //                 </Typography>
+    //               </GlassCard>
+    //             </Grid>
+    //           </Grid>
+    //         </Grid>
 
-//             {/* Back Button */}
-//             <Box
-//               sx={{
-//                 mt:4,
-//                 textAlign:'center',
-//                 background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-//                 py:2,
-//                 borderRadius:3
-//               }}
-//             >
-//               <Typography
-//                 component="button"
-//                 onClick={() => router.push(`/player/${playerId}`)}
-//                 sx={{
-//                   background:'none',
-//                   border:`1px solid rgba(255,255,255,0.4)`,
-//                   px:3,
-//                   py:1,
-//                   borderRadius:2,
-//                   color:'#fff',
-//                   fontWeight:700,
-//                   cursor:'pointer',
-//                   transition:'.2s',
-//                   '&:hover': { background:'rgba(255,255,255,0.15)' }
-//                 }}
-//               >
-//                 Back to Player Profile
-//               </Typography>
-//             </Box>
-//           </Box>
-//         )}
-//       </Box>
-//     </Container>
-//   );
-// }
+    //         {/* Back Button */}
+    //         <Box
+    //           sx={{
+    //             mt:4,
+    //             textAlign:'center',
+    //             background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+    //             py:2,
+    //             borderRadius:3
+    //           }}
+    //         >
+    //           <Typography
+    //             component="button"
+    //             onClick={() => router.push(`/player/${playerId}`)}
+    //             sx={{
+    //               background:'none',
+    //               border:`1px solid rgba(255,255,255,0.4)`,
+    //               px:3,
+    //               py:1,
+    //               borderRadius:2,
+    //               color:'#fff',
+    //               fontWeight:700,
+    //               cursor:'pointer',
+    //               transition:'.2s',
+    //               '&:hover': { background:'rgba(255,255,255,0.15)' }
+    //             }}
+    //           >
+    //             Back to Player Profile
+    //           </Typography>
+    //         </Box>
+    //       </Box>
+    //     )}
+    //   </Box>
+    // </Container>
+  );
+}
