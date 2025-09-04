@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import {
     Container,
     Typography,
@@ -155,6 +155,176 @@ export default function PlayerStatsPage() {
 
     const [search, setSearch] = useState('');
     const [, setLeagues] = useState<League[]>([]);
+
+    // --- Teammate (co-players) search state ---
+    type LeaguePlayer = {
+        id: string;
+        firstName?: string;
+        lastName?: string;
+        name?: string;
+        avatar?: string;
+        position?: string;
+    };
+
+    // Raw player shape from API (no any)
+    type RawPlayer = {
+        id?: string;
+        _id?: string;
+        userId?: string;
+        firstName?: string;
+        fname?: string;
+        lastName?: string;
+        lname?: string;
+        name?: string;
+        avatar?: string;
+        profilePicture?: string;
+        avatarUrl?: string;
+        position?: string;
+        positionType?: string;
+    };
+
+    const [teammates, setTeammates] = useState<LeaguePlayer[]>([]);
+    const [teammatesLoading, setTeammatesLoading] = useState(false);
+    const [searchTriggered, setSearchTriggered] = useState(false);
+    const [showTeammatePanel, setShowTeammatePanel] = useState(false);
+
+    const searchWrapperRef = useRef<HTMLDivElement | null>(null);
+    const fetchAbortRef = useRef<AbortController | null>(null);
+    const lastFetchKeyRef = useRef<string>('');
+
+    const normalizePlayer = (p: RawPlayer): LeaguePlayer => ({
+        id: p.id || p._id || p.userId || '',
+        firstName: p.firstName ?? p.fname,
+        lastName: p.lastName ?? p.lname,
+        name: p.name ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+        avatar: p.avatar ?? p.profilePicture ?? p.avatarUrl,
+        position: p.position ?? p.positionType,
+    });
+
+    type TeammateAPIResponse = {
+        success?: boolean;
+        data?: RawPlayer[];
+        players?: RawPlayer[];
+    } | RawPlayer[];
+
+    const fetchTeammates = useCallback(async () => {
+        if (!token) return;
+        if (!playerId) return;
+        if (!leagueId || leagueId === 'all') {
+            // If "All" selected just clear (or could later aggregate)
+            setTeammates([]);
+            setSearchTriggered(true);
+            return;
+        }
+
+        const fetchKey = `${playerId}_${leagueId}`;
+        if (fetchKey === lastFetchKeyRef.current && teammates.length && searchTriggered) {
+            // Already have data for this combination
+            setShowTeammatePanel(true);
+            return;
+        }
+
+        if (fetchAbortRef.current) fetchAbortRef.current.abort();
+        const controller = new AbortController();
+        fetchAbortRef.current = controller;
+
+        setTeammatesLoading(true);
+        setSearchTriggered(true);
+
+        try {
+            let list: RawPlayer[] | undefined;
+
+            // Primary (league-wise teammates for any player)
+            const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${leagueId}/teammates`;
+            const res = await fetch(primaryUrl, {
+                credentials: 'include',
+                headers: { Authorization: `Bearer ${token}` },
+                signal: controller.signal
+            });
+
+            if (res.ok) {
+                const json: TeammateAPIResponse = await res.json();
+                if (Array.isArray(json)) {
+                    list = json;
+                } else if (json?.data && Array.isArray(json.data)) {
+                    list = json.data;
+                } else if (json?.players && Array.isArray(json.players)) {
+                    list = json.players;
+                }
+            }
+
+            // Fallback: league players (admin/user listing)
+            if (!list) {
+                const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/players`, {
+                    credentials: 'include',
+                    headers: { Authorization: `Bearer ${token}` },
+                    signal: controller.signal
+                });
+                if (fbRes.ok) {
+                    const fb = await fbRes.json();
+                    const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
+                    list = raw as RawPlayer[];
+                }
+            }
+
+            const mapped = (list || [])
+                .map(normalizePlayer)
+                .filter(p => p.id && p.id !== playerId);
+
+            setTeammates(mapped);
+            lastFetchKeyRef.current = fetchKey;
+        } catch (err) {
+            if ((err as any)?.name !== 'AbortError') {
+                setTeammates([]);
+            }
+        } finally {
+            setTeammatesLoading(false);
+        }
+    }, [token, playerId, leagueId, teammates.length, searchTriggered]);
+
+    // Close panel on outside click / ESC
+    useEffect(() => {
+        if (!showTeammatePanel) return;
+        const handleClick = (e: MouseEvent) => {
+            if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+                setShowTeammatePanel(false);
+            }
+        };
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowTeammatePanel(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            document.removeEventListener('keydown', handleKey);
+        };
+    }, [showTeammatePanel]);
+
+    // Cleanup abort controller on unmount
+    useEffect(() => {
+        return () => {
+            if (fetchAbortRef.current) fetchAbortRef.current.abort();
+        };
+    }, []);
+
+    // Reset when league changes
+    useEffect(() => {
+        setTeammates([]);
+        setSearch('');
+        setSearchTriggered(false);
+        lastFetchKeyRef.current = '';
+        setShowTeammatePanel(false);
+    }, [leagueId]);
+
+    const filteredTeammates = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return teammates;
+        return teammates.filter(p => {
+            const full = (p.name || `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim()).toLowerCase();
+            return full.includes(q);
+        });
+    }, [search, teammates]);
 
     // fetch league list for top League select
     useEffect(() => {
@@ -413,7 +583,7 @@ export default function PlayerStatsPage() {
                     display: 'grid',
                     gap: 1,
                     gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1.5fr' },
-                    alignItems: 'center',
+                    alignItems: 'start',
                 }}
             >
                 {/* Year */}
@@ -510,24 +680,171 @@ export default function PlayerStatsPage() {
                 </FormControl>
 
                 {/* Search */}
-                <TextField
-                    size="small"
-                    placeholder="Search Players"
-                    fullWidth
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    sx={{
-                        '& .MuiOutlinedInput-root': {
-                            bgcolor: 'rgba(15,15,15,0.92)',
-                            color: '#E5E7EB',
-                            borderRadius: 2,
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                        },
-                        '& input::placeholder': { color: '#9CA3AF', opacity: 1 },
-                    }}
-                />
+                <Box ref={searchWrapperRef} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <TextField
+                            size="small"
+                            placeholder={leagueId === 'all' ? 'Select a league to load teammates' : 'Search Teammates'}
+                            fullWidth
+                            value={search}
+                            disabled={leagueId === 'all'}
+                            onFocus={() => {
+                                if (leagueId === 'all') return;
+                                setShowTeammatePanel(true);
+                                if (!searchTriggered && !teammatesLoading) fetchTeammates();
+                            }}
+                            onClick={() => {
+                                if (leagueId === 'all') return;
+                                setShowTeammatePanel(true);
+                                if (!searchTriggered && !teammatesLoading) fetchTeammates();
+                            }}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                if (!showTeammatePanel) setShowTeammatePanel(true);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    if (!searchTriggered) fetchTeammates();
+                                    setShowTeammatePanel(true);
+                                } else if (e.key === 'Escape') {
+                                    setShowTeammatePanel(false);
+                                }
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    bgcolor: 'rgba(15,15,15,0.92)',
+                                    color: '#E5E7EB',
+                                    borderRadius: 2,
+                                    '& fieldset': { border: 'none' },
+                                    '&:hover fieldset': { border: 'none' },
+                                    '&.Mui-focused fieldset': { border: 'none' },
+                                },
+                                '& input::placeholder': { color: '#9CA3AF', opacity: 1 },
+                            }}
+                        />
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => {
+                                if (leagueId === 'all') return;
+                                if (!searchTriggered) fetchTeammates();
+                                setShowTeammatePanel(true);
+                            }}
+                            disabled={!leagueId || leagueId === 'all' || teammatesLoading}
+                            sx={{ background: '#0bb77f', fontWeight: 800, textTransform: 'none', whiteSpace: 'nowrap' }}
+                        >
+                            {teammatesLoading ? '...' : (searchTriggered ? 'Refresh' : 'Load')}
+                        </Button>
+                    </Box>
+
+                    {showTeammatePanel && leagueId !== 'all' && (
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                mt: 0.5,
+                                width: '100%',
+                                zIndex: 30,
+                                maxHeight: 300,
+                                overflowY: 'auto',
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                border: '1px solid rgba(255,255,255,0.25)',
+                                borderRadius: 2,
+                                p: 1.25,
+                                '&::-webkit-scrollbar': { width: 6 },
+                                '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
+                            }}
+                        >
+                            <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 13, mb: 0.75 }}>
+                                Teammates in this league
+                            </Typography>
+
+                            {(!searchTriggered && teammatesLoading) || teammatesLoading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                    <CircularProgress size={22} />
+                                </Box>
+                            ) : !searchTriggered ? (
+                                <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                    Click load to fetch teammates you have played with.
+                                </Typography>
+                            ) : teammates.length === 0 ? (
+                                <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                    No teammate data found.
+                                </Typography>
+                            ) : filteredTeammates.length === 0 ? (
+                                <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                    This player name is not found in this league you play.
+                                </Typography>
+                            ) : (
+                                <Grid container spacing={0.75}>
+                                    {filteredTeammates.map(p => {
+                                        const displayName =
+                                            p.name ||
+                                            `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() ||
+                                            'Player';
+                                        return (
+                                            <Grid item xs={12} key={p.id}>
+                                                <Box
+                                                    onClick={() => {
+                                                        router.push(`/player/${p.id}`);
+                                                        setShowTeammatePanel(false);
+                                                    }}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        p: 0.75,
+                                                        borderRadius: 1.5,
+                                                        cursor: 'pointer',
+                                                        bgcolor: 'rgba(255,255,255,0.07)',
+                                                        transition: 'background .2s',
+                                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' },
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        src={p.avatar || '/assets/group451.png'}
+                                                        alt={displayName}
+                                                        sx={{
+                                                            width: 34,
+                                                            height: 34,
+                                                            border: '1px solid rgba(255,255,255,0.25)',
+                                                        }}
+                                                    />
+                                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                        <Typography
+                                                            noWrap
+                                                            sx={{
+                                                                color: '#E5E7EB',
+                                                                fontWeight: 700,
+                                                                fontSize: 13,
+                                                                lineHeight: 1.15,
+                                                            }}
+                                                        >
+                                                            {displayName}
+                                                        </Typography>
+                                                        {p.position && (
+                                                            <Typography
+                                                                sx={{
+                                                                    color: '#9CA3AF',
+                                                                    fontSize: 11,
+                                                                    lineHeight: 1.1,
+                                                                }}
+                                                            >
+                                                                {p.position}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                        );
+                                    })}
+                                </Grid>
+                            )}
+                        </Paper>
+                    )}
+                </Box>
             </Box>
 
             {loading ? (
