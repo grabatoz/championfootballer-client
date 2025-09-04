@@ -83,6 +83,17 @@ function hasMatches(l: unknown): l is LeagueWithMatchesTyped {
     return typeof l === 'object' && l !== null && Array.isArray((l as { matches?: unknown }).matches);
 }
 
+// AbortError type guard (replaces (err as any) usage)
+function isAbortError(error: unknown): error is DOMException & { name: 'AbortError' } {
+    return (
+        (typeof DOMException !== 'undefined' && error instanceof DOMException && error.name === 'AbortError') ||
+        (typeof error === 'object' &&
+            error !== null &&
+            'name' in error &&
+            (error as { name: unknown }).name === 'AbortError')
+    );
+}
+
 const trophyDetails: Record<string, { image: StaticImageData; label: string }> = {
     // Champion (legacy + new)
     'Champion Footballer': { image: TrophyImg, label: 'League Champion' },
@@ -273,8 +284,8 @@ export default function PlayerStatsPage() {
 
             setTeammates(mapped);
             lastFetchKeyRef.current = fetchKey;
-        } catch (err) {
-            if ((err as any)?.name !== 'AbortError') {
+        } catch (error: unknown) {
+            if (!isAbortError(error)) {
                 setTeammates([]);
             }
         } finally {
