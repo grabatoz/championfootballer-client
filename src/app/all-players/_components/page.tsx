@@ -20,9 +20,9 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayedWithPlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
-import FirstBadge from '@/Components/images/1st.png';
-import SecondBadge from '@/Components/images/2nd.png';
-import ThirdBadge from '@/Components/images/3rd.png';
+// import FirstBadge from '@/Components/images/1st.png';
+// import SecondBadge from '@/Components/images/2nd.png';
+// import ThirdBadge from '@/Components/images/3rd.png';
 import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
 

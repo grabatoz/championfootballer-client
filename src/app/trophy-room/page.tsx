@@ -11,7 +11,6 @@ import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
-import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import HatTrickBadge from '@/Components/images/brown.svg'
 import AssistMaestroBadge from '@/Components/images/brown.svg'
@@ -28,7 +27,6 @@ import {
   DialogContent,
   IconButton,
   Divider,
-  Avatar,
   Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -684,7 +682,6 @@ export default function GlobalTrophyRoom() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
   const { user, token } = useAuth();
-  const router = useRouter();
   // Quick-view modal state
   const [openQuickView, setOpenQuickView] = useState(false);
   const [quickView, setQuickView] = useState<{

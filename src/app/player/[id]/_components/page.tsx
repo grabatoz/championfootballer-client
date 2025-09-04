@@ -12,9 +12,7 @@ import {
     Button,
     CircularProgress,
     FormControl,
-    InputLabel,
     SelectChangeEvent,
-    Divider,
     TextField,
     Grid,
 } from '@mui/material';
@@ -82,7 +80,7 @@ type LeagueWithMatchesTyped = {
 
 // Type guard to safely detect leagues that include matches
 function hasMatches(l: unknown): l is LeagueWithMatchesTyped {
-    return !!l && typeof l === 'object' && Array.isArray((l as any).matches);
+    return typeof l === 'object' && l !== null && Array.isArray((l as { matches?: unknown }).matches);
 }
 
 const trophyDetails: Record<string, { image: StaticImageData; label: string }> = {
@@ -156,7 +154,7 @@ export default function PlayerStatsPage() {
     const { data: fullPlayerData } = useSelector((state: RootState) => state.playerStats);
 
     const [search, setSearch] = useState('');
-    const [leagues, setLeagues] = useState<League[]>([]);
+    const [, setLeagues] = useState<League[]>([]);
 
     // fetch league list for top League select
     useEffect(() => {
@@ -219,12 +217,15 @@ export default function PlayerStatsPage() {
     }, [data]);
 
     const currentLeagueMatches = useMemo<LeagueMatch[]>(() => {
-        if (!data?.leagues || !data.leagues.length) return [];
+        const leaguesList: LeagueWithMatchesTyped[] = (data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [];
+        if (!leaguesList.length) return [];
+
         if (leagueId && leagueId !== 'all') {
-            const l = (data.leagues as unknown[]).find((x: any) => x?.id === leagueId);
+            const l = leaguesList.find((x: LeagueWithMatchesTyped) => x.id === leagueId);
             return hasMatches(l) ? l.matches ?? [] : [];
         }
-        const first = data.leagues[0];
+
+        const first = leaguesList[0];
         return hasMatches(first) ? first.matches ?? [] : [];
     }, [data, leagueId]);
 
@@ -239,8 +240,8 @@ export default function PlayerStatsPage() {
 
     // Latest year present in data (fallback: current year)
     const latestYearInData = useMemo(() => {
-        const years = (data?.leagues || [])
-            .flatMap((l: any) => (hasMatches(l) ? (l.matches || []) : []))
+        const years = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [])
+            .flatMap((l: LeagueWithMatchesTyped) => (hasMatches(l) ? (l.matches || []) : []))
             .map((m: LeagueMatch) => dayjs(m.date).year());
         return years.length ? Math.max(...years) : dayjs().year();
     }, [data]);

@@ -29,7 +29,7 @@ type AxiosErrorLike = { response?: { data?: ApiMessagePayload } };
 type FetchErrorLike = { data?: ApiMessagePayload };
 type ThunkErrorLike = { message?: string; error?: string };
 
-type ExtractableError = string | AxiosErrorLike | FetchErrorLike | ThunkErrorLike;
+// type ExtractableError = string | AxiosErrorLike | FetchErrorLike | ThunkErrorLike;
 
 // Prefer server-provided message (works with Axios, fetch, or thunk payloads)
 const extractApiMessage = (e: unknown): string => {

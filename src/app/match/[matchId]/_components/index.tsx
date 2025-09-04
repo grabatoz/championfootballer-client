@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Divider, Card, SxProps, Theme } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -17,29 +17,29 @@ import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
 // import { ArrowLeft } from "lucide-react";
 
-const getBadgeForPosition = (position: number) => {
-  switch (position) {
-    case 1:
-      return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
-    case 2:
-      return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
-    case 3:
-      return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
-    default:
-      return `${position}th`
-  }
-}
+// const getBadgeForPosition = (position: number) => {
+//   switch (position) {
+//     case 1:
+//       return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
+//     case 2:
+//       return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
+//     case 3:
+//       return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
+//     default:
+//       return `${position}th`
+//   }
+// }
 
-const getRowStyles = (index: number) => {
-  if (index === 0) {
-    return "bg-[#0a3e1e]" // First place - darker green
-  } else if (index === 1) {
-    return "bg-[#0a4822]" // Second place - medium green
-  } else if (index === 2) {
-    return "bg-[#094420]" // Third place - another shade of green
-  }
-  return "bg-[#0a4822]" // All other places - medium green
-}
+// const getRowStyles = (index: number) => {
+//   if (index === 0) {
+//     return "bg-[#0a3e1e]" // First place - darker green
+//   } else if (index === 1) {
+//     return "bg-[#0a4822]" // Second place - medium green
+//   } else if (index === 2) {
+//     return "bg-[#094420]" // Third place - another shade of green
+//   }
+//   return "bg-[#0a4822]" // All other places - medium green
+// }
 
 interface User {
   id: string;
@@ -98,6 +98,8 @@ interface League {
   name: string;
   matches: { id: string }[];
 }
+
+type PlayerWithTeam = User & { __team: 'home' | 'away' };
 
 
 export default function MatchDetailsPage() {
@@ -219,7 +221,7 @@ export default function MatchDetailsPage() {
   }
 
   const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
+  // const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
 
   const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
     if (!user) return;
@@ -349,7 +351,7 @@ export default function MatchDetailsPage() {
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
-                const allPlayers = [
+                const allPlayers: PlayerWithTeam[] = [
                   ...(match?.homeTeamUsers ?? []).map(p => ({ ...p, __team: 'home' as const })),
                   ...(match?.awayTeamUsers ?? []).map(p => ({ ...p, __team: 'away' as const })),
                 ];
@@ -431,7 +433,7 @@ export default function MatchDetailsPage() {
                           <Box>
                             {allPlayers.map((player, idx) => {
                               const stats = player.statistics?.[0] || {};
-                              const isHome = (player as any).__team === 'home';
+                              const isHome = player.__team === 'home';
                               const isCaptain = player.id === (isHome ? match.homeCaptainId : match.awayCaptainId);
                               const textColor = '#fff';
                               const fontWeight = idx === 0 ? 700 : 500;
