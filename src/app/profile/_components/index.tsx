@@ -201,11 +201,11 @@ const getErrorMessage = (e: unknown): string => {
 }
 
 // Shape of possible API error objects (optional)
-interface ApiError {
-  message?: string
-  status?: number
-  [key: string]: unknown
-}
+// interface ApiError {
+//   message?: string
+//   status?: number
+//   [key: string]: unknown
+// }
 
 const PlayerProfileCard = () => {
   const { user, token, isAuthenticated } = useAuth()
