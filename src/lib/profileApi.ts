@@ -18,11 +18,13 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
+        message:'Failed to fetch profile',
         error: error instanceof Error ? error.message : 'Failed to fetch profile'
       };
     }
@@ -44,12 +46,14 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message:data.message
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update profile'
+        error: error instanceof Error ? error.message : 'Failed to update profile',
+        message: error instanceof Error ? error.message : 'Failed to update profile'
       };
     }
   },
@@ -77,12 +81,14 @@ export const profileAPI = {
       return {
         success: response.ok,
         data: data.user,
-        error: data.error
+        error: data.error,
+        message: data.message
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update skills'
+        error: error instanceof Error ? error.message : 'Failed to update skills',
+        message: error instanceof Error ? error.message : 'Failed to update skills'
       };
     }
   }
