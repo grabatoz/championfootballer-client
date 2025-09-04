@@ -184,12 +184,27 @@ const getSkillLabel = (value: number) => {
   if (value >= 70) return { text: `${value} Advanced`, color: themeColors.primaryGradient }
   return { text: `${value} Developing`, color: "linear-gradient(90deg,#666,#444)" }
 }
-const getSkillColor = (value: number) => {
-  if (value >= 80) return themeColors.primary
-  if (value >= 70) return themeColors.primaryAlt
-  return "#666"
+// const getSkillColor = (value: number) => {
+//   if (value >= 80) return themeColors.primary
+//   if (value >= 70) return themeColors.primaryAlt
+//   return "#666"
 
-// COMPONENT
+// // COMPONENT
+// }
+
+// Safely extract an error message
+const getErrorMessage = (e: unknown): string => {
+  if (e instanceof Error && e.message) return e.message
+  if (typeof e === 'string') return e
+  if (typeof (e as { message?: unknown })?.message === 'string') return (e as { message: string }).message
+  return "Failed to update profile. Please try again."
+}
+
+// Shape of possible API error objects (optional)
+interface ApiError {
+  message?: string
+  status?: number
+  [key: string]: unknown
 }
 
 const PlayerProfileCard = () => {
@@ -276,8 +291,9 @@ const PlayerProfileCard = () => {
       if (data.user) cacheManager.updatePlayersCache(data.user)
       toast.success("Profile updated successfully!")
       router.push("/home")
-    } catch (err: any) {
-      setError(err?.message || "Failed to update profile. Please try again.")
+    } catch (err: unknown) {
+      // err typed as unknown; safely extract message
+      setError(getErrorMessage(err))
     } finally {
       setIsUpdating(false)
     }
