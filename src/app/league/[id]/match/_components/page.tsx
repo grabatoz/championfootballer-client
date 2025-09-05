@@ -488,14 +488,51 @@ export default function ScheduleMatchPage() {
         "& .MuiSvgIcon-root": { color: "#E5E7EB" },
     };
 
-    const ShirtAvatar = ({ number, size = 56 }: { number?: string | number; size?: number; }) => (
-        <Box sx={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1, overflow: 'hidden', background: 'transparent' }}>
-            <img src={ShirtImg.src} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, zIndex: 0 }} />
-            <Typography component="span" sx={{ position: 'relative', zIndex: 1, fontWeight: 800, fontSize: size >= 56 ? 16 : 14, color: '#111', textShadow: '0 1px 1px rgba(255,255,255,0.6)', lineHeight: 1 }}>
-                {number || '0'}
-            </Typography>
-        </Box>
-    );
+    const ShirtAvatar = ({ number, size = 56 }: { number?: string | number; size?: number | { xs: number; sm: number }; }) => {
+        const avatarSize = typeof size === 'object' ? size.sm : size; // Use default size for now
+        const fontSize = avatarSize >= 56 ? 16 : 14;
+        
+        return (
+            <Box sx={{ 
+                position: 'relative', 
+                width: size, 
+                height: size, 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                borderRadius: 1, 
+                overflow: 'hidden', 
+                background: 'transparent' 
+            }}>
+                <img 
+                    src={ShirtImg.src} 
+                    alt="Shirt" 
+                    style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'contain', 
+                        position: 'absolute', 
+                        inset: 0, 
+                        zIndex: 0 
+                    }} 
+                />
+                <Typography 
+                    component="span" 
+                    sx={{ 
+                        position: 'relative', 
+                        zIndex: 1, 
+                        fontWeight: 800, 
+                        fontSize: { xs: 12, sm: fontSize }, // Make font size responsive
+                        color: '#111', 
+                        textShadow: '0 1px 1px rgba(255,255,255,0.6)', 
+                        lineHeight: 1 
+                    }}
+                >
+                    {number || '0'}
+                </Typography>
+            </Box>
+        );
+    };
 
     // Build player options including guests
     const homeGuestOptions: PlayerOption[] = homeGuests.map(g => ({
@@ -550,19 +587,34 @@ export default function ScheduleMatchPage() {
                             boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
                         }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                <Typography variant="h4" component="h1" sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #e56a16, #cf2326)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                <Typography 
+                                    variant="h4" 
+                                    component="h1" 
+                                    sx={{ 
+                                        fontWeight: 700, 
+                                        background: 'linear-gradient(135deg, #e56a16, #cf2326)', 
+                                        backgroundClip: 'text', 
+                                        WebkitBackgroundClip: 'text', 
+                                        WebkitTextFillColor: 'transparent',
+                                        fontSize: { xs: '1.25rem', sm: '2rem' } // Move responsive sizing to sx
+                                    }}
+                                >
                                     {league.name} - Create Match
                                 </Typography>
                                 <Button
                                     startIcon={<UserPlus size={20} />}
                                     variant="contained"
                                     onClick={() => setGuestDialogOpen(true)}
+                                    size="medium" // Use single size
                                     sx={{
                                         background: 'linear-gradient(135deg, #e56a16, #cf2326)',
                                         color: 'white',
                                         fontWeight: 600,
                                         borderRadius: 3,
-                                        px: 3,
+                                        px: { xs: 2, sm: 3 },
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        height: { xs: 32, sm: 36 }, // Responsive height instead of size prop
                                         '&:hover': { 
                                             background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
                                             transform: 'translateY(-1px)',
@@ -580,7 +632,7 @@ export default function ScheduleMatchPage() {
                                 <Grid item xs={12}>
                                     <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
                                         <Box sx={{ flex: 1 }}>
-                                            <Typography variant="h6" sx={{ mb: 2, color: '#43a047', fontWeight: 600 }}>Home Team</Typography>
+                                            <Typography variant="h6" sx={{ mb: 2, color: '#43a047', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Home Team</Typography>
                                             <TextField
                                                 label="Team Name"
                                                 value={homeTeamName}
@@ -630,7 +682,7 @@ export default function ScheduleMatchPage() {
                                         </Box>
 
                                         <Box sx={{ flex: 1 }}>
-                                            <Typography variant="h6" sx={{ mb: 2, color: '#ef5350', fontWeight: 600 }}>Away Team</Typography>
+                                            <Typography variant="h6" sx={{ mb: 2, color: '#ef5350', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Away Team</Typography>
                                             <TextField
                                                 label="Team Name"
                                                 value={awayTeamName}
@@ -684,17 +736,21 @@ export default function ScheduleMatchPage() {
                                 {/* Player Selection */}
                                 <Grid item xs={12}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Team Selection</Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Team Selection</Typography>
                                         <Button
                                             startIcon={<Shuffle size={18} />}
                                             variant="outlined"
                                             onClick={shuffleTeams}
                                             disabled={homeTeamUsers.length + awayTeamUsers.length < 2}
+                                            size="medium" // Use single size
                                             sx={{
                                                 borderColor: '#e56a16',
                                                 color: '#e56a16',
                                                 fontWeight: 600,
                                                 borderRadius: 3,
+                                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                                width: { xs: '100%', sm: 'auto' },
+                                                height: { xs: 32, sm: 36 }, // Responsive height
                                                 '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(229, 106, 22, 0.1)' }
                                             }}
                                         >
@@ -805,7 +861,7 @@ export default function ScheduleMatchPage() {
 
                                 {/* Match Details */}
                                 <Grid item xs={12}>
-                                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>Match Details</Typography>
+                                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Match Details</Typography>
                                     <Grid container spacing={3}>
                                         <Grid item xs={12} md={6}>
                                             <DatePicker
@@ -854,15 +910,16 @@ export default function ScheduleMatchPage() {
                                 type="submit"
                                 variant="contained"
                                 fullWidth
-                                size="large"
+                                size="large" // Use single size
                                 sx={{
-                                    mt: 4,
-                                    py: 2,
+                                    mt: { xs: 3, md: 4 },
+                                    py: { xs: 1.5, sm: 2 },
                                     background: 'linear-gradient(135deg, #e56a16, #cf2326)',
                                     color: 'white',
                                     fontWeight: 'bold',
-                                    fontSize: '1.1rem',
+                                    fontSize: { xs: '1rem', sm: '1.1rem' },
                                     borderRadius: 3,
+                                    height: { xs: 48, sm: 56 }, // Responsive height
                                     '&:hover': {
                                         background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
                                         transform: 'translateY(-2px)',
@@ -888,7 +945,13 @@ export default function ScheduleMatchPage() {
                             backdropFilter: 'blur(20px)',
                             boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
                         }}>
-                            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, textAlign: 'center', mb: 3 }}>
+                            <Typography variant="h5" sx={{ 
+                                color: '#fff', 
+                                fontWeight: 700, 
+                                textAlign: 'center', 
+                                mb: 3,
+                                fontSize: { xs: '1.125rem', sm: '1.5rem' } // Move to sx
+                            }}>
                                 Match Preview
                             </Typography>
 
@@ -934,7 +997,7 @@ export default function ScheduleMatchPage() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
                                         <Avatar src={homeTeamImagePreview || '/assets/default-team.png'} alt="Home Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #43a047' }} />
                                         <Box>
-                                            <Typography variant="h6" sx={{ color: '#43a047', fontWeight: 600 }}>
+                                            <Typography variant="h6" sx={{ color: '#43a047', fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1.25rem' } }}>
                                                 {homeTeamName || 'Home Team'}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
@@ -1027,7 +1090,7 @@ export default function ScheduleMatchPage() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
                                         <Avatar src={awayTeamImagePreview || '/assets/default-team.png'} alt="Away Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }} />
                                         <Box>
-                                            <Typography variant="h6" sx={{ color: '#ef5350', fontWeight: 600 }}>
+                                            <Typography variant="h6" sx={{ color: '#ef5350', fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1.25rem' } }}>
                                                 {awayTeamName || 'Away Team'}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
