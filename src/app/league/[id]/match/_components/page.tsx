@@ -2,24 +2,34 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Box,
-    Typography,
-    Paper,
-    Button,
-    TextField,
-    CircularProgress,
-    Autocomplete,
-    Checkbox,
-    Divider,
-    Avatar,
-    IconButton,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  TextField,
+  CircularProgress,
+  Autocomplete,
+  Checkbox,
+  Divider,
+  Avatar,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  LinearProgress,
+  Chip,
+  Grid
 } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Shuffle, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from "@/lib/cacheManager"
@@ -66,6 +76,15 @@ interface Guest {
     shirtNumber?: string;
 }
 
+interface StagedGuest extends GuestPlayerInput {
+  tempId: string;
+}
+type PlayerOption = User & {
+  isGuest?: boolean;
+  guestTempId?: string;
+  team?: 'home' | 'away';
+};
+
 export default function ScheduleMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
     const [loading, setLoading] = useState(true);
@@ -78,10 +97,10 @@ export default function ScheduleMatchPage() {
     const [startTime, setStartTime] = useState<Dayjs | null>(dayjs());
     const [duration, setDuration] = useState<number | ''>(90);
     const [location, setLocation] = useState('');
-    const [homeTeamUsers, setHomeTeamUsers] = useState<User[]>([]);
-    const [awayTeamUsers, setAwayTeamUsers] = useState<User[]>([]);
-    const [homeCaptain, setHomeCaptain] = useState<User | null>(null);
-    const [awayCaptain, setAwayCaptain] = useState<User | null>(null);
+    const [homeTeamUsers, setHomeTeamUsers] = useState<PlayerOption[]>([]);
+    const [awayTeamUsers, setAwayTeamUsers] = useState<PlayerOption[]>([]);
+    const [homeCaptain, setHomeCaptain] = useState<PlayerOption | null>(null);
+    const [awayCaptain, setAwayCaptain] = useState<PlayerOption | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Team image upload
@@ -90,16 +109,95 @@ export default function ScheduleMatchPage() {
     const [homeTeamImagePreview, setHomeTeamImagePreview] = useState<string | null>(null);
     const [awayTeamImagePreview, setAwayTeamImagePreview] = useState<string | null>(null);
 
-    // Staged guests and inline guest inputs
-    const [homeGuests, setHomeGuests] = useState<GuestPlayerInput[]>([]);
-    const [awayGuests, setAwayGuests] = useState<GuestPlayerInput[]>([]);
-    const [homeGuestName, setHomeGuestName] = useState('');
-    const [awayGuestName, setAwayGuestName] = useState('');
+    // Staged guests
+    const [homeGuests, setHomeGuests] = useState<StagedGuest[]>([]);
+    const [awayGuests, setAwayGuests] = useState<StagedGuest[]>([]);
+    // Guest dialog state
+    const [guestDialogOpen, setGuestDialogOpen] = useState(false);
+    const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
+    const [guestName, setGuestName] = useState('');
 
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
+
+    // Calculate player skill average
+    const calculatePlayerSkill = (player: PlayerOption): number => {
+        if (player.isGuest) return 50; // Default guest skill
+        if (!player.skills) return 40;
+        const { dribbling = 0, shooting = 0, passing = 0, pace = 0, defending = 0, physical = 0 } = player.skills;
+        return Math.round((dribbling + shooting + passing + pace + defending + physical) / 6);
+    };
+
+    // Calculate team strength
+    const calculateTeamStrength = (players: PlayerOption[]): number => {
+        if (players.length === 0) return 0;
+        const totalSkill = players.reduce((sum, player) => sum + calculatePlayerSkill(player), 0);
+        return Math.round(totalSkill / players.length);
+    };
+
+    // Calculate winning percentage
+    const calculateWinningPercentage = (teamStrength: number, opponentStrength: number): number => {
+        if (teamStrength === 0 && opponentStrength === 0) return 50;
+        if (opponentStrength === 0) return 85;
+        if (teamStrength === 0) return 15;
+        
+        const strengthDiff = teamStrength - opponentStrength;
+        const basePercentage = 50;
+        const adjustment = (strengthDiff / 100) * 30; // Max 30% swing
+        return Math.max(15, Math.min(85, Math.round(basePercentage + adjustment)));
+    };
+
+    // Shuffle teams equally
+    const shuffleTeams = () => {
+        const allPlayers = [...homeTeamUsers, ...awayTeamUsers];
+        if (allPlayers.length < 2) {
+            toast.error('Need at least 2 players to shuffle');
+            return;
+        }
+
+        // Sort by skill for balanced distribution
+        const sortedPlayers = allPlayers.sort((a, b) => calculatePlayerSkill(b) - calculatePlayerSkill(a));
+        
+        const newHomeTeam: PlayerOption[] = [];
+        const newAwayTeam: PlayerOption[] = [];
+
+        // Alternate assignment starting with strongest players
+        sortedPlayers.forEach((player, index) => {
+            if (index % 2 === 0) {
+                newHomeTeam.push(player);
+            } else {
+                newAwayTeam.push(player);
+            }
+        });
+
+        setHomeTeamUsers(newHomeTeam);
+        setAwayTeamUsers(newAwayTeam);
+        
+        // Reset captains
+        setHomeCaptain(null);
+        setAwayCaptain(null);
+        
+        toast.success('Teams shuffled for balanced play!');
+    };
+
+    // Handle drag and drop
+    const handlePlayerDrop = (player: PlayerOption, targetTeam: 'home' | 'away') => {
+        if (targetTeam === 'home') {
+            if (!homeTeamUsers.find(p => p.id === player.id)) {
+                setHomeTeamUsers(prev => [...prev, player]);
+                setAwayTeamUsers(prev => prev.filter(p => p.id !== player.id));
+                if (awayCaptain?.id === player.id) setAwayCaptain(null);
+            }
+        } else {
+            if (!awayTeamUsers.find(p => p.id === player.id)) {
+                setAwayTeamUsers(prev => [...prev, player]);
+                setHomeTeamUsers(prev => prev.filter(p => p.id !== player.id));
+                if (homeCaptain?.id === player.id) setHomeCaptain(null);
+            }
+        }
+    };
 
     const fetchLeagueMembers = useCallback(async () => {
         try {
@@ -162,32 +260,54 @@ export default function ScheduleMatchPage() {
         setAwayTeamImagePreview(null);
     };
 
-    // Inline guest add/remove
-    const addGuestByName = (team: 'home' | 'away') => {
-        const raw = team === 'home' ? homeGuestName : awayGuestName;
-        const name = raw.trim();
-        if (!name) {
-            toast.error('Enter guest name');
-            return;
-        }
-        const parts = name.split(/\s+/);
-        const firstName = parts[0];
-        const lastName = parts.slice(1).join(' ') || 'Guest';
-        const g: GuestPlayerInput = { team, firstName, lastName };
-
-        if (team === 'home') {
-            setHomeGuests(prev => [g, ...prev]);
-            setHomeGuestName('');
-        } else {
-            setAwayGuests(prev => [g, ...prev]);
-            setAwayGuestName('');
-        }
-        toast.success('Guest added');
+    // Add guest via dialog
+    const handleAddGuest = () => {
+      const trimmed = guestName.trim();
+      if (!trimmed) return toast.error('Enter guest name');
+      const parts = trimmed.split(/\s+/);
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(' ') || 'Guest';
+      const tempId = `${guestTeam}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      const staged: StagedGuest = { tempId, team: guestTeam, firstName, lastName };
+      
+      // Create PlayerOption for auto-selection
+      const playerOption: PlayerOption = {
+        id: `guest-${tempId}`,
+        firstName,
+        lastName,
+        email: '', // Required for User interface
+        isGuest: true,
+        guestTempId: tempId,
+        team: guestTeam
+      };
+      
+      if (guestTeam === 'home') {
+        setHomeGuests(p => [staged, ...p]);
+        setHomeTeamUsers(p => [playerOption, ...p]); // Auto-add to selection
+      } else {
+        setAwayGuests(p => [staged, ...p]);
+        setAwayTeamUsers(p => [playerOption, ...p]); // Auto-add to selection
+      }
+      
+      toast.success('Guest added and selected for team');
+      setGuestName('');
+      setGuestTeam('home');
+      setGuestDialogOpen(false);
     };
 
+    // Remove a staged guest and also from selected players / captain if applied
     const removeStagedGuest = (team: 'home' | 'away', index: number) => {
-        if (team === 'home') setHomeGuests(prev => prev.filter((_, i) => i !== index));
-        else setAwayGuests(prev => prev.filter((_, i) => i !== index));
+      if (team === 'home') {
+        const removed = homeGuests[index];
+        setHomeGuests(prev => prev.filter((_, i) => i !== index));
+        setHomeTeamUsers(prev => prev.filter(p => p.guestTempId !== removed.tempId));
+        if (homeCaptain?.guestTempId === removed.tempId) setHomeCaptain(null);
+      } else {
+        const removed = awayGuests[index];
+        setAwayGuests(prev => prev.filter((_, i) => i !== index));
+        setAwayTeamUsers(prev => prev.filter(p => p.guestTempId !== removed.tempId));
+        if (awayCaptain?.guestTempId === removed.tempId) setAwayCaptain(null);
+      }
     };
 
     // After match creation, push staged guests to server
@@ -199,7 +319,12 @@ export default function ScheduleMatchPage() {
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${newMatchId}/guests`, {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(g)
+                    body: JSON.stringify({
+                      team: g.team,
+                      firstName: g.firstName,
+                      lastName: g.lastName,
+                      shirtNumber: g.shirtNumber
+                    })
                 }).then(res => res.ok ? res.json() : res.json().then(j => Promise.reject(j?.message || 'Guest add failed')))
             )
         );
@@ -294,20 +419,33 @@ export default function ScheduleMatchPage() {
         </Box>;
     }
 
+    // Improved input styles
     const inputStyles = {
         "& .MuiOutlinedInput-root": {
             color: "#E5E7EB",
-            backgroundColor: "transparent",
-            "& fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-            "&:hover fieldset": { borderColor: "rgba(255,255,255,0.35)", borderWidth: "1px" },
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderRadius: 2,
+            "& fieldset": { 
+                borderColor: "rgba(255,255,255,0.15)",
+                borderWidth: "1px"
+            },
+            "&:hover fieldset": { 
+                borderColor: "rgba(255,255,255,0.25)", 
+                borderWidth: "1px" 
+            },
             "&.Mui-focused": {
-                "& fieldset": { borderColor: "#e56a16", borderWidth: "2px" },
+                "& fieldset": { 
+                    borderColor: "#e56a16", 
+                    borderWidth: "2px",
+                    boxShadow: "0 0 0 3px rgba(229, 106, 22, 0.1)"
+                },
             },
             "& input": { color: "#E5E7EB", backgroundColor: "transparent" },
             "& .MuiInputBase-input": { color: "#E5E7EB", backgroundColor: "transparent" },
         },
         "& .MuiInputLabel-root": {
             color: "#9CA3AF",
+            fontWeight: 500,
             "&.Mui-focused": { color: "#e56a16" },
         },
         "& .MuiSvgIcon-root": { color: "#E5E7EB" },
@@ -316,22 +454,35 @@ export default function ScheduleMatchPage() {
     const autocompleteStyles = {
         "& .MuiOutlinedInput-root": {
             color: "#E5E7EB",
-            backgroundColor: "transparent",
-            "& fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-            "&:hover fieldset": { borderColor: "rgba(255,255,255,0.35)", borderWidth: "1px" },
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderRadius: 2,
+            "& fieldset": { 
+                borderColor: "rgba(255,255,255,0.15)",
+                borderWidth: "1px"
+            },
+            "&:hover fieldset": { 
+                borderColor: "rgba(255,255,255,0.25)", 
+                borderWidth: "1px" 
+            },
             "&.Mui-focused": {
-                "& fieldset": { borderColor: "#e56a16", borderWidth: "2px" },
+                "& fieldset": { 
+                    borderColor: "#e56a16", 
+                    borderWidth: "2px",
+                    boxShadow: "0 0 0 3px rgba(229, 106, 22, 0.1)"
+                },
                 "& .MuiInputBase-input": { color: "#E5E7EB" },
             },
             "& .MuiInputBase-input": { color: "#E5E7EB", backgroundColor: "transparent" },
             "& .MuiChip-root": {
-                backgroundColor: "rgba(255,255,255,0.12)",
+                backgroundColor: "rgba(229, 106, 22, 0.15)",
                 color: "#E5E7EB",
+                border: "1px solid rgba(229, 106, 22, 0.3)",
                 "& .MuiChip-deleteIcon": { color: "#E5E7EB" },
             },
         },
         "& .MuiInputLabel-root": {
             color: "#9CA3AF",
+            fontWeight: 500,
             "&.Mui-focused": { color: "#e56a16" },
         },
         "& .MuiSvgIcon-root": { color: "#E5E7EB" },
@@ -346,6 +497,43 @@ export default function ScheduleMatchPage() {
         </Box>
     );
 
+    // Build player options including guests
+    const homeGuestOptions: PlayerOption[] = homeGuests.map(g => ({
+      id: `guest-${g.tempId}`,
+      firstName: g.firstName,
+      lastName: g.lastName,
+      email: '', // Required for User interface
+      shirtNumber: g.shirtNumber,
+      isGuest: true,
+      guestTempId: g.tempId,
+      team: 'home'
+    }));
+    const awayGuestOptions: PlayerOption[] = awayGuests.map(g => ({
+      id: `guest-${g.tempId}`,
+      firstName: g.firstName,
+      lastName: g.lastName,
+      email: '', // Required for User interface
+      shirtNumber: g.shirtNumber,
+      isGuest: true,
+      guestTempId: g.tempId,
+      team: 'away'
+    }));
+
+    const homePlayerOptions: PlayerOption[] = [
+      ...league.members.filter(m => !awayTeamUsers.some(p => p.id === m.id)),
+      ...homeGuestOptions
+    ];
+    const awayPlayerOptions: PlayerOption[] = [
+      ...league.members.filter(m => !homeTeamUsers.some(p => p.id === m.id)),
+      ...awayGuestOptions
+    ];
+
+    // Calculate team stats
+    const homeStrength = calculateTeamStrength(homeTeamUsers);
+    const awayStrength = calculateTeamStrength(awayTeamUsers);
+    const homeWinChance = calculateWinningPercentage(homeStrength, awayStrength);
+    const awayWinChance = calculateWinningPercentage(awayStrength, homeStrength);
+
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box sx={{ p: 4, minHeight: '100vh', color: '#E5E7EB' }}>
@@ -353,422 +541,615 @@ export default function ScheduleMatchPage() {
                     {/* Form Section */}
                     <Box sx={{ width: { xs: "100%", md: "58.33%" } }}>
                         <Paper component="form" onSubmit={handleScheduleMatch} sx={{
-                            p: 3,
-                            bgcolor: 'rgba(15,15,15,0.92)',
+                            p: 4,
+                            bgcolor: 'rgba(15,15,15,0.95)',
                             color: '#E5E7EB',
-                            borderRadius: 3,
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                            borderRadius: 4,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(20px)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
                         }}>
-                            <Typography variant="h4" component="h1" gutterBottom>
-                                {league.name} Create a New Match
-                            </Typography>
-
-                            {/* Home team: name + image in one row */}
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mt: 2 }}>
-                                <TextField
-                                    label="Home Team Name"
-                                    value={homeTeamName}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHomeTeamName(e.target.value)}
-                                    required
-                                    fullWidth
-                                    sx={{ ...inputStyles, flex: 1 }}
-                                />
-                                <Box sx={{ flex: 1 }}>
-                                    <input
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                        id="home-team-image-upload"
-                                        type="file"
-                                        onChange={handleHomeTeamImageUpload}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        label="Home Team Image"
-                                        value={homeTeamImage ? homeTeamImage.name : ''}
-                                        InputProps={{
-                                            readOnly: true,
-                                            endAdornment: (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <label htmlFor="home-team-image-upload">
-                                                        <Button
-                                                            component="span"
-                                                            variant="outlined"
-                                                            size="small"
-                                                            sx={{
-                                                                color: '#43a047',
-                                                                borderColor: '#43a047',
-                                                                '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' }
-                                                            }}
-                                                        >
-                                                            Browse
-                                                        </Button>
-                                                    </label>
-                                                    {homeTeamImage && (
-                                                        <IconButton onClick={handleRemoveHomeTeamImage} size="small" sx={{ color: '#f44336' }}>
-                                                            <X />
-                                                        </IconButton>
-                                                    )}
-                                                </Box>
-                                            )
-                                        }}
-                                        sx={{ ...inputStyles }}
-                                    />
-                                </Box>
-                            </Box>
-                            {homeTeamImagePreview && (
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar src={homeTeamImagePreview} alt="Home Team Preview" sx={{ width: 40, height: 40, border: '2px solid #43a047' }} />
-                                    <Typography variant="caption" sx={{ color: '#B2DFDB' }}>Image preview</Typography>
-                                </Box>
-                            )}
-
-                            {/* Inline add guest for Home */}
-                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                                <TextField
-                                    label="Add guest name (Home)"
-                                    value={homeGuestName}
-                                    onChange={(e) => setHomeGuestName(e.target.value)}
-                                    fullWidth
-                                    sx={inputStyles}
-                                />
-                                <Button variant="contained" onClick={() => addGuestByName('home')} sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}>
-                                    Add
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Typography variant="h4" component="h1" sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #e56a16, #cf2326)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                    {league.name} - Create Match
+                                </Typography>
+                                <Button
+                                    startIcon={<UserPlus size={20} />}
+                                    variant="contained"
+                                    onClick={() => setGuestDialogOpen(true)}
+                                    sx={{
+                                        background: 'linear-gradient(135deg, #e56a16, #cf2326)',
+                                        color: 'white',
+                                        fontWeight: 600,
+                                        borderRadius: 3,
+                                        px: 3,
+                                        '&:hover': { 
+                                            background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 6px 20px rgba(229, 106, 22, 0.4)'
+                                        },
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    Add Guest
                                 </Button>
                             </Box>
 
-                            {/* Home players */}
-                            <Autocomplete
-                                multiple
-                                options={league.members.filter((m) => !awayTeamUsers.find((p) => p.id === m.id))}
-                                disableCloseOnSelect
-                                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                                value={homeTeamUsers}
-                                onChange={(event, newValue) => {
-                                    setHomeTeamUsers(newValue)
-                                    if (homeCaptain && !newValue.some((u) => u.id === homeCaptain.id)) setHomeCaptain(null)
-                                }}
-                                renderOption={(props, option, { selected }) => (
-                                    <li {...props} style={{ color: "black", backgroundColor: selected ? "#e3f2fd" : "white" }}>
-                                        <Checkbox
-                                            icon={<span style={{ width: 16, height: 16, border: "1px solid #666", borderRadius: 2 }} />}
-                                            checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: "#1976d2", borderRadius: 2 }} />}
-                                            sx={{ marginRight: 1 }}
-                                            checked={selected}
-                                        />
-                                        {`${option.firstName} ${option.lastName}`}
-                                    </li>
-                                )}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Select Home Team Players" placeholder="Players" sx={{ mt: 2, ...autocompleteStyles }} />
-                                )}
-                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
-                            />
-                            {homeTeamUsers.length > 0 && (
-                                <Autocomplete
-                                    options={homeTeamUsers}
-                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                                    value={homeCaptain}
-                                    onChange={(event, newValue) => setHomeCaptain(newValue)}
-                                    renderInput={(params) => (
-                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Home Team Captain" required />
+                            <Grid container spacing={3}>
+                                {/* Team Names & Images */}
+                                <Grid item xs={12}>
+                                    <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="h6" sx={{ mb: 2, color: '#43a047', fontWeight: 600 }}>Home Team</Typography>
+                                            <TextField
+                                                label="Team Name"
+                                                value={homeTeamName}
+                                                onChange={(e) => setHomeTeamName(e.target.value)}
+                                                required
+                                                fullWidth
+                                                sx={{ ...inputStyles, mb: 2 }}
+                                            />
+                                            <Box>
+                                                <input
+                                                    accept="image/*"
+                                                    style={{ display: 'none' }}
+                                                    id="home-team-image-upload"
+                                                    type="file"
+                                                    onChange={handleHomeTeamImageUpload}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    label="Team Logo"
+                                                    value={homeTeamImage ? homeTeamImage.name : ''}
+                                                    InputProps={{
+                                                        readOnly: true,
+                                                        endAdornment: (
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <label htmlFor="home-team-image-upload">
+                                                                    <Button component="span" variant="outlined" size="small" sx={{ color: '#43a047', borderColor: '#43a047', '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' } }}>
+                                                                        Browse
+                                                                    </Button>
+                                                                </label>
+                                                                {homeTeamImage && (
+                                                                    <IconButton onClick={handleRemoveHomeTeamImage} size="small" sx={{ color: '#f44336' }}>
+                                                                        <X size={16} />
+                                                                    </IconButton>
+                                                                )}
+                                                            </Box>
+                                                        )
+                                                    }}
+                                                    sx={{ ...inputStyles }}
+                                                />
+                                                {homeTeamImagePreview && (
+                                                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        <Avatar src={homeTeamImagePreview} alt="Home Team" sx={{ width: 50, height: 50, border: '2px solid #43a047' }} />
+                                                        <Typography variant="body2" sx={{ color: '#B2DFDB' }}>Logo Preview</Typography>
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                        </Box>
+
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="h6" sx={{ mb: 2, color: '#ef5350', fontWeight: 600 }}>Away Team</Typography>
+                                            <TextField
+                                                label="Team Name"
+                                                value={awayTeamName}
+                                                onChange={(e) => setAwayTeamName(e.target.value)}
+                                                required
+                                                fullWidth
+                                                sx={{ ...inputStyles, mb: 2 }}
+                                            />
+                                            <Box>
+                                                <input
+                                                    accept="image/*"
+                                                    style={{ display: 'none' }}
+                                                    id="away-team-image-upload"
+                                                    type="file"
+                                                    onChange={handleAwayTeamImageUpload}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    label="Team Logo"
+                                                    value={awayTeamImage ? awayTeamImage.name : ''}
+                                                    InputProps={{
+                                                        readOnly: true,
+                                                        endAdornment: (
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <label htmlFor="away-team-image-upload">
+                                                                    <Button component="span" variant="outlined" size="small" sx={{ color: '#ef5350', borderColor: '#ef5350', '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' } }}>
+                                                                        Browse
+                                                                    </Button>
+                                                                </label>
+                                                                {awayTeamImage && (
+                                                                    <IconButton onClick={handleRemoveAwayTeamImage} size="small" sx={{ color: '#f44336' }}>
+                                                                        <X size={16} />
+                                                                    </IconButton>
+                                                                )}
+                                                            </Box>
+                                                        )
+                                                    }}
+                                                    sx={{ ...inputStyles }}
+                                                />
+                                                {awayTeamImagePreview && (
+                                                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        <Avatar src={awayTeamImagePreview} alt="Away Team" sx={{ width: 50, height: 50, border: '2px solid #ef5350' }} />
+                                                        <Typography variant="body2" sx={{ color: '#EF9A9A' }}>Logo Preview</Typography>
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Grid>
+
+                                {/* Player Selection */}
+                                <Grid item xs={12}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Team Selection</Typography>
+                                        <Button
+                                            startIcon={<Shuffle size={18} />}
+                                            variant="outlined"
+                                            onClick={shuffleTeams}
+                                            disabled={homeTeamUsers.length + awayTeamUsers.length < 2}
+                                            sx={{
+                                                borderColor: '#e56a16',
+                                                color: '#e56a16',
+                                                fontWeight: 600,
+                                                borderRadius: 3,
+                                                '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(229, 106, 22, 0.1)' }
+                                            }}
+                                        >
+                                            Shuffle Teams
+                                        </Button>
+                                    </Box>
+
+                                    {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
+                                        <Box sx={{ mb: 3, p: 3, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <Typography variant="body2" sx={{ mb: 2, color: '#9CA3AF', textAlign: 'center' }}>
+                                                💡 Drag players between teams to balance. Equal teams create better matches!
+                                            </Typography>
+                                        </Box>
                                     )}
-                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
-                                />
-                            )}
 
-                            <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.12)' }} />
-
-                            {/* Away team: name + image in one row */}
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                                <TextField
-                                    label="Away Team Name"
-                                    value={awayTeamName}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAwayTeamName(e.target.value)}
-                                    required
-                                    fullWidth
-                                    sx={{ ...inputStyles, flex: 1 }}
-                                />
-                                <Box sx={{ flex: 1 }}>
-                                    <input
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                        id="away-team-image-upload"
-                                        type="file"
-                                        onChange={handleAwayTeamImageUpload}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        label="Away Team Image"
-                                        value={awayTeamImage ? awayTeamImage.name : ''}
-                                        InputProps={{
-                                            readOnly: true,
-                                            endAdornment: (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <label htmlFor="away-team-image-upload">
-                                                        <Button
-                                                            component="span"
-                                                            variant="outlined"
-                                                            size="small"
-                                                            sx={{
-                                                                color: '#ef5350',
-                                                                borderColor: '#ef5350',
-                                                                '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' }
-                                                            }}
-                                                        >
-                                                            Browse
-                                                        </Button>
-                                                    </label>
-                                                    {awayTeamImage && (
-                                                        <IconButton onClick={handleRemoveAwayTeamImage} size="small" sx={{ color: '#f44336' }}>
-                                                            <X />
-                                                        </IconButton>
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <Autocomplete
+                                                multiple
+                                                options={homePlayerOptions}
+                                                disableCloseOnSelect
+                                                getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
+                                                value={homeTeamUsers}
+                                                onChange={(event, newValue) => {
+                                                    setHomeTeamUsers(newValue)
+                                                    if (homeCaptain && !newValue.some((u) => u.id === homeCaptain.id)) setHomeCaptain(null)
+                                                }}
+                                                renderOption={(props, option, { selected }) => (
+                                                    <li {...props} style={{ color: "black", backgroundColor: selected ? "#e3f2fd" : "white", padding: '12px 16px' }}>
+                                                        <Checkbox
+                                                            icon={<span style={{ width: 16, height: 16, border: "1px solid #666", borderRadius: 2 }} />}
+                                                            checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: "#1976d2", borderRadius: 2 }} />}
+                                                            sx={{ marginRight: 1 }}
+                                                            checked={selected}
+                                                        />
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <Typography>{option.firstName} {option.lastName}</Typography>
+                                                            {option.isGuest && <Chip label="Guest" size="small" sx={{ bgcolor: '#d35400', color: 'white', fontSize: '10px' }} />}
+                                                            <Chip label={`${calculatePlayerSkill(option)}`} size="small" sx={{ bgcolor: '#1976d2', color: 'white', fontSize: '10px' }} />
+                                                        </Box>
+                                                    </li>
+                                                )}
+                                                renderInput={(params) => (
+                                                    <TextField {...params} label="Select Home Team Players" placeholder="Choose players..." sx={{ ...autocompleteStyles }} />
+                                                )}
+                                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
+                                            />
+                                            {homeTeamUsers.length > 0 && (
+                                                <Autocomplete
+                                                    options={homeTeamUsers}
+                                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
+                                                    value={homeCaptain}
+                                                    onChange={(event, newValue) => setHomeCaptain(newValue)}
+                                                    renderInput={(params) => (
+                                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Home Team Captain" required />
                                                     )}
-                                                </Box>
-                                            )
-                                        }}
-                                        sx={{ ...inputStyles }}
-                                    />
-                                </Box>
-                            </Box>
-                            {awayTeamImagePreview && (
-                                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar src={awayTeamImagePreview} alt="Away Team Preview" sx={{ width: 40, height: 40, border: '2px solid #ef5350' }} />
-                                    <Typography variant="caption" sx={{ color: '#EF9A9A' }}>Image preview</Typography>
-                                </Box>
-                            )}
+                                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
+                                                />
+                                            )}
+                                        </Grid>
 
-                            {/* Inline add guest for Away */}
-                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                                <TextField
-                                    label="Add guest name (Away)"
-                                    value={awayGuestName}
-                                    onChange={(e) => setAwayGuestName(e.target.value)}
-                                    fullWidth
-                                    sx={inputStyles}
-                                />
-                                <Button variant="contained" onClick={() => addGuestByName('away')} sx={{ bgcolor: '#e56a16', '&:hover': { bgcolor: '#d32f2f' } }}>
-                                    Add
-                                </Button>
-                            </Box>
+                                        <Grid item xs={12} md={6}>
+                                            <Autocomplete
+                                                multiple
+                                                options={awayPlayerOptions}
+                                                disableCloseOnSelect
+                                                getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
+                                                value={awayTeamUsers}
+                                                onChange={(event, newValue) => {
+                                                    setAwayTeamUsers(newValue)
+                                                    if (awayCaptain && !newValue.some((u) => u.id === awayCaptain.id)) setAwayCaptain(null)
+                                                }}
+                                                renderOption={(props, option, { selected }) => (
+                                                    <li {...props} style={{ color: "black", backgroundColor: selected ? "#e3f2fd" : "white", padding: '12px 16px' }}>
+                                                        <Checkbox
+                                                            icon={<span style={{ width: 16, height: 16, border: "1px solid #666", borderRadius: 2 }} />}
+                                                            checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: "#1976d2", borderRadius: 2 }} />}
+                                                            sx={{ marginRight: 1 }}
+                                                            checked={selected}
+                                                        />
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <Typography>{option.firstName} {option.lastName}</Typography>
+                                                            {option.isGuest && <Chip label="Guest" size="small" sx={{ bgcolor: '#d35400', color: 'white', fontSize: '10px' }} />}
+                                                            <Chip label={`${calculatePlayerSkill(option)}`} size="small" sx={{ bgcolor: '#1976d2', color: 'white', fontSize: '10px' }} />
+                                                        </Box>
+                                                    </li>
+                                                )}
+                                                renderInput={(params) => (
+                                                    <TextField {...params} label="Select Away Team Players" placeholder="Choose players..." sx={{ ...autocompleteStyles }} />
+                                                )}
+                                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
+                                            />
+                                            {awayTeamUsers.length > 0 && (
+                                                <Autocomplete
+                                                    options={awayTeamUsers}
+                                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
+                                                    value={awayCaptain}
+                                                    onChange={(event, newValue) => setAwayCaptain(newValue)}
+                                                    renderInput={(params) => (
+                                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Away Team Captain" required />
+                                                    )}
+                                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
+                                                />
+                                            )}
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
 
-                            {/* Away players */}
-                            <Autocomplete
-                                multiple
-                                options={league.members.filter((m) => !homeTeamUsers.find((p) => p.id === m.id))}
-                                disableCloseOnSelect
-                                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                                value={awayTeamUsers}
-                                onChange={(event, newValue) => {
-                                    setAwayTeamUsers(newValue)
-                                    if (awayCaptain && !newValue.some((u) => u.id === awayCaptain.id)) setAwayCaptain(null)
-                                }}
-                                renderOption={(props, option, { selected }) => (
-                                    <li {...props} style={{ color: "black", backgroundColor: selected ? "#e3f2fd" : "white" }}>
-                                        <Checkbox
-                                            icon={<span style={{ width: 16, height: 16, border: "1px solid #666", borderRadius: 2 }} />}
-                                            checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: "#1976d2", borderRadius: 2 }} />}
-                                            sx={{ marginRight: 1 }}
-                                            checked={selected}
-                                        />
-                                        {`${option.firstName} ${option.lastName}`}
-                                    </li>
-                                )}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Select Away Team Players" placeholder="Players" sx={{ mt: 2, ...autocompleteStyles }} />
-                                )}
-                                sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
-                            />
-                            {awayTeamUsers.length > 0 && (
-                                <Autocomplete
-                                    options={awayTeamUsers}
-                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                                    value={awayCaptain}
-                                    onChange={(event, newValue) => setAwayCaptain(newValue)}
-                                    renderInput={(params) => (
-                                        <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Away Team Captain" required />
-                                    )}
-                                    sx={{ "& .MuiAutocomplete-popupIndicator": { color: "white" }, "& .MuiAutocomplete-clearIndicator": { color: "white" } }}
-                                />
-                            )}
-                            <DatePicker
-                                label="Match Date"
-                                value={matchDate}
-                                onChange={(newValue) => setMatchDate(dayjs(newValue))}
-                                slotProps={{ textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles } }}
-                            />
-                            <TimePicker
-                                label="Start Time"
-                                value={startTime}
-                                onChange={(newValue) => setStartTime(dayjs(newValue))}
-                                slotProps={{ textField: { fullWidth: true, margin: "normal", required: true, sx: inputStyles } }}
-                            />
-                            <TextField
-                                label="Match Duration (minutes)"
-                                type="number"
-                                value={duration}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    setDuration(e.target.value === "" ? "" : Number(e.target.value))
-                                }
-                                required
-                                fullWidth
-                                sx={{ mt: 2, mb: 1, ...inputStyles }}
-                            />
-                            <TextField
-                                label="Location"
-                                value={location}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
-                                required
-                                fullWidth
-                                sx={{ mt: 2, mb: 1, ...inputStyles }}
-                            />
+                                {/* Match Details */}
+                                <Grid item xs={12}>
+                                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>Match Details</Typography>
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <DatePicker
+                                                label="Match Date"
+                                                value={matchDate}
+                                                onChange={(newValue) => setMatchDate(dayjs(newValue))}
+                                                slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TimePicker
+                                                label="Start Time"
+                                                value={startTime}
+                                                onChange={(newValue) => setStartTime(dayjs(newValue))}
+                                                slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                label="Duration (minutes)"
+                                                type="number"
+                                                value={duration}
+                                                onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
+                                                required
+                                                fullWidth
+                                                sx={{ ...inputStyles }}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                label="Location"
+                                                value={location}
+                                                onChange={(e) => setLocation(e.target.value)}
+                                                required
+                                                fullWidth
+                                                sx={{ ...inputStyles }}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
 
-                            {error && <Typography color="error" sx={{ my: 2 }}>{error}</Typography>}
+                            {error && <Typography color="error" sx={{ my: 3, p: 2, bgcolor: 'rgba(244, 67, 54, 0.1)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>{error}</Typography>}
 
                             <Button
                                 type="submit"
                                 variant="contained"
                                 fullWidth
+                                size="large"
                                 sx={{
-                                    background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                    mt: 4,
+                                    py: 2,
+                                    background: 'linear-gradient(135deg, #e56a16, #cf2326)',
                                     color: 'white',
                                     fontWeight: 'bold',
+                                    fontSize: '1.1rem',
+                                    borderRadius: 3,
                                     '&:hover': {
-                                        background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                                        transform: 'translateY(-1px)',
-                                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                                        background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 8px 30px rgba(229, 106, 22, 0.4)',
                                     },
-                                    mt: 2,
-                                    transition: 'all 0.2s ease-in-out',
+                                    transition: 'all 0.3s ease',
                                 }}
                                 disabled={isSubmitting || league?.active === false}
                             >
-                                {isSubmitting ? <CircularProgress size={24} /> : "Schedule Match"}
+                                {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : "Schedule Match"}
                             </Button>
                         </Paper>
                     </Box>
 
-                    {/* Live Preview Section */}
+                    {/* Enhanced Live Preview Section */}
                     <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
                         <Paper sx={{
-                            p: 2,
-                            bgcolor: 'rgba(15,15,15,0.92)',
+                            p: 3,
+                            bgcolor: 'rgba(15,15,15,0.95)',
                             color: '#E5E7EB',
-                            borderRadius: 3,
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                            borderRadius: 4,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(20px)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
                         }}>
-                            <Box sx={{ borderRadius: 2, p: 1, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Typography variant="h5" gutterBottom sx={{ color: '#fff', fontWeight: 700 }}>
-                                    Live Preview
-                                </Typography>
-                            </Box>
-                            <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.12)' }} />
+                            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, textAlign: 'center', mb: 3 }}>
+                                Match Preview
+                            </Typography>
 
-                            <Box sx={{ display: { xs: 'block', md: 'flex' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
-                                {/* Home */}
-                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar src={homeTeamImagePreview || '/assets/default-team.png'} alt="Home Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }} />
-                                        <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
-                                            {homeTeamName || 'Home Team'}
-                                        </Typography>
+                            {/* Win Probability */}
+                            {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
+                                <Box sx={{ mb: 3, p: 3, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', fontWeight: 600 }}>Win Probability</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700 }}>{homeWinChance}%</Typography>
+                                            <Typography variant="body2" sx={{ color: '#43a047' }}>{homeTeamName || 'Home'}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700 }}>{awayWinChance}%</Typography>
+                                            <Typography variant="body2" sx={{ color: '#ef5350' }}>{awayTeamName || 'Away'}</Typography>
+                                        </Box>
                                     </Box>
+                                    <LinearProgress 
+                                        variant="determinate" 
+                                        value={homeWinChance} 
+                                        sx={{ 
+                                            height: 8, 
+                                            borderRadius: 4,
+                                            bgcolor: 'rgba(239, 83, 80, 0.3)',
+                                            '& .MuiLinearProgress-bar': {
+                                                bgcolor: '#43a047',
+                                                borderRadius: 4
+                                            }
+                                        }} 
+                                    />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                                        <Typography variant="caption" sx={{ color: '#9CA3AF' }}>Strength: {homeStrength}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#9CA3AF' }}>Strength: {awayStrength}</Typography>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            <Divider sx={{ mb: 3, borderColor: 'rgba(255,255,255,0.12)' }} />
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                {/* Home Team */}
+                                <Box sx={{ flex: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                                        <Avatar src={homeTeamImagePreview || '/assets/default-team.png'} alt="Home Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #43a047' }} />
+                                        <Box>
+                                            <Typography variant="h6" sx={{ color: '#43a047', fontWeight: 600 }}>
+                                                {homeTeamName || 'Home Team'}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                                                {homeTeamUsers.length} players
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    
                                     {homeCaptain && (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                            <Link href={`/player/${homeCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                <ShirtAvatar number={homeCaptain.shirtNumber} size={56} />
-                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                    <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{homeCaptain.firstName} {homeCaptain.lastName}</Typography>
-                                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                </Box>
-                                            </Link>
+                                        <Box 
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                mb: 2, 
+                                                p: 2, 
+                                                bgcolor: 'rgba(255, 215, 0, 0.1)', 
+                                                borderRadius: 3,
+                                                border: '1px solid rgba(255, 215, 0, 0.3)',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' }
+                                            }}
+                                            draggable
+                                            onDragEnd={() => handlePlayerDrop(homeCaptain, 'away')}
+                                        >
+                                            <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={48} />
+                                            <Box sx={{ ml: 2, flex: 1 }}>
+                                                <Typography fontWeight="bold" fontSize={14} noWrap>
+                                                    {homeCaptain.firstName} {homeCaptain.lastName}
+                                                    {homeCaptain.isGuest && <span style={{ color: '#e67e22', fontSize: 11, fontWeight: 600, marginLeft: 4 }}>G</span>}
+                                                </Typography>
+                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                <Typography fontSize={10} sx={{ color: '#9CA3AF' }}>
+                                                    Skill: {calculatePlayerSkill(homeCaptain)} | +{Math.round((calculatePlayerSkill(homeCaptain) / 100) * 15)}% win chance
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     )}
-                                    {homeTeamUsers.filter(u => u.id !== homeCaptain?.id).map(user => (
-                                        <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                            <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                <ShirtAvatar number={user.shirtNumber} size={48} />
-                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                    <Typography fontWeight={user.id === homeCaptain?.id ? 700 : 500} fontSize={user.id === homeCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                        {user.firstName} {user.lastName}
-                                                    </Typography>
-                                                </Box>
-                                            </Link>
-                                        </Box>
-                                    ))}
-                                    {homeGuests.map((g, i) => (
-                                        <Box key={`hg-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
-                                            <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                    
+                                    {homeTeamUsers
+                                      .filter(u => u.id !== homeCaptain?.id)
+                                      .map(user => (
+                                        <Box 
+                                            key={user.id} 
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                mb: 1.5, 
+                                                p: 2, 
+                                                bgcolor: 'rgba(255,255,255,0.03)', 
+                                                borderRadius: 3,
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' }
+                                            }}
+                                            draggable
+                                            onDragEnd={() => handlePlayerDrop(user, 'away')}
+                                        >
+                                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={40} />
                                             <Box sx={{ ml: 2, flex: 1 }}>
-                                                <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
-                                                    {g.firstName} {g.lastName}
+                                                <Typography fontWeight={500} fontSize={13} noWrap sx={{ color: 'white' }}>
+                                                    {user.firstName} {user.lastName}
+                                                    {user.isGuest && <span style={{ color: '#e67e22', fontSize: 10, fontWeight: 600, marginLeft: 4 }}>G</span>}
                                                 </Typography>
-                                                <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest (staged)</Typography>
+                                                <Typography fontSize={10} sx={{ color: '#9CA3AF' }}>
+                                                    Skill: {calculatePlayerSkill(user)} | +{Math.round((calculatePlayerSkill(user) / 100) * 15)}% win chance
+                                                </Typography>
                                             </Box>
-                                            <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => removeStagedGuest('home', i)}>
-                                                <X size={16} />
-                                            </IconButton>
+                                            {user.isGuest && (
+                                                <IconButton
+                                                    size="small"
+                                                    sx={{ color: '#f44336', ml: 0.5 }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const idx = homeGuests.findIndex(g => g.tempId === user.guestTempId);
+                                                        if (idx > -1) removeStagedGuest('home', idx);
+                                                    }}
+                                                >
+                                                    <X size={14} />
+                                                </IconButton>
+                                            )}
                                         </Box>
-                                    ))}
+                                      ))}
                                 </Box>
 
                                 {/* Divider */}
-                                <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 180, borderRadius: 1, mx: 2, alignSelf: 'stretch' }} />
+                                <Box sx={{ width: 2, bgcolor: 'rgba(255,255,255,0.2)', minHeight: 200, borderRadius: 1, alignSelf: 'stretch' }} />
 
-                                {/* Away */}
-                                <Box sx={{ flex: 1, minWidth: 120, height: '100%' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                        <Avatar src={awayTeamImagePreview || '/assets/default-team.png'} alt="Away Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #e56a16' }} />
-                                        <Typography variant="h6" sx={{ color: '#E5E7EB', textAlign: 'center' }}>
-                                            {awayTeamName || 'Away Team'}
-                                        </Typography>
+                                {/* Away Team */}
+                                <Box sx={{ flex: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                                        <Avatar src={awayTeamImagePreview || '/assets/default-team.png'} alt="Away Team" sx={{ width: 40, height: 40, mr: 1, border: '2px solid #ef5350' }} />
+                                        <Box>
+                                            <Typography variant="h6" sx={{ color: '#ef5350', fontWeight: 600 }}>
+                                                {awayTeamName || 'Away Team'}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                                                {awayTeamUsers.length} players
+                                            </Typography>
+                                        </Box>
                                     </Box>
+                                    
                                     {awayCaptain && (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, width: '100%' }}>
-                                            <Link href={`/player/${awayCaptain?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                                <ShirtAvatar number={awayCaptain.shirtNumber} size={56} />
-                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                    <Typography fontWeight="bold" fontSize={14} sx={{ mt: 0.5 }} noWrap>{awayCaptain.firstName} {awayCaptain.lastName}</Typography>
-                                                    <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                                                </Box>
-                                            </Link>
+                                        <Box 
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                mb: 2, 
+                                                p: 2, 
+                                                bgcolor: 'rgba(255, 215, 0, 0.1)', 
+                                                borderRadius: 3,
+                                                border: '1px solid rgba(255, 215, 0, 0.3)',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' }
+                                            }}
+                                            draggable
+                                            onDragEnd={() => handlePlayerDrop(awayCaptain, 'home')}
+                                        >
+                                            <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={48} />
+                                            <Box sx={{ ml: 2, flex: 1 }}>
+                                                <Typography fontWeight="bold" fontSize={14} noWrap>
+                                                    {awayCaptain.firstName} {awayCaptain.lastName}
+                                                    {awayCaptain.isGuest && <span style={{ color: '#e67e22', fontSize: 11, fontWeight: 600, marginLeft: 4 }}>G</span>}
+                                                </Typography>
+                                                <Typography fontSize={12} sx={{ color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                                                <Typography fontSize={10} sx={{ color: '#9CA3AF' }}>
+                                                    Skill: {calculatePlayerSkill(awayCaptain)} | +{Math.round((calculatePlayerSkill(awayCaptain) / 100) * 15)}% win chance
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     )}
-                                    {awayTeamUsers.filter(u => u.id !== awayCaptain?.id).map(user => (
-                                        <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', mb: 1.2, width: '100%' }}>
-                                            <Link href={`/player/${user?.id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                                                <ShirtAvatar number={user.shirtNumber} size={48} />
-                                                <Box sx={{ ml: 2, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                    <Typography fontWeight={user.id === awayCaptain?.id ? 700 : 500} fontSize={user.id === awayCaptain?.id ? 15 : 14} noWrap sx={{ color: 'white' }}>
-                                                        {user.firstName} {user.lastName}
-                                                    </Typography>
-                                                </Box>
-                                            </Link>
-                                        </Box>
-                                    ))}
-                                    {awayGuests.map((g, i) => (
-                                        <Box key={`ag-staged-${i}`} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
-                                            <ShirtAvatar number={g.shirtNumber || 'G'} size={48} />
+                                    
+                                    {awayTeamUsers
+                                      .filter(u => u.id !== awayCaptain?.id)
+                                      .map(user => (
+                                        <Box 
+                                            key={user.id} 
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                mb: 1.5, 
+                                                p: 2, 
+                                                bgcolor: 'rgba(255,255,255,0.03)', 
+                                                borderRadius: 3,
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' }
+                                            }}
+                                            draggable
+                                            onDragEnd={() => handlePlayerDrop(user, 'home')}
+                                        >
+                                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={40} />
                                             <Box sx={{ ml: 2, flex: 1 }}>
-                                                <Typography fontWeight={600} fontSize={14} noWrap sx={{ color: '#E5E7EB' }}>
-                                                    {g.firstName} {g.lastName}
+                                                <Typography fontWeight={500} fontSize={13} noWrap sx={{ color: 'white' }}>
+                                                    {user.firstName} {user.lastName}
+                                                    {user.isGuest && <span style={{ color: '#e67e22', fontSize: 10, fontWeight: 600, marginLeft: 4 }}>G</span>}
                                                 </Typography>
-                                                <Typography fontSize={12} sx={{ color: '#9CA3AF' }}>Guest (staged)</Typography>
+                                                <Typography fontSize={10} sx={{ color: '#9CA3AF' }}>
+                                                    Skill: {calculatePlayerSkill(user)} | +{Math.round((calculatePlayerSkill(user) / 100) * 15)}% win chance
+                                                </Typography>
                                             </Box>
-                                            <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => removeStagedGuest('away', i)}>
-                                                <X size={16} />
-                                            </IconButton>
+                                            {user.isGuest && (
+                                                <IconButton
+                                                    size="small"
+                                                    sx={{ color: '#f44336', ml: 0.5 }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const idx = awayGuests.findIndex(g => g.tempId === user.guestTempId);
+                                                        if (idx > -1) removeStagedGuest('away', idx);
+                                                    }}
+                                                >
+                                                    <X size={14} />
+                                                </IconButton>
+                                            )}
                                         </Box>
-                                    ))}
+                                      ))}
                                 </Box>
                             </Box>
                         </Paper>
                     </Box>
                 </Box>
             </Box>
+
+            <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth="xs">
+              <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
+              <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
+                <RadioGroup
+                  row
+                  value={guestTeam}
+                  onChange={(e) => setGuestTeam(e.target.value as 'home' | 'away')}
+                  sx={{ mb: 3, justifyContent: 'center' }}
+                >
+                  <FormControlLabel value="home" control={<Radio sx={{ color: '#43a047' }} />} label="Home Team" />
+                  <FormControlLabel value="away" control={<Radio sx={{ color: '#ef5350' }} />} label="Away Team" />
+                </RadioGroup>
+                <TextField
+                  autoFocus
+                  label="Guest Full Name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  fullWidth
+                  placeholder="e.g. John Doe"
+                  sx={{ ...inputStyles }}
+                />
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 3, bgcolor: 'rgba(15,15,15,0.95)' }}>
+                <Button onClick={() => setGuestDialogOpen(false)} sx={{ color: '#9CA3AF' }}>Cancel</Button>
+                <Button
+                  onClick={handleAddGuest}
+                  variant="contained"
+                  sx={{ background: 'linear-gradient(135deg, #e56a16, #cf2326)', '&:hover': { background: 'linear-gradient(135deg, #d32f2f, #b71c1c)' } }}
+                >
+                  Add Guest
+                </Button>
+              </DialogActions>
+            </Dialog>
 
             <Toaster position="top-center" reverseOrder={false} />
         </LocalizationProvider>
