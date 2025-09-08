@@ -112,7 +112,7 @@ export default function ScheduleMatchPage() {
     // Staged guests
     const [homeGuests, setHomeGuests] = useState<StagedGuest[]>([]);
     const [awayGuests, setAwayGuests] = useState<StagedGuest[]>([]);
-    // Guest dialog state
+    //   dialog state
     const [guestDialogOpen, setGuestDialogOpen] = useState(false);
     const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
     const [guestName, setGuestName] = useState('');
