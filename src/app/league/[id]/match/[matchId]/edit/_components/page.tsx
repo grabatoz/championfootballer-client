@@ -230,7 +230,8 @@ type PlayerOption = User & { isGuest?: boolean; guestTempId?: string; team?: 'ho
                 <Box sx={{ p:4, minHeight:'100vh', color:'#E5E7EB' }}>
                     <Box sx={{ display:'flex', gap:3, flexDirection:{ xs:'column', md:'row' } }}>
                         <Box sx={{ width:{ xs:'100%', md:'58.33%' } }}>
-                            <Paper component='form' onSubmit={handleUpdateMatch} sx={{ p:4, bgcolor:'rgba(15,15,15,0.95)', color:'#E5E7EB', borderRadius:4, border:'1px solid rgba(255,255,255,0.1)', backdropFilter:'blur(20px)', boxShadow:'0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)' }}>
+                          <form onSubmit={handleUpdateMatch} style={{ width: '100%' }}>
+                            <Paper sx={{ p:4, bgcolor:'rgba(15,15,15,0.95)', color:'#E5E7EB', borderRadius:4, border:'1px solid rgba(255,255,255,0.1)', backdropFilter:'blur(20px)', boxShadow:'0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)', mb:3 }}>
                                 <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:3 }}>
                                     <Typography variant='h4' sx={{ fontWeight:700, background:'linear-gradient(135deg,#e56a16,#cf2326)', backgroundClip:'text', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontSize:{ xs:'1.25rem', sm:'2rem' } }}>Edit Match - {league.name}</Typography>
                                     <Button startIcon={<UserPlus size={20}/>} variant='contained' onClick={()=>setGuestDialogOpen(true)} sx={{ background:'linear-gradient(135deg,#e56a16,#cf2326)', color:'white', fontWeight:600, borderRadius:3, px:{ xs:2, sm:3 }, fontSize:{ xs:'0.75rem', sm:'0.875rem' }, '&:hover':{ background:'linear-gradient(135deg,#d32f2f,#b71c1c)', transform:'translateY(-1px)' } }}>Add Guest</Button>
@@ -274,19 +275,23 @@ type PlayerOption = User & { isGuest?: boolean; guestTempId?: string; team?: 'ho
                                             </Grid>
                                         </Grid>
                                     </Grid>
-                                    <Grid item xs={12}>
-                                        <Typography variant='h6' sx={{ mb:3, fontWeight:600 }}>Match Details</Typography>
-                                        <Grid container spacing={3}>
-                                            <Grid item xs={12} md={6}><DatePicker label='Match Date' value={matchDate} onChange={nv=>setMatchDate(dayjs(nv))} slotProps={{ textField:{ fullWidth:true, required:true, sx: inputStyles } }} /></Grid>
-                                            <Grid item xs={12} md={6}><TimePicker label='Start Time' value={startTime} onChange={nv=>setStartTime(dayjs(nv))} slotProps={{ textField:{ fullWidth:true, required:true, sx: inputStyles } }} /></Grid>
-                                            <Grid item xs={12} md={6}><TextField label='Duration (minutes)' type='number' value={duration} onChange={e=> setDuration(e.target.value===''? '': Number(e.target.value))} required fullWidth sx={{ ...inputStyles }} /></Grid>
-                                            <Grid item xs={12} md={6}><TextField label='Location' value={location} onChange={e=>setLocation(e.target.value)} required fullWidth sx={{ ...inputStyles }} /></Grid>
-                                        </Grid>
-                                    </Grid>
+                                </Grid>
+                            </Paper>
+                            <Paper sx={{ mt:0, mb:2, p:4, bgcolor:'rgba(15,15,15,0.95)', color:'#E5E7EB', borderRadius:4, border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 4px 24px rgba(0,0,0,0.4)' }}>
+                                <Typography variant='h6' sx={{ mb:3, fontWeight:600 }}>Match Details</Typography>
+                                <Typography variant='body2' sx={{ mb:2, color:'#9CA3AF' }}>These fields are required by the API to save your match.</Typography>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} md={6}><DatePicker label='Match Date' value={matchDate} onChange={nv=>setMatchDate(dayjs(nv))} slotProps={{ textField:{ fullWidth:true, required:true, sx: inputStyles } }} /></Grid>
+                                    <Grid item xs={12} md={6}><TimePicker label='Start Time' value={startTime} onChange={nv=>setStartTime(dayjs(nv))} slotProps={{ textField:{ fullWidth:true, required:true, sx: inputStyles } }} /></Grid>
+                                    <Grid item xs={12} md={6}><TextField label='Duration (minutes)' type='number' value={duration} onChange={e=> setDuration(e.target.value===''? '': Number(e.target.value))} required fullWidth sx={{ ...inputStyles }} /></Grid>
+                                    <Grid item xs={12} md={6}><TextField label='Location' value={location} onChange={e=>setLocation(e.target.value)} required fullWidth sx={{ ...inputStyles }} /></Grid>
                                 </Grid>
                                 {error && <Typography color='error' sx={{ my:3, p:2, bgcolor:'rgba(244,67,54,0.1)', borderRadius:2, border:'1px solid rgba(244,67,54,0.3)' }}>{error}</Typography>}
-                                <Button type='submit' variant='contained' fullWidth sx={{ mt:{ xs:3, md:4 }, py:{ xs:1.5, sm:2 }, background:'linear-gradient(135deg,#e56a16,#cf2326)', color:'white', fontWeight:'bold', fontSize:{ xs:'1rem', sm:'1.1rem' }, borderRadius:3, '&:hover':{ background:'linear-gradient(135deg,#d32f2f,#b71c1c)', transform:'translateY(-2px)', boxShadow:'0 8px 30px rgba(229,106,22,0.4)' } }} disabled={isSubmitting}>{isSubmitting? <CircularProgress size={28} sx={{ color:'white' }}/>: 'Update Match'}</Button>
                             </Paper>
+                            <Button type='submit' variant='contained' fullWidth sx={{ py:2, background:'#ff6a00', color:'white', fontWeight:'bold', fontSize:'1.1rem', borderRadius:2, boxShadow:'0 2px 8px rgba(255,106,0,0.2)', '&:hover':{ background:'#cf2326' } }} disabled={isSubmitting}>
+                              {isSubmitting ? <CircularProgress size={28} sx={{ color:'white' }}/> : 'SAVE MATCH'}
+                            </Button>
+                          </form>
                         </Box>
                         <Box sx={{ width:{ xs:'100%', md:'41.67%' } }}>
                             <Paper sx={{ p:3, bgcolor:'rgba(15,15,15,0.95)', color:'#E5E7EB', borderRadius:4, border:'1px solid rgba(255,255,255,0.1)', backdropFilter:'blur(20px)', boxShadow:'0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)' }}>

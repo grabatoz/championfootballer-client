@@ -397,7 +397,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                      onClick={() => setShowLoginPassword((show) => !show)}
                      edge="end"
                      size="small"
-                     sx={{ color: 'white' }}
+                     sx={{ color: '#000' }}
                    >
                      {showLoginPassword ? <VisibilityOff /> : <Visibility />}
                    </IconButton>
@@ -644,7 +644,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                      onClick={() => setShowRegisterPassword((show) => !show)}
                      edge="end"
                      size="small"
-                     sx={{ color: 'white' }}
+                     sx={{ color: '#000' }}
                    >
                      {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
                    </IconButton>
@@ -676,7 +676,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                      onClick={() => setShowRegisterConfirmPassword((show) => !show)}
                      edge="end"
                      size="small"
-                     sx={{ color: 'white' }}
+                     sx={{ color: '#000' }}
                    >
                      {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
                    </IconButton>

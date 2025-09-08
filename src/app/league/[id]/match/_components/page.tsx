@@ -360,6 +360,12 @@ export default function ScheduleMatchPage() {
         const matchDuration = duration || 90;
         const end = start.add(matchDuration, 'minute');
 
+        // Only send real user UUIDs for team users and captains
+        const realHomeTeamUsers = homeTeamUsers.filter(u => !u.isGuest).map(u => u.id);
+        const realAwayTeamUsers = awayTeamUsers.filter(u => !u.isGuest).map(u => u.id);
+        const realHomeCaptain = homeCaptain && !homeCaptain.isGuest ? homeCaptain.id : '';
+        const realAwayCaptain = awayCaptain && !awayCaptain.isGuest ? awayCaptain.id : '';
+
         try {
             const formData = new FormData();
             formData.append('homeTeamName', homeTeamName);
@@ -368,10 +374,10 @@ export default function ScheduleMatchPage() {
             formData.append('start', start.toISOString());
             formData.append('end', end.toISOString());
             formData.append('location', location);
-            formData.append('homeTeamUsers', JSON.stringify(homeTeamUsers.map(u => u.id)));
-            formData.append('awayTeamUsers', JSON.stringify(awayTeamUsers.map(u => u.id)));
-            formData.append('homeCaptain', homeCaptain?.id || '');
-            formData.append('awayCaptain', awayCaptain?.id || '');
+            formData.append('homeTeamUsers', JSON.stringify(realHomeTeamUsers));
+            formData.append('awayTeamUsers', JSON.stringify(realAwayTeamUsers));
+            formData.append('homeCaptain', realHomeCaptain);
+            formData.append('awayCaptain', realAwayCaptain);
             if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
             if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
@@ -576,8 +582,8 @@ export default function ScheduleMatchPage() {
             <Box sx={{ p: 4, minHeight: '100vh', color: '#E5E7EB' }}>
                 <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Form Section */}
-                    <Box sx={{ width: { xs: "100%", md: "58.33%" } }}>
-                        <Paper component="form" onSubmit={handleScheduleMatch} sx={{
+                    <Box component="form" onSubmit={handleScheduleMatch} sx={{ width: { xs: "100%", md: "58.33%" } }}>
+                        <Paper sx={{
                             p: 4,
                             bgcolor: 'rgba(15,15,15,0.95)',
                             color: '#E5E7EB',
@@ -859,67 +865,90 @@ export default function ScheduleMatchPage() {
                                     </Grid>
                                 </Grid>
 
-                                {/* Match Details */}
-                                <Grid item xs={12}>
-                                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Match Details</Typography>
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
-                                            <DatePicker
-                                                label="Match Date"
-                                                value={matchDate}
-                                                onChange={(newValue) => setMatchDate(dayjs(newValue))}
-                                                slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TimePicker
-                                                label="Start Time"
-                                                value={startTime}
-                                                onChange={(newValue) => setStartTime(dayjs(newValue))}
-                                                slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                label="Duration (minutes)"
-                                                type="number"
-                                                value={duration}
-                                                onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
-                                                required
-                                                fullWidth
-                                                sx={{ ...inputStyles }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                label="Location"
-                                                value={location}
-                                                onChange={(e) => setLocation(e.target.value)}
-                                                required
-                                                fullWidth
-                                                sx={{ ...inputStyles }}
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
+                                {/* Match Details moved to its own card below */}
                             </Grid>
 
-                            {error && <Typography color="error" sx={{ my: 3, p: 2, bgcolor: 'rgba(244, 67, 54, 0.1)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>{error}</Typography>}
+                            {error && <Typography color="error" sx={{ mt: 2, p: 2, bgcolor: 'rgba(244, 67, 54, 0.1)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>{error}</Typography>}
+                        </Paper>
 
+                        {/* Separate Match Details Card */}
+                        <Paper sx={{
+                            mt: 3,
+                            p: 4,
+                            bgcolor: 'rgba(15,15,15,0.95)',
+                            color: '#E5E7EB',
+                            borderRadius: 4,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(20px)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)'
+                        }}>
+                            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                                Match Details
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 3, color: '#9CA3AF' }}>
+                                These fields are required by the API to save your match.
+                            </Typography>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <DatePicker
+                                        label="Match Date"
+                                        value={matchDate}
+                                        onChange={(newValue) => setMatchDate(dayjs(newValue))}
+                                        slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TimePicker
+                                        label="Start Time"
+                                        value={startTime}
+                                        onChange={(newValue) => setStartTime(dayjs(newValue))}
+                                        slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        label="Duration (minutes)"
+                                        type="number"
+                                        value={duration}
+                                        onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
+                                        required
+                                        fullWidth
+                                        sx={{ ...inputStyles }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        label="Location"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                        required
+                                        fullWidth
+                                        sx={{ ...inputStyles }}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Paper>
+
+                        {/* Single Save Button below both cards */}
+                        <Box sx={{ mt: { xs: 3, md: 4 } }}>
+                            {error && (
+                                <Typography color="error" sx={{ mb: 2, p: 2, bgcolor: 'rgba(244, 67, 54, 0.1)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>
+                                    {error}
+                                </Typography>
+                            )}
                             <Button
                                 type="submit"
                                 variant="contained"
                                 fullWidth
-                                size="large" // Use single size
+                                size="large"
                                 sx={{
-                                    mt: { xs: 3, md: 4 },
                                     py: { xs: 1.5, sm: 2 },
                                     background: 'linear-gradient(135deg, #e56a16, #cf2326)',
                                     color: 'white',
                                     fontWeight: 'bold',
                                     fontSize: { xs: '1rem', sm: '1.1rem' },
                                     borderRadius: 3,
-                                    height: { xs: 48, sm: 56 }, // Responsive height
+                                    height: { xs: 48, sm: 56 },
                                     '&:hover': {
                                         background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
                                         transform: 'translateY(-2px)',
@@ -929,9 +958,9 @@ export default function ScheduleMatchPage() {
                                 }}
                                 disabled={isSubmitting || league?.active === false}
                             >
-                                {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : "Schedule Match"}
+                                {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'Save Match'}
                             </Button>
-                        </Paper>
+                        </Box>
                     </Box>
 
                     {/* Enhanced Live Preview Section */}
