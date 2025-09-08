@@ -605,7 +605,7 @@ export default function ScheduleMatchPage() {
                                         fontSize: { xs: '1.25rem', sm: '2rem' } // Move responsive sizing to sx
                                     }}
                                 >
-                                    {league.name} - Create Match
+                                   Create Match
                                 </Typography>
                                 <Button
                                     startIcon={<UserPlus size={20} />}

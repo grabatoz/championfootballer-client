@@ -365,7 +365,7 @@ export default function NavigationBar() {
           },
         }}
       >
-        <Box sx={{ mt: 2 }}>
+  <Box sx={{ mt: 2, px: 2 }}>
           <List>
             {isAuthenticated && (
               <ListItem disablePadding>
@@ -374,21 +374,26 @@ export default function NavigationBar() {
                   startIcon={<AccountCircleIcon />}
                   fullWidth
                   sx={{
-                    justifyContent: 'flex-start',
-                    px: 3,
-                    py: 1.5,
+                    textTransform: 'none',
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontWeight: 'bold',
                     color: '#fff',
-                    bgcolor: '#2b2b2b',
+                    bgcolor: '#2B2B2B',
                     borderRadius: 2,
-                    fontWeight: 600,
+                    px: 3,
+                    py: 1.25,
+                    fontSize: { xs: '14px', md: '16px' },
+                    justifyContent: 'flex-start',
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     mb: 1,
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
-                      bgcolor: '#2b2b2b',
+                      bgcolor: '#2B2B2B',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
                     },
+                    '& .MuiButton-startIcon': { marginRight: 1 },
                   }}
                 >
                   Profile
@@ -442,7 +447,7 @@ export default function NavigationBar() {
                 </Menu>
               </ListItem>
             )}
-            {isAuthenticated && (
+            {/* {isAuthenticated && (
               <ListItem disablePadding>
                 <Button
                   onClick={() => { setHowToPlayOpen(true); setDrawerOpen(false); }}
@@ -452,8 +457,8 @@ export default function NavigationBar() {
                   <ListItemText primary="How to play" />
                 </Button>
               </ListItem>
-            )}
-            {isAuthenticated && (
+            )} */}
+            {/* {isAuthenticated && (
               <ListItem disablePadding>
                 <Button
                   onClick={() => { setGameRulesOpen(true); setDrawerOpen(false); }}
@@ -463,10 +468,43 @@ export default function NavigationBar() {
                   <ListItemText primary="Game rules" />
                 </Button>
               </ListItem>
-            )}
-            <Divider sx={{ my: 1 }} />
+            )} */}
+            {/* <Divider sx={{ my: 1 }} /> */}
             {/* Old Sign out button removed from here, now in Profile menu */}
           </List>
+            {/* Mobile nav links: show same nav items as desktop inside drawer */}
+            {isAuthenticated && (
+              <Box sx={{ mt: 1, px: 2 }}>
+                {navItems.map(({ label, href }) => {
+                  const active = pathname?.startsWith(href);
+                  return (
+                    <ListItem key={href} disablePadding>
+                      <Button
+                        component={Link}
+                        href={href}
+                        fullWidth
+                        onClick={() => setDrawerOpen(false)}
+                        disableRipple
+                        sx={{
+                          justifyContent: 'flex-start',
+                          px: 3,
+                          py: 1.5,
+                          color: '#fff',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+                          borderRadius: 1,
+                          mb: 0.5,
+                          '&:hover': { background: 'rgba(255,255,255,0.06)' },
+                        }}
+                      >
+                        <ListItemText primary={label} sx={{ color: '#fff' }} />
+                      </Button>
+                    </ListItem>
+                  );
+                })}
+              </Box>
+            )}
         </Box>
       </Drawer>
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>

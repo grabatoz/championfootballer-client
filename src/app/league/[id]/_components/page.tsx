@@ -1183,6 +1183,8 @@ export default function LeagueDetailPage() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: 1,
+                                            flexWrap: 'nowrap',
+                                            whiteSpace: 'nowrap',
                                             flexShrink: 0,
                                             ml: { xs: 0, md: 'auto' },
                                             mt: { xs: 1, md: 0 },
@@ -1191,9 +1193,9 @@ export default function LeagueDetailPage() {
                                         }}
                                     >
                                         {isMember && (
-                                            <Chip
+                        <Chip
                                                 label={
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap' }}>
                                                         <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
                                                             {`Code: ${league.inviteCode}`}
                                                         </Typography>
@@ -1205,6 +1207,7 @@ export default function LeagueDetailPage() {
                                                                 '&:hover': { backgroundColor: '#2B2B2B' },
                                                                 minWidth: 'auto',
                                                                 height: '40px',
+                                display: 'inline-flex',
                                                                 '& .MuiChip-label': { px: 0.5 },
 
                                                                 //  borderRadius: '4px', 
@@ -1221,6 +1224,8 @@ export default function LeagueDetailPage() {
                                                     minWidth: 'auto',
                                                     height: 'auto',
                                                     borderRadius: '7px',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex'
                                                 }}
                                             />
                                         )}
@@ -1231,7 +1236,8 @@ export default function LeagueDetailPage() {
                                                     ml: 0.5,
                                                     color: 'white',
                                                     '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                                                    p: 1
+                            p: 1,
+                            flexShrink: 0
                                                 }}
                                             >
                                                 <Settings size={20} />
@@ -1402,7 +1408,8 @@ export default function LeagueDetailPage() {
                                                     minWidth: 'auto',
                                                     ml: 2,
                                                     fontWeight: 'bold',
-                                                    textTransform: 'none'
+                                                    textTransform: 'none',
+                                                    mb:{xs:2,sm:2,md:0}
                                                 }}
                                                 startIcon={<Calendar size={16} className='stroke-white' />}
                                                 disabled={!league.active}
@@ -1576,7 +1583,8 @@ export default function LeagueDetailPage() {
                                                         fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                                         px: { xs: 1, sm: 1.5 },
                                                         py: 0.5,
-                                                        minWidth: 'auto'
+                                                        minWidth: 'auto',
+                                                        mb:3
                                                     }}
                                                     startIcon={<Calendar size={16} className='stroke-white' />}
                                                     disabled={!league.active}
@@ -2078,7 +2086,7 @@ export default function LeagueDetailPage() {
                                         <div className="p-3 px-2 pb-2">
                                             {/* bg-[rgba(59,130,246,0.8)] */}
                                             <div className=" rounded-lg px-2 py-1 mb-4 flex items-center">
-                                                <div className="ml-2 flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Player</div>
+                                                <div className="flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Player</div>
                                                 <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">P</div>
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">W</div>
@@ -2126,7 +2134,7 @@ export default function LeagueDetailPage() {
                                                                               }}
                                                                             />
                                                                             {/* Number overlay */}
-                                                                            <span className="absolute inset-0 flex items-center justify-content-center text-black font-bold text-xs sm:text-sm flex items-center justify-center">
+                                                                            <span className="absolute inset-0 flex items-center justify-center text-black font-bold text-xs sm:text-sm">
                                                                               {((league?.members || []).find(m => m.id === player.id)?.shirtNumber ?? '')}
                                                                             </span>
                                                                           </div>
