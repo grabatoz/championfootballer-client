@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/hooks';
 
 interface Filters { positionType?: string; mode: 'total'|'avg'; year?: string; }
+type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
+interface SortState { key: SortKey; direction: 'asc' | 'desc'; }
 
 export default function WorldRankingTable(){
   const { user } = useAuth();
@@ -14,14 +16,21 @@ export default function WorldRankingTable(){
   const [data, setData] = useState<WorldRankingResponse | null>(null);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [sort, setSort] = useState<SortState>({ key: 'rank', direction: 'asc' });
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const userRowRef = useRef<HTMLTableRowElement | null>(null);
+  const years = useMemo(()=>{
+    const current = new Date().getFullYear();
+    return Array.from({ length: 10 }, (_,i)=> (current - i).toString());
+  },[]);
 
   const load = async () => {
     setLoading(true); setError(null);
     try {
       const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, playerId: user?.id });
       setData(res);
+      setLastUpdated(new Date());
     } catch(e: unknown) {
       const message = e instanceof Error ? (e.message || 'Failed') : 'Failed';
       setError(message);
@@ -34,9 +43,34 @@ export default function WorldRankingTable(){
   const filtered = useMemo(()=>{
     if(!data) return [] as WorldRankingPlayer[];
     const term = search.trim().toLowerCase();
-    if(!term) return data.players;
-    return data.players.filter(p=> p.name.toLowerCase().includes(term));
-  },[data,search]);
+    let base = !term ? data.players : data.players.filter(p=> p.name.toLowerCase().includes(term));
+    // Client-side sorting (stable by using slice)
+    const { key, direction } = sort;
+    const dirMul = direction === 'asc' ? 1 : -1;
+    base = [...base].sort((a,b)=>{
+      const va = key === 'name' ? a.name.toLowerCase() : (a as any)[key];
+      const vb = key === 'name' ? b.name.toLowerCase() : (b as any)[key];
+      if (va < vb) return -1 * dirMul;
+      if (va > vb) return 1 * dirMul;
+      return 0;
+    });
+    return base;
+  },[data,search,sort]);
+
+  const toggleSort = (key: SortKey) => {
+    setSort(prev => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: key === 'rank' ? 'asc' : 'desc' };
+    });
+  };
+
+  const clearFilters = () => {
+    setFilters({ mode: filters.mode });
+    setSearch('');
+    setSort({ key: 'rank', direction: 'asc' });
+  };
 
   // Scroll current user into view when data loads
   useEffect(()=>{
@@ -55,7 +89,7 @@ export default function WorldRankingTable(){
   };
 
   return (
-    <Box sx={{ maxWidth: 1400, mx:'auto', p:{ xs:2, md:4 }, minHeight:'100vh' }}>
+    <Box sx={{ maxWidth: 1400, mx:'auto', p:{ xs:2, md:4 }, minHeight:'100vh', display:'flex', flexDirection:'column', gap:2 }}>
       <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography>
 
       {/* Unified Control + Summary Card */}
@@ -69,7 +103,7 @@ export default function WorldRankingTable(){
         background:'linear-gradient(115deg,#181818 0%, #212121 40%, #2a0c00 100%)'
       }}>
         <Box sx={{ position:'absolute', inset:0, background:'radial-gradient(circle at 12% 8%, rgba(255,120,40,0.18), transparent 55%)' }} />
-        <Box sx={{ position:'relative', display:'flex', flexWrap:'wrap', gap:2.2, alignItems:'flex-end' }}>
+  <Box sx={{ position:'relative', display:'flex', flexWrap:'wrap', gap:2.2, alignItems:'flex-end' }}>
           <Box sx={{ display:'flex', flexDirection:'column', gap:.7, minWidth:160 }}>
             <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Mode</Typography>
             <ToggleButtonGroup size="small" exclusive value={filters.mode} onChange={(_,v)=> v && setFilters(f=>({...f, mode:v}))} sx={{
@@ -91,21 +125,38 @@ export default function WorldRankingTable(){
               <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
             </Select>
           </Box>
-          <Box sx={{ display:'flex', flexDirection:'column', gap:.7 }}>
+          <Box sx={{ display:'flex', flexDirection:'column', gap:.7, minWidth:110 }}>
             <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Year</Typography>
-            <TextField size="small" value={filters.year||''} onChange={e=> setFilters(f=>({...f, year: e.target.value}))} placeholder="All" sx={{ width:90, '& .MuiOutlinedInput-root':{ color:'#fff', '& fieldset':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover fieldset':{ borderColor:'rgba(255,255,255,0.34)' } } }} />
+            <Select
+              size="small"
+              value={filters.year || ''}
+              onChange={e=> setFilters(f=> ({...f, year: e.target.value || undefined}))}
+              displayEmpty
+              sx={{ width:110, fontSize:13, color:'#f1f1f1', '.MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.35)' } }}
+            >
+              <MenuItem value=""><em>All</em></MenuItem>
+              {years.map(y=> <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            </Select>
           </Box>
             <Box sx={{ display:'flex', flexDirection:'column', gap:.7, flexGrow:1, minWidth:200 }}>
               <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Search</Typography>
               <TextField size="small" placeholder="Search Player" value={search} onChange={e=> setSearch(e.target.value)} sx={{ minWidth:200, '& .MuiOutlinedInput-root':{ color:'#fff', '& fieldset':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover fieldset':{ borderColor:'rgba(255,255,255,0.34)' } } }} />
             </Box>
-            <Box sx={{ display:'flex', alignItems:'flex-end', gap:1 }}>
+          <Box sx={{ display:'flex', flexDirection:'column', gap:.7, minWidth:130 }}>
+            <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Actions</Typography>
+            <Box sx={{ display:'flex', gap:1 }}>
               <Button variant="outlined" size="small" disabled={loading} onClick={load} sx={{
                 textTransform:'none', fontWeight:600, fontSize:12.5,
                 borderColor:'rgba(255,255,255,0.35)', color:'#ffb78b',
                 '&:hover':{ borderColor:'#ff9d55', background:'rgba(255,120,40,0.08)' }
               }}>{loading? '...' : 'Refresh'}</Button>
+              <Button variant="outlined" size="small" onClick={clearFilters} sx={{
+                textTransform:'none', fontWeight:600, fontSize:12.5,
+                borderColor:'rgba(255,255,255,0.25)', color:'#dcdcdc',
+                '&:hover':{ borderColor:'#fff', background:'rgba(255,255,255,0.08)' }
+              }}>Clear</Button>
             </Box>
+          </Box>
           <Box sx={{ flexBasis:'100%' }} />
           <Box sx={{ display:'flex', gap:1, flexWrap:'wrap', position:'relative', zIndex:1 }}>
             {filters.positionType && <Chip size="small" label={`Pos: ${filters.positionType}`} onDelete={()=> setFilters(f=> ({...f, positionType: undefined}))} sx={{ background:'linear-gradient(90deg,#ff8a2b,#ff3030)', color:'#fff', '& .MuiChip-deleteIcon':{ color:'#fff' } }} />}
@@ -117,6 +168,7 @@ export default function WorldRankingTable(){
             <SummaryPill label="Mode" value={filters.mode==='total'? 'Total XP' : 'Average XP / Match'} />
             <SummaryPill label="Players Shown" value={`${filtered.length.toLocaleString()}`} />
             {data?.playerRank && <SummaryPill label="Your Rank" value={`#${data.playerRank}`} highlight />}
+            {lastUpdated && <SummaryPill label="Updated" value={lastUpdated.toLocaleTimeString()} />}
           </Box>
         </Box>
         <Typography sx={{ position:'relative', mt:2, fontSize:11.7, lineHeight:1.5, color:'#c3c3c3', maxWidth:880 }}>
@@ -124,7 +176,12 @@ export default function WorldRankingTable(){
         </Typography>
       </Paper>
 
-      {error && <Typography color="error" sx={{ mb:2 }}>{error}</Typography>}
+      {error && (
+        <Paper sx={{ p:2, border:'1px solid #552', background:'linear-gradient(135deg,#3a0000,#120000)', color:'#ffe2d8', borderRadius:2, mb:2 }}>
+          <Typography sx={{ fontWeight:600, mb:1 }}>Error: {error}</Typography>
+          <Button onClick={load} size="small" variant="outlined" sx={{ textTransform:'none', borderColor:'#ff6a3c', color:'#ffb092', '&:hover':{ borderColor:'#ff8a2b', background:'rgba(255,120,40,0.08)' } }}>Retry</Button>
+        </Paper>
+      )}
       <Paper
         variant="outlined"
         sx={{
@@ -141,10 +198,21 @@ export default function WorldRankingTable(){
           <Table stickyHeader size="small" sx={{ '& .MuiTableCell-root':{ borderBottom:'1px solid rgba(255,255,255,0.18)' } }}>
             <TableHead>
               <TableRow>
-                {['Rank','Player','Position','Pos Type','Matches','Avg XP','Total XP'].map(h=> (
+                {[
+                  { label:'Rank', key:'rank' as SortKey },
+                  { label:'Player', key:'name' as SortKey },
+                  { label:'Position', key:'position' as SortKey },
+                  { label:'Pos Type', key:'positionType' as SortKey },
+                  { label:'Matches', key:'matches' as SortKey },
+                  { label:'Avg XP', key:'avgXP' as SortKey },
+                  { label:'Total XP', key:'totalXP' as SortKey }
+                ].map(col => (
                   <TableCell
-                    key={h}
+                    key={col.label}
+                    onClick={()=> ['rank','name','matches','avgXP','totalXP'].includes(col.key) && toggleSort(col.key as SortKey)}
                     sx={{
+                      cursor: ['rank','name','matches','avgXP','totalXP'].includes(col.key) ? 'pointer' : 'default',
+                      userSelect:'none',
                       background:'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                       color:'#fff',
                       fontWeight:700,
@@ -152,7 +220,14 @@ export default function WorldRankingTable(){
                       letterSpacing:.5,
                       borderBottom:'2px solid rgba(255,255,255,0.35)'
                     }}
-                  >{h}</TableCell>
+                  >
+                    {col.label}
+                    {sort.key === col.key && (
+                      <Box component="span" sx={{ ml:.6, fontSize:11, fontWeight:700 }}>
+                        {sort.direction === 'asc' ? '▲' : '▼'}
+                      </Box>
+                    )}
+                  </TableCell>
                 ))}
               </TableRow>
             </TableHead>
@@ -205,6 +280,17 @@ export default function WorldRankingTable(){
                     <Typography sx={{ textAlign:'center', py:5, fontSize:13, color:'#fff' }}>No players found.</Typography>
                   </TableCell>
                 </TableRow>
+              )}
+              {loading && (
+                Array.from({ length: 8 }).map((_,i)=>(
+                  <TableRow key={`skeleton-${i}`} sx={{ opacity:.55 }}>
+                    {Array.from({ length:7 }).map((__,c)=>(
+                      <TableCell key={c} sx={{ background:'rgba(255,255,255,0.04)' }}>
+                        <Box sx={{ height:14, width: c===1? '60%':'40%', background:'linear-gradient(90deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05))', borderRadius:1 }} />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>

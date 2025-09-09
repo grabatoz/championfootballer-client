@@ -181,19 +181,20 @@ export default function NavigationBar() {
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
           <Link href="/home" style={{ display: 'flex', alignItems: 'center' }}>
-            <Image
-              src={cflogo}
-              alt="Champion Footballer Logo"
-              width={350}
-              height={40}
-              priority
-              className="w-auto"
-              style={{
-                height: '40px',
-                width: 'auto',
-                maxWidth: '350px'
-              }}
-            />
+            <Box sx={{ width:{ xs:250, sm:250, md:350 }, display:'flex' }}>
+              <Image
+                src={cflogo}
+                alt="Champion Footballer Logo"
+                width={350}
+                height={40}
+                priority
+                style={{
+                  height: '40px',
+                  width: '100%',
+                  objectFit: 'contain'
+                }}
+              />
+            </Box>
           </Link>
 
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
