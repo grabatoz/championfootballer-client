@@ -82,6 +82,20 @@ interface Match {
     awayCaptainId?: string;
 }
 
+// Guest player representation coming from backend (via /leagues/:leagueId/matches/:matchId)
+interface GuestPlayer {
+    id: string; // guest record id (not necessarily a real user id)
+    team: 'home' | 'away';
+    firstName: string;
+    lastName: string;
+    shirtNumber?: string;
+}
+
+// Extend Match type locally to optionally include guests array
+interface MatchWithGuests extends Match {
+    guests?: GuestPlayer[];
+}
+
 interface League {
     id: string;
     name: string;
@@ -201,7 +215,7 @@ const JerseyAvatar = ({
 
 export default function PlayMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
-    const [match, setMatch] = useState<Match | null>(null);
+    const [match, setMatch] = useState<MatchWithGuests | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [homeGoals, setHomeGoals] = useState<number>(0);
@@ -258,7 +272,7 @@ export default function PlayMatchPage() {
             if (leagueData.success) setLeague(leagueData.league);
             else throw new Error(leagueData.message || 'Failed to fetch league details');
 
-            if (matchData.success) setMatch(matchData.match);
+            if (matchData.success) setMatch(matchData.match); // match may include guests
             else throw new Error(matchData.message || 'Failed to fetch match details');
 
         } catch (err: unknown) {
@@ -636,6 +650,30 @@ export default function PlayMatchPage() {
     const playerOnHomeTeam = match.homeTeamUsers.some(p => p.id === user.id);
     const playerOnAwayTeam = match.awayTeamUsers.some(p => p.id === user.id);
     const teamGoals = playerOnHomeTeam ? match.homeTeamGoals || 0 : (playerOnAwayTeam ? match.awayTeamGoals || 0 : 0);
+
+    // Transform guests into pseudo User objects for display purposes (no links/stats for guests)
+    const guestUsersHome: (User & { isGuest: true })[] = (match.guests || [])
+        .filter(g => g.team === 'home')
+        .map(g => ({
+            id: g.id, // keep id (used only as key) – not linking to player profile
+            firstName: g.firstName,
+            lastName: g.lastName,
+            shirtNumber: g.shirtNumber,
+            isGuest: true
+        } as User & { isGuest: true }));
+
+    const guestUsersAway: (User & { isGuest: true })[] = (match.guests || [])
+        .filter(g => g.team === 'away')
+        .map(g => ({
+            id: g.id,
+            firstName: g.firstName,
+            lastName: g.lastName,
+            shirtNumber: g.shirtNumber,
+            isGuest: true
+        } as User & { isGuest: true }));
+
+    const homePlayersAll: (User & { isGuest?: boolean })[] = [...match.homeTeamUsers, ...guestUsersHome];
+    const awayPlayersAll: (User & { isGuest?: boolean })[] = [...match.awayTeamUsers, ...guestUsersAway];
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
@@ -710,11 +748,11 @@ export default function PlayMatchPage() {
                                 scrollbarWidth: 'none',
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
-                                {match.homeTeamUsers.length > 0 ? (
+                {homePlayersAll.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        {match.homeTeamUsers.map((player, index) => {
+                    {homePlayersAll.map((player, index) => {
                                             return (
-                                                <React.Fragment key={player.id}>
+                        <React.Fragment key={player.id}>
                                                     <Box sx={{
                                                         display: 'flex',
                                                         flexDirection: 'row',
@@ -737,7 +775,7 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {match.status === 'completed' && league.active && user.id !== player.id && (
+                                                        {match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{
                                                                 position: 'absolute',
                                                                 top: { xs: 2, sm: 4, md: 8 },
@@ -759,20 +797,57 @@ export default function PlayMatchPage() {
                                                             </Box>
                                                         )}
 
-                                                        <Link href={`/player/${player.id}`}>
+                                                        {player.hasOwnProperty('isGuest') ? (
                                                             <JerseyAvatar
-                                                                number={player.shirtNumber || '0'}
+                                                                number={player.shirtNumber || 'G'}
                                                                 sx={{
                                                                     width: { xs: 25, sm: 35, md: 74 },
                                                                     height: { xs: 25, sm: 35, md: 74 },
                                                                     mr: { xs: 0.5, sm: 1, md: 2 },
                                                                     flexShrink: 0,
+                                                                    opacity: 0.9
                                                                 }}
                                                             />
-                                                        </Link>
+                                                        ) : (
+                                                            <Link href={`/player/${player.id}`}>
+                                                                <JerseyAvatar
+                                                                    number={player.shirtNumber || '0'}
+                                                                    sx={{
+                                                                        width: { xs: 25, sm: 35, md: 74 },
+                                                                        height: { xs: 25, sm: 35, md: 74 },
+                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                />
+                                                            </Link>
+                                                        )}
 
                                                         {/* Player Info */}
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            {player.hasOwnProperty('isGuest') ? (
+                                                                <>
+                                                            <Typography variant="h6" sx={{
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                }}>
+                                                                    {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{
+                                                                    color: '#D1D5DB',
+                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                }}>
+                                                                    Guest Player
+                                                                </Typography>
+                                                                </>
+                                                            ) : (
                                                             <Link href={`/player/${player.id}`}>
 
                                                                 <Typography variant="h6" sx={{
@@ -785,8 +860,8 @@ export default function PlayMatchPage() {
                                                                     whiteSpace: 'nowrap',
                                                                     lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
                                                                 }}>
-                                                                    {player.firstName} {player.lastName}
-                                                                    {player.id === match.homeCaptainId ? ' (C)' : ''}
+                                    {player.firstName} {player.lastName}
+                                    {player.id === match.homeCaptainId ? ' (C)' : ''}
                                                                 </Typography>
 
                                                                 <Typography variant="body2" sx={{
@@ -797,7 +872,8 @@ export default function PlayMatchPage() {
                                                                 }}>
                                                                     {player.positionType || 'Player'}
                                                                 </Typography>
-                                                            </Link>
+                                </Link>
+                                )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* <Button
                                                                     variant="contained"
@@ -823,7 +899,7 @@ export default function PlayMatchPage() {
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'completed' && league.active && (
+                                                                {isAdmin && match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
@@ -850,7 +926,7 @@ export default function PlayMatchPage() {
                                                             </Box>
                                                         </Box>
                                                     </Box>
-                                                    {index < match.homeTeamUsers.length - 1 && (
+                                                    {index < homePlayersAll.length - 1 && (
                                                         <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
                                                 </React.Fragment>
@@ -920,9 +996,9 @@ export default function PlayMatchPage() {
                                 scrollbarWidth: 'none',
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
-                                {match.awayTeamUsers.length > 0 ? (
+                {awayPlayersAll.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        {match.awayTeamUsers.map((player, index) => {
+                    {awayPlayersAll.map((player, index) => {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
@@ -947,7 +1023,7 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {match.status === 'completed' && league.active && user.id !== player.id && (
+                                                        {match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{
                                                                 position: 'absolute',
                                                                 top: { xs: 2, sm: 4, md: 8 },
@@ -969,19 +1045,56 @@ export default function PlayMatchPage() {
                                                             </Box>
                                                         )}
 
-                                                        <Link href={`/player/${player.id}`}>
+                                                        {player.hasOwnProperty('isGuest') ? (
                                                             <JerseyAvatar
-                                                                number={player.shirtNumber || '0'}
+                                                                number={player.shirtNumber || 'G'}
                                                                 sx={{
                                                                     width: { xs: 25, sm: 35, md: 74 },
                                                                     height: { xs: 25, sm: 35, md: 74 },
                                                                     mr: { xs: 0.5, sm: 1, md: 2 },
                                                                     flexShrink: 0,
+                                                                    opacity: 0.9
                                                                 }}
                                                             />
-                                                        </Link>
+                                                        ) : (
+                                                            <Link href={`/player/${player.id}`}>
+                                                                <JerseyAvatar
+                                                                    number={player.shirtNumber || '0'}
+                                                                    sx={{
+                                                                        width: { xs: 25, sm: 35, md: 74 },
+                                                                        height: { xs: 25, sm: 35, md: 74 },
+                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                />
+                                                            </Link>
+                                                        )}
                                                         {/* Player Info */}
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            {player.hasOwnProperty('isGuest') ? (
+                                                                <>
+                                                                <Typography variant="h6" sx={{
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                }}>
+                                                                    {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{
+                                                                    color: '#D1D5DB',
+                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                }}>
+                                                                    Guest Player
+                                                                </Typography>
+                                                                </>
+                                                            ) : (
                                                             <Link href={`/player/${player.id}`}>
 
                                                                 <Typography variant="h6" sx={{
@@ -1004,9 +1117,10 @@ export default function PlayMatchPage() {
                                                                     mb: { xs: 0.25, sm: 0.5, md: 1 },
                                                                     lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
                                                                 }}>
-                                                                    {player.positionType || 'Player'}
+                                    {player.positionType || 'Player'}
                                                                 </Typography>
-                                                            </Link>
+                                </Link>
+                                )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* <Button
                                                                     variant="contained"
@@ -1032,7 +1146,7 @@ export default function PlayMatchPage() {
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'completed' && league.active && (
+                                                                {isAdmin && match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
@@ -1059,7 +1173,7 @@ export default function PlayMatchPage() {
                                                             </Box>
                                                         </Box>
                                                     </Box>
-                                                    {index < match.awayTeamUsers.length - 1 && (
+                                                    {index < awayPlayersAll.length - 1 && (
                                                         <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
                                                 </React.Fragment>

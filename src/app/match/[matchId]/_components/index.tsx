@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 // import useMediaQuery from '@mui/material/useMediaQuery';
@@ -68,6 +68,8 @@ interface User {
     impact?: number;
     // add other fields if you want
   }[];
+  // added flag (not from backend users) for guest placeholders
+  isGuest?: boolean;
 }
 
 interface Match {
@@ -91,6 +93,8 @@ interface Match {
   leagueId?: string;
   end?: string;
   availableUsers?: { id: string }[];
+  // guests array provided by backend (team based) -> we merge into display list
+  guests?: { id: string; team: 'home' | 'away'; firstName: string; lastName: string; shirtNumber?: string }[];
 }
 
 interface League {
@@ -113,6 +117,8 @@ export default function MatchDetailsPage() {
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
   const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
   const [, setVotedForId] = useState<string | null>(null);
+  // track if we already attempted detailed fetch to avoid loops
+  const detailedFetchDone = useRef(false);
 
   useEffect(() => {
     if (!matchId || !token) return;
@@ -144,6 +150,24 @@ export default function MatchDetailsPage() {
           if (data.success && data.league) setLeague(data.league);
         });
     }
+  }, [match, token]);
+
+  // Fetch detailed match (including guests) if not present in initial /matches/:id response
+  useEffect(() => {
+    if (!match || !token || !match.leagueId) return;
+    // If guests already present or already fetched, skip
+    if ((match as any).guests?.length || detailedFetchDone.current) return;
+    detailedFetchDone.current = true;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${match.leagueId}/matches/${match.id}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (data.success && data.match) {
+          setMatch(prev => prev && prev.id === data.match.id ? { ...prev, guests: data.match.guests || [] } : prev);
+        }
+      } catch { /* ignore */ }
+    })();
   }, [match, token]);
 
   // Automatically select home team on load if match is loaded
@@ -351,9 +375,18 @@ export default function MatchDetailsPage() {
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
+                const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
+                  id: `guest-${g.id}`,
+                  firstName: g.firstName,
+                  lastName: g.lastName,
+                  shirtNumber: g.shirtNumber,
+                  __team: g.team,
+                  isGuest: true
+                }));
                 const allPlayers: PlayerWithTeam[] = [
                   ...(match?.homeTeamUsers ?? []).map(p => ({ ...p, __team: 'home' as const })),
                   ...(match?.awayTeamUsers ?? []).map(p => ({ ...p, __team: 'away' as const })),
+                  ...guestPlayers
                 ];
 
                 return (
@@ -491,6 +524,20 @@ export default function MatchDetailsPage() {
                                           title={`${player.firstName} ${player.lastName}`}
                                         >
                                           {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
+                                          {player.isGuest && (
+                                            <Chip
+                                              label="G"
+                                              size="small"
+                                              sx={{
+                                                ml: 1,
+                                                height: 18,
+                                                bgcolor: '#e67e22',
+                                                color: 'white',
+                                                fontSize: 10,
+                                                '& .MuiChip-label': { px: 0.5, fontWeight: 700 }
+                                              }}
+                                            />
+                                          )}
                                         </Typography>
                                           <Box
                                     sx={{
