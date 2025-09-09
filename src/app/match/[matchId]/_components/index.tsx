@@ -498,7 +498,7 @@ export default function MatchDetailsPage() {
                                               display: 'flex',
                                               alignItems: 'center',
                                               justifyContent: 'center',
-                                              color: '#000',
+                                              color: '#fff',
                                               fontWeight: 800,
                                               fontSize: 14,
                                               lineHeight: 1,
