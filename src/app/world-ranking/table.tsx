@@ -9,6 +9,25 @@ interface Filters { positionType?: string; mode: 'total'|'avg'; year?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
 interface SortState { key: SortKey; direction: 'asc' | 'desc'; }
 
+// Helper to get a comparable value for sorting without using any
+function getSortValue(player: WorldRankingPlayer, key: SortKey): string | number {
+  switch(key){
+    case 'name':
+      return player.name.toLowerCase();
+    case 'rank':
+      return player.rank;
+    case 'matches':
+      return player.matches ?? 0;
+    case 'avgXP':
+      return player.avgXP ?? 0;
+    case 'totalXP':
+      return player.totalXP ?? 0;
+    default:
+      // Exhaustive check (should never happen)
+      return 0;
+  }
+}
+
 export default function WorldRankingTable(){
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({ mode: 'total' });
@@ -48,8 +67,8 @@ export default function WorldRankingTable(){
     const { key, direction } = sort;
     const dirMul = direction === 'asc' ? 1 : -1;
     base = [...base].sort((a,b)=>{
-      const va = key === 'name' ? a.name.toLowerCase() : (a as any)[key];
-      const vb = key === 'name' ? b.name.toLowerCase() : (b as any)[key];
+      const va = getSortValue(a, key);
+      const vb = getSortValue(b, key);
       if (va < vb) return -1 * dirMul;
       if (va > vb) return 1 * dirMul;
       return 0;
