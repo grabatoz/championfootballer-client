@@ -185,11 +185,11 @@ export default function NavigationBar() {
               src={cflogo}
               alt="Champion Footballer Logo"
               width={350}
-              height={45}
+              height={40}
               priority
               className="w-auto"
               style={{
-                height: '45px',
+                height: '40px',
                 width: 'auto',
                 maxWidth: '350px'
               }}
