@@ -944,3 +944,20 @@ export function updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: 
     setCache(cacheKey, newData);
   }
 }
+
+// World Ranking -------------------------------------------------------------
+export interface WorldRankingPlayer {
+  id: string; name: string; position: string; positionType: string; profilePicture: string; totalXP: number; avgXP: number; matches: number; rank: number;
+}
+export interface WorldRankingResponse {
+  players: WorldRankingPlayer[]; mode: 'avg'|'total'; limit: number; playerOutsideTop?: boolean; playerRank?: number;
+}
+export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId?: string; positionType?: string; year?: number; limit?: number; token?: string }) {
+  const { token, ...rest } = params || {};
+  const search = new URLSearchParams();
+  Object.entries(rest).forEach(([k,v])=>{ if(v!==undefined && v!==null) search.append(k, String(v)); });
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/world-ranking?${search.toString()}`;
+  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if(!res.ok) throw new Error('Failed world ranking');
+  return res.json() as Promise<WorldRankingResponse>;
+}

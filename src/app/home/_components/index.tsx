@@ -863,6 +863,30 @@ export default function PlayerDashboard() {
         </Box>
       </Paper>
 
+      {/* Quick Links */}
+      <Box sx={{ mt:4, width:'100%', display:'flex', flexWrap:'wrap', gap:2, justifyContent:'center' }}>
+        <Button
+          href="/world-ranking"
+          component={"a" as any}
+          sx={{
+            textTransform:'none',
+            background:'#004e5f',
+            color:'#fff',
+            px:3,
+            py:2,
+            borderRadius:3,
+            fontWeight:600,
+            display:'flex',
+            alignItems:'center',
+            gap:1.2,
+            '&:hover':{ background:'#006b82' }
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10l1 5-6 2-6-2 1-5Z" /><path d="M4 9c.6 2.1 2.5 3 4 3" /><path d="M20 9c-.6 2.1-2.5 3-4 3" /></svg>
+          World Ranking
+        </Button>
+      </Box>
+
         {/* <Box sx={{
           display: 'flex',
           alignItems: { xs: 'stretch', md: 'center' },
