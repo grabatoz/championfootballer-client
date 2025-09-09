@@ -111,7 +111,10 @@ export default function EditMatchPage() {
             }
             if (m.homeTeamImage) setHomeTeamImagePreview(m.homeTeamImage.startsWith('http') ? m.homeTeamImage : `${process.env.NEXT_PUBLIC_API_URL}${m.homeTeamImage}`);
             if (m.awayTeamImage) setAwayTeamImagePreview(m.awayTeamImage.startsWith('http') ? m.awayTeamImage : `${process.env.NEXT_PUBLIC_API_URL}${m.awayTeamImage}`);
-        } catch (e: any) { setError(e.message || 'Load failed'); } finally { setLoading(false); }
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Load failed';
+            setError(msg);
+        } finally { setLoading(false); }
     }, [leagueId, matchId, token]);
 
     useEffect(() => { if (leagueId && matchId && token) fetchData(); }, [leagueId, matchId, token, fetchData]);
@@ -119,7 +122,13 @@ export default function EditMatchPage() {
     const guestToPlayer = (g: StagedGuest): PlayerOption => ({ id: `guest-${g.tempId}`, firstName: g.firstName, lastName: g.lastName, email: '', isGuest: true, guestTempId: g.tempId, team: g.team, existingGuestId: g.existingId });
 
     // Skill calculations
-    const calcSkill = (p: PlayerOption) => { if (p.isGuest) return 50; const s = p.skills || {}; const vals = ['dribbling', 'shooting', 'passing', 'pace', 'defending', 'physical'].map(k => (s as any)[k] || 0); return Math.round(vals.reduce((a, b) => a + b, 0) / 6); };
+    const calcSkill = (p: PlayerOption) => {
+        if (p.isGuest) return 50;
+        const s = p.skills;
+        const skillKeys: (keyof NonNullable<User['skills']>)[] = ['dribbling', 'shooting', 'passing', 'pace', 'defending', 'physical'];
+        const total = skillKeys.reduce((sum, k) => sum + (s?.[k] ?? 0), 0);
+        return Math.round(total / skillKeys.length);
+    };
     const teamStrength = (arr: PlayerOption[]) => arr.length ? Math.round(arr.reduce((s, p) => s + calcSkill(p), 0) / arr.length) : 0;
     const winPct = (a: number, b: number) => { if (!a && !b) return 50; if (!b) return 85; if (!a) return 15; const diff = a - b; return Math.max(15, Math.min(85, Math.round(50 + (diff / 100) * 30))); };
 
@@ -214,10 +223,13 @@ export default function EditMatchPage() {
             const newOnes = currentGuests.filter(g => !g.existingId);
             await Promise.allSettled(newOnes.map(g => fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ team: g.team, firstName: g.firstName, lastName: g.lastName, shirtNumber: g.shirtNumber }) })));
             // Clear matches cache so updated match list refetches
-            try { (cacheManager as any).clearCache ? (cacheManager as any).clearCache('matches_cache') : null; } catch { }
+            try { cacheManager.clearCache('matches_cache'); } catch { /* ignore cache clear issues */ }
             toast.success('Match updated');
             router.push(`/league/${leagueId}`);
-        } catch (er: any) { setError(er.message || 'Update error'); } finally { setIsSubmitting(false); }
+        } catch (er: unknown) {
+            const msg = er instanceof Error ? er.message : 'Update error';
+            setError(msg);
+        } finally { setIsSubmitting(false); }
     };
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
@@ -983,7 +995,12 @@ export default function EditMatchPage() {
             <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
                 <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
                 <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
-                    <RadioGroup row value={guestTeam} onChange={e => setGuestTeam(e.target.value as any)} sx={{ mb: 3, justifyContent: 'center' }}>
+                    <RadioGroup
+                        row
+                        value={guestTeam}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestTeam(e.target.value as 'home' | 'away')}
+                        sx={{ mb: 3, justifyContent: 'center' }}
+                    >
                         <FormControlLabel value='home' control={<Radio sx={{ color: '#43a047' }} />} label='Home Team' />
                         <FormControlLabel value='away' control={<Radio sx={{ color: '#ef5350' }} />} label='Away Team' />
                     </RadioGroup>
