@@ -748,11 +748,11 @@ export default function PlayMatchPage() {
                                 scrollbarWidth: 'none',
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
-                {homePlayersAll.length > 0 ? (
+                                {homePlayersAll.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {homePlayersAll.map((player, index) => {
+                                        {homePlayersAll.map((player, index) => {
                                             return (
-                        <React.Fragment key={player.id}>
+                                                <React.Fragment key={player.id}>
                                                     <Box sx={{
                                                         display: 'flex',
                                                         flexDirection: 'row',
@@ -826,54 +826,54 @@ export default function PlayMatchPage() {
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                                             {player.hasOwnProperty('isGuest') ? (
                                                                 <>
-                                                            <Typography variant="h6" sx={{
-                                                                    color: 'white',
-                                                                    fontWeight: 'bold',
-                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap',
-                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                }}>
-                                                                    {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
-                                                                </Typography>
-                                                                <Typography variant="body2" sx={{
-                                                                    color: '#D1D5DB',
-                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                }}>
-                                                                    Guest Player
-                                                                </Typography>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        Guest Player
+                                                                    </Typography>
                                                                 </>
                                                             ) : (
-                                                            <Link href={`/player/${player.id}`}>
+                                                                <Link href={`/player/${player.id}`}>
 
-                                                                <Typography variant="h6" sx={{
-                                                                    color: 'white',
-                                                                    fontWeight: 'bold',
-                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap',
-                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                }}>
-                                    {player.firstName} {player.lastName}
-                                    {player.id === match.homeCaptainId ? ' (C)' : ''}
-                                                                </Typography>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName}
+                                                                        {player.id === match.homeCaptainId ? ' (C)' : ''}
+                                                                    </Typography>
 
-                                                                <Typography variant="body2" sx={{
-                                                                    color: '#D1D5DB',
-                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                }}>
-                                                                    {player.positionType || 'Player'}
-                                                                </Typography>
-                                </Link>
-                                )}
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        {player.positionType || 'Player'}
+                                                                    </Typography>
+                                                                </Link>
+                                                            )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* <Button
                                                                     variant="contained"
@@ -996,9 +996,9 @@ export default function PlayMatchPage() {
                                 scrollbarWidth: 'none',
                                 '&::-webkit-scrollbar': { display: 'none' }
                             }}>
-                {awayPlayersAll.length > 0 ? (
+                                {awayPlayersAll.length > 0 ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {awayPlayersAll.map((player, index) => {
+                                        {awayPlayersAll.map((player, index) => {
                                             return (
                                                 <React.Fragment key={player.id}>
                                                     <Box sx={{
@@ -1073,54 +1073,54 @@ export default function PlayMatchPage() {
                                                         <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                                             {player.hasOwnProperty('isGuest') ? (
                                                                 <>
-                                                                <Typography variant="h6" sx={{
-                                                                    color: 'white',
-                                                                    fontWeight: 'bold',
-                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap',
-                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                }}>
-                                                                    {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
-                                                                </Typography>
-                                                                <Typography variant="body2" sx={{
-                                                                    color: '#D1D5DB',
-                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                }}>
-                                                                    Guest Player
-                                                                </Typography>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        Guest Player
+                                                                    </Typography>
                                                                 </>
                                                             ) : (
-                                                            <Link href={`/player/${player.id}`}>
+                                                                <Link href={`/player/${player.id}`}>
 
-                                                                <Typography variant="h6" sx={{
-                                                                    color: 'white',
-                                                                    fontWeight: 'bold',
-                                                                    fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap',
-                                                                    lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                }}>
-                                                                    {player.firstName} {player.lastName}
-                                                                    {player.id === match.awayCaptainId ? ' (C)' : ''}
-                                                                </Typography>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName}
+                                                                        {player.id === match.awayCaptainId ? ' (C)' : ''}
+                                                                    </Typography>
 
-                                                                <Typography variant="body2" sx={{
-                                                                    color: '#D1D5DB',
-                                                                    fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                    lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                }}>
-                                    {player.positionType || 'Player'}
-                                                                </Typography>
-                                </Link>
-                                )}
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        {player.positionType || 'Player'}
+                                                                    </Typography>
+                                                                </Link>
+                                                            )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* <Button
                                                                     variant="contained"
