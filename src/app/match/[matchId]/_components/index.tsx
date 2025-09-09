@@ -156,7 +156,7 @@ export default function MatchDetailsPage() {
   useEffect(() => {
     if (!match || !token || !match.leagueId) return;
     // If guests already present or already fetched, skip
-    if ((match as any).guests?.length || detailedFetchDone.current) return;
+  if (match.guests?.length || detailedFetchDone.current) return;
     detailedFetchDone.current = true;
     (async () => {
       try {
