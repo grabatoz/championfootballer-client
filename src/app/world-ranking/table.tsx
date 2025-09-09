@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/hooks';
 interface Filters { positionType?: string; mode: 'total'|'avg'; year?: string; }
 
 export default function WorldRankingTable(){
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({ mode: 'total' });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<WorldRankingResponse | null>(null);
@@ -22,7 +22,10 @@ export default function WorldRankingTable(){
     try {
       const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, playerId: user?.id });
       setData(res);
-    } catch(e:any){ setError(e.message || 'Failed'); }
+    } catch(e: unknown) {
+      const message = e instanceof Error ? (e.message || 'Failed') : 'Failed';
+      setError(message);
+    }
     finally { setLoading(false); }
   };
 

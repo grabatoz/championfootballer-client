@@ -867,7 +867,7 @@ export default function PlayerDashboard() {
       <Box sx={{ mt:4, width:'100%', display:'flex', flexWrap:'wrap', gap:2, justifyContent:'center' }}>
         <Button
           href="/world-ranking"
-          component={"a" as any}
+          component="a"
           sx={{
             textTransform:'none',
             background:'#004e5f',
