@@ -116,6 +116,7 @@ export default function LandingPage() {
               fontSize: { xs: '1.2rem', md: '1.5rem' },
               textShadow: '0 2px 4px rgba(0,0,0,0.6)',
               color: 'white',
+              display: { xs: 'none', md: 'block' }
             }}
           >
             Your Game. Your Stats.<br />Your Glory
@@ -129,6 +130,8 @@ export default function LandingPage() {
               color: '#f0f0f0',
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               fontSize: { xs: '1rem', md: '1.05rem' },
+              display: { xs: 'none', md: 'block' }
+
             }}
           >
             Create your personalised matches, track your performance, and climb the ranks. Champion Footballer is your home for casual football made competitive!
@@ -143,7 +146,7 @@ export default function LandingPage() {
             justifyContent: 'center',
             alignItems: 'center',
             background: 'transparent',
-            mt: '13%',              // md: ensure Paper itself is centered
+            mt: {xs:'90%',sm:'20%',md:'13%'},              // md: ensure Paper itself is centered
             // ml: { sm: '50%' }
           }}
           
