@@ -33,8 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 		const data = await r.json();
 		return res.status(200).json(data);
-	} catch (err: any) {
-		return res.status(500).json({ message: 'Proxy failure', error: err?.message || String(err) });
+	} catch (err: unknown) {
+		const errorMessage = err instanceof Error ? err.message : String(err);
+		return res.status(500).json({ message: 'Proxy failure', error: errorMessage });
 	}
 }
 

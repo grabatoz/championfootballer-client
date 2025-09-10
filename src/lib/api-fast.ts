@@ -144,7 +144,7 @@ export const leagueAPI = {
 
   create: async (league: CreateLeagueDTO): Promise<ApiResponse<League>> => {
     try {
-      const data = await quickFetch<any>('/leagues', {
+      const data = await quickFetch<{ league: League }>('/leagues', {
         method: 'POST',
         body: JSON.stringify(league),
       });
@@ -162,7 +162,7 @@ export const leagueAPI = {
 
   getById: async (id: string): Promise<ApiResponse<League>> => {
     try {
-      const data = await quickFetch<any>(`/leagues/${id}`, {}, `league_${id}`);
+      const data = await quickFetch<{ league: League }>(`/leagues/${id}`, {}, `league_${id}`);
       return { success: true, data: data.league, message: 'League fetched successfully' };
     } catch (error) {
       return {
@@ -173,9 +173,9 @@ export const leagueAPI = {
     }
   },
 
-  join: async (id: string): Promise<ApiResponse<any>> => {
+  join: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
     try {
-      const data = await quickFetch<any>(`/leagues/${id}/join`, { method: 'POST' });
+      const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}/join`, { method: 'POST' });
       fastCache.delete('leagues_all'); // Invalidate cache
       fastCache.delete(`league_${id}`);
       return { success: true, data, message: 'Joined league successfully' };
@@ -201,7 +201,7 @@ export const matchAPI = {
 
   create: async (match: CreateMatchDTO): Promise<ApiResponse<Match>> => {
     try {
-      const data = await quickFetch<any>('/matches', {
+      const data = await quickFetch<{ match: Match }>('/matches', {
         method: 'POST',
         body: JSON.stringify(match),
       });
@@ -222,7 +222,7 @@ export const matchAPI = {
 
   update: async (id: string, match: UpdateMatchDTO): Promise<ApiResponse<Match>> => {
     try {
-      const data = await quickFetch<any>(`/matches/${id}`, {
+      const data = await quickFetch<{ match: Match }>(`/matches/${id}`, {
         method: 'PUT',
         body: JSON.stringify(match),
       });
@@ -297,7 +297,7 @@ export async function fetchWorldRanking(params: {
   limit?: number;
   token?: string;
 }): Promise<WorldRankingResponse> {
-  const { token, ...rest } = params || {};
+  const { token: _token, ...rest } = params || {};
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k, v]) => {
     if (v !== undefined && v !== null) search.append(k, String(v));
