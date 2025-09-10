@@ -1,55 +1,40 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-// Proxy endpoint to shield the frontend from VPS path differences and CORS
+// Simple proxy to the Koa API's /world-ranking endpoint so the client can also call
+// our Next.js domain at /api/world-ranking (useful on Vercel and for CORS simplicity).
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+	if (req.method !== 'GET') {
+		res.setHeader('Allow', 'GET');
+		return res.status(405).json({ message: 'Method Not Allowed' });
+	}
 
-  try {
-    const base = (process.env.SERVER_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
-    const q: Record<string, string> = {};
-    Object.entries(req.query || {}).forEach(([k, v]) => {
-      if (Array.isArray(v)) q[k] = v[0] ?? '';
-      else if (v !== undefined) q[k] = String(v);
-    });
-    const search = new URLSearchParams(q).toString();
+	try {
+		// Prefer a server-side env var for the backend base URL; fallback to the public one for dev
+		const base = process.env.API_URL || process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Prefer direct world-ranking; server also supports /api/world-ranking via our mounts
-    const candidates = [
-      `${base}/world-ranking${search ? `?${search}` : ''}`,
-      `${base}/api/world-ranking${search ? `?${search}` : ''}`,
-    ];
+		// Forward query params directly
+		const qs = new URLSearchParams();
+		Object.entries(req.query).forEach(([k, v]) => {
+			if (Array.isArray(v)) {
+				v.forEach((vi) => qs.append(k, String(vi)));
+			} else if (v !== undefined) {
+				qs.append(k, String(v));
+			}
+		});
 
-    const headers: Record<string,string> = { 'Accept': 'application/json' };
-    if (req.headers.authorization) headers['Authorization'] = String(req.headers.authorization);
+		const url = `${base.replace(/\/$/, '')}/world-ranking${qs.toString() ? `?${qs.toString()}` : ''}`;
+		const r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+		if (!r.ok) {
+			const text = await r.text().catch(() => '');
+			return res.status(r.status).json({ message: 'Upstream error', status: r.status, detail: text });
+		}
 
-    let lastErr: any = null;
-    for (const url of candidates) {
-      try {
-        const upstream = await fetch(url, { headers });
-        const text = await upstream.text();
-        const contentType = upstream.headers.get('content-type') || '';
-        const body = contentType.includes('application/json') ? JSON.parse(text || '{}') : text;
-        if (!upstream.ok) {
-          lastErr = { status: upstream.status, body };
-          continue;
-        }
-        // Pass-through success
-        if (typeof body === 'string') {
-          res.setHeader('Content-Type', contentType || 'application/json');
-          return res.status(upstream.status).send(body);
-        }
-        return res.status(upstream.status).json(body);
-      } catch (e: any) {
-        lastErr = e;
-        continue;
-      }
-    }
-
-    return res.status(502).json({ error: 'Upstream failed', detail: lastErr });
-  } catch (error: any) {
-    return res.status(500).json({ error: 'Proxy error', message: error?.message || 'Unknown error' });
-  }
+		// Cache briefly at the edge/CDN if possible
+		res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+		const data = await r.json();
+		return res.status(200).json(data);
+	} catch (err: any) {
+		return res.status(500).json({ message: 'Proxy failure', error: err?.message || String(err) });
+	}
 }
+
