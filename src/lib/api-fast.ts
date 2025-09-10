@@ -7,25 +7,29 @@ import type {
   LeaderboardResponse,
   PlayersResponse,
   MatchesResponse,
-  DreamTeamResponse,
-  PlayerStatsResponse,
-  MatchUser
+  PlayerStatsResponse
 } from '@/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Cache item interface
+interface CacheItem<T> {
+  data: T;
+  expires: number;
+}
+
 // LIGHTNING FAST CACHE
-const fastCache = new Map<string, { data: any; expires: number }>();
+const fastCache = new Map<string, CacheItem<unknown>>();
 
 function getCache<T>(key: string): T | null {
   const cached = fastCache.get(key);
-  if (cached && Date.now() < cached.expires) return cached.data;
+  if (cached && Date.now() < cached.expires) return cached.data as T;
   fastCache.delete(key);
   return null;
 }
 
 function setCache<T>(key: string, data: T, minutes: number = 15): void {
-  fastCache.set(key, { data, expires: Date.now() + (minutes * 60 * 1000) });
+  fastCache.set(key, { data, expires: Date.now() + (minutes * 60 * 1000) } as CacheItem<T>);
 }
 
 // ULTRA FAST FETCH
@@ -57,11 +61,27 @@ async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheK
   return data;
 }
 
+// Auth response interfaces
+interface AuthResponse {
+  user: User;
+  token: string;
+  message: string;
+}
+
+interface UserDataResponse {
+  user: User;
+  message: string;
+}
+
+interface LogoutResponse {
+  message: string;
+}
+
 // AUTH API - OPTIMIZED
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<User>> => {
     try {
-      const data = await quickFetch<any>('/auth/login', {
+      const data = await quickFetch<AuthResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ user: credentials }),
       });
@@ -83,7 +103,7 @@ export const authAPI = {
 
   register: async (credentials: RegisterCredentials): Promise<ApiResponse<User>> => {
     try {
-      const data = await quickFetch<any>('/auth/register', {
+      const data = await quickFetch<AuthResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ user: credentials }),
       });
@@ -105,7 +125,7 @@ export const authAPI = {
 
   getUserData: async (): Promise<ApiResponse<User>> => {
     try {
-      const data = await quickFetch<any>('/auth/data', {}, 'user_data');
+      const data = await quickFetch<UserDataResponse>('/auth/data', {}, 'user_data');
       return {
         success: true,
         data: data.user,
@@ -122,7 +142,7 @@ export const authAPI = {
 
   logout: async (): Promise<ApiResponse<null>> => {
     try {
-      await quickFetch<any>('/auth/logout', { method: 'POST' });
+      await quickFetch<LogoutResponse>('/auth/logout', { method: 'POST' });
       Cookies.remove('token');
       fastCache.clear(); // Clear all cache on logout
       return { success: true, message: 'Logged out successfully' };
@@ -297,7 +317,8 @@ export async function fetchWorldRanking(params: {
   limit?: number;
   token?: string;
 }): Promise<WorldRankingResponse> {
-  const { token: _token, ...rest } = params || {};
+  const { token, ...rest } = params || {};
+  // Note: token is extracted but not used in this implementation
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k, v]) => {
     if (v !== undefined && v !== null) search.append(k, String(v));
