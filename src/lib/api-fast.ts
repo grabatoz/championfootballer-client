@@ -315,9 +315,9 @@ export async function fetchWorldRanking(params: {
   positionType?: string;
   year?: number;
   limit?: number;
-  token?: string;
+//   token?: string;
 }): Promise<WorldRankingResponse> {
-  const { token, ...rest } = params || {};
+  const {...rest } = params || {};
   // Note: token is extracted but not used in this implementation
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k, v]) => {
