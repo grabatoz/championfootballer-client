@@ -152,20 +152,20 @@ interface InfluenceEntry {
 // Replace the empty extending interface with a type alias to satisfy eslint
 type StrengthEntry = InfluenceEntry;
 
-interface RecentRow {
-  id: string;
-  date: string;
-  goals: number;
-  assists: number;
-  cleanSheets: number;
-  impact: number;
-  defence: number;
-  fk: number;
-  pens: number;
-  motm: number;
-  points: number;
-  result: string;
-}
+// interface RecentRow {
+//   id: string;
+//   date: string;
+//   goals: number;
+//   assists: number;
+//   cleanSheets: number;
+//   impact: number;
+//   defence: number;
+//   fk: number;
+//   pens: number;
+//   motm: number;
+//   points: number;
+//   result: string;
+// }
 
 // ---------- DYNAMIC RECHARTS ----------
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
@@ -308,7 +308,7 @@ export default function CareerPage() {
   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
 
   // ------------- AGGREGATION (supports forced modes) -------------
-  const { performanceData, groupingType, periodKeyFn } = useMemo(() => {
+  const { performanceData, groupingType } = useMemo(() => {
     if (!matches.length) {
       return {
         performanceData: [] as PerformanceRow[],
@@ -454,18 +454,18 @@ export default function CareerPage() {
   }, [matches, groupMode]);
 
   // ------------- RAW MATCH SCATTER DATA -------------
-  const performanceIndexByKey = useMemo(() => {
-    const map: Record<string, PerformanceRow> = {};
-    performanceData.forEach(p => { map[p.key] = p; });
-    return map;
-  }, [performanceData]);
+  // const performanceIndexByKey = useMemo(() => {
+  //   const map: Record<string, PerformanceRow> = {};
+  //   performanceData.forEach(p => { map[p.key] = p; });
+  //   return map;
+  // }, [performanceData]);
 
-  interface ScatterPoint {
-    key: string;
-    label: string;       // must match XAxis dataKey ("label") so it aligns
-    year: string;
-    matchPoints: number;
-  }
+  // interface ScatterPoint {
+  //   key: string;
+  //   label: string;       // must match XAxis dataKey ("label") so it aligns
+  //   year: string;
+  //   matchPoints: number;
+  // }
 
   // const scatterPoints: ScatterPoint[] = useMemo(() => {
   //   if (!performanceData.length) return [];
