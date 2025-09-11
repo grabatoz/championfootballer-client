@@ -518,25 +518,57 @@ function AllLeagues() {
       console.log('Fetching all available leagues...');
       setLoading(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+      // First get the user's leagues from auth/status
+      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.user) {
+      if (authResponse.ok) {
+        const authData = await authResponse.json();
+        if (authData.success && authData.user) {
           // Combine joined and managed leagues
-          const leagues = [
-            ...(data.user.leagues || []),
-            ...(data.user.administeredLeagues || [])
+          const userLeagues = [
+            ...(authData.user.leagues || []),
+            ...(authData.user.administeredLeagues || [])
           ].filter(league => league && league.id); // Filter out undefined/null leagues
           
           // Remove duplicates
-          const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
-          setLeagues(uniqueLeagues);
-          console.log('Setting leagues:', uniqueLeagues);
+          const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
+          
+          // Now fetch detailed information for each league
+          const detailedLeagues = await Promise.all(
+            uniqueLeagues.map(async (league) => {
+              try {
+                const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (leagueResponse.ok) {
+                  const leagueData = await leagueResponse.json();
+                  if (leagueData.success) {
+                    return {
+                      ...league,
+                      members: leagueData.league.members || [],
+                      matches: leagueData.league.matches || [],
+                      administrators: leagueData.league.administrators || []
+                    };
+                  }
+                }
+                // If individual league fetch fails, return the basic league info
+                return league;
+              } catch (error) {
+                console.warn(`Failed to fetch details for league ${league.id}:`, error);
+                return league;
+              }
+            })
+          );
+          
+          setLeagues(detailedLeagues);
+          console.log('Setting detailed leagues:', detailedLeagues);
         }
       } else {
         console.error('Failed to fetch leagues');
