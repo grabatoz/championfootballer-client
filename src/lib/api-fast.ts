@@ -634,100 +634,37 @@ export function getCacheStatus(): Record<string, boolean> {
 
 // Export main functions for backward compatibility
 export { getCache, setCache };
-'use client';
 
-type CacheEntry<T> = { data: T; expiry: number };
-const fastCache = new Map<string, CacheEntry<any>>();
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
-function now() { return Date.now(); }
-function get<T>(key: string): T | undefined {
-  const hit = fastCache.get(key);
-  if (!hit) return undefined;
-  if (hit.expiry < now()) { fastCache.delete(key); return undefined; }
-  return hit.data as T;
-}
-function set<T>(key: string, data: T, ttlSec: number) {
-  if (ttlSec <= 0) return;
-  fastCache.set(key, { data, expiry: now() + ttlSec * 1000 });
-}
-export function clearCache(pattern?: string) {
-  if (!pattern) return fastCache.clear();
-  for (const k of fastCache.keys()) if (k.includes(pattern)) fastCache.delete(k);
-}
-
-function getDefaultTtl(endpoint: string, method: string): number {
-  if (method !== 'GET') return 0;
-  if (endpoint.startsWith('/leagues')) return 1800;
-  if (endpoint.startsWith('/matches') && endpoint.includes('/votes')) return 300;
-  if (endpoint.startsWith('/matches') && endpoint.includes('/stats')) return 600;
-  if (endpoint.startsWith('/matches')) return 600;
-  if (endpoint.startsWith('/dream-team')) return 600;
-  if (endpoint.startsWith('/leaderboard')) return 1800;
-  if (endpoint.startsWith('/players')) return 1800;
-  return 300;
-}
-
-function getToken(): string | undefined {
-  try {
-    if (typeof window === 'undefined') return undefined;
-    const fromStorage = window.localStorage?.getItem('token') || undefined;
-    if (fromStorage) return fromStorage;
-    const m = document.cookie?.match(/(?:^|; )token=([^;]+)/);
-    return m ? decodeURIComponent(m[1]) : undefined;
-  } catch { return undefined; }
-}
-
-export async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheKey?: string): Promise<T> {
-  const method = (options.method || 'GET').toUpperCase();
-  const url = `${API_BASE_URL}${endpoint}`;
-  const key = cacheKey || `${method}:${endpoint}`;
-  const ttl = getDefaultTtl(endpoint, method);
-
-  if (method === 'GET' && ttl > 0) {
-    const cached = get<T>(key);
-    if (cached !== undefined) return cached;
-  }
-
-  const headers = new Headers(options.headers || {});
-  const token = getToken();
-  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
-
-  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
-  if (!isFormData && options.body && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  const resp = await fetch(url, { ...options, headers });
-  if (!resp.ok) {
-    let body: any;
-    try { body = await resp.json(); } catch { /* noop */ }
-    const err = new Error(body?.message || `Request failed: ${resp.status}`);
-    (err as any).status = resp.status;
-    (err as any).body = body;
-    throw err;
-  }
-  const data = await resp.json();
-  if (method === 'GET' && ttl > 0) set(key, data, ttl);
-  return data;
-}
-
-// Lightweight wrappers
+// Strongly-typed lightweight wrappers (no `any`)
 export const leagueAPI = {
-  getAll: () => quickFetch<any>('/leagues', { method: 'GET' }, 'GET:/leagues'),
-  getById: (id: string) => quickFetch<any>(`/leagues/${id}`, { method: 'GET' }, `GET:/leagues/${id}`),
+  getAll: (): Promise<LeaguesResponse> =>
+    quickFetch<LeaguesResponse>('/leagues', { method: 'GET' }, 'leagues_all'),
+
+  getById: (id: string): Promise<ApiResponse<League>> =>
+    quickFetch<{ league: League }>(`/leagues/${id}`, { method: 'GET' }, `league_${id}`)
+      .then(res => ({ success: true, data: res.league, message: 'League fetched successfully' })),
 };
 
 export const matchAPI = {
-  // Prefer a dedicated list endpoint if available, else fall back to league details
-  getByLeague: (leagueId: string) =>
-    quickFetch<any>(`/leagues/${leagueId}/matches`, { method: 'GET' }, `GET:/leagues/${leagueId}/matches`),
-  getVotes: (matchId: string) =>
-    quickFetch<any>(`/matches/${matchId}/votes`, { method: 'GET' }, `GET:/matches/${matchId}/votes`),
+  getAll: (): Promise<MatchesResponse> =>
+    quickFetch<MatchesResponse>('/matches', { method: 'GET' }, 'matches_all'),
+
+  getByLeague: (leagueId: string): Promise<MatchesResponse> =>
+    quickFetch<MatchesResponse>(`/matches?leagueId=${leagueId}`, { method: 'GET' }, `matches_league_${leagueId}`),
+
+  getById: (id: string): Promise<ApiResponse<Match>> =>
+    quickFetch<{ match: Match }>(`/matches/${id}`, { method: 'GET' }, `match_${id}`)
+      .then(res => ({ success: true, data: res.match, message: 'Match fetched successfully' })),
+
+  getVotes: (matchId: string): Promise<ApiResponse<{ votes: Record<string, number>; userVote: string | null }>> =>
+    quickFetch<{ votes: Record<string, number>; userVote: string | null }>(
+      `/matches/${matchId}/votes`,
+      { method: 'GET' },
+      `match_votes_${matchId}`
+    ).then(data => ({ success: true, data, message: 'Votes fetched successfully' })),
 };
 
 export const dreamTeamAPI = {
-  getByLeague: (leagueId: string) =>
-    quickFetch<any>(`/leagues/${leagueId}/dream-team`, { method: 'GET' }, `GET:/leagues/${leagueId}/dream-team`),
+  getByLeague: (leagueId: string): Promise<DreamTeamResponse> =>
+    quickFetch<DreamTeamResponse>(`/dream-team?leagueId=${leagueId}`, { method: 'GET' }, `dream_team_${leagueId}`),
 };
