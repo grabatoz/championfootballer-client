@@ -13,13 +13,13 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Chip,
-  Divider,
-  LinearProgress,
+  // Chip,
+  // Divider,
+  // LinearProgress,
   ToggleButtonGroup,
   ToggleButton,
-  Slider,
-  Card,
+  // Slider,
+  // Card,
   CardContent
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
@@ -31,7 +31,7 @@ import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { styled } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
-import { Legend as RechartsLegend } from 'recharts';
+// import { Legend as RechartsLegend } from 'recharts';
 import { useAuth } from '@/lib/useAuth';
 
 // ---------- THEME (Brand) ----------
@@ -60,13 +60,13 @@ const themeColors = {
 };
 
 // Mock data to match Flutter UI
-const performanceData = [
-  { month: "Jan", points: 20, total: 100 },
-  { month: "Feb", points: 40, total: 200 },
-  { month: "Mar", points: 60, total: 300 },
-  { month: "Apr", points: 80, total: 400 },
-  { month: "May", points: 50, total: 450 },
-];
+// const performanceData = [
+//   { month: "Jan", points: 20, total: 100 },
+//   { month: "Feb", points: 40, total: 200 },
+//   { month: "Mar", points: 60, total: 300 },
+//   { month: "Apr", points: 80, total: 400 },
+//   { month: "May", points: 50, total: 450 },
+// ];
 
 const influenceData = [
   { metric: "Goals", playerValue: 10, leagueAvg: 6 },
@@ -76,13 +76,13 @@ const influenceData = [
   { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
 ];
 
-const leagueAvgData = [
-  { metric: "Goals", value: 6 },
-  { metric: "Assists", value: 5 },
-  { metric: "Clean Sheets", value: 4 },
-  { metric: "Defence", value: 3 },
-  { metric: "MOTM", value: 4 },
-];
+// const leagueAvgData = [
+//   { metric: "Goals", value: 6 },
+//   { metric: "Assists", value: 5 },
+//   { metric: "Clean Sheets", value: 4 },
+//   { metric: "Defence", value: 3 },
+//   { metric: "MOTM", value: 4 },
+// ];
 
 const winLossData = [
   { name: 'Win', value: 45, color: '#4CAF50' },
@@ -118,6 +118,19 @@ interface LeagueWithMatches {
 interface PlayerStatsData {
   leagues?: LeagueWithMatches[];
 }
+
+// Helper to safely extract name without using any
+type MaybeNameObj = { name?: unknown };
+type MaybeRoot = { playerName?: unknown; player?: MaybeNameObj; profile?: MaybeNameObj };
+const extractPlayerName = (input: unknown): string => {
+  const r = input as MaybeRoot | undefined;
+  if (typeof r?.playerName === 'string') return r.playerName;
+  const pName = r?.player?.name;
+  if (typeof pName === 'string') return pName;
+  const prName = r?.profile?.name;
+  if (typeof prName === 'string') return prName;
+  return '';
+};
 
 // Row used for weekly / monthly aggregation
 interface PerformanceRow {
@@ -169,17 +182,17 @@ const PolarGrid           = dynamic(() => import('recharts').then(m => m.PolarGr
 const PolarAngleAxis      = dynamic(() => import('recharts').then(m => m.PolarAngleAxis), { ssr: false });
 const PolarRadiusAxis     = dynamic(() => import('recharts').then(m => m.PolarRadiusAxis), { ssr: false });
 const Radar               = dynamic(() => import('recharts').then(m => m.Radar), { ssr: false });
-const Scatter             = dynamic(() => import('recharts').then(m => m.Scatter), { ssr: false }) as any; // cast to any to relax TS
+// const Scatter             = dynamic(() => import('recharts').then(m => m.Scatter), { ssr: false }) as any; // cast to any to relax TS
 
 // Background gradient
-const BG_GRAD = 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)';
+// const BG_GRAD = 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)';
 
 // ---------- ANIMATIONS / STYLES ----------
-const floatIn = keyframes`
-  0% { opacity:0; transform:translateY(14px) scale(.985); }
-  60% { opacity:1; transform:translateY(-2px) scale(1); }
-  100% { opacity:1; transform:translateY(0) scale(1); }
-`;
+// const floatIn = keyframes`
+//   0% { opacity:0; transform:translateY(14px) scale(.985); }
+//   60% { opacity:1; transform:translateY(-2px) scale(1); }
+//   100% { opacity:1; transform:translateY(0) scale(1); }
+// `;
 
 const GlassCard = styled(Paper)(() => ({
   background: '#ffffff',
@@ -258,10 +271,10 @@ function calcPoints(ps: PlayerMatchStats | undefined): number {
     + (ps.penalties || 0) * 2;
 }
 
-function weekKey(dateStr: string): string {
-  const d = dayjs(dateStr);
-  return d.startOf('week').format('YYYY-MM-DD');
-}
+// function weekKey(dateStr: string): string {
+//   const d = dayjs(dateStr);
+//   return d.startOf('week').format('YYYY-MM-DD');
+// }
 
 // ---------- COMPONENT ----------
 export default function CareerPage() {
@@ -485,13 +498,13 @@ export default function CareerPage() {
     return performanceData.slice(s, e+1);
   }, [performanceData, range]);
 
-  const scatterFiltered = useMemo(() => {
-    if (!scatterPoints.length) return [];
-    if (!range) return scatterPoints;
-    const [s,e] = range;
-    const allowedKeys = new Set(performanceData.slice(s,e+1).map(p=>p.key));
-    return scatterPoints.filter(sp => allowedKeys.has(sp.key));
-  }, [scatterPoints, range, performanceData]);
+  // const scatterFiltered = useMemo(() => {
+  //   if (!scatterPoints.length) return [];
+  //   if (!range) return scatterPoints;
+  //   const [s,e] = range;
+  //   const allowedKeys = new Set(performanceData.slice(s,e+1).map(p=>p.key));
+  //   return scatterPoints.filter(sp => allowedKeys.has(sp.key));
+  // }, [scatterPoints, range, performanceData]);
 
   // Reset range if data length changes
   useEffect(() => {
@@ -562,36 +575,36 @@ export default function CareerPage() {
   );
 
   // Build league comparison baselines (simple league-wide averages across matches)
-  const leagueBaselines = useMemo(() => {
-    // If leagues are provided, average per match across the same sample
-    const n = Math.max(matches.length, 1);
-    const totals: Record<string, number> = {
-      Goals: 0,
-      Assists: 0,
-      'Clean Sheets': 0,
-      Impact: 0,
-      Defence: 0,
-      'Free Kicks': 0,
-      Penalties: 0,
-      'MOTM Votes': 0
-    };
-    matches.forEach(m => {
-      const ps = m.playerStats || {};
-      totals.Goals += ps.goals || 0;
-      totals.Assists += ps.assists || 0;
-      totals['Clean Sheets'] += ps.cleanSheets || 0;
-      totals.Impact += ps.impact || 0;
-      totals.Defence += ps.defence || 0;
-      totals['Free Kicks'] += ps.freeKicks || 0;
-      totals.Penalties += ps.penalties || 0;
-      totals['MOTM Votes'] += ps.motmVotes || 0;
-    });
-    const perMatch: Record<string, number> = {};
-    Object.keys(totals).forEach(k => {
-      perMatch[k] = n ? totals[k] / n : 0;
-    });
-    return perMatch;
-  }, [matches]);
+  // const leagueBaselines = useMemo(() => {
+  //   // If leagues are provided, average per match across the same sample
+  //   const n = Math.max(matches.length, 1);
+  //   const totals: Record<string, number> = {
+  //     Goals: 0,
+  //     Assists: 0,
+  //     'Clean Sheets': 0,
+  //     Impact: 0,
+  //     Defence: 0,
+  //     'Free Kicks': 0,
+  //     Penalties: 0,
+  //     'MOTM Votes': 0
+  //   };
+  //   matches.forEach(m => {
+  //     const ps = m.playerStats || {};
+  //     totals.Goals += ps.goals || 0;
+  //     totals.Assists += ps.assists || 0;
+  //     totals['Clean Sheets'] += ps.cleanSheets || 0;
+  //     totals.Impact += ps.impact || 0;
+  //     totals.Defence += ps.defence || 0;
+  //     totals['Free Kicks'] += ps.freeKicks || 0;
+  //     totals.Penalties += ps.penalties || 0;
+  //     totals['MOTM Votes'] += ps.motmVotes || 0;
+  //   });
+  //   const perMatch: Record<string, number> = {};
+  //   Object.keys(totals).forEach(k => {
+  //     perMatch[k] = n ? totals[k] / n : 0;
+  //   });
+  //   return perMatch;
+  // }, [matches]);
 
   // Decide comparison visibility: if user not in top 25% for any metric, adjust to top 50%.
   // If still not outperforming, hide comparison column entirely.
@@ -665,33 +678,33 @@ export default function CareerPage() {
     });
   }, [matches]);
 
-  const recentAverages = useMemo(() => {
-    if (!recent.length) return null;
-    const agg = recent.reduce((a, r) => {
-      a.goals += r.goals;
-      a.assists += r.assists;
-      a.cleanSheets += r.cleanSheets;
-      a.impact += r.impact;
-      a.defence += r.defence;
-      a.fk += r.fk;
-      a.pens += r.pens;
-      a.motm += r.motm;
-      a.points += r.points;
-      return a;
-    }, { goals:0, assists:0, cleanSheets:0, impact:0, defence:0, fk:0, pens:0, motm:0, points:0 });
-    const d = recent.length;
-    return {
-      goals: +(agg.goals/d).toFixed(2),
-      assists: +(agg.assists/d).toFixed(2),
-      cleanSheets: +(agg.cleanSheets/d).toFixed(2),
-      impact: +(agg.impact/d).toFixed(2),
-      defence: +(agg.defence/d).toFixed(2),
-      fk: +(agg.fk/d).toFixed(2),
-      pens: +(agg.pens/d).toFixed(2),
-      motm: +(agg.motm/d).toFixed(2),
-      points: +(agg.points/d).toFixed(2),
-    };
-  }, [recent]);
+  // const recentAverages = useMemo(() => {
+  //   if (!recent.length) return null;
+  //   const agg = recent.reduce((a, r) => {
+  //     a.goals += r.goals;
+  //     a.assists += r.assists;
+  //     a.cleanSheets += r.cleanSheets;
+  //     a.impact += r.impact;
+  //     a.defence += r.defence;
+  //     a.fk += r.fk;
+  //     a.pens += r.pens;
+  //     a.motm += r.motm;
+  //     a.points += r.points;
+  //     return a;
+  //   }, { goals:0, assists:0, cleanSheets:0, impact:0, defence:0, fk:0, pens:0, motm:0, points:0 });
+  //   const d = recent.length;
+  //   return {
+  //     goals: +(agg.goals/d).toFixed(2),
+  //     assists: +(agg.assists/d).toFixed(2),
+  //     cleanSheets: +(agg.cleanSheets/d).toFixed(2),
+  //     impact: +(agg.impact/d).toFixed(2),
+  //     defence: +(agg.defence/d).toFixed(2),
+  //     fk: +(agg.fk/d).toFixed(2),
+  //     pens: +(agg.pens/d).toFixed(2),
+  //     motm: +(agg.motm/d).toFixed(2),
+  //     points: +(agg.points/d).toFixed(2),
+  //   };
+  // }, [recent]);
 
   // --- Last 10 vs Previous 10 for Impact section ---
   const lastPrev10 = useMemo(() => {
@@ -738,64 +751,58 @@ export default function CareerPage() {
     return msgs.slice(0, 3);
   }, [lastPrev10]);
 
-  const careerTotals = useMemo(() => {
-    const totalMatches = matches.length;
-    const totalPoints = matches.reduce((s,m)=> s + calcPoints(m.playerStats),0);
-    return {
-      totalMatches,
-      totalPoints,
-      avgPerMatch: totalMatches ? +(totalPoints/totalMatches).toFixed(2) : 0
-    };
-  }, [matches]);
+  // const careerTotals = useMemo(() => {
+  //   const totalMatches = matches.length;
+  //   const totalPoints = matches.reduce((s,m)=> s + calcPoints(m.playerStats),0);
+  //   return {
+  //     totalMatches,
+  //     totalPoints,
+  //     avgPerMatch: totalMatches ? +(totalPoints/totalMatches).toFixed(2) : 0
+  //   };
+  // }, [matches]);
 
-  const insights: string[] = useMemo(() => {
-    const lines: string[] = [];
-    if (performanceData.length) {
-      const best = [...performanceData].sort((a, b) => b.avgPoints - a.avgPoints)[0];
-      lines.push(`Peak ${groupingType === 'weekly' ? 'Week' : 'Month'}: ${best.label} ${best.year} (Avg ${best.avgPoints}).`);
-    }
-    if (performanceData.length > 1) {
-      const last3 = performanceData.slice(-3);
-      if (last3.length === 3) {
-        const trend = last3.map(r => r.avgPoints);
-        const dir = trend[2] > trend[0] ? 'rising' : trend[2] < trend[0] ? 'declining' : 'flat';
-        lines.push(`Form Trend: ${dir} (${trend.map(t => t.toFixed(2)).join(' → ')}).`);
-      }
-    }
-    if (matches.length) {
-      const totalPoints = matches.reduce((s,m)=> s + calcPoints(m.playerStats),0);
-      lines.push(`Career Avg Points/Match: ${(totalPoints / matches.length).toFixed(2)} over ${matches.length} matches.`);
-    }
-    const winTotal = wld.W + wld.L + wld.D;
-    if (winTotal) {
-      lines.push(`Win Rate: ${((wld.W / winTotal) * 100).toFixed(1)}% (W${wld.W}/D${wld.D}/L${wld.L}).`);
-    }
-    if (strengths.length) {
-      lines.push(`Key Strength: ${strengths[0].metric} (raw ${strengths[0].value}).`);
-    }
-    if (!lines.length) lines.push('Not enough data for insights.');
-    return lines;
-  }, [performanceData, groupingType, matches, wld, strengths]);
+  // const insights: string[] = useMemo(() => {
+  //   const lines: string[] = [];
+  //   if (performanceData.length) {
+  //     const best = [...performanceData].sort((a, b) => b.avgPoints - a.avgPoints)[0];
+  //     lines.push(`Peak ${groupingType === 'weekly' ? 'Week' : 'Month'}: ${best.label} ${best.year} (Avg ${best.avgPoints}).`);
+  //   }
+  //   if (performanceData.length > 1) {
+  //     const last3 = performanceData.slice(-3);
+  //     if (last3.length === 3) {
+  //       const trend = last3.map(r => r.avgPoints);
+  //       const dir = trend[2] > trend[0] ? 'rising' : trend[2] < trend[0] ? 'declining' : 'flat';
+  //       lines.push(`Form Trend: ${dir} (${trend.map(t => t.toFixed(2)).join(' → ')}).`);
+  //     }
+  //   }
+  //   if (matches.length) {
+  //     const totalPoints = matches.reduce((s,m)=> s + calcPoints(m.playerStats),0);
+  //     lines.push(`Career Avg Points/Match: ${(totalPoints / matches.length).toFixed(2)} over ${matches.length} matches.`);
+  //   }
+  //   const winTotal = wld.W + wld.L + wld.D;
+  //   if (winTotal) {
+  //     lines.push(`Win Rate: ${((wld.W / winTotal) * 100).toFixed(1)}% (W${wld.W}/D${wld.D}/L${wld.L}).`);
+  //   }
+  //   if (strengths.length) {
+  //     lines.push(`Key Strength: ${strengths[0].metric} (raw ${strengths[0].value}).`);
+  //   }
+  //   if (!lines.length) lines.push('Not enough data for insights.');
+  //   return lines;
+  // }, [performanceData, groupingType, matches, wld, strengths]);
 
-  const formBadge = useMemo(() => {
-    if (!performanceData.length) return 'No Data';
-    const last = performanceData.slice(-5);
-    const avg = last.reduce((s, r) => s + r.avgPoints, 0) / last.length;
-    if (avg >= 25) return 'On Fire';
-    if (avg >= 15) return 'Hot Form';
-    if (avg >= 8) return 'Solid';
-    return 'Needs Spark';
-  }, [performanceData]);
+  // const formBadge = useMemo(() => {
+  //   if (!performanceData.length) return 'No Data';
+  //   const last = performanceData.slice(-5);
+  //   const avg = last.reduce((s, r) => s + r.avgPoints, 0) / last.length;
+  //   if (avg >= 25) return 'On Fire';
+  //   if (avg >= 15) return 'Hot Form';
+  //   if (avg >= 8) return 'Solid';
+  //   return 'Needs Spark';
+  // }, [performanceData]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
-    const anyData = data as any;
-    return (
-      anyData?.playerName ||
-      anyData?.player?.name ||
-      anyData?.profile?.name ||
-      '' // fallback
-    );
+    return extractPlayerName(data);
   }, [data]);
 
   const [playerName, setPlayerName] = useState<string>('');
@@ -991,10 +998,12 @@ export default function CareerPage() {
                           boxShadow: '0 4px 10px -2px rgba(0,0,0,0.15)'
                         }}
                         labelStyle={{ fontWeight: 700, color: '#222' }}
-                        formatter={(value: any, name: any) => {
-                          if (name.includes('Avg')) return [value, 'Avg Points'];
-                          if (name.includes('Accumulative')) return [value, 'Cumulative XP'];
-                          return [value, name];
+                        formatter={(value: unknown, name: unknown) => {
+                          const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
+                          const n = typeof name === 'string' ? name : String(name ?? '');
+                          if (n.includes('Avg')) return [v, 'Avg Points'] as [string | number, string];
+                          if (n.includes('Accumulative')) return [v, 'Cumulative XP'] as [string | number, string];
+                          return [v, n] as [string | number, string];
                         }}
                       />
                       {/* Green bars for average points */}
@@ -1210,7 +1219,7 @@ export default function CareerPage() {
                 {/* Guidance per spec */}
                 <Box sx={{ mt: 2, border: '1px solid #e5e7eb', borderRadius: 1, p: 1.2, background: '#fafafa' }}>
                   <Typography sx={{ fontSize: 12, color: '#111827' }}>
-                    This tracks the selected player's performance over their last 10 games using the key metrics shown in the table. It measures their progress based on the previous 10 games they played. If a player has not yet completed 10 games, it will still show the most recent games played. <b>Refer to the Key Stats</b> reference tab to understand the algorithm for each metric.
+                   {` This tracks the selected player's performance over their last 10 games using the key metrics shown in the table. It measures their progress based on the previous 10 games they played. If a player has not yet completed 10 games, it will still show the most recent games played. <b>Refer to the Key Stats</b> reference tab to understand the algorithm for each metric.`}
                   </Typography>
                 </Box>
 
