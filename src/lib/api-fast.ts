@@ -635,7 +635,7 @@ export function getCacheStatus(): Record<string, boolean> {
 // Export main functions for backward compatibility
 export { getCache, setCache };
 
-// Strongly-typed lightweight wrappers (no `any`)
+// Strongly-typed lightweight wrappers (single declarations)
 export const leagueAPI = {
   getAll: (): Promise<LeaguesResponse> =>
     quickFetch<LeaguesResponse>('/leagues', { method: 'GET' }, 'leagues_all'),
@@ -644,7 +644,6 @@ export const leagueAPI = {
     quickFetch<{ league: League }>(`/leagues/${id}`, { method: 'GET' }, `league_${id}`)
       .then(res => ({ success: true, data: res.league, message: 'League fetched successfully' })),
 };
-
 
 export const matchAPI = {
   getAll: (): Promise<MatchesResponse> =>
