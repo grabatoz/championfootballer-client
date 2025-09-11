@@ -30,7 +30,7 @@ import { fetchPlayerStats } from '@/lib/features/playerStatsSlice';
 import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { styled } from '@mui/material/styles';
-import { keyframes } from '@mui/system';
+// import { keyframes } from '@mui/system';
 // import { Legend as RechartsLegend } from 'recharts';
 import { useAuth } from '@/lib/useAuth';
 
@@ -149,7 +149,8 @@ interface InfluenceEntry {
   scaled: number;
 }
 
-interface StrengthEntry extends InfluenceEntry {}
+// Replace the empty extending interface with a type alias to satisfy eslint
+type StrengthEntry = InfluenceEntry;
 
 interface RecentRow {
   id: string;
@@ -466,29 +467,29 @@ export default function CareerPage() {
     matchPoints: number;
   }
 
-  const scatterPoints: ScatterPoint[] = useMemo(() => {
-    if (!performanceData.length) return [];
-    return matches.map(m => {
-      const periodKey = periodKeyFn(m.date);
-      const period = performanceIndexByKey[periodKey];
-      if (period) {
-        return {
-          key: periodKey,
-          label: period.label,
-          year: period.year,
-          matchPoints: calcPoints(m.playerStats)
-        };
-      }
-      // Fallback (should rarely happen if periods filled)
-      const d = dayjs(m.date);
-      return {
-        key: periodKey,
-        label: d.format(groupingType === 'weekly' ? 'DD-MMM' : 'MMM'),
-        year: d.format('YYYY'),
-        matchPoints: calcPoints(m.playerStats)
-      };
-    });
-  }, [matches, performanceData, periodKeyFn, performanceIndexByKey, groupingType]);
+  // const scatterPoints: ScatterPoint[] = useMemo(() => {
+  //   if (!performanceData.length) return [];
+  //   return matches.map(m => {
+  //     const periodKey = periodKeyFn(m.date);
+  //     const period = performanceIndexByKey[periodKey];
+  //     if (period) {
+  //       return {
+  //         key: periodKey,
+  //         label: period.label,
+  //         year: period.year,
+  //         matchPoints: calcPoints(m.playerStats)
+  //       };
+  //     }
+  //     // Fallback (should rarely happen if periods filled)
+  //     const d = dayjs(m.date);
+  //     return {
+  //       key: periodKey,
+  //       label: d.format(groupingType === 'weekly' ? 'DD-MMM' : 'MMM'),
+  //       year: d.format('YYYY'),
+  //       matchPoints: calcPoints(m.playerStats)
+  //     };
+  //   });
+  // }, [matches, performanceData, periodKeyFn, performanceIndexByKey, groupingType]);
 
   // ------------- RANGE FILTER -------------
   const chartData = useMemo(() => {
@@ -511,14 +512,14 @@ export default function CareerPage() {
     setRange(null);
   }, [groupingType]);
 
-  const wld = useMemo(() => {
-    let W = 0, L = 0, D = 0;
-    matches.forEach(m => {
-      const r = m.playerStats?.result;
-      if (r === 'W') W++; else if (r === 'L') L++; else if (r === 'D') D++;
-    });
-    return { W, L, D };
-  }, [matches]);
+  // const wld = useMemo(() => {
+  //   let W = 0, L = 0, D = 0;
+  //   matches.forEach(m => {
+  //     const r = m.playerStats?.result;
+  //     if (r === 'W') W++; else if (r === 'L') L++; else if (r === 'D') D++;
+  //   });
+  //   return { W, L, D };
+  // }, [matches]);
 
   const influence: InfluenceEntry[] = useMemo(() => {
     // accumulate raw totals
@@ -658,25 +659,25 @@ export default function CareerPage() {
     return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
   }, [matches.length, influence, strengths]);
 
-  const recent: RecentRow[] = useMemo(() => {
-    return [...matches].slice(-10).reverse().map(m => {
-      const ps = m.playerStats || {};
-      return {
-        id: m.id,
-        date: dayjs(m.date).format('DD MMM'),
-        goals: ps.goals || 0,
-        assists: ps.assists || 0,
-        cleanSheets: ps.cleanSheets || 0,
-        impact: ps.impact || 0,
-        defence: ps.defence || 0,
-        fk: ps.freeKicks || 0,
-        pens: ps.penalties || 0,
-        motm: ps.motmVotes || 0,
-        points: calcPoints(ps),
-        result: ps.result || '-'
-      };
-    });
-  }, [matches]);
+  // const recent: RecentRow[] = useMemo(() => {
+  //   return [...matches].slice(-10).reverse().map(m => {
+  //     const ps = m.playerStats || {};
+  //     return {
+  //       id: m.id,
+  //       date: dayjs(m.date).format('DD MMM'),
+  //       goals: ps.goals || 0,
+  //       assists: ps.assists || 0,
+  //       cleanSheets: ps.cleanSheets || 0,
+  //       impact: ps.impact || 0,
+  //       defence: ps.defence || 0,
+  //       fk: ps.freeKicks || 0,
+  //       pens: ps.penalties || 0,
+  //       motm: ps.motmVotes || 0,
+  //       points: calcPoints(ps),
+  //       result: ps.result || '-'
+  //     };
+  //   });
+  // }, [matches]);
 
   // const recentAverages = useMemo(() => {
   //   if (!recent.length) return null;
