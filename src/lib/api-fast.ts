@@ -645,6 +645,7 @@ export const leagueAPI = {
       .then(res => ({ success: true, data: res.league, message: 'League fetched successfully' })),
 };
 
+
 export const matchAPI = {
   getAll: (): Promise<MatchesResponse> =>
     quickFetch<MatchesResponse>('/matches', { method: 'GET' }, 'matches_all'),
