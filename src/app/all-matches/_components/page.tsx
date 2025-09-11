@@ -573,7 +573,7 @@ export default function AllMatches() {
                 minHeight: '100vh',
                 // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
                 // backgroundColor:'white',
-                py: 6,
+                py: 4,
             }}
         >
             <Container maxWidth="lg">
