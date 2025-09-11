@@ -634,37 +634,3 @@ export function getCacheStatus(): Record<string, boolean> {
 
 // Export main functions for backward compatibility
 export { getCache, setCache };
-
-// Strongly-typed lightweight wrappers (single declarations)
-export const leagueAPI = {
-  getAll: (): Promise<LeaguesResponse> =>
-    quickFetch<LeaguesResponse>('/leagues', { method: 'GET' }, 'leagues_all'),
-
-  getById: (id: string): Promise<ApiResponse<League>> =>
-    quickFetch<{ league: League }>(`/leagues/${id}`, { method: 'GET' }, `league_${id}`)
-      .then(res => ({ success: true, data: res.league, message: 'League fetched successfully' })),
-};
-
-export const matchAPI = {
-  getAll: (): Promise<MatchesResponse> =>
-    quickFetch<MatchesResponse>('/matches', { method: 'GET' }, 'matches_all'),
-
-  getByLeague: (leagueId: string): Promise<MatchesResponse> =>
-    quickFetch<MatchesResponse>(`/matches?leagueId=${leagueId}`, { method: 'GET' }, `matches_league_${leagueId}`),
-
-  getById: (id: string): Promise<ApiResponse<Match>> =>
-    quickFetch<{ match: Match }>(`/matches/${id}`, { method: 'GET' }, `match_${id}`)
-      .then(res => ({ success: true, data: res.match, message: 'Match fetched successfully' })),
-
-  getVotes: (matchId: string): Promise<ApiResponse<{ votes: Record<string, number>; userVote: string | null }>> =>
-    quickFetch<{ votes: Record<string, number>; userVote: string | null }>(
-      `/matches/${matchId}/votes`,
-      { method: 'GET' },
-      `match_votes_${matchId}`
-    ).then(data => ({ success: true, data, message: 'Votes fetched successfully' })),
-};
-
-export const dreamTeamAPI = {
-  getByLeague: (leagueId: string): Promise<DreamTeamResponse> =>
-    quickFetch<DreamTeamResponse>(`/dream-team?leagueId=${leagueId}`, { method: 'GET' }, `dream_team_${leagueId}`),
-};
