@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Box,
     Typography,
@@ -355,6 +356,60 @@ export default function PlayMatchPage() {
         if (matchId && token) fetchVotes();
     }, [matchId, token, fetchVotes]);
 
+    // Hooks for computed Impact must be unconditionally called (before any early returns)
+    // Compute safe team goals context for the current user
+    const playerOnHomeTeamSafe = !!(match && user && match.homeTeamUsers.some(p => p.id === user.id));
+    const playerOnAwayTeamSafe = !!(match && user && match.awayTeamUsers.some(p => p.id === user.id));
+    const teamGoalsSafe = (match && user)
+        ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
+        : 0;
+
+    // Compute Impact % based on weighted normalized metrics (image spec). Always defined.
+    const computeImpactPercent = useCallback(
+        (s: { goals: number; assists: number; cleanSheets: number; defence: number }, tGoals: number) => {
+            const safeMax = (n: number) => Math.max(1, n || 0);
+            const metrics = [
+                { value: s.goals,       max: safeMax(tGoals), weight: 0.3 },
+                { value: s.assists,     max: safeMax(tGoals), weight: 0.2 },
+                { value: s.cleanSheets, max: 1,               weight: 0.1 },
+                { value: s.defence,     max: 1,               weight: 0.2 },
+                // MOTM votes weight (0.2) intentionally omitted
+            ];
+            const active = metrics.filter(m => m.max > 0);
+            const sumW = active.reduce((a, b) => a + b.weight, 0) || 1;
+            const score01 = active.reduce((acc, m) => acc + (Math.min(m.value, m.max) / m.max) * (m.weight / sumW), 0);
+            const percent = Math.max(0.10, Math.min(1, score01)) * 100; // clamp to [10%, 100%]
+            return Math.round(percent);
+        },
+        []
+    );
+
+    const computedImpact = useMemo(
+        () => computeImpactPercent(
+            { goals: stats.goals, assists: stats.assists, cleanSheets: stats.cleanSheets, defence: stats.defence },
+            teamGoalsSafe
+        ),
+        [stats.goals, stats.assists, stats.cleanSheets, stats.defence, teamGoalsSafe, computeImpactPercent]
+    );
+
+    // For admin modal: compute impact for selected player using that player's team goals
+    const adminSelectedTeamGoals = useMemo(() => {
+        if (!match || !selectedPlayerForAdmin) return teamGoalsSafe;
+        const isHome = match.homeTeamUsers.some(p => p.id === selectedPlayerForAdmin.id);
+        const isAway = match.awayTeamUsers.some(p => p.id === selectedPlayerForAdmin.id);
+        if (isHome) return match.homeTeamGoals || 0;
+        if (isAway) return match.awayTeamGoals || 0;
+        return teamGoalsSafe;
+    }, [selectedPlayerForAdmin, match, teamGoalsSafe]);
+
+    const computedAdminImpact = useMemo(
+        () => computeImpactPercent(
+            { goals: adminStats.goals, assists: adminStats.assists, cleanSheets: adminStats.cleanSheets, defence: adminStats.defence },
+            adminSelectedTeamGoals
+        ),
+        [adminStats.goals, adminStats.assists, adminStats.cleanSheets, adminStats.defence, adminSelectedTeamGoals, computeImpactPercent]
+    );
+
     const handleVote = async (playerId: string) => {
         setLoadingVote(true);
         try {
@@ -476,7 +531,7 @@ export default function PlayMatchPage() {
                     penalties: stats.penalties,
                     freeKicks: stats.freeKicks,
                     defence: stats.defence,
-                    impact: stats.impact,
+                    impact: computedImpact,
                 }),
             });
 
@@ -601,7 +656,9 @@ export default function PlayMatchPage() {
                 },
                 body: JSON.stringify({
                     playerId: selectedPlayerForAdmin.id,
-                    ...adminStats
+                    ...adminStats,
+                    // Override impact with computed admin impact
+                    impact: computedAdminImpact,
                 })
             });
 
@@ -647,9 +704,6 @@ export default function PlayMatchPage() {
     if (!user) return null;
 
     const isAdmin = league.administrators?.some(admin => admin.id === user.id);
-    const playerOnHomeTeam = match.homeTeamUsers.some(p => p.id === user.id);
-    const playerOnAwayTeam = match.awayTeamUsers.some(p => p.id === user.id);
-    const teamGoals = playerOnHomeTeam ? match.homeTeamGoals || 0 : (playerOnAwayTeam ? match.awayTeamGoals || 0 : 0);
 
     // Transform guests into pseudo User objects for display purposes (no links/stats for guests)
     const guestUsersHome: (User & { isGuest: true })[] = (match.guests || [])
@@ -849,7 +903,6 @@ export default function PlayMatchPage() {
                                                                 </>
                                                             ) : (
                                                                 <Link href={`/player/${player.id}`}>
-
                                                                     <Typography variant="h6" sx={{
                                                                         color: 'white',
                                                                         fontWeight: 'bold',
@@ -1384,13 +1437,22 @@ export default function PlayMatchPage() {
             <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Your Stats for the Match</DialogTitle>
                 <DialogContent>
-                    <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoals)} onDecrement={() => handleStatChange('goals', -1, teamGoals)} />
-                    <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoals)} onDecrement={() => handleStatChange('assists', -1, teamGoals)} />
+                    <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)} />
+                    <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
-                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoals)} onDecrement={() => handleStatChange('penalties', -1, teamGoals)} />
-                    <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoals)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoals)} />
+                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('penalties', -1, teamGoalsSafe)} />
+                    <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} />
-                    <StatCounter icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />} label="Impact" value={stats.impact} onIncrement={() => handleStatChange('impact', 1, 1)} onDecrement={() => handleStatChange('impact', -1, 1)} />
+                    {/* Read-only computed Impact display */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                            <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
+                            <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
+                        </Box>
+                        <Typography sx={{ mx: 2, fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
+                            {computedImpact}%
+                        </Typography>
+                    </Box>
                 </DialogContent>
                 {/* FreeKick */}
                 <DialogActions>
@@ -1466,13 +1528,16 @@ export default function PlayMatchPage() {
                         onIncrement={() => handleAdminStatChange('defence', 1, 1)}
                         onDecrement={() => handleAdminStatChange('defence', -1, 1)}
                     />
-                    <StatCounter
-                        icon={<img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />}
-                        label="Impact"
-                        value={adminStats.impact}
-                        onIncrement={() => handleAdminStatChange('impact', 1, 1)}
-                        onDecrement={() => handleAdminStatChange('impact', -1, 1)}
-                    />
+                    {/* Read-only computed Impact display for Admin */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                            <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
+                            <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
+                        </Box>
+                        <Typography sx={{ mx: 2, fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
+                            {computedAdminImpact}%
+                        </Typography>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button

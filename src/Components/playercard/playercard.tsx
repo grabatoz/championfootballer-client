@@ -134,7 +134,7 @@ import vectorBlue from '@/Components/images/sky.svg';
 import vectorBronze from '@/Components/images/brown.svg';
 import vectorSilver from '@/Components/images/silver.svg';
 import vectorGold from '@/Components/images/golden.svg';
-import vectorBlack from '@/Components/images/Vector.svg';
+import vectorBlack from '@/Components/images/goat.png';
 import vectorDefault from '@/Components/images/green.svg';
 import vectorImg from '@/Components/images/Vector.svg'
 
