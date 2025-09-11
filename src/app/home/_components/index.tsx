@@ -69,7 +69,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
   }, []);
 
   // Format league name function
-  const formatLeagueName = (name: string) => {
+  const formatLeagueName = (name: string | undefined | null) => {
     if (!name) return '';
     const words = name.split(' ');
     const capitalizedWords = words.map(word =>
@@ -97,12 +97,13 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
             const leagues = [
               ...(data.user.leagues || []),
               ...(data.user.administeredLeagues || [])
-            ];
+            ].filter(league => league && league.id); // Filter out undefined/null leagues
+            
             const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
-            setUserLeagues(Array.from(uniqueLeagues));
+            setUserLeagues(uniqueLeagues);
 
             if (uniqueLeagues.length > 0) {
-              setSelectedLeague(Array.from(uniqueLeagues)[0]);
+              setSelectedLeague(uniqueLeagues[0]);
             }
           }
         }
@@ -214,20 +215,28 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
             </Typography>
           </Box>
 
-          <IconButton
+          <Box
             onClick={(e) => {
               e.stopPropagation();
               setShowDropdown(!showDropdown);
             }}
             sx={{
               color: 'white',
+              cursor: 'pointer',
+              borderRadius: '50%',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               '&:hover': {
                 backgroundColor: 'rgba(255,255,255,0.1)'
-              }
+              },
+              transition: 'background-color 0.2s'
             }}
           >
             <ChevronRight size={24} />
-          </IconButton>
+          </Box>
         </Box>
       </Button>
 

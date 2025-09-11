@@ -19,7 +19,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
 
 // Helper function to format league name
-const formatLeagueName = (name: string): string => {
+const formatLeagueName = (name: string | undefined | null): string => {
   if (!name) return '';
 
   // Capitalize first letter of the name
@@ -61,7 +61,7 @@ function LeagueMembersDialog({
   if (!league) return null
 
   const isAdmin = league.adminId === currentUserId
-  const memberCount = league.members.length
+  const memberCount = league.members?.length || 0
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
     if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
@@ -186,7 +186,7 @@ function LeagueMembersDialog({
         }}
       >
         <List sx={{ py: 0 }}>
-          {league.members.map((member, index) => {
+          {(league.members || []).map((member, index) => {
             const memberName = `${member.firstName} ${member.lastName}`
             const isLeagueAdmin = member.id === league.adminId
             const isCurrentUser = member.id === currentUserId
@@ -306,7 +306,7 @@ function LeagueMembersDialog({
                       </Tooltip>
                     )}
                   </ListItem>
-                  {index < league.members.length - 1 && (
+                  {index < (league.members?.length || 0) - 1 && (
                     <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
                   )}
                 </Box>
@@ -459,21 +459,23 @@ function AllLeagues() {
       return;
     }
 
+    setIsJoining(true);
     try {
       const result = await dispatch(joinLeague(inviteCode.trim())).unwrap();
       toast.success('Successfully joined the league!');
-      setIsJoining(false);
       setInviteCode('');
 
       if (result) {
-        cacheManager.updateLeaguesCacheOnJoin(result);
-        console.log('Updated cache with joined league:', result.name);
+        console.log('Joined league successfully:', result.name);
       }
 
-      fetchUserLeagues();
+      // Fetch fresh leagues data
+      await fetchAllLeagues();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
       toast.error(errorMessage);
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -509,22 +511,36 @@ function AllLeagues() {
     setImagePreview(null);
   };
 
-  const fetchUserLeagues = useCallback(async () => {
-    try {
-      console.log('Fetching user leagues...');
-      setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      console.log('Fetched leagues data:', data);
+  const fetchAllLeagues = useCallback(async () => {
+    if (!token) return;
 
-      if (data.success) {
-        console.log('Setting leagues:', data.leagues);
-        setLeagues(data.leagues || []);
+    try {
+      console.log('Fetching all available leagues...');
+      setLoading(true);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          // Combine joined and managed leagues
+          const leagues = [
+            ...(data.user.leagues || []),
+            ...(data.user.administeredLeagues || [])
+          ].filter(league => league && league.id); // Filter out undefined/null leagues
+          
+          // Remove duplicates
+          const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
+          setLeagues(uniqueLeagues);
+          console.log('Setting leagues:', uniqueLeagues);
+        }
       } else {
-        console.error('Failed to fetch leagues:', data.message);
-        toast.error(data.message || 'Failed to fetch leagues');
+        console.error('Failed to fetch leagues');
+        toast.error('Failed to fetch leagues');
       }
     } catch (error) {
       console.error('Error fetching leagues:', error);
@@ -536,9 +552,37 @@ function AllLeagues() {
 
   useEffect(() => {
     if (token) {
-      fetchUserLeagues();
+      fetchAllLeagues();
     }
-  }, [token, fetchUserLeagues]);
+  }, [token, fetchAllLeagues]);
+
+  // Refresh data when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && token) {
+        fetchAllLeagues();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [token, fetchAllLeagues]);
+
+  // Refresh data when component mounts or becomes focused
+  useEffect(() => {
+    const handleFocus = () => {
+      if (token) {
+        fetchAllLeagues();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [token, fetchAllLeagues]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -592,6 +636,10 @@ function AllLeagues() {
           setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
           console.log('Updated cache and local state with new league:', newLeague);
         }
+
+        // Fetch fresh leagues list from server
+        await fetchAllLeagues();
+        console.log('Fetched fresh leagues after creating new league');
       } else {
         console.error('Failed to create league:', data.message);
         toast.error(data.message || 'Failed to create league');
@@ -601,7 +649,6 @@ function AllLeagues() {
       toast.error('An error occurred while creating the league');
     } finally {
       setIsCreating(false);
-      setLoading(false);
     }
   };
 
@@ -613,11 +660,11 @@ function AllLeagues() {
       });
       const data = await response.json();
       if (data.success) {
-        const admin = data.league.administrators[0];
+        const admin = data.league.administrators?.[0];
         setSelectedLeague({
           ...league,
           adminId: admin?.id,
-          members: data.league.members.map((m: User) => ({
+          members: (data.league.members || []).map((m: User) => ({
             id: m.id,
             firstName: m.firstName,
             lastName: m.lastName,
@@ -640,12 +687,23 @@ function AllLeagues() {
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedLeague) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/users/${memberId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/users/${memberId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      // Refetch members after removal
-      handleOpenMembers(selectedLeague);
+      
+      if (response.ok) {
+        // If current user was removed, refresh the entire leagues list
+        if (memberId === user?.id) {
+          setOpenMembers(false);
+          await fetchAllLeagues();
+        } else {
+          // Otherwise, just refetch members for this league
+          handleOpenMembers(selectedLeague);
+        }
+      } else {
+        toast.error('Failed to remove member');
+      }
     } catch {
       toast.error('Failed to remove member');
     }
@@ -654,12 +712,18 @@ function AllLeagues() {
   const handleLeaveLeague = async () => {
     if (!selectedLeague) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setOpenMembers(false);
-      fetchUserLeagues();
+      
+      if (response.ok) {
+        setOpenMembers(false);
+        await fetchAllLeagues();
+        toast.success('Successfully left the league');
+      } else {
+        toast.error('Failed to leave league');
+      }
     } catch {
       toast.error('Failed to leave league');
     }
@@ -676,7 +740,7 @@ function AllLeagues() {
         py: 4,
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg"> 
         {/* <Button
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
@@ -971,7 +1035,7 @@ function AllLeagues() {
                             fontWeight: 200,
                             fontSize: { xs: '13px', sm: '13px' }
                           }}>
-                            Players {league.members.length}
+                            Players {league.members?.length || 0}
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1102,7 +1166,7 @@ function AllLeagues() {
                             fontWeight: 200,
                             fontSize: { xs: '13px', sm: '13px' }
                           }}>
-                            Matches: {league.matches.length}
+                            Matches: {league.matches?.length || 0}
                           </Typography>
                         </Box>
                       </Box>

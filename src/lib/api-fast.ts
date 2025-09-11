@@ -12,6 +12,51 @@ import type {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Additional interfaces for extended functionality
+interface DreamTeamPlayer {
+  id: string;
+  name: string;
+  position: string;
+  positionType: string;
+  profilePicture: string;
+  totalXP: number;
+  avgXP: number;
+  isSelected: boolean;
+}
+
+interface DreamTeamResponse {
+  success: boolean;
+  players: DreamTeamPlayer[];
+  message?: string;
+}
+
+interface CreateDreamTeamDTO {
+  leagueId: string;
+  players: string[];
+  formation: string;
+}
+
+interface MatchVote {
+  matchId: string;
+  votedForId: string;
+}
+
+interface MatchStats {
+  matchId: string;
+  playerId: string;
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  penalties: number;
+  freeKicks: number;
+  defence: number;
+  impact: number;
+}
+
+interface JoinLeagueDTO {
+  inviteCode: string;
+}
+
 // Cache item interface
 interface CacheItem<T> {
   data: T;
@@ -206,6 +251,54 @@ export const leagueAPI = {
         error: error instanceof Error ? error.message : 'Failed to join league'
       };
     }
+  },
+
+  joinWithCode: async (inviteCode: string): Promise<ApiResponse<League>> => {
+    try {
+      const data = await quickFetch<{ league: League }>('/leagues/join', {
+        method: 'POST',
+        body: JSON.stringify({ inviteCode }),
+      });
+      
+      fastCache.delete('leagues_all'); // Invalidate cache
+      return { success: true, data: data.league, message: 'Joined league successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to join league with code',
+        error: error instanceof Error ? error.message : 'Failed to join league'
+      };
+    }
+  },
+
+  leave: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}/leave`, { method: 'POST' });
+      fastCache.delete('leagues_all'); // Invalidate cache
+      fastCache.delete(`league_${id}`);
+      return { success: true, data, message: 'Left league successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to leave league',
+        error: error instanceof Error ? error.message : 'Failed to leave league'
+      };
+    }
+  },
+
+  delete: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}`, { method: 'DELETE' });
+      fastCache.delete('leagues_all'); // Invalidate cache
+      fastCache.delete(`league_${id}`);
+      return { success: true, data, message: 'League deleted successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to delete league',
+        error: error instanceof Error ? error.message : 'Failed to delete league'
+      };
+    }
   }
 };
 
@@ -257,6 +350,205 @@ export const matchAPI = {
         success: false,
         message: 'Failed to update match',
         error: error instanceof Error ? error.message : 'Failed to update match'
+      };
+    }
+  },
+
+  getById: async (id: string): Promise<ApiResponse<Match>> => {
+    try {
+      const data = await quickFetch<{ match: Match }>(`/matches/${id}`, {}, `match_${id}`);
+      return { success: true, data: data.match, message: 'Match fetched successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch match',
+        error: error instanceof Error ? error.message : 'Failed to fetch match'
+      };
+    }
+  },
+
+  vote: async (matchId: string, votedForId: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/matches/${matchId}/votes`, {
+        method: 'POST',
+        body: JSON.stringify({ votedForId }),
+      });
+      
+      // Invalidate vote cache
+      fastCache.delete(`match_votes_${matchId}`);
+      
+      return { success: true, data, message: 'Vote cast successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to cast vote',
+        error: error instanceof Error ? error.message : 'Failed to cast vote'
+      };
+    }
+  },
+
+  getVotes: async (matchId: string): Promise<ApiResponse<{ votes: Record<string, number>; userVote: string | null }>> => {
+    try {
+      const data = await quickFetch<{ votes: Record<string, number>; userVote: string | null }>(`/matches/${matchId}/votes`, {}, `match_votes_${matchId}`);
+      return { success: true, data, message: 'Votes fetched successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch votes',
+        error: error instanceof Error ? error.message : 'Failed to fetch votes'
+      };
+    }
+  },
+
+  saveStats: async (matchId: string, stats: MatchStats): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/matches/${matchId}/stats`, {
+        method: 'POST',
+        body: JSON.stringify(stats),
+      });
+      
+      // Invalidate stats cache
+      fastCache.delete(`match_stats_${matchId}_${stats.playerId}`);
+      
+      return { success: true, data, message: 'Stats saved successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to save stats',
+        error: error instanceof Error ? error.message : 'Failed to save stats'
+      };
+    }
+  },
+
+  getStats: async (matchId: string, playerId: string): Promise<ApiResponse<MatchStats>> => {
+    try {
+      const data = await quickFetch<{ stats: MatchStats }>(`/matches/${matchId}/stats?playerId=${playerId}`, {}, `match_stats_${matchId}_${playerId}`);
+      return { success: true, data: data.stats, message: 'Stats fetched successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch stats',
+        error: error instanceof Error ? error.message : 'Failed to fetch stats'
+      };
+    }
+  },
+
+  setAvailability: async (matchId: string, available: boolean): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const action = available ? 'available' : 'unavailable';
+      const data = await quickFetch<{ success: boolean; message: string }>(`/matches/${matchId}/availability?action=${action}`, {
+        method: 'POST',
+      });
+      
+      // Invalidate match cache
+      fastCache.delete(`match_${matchId}`);
+      fastCache.delete('matches_all');
+      
+      return { success: true, data, message: 'Availability updated successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to update availability',
+        error: error instanceof Error ? error.message : 'Failed to update availability'
+      };
+    }
+  },
+
+  delete: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/matches/${id}`, { method: 'DELETE' });
+      fastCache.delete('matches_all');
+      fastCache.delete(`match_${id}`);
+      return { success: true, data, message: 'Match deleted successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to delete match',
+        error: error instanceof Error ? error.message : 'Failed to delete match'
+      };
+    }
+  }
+};
+
+// DREAM TEAM API - ULTRA FAST
+export const dreamTeamAPI = {
+  getAll: async (leagueId?: string): Promise<DreamTeamResponse> => {
+    const endpoint = leagueId ? `/dream-team?leagueId=${leagueId}` : '/dream-team';
+    const cacheKey = leagueId ? `dream_team_${leagueId}` : 'dream_team_all';
+    return await quickFetch<DreamTeamResponse>(endpoint, {}, cacheKey);
+  },
+
+  create: async (dreamTeam: CreateDreamTeamDTO): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>('/dream-team', {
+        method: 'POST',
+        body: JSON.stringify(dreamTeam),
+      });
+      
+      // Invalidate dream team cache
+      fastCache.delete('dream_team_all');
+      fastCache.delete(`dream_team_${dreamTeam.leagueId}`);
+      
+      return { success: true, data, message: 'Dream team created successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to create dream team',
+        error: error instanceof Error ? error.message : 'Failed to create dream team'
+      };
+    }
+  },
+
+  getByLeague: async (leagueId: string): Promise<DreamTeamResponse> => {
+    return await quickFetch<DreamTeamResponse>(`/dream-team?leagueId=${leagueId}`, {}, `dream_team_${leagueId}`);
+  },
+
+  getFormations: async (): Promise<ApiResponse<string[]>> => {
+    try {
+      const data = await quickFetch<{ formations: string[] }>('/dream-team/formations', {}, 'dream_team_formations');
+      return { success: true, data: data.formations, message: 'Formations fetched successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch formations',
+        error: error instanceof Error ? error.message : 'Failed to fetch formations'
+      };
+    }
+  },
+
+  update: async (dreamTeamId: string, dreamTeam: Partial<CreateDreamTeamDTO>): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/dream-team/${dreamTeamId}`, {
+        method: 'PUT',
+        body: JSON.stringify(dreamTeam),
+      });
+      
+      // Invalidate dream team cache
+      fastCache.delete('dream_team_all');
+      if (dreamTeam.leagueId) {
+        fastCache.delete(`dream_team_${dreamTeam.leagueId}`);
+      }
+      
+      return { success: true, data, message: 'Dream team updated successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to update dream team',
+        error: error instanceof Error ? error.message : 'Failed to update dream team'
+      };
+    }
+  },
+
+  delete: async (dreamTeamId: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    try {
+      const data = await quickFetch<{ success: boolean; message: string }>(`/dream-team/${dreamTeamId}`, { method: 'DELETE' });
+      fastCache.delete('dream_team_all');
+      return { success: true, data, message: 'Dream team deleted successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to delete dream team',
+        error: error instanceof Error ? error.message : 'Failed to delete dream team'
       };
     }
   }
