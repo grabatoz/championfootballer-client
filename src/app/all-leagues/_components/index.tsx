@@ -1,5 +1,4 @@
 'use client';
-
 import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress } from '@mui/material'
@@ -441,6 +440,7 @@ function AllLeagues() {
   const [isCreating, setIsCreating] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const router = useRouter();
   const [leagueName, setLeagueName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -452,6 +452,9 @@ function AllLeagues() {
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Cache timeout - 5 minutes
+  const CACHE_TIMEOUT = 5 * 60 * 1000;
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -470,7 +473,7 @@ function AllLeagues() {
       }
 
       // Fetch fresh leagues data
-      await fetchAllLeagues();
+      await fetchAllLeagues(true); // Force refresh after joining league
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
       toast.error(errorMessage);
@@ -511,8 +514,18 @@ function AllLeagues() {
     setImagePreview(null);
   };
 
-  const fetchAllLeagues = useCallback(async () => {
+  const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
     if (!token) return;
+
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastFetchTime;
+
+    // Check if we need to fetch (either forced refresh or cache expired)
+    if (!forceRefresh && timeSinceLastFetch < CACHE_TIMEOUT && leagues.length > 0) {
+      console.log('Using cached leagues data');
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('Fetching all available leagues...');
@@ -568,6 +581,7 @@ function AllLeagues() {
           );
           
           setLeagues(detailedLeagues);
+          setLastFetchTime(now); // Update last fetch time
           console.log('Setting detailed leagues:', detailedLeagues);
         }
       } else {
@@ -580,19 +594,25 @@ function AllLeagues() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]); // Only depend on token
 
   useEffect(() => {
     if (token) {
-      fetchAllLeagues();
+      fetchAllLeagues(false); // Don't force refresh on mount
     }
-  }, [token, fetchAllLeagues]);
+  }, [token]); // Remove fetchAllLeagues from dependencies
 
-  // Refresh data when page becomes visible
+  // Refresh data when page becomes visible - but only if cache is old
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && token) {
-        fetchAllLeagues();
+        const now = Date.now();
+        const timeSinceLastFetch = now - lastFetchTime;
+        
+        // Only fetch if cache is older than 2 minutes when page becomes visible
+        if (timeSinceLastFetch > 2 * 60 * 1000) {
+          fetchAllLeagues(false);
+        }
       }
     };
 
@@ -600,21 +620,21 @@ function AllLeagues() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [token, fetchAllLeagues]);
+  }, [token, lastFetchTime]); // Add lastFetchTime dependency
 
-  // Refresh data when component mounts or becomes focused
-  useEffect(() => {
-    const handleFocus = () => {
-      if (token) {
-        fetchAllLeagues();
-      }
-    };
+  // Remove the focus event listener to prevent excessive API calls
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (token) {
+  //       fetchAllLeagues();
+  //     }
+  //   };
 
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [token, fetchAllLeagues]);
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => {
+  //     window.removeEventListener('focus', handleFocus);
+  //   };
+  // }, [token]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -670,7 +690,7 @@ function AllLeagues() {
         }
 
         // Fetch fresh leagues list from server
-        await fetchAllLeagues();
+        await fetchAllLeagues(true); // Force refresh after creating league
         console.log('Fetched fresh leagues after creating new league');
       } else {
         console.error('Failed to create league:', data.message);
@@ -728,7 +748,7 @@ function AllLeagues() {
         // If current user was removed, refresh the entire leagues list
         if (memberId === user?.id) {
           setOpenMembers(false);
-          await fetchAllLeagues();
+          await fetchAllLeagues(true); // Force refresh
         } else {
           // Otherwise, just refetch members for this league
           handleOpenMembers(selectedLeague);
@@ -751,7 +771,7 @@ function AllLeagues() {
       
       if (response.ok) {
         setOpenMembers(false);
-        await fetchAllLeagues();
+        await fetchAllLeagues(true); // Force refresh after leaving league
         toast.success('Successfully left the league');
       } else {
         toast.error('Failed to leave league');
@@ -1030,15 +1050,15 @@ function AllLeagues() {
                       display: 'flex',
                       justifyContent: 'flex-start',
                       alignItems: 'flex-start',
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      gap: { xs: 2, sm: 15 }
+                      flexDirection: 'row',
+                      gap: { xs: 4, sm: 15 }
                     }}>
                       {/* Left Column */}
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, justifyContent: 'space-between' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 }, justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                           <Box sx={{
-                            width: 16,
-                            height: 16,
+                            width: { xs: 12, sm: 16 },
+                            height: { xs: 12, sm: 16 },
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -1049,8 +1069,8 @@ function AllLeagues() {
                             position: 'relative'
                           }}>
                             <Box sx={{
-                              width: 10,
-                              height: 10,
+                              width: { xs: 8, sm: 10 },
+                              height: { xs: 8, sm: 10 },
                               backgroundColor: 'rgba(255, 255, 255, 0.9)',
                               borderRadius: '50%',
                               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -1065,15 +1085,15 @@ function AllLeagues() {
                             color: 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
-                            fontSize: { xs: '13px', sm: '13px' }
+                            fontSize: { xs: '10px', sm: '13px' }
                           }}>
                             Players {league.members?.length || 0}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                           <Box sx={{
-                            width: 16,
-                            height: 16,
+                            width: { xs: 12, sm: 16 },
+                            height: { xs: 12, sm: 16 },
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -1084,8 +1104,8 @@ function AllLeagues() {
                             position: 'relative'
                           }}>
                             <Box sx={{
-                              width: 10,
-                              height: 10,
+                              width: { xs: 8, sm: 10 },
+                              height: { xs: 8, sm: 10 },
                               backgroundColor: 'rgba(255, 255, 255, 0.9)',
                               borderRadius: '50%',
                               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -1100,9 +1120,9 @@ function AllLeagues() {
                             color: 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
-                            fontSize: { xs: '14px', sm: '16px' }
+                            fontSize: { xs: '9px', sm: '12px' }
                           }}>
-                            Created At {new Date(league.createdAt).toLocaleString()}
+                            Created {new Date(league.createdAt).toLocaleDateString()}
                           </Typography>
                         </Box>
                       </Box>
@@ -1111,13 +1131,13 @@ function AllLeagues() {
                       <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 1.5,
-                        alignItems: { xs: 'flex-start', sm: 'flex-start' }
+                        gap: { xs: 1, sm: 1.5 },
+                        alignItems: 'flex-start'
                       }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                           <Box sx={{
-                            width: 16,
-                            height: 16,
+                            width: { xs: 12, sm: 16 },
+                            height: { xs: 12, sm: 16 },
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -1128,8 +1148,8 @@ function AllLeagues() {
                             position: 'relative'
                           }}>
                             <Box sx={{
-                              width: 10,
-                              height: 10,
+                              width: { xs: 8, sm: 10 },
+                              height: { xs: 8, sm: 10 },
                               backgroundColor: 'rgba(255, 255, 255, 0.9)',
                               borderRadius: '50%',
                               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -1144,15 +1164,15 @@ function AllLeagues() {
                             color: 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
-                            fontSize: { xs: '13px', sm: '13px' }
+                            fontSize: { xs: '9px', sm: '12px' }
                           }}>
-                            Invite Code: {league.inviteCode}
+                            Code: {league.inviteCode}
                           </Typography>
                           <IconButton
                             size="small"
                             sx={{
                               color: 'white',
-                              p: 0.5,
+                              p: { xs: 0.2, sm: 0.5 },
                               '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
                             }}
                             onClick={(e) => {
@@ -1161,15 +1181,15 @@ function AllLeagues() {
                               toast.success('Invite code copied!');
                             }}
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
                               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
                             </svg>
                           </IconButton>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                           <Box sx={{
-                            width: 16,
-                            height: 16,
+                            width: { xs: 12, sm: 16 },
+                            height: { xs: 12, sm: 16 },
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -1180,8 +1200,8 @@ function AllLeagues() {
                             position: 'relative'
                           }}>
                             <Box sx={{
-                              width: 10,
-                              height: 10,
+                              width: { xs: 8, sm: 10 },
+                              height: { xs: 8, sm: 10 },
                               backgroundColor: 'rgba(255, 255, 255, 0.9)',
                               borderRadius: '50%',
                               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -1196,7 +1216,7 @@ function AllLeagues() {
                             color: 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
-                            fontSize: { xs: '13px', sm: '13px' }
+                            fontSize: { xs: '10px', sm: '13px' }
                           }}>
                             Matches: {league.matches?.length || 0}
                           </Typography>
