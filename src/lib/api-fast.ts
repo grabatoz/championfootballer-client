@@ -36,11 +36,6 @@ interface CreateDreamTeamDTO {
   formation: string;
 }
 
-interface MatchVote {
-  matchId: string;
-  votedForId: string;
-}
-
 interface MatchStats {
   matchId: string;
   playerId: string;
@@ -51,10 +46,6 @@ interface MatchStats {
   freeKicks: number;
   defence: number;
   impact: number;
-}
-
-interface JoinLeagueDTO {
-  inviteCode: string;
 }
 
 // Cache item interface
