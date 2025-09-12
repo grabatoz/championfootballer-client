@@ -108,8 +108,24 @@ export default function WorldRankingTable(){
   };
 
   return (
-    <Box sx={{ maxWidth: 1400, mx:'auto', p:{ xs:2, md:4 }, minHeight:'100vh', display:'flex', flexDirection:'column', gap:2 }}>
-      <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography>
+    <Box sx={{ maxWidth: 1400, mx:'auto', p:{ xs:2, md:4 },minHeight:'100vh', display:'flex', flexDirection:'column', gap:2 }}>
+      {/* <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography> */}
+  <Typography variant="h3" sx={{
+            // mb: { xs: 3, md: 4 },
+            color: '#404040',
+            // fontFamily: 'Arial Black, Arial, sans-serif',
+            fontFamily: '"Anton", sans-serif',
+            fontWeight: 'semibold',
+            fontSize: { xs: '32px', sm: '42px', md: '56px' },
+            textAlign: { xs: 'center', md: 'left' },
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}
+            className='all-leagues-heading'
+          >
+           world ranking
+          </Typography>
 
       {/* Unified Control + Summary Card */}
       <Paper elevation={0} sx={{
