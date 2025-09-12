@@ -719,7 +719,7 @@ export default function PlayerDashboard() {
             flex: { xs: 'none', md: '0 0 300px' },
             width: { xs: '100%', md: '90%' },
             display: 'flex',
-            justifyContent: { xs: 'center', sm: 'center', md: 'center' },
+            justifyContent: { xs: 'center', md: 'center' },
             mb: { xs: 2, md: 0 }, // Add margin bottom on mobile
             mt: { xs: 1 }
           }}>
@@ -737,164 +737,185 @@ export default function PlayerDashboard() {
               }}
               foot={user?.preferredFoot === "right" ? "R" : "L"}
               profileImage={user?.profilePicture || undefined}
-              shirtIcon={''}
+              shirtIcon=""
               position={user?.position || 'XXX'}
             />
           </Box>
 
+          {/* WRAPPER: White box + World Ranking button stacked */}
           <Box
             sx={{
               flex: 1,
-              backgroundColor: '#fff',
-              p: { xs: 3, sm: 2, md: 1.5 },
-              borderRadius: { xs: '20px 20px 20px 20px', md: 2 },
               maxWidth: { xs: '100%', md: '65%', lg: '65%' },
               width: { xs: '96%', sm: '100%', md: '100%', lg: '33%' },
-              textAlign: 'flex',
-              mt: { xs: 'auto', md: -3 },
-              minHeight: { xs: 'auto', md: 'auto' },
-              mb: { xs: 2, md: 0 },
-              alignSelf: { xs: 'center' },
-              ml: { md: -2 },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.2,
+              mt: { xs: 0, md: 7 },
+              ml: { md: -2 }
             }}
           >
-            <Box sx={{ display: 'inline-flex', gap: 1 }}>
-              <Typography
-                variant="h5"
-                gutterBottom
-                sx={{
+            {/* White Box */}
+            <Box
+              sx={{
+                backgroundColor: '#fff',
+                p: { xs: 3, sm: 2, md: 1.5 },
+                borderRadius: { xs: '20px', md: 2 },
+                width: '100%',
+                minHeight: 'auto'
+              }}
+            >
+              <Box sx={{ display: 'inline-flex', gap: 1 }}>
+                <Typography variant="h5" gutterBottom sx={{
                   fontWeight: 'bold',
                   fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' },
-                  color: 'black',
-                }}
-              >
-                Welcome,
-              </Typography>
-              <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 'semibold' }}>
-                {user?.firstName}
-              </Typography>
-            </Box>
+                  color: 'black'
+                }}>Welcome,</Typography>
+                <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 600 }}>
+                  {user?.firstName}
+                </Typography>
+              </Box>
 
-            <Divider sx={{ mb: 1.5, width: '100%', height: 2, bgcolor: 'green' }} />
+              <Divider sx={{ mb: 1.5, width: '100%', height: 2, bgcolor: 'green' }} />
 
-            <Box sx={{ justifyContent: 'center', textAlign: 'center' }}>
-              <Typography
-                variant="body2"
-                sx={{
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" sx={{
                   color: 'black',
                   mb: 1.5,
                   fontSize: { xs: '0.9rem', sm: '1rem' }
-                }}
-              >
-                Your Current League In Which You Stand
-              </Typography>
+                }}>
+                  Your Current League In Which You Stand
+                </Typography>
 
-              {/* League Selection Component */}
-              <LeagueSelectionComponent user={user} />
+                {/* League Selection Component */}
+                <LeagueSelectionComponent user={user} />
 
-            {/* Add New League Button */}
+                {/* Add New League Button */}
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => setIsDialogOpen(true)}
+                  sx={{
+                    bgcolor: '#0388E3',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    mb: 2,
+                    mt: 3,
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)' },
+                    width: '320px',
+                    mx: 'auto',
+                    display: { xs: 'none', sm: 'none', md: 'block' }
+                  }}
+                >
+                  + Create New League
+                </Button>
+
+                {/* Invite Code Join Section */}
+                <Box sx={{
+                  mx: 'auto',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: { xs: 'none', sm: 'none', md: 'block' },
+                  maxWidth: '320px'
+                }}>
+                  <TextField
+                    placeholder="Enter invite code"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#DEDCDC',
+                      borderRadius: 3,
+                      flex: 1,
+                      maxWidth: 190,
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { border: 'none' },
+                        '&:hover fieldset': { border: 'none' },
+                        '&.Mui-focused fieldset': { border: 'none' }
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    sx={{ background: '#00A77F', borderRadius: 2, '&:hover': { background: '#00A77F' }, ml: -3, py: 1 }}
+                    onClick={handleJoinLeague}
+                    startIcon={
+                      <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
+                        <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
+                      </svg>
+                    }
+                  >
+                    Join League
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* World Ranking Button directly below */}
             <Button
-              variant="contained"
+              href="/world-ranking"
+              component="a"
               fullWidth
-              onClick={() => setIsDialogOpen(true)}
               sx={{
-                bgcolor: '#0388E3',
-                color: 'white',
-                fontWeight: 'bold',
-                mb: 2,
-                mt: 3,
+                position: 'relative',
+                textTransform: 'none',
+                background: 'linear-gradient(135deg,#004e5f,#007a95)',
+                color: '#fff',
+                py: 1.6,
                 borderRadius: 2,
-                '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)', },
-                width: '320px',
-                mx: 'auto',
-                display: {
-                  xs: 'none',  // Show on extra small screens
-                  sm: 'none',  // Show on small screens
-                  md: 'block',   // Hide on medium screens and up
+                fontWeight: 700,
+                letterSpacing: 0.4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                justifyContent: 'center',
+                boxShadow: '0 8px 24px -6px rgba(0,78,95,0.55)',
+                overflow: 'hidden',
+                '&:before': {
+                  content: '""',
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: 2,
+                  padding: '2px',
+                  background: 'linear-gradient(120deg,#30e8ff,#72ffa8,#30e8ff)',
+                  WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                  opacity: 0.55
+                },
+                '&:after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-40%',
+                  width: '40%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.5) 60%,rgba(255,255,255,0) 100%)',
+                  transform: 'skewX(-18deg)',
+                  animation: 'wr-shine 3.4s linear infinite'
+                },
+                '@keyframes wr-shine': {
+                  '0%': { left: '-40%' },
+                  '70%': { left: '140%' },
+                  '100%': { left: '140%' }
+                },
+                '&:hover': {
+                  background: 'linear-gradient(135deg,#005d72,#0092b1)',
+                  boxShadow: '0 10px 28px -6px rgba(0,120,150,0.6)'
                 }
               }}
             >
-              + Create New League
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10l1 5-6 2-6-2 1-5Z" /><path d="M4 9c.6 2.1 2.5 3 4 3" /><path d="M20 9c-.6 2.1-2.5 3-4 3" />
+              </svg>
+              World Ranking
             </Button>
-
-            {/* Invite Code Join Section */}
-            <Box sx={{
-               mx: 'auto',
-              alignItems: 'center', justifyContent: 'center', display: {
-                xs: 'none',  // Show on extra small screens
-                sm: 'none',  // Show on small screens
-                md: 'block',   // Hide on medium screens and up
-                maxWidth:'320px'
-              }
-            }}>
-              <TextField
-                placeholder="Enter invite code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                size="small"
-                variant="outlined"
-                sx={{
-                  backgroundColor: '#DEDCDC',
-                  borderRadius: 3,
-                  flex: 1,
-                  maxWidth: 190,
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      border: 'none',
-                    },
-                    '&:hover fieldset': {
-                      border: 'none',
-                    },
-                    '&.Mui-focused fieldset': {
-                      border: 'none',
-                    },
-                  },
-                }}
-              />
-              <Button
-                variant="contained"
-                // color="success"
-                sx={{ background: '#00A77F', borderRadius: 2, '&:hover': { background: '#00A77F' }, ml: -3, py: 1 }}
-                onClick={handleJoinLeague}
-                startIcon={
-                  <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-                    <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
-                  </svg>
-                }
-              >
-                Join League
-              </Button>
-            </Box>
-            </Box>
-
           </Box>
-
         </Box>
       </Paper>
-
-      {/* Quick Links */}
-      <Box sx={{ mt:4, width:'100%', display:'flex', flexWrap:'wrap', gap:2, justifyContent:'center' }}>
-        <Button
-          href="/world-ranking"
-          component="a"
-          sx={{
-            textTransform:'none',
-            background:'#004e5f',
-            color:'#fff',
-            px:3,
-            py:2,
-            borderRadius:3,
-            fontWeight:600,
-            display:'flex',
-            alignItems:'center',
-            gap:1.2,
-            '&:hover':{ background:'#006b82' }
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10l1 5-6 2-6-2 1-5Z" /><path d="M4 9c.6 2.1 2.5 3 4 3" /><path d="M20 9c-.6 2.1-2.5 3-4 3" /></svg>
-          World Ranking
-        </Button>
-      </Box>
 
         {/* <Box sx={{
           display: 'flex',
