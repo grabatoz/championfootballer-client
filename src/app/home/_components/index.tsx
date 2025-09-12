@@ -264,8 +264,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
           {sortedUserLeagues.map((league) => {
             const isActive = league.id === selectedLeague?.id;
             return (
-              <Link href={`/league/${league.id}`}>
-
+              <Link href={`/league/${league.id}`} key={league.id} passHref>
                 <MenuItem
                   key={league.id}
                   onClick={() => {
