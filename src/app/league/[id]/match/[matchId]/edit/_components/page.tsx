@@ -445,92 +445,102 @@ export default function EditMatchPage() {
 
                                         <Grid container spacing={3}>
                                             <Grid item xs={12} md={6}>
-                                                <Autocomplete
-                                                    multiple
-                                                    options={homePlayerOptions}
-                                                    disableCloseOnSelect
-                                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
-                                                    value={homeTeamUsers}
-                                                    onChange={(event, newValue) => {
-                                                        setHomeTeamUsers(newValue);
-                                                        if (homeCaptain && !newValue.some((u) => u.id === homeCaptain.id)) setHomeCaptain(null);
-                                                    }}
-                                                    renderOption={(props, option, { selected }) => (
-                                                        <li {...props} style={{ color: 'black', backgroundColor: selected ? '#e3f2fd' : 'white', padding: '12px 16px' }}>
-                                                            <Checkbox
-                                                                icon={<span style={{ width: 16, height: 16, border: '1px solid #666', borderRadius: 2 }} />}
-                                                                checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: '#1976d2', borderRadius: 2 }} />}
-                                                                sx={{ marginRight: 1 }}
-                                                                checked={selected}
-                                                            />
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                <Typography>{option.firstName} {option.lastName}</Typography>
-                                                                {option.isGuest && <Chip label="Guest" size="small" sx={{ bgcolor: '#d35400', color: 'white', fontSize: '10px' }} />}
-                                                                <Chip label={`${calcSkill(option)}`} size="small" sx={{ bgcolor: '#1976d2', color: 'white', fontSize: '10px' }} />
-                                                            </Box>
-                                                        </li>
-                                                    )}
-                                                    renderInput={(params) => (
-                                                        <TextField {...params} label="Select Home Team Players" placeholder="Choose players..." sx={{ ...autocompleteStyles }} />
-                                                    )}
-                                                    sx={{ '& .MuiAutocomplete-popupIndicator': { color: 'white' }, '& .MuiAutocomplete-clearIndicator': { color: 'white' } }}
-                                                />
-                                                {homeTeamUsers.length > 0 && (
-                                                    <Autocomplete
-                                                        options={homeTeamUsers}
-                                                        getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
-                                                        value={homeCaptain}
-                                                        onChange={(event, newValue) => setHomeCaptain(newValue)}
-                                                        renderInput={(params) => (
-                                                            <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Home Team Captain" required />
-                                                        )}
-                                                        sx={{ '& .MuiAutocomplete-popupIndicator': { color: 'white' }, '& .MuiAutocomplete-clearIndicator': { color: 'white' } }}
-                                                    />
+                                              <Autocomplete
+                                                multiple
+                                                options={homePlayerOptions}
+                                                disableCloseOnSelect
+                                                getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                                                ListboxProps={{
+                                                  sx: {
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(2, 1fr)',
+                                                    gap: 1,
+                                                    p: 1
+                                                  }
+                                                }}
+                                                renderOption={(props, option) => (
+                                                  <Box component="li" {...props} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1 }}>
+                                                    <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 1 }} />
+                                                    <Typography variant="body2">{option.firstName} </Typography>
+                                                  {/* {option.lastName} */}
+                                                  </Box>
                                                 )}
+                                                renderTags={(value, getTagProps) =>
+                                                  value.map((opt, index) => (
+                                                    <Box
+                                                      key={opt.id}
+                                                      {...getTagProps({ index })}
+                                                      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
+                                                    >
+                                                      <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                                                      <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {opt.firstName} 
+                                                      </Typography>
+                                                      {/* {opt.lastName} */}
+                                                    </Box>
+                                                  ))
+                                                }
+                                                // ← bind value + onChange so `value` is never undefined
+                                                value={homeTeamUsers}
+                                                onChange={(_, newValue) => {
+                                                  setHomeTeamUsers(newValue);
+                                                  if (homeCaptain && !newValue.some(u => u.id === homeCaptain.id)) {
+                                                    setHomeCaptain(null);
+                                                  }
+                                                }}
+                                                renderInput={params => (
+                                                  <TextField {...params} label="Select Home Players" sx={{ ...autocompleteStyles }} />
+                                                )}
+                                              />
                                             </Grid>
                                             <Grid item xs={12} md={6}>
-                                                <Autocomplete
-                                                    multiple
-                                                    options={awayPlayerOptions}
-                                                    disableCloseOnSelect
-                                                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
-                                                    value={awayTeamUsers}
-                                                    onChange={(event, newValue) => {
-                                                        setAwayTeamUsers(newValue);
-                                                        if (awayCaptain && !newValue.some((u) => u.id === awayCaptain.id)) setAwayCaptain(null);
-                                                    }}
-                                                    renderOption={(props, option, { selected }) => (
-                                                        <li {...props} style={{ color: 'black', backgroundColor: selected ? '#e3f2fd' : 'white', padding: '12px 16px' }}>
-                                                            <Checkbox
-                                                                icon={<span style={{ width: 16, height: 16, border: '1px solid #666', borderRadius: 2 }} />}
-                                                                checkedIcon={<span style={{ width: 16, height: 16, backgroundColor: '#1976d2', borderRadius: 2 }} />}
-                                                                sx={{ marginRight: 1 }}
-                                                                checked={selected}
-                                                            />
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                <Typography>{option.firstName} {option.lastName}</Typography>
-                                                                {option.isGuest && <Chip label="Guest" size="small" sx={{ bgcolor: '#d35400', color: 'white', fontSize: '10px' }} />}
-                                                                <Chip label={`${calcSkill(option)}`} size="small" sx={{ bgcolor: '#1976d2', color: 'white', fontSize: '10px' }} />
-                                                            </Box>
-                                                        </li>
-                                                    )}
-                                                    renderInput={(params) => (
-                                                        <TextField {...params} label="Select Away Team Players" placeholder="Choose players..." sx={{ ...autocompleteStyles }} />
-                                                    )}
-                                                    sx={{ '& .MuiAutocomplete-popupIndicator': { color: 'white' }, '& .MuiAutocomplete-clearIndicator': { color: 'white' } }}
-                                                />
-                                                {awayTeamUsers.length > 0 && (
-                                                    <Autocomplete
-                                                        options={awayTeamUsers}
-                                                        getOptionLabel={(option) => `${option.firstName} ${option.lastName}${option.isGuest ? ' (Guest)' : ''}`}
-                                                        value={awayCaptain}
-                                                        onChange={(event, newValue) => setAwayCaptain(newValue)}
-                                                        renderInput={(params) => (
-                                                            <TextField {...params} sx={{ mt: 2, ...inputStyles }} label="Select Away Team Captain" required />
-                                                        )}
-                                                        sx={{ '& .MuiAutocomplete-popupIndicator': { color: 'white' }, '& .MuiAutocomplete-clearIndicator': { color: 'white' } }}
-                                                    />
+                                              <Autocomplete
+                                                multiple
+                                                options={awayPlayerOptions}
+                                                disableCloseOnSelect
+                                                getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                                                ListboxProps={{
+                                                  sx: {
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(2, 1fr)',
+                                                    gap: 1,
+                                                    p: 1
+                                                  }
+                                                }}
+                                                renderOption={(props, option) => (
+                                                  <Box component="li" {...props} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1 }}>
+                                                    <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 1 }} />
+                                                    <Typography variant="body2">{option.firstName} </Typography>
+                                                  {/* {option.lastName} */}
+                                                  </Box>
                                                 )}
+                                                renderTags={(value, getTagProps) =>
+                                                  value.map((opt, index) => (
+                                                    <Box
+                                                      key={opt.id}
+                                                      {...getTagProps({ index })}
+                                                      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
+                                                    >
+                                                      <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
+                                                      <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {opt.firstName} 
+                                                      </Typography>
+                                                      {/* {opt.lastName} */}
+                                                    </Box>
+                                                  ))
+                                                }
+                                                // ← bind value + onChange here as well
+                                                value={awayTeamUsers}
+                                                onChange={(_, newValue) => {
+                                                  setAwayTeamUsers(newValue);
+                                                  if (awayCaptain && !newValue.some(u => u.id === awayCaptain.id)) {
+                                                    setAwayCaptain(null);
+                                                  }
+                                                }}
+                                                renderInput={params => (
+                                                  <TextField {...params} label="Select Away Players" sx={{ ...autocompleteStyles }} />
+                                                )}
+                                              />
                                             </Grid>
                                         </Grid>
                                     </Grid>
@@ -766,7 +776,7 @@ export default function EditMatchPage() {
                                                             />
                                                         )}
                                                     </Typography>
-                                                    <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                                                    <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                                                         Skill: {calcSkill(user)}
                                                     </Typography>
                                                 </Box>
