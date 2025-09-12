@@ -468,15 +468,14 @@ export default function EditMatchPage() {
                                                 renderTags={(value, getTagProps) =>
                                                   value.map((opt, index) => (
                                                     <Box
-                                                      key={opt.id}
-                                                      {...getTagProps({ index })}
+                                                      {...getTagProps({ index })}      // spread first
+                                                      key={opt.id}                     // then set your own key
                                                       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
                                                     >
                                                       <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
                                                       <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {opt.firstName} 
+                                                        {opt.firstName} {opt.lastName}
                                                       </Typography>
-                                                      {/* {opt.lastName} */}
                                                     </Box>
                                                   ))
                                                 }
@@ -517,15 +516,14 @@ export default function EditMatchPage() {
                                                 renderTags={(value, getTagProps) =>
                                                   value.map((opt, index) => (
                                                     <Box
-                                                      key={opt.id}
                                                       {...getTagProps({ index })}
+                                                      key={opt.id}
                                                       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
                                                     >
                                                       <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
                                                       <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {opt.firstName} 
+                                                        {opt.firstName} {opt.lastName}
                                                       </Typography>
-                                                      {/* {opt.lastName} */}
                                                     </Box>
                                                   ))
                                                 }
