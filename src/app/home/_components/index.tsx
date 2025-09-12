@@ -42,6 +42,7 @@ import { Trophy } from 'lucide-react';
 import Dashbg from '@/Components/images/dashbg.jpg'
 import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
+import Link from 'next/link';
 
 
 
@@ -98,7 +99,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
               ...(data.user.leagues || []),
               ...(data.user.administeredLeagues || [])
             ].filter(league => league && league.id); // Filter out undefined/null leagues
-            
+
             const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
             setUserLeagues(uniqueLeagues);
 
@@ -204,7 +205,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-            <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{height:24,width:24}} />
+            <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
             <Typography
               sx={{
                 fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
@@ -263,47 +264,51 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
           {sortedUserLeagues.map((league) => {
             const isActive = league.id === selectedLeague?.id;
             return (
-              <MenuItem
-                key={league.id}
-                onClick={() => {
-                  setSelectedLeague(league);
-                  setShowDropdown(false);
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  mx: 0.5,
-                  my: 0.25,
-                  py: 1.25,
-                  px: 1.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  color: '#FFFFFF',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    backgroundColor: 'rgba(255,255,255,0.12)',
-                  },
-                  ...(isActive && {
-                    backgroundColor: 'rgba(255,255,255,0.20)',
-                    border: '1px solid rgba(255,255,255,0.65)',
-                  }),
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                  <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
-                  <Typography
-                    sx={{
-                      fontSize: '0.95rem',
-                      fontWeight: isActive ? 700 : 500,
-                      letterSpacing: 0.2,
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    {formatLeagueName(league.name)}
-                  </Typography>
-                </Box>
-                {isActive && (
+              <Link href={`/league/${league.id}`}>
+
+                <MenuItem
+                  key={league.id}
+                  onClick={() => {
+                    setSelectedLeague(league);
+                    setShowDropdown(false);
+                  }}
+                  sx={{
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 1.25,
+                    px: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#FFFFFF',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      backgroundColor: 'rgba(255,255,255,0.12)',
+                    },
+                    ...(isActive && {
+                      backgroundColor: 'rgba(255,255,255,0.20)',
+                      border: '1px solid rgba(255,255,255,0.65)',
+                    }),
+                  }}
+                >
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                    <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
+                    <Typography
+                      sx={{
+                        fontSize: '0.95rem',
+                        fontWeight: isActive ? 700 : 500,
+                        letterSpacing: 0.2,
+                        color: '#FFFFFF',
+                      }}
+                    >
+                      {formatLeagueName(league.name)}
+                    </Typography>
+                  </Box>
+
+                  {/* {isActive && (
                   <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Box
                       sx={{
@@ -321,8 +326,10 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
                       Current
                     </Box>
                   </Box>
-                )}
-              </MenuItem>
+                )} */}
+                </MenuItem>
+              </Link>
+
             );
           })}
         </Box>
@@ -704,7 +711,7 @@ export default function PlayerDashboard() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          mx: 'auto', 
+          mx: 'auto',
           alignItems: 'center',
         }}
       >
@@ -908,7 +915,7 @@ export default function PlayerDashboard() {
               }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10l1 5-6 2-6-2 1-5Z" /><path d="M4 9c.6 2.1 2.5 3 4 3" /><path d="M20 9c-.6 2.1-2.5 3-4 3" />
               </svg>
               World Ranking
@@ -917,7 +924,7 @@ export default function PlayerDashboard() {
         </Box>
       </Paper>
 
-        {/* <Box sx={{
+      {/* <Box sx={{
           display: 'flex',
           alignItems: { xs: 'stretch', md: 'center' },
           gap: { xs: 2, md: 4 },
@@ -1151,112 +1158,110 @@ export default function PlayerDashboard() {
         </Box>
 
       </Paper> */}
- <Paper
-  elevation={3}
-  sx={{
-    backgroundImage: `url(${Dashbg.src})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    borderRadius: 2,
-    overflow: 'hidden',
-    p: { xs: 0.5, sm: 3 },
-    width: '98%',
-    boxShadow: { xs: 0, sm: 3 },
-    mt: { xs: 2, md: 0 },
-    display: {
-      xs: 'flex',
-      sm: 'flex',
-      md: 'none',
-    },
-    flexDirection: 'column',
-    alignItems: 'center',
-  }}
->
-  {/* Create New League Button - Now matching Join League section width */}
-  <Box sx={{
-    width: { xs: '100%', sm: '380px' },
-    display: 'flex',
-    justifyContent: 'center',
-    mb: 2
-  }}>
-    <Button
-      variant="contained"
-      onClick={() => setIsDialogOpen(true)}
-      sx={{
-        bgcolor: '#0388E3',
-        color: 'white',
-        fontWeight: 'bold',
-        borderRadius: 2,
-        boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
-        '&:hover': { bgcolor: '#0388E3' },
-        width: { xs: '100%', sm: '315px' },
-        height: '40px', // Fixed height to match Join button
-        fontSize: { xs: '0.875rem', sm: '1rem' }
-      }}
-    >
-      + Create New League
-    </Button>
-  </Box>
+      <Paper
+        elevation={3}
+        sx={{
+          backgroundImage: `url(${Dashbg.src})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: 2,
+          overflow: 'hidden',
+          p: { xs: 0.5, sm: 3 },
+          width: '98%',
+          boxShadow: { xs: 0, sm: 3 },
+          mt: { xs: 2, md: 0 },
+          display: {
+            xs: 'flex',
+            sm: 'flex',
+            md: 'none',
+          },
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        {/* Create New League Button - Now matching Join League section width */}
+        <Box sx={{
+          width: { xs: '100%', sm: '380px' },
+          display: 'flex',
+          justifyContent: 'center',
+          mb: 2
+        }}>
+          <Button
+            variant="contained"
+            onClick={() => setIsDialogOpen(true)}
+            sx={{
+              bgcolor: '#0388E3',
+              color: 'white',
+              fontWeight: 'bold',
+              borderRadius: 2,
+              boxShadow: '0 2px 8px rgba(25,118,210,0.2)',
+              '&:hover': { bgcolor: '#0388E3' },
+              width: { xs: '100%', sm: '315px' },
+              height: '40px', // Fixed height to match Join button
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
+          >
+            + Create New League
+          </Button>
+        </Box>
 
-  {/* Join League Section */}
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 2,
-      mb: 3,
-      width: { xs: '100%', sm: '380px' },
-      justifyContent: 'center',
-    }}
-  >
-    <TextField
-      placeholder="Enter invite code"
-      value={inviteCode}
-      onChange={(e) => setInviteCode(e.target.value)}
-      size="small"
-      variant="outlined"
-      sx={{
-        backgroundColor: '#fff',
-        borderRadius: 3,
-        flex: 1,
-        maxWidth: 190,
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': { border: 'none' },
-          '&:hover fieldset': { border: 'none' },
-          '&.Mui-focused fieldset': { border: 'none' },
-        },
-        '& .MuiInputBase-input': {
-          height: '40px', // Match button height
-          padding: '0 14px',
-          fontSize: '0.875rem'
-        }
-      }}
-    />
-    <Button
-      variant="contained"
-      sx={{ 
-        background: '#00a77f', 
-        borderRadius: 2, 
-        '&:hover': { background: '#00a77f' },
-        ml: -5, 
-        py: 1,
-        height: '40px', // Fixed height
-        minWidth: '120px', // Minimum width
-        fontSize: '0.875rem'
-      }}
-      onClick={handleJoinLeague}
-      startIcon={
-        <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-          <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
-        </svg>
-      }
-    >
-      Join League
-    </Button>
-  </Box>
-</Paper>
-
-
+        {/* Join League Section */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            mb: 3,
+            width: { xs: '100%', sm: '380px' },
+            justifyContent: 'center',
+          }}
+        >
+          <TextField
+            placeholder="Enter invite code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            size="small"
+            variant="outlined"
+            sx={{
+              backgroundColor: '#fff',
+              borderRadius: 3,
+              flex: 1,
+              maxWidth: 190,
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { border: 'none' },
+                '&:hover fieldset': { border: 'none' },
+                '&.Mui-focused fieldset': { border: 'none' },
+              },
+              '& .MuiInputBase-input': {
+                height: '40px', // Match button height
+                padding: '0 14px',
+                fontSize: '0.875rem'
+              }
+            }}
+          />
+          <Button
+            variant="contained"
+            sx={{
+              background: '#00a77f',
+              borderRadius: 2,
+              '&:hover': { background: '#00a77f' },
+              ml: -5,
+              py: 1,
+              height: '40px', // Fixed height
+              minWidth: '120px', // Minimum width
+              fontSize: '0.875rem'
+            }}
+            onClick={handleJoinLeague}
+            startIcon={
+              <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
+                <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
+              </svg>
+            }
+          >
+            Join League
+          </Button>
+        </Box>
+      </Paper>
 
 
 
@@ -1265,7 +1270,9 @@ export default function PlayerDashboard() {
 
 
 
-      
+
+
+
       <Dialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
