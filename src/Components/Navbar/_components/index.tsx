@@ -10,16 +10,21 @@ import {
   List,
   ListItem,
   ListItemText,
+  Badge,
+  Popover,
+  Paper,
+  Divider,
   // Divider,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/hooks';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
-// import cflogo from '@/Components/images/logo.png';
 import cflogo from '@/Components/images/champion football logo 3.png';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -32,7 +37,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
 import playercardupdate from '@/Components/images/playercardupdate.png';
 import leagueimg from '@/Components/images/leagueimg.png';
 import progressimg from '@/Components/images/progressimg.png';
@@ -43,6 +47,19 @@ import player from '@/Components/images/profile-user.png'
 import play from '@/Components/images/play.png'
 import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
+import { useAuth } from '@/lib/hooks';
+
+
+// Notification interface
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  meta?: any;
+  read: boolean;
+  created_at: string;
+}
 
 // Custom SlideFade transition
 const SlideFade = forwardRef(function SlideFade(
@@ -63,21 +80,246 @@ export default function NavigationBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { isAuthenticated, dispatch } = useAuth();
+  const { isAuthenticated, dispatch, token, user } = useAuth(); // 🔥 MOVED HERE - GET ALL VALUES AT COMPONENT LEVEL
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
   const openProfileMenu = Boolean(profileMenuAnchor);
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   const [gameRulesOpen, setGameRulesOpen] = useState(false);
   const pathname = usePathname();
 
+  // 🔥 NOTIFICATION STATES
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const openNotifications = Boolean(notificationAnchor);
+
+  // 🔥 REMOVED DUPLICATE useAuth CALLS - NOW USING COMPONENT LEVEL VALUES
+
+  // 🔥 UPDATED FETCH NOTIFICATIONS - USE COMPONENT LEVEL TOKEN
+  const fetchNotifications = async (showLogs?: boolean) => {
+    try {
+      setLoading(true);
+      
+      if (showLogs) {
+        console.log('🔔 Fetching notifications...');
+        console.log('🔍 Auth state:', { 
+          token: token ? 'Available' : 'Missing', 
+          isAuthenticated, 
+          userId: user?.id 
+        });
+      }
+      
+      if (!token) {
+        if (showLogs) {
+          console.log('❌ No token available from useAuth hook');
+        }
+        return;
+      }
+      
+      const userId = user?.id;
+      if (!userId) {
+        if (showLogs) {
+          console.log('❌ No user ID available from useAuth hook');
+        }
+        return;
+      }
+      
+      if (showLogs) {
+        console.log('✅ Using token:', token.substring(0, 20) + '...');
+        console.log('✅ Using userId:', userId);
+      }
+
+      const response = await fetch(`http://localhost:5000/notifications?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🔥 USE COMPONENT LEVEL TOKEN
+        }
+      });
+      
+      if (showLogs) {
+        console.log('🔔 API Response Status:', response.status);
+      }
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          if (showLogs) {
+            console.log('❌ Unauthorized - token might be expired');
+            console.log('🔍 Token used:', token.substring(0, 20) + '...');
+          }
+          setNotifications([]);
+          setUnreadCount(0);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (showLogs) {
+        console.log('🔔 Notifications Data:', data);
+      }
+      
+      if (data.success) {
+        const notificationList = data.notifications || [];
+        setNotifications(notificationList);
+        
+        const unread = notificationList.filter((n: Notification) => !n.read).length;
+        setUnreadCount(unread);
+        
+        if (showLogs) {
+          console.log(`📊 Total: ${notificationList.length}, Unread: ${unread}`);
+        }
+      } else {
+        console.error('API returned error:', data.message);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshNotifications = async () => {
+    setIsRefreshing(true);
+    console.log('🔄 Manual refresh triggered');
+    await fetchNotifications(true);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  // 🔥 FIXED: Use component level token instead of calling useAuth inside function
+  const markAsRead = async (notificationId: string) => {
+    try {
+      console.log(`📖 Marking notification ${notificationId} as read`);
+      
+      // 🔥 REMOVED: const { token } = useAuth(); - USING COMPONENT LEVEL TOKEN
+      
+      if (!token) {
+        console.log('❌ No token found for markAsRead');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:5000/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🔥 USE COMPONENT LEVEL TOKEN
+        }
+      });
+
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        console.log('✅ Notification marked as read');
+      } else {
+        console.error('❌ Failed to mark notification as read:', response.status);
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // 🔥 FIXED: Use component level token and user instead of calling useAuth inside function
+  const markAllAsRead = async () => {
+    try {
+      console.log('📖 Marking all notifications as read');
+      
+      // 🔥 REMOVED: const { token } = useAuth(); - USING COMPONENT LEVEL TOKEN
+      const userId = user?.id; // 🔥 USE COMPONENT LEVEL USER
+      
+      if (!token || !userId) {
+        console.log('❌ No token or user ID found for markAllAsRead');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:5000/notifications/read-all?userId=${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🔥 USE COMPONENT LEVEL TOKEN
+        }
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+        console.log('✅ All notifications marked as read');
+      } else {
+        console.error('❌ Failed to mark all notifications as read:', response.status);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  // 🔥 HELPER FUNCTION - KEEP FOR BACKWARD COMPATIBILITY
+  const getUserId = () => {
+    // Use component level user first, fallback to localStorage
+    if (user?.id) {
+      return user.id;
+    }
+    
+    try {
+      const localUser = localStorage.getItem('user');
+      if (localUser) {
+        const parsedUser = JSON.parse(localUser);
+        return parsedUser.id;
+      }
+    } catch (e) {
+      console.error('Error getting user ID:', e);
+    }
+    return null;
+  };
+
+  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+    console.log('🔔 Notification bell clicked');
+    setNotificationAnchor(event.currentTarget);
+    // Fetch fresh notifications when opening
+    fetchNotifications(true);
+  };
+
+  const handleNotificationClose = () => {
+    setNotificationAnchor(null);
+  };
+
   useEffect(() => {
     setMounted(true);
     dispatch(initializeFromStorage());
   }, [dispatch]);
 
+  // 🔥 FETCH NOTIFICATIONS ON MOUNT AND POLL
+  useEffect(() => {
+    if (isAuthenticated && token && user?.id) { // 🔥 ADDED TOKEN AND USER CHECK
+      console.log('✅ User authenticated with token, starting notification system...');
+      fetchNotifications(true);
+      
+      // Poll every 30 seconds
+      const interval = setInterval(() => {
+        fetchNotifications();
+      }, 30000);
+      
+      return () => {
+        console.log('🛑 Clearing notification interval...'); 
+        clearInterval(interval);
+      };
+    } else {
+      console.log('❌ User not authenticated or missing token/user, skipping notifications');
+      // Clear notifications when not authenticated
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated, token, user?.id]); // 🔥 ADDED TOKEN AND USER ID TO DEPENDENCY ARRAY
+
   const handleSignOut = async () => {
     try {
       await dispatch(logout());
+      // Clear notifications on logout
+      setNotifications([]);
+      setUnreadCount(0);
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -109,7 +351,13 @@ export default function NavigationBar() {
   ];
 
   const renderNavLinks = () => (
-    <>
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: { xs: 0.5, md: 1 },
+      flexWrap: 'nowrap',
+      overflow: 'hidden'
+    }}>
       {navItems.map(({ label, href }) => {
         const active = pathname?.startsWith(href);
         return (
@@ -123,39 +371,55 @@ export default function NavigationBar() {
               textTransform: 'none',
               fontFamily: 'Arial, Helvetica, sans-serif',
               fontWeight: 700,
-              color: active ? '#fff' : '#fff',
-              fontSize: { xs: '14px', md: '16px' },
-              px: 1.25,
-              mx: 0.5,
+              color: '#fff',
+              fontSize: { xs: '12px', sm: '13px', md: '14px', lg: '16px' },
+              px: { xs: 0.5, sm: 0.75, md: 1, lg: 1.25 },
+              py: { xs: 1, md: 1.25 },
+              minWidth: { xs: 'auto', md: 'auto' },
               position: 'relative',
-              transition: 'color .2s ease',
-              '&:hover': { color: '#fff', backgroundColor: 'transparent' },
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap',
+              borderRadius: 1,
+              '&:hover': { 
+                color: '#fff', 
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              },
               '&::after': {
                 content: '""',
                 position: 'absolute',
-                left: 0,
-                right: 0,
+                left: '50%',
                 bottom: -6,
-                height: '2px',
-                width: active ? '100%' : 0,
-                margin: '0 auto',
+                height: '3px',
+                width: active ? '80%' : 0,
+                transform: 'translateX(-50%)',
                 backgroundColor: '#fff',
-                transition: 'width .25s ease',
+                borderRadius: '2px',
+                transition: 'width 0.3s ease',
+                boxShadow: active ? '0 0 8px rgba(255,255,255,0.6)' : 'none',
               },
               '&:hover::after': {
-                width: '100%',
+                width: '80%',
+                boxShadow: '0 0 8px rgba(255,255,255,0.6)',
               },
               '&:focus-visible': {
-                outline: '2px solid #00a77f',
+                outline: '2px solid #fff',
                 outlineOffset: 2,
+                backgroundColor: 'rgba(255,255,255,0.1)',
               },
+              // Active state styling
+              ...(active && {
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }),
             }}
           >
             {label}
           </Button>
         );
       })}
-    </>
+    </Box>
   );
 
   if (!mounted) {
@@ -173,15 +437,22 @@ export default function NavigationBar() {
       <AppBar
         position="static"
         sx={{
-          // background: '#00A77F',
           background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
           boxShadow: 3,
-          px: { xs: 2, md: 2 }
+          px: { xs: 1, sm: 2, md: 2 }
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', minHeight: '70px' }}>
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width:{ xs:250, sm:250, md:350 }, display:'flex' }}>
+        <Toolbar sx={{ 
+          justifyContent: 'space-between', 
+          minHeight: { xs: '60px', md: '70px' },
+          gap: { xs: 1, md: 2 }
+        }}>
+          {/* LOGO SECTION */}
+          <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Box sx={{ 
+              width: { xs: 180, sm: 220, md: 280, lg: 350 }, 
+              display: 'flex' 
+            }}>
               <Image
                 src={cflogo}
                 alt="Champion Footballer Logo"
@@ -197,14 +468,65 @@ export default function NavigationBar() {
             </Box>
           </Link>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+          {/* DESKTOP NAVIGATION */}
+          <Box sx={{ 
+            display: { xs: 'none', lg: 'flex' }, 
+            alignItems: 'center',
+            flex: 1,
+            justifyContent: 'center',
+            maxWidth: '800px'
+          }}>
             {isAuthenticated && renderNavLinks()}
+          </Box>
+
+          {/* RIGHT SIDE CONTROLS */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: { xs: 0.5, md: 1 },
+            flexShrink: 0
+          }}>
             {isAuthenticated && (
               <>
+                {/* NOTIFICATION BELL - DESKTOP */}
+                <IconButton
+                  onClick={handleNotificationClick}
+                  sx={{
+                    color: '#fff',
+                    display: { xs: 'none', lg: 'flex' },
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      transform: 'scale(1.1)',
+                    }
+                  }}
+                >
+                  <Badge 
+                    badgeContent={unreadCount} 
+                    color="error" 
+                    max={99}
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%': { transform: 'scale(1)' },
+                          '50%': { transform: 'scale(1.1)' },
+                          '100%': { transform: 'scale(1)' }
+                        }
+                      }
+                    }}
+                  >
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+
+                {/* PROFILE BUTTON - DESKTOP */}
                 <Button
                   onClick={handleProfileMenuOpen}
                   startIcon={<AccountCircleIcon />}
                   sx={{
+                    display: { xs: 'none', lg: 'flex' },
                     textTransform: 'none',
                     fontFamily: 'Arial, Helvetica, sans-serif',
                     fontWeight: 'bold',
@@ -212,7 +534,7 @@ export default function NavigationBar() {
                     bgcolor: '#2B2B2B',
                     borderRadius: 2,
                     px: 2.5,
-                    fontSize: { xs: '14px', md: '16px' },
+                    fontSize: '14px',
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     '&:hover': {
@@ -225,6 +547,57 @@ export default function NavigationBar() {
                 >
                   Profile
                 </Button>
+
+                {/* MOBILE CONTROLS */}
+                <Box sx={{ 
+                  display: { xs: 'flex', lg: 'none' }, 
+                  alignItems: 'center',
+                  gap: 0.5
+                }}>
+                  {/* MOBILE NOTIFICATION BELL */}
+                  <IconButton
+                    onClick={handleNotificationClick}
+                    sx={{
+                      color: '#fff',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        transform: 'scale(1.1)',
+                      }
+                    }}
+                  >
+                    <Badge 
+                      badgeContent={unreadCount} 
+                      color="error" 
+                      max={99}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
+                        }
+                      }}
+                    >
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+
+                  {/* MOBILE MENU BUTTON */}
+                  <IconButton
+                    edge="end"
+                    color="inherit"
+                    aria-label="menu"
+                    onClick={() => setDrawerOpen(true)}
+                    sx={{ 
+                      color: '#fff',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                      }
+                    }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                </Box>
+
+                {/* PROFILE MENU */}
                 <Menu
                   anchorEl={profileMenuAnchor}
                   open={openProfileMenu}
@@ -343,35 +716,188 @@ export default function NavigationBar() {
               </>
             )}
           </Box>
-
-          {isAuthenticated && (
-            <IconButton
-              edge="end"
-              color="inherit"
-              aria-label="menu"
-              onClick={() => setDrawerOpen(true)}
-              sx={{ display: { md: 'none' }, color: '#fff' }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
         </Toolbar>
       </AppBar>
 
+      {/* NOTIFICATION POPOVER - ENHANCED */}
+      <Popover
+        open={openNotifications}
+        anchorEl={notificationAnchor}
+        onClose={handleNotificationClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          elevation: 8,
+          sx: {
+            width: { xs: 320, sm: 380 },
+            maxHeight: 400,
+            bgcolor: '#fff',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+            borderRadius: 2,
+            border: '1px solid rgba(0,0,0,0.08)',
+            mt: 1,
+          }
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#333' }}>
+            Notifications {notifications.length > 0 && `(${notifications.length})`}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* REFRESH BUTTON */}
+            <IconButton
+              onClick={handleRefreshNotifications}
+              disabled={isRefreshing}
+              size="small"
+              sx={{ 
+                color: '#1976d2',
+                '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' },
+                '&:disabled': { color: '#ccc' }
+              }}
+              title="Refresh notifications"
+            >
+              <RefreshIcon 
+                fontSize="small" 
+                sx={{ 
+                  animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                  '@keyframes spin': {
+                    '0%': { transform: 'rotate(0deg)' },
+                    '100%': { transform: 'rotate(360deg)' }
+                  }
+                }}
+              />
+            </IconButton>
+            
+            {unreadCount > 0 && (
+              <Button
+                onClick={markAllAsRead}
+                size="small"
+                sx={{ 
+                  color: '#1976d2', 
+                  fontSize: '12px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' }
+                }}
+              >
+                Mark all read
+              </Button>
+            )}
+            <IconButton
+              onClick={handleNotificationClose}
+              size="small"
+              sx={{ color: '#666' }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+          {loading ? (
+            <Box sx={{ p: 4, textAlign: 'center', color: '#666' }}>
+              <RefreshIcon sx={{ fontSize: 32, color: '#ccc', mb: 1, animation: 'spin 1s linear infinite' }} />
+              <Typography>Loading notifications...</Typography>
+            </Box>
+          ) : notifications.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: 'center', color: '#666' }}>
+              <NotificationsIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+              <Typography>No notifications yet</Typography>
+              <Typography variant="caption" sx={{ color: '#999', mt: 1, display: 'block' }}>
+                Create a match to test notifications
+              </Typography>
+            </Box>
+          ) : (
+            notifications.map((notification, index) => (
+              <Box key={notification.id}>
+                <Box
+                  onClick={() => !notification.read && markAsRead(notification.id)}
+                  sx={{
+                    p: 2,
+                    cursor: notification.read ? 'default' : 'pointer',
+                    bgcolor: notification.read ? '#fff' : '#f8f9ff',
+                    borderLeft: notification.read ? 'none' : '4px solid #1976d2',
+                    '&:hover': { bgcolor: notification.read ? '#f9f9f9' : '#f0f4ff' },
+                    transition: 'background-color 0.2s',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ flex: 1, pr: 1 }}>
+                      <Typography 
+                        variant="subtitle2" 
+                        sx={{ 
+                          fontWeight: notification.read ? 500 : 700,
+                          color: '#333',
+                          mb: 0.5,
+                          fontSize: '14px'
+                        }}
+                      >
+                        {notification.title}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#666',
+                          fontSize: '13px',
+                          lineHeight: 1.4,
+                          mb: 1
+                        }}
+                      >
+                        {notification.body}
+                      </Typography>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: '#999',
+                          fontSize: '11px'
+                        }}
+                      >
+                        {new Date(notification.created_at).toLocaleString()}
+                      </Typography>
+                    </Box>
+                    {!notification.read && (
+                      <Box 
+                        sx={{ 
+                          width: 8, 
+                          height: 8, 
+                          bgcolor: '#1976d2', 
+                          borderRadius: '50%',
+                          mt: 0.5,
+                          flexShrink: 0
+                        }} 
+                      />
+                    )}
+                  </Box>
+                </Box>
+                {index < notifications.length - 1 && <Divider />}
+              </Box>
+            ))
+          )}
+        </Box>
+      </Popover>
+
+      {/* MOBILE DRAWER */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sx={{
           '& .MuiDrawer-paper': {
-            width: 260,
+            width: 280,
             background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
             boxShadow: 3,
           },
         }}
       >
-  <Box sx={{ mt: 2, px: 2 }}>
+        <Box sx={{ mt: 2, px: 2 }}>
           <List>
+            {/* PROFILE BUTTON IN MOBILE DRAWER */}
             {isAuthenticated && (
               <ListItem disablePadding>
                 <Button
@@ -387,7 +913,7 @@ export default function NavigationBar() {
                     borderRadius: 2,
                     px: 3,
                     py: 1.25,
-                    fontSize: { xs: '14px', md: '16px' },
+                    fontSize: '14px',
                     justifyContent: 'flex-start',
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     mb: 1,
@@ -403,115 +929,49 @@ export default function NavigationBar() {
                 >
                   Profile
                 </Button>
-                <Menu
-                  anchorEl={profileMenuAnchor}
-                  open={openProfileMenu}
-                  onClose={handleProfileMenuClose}
-                  TransitionComponent={SlideFade}
-                  PaperProps={{
-                    sx: {
-                      p: 0.5,
-                      mt: 1.5,
-                      minWidth: 200,
-                      bgcolor: 'rgba(15,15,15,0.92)',
-                      color: '#E5E7EB',
-                      borderRadius: 2.5,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                      overflow: 'hidden',
-                    },
-                  }}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                >
-                  <MenuItem onClick={handleProfileClick} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>Profile</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={play} alt="how to play" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>How to play</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }} sx={{ color: '#E5E7EB', fontWeight: 600, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', color: '#FFFFFF' } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={gamification} alt="rules" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>Game rules</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem onClick={handleSignOutClick} sx={{ color: '#F87171', fontWeight: 700, borderRadius: 1.5, mx: 0.5, my: 0.25, py: 1.25, px: 1.5, transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', background: 'linear-gradient(90deg, rgba(239,68,68,0.25), rgba(239,68,68,0.10))', color: '#FFFFFF' } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={logoutpic} alt="sign out" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>Sign out</Box>
-                    </Box>
-                  </MenuItem>
-                </Menu>
               </ListItem>
             )}
-            {/* {isAuthenticated && (
-              <ListItem disablePadding>
-                <Button
-                  onClick={() => { setHowToPlayOpen(true); setDrawerOpen(false); }}
-                  fullWidth
-                  sx={{ justifyContent: 'flex-start', px: 3, py: 1.5, color: 'white' }}
-                >
-                  <ListItemText primary="How to play" />
-                </Button>
-              </ListItem>
-            )} */}
-            {/* {isAuthenticated && (
-              <ListItem disablePadding>
-                <Button
-                  onClick={() => { setGameRulesOpen(true); setDrawerOpen(false); }}
-                  fullWidth
-                  sx={{ justifyContent: 'flex-start', px: 3, py: 1.5, color: 'white' }}
-                >
-                  <ListItemText primary="Game rules" />
-                </Button>
-              </ListItem>
-            )} */}
-            {/* <Divider sx={{ my: 1 }} /> */}
-            {/* Old Sign out button removed from here, now in Profile menu */}
-          </List>
-            {/* Mobile nav links: show same nav items as desktop inside drawer */}
+            
+            {/* MOBILE NAVIGATION LINKS */}
             {isAuthenticated && (
-              <Box sx={{ mt: 1, px: 2 }}>
-                {navItems.map(({ label, href }) => {
-                  const active = pathname?.startsWith(href);
-                  return (
-                    <ListItem key={href} disablePadding>
-                      <Button
-                        component={Link}
-                        href={href}
-                        fullWidth
-                        onClick={() => setDrawerOpen(false)}
-                        disableRipple
-                        sx={{
-                          justifyContent: 'flex-start',
-                          px: 3,
-                          py: 1.5,
-                          color: '#fff',
-                          textTransform: 'none',
-                          fontWeight: 700,
-                          background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { background: 'rgba(255,255,255,0.06)' },
-                        }}
-                      >
-                        <ListItemText primary={label} sx={{ color: '#fff' }} />
-                      </Button>
-                    </ListItem>
-                  );
-                })}
-              </Box>
+              navItems.map(({ label, href }) => {
+                const active = pathname?.startsWith(href);
+                return (
+                  <ListItem key={href} disablePadding>
+                    <Button
+                      component={Link}
+                      href={href}
+                      fullWidth
+                      onClick={() => setDrawerOpen(false)}
+                      disableRipple
+                      sx={{
+                        justifyContent: 'flex-start',
+                        px: 3,
+                        py: 1.5,
+                        color: '#fff',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+                        borderRadius: 1,
+                        mb: 0.5,
+                        '&:hover': { 
+                          background: 'rgba(255,255,255,0.12)',
+                          transform: 'translateX(4px)',
+                        },
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <ListItemText primary={label} sx={{ color: '#fff' }} />
+                    </Button>
+                  </ListItem>
+                );
+              })
             )}
+          </List>
         </Box>
       </Drawer>
+
+      {/* YOUR EXISTING DIALOGS - keeping them as they were */}
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{
           bgcolor: '#1f673b',
@@ -702,3 +1162,25 @@ export default function NavigationBar() {
     </>
   );
 }
+
+// LOGIN SUCCESS - ADD TOKEN STORAGE
+const handleLoginSuccess = (response: any) => {
+  // Store user data (already happening)
+  localStorage.setItem('user', JSON.stringify(response.data.user));
+  localStorage.setItem('userData', JSON.stringify(response.data.userData));
+  
+  // 🔥 ADD TOKEN STORAGE - CHECK RESPONSE STRUCTURE
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+    console.log('✅ Token stored:', response.data.token.substring(0, 20) + '...');
+  } else if (response.data.accessToken) {
+    localStorage.setItem('token', response.data.accessToken);
+    console.log('✅ Access Token stored:', response.data.accessToken.substring(0, 20) + '...');
+  } else if (response.token) {
+    localStorage.setItem('token', response.token);
+    console.log('✅ Response Token stored:', response.token.substring(0, 20) + '...');
+  } else {
+    console.error('❌ No token found in login response!');
+    console.log('🔍 Login Response Structure:', response);
+  }
+};
