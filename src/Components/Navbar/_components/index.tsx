@@ -12,7 +12,6 @@ import {
   ListItemText,
   Badge,
   Popover,
-  Paper,
   Divider,
   // Divider,
 } from '@mui/material';
@@ -51,12 +50,28 @@ import { useAuth } from '@/lib/hooks';
 
 
 // Notification interface
+type NotificationKind =
+  | 'MATCH_CREATED'
+  | 'MATCH_UPDATED'
+  | 'TEAM_SELECTION'
+  | 'AVAILABILITY_REMINDER'
+  | 'RESULT_PUBLISHED'
+  | 'GENERAL';
+
+interface NotificationMeta {
+  matchId?: string;
+  leagueId?: string;
+  playerId?: string;
+  // extra arbitrary key/value if backend sends more
+  [key: string]: unknown;
+}
+
 interface Notification {
   id: string;
-  type: string;
+  type: NotificationKind;
   title: string;
   body: string;
-  meta?: any;
+  meta?: NotificationMeta;
   read: boolean;
   created_at: string;
 }
@@ -257,23 +272,23 @@ export default function NavigationBar() {
   };
 
   // 🔥 HELPER FUNCTION - KEEP FOR BACKWARD COMPATIBILITY
-  const getUserId = () => {
-    // Use component level user first, fallback to localStorage
-    if (user?.id) {
-      return user.id;
-    }
+  // const getUserId = () => {
+  //   // Use component level user first, fallback to localStorage
+  //   if (user?.id) {
+  //     return user.id;
+  //   }
     
-    try {
-      const localUser = localStorage.getItem('user');
-      if (localUser) {
-        const parsedUser = JSON.parse(localUser);
-        return parsedUser.id;
-      }
-    } catch (e) {
-      console.error('Error getting user ID:', e);
-    }
-    return null;
-  };
+  //   try {
+  //     const localUser = localStorage.getItem('user');
+  //     if (localUser) {
+  //       const parsedUser = JSON.parse(localUser);
+  //       return parsedUser.id;
+  //     }
+  //   } catch (e) {
+  //     console.error('Error getting user ID:', e);
+  //   }
+  //   return null;
+  // };
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     console.log('🔔 Notification bell clicked');
@@ -1164,23 +1179,23 @@ export default function NavigationBar() {
 }
 
 // LOGIN SUCCESS - ADD TOKEN STORAGE
-const handleLoginSuccess = (response: any) => {
-  // Store user data (already happening)
-  localStorage.setItem('user', JSON.stringify(response.data.user));
-  localStorage.setItem('userData', JSON.stringify(response.data.userData));
+// const handleLoginSuccess = (response: any) => {
+//   // Store user data (already happening)
+//   localStorage.setItem('user', JSON.stringify(response.data.user));
+//   localStorage.setItem('userData', JSON.stringify(response.data.userData));
   
-  // 🔥 ADD TOKEN STORAGE - CHECK RESPONSE STRUCTURE
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    console.log('✅ Token stored:', response.data.token.substring(0, 20) + '...');
-  } else if (response.data.accessToken) {
-    localStorage.setItem('token', response.data.accessToken);
-    console.log('✅ Access Token stored:', response.data.accessToken.substring(0, 20) + '...');
-  } else if (response.token) {
-    localStorage.setItem('token', response.token);
-    console.log('✅ Response Token stored:', response.token.substring(0, 20) + '...');
-  } else {
-    console.error('❌ No token found in login response!');
-    console.log('🔍 Login Response Structure:', response);
-  }
-};
+//   // 🔥 ADD TOKEN STORAGE - CHECK RESPONSE STRUCTURE
+//   if (response.data.token) {
+//     localStorage.setItem('token', response.data.token);
+//     console.log('✅ Token stored:', response.data.token.substring(0, 20) + '...');
+//   } else if (response.data.accessToken) {
+//     localStorage.setItem('token', response.data.accessToken);
+//     console.log('✅ Access Token stored:', response.data.accessToken.substring(0, 20) + '...');
+//   } else if (response.token) {
+//     localStorage.setItem('token', response.token);
+//     console.log('✅ Response Token stored:', response.token.substring(0, 20) + '...');
+//   } else {
+//     console.error('❌ No token found in login response!');
+//     console.log('🔍 Login Response Structure:', response);
+//   }
+// };

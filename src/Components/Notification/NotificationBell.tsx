@@ -2,14 +2,35 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 
+interface NotificationMeta {
+  leagueId?: string;
+  matchId?: string;
+  teamId?: string;
+  actorId?: string;          // user who triggered it
+  homeScore?: number;
+  awayScore?: number;
+  deadline?: string;         // ISO timestamp
+  redirectPath?: string;     // client route
+  // allow future safe extension without using any
+  [key: string]: unknown;
+}
+
+type NotificationKind =
+  | 'MATCH_CREATED'
+  | 'MATCH_UPDATED'
+  | 'TEAM_SELECTION'
+  | 'AVAILABILITY_REMINDER'
+  | 'RESULT_PUBLISHED'
+  | 'GENERAL';
+
 interface Notification {
   id: string;
-  type: string;
+  type: NotificationKind;
   title: string;
   body: string;
   read: boolean;
   created_at: string;
-  meta?: any;
+  meta?: NotificationMeta;
 }
 
 const NotificationBell = () => {
@@ -166,7 +187,7 @@ const NotificationBell = () => {
                   </div>
                 </div>
               ))
-            )}
+            }
           </div>
 
           {/* Footer */}

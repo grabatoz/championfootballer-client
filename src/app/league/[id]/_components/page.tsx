@@ -52,6 +52,8 @@ import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import ShirtImg from '@/Components/images/shirtimg.png'
+import homeImg from '@/Components/images/matches.png' 
+import awayImg from '@/Components/images/2nd champion icon football.png' 
 
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
@@ -1658,7 +1660,7 @@ export default function LeagueDetailPage() {
                                                                             flex: 1,
                                                                         }}>
                                                                             <Image
-                                                                                src={match.homeTeamImage || leagueIcon}
+                                                                                src={match.homeTeamImage || homeImg}
                                                                                 alt={match.homeTeamName}
                                                                                 width={24}
                                                                                 height={24}
@@ -1694,7 +1696,7 @@ export default function LeagueDetailPage() {
                                                                             mt: 2,
                                                                         }}>
                                                                             <Image
-                                                                                src={match.awayTeamImage || leagueIcon}
+                                                                                src={match.awayTeamImage || awayImg}
                                                                                 alt={match.awayTeamName}
                                                                                 width={24}
                                                                                 height={24}
@@ -1874,7 +1876,7 @@ export default function LeagueDetailPage() {
                                                                         flex: 1,
                                                                     }}>
                                                                         <Image
-                                                                            src={match.homeTeamImage || leagueIcon}
+                                                                            src={match.homeTeamImage || homeImg}
                                                                             alt={match.homeTeamName}
                                                                             width={24}
                                                                             height={24}
@@ -1921,7 +1923,7 @@ export default function LeagueDetailPage() {
                                                                         flex: 1
                                                                     }}>
                                                                         <Image
-                                                                            src={match.awayTeamImage || leagueIcon}
+                                                                            src={match.awayTeamImage || awayImg}
                                                                             alt={match.awayTeamName}
                                                                             width={24}
                                                                             height={24}
