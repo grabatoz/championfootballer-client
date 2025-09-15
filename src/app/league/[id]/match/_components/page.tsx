@@ -332,6 +332,7 @@ export default function ScheduleMatchPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load league');
+       setLeague({ id: json.league.id, name: json.league.name, active: json.league.active });
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
