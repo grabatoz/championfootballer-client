@@ -19,6 +19,17 @@ interface MatchResp { id: string; homeTeamName: string; awayTeamName: string; lo
 type PlayerOption = User & { isGuest?: boolean; guestTempId?: string; team?: 'home' | 'away'; existingGuestId?: string };
 interface AvailabilityRecord { userId: string; status: 'available' | 'maybe' | 'unavailable' | 'pending'; }
 
+// ADD THESE TYPES (fixes AvailabilityApiResponse not found)
+type AvailabilityStatus = AvailabilityRecord['status'];
+interface AvailabilityEntry {
+  userId: string;
+  status?: string; // will normalize
+}
+interface AvailabilityApiResponse {
+  success?: boolean;
+  availability?: AvailabilityEntry[];
+}
+
 export default function EditMatchPage() {
     // Fallback team image (used in responsive preview)
     const defaultTeamImage = '/assets/cflogo2.png';
@@ -74,15 +85,23 @@ export default function EditMatchPage() {
     const fetchAvailability = useCallback(async () => {
         if (!leagueId || !matchId || !token) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/availability`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/availability`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             if (!res.ok) return;
-            const j = await res.json().catch(() => ({}));
-            if (!j.success) return;
-            const map: Record<string, AvailabilityRecord['status']> = {};
-            (j.availability || []).forEach((r: any) => {
-                map[r.userId] = r.status || 'pending';
+            const j: AvailabilityApiResponse = await res.json().catch(() => ({} as AvailabilityApiResponse));
+            if (!j.success || !j.availability) return;
+
+            const map: Record<string, AvailabilityStatus> = {};
+            j.availability.forEach((r: AvailabilityEntry) => {
+              if (!r.userId) return;
+              const s = r.status;
+              const normalized: AvailabilityStatus =
+                s === 'available' || s === 'maybe' || s === 'unavailable' || s === 'pending'
+                  ? s
+                  : 'pending';
+              map[r.userId] = normalized;
             });
             setAvailabilityMap(map);
         } catch {
@@ -224,8 +243,8 @@ export default function EditMatchPage() {
         else { setAwayGuests(g => g.filter(x => x.tempId !== tempId)); setAwayTeamUsers(p => p.filter(x => x.guestTempId !== tempId)); if (awayCaptain?.guestTempId === tempId) setAwayCaptain(null); }
     };
 
-    const homeGuestOptions: PlayerOption[] = homeGuests.map(guestToPlayer);
-    const awayGuestOptions: PlayerOption[] = awayGuests.map(guestToPlayer);
+    // const homeGuestOptions: PlayerOption[] = homeGuests.map(guestToPlayer);
+    // const awayGuestOptions: PlayerOption[] = awayGuests.map(guestToPlayer);
     const homePlayerOptions: PlayerOption[] = [
         ...(league?.members || []).filter(m => !awayTeamUsers.some(p => p.id === m.id)),
         ...homeGuests.map(guestToPlayer)

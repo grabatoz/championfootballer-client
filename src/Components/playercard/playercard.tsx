@@ -346,29 +346,45 @@ const PlayerCard = ({
           <Box
             sx={{
               position: 'relative',
-              // width: {xs:85,sm:85,md:100},
-              // height: {xs:85,sm:85,md:100},
               width: 100,
               height: 100,
-              border: `2px solid ${'#fff'}`,
+              border: `2px solid #fff`,
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden'
             }}
           >
             <div style={{ position: 'relative', display: 'inline-block' }}>
+              {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}
               <Avatar
-                key={`${imgUrl}-${imageKey}`} // Force complete re-render when image changes
-                src={imgUrl || undefined}
-                sx={{ width:85, height: 85, borderRadius: '0' }}
-                alt="Profile"
+                key={`${imgUrl}-${imageKey}`}
+                variant="square"
+                sx={{
+                  width: 85,
+                  height: 85,
+                  borderRadius: 0,
+                  // overflow: 'hidden',
+                  p: 0
+                }}
                 data-testid="profile-avatar"
               >
-                {(!imgUrl || typeof imgUrl !== 'string') && (
-                  <Image height={0} width={0} src={imgicon.src} alt="Profile" style={{ width: '100%', height: '100%' }} />
-                )}
+                <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <Image
+                    src={imgUrl && typeof imgUrl === 'string' ? imgUrl : imgicon}
+                    alt="Profile"
+                    fill
+                    sizes="85px"
+                    priority={!imgUrl}
+                    style={{
+                      objectFit: 'cover',
+                      imageRendering: 'auto',
+                    }}
+                  />
+                </Box>
               </Avatar>
+
               <IconButton
                 size="small"
                 onClick={handleEditIconClick}
@@ -380,7 +396,7 @@ const PlayerCard = ({
                   boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                   top: -13,
                   height: 20,
-                  width: 20,
+                  width: 20
                 }}
                 aria-label="edit profile image"
               >
