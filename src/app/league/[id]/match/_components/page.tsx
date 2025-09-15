@@ -119,8 +119,8 @@ function CustomCalendar({
                 color: isSel
                   ? '#fff'
                   : isDis
-                  ? '#fff'
-                  : THEME.TEXT,
+                    ? '#fff'
+                    : THEME.TEXT,
                 background: isSel ? THEME.GRADIENT_MAIN : 'transparent',
                 border: dayjs().isSame(d, 'day')
                   ? `2px solid ${THEME.TODAY_RING}`
@@ -223,20 +223,20 @@ const GradientCard: React.FC<React.PropsWithChildren<{ title: string; subtitle?:
       }
     }}
   >
-     <Typography variant="h3" sx={{
-              //  mb: { xs: 3, md: 4 },
-               color: '#fff',
-               // fontFamily: 'Arial Black, Arial, sans-serif',
-               fontFamily: '"Anton", sans-serif',
-               fontWeight: 'semibold',
-               fontSize: { xs: '32px', sm: '42px', md: '56px' },
-               textAlign: { xs: 'center', md: 'left' },
-               textTransform: 'uppercase',
-               letterSpacing: '2px',
-               textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-             }}
-               className='all-leagues-heading'
-             >
+    <Typography variant="h3" sx={{
+      //  mb: { xs: 3, md: 4 },
+      color: '#fff',
+      // fontFamily: 'Arial Black, Arial, sans-serif',
+      fontFamily: '"Anton", sans-serif',
+      fontWeight: 'semibold',
+      fontSize: { xs: '32px', sm: '42px', md: '56px' },
+      textAlign: { xs: 'center', md: 'left' },
+      textTransform: 'uppercase',
+      letterSpacing: '2px',
+      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+    }}
+      className='all-leagues-heading'
+    >
       {title}
     </Typography>
     {subtitle && (
@@ -332,10 +332,14 @@ export default function ScheduleMatchPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load league');
-      setLeague({ id: json.league.id, name: json.league.name, active: json.league.active });
-    } catch (e: any) {
-      setError(e.message || 'Unable to load league');
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError('Unable to load league');
+      }
     } finally {
+
       setLoading(false);
     }
   }, [leagueId, token]);
@@ -379,9 +383,14 @@ export default function ScheduleMatchPage() {
       if (!resp.ok || !json.success) throw new Error(json.message || 'Failed to create match');
       toast.success('Match created');
       router.push(`/league/${league.id}`);
-    } catch (e: any) {
-      toast.error(e.message || 'Error creating match');
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError('Unable to load league');
+      }
     } finally {
+
       setSaving(false);
     }
   };
@@ -597,7 +606,7 @@ export default function ScheduleMatchPage() {
                     border: '1px solid rgba(229,106,22,0.35)'
                   }}
                 >
-                  <Typography sx={{ fontSize: 12.2, fontWeight: 600, letterSpacing: 0.5 , color: '#fff'}}>
+                  <Typography sx={{ fontSize: 12.2, fontWeight: 600, letterSpacing: 0.5, color: '#fff' }}>
                     Selected:
                   </Typography>
                   <Typography sx={{ fontSize: 12.2, color: THEME.TEXT_MUTED }}>
@@ -841,33 +850,33 @@ export default function ScheduleMatchPage() {
                   Finish time: {finishTime}
                 </Box>
               </Grid>
-                <Grid
-              item
-              xs={12}
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                mt: 1.5
-              }}
-            >
-              <Tooltip title={!league.active ? 'League is inactive' : ''} placement="top">
-                {/* ← span now takes 100% of the grid column */}
-                <span style={{ display: 'inline-block', width: '100%' }}>
-                  <GradientButton
-                    loading={saving}
-                    disabled={!league.active}
-                    onClick={handleCreate}
-                  >
-                    Save Match
-                  </GradientButton>
-                </span>
-              </Tooltip>
-            </Grid>
+              <Grid
+                item
+                xs={12}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  mt: 1.5
+                }}
+              >
+                <Tooltip title={!league.active ? 'League is inactive' : ''} placement="top">
+                  {/* ← span now takes 100% of the grid column */}
+                  <span style={{ display: 'inline-block', width: '100%' }}>
+                    <GradientButton
+                      loading={saving}
+                      disabled={!league.active}
+                      onClick={handleCreate}
+                    >
+                      Save Match
+                    </GradientButton>
+                  </span>
+                </Tooltip>
+              </Grid>
             </Grid>
 
             {/* ACTION */}
-          
+
           </Grid>
         </GradientCard>
       </Box>
