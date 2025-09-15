@@ -17,6 +17,7 @@ interface Guest { id: string; team: 'home' | 'away'; firstName: string; lastName
 interface StagedGuest { tempId: string; team: 'home' | 'away'; firstName: string; lastName: string; shirtNumber?: string; existingId?: string; }
 interface MatchResp { id: string; homeTeamName: string; awayTeamName: string; location: string; date: string; start: string; end: string; status: string; homeCaptainId?: string; awayCaptainId?: string; homeTeamImage?: string; awayTeamImage?: string; homeTeamUsers: User[]; awayTeamUsers: User[]; guests?: Guest[]; }
 type PlayerOption = User & { isGuest?: boolean; guestTempId?: string; team?: 'home' | 'away'; existingGuestId?: string };
+interface AvailabilityRecord { userId: string; status: 'available' | 'maybe' | 'unavailable' | 'pending'; }
 
 export default function EditMatchPage() {
     // Fallback team image (used in responsive preview)
@@ -60,10 +61,57 @@ export default function EditMatchPage() {
     const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
     const [guestName, setGuestName] = useState('');
 
+    // NEW: availability map
+    const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityRecord['status']>>({});
+
     const parseJson = async (res: Response) => {
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) return res.json().catch(() => ({}));
         return {};
+    };
+
+    // NEW: fetch availability
+    const fetchAvailability = useCallback(async () => {
+        if (!leagueId || !matchId || !token) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/availability`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) return;
+            const j = await res.json().catch(() => ({}));
+            if (!j.success) return;
+            const map: Record<string, AvailabilityRecord['status']> = {};
+            (j.availability || []).forEach((r: any) => {
+                map[r.userId] = r.status || 'pending';
+            });
+            setAvailabilityMap(map);
+        } catch {
+            /* silent */
+        }
+    }, [leagueId, matchId, token]);
+
+    // Helper: is player selectable (allowed to add)
+    const isPlayerSelectable = (id: string) => {
+        const st = availabilityMap[id] || 'pending';
+        return st === 'available' || st === 'maybe';
+    };
+
+    // Add (or merge) this style object near other styles if you want reuse
+    const disabledOptionStyles = {
+      opacity: 0.35,
+      filter: 'grayscale(0.6)',
+      pointerEvents: 'none',
+      cursor: 'not-allowed'
+    };
+
+    // Badge meta
+    const availabilityStyle = (st: string) => {
+        switch (st) {
+            case 'available': return { bg: '#1b5e20', color: '#a5d6a7', label: 'AVAILABLE' };
+            case 'maybe': return { bg: '#795548', color: '#ffe0b2', label: 'MAYBE' };
+            case 'unavailable': return { bg: '#b71c1c', color: '#ffcdd2', label: 'UNAVAILABLE' };
+            default: return { bg: '#424242', color: '#e0e0e0', label: 'NO RESPONSE' };
+        }
     };
 
     const fetchData = useCallback(async () => {
@@ -118,6 +166,7 @@ export default function EditMatchPage() {
     }, [leagueId, matchId, token]);
 
     useEffect(() => { if (leagueId && matchId && token) fetchData(); }, [leagueId, matchId, token, fetchData]);
+    useEffect(() => { if (leagueId && matchId && token) fetchAvailability(); }, [leagueId, matchId, token, fetchAvailability]);
 
     const guestToPlayer = (g: StagedGuest): PlayerOption => ({ id: `guest-${g.tempId}`, firstName: g.firstName, lastName: g.lastName, email: '', isGuest: true, guestTempId: g.tempId, team: g.team, existingGuestId: g.existingId });
 
@@ -177,8 +226,14 @@ export default function EditMatchPage() {
 
     const homeGuestOptions: PlayerOption[] = homeGuests.map(guestToPlayer);
     const awayGuestOptions: PlayerOption[] = awayGuests.map(guestToPlayer);
-    const homePlayerOptions: PlayerOption[] = [...(league?.members || []).filter(m => !awayTeamUsers.some(p => p.id === m.id)), ...homeGuestOptions];
-    const awayPlayerOptions: PlayerOption[] = [...(league?.members || []).filter(m => !homeTeamUsers.some(p => p.id === m.id)), ...awayGuestOptions];
+    const homePlayerOptions: PlayerOption[] = [
+        ...(league?.members || []).filter(m => !awayTeamUsers.some(p => p.id === m.id)),
+        ...homeGuests.map(guestToPlayer)
+    ];
+    const awayPlayerOptions: PlayerOption[] = [
+        ...(league?.members || []).filter(m => !homeTeamUsers.some(p => p.id === m.id)),
+        ...awayGuests.map(guestToPlayer)
+    ];
 
     const homeStrength = teamStrength(homeTeamUsers);
     const awayStrength = teamStrength(awayTeamUsers);
@@ -258,10 +313,42 @@ export default function EditMatchPage() {
                     <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
                         <form onSubmit={handleUpdateMatch} style={{ width: '100%' }}>
                             <Paper sx={{ p: 4, bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)', mb: 3 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                    <Typography variant='h4' sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#e56a16,#cf2326)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '1.25rem', sm: '2rem' } }}>Edit Match</Typography>
-                                    <Button startIcon={<UserPlus size={20} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-1px)' } }}>Add Guest</Button>
-                                </Box>
+                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  {/* Updated heading styling to match main page (Anton, uppercase, large, glow) */}
+                  <Typography variant="h3" sx={{
+                    //  mb: { xs: 3, md: 4 },
+                    color: '#fff',
+                    // fontFamily: 'Arial Black, Arial, sans-serif',
+                    fontFamily: '"Anton", sans-serif',
+                    fontWeight: 'semibold',
+                    fontSize: { xs: '32px', sm: '42px', md: '56px' },
+                    textAlign: { xs: 'center', md: 'left' },
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                    className='all-leagues-heading'
+                  >
+                    Edit Match
+                  </Typography>
+                  <Button
+                    startIcon={<UserPlus size={20} />}
+                    variant='contained'
+                    onClick={() => setGuestDialogOpen(true)}
+                    sx={{
+                      background: 'linear-gradient(135deg,#e56a16,#cf2326)',
+                      color: 'white',
+                      fontWeight: 600,
+                      borderRadius: 3,
+                      px: { xs: 2, sm: 3 },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' },
+                      transition: 'all .25s ease'
+                    }}
+                  >
+                    Add Guest
+                  </Button>
+                </Box>
                                 {/* Updated Team & Player Selection Section */}
                                 <Grid container spacing={3}>
                                     {/* Team Names & Images */}
@@ -450,45 +537,124 @@ export default function EditMatchPage() {
                                                 options={homePlayerOptions}
                                                 disableCloseOnSelect
                                                 getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                                                getOptionDisabled={option => !option.isGuest && !isPlayerSelectable(option.id)}
                                                 ListboxProps={{
                                                   sx: {
                                                     display: 'grid',
                                                     gridTemplateColumns: 'repeat(2, 1fr)',
                                                     gap: 1,
-                                                    p: 1
+                                                    p: 1,
+                                                    '& li[aria-disabled="true"]': disabledOptionStyles
                                                   }
                                                 }}
-                                                renderOption={(props, option) => (
-                                                  <Box component="li" {...props} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1 }}>
-                                                    <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 1 }} />
-                                                    <Typography variant="body2">{option.firstName} </Typography>
-                                                  {/* {option.lastName} */}
-                                                  </Box>
-                                                )}
-                                                renderTags={(value, getTagProps) =>
-                                                  value.map((opt, index) => (
+                                                renderOption={(props, option) => {
+                                                  const st = availabilityMap[option.id] || 'pending';
+                                                  const meta = availabilityStyle(st);
+                                                  const disabled = !option.isGuest && !isPlayerSelectable(option.id);
+                                                  return (
                                                     <Box
-                                                      {...getTagProps({ index })}      // spread first
-                                                      key={opt.id}                     // then set your own key
-                                                      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
+                                                      component="li"
+                                                      {...props}
+                                                      aria-disabled={disabled ? 'true' : 'false'}
+                                                      sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        p: 1,
+                                                        position: 'relative',
+                                                        ...(disabled ? disabledOptionStyles : {})
+                                                      }}
                                                     >
-                                                      <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
-                                                      <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {opt.firstName} {opt.lastName}
+                                                      <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5 }} />
+                                                      <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 }}>
+                                                        {option.firstName}
                                                       </Typography>
+                                                      <Box sx={{
+                                                        mt: 0.4,
+                                                        px: 0.6,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                        fontSize: '0.55rem',
+                                                        fontWeight: 700,
+                                                        background: meta.bg,
+                                                        color: meta.color,
+                                                        width: '100%',
+                                                        letterSpacing: '.5px',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        {meta.label}
+                                                      </Box>
                                                     </Box>
-                                                  ))
+                                                  );
+                                                }}
+                                                renderTags={(value, getTagProps) =>
+                                                  value.map((opt, index) => {
+                                                    const st = availabilityMap[opt.id] || 'pending';
+                                                    const meta = availabilityStyle(st);
+                                                    return (
+                                                      <Box
+                                                        {...getTagProps({ index })}
+                                                        key={opt.id}
+                                                        sx={{
+                                                          display: 'flex',
+                                                          flexDirection: 'column',
+                                                          alignItems: 'center',
+                                                          mr: 1,
+                                                          position: 'relative'
+                                                        }}
+                                                      >
+                                                        <Avatar
+                                                          src={opt.profilePicture || defaultTeamImage}
+                                                          sx={{
+                                                            width: 32,
+                                                            height: 32,
+                                                            mb: 0.3,
+                                                            outline: (isPlayerSelectable(opt.id) || opt.isGuest) ? '2px solid #2e7d32' : '2px solid #b71c1c'
+                                                          }}
+                                                        />
+                                                        <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1 }}>
+                                                          {opt.firstName}
+                                                        </Typography>
+                                                        <Box sx={{
+                                                          mt: 0.2,
+                                                          px: 0.4,
+                                                          py: 0.15,
+                                                          borderRadius: 1,
+                                                          fontSize: '0.45rem',
+                                                          fontWeight: 700,
+                                                          background: meta.bg,
+                                                          color: meta.color,
+                                                          letterSpacing: '.5px'
+                                                        }}>
+                                                          {meta.label.replace('UNAVAILABLE', 'UNAV')}
+                                                        </Box>
+                                                      </Box>
+                                                    );
+                                                  })
                                                 }
-                                                // ← bind value + onChange so `value` is never undefined
                                                 value={homeTeamUsers}
                                                 onChange={(_, newValue) => {
-                                                  setHomeTeamUsers(newValue);
+                                                  // keep guests + selectable + already selected
+                                                  setHomeTeamUsers(prev => {
+                                                    const prevIds = new Set(prev.map(p => p.id));
+                                                    return newValue.filter(p =>
+                                                      p.isGuest ||
+                                                      isPlayerSelectable(p.id) ||
+                                                      prevIds.has(p.id)
+                                                    );
+                                                  });
                                                   if (homeCaptain && !newValue.some(u => u.id === homeCaptain.id)) {
                                                     setHomeCaptain(null);
                                                   }
                                                 }}
                                                 renderInput={params => (
-                                                  <TextField {...params} label="Select Home Players" sx={{ ...autocompleteStyles }} />
+                                                  <TextField
+                                                    {...params}
+                                                    label="Select Home Players"
+                                                    helperText="Only AVAILABLE / MAYBE can be added"
+                                                    FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
+                                                    sx={{ ...autocompleteStyles }}
+                                                  />
                                                 )}
                                               />
                                             </Grid>
@@ -498,45 +664,122 @@ export default function EditMatchPage() {
                                                 options={awayPlayerOptions}
                                                 disableCloseOnSelect
                                                 getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                                                getOptionDisabled={option => !option.isGuest && !isPlayerSelectable(option.id)}
                                                 ListboxProps={{
                                                   sx: {
                                                     display: 'grid',
                                                     gridTemplateColumns: 'repeat(2, 1fr)',
                                                     gap: 1,
-                                                    p: 1
+                                                    p: 1,
+                                                    '& li[aria-disabled="true"]': disabledOptionStyles
                                                   }
                                                 }}
-                                                renderOption={(props, option) => (
-                                                  <Box component="li" {...props} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1 }}>
-                                                    <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 1 }} />
-                                                    <Typography variant="body2">{option.firstName} </Typography>
-                                                  {/* {option.lastName} */}
-                                                  </Box>
-                                                )}
-                                                renderTags={(value, getTagProps) =>
-                                                  value.map((opt, index) => (
+                                                renderOption={(props, option) => {
+                                                  const st = availabilityMap[option.id] || 'pending';
+                                                  const meta = availabilityStyle(st);
+                                                  const disabled = !option.isGuest && !isPlayerSelectable(option.id);
+                                                  return (
                                                     <Box
-                                                      {...getTagProps({ index })}
-                                                      key={opt.id}
-                                                      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}
+                                                      component="li"
+                                                      {...props}
+                                                      aria-disabled={disabled ? 'true' : 'false'}
+                                                      sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        p: 1,
+                                                        position: 'relative',
+                                                        ...(disabled ? disabledOptionStyles : {})
+                                                      }}
                                                     >
-                                                      <Avatar src={opt.profilePicture || defaultTeamImage} sx={{ width: 32, height: 32, mb: 0.5 }} />
-                                                      <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {opt.firstName} {opt.lastName}
+                                                      <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5 }} />
+                                                      <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 }}>
+                                                        {option.firstName}
                                                       </Typography>
+                                                      <Box sx={{
+                                                        mt: 0.4,
+                                                        px: 0.6,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                        fontSize: '0.55rem',
+                                                        fontWeight: 700,
+                                                        background: meta.bg,
+                                                        color: meta.color,
+                                                        width: '100%',
+                                                        letterSpacing: '.5px',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        {meta.label}
+                                                      </Box>
                                                     </Box>
-                                                  ))
+                                                  );
+                                                }}
+                                                renderTags={(value, getTagProps) =>
+                                                  value.map((opt, index) => {
+                                                    const st = availabilityMap[opt.id] || 'pending';
+                                                    const meta = availabilityStyle(st);
+                                                    return (
+                                                      <Box
+                                                        {...getTagProps({ index })}
+                                                        key={opt.id}
+                                                        sx={{
+                                                          display: 'flex',
+                                                          flexDirection: 'column',
+                                                          alignItems: 'center',
+                                                          mr: 1
+                                                        }}
+                                                      >
+                                                        <Avatar
+                                                          src={opt.profilePicture || defaultTeamImage}
+                                                          sx={{
+                                                            width: 32,
+                                                            height: 32,
+                                                            mb: 0.3,
+                                                            outline: (isPlayerSelectable(opt.id) || opt.isGuest) ? '2px solid #c62828' : '2px solid #616161'
+                                                          }}
+                                                        />
+                                                        <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1 }}>
+                                                          {opt.firstName}
+                                                        </Typography>
+                                                        <Box sx={{
+                                                          mt: 0.2,
+                                                          px: 0.4,
+                                                          py: 0.15,
+                                                          borderRadius: 1,
+                                                          fontSize: '0.45rem',
+                                                          fontWeight: 700,
+                                                          background: meta.bg,
+                                                          color: meta.color,
+                                                          letterSpacing: '.5px'
+                                                        }}>
+                                                          {meta.label.replace('UNAVAILABLE', 'UNAV')}
+                                                        </Box>
+                                                      </Box>
+                                                    );
+                                                  })
                                                 }
-                                                // ← bind value + onChange here as well
                                                 value={awayTeamUsers}
                                                 onChange={(_, newValue) => {
-                                                  setAwayTeamUsers(newValue);
+                                                  setAwayTeamUsers(prev => {
+                                                    const prevIds = new Set(prev.map(p => p.id));
+                                                    return newValue.filter(p =>
+                                                      p.isGuest ||
+                                                      isPlayerSelectable(p.id) ||
+                                                      prevIds.has(p.id)
+                                                    );
+                                                  });
                                                   if (awayCaptain && !newValue.some(u => u.id === awayCaptain.id)) {
                                                     setAwayCaptain(null);
                                                   }
                                                 }}
                                                 renderInput={params => (
-                                                  <TextField {...params} label="Select Away Players" sx={{ ...autocompleteStyles }} />
+                                                  <TextField
+                                                    {...params}
+                                                    label="Select Away Players"
+                                                    helperText="Only AVAILABLE / MAYBE can be added"
+                                                    FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
+                                                    sx={{ ...autocompleteStyles }}
+                                                  />
                                                 )}
                                               />
                                             </Grid>

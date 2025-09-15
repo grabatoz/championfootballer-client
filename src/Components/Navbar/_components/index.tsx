@@ -366,12 +366,13 @@ export default function NavigationBar() {
   ];
 
   const renderNavLinks = () => (
-    <Box sx={{ 
-      display: 'flex', 
-      alignItems: 'center', 
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'flex-end',
       gap: { xs: 0.5, md: 1 },
       flexWrap: 'nowrap',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      justifyContent: 'flex-end'      // ✅ push links to the right inside this box
     }}>
       {navItems.map(({ label, href }) => {
         const active = pathname?.startsWith(href);
@@ -387,16 +388,16 @@ export default function NavigationBar() {
               fontFamily: 'Arial, Helvetica, sans-serif',
               fontWeight: 700,
               color: '#fff',
-              fontSize: { xs: '12px', sm: '13px', md: '14px', lg: '16px' },
-              px: { xs: 0.5, sm: 0.75, md: 1, lg: 1.25 },
+              fontSize: { xs: '12px', sm: '9px', md: '13px', lg: '13px' },
+              px: { xs: 0.5, sm: 0.50, md: 1, lg: 1 },
               py: { xs: 1, md: 1.25 },
-              minWidth: { xs: 'auto', md: 'auto' },
+              minWidth: 'auto',
               position: 'relative',
               transition: 'all 0.3s ease',
               whiteSpace: 'nowrap',
               borderRadius: 1,
-              '&:hover': { 
-                color: '#fff', 
+              '&:hover': {
+                color: '#fff',
                 backgroundColor: 'rgba(255,255,255,0.1)',
                 transform: 'translateY(-2px)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
@@ -483,13 +484,13 @@ export default function NavigationBar() {
             </Box>
           </Link>
 
-          {/* DESKTOP NAVIGATION */}
-          <Box sx={{ 
-            display: { xs: 'none', lg: 'flex' }, 
+          {/* DESKTOP NAVIGATION (moved to right) */}
+          <Box sx={{
+            display: { xs: 'none', lg: 'flex' },
             alignItems: 'center',
-            flex: 1,
-            justifyContent: 'center',
-            maxWidth: '800px'
+            ml: 'auto',              // ✅ push whole nav group to the right
+            // pr: 2,                   // optional padding right
+            // gap: 1
           }}>
             {isAuthenticated && renderNavLinks()}
           </Box>
