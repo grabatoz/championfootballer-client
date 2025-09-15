@@ -146,6 +146,15 @@ const StyledTextField = styled(TextField)(() => ({
     '& input::selection, & textarea::selection': {
       background: themeColors.primaryAlt,
       color: "#fff"
+    },
+    /* Prevent autofill background color change */
+    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+      WebkitBoxShadow: '0 0 0 1000px #202225 inset !important',
+      boxShadow: '0 0 0 1000px #202225 inset !important',
+      WebkitTextFillColor: themeColors.text,
+      caretColor: themeColors.text,
+      transition: 'background-color 9999s ease-out 0s',
+      backgroundClip: 'content-box !important'
     }
   },
   '& .MuiInputLabel-root': {

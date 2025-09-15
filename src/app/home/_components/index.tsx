@@ -16,6 +16,8 @@ import {
   DialogContent,
   Divider,
   MenuItem,
+  GlobalStyles,
+  styled
 } from '@mui/material';
 import PlayerCard from '@/Components/playercard/playercard';
 // import Link from 'next/link';
@@ -44,8 +46,31 @@ import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
 import Link from 'next/link';
 
-
-
+const GreenDialogTextField = styled(TextField)(() => ({
+  '& .MuiOutlinedInput-root': {
+    background: 'rgba(18,74,46,0.85)',
+    backdropFilter: 'blur(6px)',
+    color: '#fff',
+    borderRadius: 10,
+    border: '1.5px solid rgba(88,220,140,0.55)',
+    transition: 'border-color .25s, box-shadow .25s',
+    '& fieldset': { borderColor: 'transparent' },
+    '&:hover fieldset': { borderColor: 'rgba(120,255,180,0.7)' },
+    '&.Mui-focused fieldset': { borderColor: '#53d276', boxShadow: '0 0 0 3px rgba(83,210,118,0.25)' },
+    '& input': { color: '#fff', fontWeight: 500, letterSpacing: .4 }
+  },
+  '& .MuiInputLabel-root': {
+    color: '#cfeedd',
+    fontWeight: 600,
+    letterSpacing: .5,
+    '&.Mui-focused': { color: '#ffffff' }
+  },
+  '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
+    WebkitBoxShadow: '0 0 0 1000px rgba(18,74,46,0.85) inset',
+    WebkitTextFillColor: '#fff',
+    transition: 'background-color 9999s ease-out 0s'
+  }
+}));
 
 const LeagueSelectionComponent = ({ }: { user: User }) => {
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
@@ -1262,167 +1287,180 @@ export default function PlayerDashboard() {
         </Box>
       </Paper>
 
-
-
-
-
-
-
-
-
-
+      <GlobalStyles styles={{
+  '::-webkit-scrollbar': { width: 10 },
+  '::-webkit-scrollbar-track': { background: '#0d2f1e' },
+  '::-webkit-scrollbar-thumb': { background: '#1c5c37', borderRadius: 20, border: '2px solid #0d2f1e' },
+  '::-webkit-scrollbar-thumb:hover': { background: '#257647' }
+}} />
 
       <Dialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            background: '#1f673b',
-            border: '2px solid #43a047',
-            boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
-            p: 2,
-            color: '#fff',
-          },
+            borderRadius: 5,
+            overflow: 'hidden',
+            position: 'relative',
+            p: 0,
+            // New background matching site palette (deep green + accent glow)
+            background: `
+              radial-gradient(circle at 18% 10%, rgba(0,167,127,0.20) 0%, rgba(0,167,127,0) 55%),
+              linear-gradient(150deg,#052d1c 0%,#064228 35%,#086138 68%,#0a7c46 100%)
+            `,
+            boxShadow: '0 24px 60px -18px rgba(0,0,0,0.65), 0 0 0 1px rgba(120,255,200,0.15)',
+            border: '1.5px solid rgba(120,255,180,0.40)',
+            backdropFilter: 'blur(6px)'
+          }
         }}
       >
-        <Box display="flex" justifyContent="space-between" alignItems="center" p={1}>
-          <DialogTitle sx={{ p: 0, fontWeight: 'bold', color: '#fff', fontSize: 22, letterSpacing: 0.5 }}>
+        {/* Soft overlay shimmer */}
+        <Box sx={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background: `
+            linear-gradient(95deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0) 38%),
+            radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 60%)
+          `
+        }} />
+
+        <Box
+          display="flex"
+          justifyContent="space-between"
+            alignItems="center"
+          sx={{
+            px: 3.2,
+            pt: 2.8,
+            pb: 1.6,
+            background: 'linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0))',
+          }}
+        >
+          <DialogTitle
+            sx={{
+              p: 0,
+              fontWeight: 900,
+              fontSize: 25,
+              letterSpacing: .85,
+              color: '#f2fff9',
+              textShadow: '0 3px 10px rgba(0,0,0,0.45)'
+            }}
+          >
             Create a League
           </DialogTitle>
-          <IconButton onClick={() => setIsDialogOpen(false)} sx={{ color: '#fff' }}>
-            <X />
+          <IconButton
+            onClick={() => setIsDialogOpen(false)}
+            sx={{
+              color: '#eafff4',
+              bgcolor: 'rgba(255,255,255,0.10)',
+              border: '1px solid rgba(120,255,190,0.25)',
+              backdropFilter: 'blur(4px)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.20)' }
+            }}
+          >
+            <X size={20} />
           </IconButton>
         </Box>
-        <DialogContent>
-          <TextField
+
+        <DialogContent
+          sx={{
+            px: 3.2,
+            pt: 1,
+            pb: 0.5,
+            color: '#d8ffe9'
+          }}
+        >
+          {/* Input field already styled (GreenDialogTextField) */}
+          <GreenDialogTextField
             autoFocus
             margin="dense"
             label="League Name"
-            type="text"
             fullWidth
-            variant="outlined"
             value={leagueName}
             onChange={(e) => setLeagueName(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleCreateLeague();
-              }
-            }}
-            sx={{
-              mt: 1,
-              mb: 2,
-              '& .MuiOutlinedInput-root': {
-                background: '#1f673b',
-                color: '#fff',
-                borderRadius: 2,
-                border: '1.5px solid #43a047',
-                '& fieldset': {
-                  borderColor: '#43a047',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#388e3c',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#43a047',
-                },
-                '& input': {
-                  color: '#fff',
-                },
-              },
-              '& label': {
-                color: '#fff',
-              },
-              '& .MuiInputLabel-root': {
-                color: '#fff',
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: '#fff',
-              },
-            }}
-            InputLabelProps={{ sx: { color: '#fff' } }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateLeague(); }}
+            placeholder="e.g. Elite Champions"
           />
 
-          {/* League Image Upload Section */}
-          <Box sx={{ mt: 2, mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ color: '#fff', mb: 1, fontWeight: 'bold' }}>
+          <Box sx={{ mt: 3.2, mb: 1.4 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: '#eafff7',
+                mb: 1,
+                fontWeight: 700,
+                letterSpacing: .65,
+                textTransform: 'uppercase',
+                fontSize: 13.5
+              }}
+            >
               League Image (Optional)
             </Typography>
 
-            {/* Image Preview */}
             <Box sx={{
               display: 'flex',
               alignItems: 'center',
               gap: 2,
-              mb: 2,
+              mb: 2.2,
               p: 2,
-              border: '2px dashed #43a047',
-              borderRadius: 2,
-              background: 'rgba(67,160,71,0.1)',
-              minHeight: 80
+              border: '1.5px dashed rgba(140,255,195,0.55)',
+              borderRadius: 4,
+              background: 'linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03))',
+              backdropFilter: 'blur(5px)'
             }}>
               <Avatar
                 src={imagePreview || '/assets/league.png'}
-                alt="League Image"
-                sx={{
-                  width: 60,
-                  height: 60,
-                  border: '2px solid #43a047',
-                  background: '#1f673b'
-                }}
+                alt="League"
                 variant="rounded"
+                sx={{
+                  width: 74,
+                  height: 74,
+                  border: '2px solid #62f5ab',
+                  background: '#0c3d27',
+                  boxShadow: '0 6px 18px -6px rgba(0,0,0,0.65)'
+                }}
               />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" sx={{ color: '#B2DFDB', mb: 0.5 }}>
-                  {imagePreview ? 'Selected Image' : 'Default Flag Image'}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" sx={{ color: '#c5ffe2', fontWeight: 600 }}>
+                  {imagePreview ? 'Selected Image' : 'Default Placeholder'}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
-                  {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
+                <Typography variant="caption" sx={{ color: '#9fe9c8' }}>
+                  {imagePreview ? 'Change or remove below' : 'Upload a custom emblem'}
                 </Typography>
               </Box>
             </Box>
 
-            {/* Upload Buttons */}
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 1.1, flexWrap: 'wrap' }}>
               <Button
                 component="label"
-                variant="outlined"
-                startIcon={<CloudUpload />}
+                variant="contained"
                 sx={{
-                  color: '#43a047',
-                  borderColor: '#43a047',
-                  borderRadius: 2,
-                  px: 2,
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    borderColor: '#388e3c',
-                    backgroundColor: 'rgba(67,160,71,0.1)'
-                  },
+                  background: 'linear-gradient(135deg,#11a964,#18c178)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  borderRadius: 2.4,
+                  px: 2.6,
+                  letterSpacing: .55,
+                  boxShadow: '0 8px 26px -8px rgba(20,185,110,0.55)',
+                  '&:hover': { background: 'linear-gradient(135deg,#17bb71,#23d886)' }
                 }}
+                startIcon={<CloudUpload size={18} />}
               >
                 {imagePreview ? 'Change Image' : 'Upload Image'}
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                />
+                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
               </Button>
-
               {imagePreview && (
                 <Button
                   variant="outlined"
                   onClick={handleRemoveImage}
                   sx={{
-                    color: '#ff6b6b',
-                    borderColor: '#ff6b6b',
-                    borderRadius: 2,
-                    px: 2,
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      borderColor: '#ff5252',
-                      backgroundColor: 'rgba(255,107,107,0.1)'
-                    },
+                    color: '#ff8f8f',
+                    borderColor: '#ff8f8f',
+                    fontWeight: 600,
+                    borderRadius: 2.2,
+                    px: 2.2,
+                    letterSpacing: .45,
+                    '&:hover': { borderColor: '#ffb1b1', background: 'rgba(255,143,143,0.12)' }
                   }}
                 >
                   Remove
@@ -1431,36 +1469,51 @@ export default function PlayerDashboard() {
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={handleCreateLeague}
-            variant="contained"
-            disabled={isCreating || !leagueName.trim()}
-            sx={{
-              bgcolor: '#43a047',
-              color: 'white',
-              fontWeight: 'bold',
-              borderRadius: 2,
-              px: 3,
-              boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
-              '&:hover': { bgcolor: '#388e3c' },
-            }}
-          >
-            {isCreating ? 'Creating...' : 'Create League'}
-          </Button>
+
+        <DialogActions
+          sx={{
+            px: 3.2,
+            pt: 1,
+            pb: 2.8,
+            gap: 1.2
+          }}
+        >
           <Button
             onClick={() => setIsDialogOpen(false)}
             variant="outlined"
             sx={{
-              color: '#fff',
-              border: '1.5px solid #43a047',
-              borderRadius: 2,
+              color: '#e6fff3',
+              borderColor: 'rgba(125,255,195,0.50)',
+              fontWeight: 600,
+              borderRadius: 2.4,
               px: 3,
-              fontWeight: 'bold',
-              '&:hover': { bgcolor: 'rgba(67,160,71,0.08)' },
+              letterSpacing: .55,
+              backdropFilter: 'blur(3px)',
+              '&:hover': { borderColor: '#93ffcf', background: 'rgba(140,255,210,0.12)' }
             }}
           >
             Cancel
+          </Button>
+          <Button
+            onClick={handleCreateLeague}
+            disabled={isCreating || !leagueName.trim()}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg,#12b46a,#24d07e)',
+              color: '#fff',
+              fontWeight: 800,
+              borderRadius: 2.6,
+              px: 3.4,
+              letterSpacing: .75,
+              boxShadow: '0 12px 32px -10px rgba(30,205,125,0.55)',
+              '&:hover': { background: 'linear-gradient(135deg,#17c575,#33e38b)' },
+              '&:disabled': {
+                background: 'linear-gradient(135deg,#1d5f39,#1d5f39)',
+                color: '#7ca790'
+              }
+            }}
+          >
+            {isCreating ? 'Creating...' : 'Create League'}
           </Button>
         </DialogActions>
       </Dialog>

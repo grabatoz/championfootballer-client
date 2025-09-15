@@ -135,27 +135,14 @@ const AllPlayersPage = () => {
               '&.Mui-focused fieldset': {
                 borderColor: '#e56a16',
               },
-              // Autofill fix for Chrome, Safari, Edge
-              '& input:-webkit-autofill': {
-                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+              /* Unified autofill fix: keep same background (no yellow/green flash) */
+              '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
+                boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
                 WebkitTextFillColor: 'white',
                 caretColor: 'white',
-                transition: 'background-color 5000s ease-in-out 0s',
-              },
-              '& input:-webkit-autofill:focus': {
-                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
-                WebkitTextFillColor: 'white',
-                caretColor: 'white',
-              },
-              '& input:-webkit-autofill:hover': {
-                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
-                WebkitTextFillColor: 'white',
-                caretColor: 'white',
-              },
-              '& input:-webkit-autofill:active': {
-                WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
-                WebkitTextFillColor: 'white',
-                caretColor: 'white',
+                backgroundClip: 'content-box !important',
+                transition: 'background-color 9999s ease-out 0s',
               },
             },
             '& .MuiInputBase-input': {

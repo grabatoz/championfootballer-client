@@ -650,7 +650,8 @@ function AllLeagues() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
         method: 'POST',
-        headers: {
+        headers:
+         {
           'Authorization': `Bearer ${token}`
           // 'Content-Type' mat lagayen, FormData khud set karega
         },
@@ -808,7 +809,7 @@ function AllLeagues() {
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
           <Typography variant="h3" sx={{
             mb: { xs: 3, md: 4 },
-            color: '#404040',
+            color: 'black',
             // fontFamily: 'Arial Black, Arial, sans-serif',
             fontFamily: '"Anton", sans-serif',
             fontWeight: 'semibold',
@@ -885,6 +886,7 @@ function AllLeagues() {
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 size="medium"
+                autoComplete="off"
                 sx={{
                   flex: 1,
                   width: { xs: '100%', sm: 'auto' },
@@ -892,13 +894,23 @@ function AllLeagues() {
                     color: 'black',
                     backgroundColor: 'rgba(255,255,255,0.1)',
                     borderRadius: 2,
-                    padding: '0', // Remove extra padding
+                    padding: '0',
                     '& input': {
-                      padding: '13px 12px', // Reduce input height
+                      padding: '13px 12px',
                     },
                     '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
                     '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
                     '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+
+                    /* Prevent Chrome autofill yellow background */
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+                      WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
+                      boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
+                      WebkitTextFillColor: 'black',
+                      caretColor: 'black',
+                      transition: 'background-color 9999s ease-out 0s',
+                      backgroundClip: 'content-box !important',
+                    },
                   },
                   '& .MuiInputLabel-root': { color: '#8C8C8C' },
                 }}

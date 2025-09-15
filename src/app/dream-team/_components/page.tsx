@@ -257,7 +257,7 @@ const DreamTeamPage = () => {
             mb: { xs: 2, md: 0 }, // Bottom margin on mobile
           }}
         >
-          <Image
+          {/* <Image
             src={dreamteam.src}
             alt="Dream Team Logo"
             height={80}
@@ -266,7 +266,7 @@ const DreamTeamPage = () => {
               display: "block",
               objectFit: "contain"
             }}
-          />
+          /> */}
           <Typography
             variant="h3"
             component="h1"

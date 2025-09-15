@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Container, Typography, Paper,  MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronDown, Edit, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -591,7 +591,7 @@ export default function AllMatches() {
                 <Box sx={{ mb: { xs: 3, md: 5 } }}>
                     <Typography variant="h3" sx={{
                         mb: { xs: 3, md: 4 },
-                        color: '#404040',
+                        color: 'black',
                         // fontFamily: 'Arial Black, Arial, sans-serif',
                         fontFamily: '"Anton", sans-serif',
                         fontWeight: 'semibold',
@@ -643,7 +643,7 @@ export default function AllMatches() {
                                 }}
                             >
                                 <Link href={`/league/${league?.id}/match`}>
-                                Create New Match
+                                    Create New Match
                                 </Link>
                             </Button>
                             {/* <TextField
@@ -738,81 +738,81 @@ export default function AllMatches() {
                                 onClose={handleLeaguesDropdownClose}
                                 PaperProps={{
                                     sx: {
-                                      p: 0.5,
-                                      mt: 1,
-                                      minWidth: 240,
-                                      bgcolor: 'rgba(15,15,15,0.92)',
-                                      color: '#E5E7EB',
-                                      borderRadius: 2.5,
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      backdropFilter: 'blur(10px)',
-                                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                                      overflow: 'hidden',
+                                        p: 0.5,
+                                        mt: 1,
+                                        minWidth: 240,
+                                        bgcolor: 'rgba(15,15,15,0.92)',
+                                        color: '#E5E7EB',
+                                        borderRadius: 2.5,
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        backdropFilter: 'blur(10px)',
+                                        boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                        overflow: 'hidden',
                                     }
-                                  }}
+                                }}
                             >
                                 {sortedLeagues.map((leagueItem) => {
-                                  const isActive = leagueItem.id === selectedLeague;
-                                  return (
-                                    <MenuItem
-                                      key={leagueItem.id}
-                                      onClick={() => handleLeagueSelect(leagueItem.id)}
-                                      sx={{
-                                        borderRadius: 1.5,
-                                        mx: 0.5,
-                                        my: 0.25,
-                                        py: 1.25,
-                                        px: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        color: '#E5E7EB',
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                          transform: 'translateY(-1px)',
-                                          background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                                        },
-                                        ...(isActive && {
-                                          background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
-                                          border: '1px solid rgba(3,136,227,0.35)',
-                                        }),
-                                      }}
-                                    >
-                                      <ListItemIcon sx={{ minWidth: 36 }}>
-                                        <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
-                                      </ListItemIcon>
-                                      <ListItemText
-                                        primary={leagueItem.name}
-                                        sx={{
-                                          '& .MuiListItemText-primary': {
-                                            fontSize: '0.95rem',
-                                            fontWeight: isActive ? 700 : 500,
-                                            letterSpacing: 0.2,
-                                            color: isActive ? '#FFFFFF' : '#E5E7EB',
-                                          }
-                                        }}
-                                      />
-                                      {isActive ? (
-                                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                          <Box
+                                    const isActive = leagueItem.id === selectedLeague;
+                                    return (
+                                        <MenuItem
+                                            key={leagueItem.id}
+                                            onClick={() => handleLeagueSelect(leagueItem.id)}
                                             sx={{
-                                              px: 1,
-                                              py: 0.25,
-                                              bgcolor: '#0388E3',
-                                              color: 'white',
-                                              borderRadius: '9999px',
-                                              fontSize: 10,
-                                              fontWeight: 700,
-                                              letterSpacing: 0.3,
-                                              textTransform: 'uppercase',
+                                                borderRadius: 1.5,
+                                                mx: 0.5,
+                                                my: 0.25,
+                                                py: 1.25,
+                                                px: 1.5,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                                color: '#E5E7EB',
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                    background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                                                },
+                                                ...(isActive && {
+                                                    background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
+                                                    border: '1px solid rgba(3,136,227,0.35)',
+                                                }),
                                             }}
-                                          >
-                                            Current
-                                          </Box>
-                                        </Box>
-                                      ) : null}
-                                    </MenuItem>
-                                  );
+                                        >
+                                            <ListItemIcon sx={{ minWidth: 36 }}>
+                                                <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={leagueItem.name}
+                                                sx={{
+                                                    '& .MuiListItemText-primary': {
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: isActive ? 700 : 500,
+                                                        letterSpacing: 0.2,
+                                                        color: isActive ? '#FFFFFF' : '#E5E7EB',
+                                                    }
+                                                }}
+                                            />
+                                            {isActive ? (
+                                                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Box
+                                                        sx={{
+                                                            px: 1,
+                                                            py: 0.25,
+                                                            bgcolor: '#0388E3',
+                                                            color: 'white',
+                                                            borderRadius: '9999px',
+                                                            fontSize: 10,
+                                                            fontWeight: 700,
+                                                            letterSpacing: 0.3,
+                                                            textTransform: 'uppercase',
+                                                        }}
+                                                    >
+                                                        Current
+                                                    </Box>
+                                                </Box>
+                                            ) : null}
+                                        </MenuItem>
+                                    );
                                 })}
                             </Menu>
                         </Box>
@@ -846,7 +846,7 @@ export default function AllMatches() {
                         <Paper
                             elevation={0}
                             sx={{
-                               background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                 borderRadius: 3,
                                 p: 4,
                                 textAlign: 'center',
@@ -1110,10 +1110,15 @@ export default function AllMatches() {
                                                 <Link href={`/league/${league?.id}/match/${match.id}/edit`} passHref>
                                                     <IconButton
                                                         size="small"
-                                                        sx={{ position: 'absolute', top: 8, right: 8, color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' } }}
+                                                        sx={{ position: 'absolute', top: 8, right: 8, color: 'white' }}
                                                         disabled={!league?.active}
                                                     >
-                                                        <Edit size={16} />
+                                                        <span style={{
+                                                            color: 'white',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '1rem',
+                                                        }} className='mr-2' >Edit</span>
+                                                        <Edit size={22} />
                                                     </IconButton>
                                                 </Link>
                                             )}
@@ -1203,7 +1208,7 @@ export default function AllMatches() {
                                                         flexDirection: 'column',
                                                         alignItems: 'flex-end',
                                                         position: 'absolute',
-                                                        top: 32,
+                                                        top: 42,
                                                         right: 8
                                                     }}>
                                                         <Typography variant="body2" sx={{
