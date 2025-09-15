@@ -353,7 +353,7 @@ const PlayerCard = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              overflow: 'hidden'
+              // overflow: 'hidden'
             }}
           >
             <div style={{ position: 'relative', display: 'inline-block' }}>
