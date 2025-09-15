@@ -39,7 +39,6 @@ import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
-import leagueIcon from '@/Components/images/league.png';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import TrophyRoom from '@/Components/TrophyRoom';

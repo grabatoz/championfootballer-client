@@ -187,7 +187,7 @@ const NotificationBell = () => {
                   </div>
                 </div>
               ))
-            }
+            )}
           </div>
 
           {/* Footer */}
