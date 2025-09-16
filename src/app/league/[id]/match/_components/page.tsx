@@ -174,8 +174,10 @@ interface League {
 }
 
 /* ================== HELPERS ================== */
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);          // 12‑hour clock (start time)
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+// NEW: duration hours include 0
+const DURATION_HOURS = Array.from({ length: 13 }, (_, i) => i);     // 0..12 for duration
 
 const buildDateTime = (base: Dayjs, hour12: number, minute: number, isPM: boolean) => {
   let h24 = hour12 % 12;
@@ -309,11 +311,21 @@ export default function ScheduleMatchPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // NEW: initialize start time from user's current local time
+  const now = dayjs();
+  const initialHour12 = (() => {
+    let h = now.hour() % 12;
+    if (h === 0) h = 12;
+    return h;
+  })();
+  const initialMinute = now.minute();
+  const initialIsPM = now.hour() >= 12;
+
   // Form state
   const [date, setDate] = useState<Dayjs>(dayjs());
-  const [hour, setHour] = useState<number>(9);
-  const [minute, setMinute] = useState<number>(30);
-  const [isPM, setIsPM] = useState<boolean>(true);
+  const [hour, setHour] = useState<number>(initialHour12);      // was 9
+  const [minute, setMinute] = useState<number>(initialMinute);  // was 30
+  const [isPM, setIsPM] = useState<boolean>(initialIsPM);       // was true
   const [durHours, setDurHours] = useState<number>(1);
   const [durMinutes, setDurMinutes] = useState<number>(40);
   const [location, setLocation] = useState<string>('');
@@ -458,6 +470,10 @@ export default function ScheduleMatchPage() {
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
       borderColor: THEME.FOCUS,
       boxShadow: THEME.SHADOW_GLOW
+    },
+    // prevent MUI adding background on focus for select trigger
+    '& .MuiSelect-select:focus': {
+      backgroundColor: 'transparent'
     }
   };
 
@@ -479,6 +495,13 @@ export default function ScheduleMatchPage() {
     '& .MuiInputBase-input::placeholder': {
       color: THEME.TEXT_FADE,
       opacity: 1
+    },
+    // remove background change on browser auto-fill (Chrome / Edge)
+    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+      WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.02) inset !important',
+      WebkitTextFillColor: THEME.TEXT,
+      transition: 'background-color 9999s ease-in-out 0s',
+      caretColor: THEME.TEXT
     }
   };
 
@@ -767,7 +790,7 @@ export default function ScheduleMatchPage() {
                       }
                       sx={selectStyles}
                     >
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      {DURATION_HOURS.map((h) => (
                         <MenuItem key={h} value={h}>
                           {h}
                         </MenuItem>
@@ -828,7 +851,7 @@ export default function ScheduleMatchPage() {
                   }}
                 >
                   <span>{location.length}/120</span>
-                  <span>Required *</span>
+                  {/* <span>Required *</span> */}
                 </Box>
               </Grid>
               {/* SUMMARY */}

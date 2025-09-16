@@ -563,6 +563,7 @@ export default function EditMatchPage() {
                           disableCloseOnSelect
                           getOptionLabel={option => `${option.firstName} ${option.lastName}`}
                           getOptionDisabled={option => !canAddPlayer(option.id, option.isGuest)}
+                          isOptionEqualToValue={(o, v) => o.id === v.id}
                           ListboxProps={{
                             sx: {
                               display: 'grid',
@@ -691,6 +692,7 @@ export default function EditMatchPage() {
                           disableCloseOnSelect
                           getOptionLabel={option => `${option.firstName} ${option.lastName}`}
                           getOptionDisabled={option => !canAddPlayer(option.id, option.isGuest)}
+                          isOptionEqualToValue={(o, v) => o.id === v.id}
                           ListboxProps={{
                             sx: {
                               display: 'grid',
@@ -722,7 +724,7 @@ export default function EditMatchPage() {
                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 }}>
                                   {option.firstName}
                                 </Typography>
-                                <Box sx={{
+                                {/* <Box sx={{
                                   mt: 0.4,
                                   px: 0.6,
                                   py: 0.25,
@@ -736,7 +738,7 @@ export default function EditMatchPage() {
                                   textAlign: 'center'
                                 }}>
                                   {meta.label}
-                                </Box>
+                                </Box> */}
                               </Box>
                             );
                           }}
@@ -767,7 +769,7 @@ export default function EditMatchPage() {
                                   <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1 }}>
                                     {opt.firstName}
                                   </Typography>
-                                  <Box sx={{
+                                  {/* <Box sx={{
                                     mt: 0.2,
                                     px: 0.4,
                                     py: 0.15,
@@ -779,7 +781,7 @@ export default function EditMatchPage() {
                                     letterSpacing: '.5px'
                                   }}>
                                     {meta.label.replace('UNAVAILABLE', 'UNAV')}
-                                  </Box>
+                                  </Box> */}
                                 </Box>
                               );
                             })
@@ -809,6 +811,89 @@ export default function EditMatchPage() {
                           )}
                         />
                       </Grid>
+
+                      {/* NEW: Captain selectors appear under team selection */}
+                      <Grid item xs={12} md={6}>
+                        <Autocomplete<PlayerOption, false, false>
+                          options={homeTeamUsers}
+                          value={homeCaptain}
+                          onChange={(_, val) => setHomeCaptain(val)}
+                          isOptionEqualToValue={(o, v) => o.id === v.id}
+                          getOptionLabel={o => `${o.firstName} ${o.lastName}`}
+                          disabled={!homeTeamUsers.length}
+                          renderInput={params => (
+                            <TextField
+                              {...params}
+                              label="Select Home Captain"
+                              placeholder="Choose captain"
+                              required
+                              sx={autocompleteStyles}
+                            />
+                          )}
+                          renderOption={(props, option) => (
+                            <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: .5 }}>
+                              <Avatar
+                                src={option.profilePicture || defaultTeamImage}
+                                sx={{ width: 30, height: 30 }}
+                              />
+                              <Typography variant="body2" sx={{ flex: 1 }}>
+                                {option.firstName} {option.lastName}
+                              </Typography>
+                              {!option.isGuest && (
+                                <Chip
+                                  size="small"
+                                  label={`Skill ${calcSkill(option)}`}
+                                  sx={{ height: 20, fontSize: '0.65rem' }}
+                                />
+                              )}
+                              {option.isGuest && (
+                                <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
+                              )}
+                            </Box>
+                          )}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Autocomplete<PlayerOption, false, false>
+                          options={awayTeamUsers}
+                          value={awayCaptain}
+                          onChange={(_, val) => setAwayCaptain(val)}
+                          isOptionEqualToValue={(o, v) => o.id === v.id}
+                          getOptionLabel={o => `${o.firstName} ${o.lastName}`}
+                          disabled={!awayTeamUsers.length}
+                          renderInput={params => (
+                            <TextField
+                              {...params}
+                              label="Select Away Captain"
+                              placeholder="Choose captain"
+                              required
+                              sx={autocompleteStyles}
+                            />
+                          )}
+                          renderOption={(props, option) => (
+                            <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: .5 }}>
+                              <Avatar
+                                src={option.profilePicture || defaultTeamImage}
+                                sx={{ width: 30, height: 30 }}
+                              />
+                              <Typography variant="body2" sx={{ flex: 1 }}>
+                                {option.firstName} {option.lastName}
+                              </Typography>
+                              {!option.isGuest && (
+                                <Chip
+                                  size="small"
+                                  label={`Skill ${calcSkill(option)}`}
+                                  sx={{ height: 20, fontSize: '0.65rem' }}
+                                />
+                              )}
+                              {option.isGuest && (
+                                <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
+                              )}
+                            </Box>
+                          )}
+                        />
+                      </Grid>
+                      {/* END Captain selectors */}
                     </Grid>
                   </Grid>
                 </Grid>
