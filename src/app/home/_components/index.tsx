@@ -222,11 +222,15 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
           boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
           border: '2px solid #fff',
         }}
-        onClick={() => {
-          if (selectedLeague) {
-            window.location.href = `/league/${selectedLeague.id}`;
-          }
-        }}
+        // onClick={() => {
+        //   if (selectedLeague) {
+        //     window.location.href = `/league/${selectedLeague.id}`;
+        //   }
+        // }}
+          onClick={(e) => {
+              e.stopPropagation();
+              setShowDropdown(!showDropdown);
+            }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
@@ -241,11 +245,7 @@ const LeagueSelectionComponent = ({ }: { user: User }) => {
             </Typography>
           </Box>
 
-          <Box
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDropdown(!showDropdown);
-            }}
+          <Box 
             sx={{
               color: 'white',
               cursor: 'pointer',

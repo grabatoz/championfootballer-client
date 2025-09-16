@@ -1259,85 +1259,8 @@ export default function LeagueDetailPage() {
                                         mt: 2
                                     }}
                                 >
-                                    <Button
-                                        variant="text"
-                                        size="small"
-                                        sx={{
-                                            color: 'white',
-                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                                            px: { xs: 2, sm: 3, md: 4 },
-                                            py: 1.5,
-                                            minWidth: 'auto',
-                                            fontWeight: 'bold',
-                                            textTransform: 'none',
-                                            borderBottom: section === 'members' ? '3px solid white' : '3px solid transparent',
-                                            borderRadius: 0,
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            setSection('members');
-                                            router.replace(`/league/${leagueId}?tab=members`);
-                                        }}
-                                    >
-                                        Players
-                                    </Button>
 
-                                    <Button
-                                        variant="text"
-                                        size="small"
-                                        sx={{
-                                            color: 'white',
-                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                                            px: { xs: 2, sm: 3, md: 4 },
-                                            py: 1.5,
-                                            minWidth: 'auto',
-                                            fontWeight: 'bold',
-                                            textTransform: 'none',
-                                            borderBottom: section === 'matches' ? '3px solid white' : '3px solid transparent',
-                                            borderRadius: 0,
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            setSection('matches');
-                                            router.replace(`/league/${leagueId}?tab=matches`);
-                                        }}
-                                    >
-                                        Fixtures
-                                    </Button>
-
-                                    <Button
-                                        variant="text"
-                                        size="small"
-                                        sx={{
-                                            color: 'white',
-                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                                            px: { xs: 2, sm: 3, md: 4 },
-                                            py: 1.5,
-                                            minWidth: 'auto',
-                                            fontWeight: 'bold',
-                                            textTransform: 'none',
-                                            borderBottom: section === 'results' ? '3px solid white' : '3px solid transparent',
-                                            borderRadius: 0,
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            setSection('results');
-                                            router.replace(`/league/${leagueId}?tab=results`);
-                                        }}
-                                    >
-                                        Results
-                                    </Button>
-
-                                    <Button
+                                      <Button
                                         variant="text"
                                         size="small"
                                         sx={{
@@ -1365,8 +1288,60 @@ export default function LeagueDetailPage() {
                                             router.replace(`/league/${leagueId}?tab=table`);
                                         }}
                                     >
-                                        Points Table
+                                        League Table
                                     </Button>
+
+                                     <Button
+                                        variant="text"
+                                        size="small"
+                                        sx={{
+                                            color: 'white',
+                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                                            px: { xs: 2, sm: 3, md: 4 },
+                                            py: 1.5,
+                                            minWidth: 'auto',
+                                            fontWeight: 'bold',
+                                            textTransform: 'none',
+                                            borderBottom: section === 'results' ? '3px solid white' : '3px solid transparent',
+                                            borderRadius: 0,
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            setSection('results');
+                                            router.replace(`/league/${leagueId}?tab=results`);
+                                        }}
+                                    >
+                                      Match Results
+                                    </Button>
+
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        sx={{
+                                            color: 'white',
+                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                                            px: { xs: 2, sm: 3, md: 4 },
+                                            py: 1.5,
+                                            minWidth: 'auto',
+                                            fontWeight: 'bold',
+                                            textTransform: 'none',
+                                            borderBottom: section === 'matches' ? '3px solid white' : '3px solid transparent',
+                                            borderRadius: 0,
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            setSection('matches');
+                                            router.replace(`/league/${leagueId}?tab=matches`);
+                                        }}
+                                    >
+                                        Fixtures
+                                    </Button>  
 
                                     <Button
                                         variant="text"
@@ -1392,6 +1367,32 @@ export default function LeagueDetailPage() {
                                         }}
                                     >
                                         Awards
+                                    </Button>
+
+                                     <Button
+                                        variant="text"
+                                        size="small"
+                                        sx={{
+                                            color: 'white',
+                                            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                                            px: { xs: 2, sm: 3, md: 4 },
+                                            py: 1.5,
+                                            minWidth: 'auto',
+                                            fontWeight: 'bold',
+                                            textTransform: 'none',
+                                            borderBottom: section === 'members' ? '3px solid white' : '3px solid transparent',
+                                            borderRadius: 0,
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                                borderBottom: '3px solid rgba(255,255,255,0.7)'
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            setSection('members');
+                                            router.replace(`/league/${leagueId}?tab=members`);
+                                        }}
+                                    >
+                                        Players
                                     </Button>
 
                                     {isAdmin && (
