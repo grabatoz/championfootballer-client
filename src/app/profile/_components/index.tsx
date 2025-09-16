@@ -94,26 +94,24 @@ const SkillCard = styled(Card)(() => ({
 
 const StyledSlider = styled(Slider)(() => ({
   height: 8,
-  "& .MuiSlider-track": {
-    border: "none",
+  padding: '4px 0',                 // reduce default vertical padding
+  boxSizing: 'border-box',
+  '& .MuiSlider-track': {
+    border: 'none',
     background: themeColors.sliderTrack
   },
-  "& .MuiSlider-rail": {
+  '& .MuiSlider-rail': {
     opacity: 0.25,
-    background: "#555"
+    background: '#555'
   },
-  "& .MuiSlider-thumb": {
-    width: 22,
-    height: 22,
-    background: "#fff",
+  '& .MuiSlider-thumb': {
+    width: 20,
+    height: 20,
+    background: '#fff',
     border: `3px solid ${themeColors.primary}`,
-    boxShadow: "0 2px 6px rgba(0,0,0,0.45)",
-    "&:hover": {
-      boxShadow: "0 0 0 8px rgba(229,106,22,0.2)"
-    },
-    "&:focus-visible": {
-      boxShadow: "0 0 0 10px rgba(229,106,22,0.25)"
-    }
+    boxShadow: '0 2px 6px rgba(0,0,0,0.45)',
+    '&:hover': { boxShadow: '0 0 0 6px rgba(229,106,22,0.25)' },
+    '&:focus-visible': { boxShadow: '0 0 0 8px rgba(229,106,22,0.30)' }
   }
 }))
 
@@ -124,52 +122,33 @@ const StyledTextField = styled(TextField)(() => ({
     borderRadius: 10,
     border: `1px solid ${themeColors.border}`,
     transition: ".25s",
-    '& fieldset': {
-      borderColor: "transparent"
-    },
-    '&:hover': {
-      borderColor: themeColors.borderStrong
-    },
-    '&:hover fieldset': {
-      borderColor: themeColors.primary
-    },
-    '&.Mui-focused': {
-      borderColor: themeColors.primary
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: themeColors.primary
-    },
+    '& fieldset': { borderColor: "transparent" },
+    '&:hover': { borderColor: themeColors.borderStrong },
+    '&:hover fieldset': { borderColor: themeColors.primary },
+    '&.Mui-focused': { borderColor: themeColors.primary },
+    '&.Mui-focused fieldset': { borderColor: themeColors.primary },
     '& input, & textarea': {
       color: themeColors.text,
       background: "transparent"
     },
-    '& input::selection, & textarea::selection': {
-      background: themeColors.primaryAlt,
-      color: "#fff"
-    },
-    /* Prevent autofill background color change */
-    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-      WebkitBoxShadow: '0 0 0 1000px #202225 inset !important',
-      boxShadow: '0 0 0 1000px #202225 inset !important',
-      WebkitTextFillColor: themeColors.text,
-      caretColor: themeColors.text,
-      transition: 'background-color 9999s ease-out 0s',
-      backgroundClip: 'content-box !important'
-    }
+    // Reduced overall control height
+    minHeight: 48
   },
-  '& .MuiInputLabel-root': {
-    color: themeColors.textDim
+  // Compact input padding + font size
+  '& .MuiOutlinedInput-input': {
+    padding: '6px 12px',      // was larger before
+    fontSize: '0.85rem',
+    lineHeight: 1.2
   },
-  '& .MuiInputLabel-root.Mui-focused': {
-    color: themeColors.primary
-  },
-  '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
-    WebkitAppearance: 'none',
-    margin: 0
-  },
-  '& input[type=number]': {
-    MozAppearance: 'textfield',
-    appearance: 'textfield'
+  '& .MuiInputLabel-root': { color: themeColors.textDim },
+  '& .MuiInputLabel-root.Mui-focused': { color: themeColors.primary },
+  '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+    WebkitBoxShadow: '0 0 0 1000px #202225 inset !important',
+    boxShadow: '0 0 0 1000px #202225 inset !important',
+    WebkitTextFillColor: themeColors.text,
+    caretColor: themeColors.text,
+    transition: 'background-color 9999s ease-out 0s',
+    backgroundClip: 'content-box !important'
   }
 }))
 
@@ -520,12 +499,12 @@ const PlayerProfileCard = () => {
             </Stepper>
 
             <StyledPaper sx={{
-              p: 4,
+              p: 3,
               background: "linear-gradient(145deg,#202226 0%,#27292d 60%)",
               borderRadius: 6
             }}>
               <Typography variant="h5" fontWeight={800} align="center" sx={{
-                mb: 4,
+                mb: 2,
                 color: themeColors.text,
                 letterSpacing: .5,
                 background: themeColors.primaryGradient,
@@ -539,7 +518,7 @@ const PlayerProfileCard = () => {
               <Box sx={{
                 display: 'flex',
                 gap: 4,
-                mb: 4,
+                mb: 2,
                 flexDirection: { xs: 'column', md: 'row' }
               }}>
                 <Box sx={{
@@ -559,7 +538,7 @@ const PlayerProfileCard = () => {
                       }}
                       sx={{
                         width: { xs: 120, sm: 140, md: 170 },
-                        height: { xs: 150, sm: 185, md: 230 },
+                        height: { xs: 150, sm: 185, md: 180 },
                         border: `3px solid ${themeColors.primary}`,
                         borderRadius: 4,
                         background: "#2c2e32"
@@ -572,7 +551,7 @@ const PlayerProfileCard = () => {
                       sx={{
                         position: 'absolute',
                         top: -12,
-                        left: '50%',
+                        left: '95%',
                         transform: 'translateX(-50%)',
                         background: themeColors.primaryGradient,
                         color: '#fff',
@@ -604,18 +583,19 @@ const PlayerProfileCard = () => {
                 </Box>
 
                 <Box sx={{ flex: 1 }}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={1}>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField label="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth />
+                      <StyledTextField size="small" label="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField label="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth />
+                      <StyledTextField size="small" label="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} fullWidth />
+                      <StyledTextField size="small" label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} fullWidth />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
+                        size="medium"
                         label="Change Password"
                         type={showPassword ? "text" : "password"}
                         value={password}
@@ -634,51 +614,101 @@ const PlayerProfileCard = () => {
 
                     <Grid container spacing={2} mt={1} ml={0.2}>
                       <Grid item xs={6} sm={2}>
-                        <StyledTextField label="Shirt #" type="number" value={shirtNumber} onChange={e => setShirtNumber(e.target.value)} fullWidth />
+                        <StyledTextField size="medium" label="Shirt #" type="number" value={shirtNumber} onChange={e => setShirtNumber(e.target.value)} fullWidth />
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <StyledTextField label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
+                        <StyledTextField size="medium" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
                       </Grid>
 
                       <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
-                        <Card sx={{
-                          p: 2,
-                          background: "#222428",
-                          border: `1px solid ${themeColors.border}`,
-                          borderRadius: 4
-                        }}>
-                          <FormControl component="fieldset">
-                            <StyledFormLabel sx={{ mt: -1 }}>Gender</StyledFormLabel>
+                        <Card
+                          sx={{
+                            p: 1.1,
+                            background: "#222428",
+                            border: `1px solid ${themeColors.border}`,
+                            borderRadius: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            minHeight: 68
+                          }}
+                        >
+                          <FormControl component="fieldset" sx={{ width: '100%' }}>
+                            <StyledFormLabel sx={{ mt: -0.5, fontSize: 12 }}>Gender</StyledFormLabel>
                             <RadioGroup
                               row
                               value={gender}
                               onChange={e => setGender(e.target.value)}
-                              sx={{ justifyContent: 'space-between' }}
+                              sx={{
+                                justifyContent: 'flex-start',
+                                flexWrap: 'nowrap',
+                                gap: 1.5,
+                                '& .MuiFormControlLabel-root': {
+                                  margin: 0
+                                },
+                                '& .MuiFormControlLabel-label': {
+                                  fontSize: 12,
+                                  color: themeColors.textDim,
+                                  letterSpacing: .3
+                                }
+                              }}
                             >
-                              <FormControlLabel value="male" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Male</span>} />
-                              <FormControlLabel value="female" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Female</span>} />
+                              <FormControlLabel
+                                value="male"
+                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
+                                label="Male"
+                              />
+                              <FormControlLabel
+                                value="female"
+                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
+                                label="Female"
+                              />
                             </RadioGroup>
                           </FormControl>
                         </Card>
                       </Grid>
 
                       <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
-                        <Card sx={{
-                          p: 2,
-                          background: "#222428",
-                          border: `1px solid ${themeColors.border}`,
-                          borderRadius: 4
-                        }}>
-                          <FormControl component="fieldset">
-                            <StyledFormLabel sx={{ mt: -1 }}>Preferred Foot</StyledFormLabel>
+                        <Card
+                          sx={{
+                            p: 1.1,
+                            background: "#222428",
+                            border: `1px solid ${themeColors.border}`,
+                            borderRadius: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            minHeight: 68
+                          }}
+                        >
+                          <FormControl component="fieldset" sx={{ width: '100%' }}>
+                            <StyledFormLabel sx={{ mt: -0.5, fontSize: 12 }}>Preferred Foot</StyledFormLabel>
                             <RadioGroup
                               row
                               value={preferredFoot}
                               onChange={e => setPreferredFoot(e.target.value)}
-                              sx={{ justifyContent: 'space-between' }}
+                              sx={{
+                                justifyContent: 'flex-start',
+                                flexWrap: 'nowrap',
+                                gap: 1.5,
+                                '& .MuiFormControlLabel-root': {
+                                  margin: 0
+                                },
+                                '& .MuiFormControlLabel-label': {
+                                  fontSize: 12,
+                                  color: themeColors.textDim,
+                                  letterSpacing: .3
+                                }
+                              }}
                             >
-                              <FormControlLabel value="Left" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Left</span>} />
-                              <FormControlLabel value="Right" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Right</span>} />
+                              <FormControlLabel
+                                value="Left"
+                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
+                                label="Left"
+                              />
+                              <FormControlLabel
+                                value="Right"
+                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
+                                label="Right"
+                              />
                             </RadioGroup>
                           </FormControl>
                         </Card>
@@ -817,25 +847,49 @@ const PlayerProfileCard = () => {
               borderRadius: 6
             }}>
               <Typography variant="h5" fontWeight={800} align="center" sx={{
-                mb: 4,
-                background: themeColors.primaryGradient,
+                mb: 0,
+                background: "#fff",
                 WebkitBackgroundClip: "text",
                 color: "transparent",
                 letterSpacing: .6
               }}>
-                <Sports sx={{ mr: .75, color: themeColors.primary }} /> Skills & Attributes
+                <Sports sx={{ mr: .75, color: '#fff' }} /> Skills & Attributes
               </Typography>
 
               <Grid container spacing={3} sx={{ mt: 1 }}>
                 {skills.map(skill => {
                   const labelInfo = getSkillLabel(skill.value ?? 50)
                   return (
-                    <Grid item xs={12} sm={6} key={skill.name}>
-                      <SkillCard>
-                        <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, mb: 1.5 }}>
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      key={skill.name}
+                      sx={{ display: 'flex' }}
+                    >
+                      <SkillCard
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          minHeight: 170,
+                          maxHeight: 170
+                        }}
+                      >
+                        <CardContent
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flex: 1,
+                            p: 2.2
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
                             <Image src={skill.icon} alt="icon" width={42} height={42} />
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: themeColors.text, letterSpacing: .4 }}>
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={700}
+                              sx={{ color: themeColors.text, letterSpacing: .4, fontSize: 14 }}
+                            >
                               {skill.name}
                             </Typography>
                             <Chip
@@ -846,11 +900,13 @@ const PlayerProfileCard = () => {
                                 fontSize: 11,
                                 fontWeight: 700,
                                 background: themeColors.primaryGradient,
-                                color: '#fff'
+                                color: '#fff',
+                                height: 22
                               }}
                             />
                           </Box>
-                          <Box mt="auto">
+
+                          <Box mt="auto" sx={{ px: 1.5 /* add horizontal padding so thumb not stuck to edge */ }}>
                             <StyledSlider
                               value={skill.value ?? 50}
                               onChange={(e, v) => skill.setter(v as number)}
@@ -858,17 +914,17 @@ const PlayerProfileCard = () => {
                               max={99}
                               step={1}
                             />
-                            <Box sx={{ textAlign: "center", mt: 1.2 }}>
+                            <Box sx={{ textAlign: 'center', mt: 1 }}>
                               <Chip
                                 label={labelInfo.text}
                                 sx={{
                                   background: labelInfo.color,
                                   color: '#fff',
                                   fontWeight: 700,
-                                  fontSize: '.75rem',
-                                  px: 2,
+                                  fontSize: '.65rem',
+                                  px: 1.5,
                                   borderRadius: 2,
-                                  letterSpacing: .5
+                                  height: 22
                                 }}
                               />
                             </Box>
