@@ -40,8 +40,9 @@ export default function LandingPage() {
         backgroundImage: {
           xs: `url(${mobile.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
           sm: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          md: `url(${Newimg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          lg: `url(${Newimg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
+          md: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
+          lg: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
+          xl: `url(${Newimg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
         },
         backgroundSize: 'contain, cover',
         backgroundPosition: 'top center, top center',
