@@ -389,7 +389,7 @@ export default function LeagueDetailPage() {
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [section, setSection] = useState<'members' | 'matches' | 'results' | 'table' | 'awards'>('members');
+    const [section, setSection] = useState<'members' | 'matches' | 'results' | 'table' | 'awards'>('table');
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
