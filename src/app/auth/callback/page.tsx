@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-import dynamic from 'next/dynamic';
+import NextDynamic from 'next/dynamic'; // renamed to avoid clash
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
@@ -96,4 +96,4 @@ function CallbackClient() {
 }
 
 // Disable SSR for this page so Vercel doesn’t try to pre-render it
-export default dynamic(() => Promise.resolve(CallbackClient), { ssr: false });
+export default NextDynamic(() => Promise.resolve(CallbackClient), { ssr: false });
