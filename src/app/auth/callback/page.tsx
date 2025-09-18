@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
@@ -17,9 +19,9 @@ export default function AuthCallbackPage() {
   const [msg, setMsg] = useState('Signing you in…');
 
   useEffect(() => {
-    const token = sp?.get('token');           // fix: sp may be null
-    const error = sp?.get('error');           // fix: sp may be null
-    const next = sp?.get('next') || '/home';  // fix: sp may be null
+    const token = sp?.get('token');
+    const error = sp?.get('error');
+    const next = sp?.get('next') || '/home';
 
     if (error || !token) {
       router.replace('/');
@@ -47,7 +49,6 @@ export default function AuthCallbackPage() {
           userData = payload?.user ?? null;
         }
 
-        // Normalize to the same shape as email/password login for "user"
         const u = (userData || {}) as Record<string, unknown>;
         const normalizedUser: NormalizedUser = {
           id: (u['id'] as string) || '',
@@ -84,10 +85,8 @@ export default function AuthCallbackPage() {
           availableMatches: (Array.isArray(u['availableMatches']) ? (u['availableMatches'] as unknown[]) : []) ?? [],
         };
 
-        // Save everything: token, user, userData, isAuthenticated, sessionExpiry
         saveAuthSession(token, normalizedUser, exp, userData ?? {});
       } catch {
-        // Minimal session if fetch fails
         saveAuthSession(token, {
           id: '',
           firstName: '',
