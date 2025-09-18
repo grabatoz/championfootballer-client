@@ -16,6 +16,7 @@ import image11 from '@/Components/images/3rdpic.png';
 import image12 from '@/Components/images/4thpic.png';
 
 import { useState } from 'react';
+import AuthSocialButtons from '@/Components/AuthSocialButtons';
 
 export default function LandingPage() {
   const [showLogin, setShowLogin] = useState(true);
@@ -142,6 +143,7 @@ export default function LandingPage() {
           </Typography>
         </Box>
 
+<AuthSocialButtons/>
         {/* Auth area (right side inside top group) */}
         <Box
           sx={{

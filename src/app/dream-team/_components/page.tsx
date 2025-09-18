@@ -124,7 +124,7 @@ const DreamTeamPage = () => {
     console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('Response status:', response.status);

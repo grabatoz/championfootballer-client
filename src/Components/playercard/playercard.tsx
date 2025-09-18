@@ -16,6 +16,8 @@ import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
 
+const fallback = '/assets/cflogo2.png';
+
 // Static mapping for levels, milestone titles, colors, and point ranges
 const LEVELS = [
   { level: 1, min: 0, max: 100, title: "Rookie", color: "Green" },

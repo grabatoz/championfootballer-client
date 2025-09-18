@@ -1,35 +1,74 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
-  const { pathname } = request.nextUrl;
+const LOGIN_PATH = '/';
 
-  // Public paths that don't require authentication
-  const isPublicPath = pathname === '/' || pathname === '/terms' || pathname === '/privacy' || pathname === '/contact' || pathname === '/about';
+const PUBLIC_PATHS = [
+  '/',
+  '/auth/callback',
+  '/auth/login',
+  '/auth/register',
+  '/about',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/_next',
+  '/api',
+  '/assets',
+  '/public',
+];
 
-  // If user is logged in and tries to access auth pages, redirect to dashboard
-  if (token && (pathname === '/')) {
-    return NextResponse.redirect(new URL('/home', request.url));
+const PROTECTED_PREFIXES = [
+  '/home',
+  '/dashboard',
+  '/profile',
+  '/league',
+  '/match',
+  '/trophy-room',
+  '/world-ranking',
+  '/leader-board',
+  '/dream-team',
+];
+
+export function middleware(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+
+  // Read token from either cookie name
+  const token =
+    req.cookies.get('token')?.value ||
+    req.cookies.get('auth_token')?.value;
+
+  // If already authenticated and at root, send to /home
+  if (pathname === '/' && token) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/home';
+    url.search = ''; // clean query
+    return NextResponse.redirect(url);
   }
 
-  // If user is not logged in and tries to access protected pages, redirect to login
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // Public paths always allowed
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next();
+  }
+
+  // Protect only known private prefixes
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+
+  if (isProtected && !token) {
+    const url = req.nextUrl.clone();
+    url.pathname = LOGIN_PATH;
+    // Only attach next when not already at login/root
+    if (pathname !== LOGIN_PATH && pathname !== '/') {
+      url.searchParams.set('next', pathname + search);
+    } else {
+      url.searchParams.delete('next');
+    }
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-}; 
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|assets|public).*)'],
+};
