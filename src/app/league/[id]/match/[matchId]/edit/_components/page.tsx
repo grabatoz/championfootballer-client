@@ -698,7 +698,7 @@ export default function EditMatchPage() {
                             }
                           }}
                           renderOption={(props, option) => {
-                            const st = availabilityMap[option.id] || 'pending';
+                            // const st = availabilityMap[option.id] || 'pending';
                             // const meta = availabilityStyle(st);
                             const disabled = !canAddPlayer(option.id, option.isGuest);
                             return (
@@ -739,7 +739,7 @@ export default function EditMatchPage() {
                           }}
                           renderTags={(value, getTagProps) =>
                             value.map((opt, index) => {
-                              const st = availabilityMap[opt.id] || 'pending';
+                              // const st = availabilityMap[opt.id] || 'pending';
                               // const meta = availabilityStyle(st);
                               return (
                                 <Box
