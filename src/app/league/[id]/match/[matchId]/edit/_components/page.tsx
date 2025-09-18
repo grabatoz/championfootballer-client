@@ -19,10 +19,10 @@ interface MatchResp { id: string; homeTeamName: string; awayTeamName: string; lo
 type PlayerOption = User & { isGuest?: boolean; guestTempId?: string; team?: 'home' | 'away'; existingGuestId?: string };
 interface AvailabilityRecord { userId: string; status: 'available' | 'unavailable' | 'pending'; }
 type AvailabilityStatus = AvailabilityRecord['status'];
-interface AvailabilityEntry {
-  userId: string;
-  status?: string; // will normalize
-}
+// interface AvailabilityEntry {
+//   userId: string;
+//   status?: string; // will normalize
+// }
 interface AvailabilityApiResponse {
   success?: boolean;
   matchId?: string;
@@ -104,16 +104,11 @@ export default function EditMatchPage() {
     }
   }, [matchId, token]);
 
-  // REMOVE old isPlayerSelectable helper and ADD these helpers:
 
   // Helper: already picked in either team
-  const isAlreadyPicked = (id: string) =>
-    homeTeamUsers.some(p => p.id === id) || awayTeamUsers.some(p => p.id === id);
+  // const isAlreadyPicked = (id: string) =>
+    // homeTeamUsers.some(p => p.id === id) || awayTeamUsers.some(p => p.id === id);
 
-  // Core rule:
-  // Guests: always enabled
-  // Already picked players: stay enabled
-  // Others: only enabled if availability === 'available'
   const canAddPlayer = (id: string, isGuest?: boolean) => {
     if (isGuest) return true;
     // Only enable if marked available
@@ -704,7 +699,7 @@ export default function EditMatchPage() {
                           }}
                           renderOption={(props, option) => {
                             const st = availabilityMap[option.id] || 'pending';
-                            const meta = availabilityStyle(st);
+                            // const meta = availabilityStyle(st);
                             const disabled = !canAddPlayer(option.id, option.isGuest);
                             return (
                               <Box
@@ -745,7 +740,7 @@ export default function EditMatchPage() {
                           renderTags={(value, getTagProps) =>
                             value.map((opt, index) => {
                               const st = availabilityMap[opt.id] || 'pending';
-                              const meta = availabilityStyle(st);
+                              // const meta = availabilityStyle(st);
                               return (
                                 <Box
                                   {...getTagProps({ index })}
