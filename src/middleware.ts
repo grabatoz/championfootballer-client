@@ -36,7 +36,7 @@ export function middleware(req: NextRequest) {
   // Read token from either cookie name
   const token =
     req.cookies.get('token')?.value ||
-    req.cookies.get('auth_token')?.value;
+    req.cookies.get('token')?.value;
 
   // If already authenticated and at root, send to /home
   if (pathname === '/' && token) {

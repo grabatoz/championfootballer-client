@@ -99,22 +99,22 @@ export function clearAuthSession(): void {
   localStorage.removeItem('sessionExpiry');
 
   // legacy
-  localStorage.removeItem('auth.token');
-  localStorage.removeItem('auth.user');
-  localStorage.removeItem('auth.isAuthenticated');
-  localStorage.removeItem('auth.expiresAt');
-  localStorage.removeItem('auth.savedAt');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('expiresAt');
+  localStorage.removeItem('savedAt');
 }
 
 export function loadAuthSession(): AuthSession {
   const token =
     localStorage.getItem('token') ||
-    localStorage.getItem('auth.token') ||
+    localStorage.getItem('token') ||
     null;
 
   const userRaw =
     localStorage.getItem('user') ??
-    localStorage.getItem('auth.user') ??
+    localStorage.getItem('user') ??
     null;
 
   const userDataRaw = localStorage.getItem('userData') ?? userRaw;
@@ -132,7 +132,7 @@ export function loadAuthSession(): AuthSession {
     const t = Date.parse(sessionExpiryISO);
     if (!Number.isNaN(t)) expiresAt = Math.floor(t / 1000);
   } else {
-    const oldExp = Number(localStorage.getItem('auth.expiresAt') || 0);
+    const oldExp = Number(localStorage.getItem('expiresAt') || 0);
     if (Number.isFinite(oldExp)) expiresAt = oldExp;
   }
 
