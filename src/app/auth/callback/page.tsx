@@ -2,6 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -12,32 +13,13 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 
 function normalizeUser(data: UserData | null): NormalizedUser {
   const d = (data ?? {}) as Record<string, unknown>;
-
-  const str = (k: string, fallback = ''): string =>
-    typeof d[k] === 'string' ? (d[k] as string) : fallback;
-
-  const maybeStr = (k: string): string | null =>
-    typeof d[k] === 'string' ? (d[k] as string) : null;
-
-  const num = (k: string, fallback = 0): number => {
-    const v = d[k];
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string' && !Number.isNaN(Number(v))) return Number(v);
-    return fallback;
-  };
-
-  const arr = (k: string): unknown[] => (Array.isArray(d[k]) ? (d[k] as unknown[]) : []);
-
-  const skills =
-    typeof d['skills'] === 'object' && d['skills'] !== null
-      ? (d['skills'] as Record<string, unknown>)
-      : undefined;
-
-  const joined = arr('leagues');
-  const joinedLeagues = joined.length ? joined : arr('joinedLeagues');
-
-  const managed = arr('administeredLeagues');
-  const managedLeagues = managed.length ? managed : arr('managedLeagues');
+  const str = (k: string, fb = '') => (typeof d[k] === 'string' ? (d[k] as string) : fb);
+  const maybeStr = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : null);
+  const num = (k: string, fb = 0) => (typeof d[k] === 'number' ? (d[k] as number) : Number(d[k]) || fb);
+  const arr = (k: string) => (Array.isArray(d[k]) ? (d[k] as unknown[]) : []);
+  const skills = typeof d['skills'] === 'object' && d['skills'] !== null ? (d['skills'] as Record<string, unknown>) : undefined;
+  const joined = arr('leagues'); const joinedLeagues = joined.length ? joined : arr('joinedLeagues');
+  const managed = arr('administeredLeagues'); const managedLeagues = managed.length ? managed : arr('managedLeagues');
 
   return {
     id: str('id'),
@@ -61,9 +43,7 @@ function normalizeUser(data: UserData | null): NormalizedUser {
   };
 }
 
-interface AuthDataResponse {
-  user?: UserData;
-}
+interface AuthDataResponse { user?: UserData }
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -101,12 +81,9 @@ export default function AuthCallbackPage() {
           userData = payload.user ?? null;
         }
 
-        const normalizedUser = normalizeUser(userData);
-
-        // Save everything: token, user, userData, isAuthenticated, sessionExpiry
+        const normalizedUser: NormalizedUser = normalizeUser(userData);
         saveAuthSession(token, normalizedUser, exp, userData ?? {});
       } catch {
-        // Minimal session if fetch fails
         saveAuthSession(token, normalizeUser(null), exp, {});
       } finally {
         window.location.replace(next);
