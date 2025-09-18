@@ -1,75 +1,28 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
-import type { NormalizedUser, UserData } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-function normalizeUser(data: UserData | null): NormalizedUser {
-  const d = (data ?? {}) as Record<string, unknown>;
-  const str = (k: string, fb = '') => (typeof d[k] === 'string' ? (d[k] as string) : fb);
-  const maybeStr = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : null);
-  const num = (k: string, fb = 0) => (typeof d[k] === 'number' ? (d[k] as number) : Number(d[k]) || fb);
-  const arr = (k: string) => (Array.isArray(d[k]) ? (d[k] as unknown[]) : []);
-  const skills =
-    typeof d['skills'] === 'object' && d['skills'] !== null
-      ? (d['skills'] as Record<string, unknown>)
-      : undefined;
-  const joined = arr('leagues'); const joinedLeagues = joined.length ? joined : arr('joinedLeagues');
-  const managed = arr('administeredLeagues'); const managedLeagues = managed.length ? managed : arr('managedLeagues');
-
-  return {
-    id: str('id'),
-    firstName: str('firstName'),
-    lastName: str('lastName'),
-    email: maybeStr('email'),
-    age: typeof d['age'] === 'number' ? (d['age'] as number) : null,
-    gender: maybeStr('gender'),
-    position: str('position'),
-    positionType: str('positionType'),
-    style: str('style'),
-    preferredFoot: str('preferredFoot'),
-    shirtNumber: num('shirtNumber', 1),
-    profilePicture: maybeStr('profilePicture'),
-    skills,
-    joinedLeagues,
-    managedLeagues,
-    homeTeamMatches: arr('homeTeamMatches'),
-    awayTeamMatches: arr('awayTeamMatches'),
-    availableMatches: arr('availableMatches'),
-  };
-}
-
-interface AuthDataResponse { user?: UserData }
-
-export default function AuthCallbackClientPage() {
+export default function AuthCallbackPage() {
   const router = useRouter();
   const sp = useSearchParams();
-  const [msg, setMsg] = useState('Finalizing sign-in…');
+  const [msg, setMsg] = useState('Signing you in…');
 
   useEffect(() => {
-    const next = sp?.get('next') || '/home';
-    const token = getCookie('auth_token') || getCookie('token');
+    const token = sp.get('token');
+    const error = sp.get('error');
+    const next = sp.get('next') || '/home';
 
-    if (!token) {
+    if (error || !token) {
       router.replace('/');
       return;
     }
 
     const { exp } = decodeJwt(token);
 
-    // Refresh client-readable cookies for 7d
     const secure = window.location.protocol === 'https:';
     const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
     document.cookie = `token=${token}${attrs}`;
@@ -83,16 +36,40 @@ export default function AuthCallbackClientPage() {
           cache: 'no-store',
         });
 
-        let userData: UserData | null = null;
+        let userData: any = null;
         if (res.ok) {
-          const payload = (await res.json()) as AuthDataResponse;
-          userData = payload.user ?? null;
+          const payload = await res.json();
+          userData = payload?.user || null;
         }
 
-        const user: NormalizedUser = normalizeUser(userData);
-        saveAuthSession(token, user, exp, userData ?? {});
+        // Normalize to the same shape as email/password login for "user"
+        const u = userData || {};
+        const normalizedUser = {
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email: u.email,
+          age: u.age ?? null,
+          gender: u.gender ?? null,
+          position: u.position,
+          positionType: u.positionType,
+          style: u.style,
+          preferredFoot: u.preferredFoot,
+          shirtNumber: u.shirtNumber,
+          profilePicture: u.profilePicture,
+          skills: u.skills,
+          joinedLeagues: u.leagues ?? u.joinedLeagues ?? [],
+          managedLeagues: u.administeredLeagues ?? u.managedLeagues ?? [],
+          homeTeamMatches: u.homeTeamMatches ?? [],
+          awayTeamMatches: u.awayTeamMatches ?? [],
+          availableMatches: u.availableMatches ?? [],
+        };
+
+        // Save everything: token, user, userData, isAuthenticated, sessionExpiry
+        saveAuthSession(token, normalizedUser, exp, userData);
       } catch {
-        saveAuthSession(token, normalizeUser(null), exp, {});
+        // Minimal session if fetch fails
+        saveAuthSession(token, {}, exp, {});
       } finally {
         window.location.replace(next);
       }
