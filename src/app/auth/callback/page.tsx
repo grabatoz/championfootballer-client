@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-import NextDynamic from 'next/dynamic'; // renamed to avoid clash
+import NextDynamic from 'next/dynamic'; // avoid name clash with export const dynamic
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
@@ -18,7 +18,10 @@ function normalizeUser(data: UserData | null): NormalizedUser {
   const maybeStr = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : null);
   const num = (k: string, fb = 0) => (typeof d[k] === 'number' ? (d[k] as number) : Number(d[k]) || fb);
   const arr = (k: string) => (Array.isArray(d[k]) ? (d[k] as unknown[]) : []);
-  const skills = typeof d['skills'] === 'object' && d['skills'] !== null ? (d['skills'] as Record<string, unknown>) : undefined;
+  const skills =
+    typeof d['skills'] === 'object' && d['skills'] !== null
+      ? (d['skills'] as Record<string, unknown>)
+      : undefined;
   const joined = arr('leagues'); const joinedLeagues = joined.length ? joined : arr('joinedLeagues');
   const managed = arr('administeredLeagues'); const managedLeagues = managed.length ? managed : arr('managedLeagues');
 
@@ -95,5 +98,4 @@ function CallbackClient() {
   return <p style={{ padding: 16 }}>{msg}</p>;
 }
 
-// Disable SSR for this page so Vercel doesn’t try to pre-render it
 export default NextDynamic(() => Promise.resolve(CallbackClient), { ssr: false });
