@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
@@ -45,7 +46,7 @@ function normalizeUser(data: UserData | null): NormalizedUser {
 
 interface AuthDataResponse { user?: UserData }
 
-export default function AuthCallbackPage() {
+function CallbackClient() {
   const router = useRouter();
   const sp = useSearchParams();
   const [msg, setMsg] = useState('Signing you in…');
@@ -93,3 +94,6 @@ export default function AuthCallbackPage() {
 
   return <p style={{ padding: 16 }}>{msg}</p>;
 }
+
+// Disable SSR for this page so Vercel doesn’t try to pre-render it
+export default dynamic(() => Promise.resolve(CallbackClient), { ssr: false });
