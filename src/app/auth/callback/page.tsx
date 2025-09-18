@@ -2,15 +2,19 @@
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const fetchCache = 'force-no-store';
 
-import NextDynamic from 'next/dynamic'; // avoid name clash with export const dynamic
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
 import type { NormalizedUser, UserData } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 function normalizeUser(data: UserData | null): NormalizedUser {
   const d = (data ?? {}) as Record<string, unknown>;
@@ -49,23 +53,23 @@ function normalizeUser(data: UserData | null): NormalizedUser {
 
 interface AuthDataResponse { user?: UserData }
 
-function CallbackClient() {
+export default function AuthCallbackClientPage() {
   const router = useRouter();
   const sp = useSearchParams();
-  const [msg, setMsg] = useState('Signing you in…');
+  const [msg, setMsg] = useState('Finalizing sign-in…');
 
   useEffect(() => {
-    const token = sp?.get('token');
-    const error = sp?.get('error');
     const next = sp?.get('next') || '/home';
+    const token = getCookie('auth_token') || getCookie('token');
 
-    if (error || !token) {
+    if (!token) {
       router.replace('/');
       return;
     }
 
     const { exp } = decodeJwt(token);
 
+    // Refresh client-readable cookies for 7d
     const secure = window.location.protocol === 'https:';
     const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
     document.cookie = `token=${token}${attrs}`;
@@ -85,8 +89,8 @@ function CallbackClient() {
           userData = payload.user ?? null;
         }
 
-        const normalizedUser: NormalizedUser = normalizeUser(userData);
-        saveAuthSession(token, normalizedUser, exp, userData ?? {});
+        const user: NormalizedUser = normalizeUser(userData);
+        saveAuthSession(token, user, exp, userData ?? {});
       } catch {
         saveAuthSession(token, normalizeUser(null), exp, {});
       } finally {
@@ -97,5 +101,3 @@ function CallbackClient() {
 
   return <p style={{ padding: 16 }}>{msg}</p>;
 }
-
-export default NextDynamic(() => Promise.resolve(CallbackClient), { ssr: false });
