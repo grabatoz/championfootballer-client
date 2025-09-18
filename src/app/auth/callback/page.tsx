@@ -68,21 +68,21 @@ export default function AuthCallbackPage() {
   const [msg, setMsg] = useState('Signing you in…');
 
   useEffect(() => {
-    const token = sp.get('token');
-    const error = sp.get('error');
-    const next = sp.get('next') || '/home';
+    const token = sp?.get('token');           // safe access
+    const error = sp?.get('error');           // safe access
+    const next = sp?.get('next') || '/home';  // safe access
 
     if (error || !token) {
       router.replace('/');
       return;
     }
 
-    const { exp } = decodeJwt(token);
+    const { exp } = decodeJwt(token!); // token is checked below
 
     const secure = window.location.protocol === 'https:';
     const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
     document.cookie = `token=${token}${attrs}`;
-    document.cookie = `token=${token}${attrs}`;
+    document.cookie = `auth_token=${token}${attrs}`; // fix duplicate cookie name
 
     (async () => {
       try {
