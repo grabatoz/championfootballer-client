@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt, saveAuthSession } from '@/lib/auth';
@@ -68,21 +71,21 @@ export default function AuthCallbackPage() {
   const [msg, setMsg] = useState('Signing you in…');
 
   useEffect(() => {
-    const token = sp?.get('token');           // safe access
-    const error = sp?.get('error');           // safe access
-    const next = sp?.get('next') || '/home';  // safe access
+    const token = sp?.get('token');
+    const error = sp?.get('error');
+    const next = sp?.get('next') || '/home';
 
     if (error || !token) {
       router.replace('/');
       return;
     }
 
-    const { exp } = decodeJwt(token!); // token is checked below
+    const { exp } = decodeJwt(token);
 
     const secure = window.location.protocol === 'https:';
     const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
     document.cookie = `token=${token}${attrs}`;
-    document.cookie = `auth_token=${token}${attrs}`; // fix duplicate cookie name
+    document.cookie = `auth_token=${token}${attrs}`;
 
     (async () => {
       try {

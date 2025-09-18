@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "pbs.twimg.com" }, // Twitter/X (optional)
     ],
   },
+  // remove: output: 'export',
 };
 
 export default nextConfig;
