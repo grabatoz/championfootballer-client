@@ -17,9 +17,9 @@ export default function AuthCallbackPage() {
   const [msg, setMsg] = useState('Signing you in…');
 
   useEffect(() => {
-    const token = sp.get('token');
-    const error = sp.get('error');
-    const next = sp.get('next') || '/home';
+    const token = sp?.get('token');           // fix: sp may be null
+    const error = sp?.get('error');           // fix: sp may be null
+    const next = sp?.get('next') || '/home';  // fix: sp may be null
 
     if (error || !token) {
       router.replace('/');
