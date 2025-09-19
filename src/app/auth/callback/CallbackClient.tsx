@@ -7,10 +7,6 @@ import {
   NormalizedUser, 
   UserData, 
   Skills, 
-  League, 
-  Match, 
-  User,
-  isUser, 
   isLeagueArray, 
   isMatchArray 
 } from '@/types/shared';
