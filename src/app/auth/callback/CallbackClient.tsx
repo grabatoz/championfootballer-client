@@ -96,20 +96,13 @@ function safeParseJson<T>(jsonString: string): T | null {
   }
 }
 
-export default function CallbackClient() {
+// Separate component that uses useSearchParams and is wrapped in Suspense
+function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [msg, setMsg] = useState('Signing you in…');
-  const [isClient, setIsClient] = useState(false);
-
-  // Ensure we're on the client side
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   useEffect(() => {
-    if (!isClient) return; // Don't run on server
-
     (async () => {
       try {
         console.log('[CALLBACK] Starting callback process');
@@ -270,16 +263,7 @@ export default function CallbackClient() {
         router.replace('/');
       }
     })();
-  }, [router, searchParams, isClient]);
-
-  // Show loading until client-side hydration is complete
-  if (!isClient) {
-    return (
-      <div style={{ padding: 16 }}>
-        <p>Initializing...</p>
-      </div>
-    );
-  }
+  }, [router, searchParams]);
 
   return (
     <div style={{ padding: 16 }}>
@@ -289,4 +273,8 @@ export default function CallbackClient() {
       </p>
     </div>
   );
+}
+
+export default function CallbackClient() {
+  return <CallbackHandler />;
 }
