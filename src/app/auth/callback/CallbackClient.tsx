@@ -66,9 +66,13 @@ interface RawUserData {
 }
 
 function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return m ? decodeURIComponent(m[1]) : null;
+  if (typeof window === 'undefined') return null;
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
 }
 
 function isValidSkills(obj: unknown): obj is Skills {
@@ -94,17 +98,25 @@ function safeParseJson<T>(jsonString: string): T | null {
 
 export default function CallbackClient() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const searchParams = useSearchParams();
   const [msg, setMsg] = useState('Signing you in…');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
+    if (!isClient) return; // Don't run on server
+
     (async () => {
       try {
         console.log('[CALLBACK] Starting callback process');
         
-        const tokenFromUrl = sp?.get('token') || null;
-        const error = sp?.get('error') || null;
-        const next = sp?.get('next') || '/home';
+        const tokenFromUrl = searchParams?.get('token') || null;
+        const error = searchParams?.get('error') || null;
+        const next = searchParams?.get('next') || '/home';
 
         console.log('[CALLBACK] URL params:', { 
           hasToken: !!tokenFromUrl, 
@@ -114,7 +126,7 @@ export default function CallbackClient() {
 
         if (error) {
           console.error('[CALLBACK] Auth error:', error);
-          router.replace('/?error=' + error);
+          router.replace('/?error=' + encodeURIComponent(error));
           return;
         }
 
@@ -139,11 +151,11 @@ export default function CallbackClient() {
           console.warn('[CALLBACK] Token decode failed:', e);
         }
 
-        // **PEHLE HI SET KARO DONO - COOKIES AUR LOCALSTORAGE**
+        // Set cookies and localStorage
         console.log('[CALLBACK] Setting cookies and localStorage...');
         
         // 1. Set cookies first
-        const secure = window.location.protocol === 'https:';
+        const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
         const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
         document.cookie = `token=${token}${attrs}`;
         document.cookie = `auth_token=${token}${attrs}`;
@@ -258,7 +270,16 @@ export default function CallbackClient() {
         router.replace('/');
       }
     })();
-  }, [router, sp]);
+  }, [router, searchParams, isClient]);
+
+  // Show loading until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div style={{ padding: 16 }}>
+        <p>Initializing...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 16 }}>
