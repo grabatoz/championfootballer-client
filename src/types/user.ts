@@ -146,24 +146,154 @@ export interface RegisterCredentials {
   gender?: string;
 }
 
-// Type guards for runtime type checking
-export function isUser(obj: any): obj is User {
-  return obj && typeof obj.id === 'string' && typeof obj.email === 'string';
+// Type guards for runtime type checking - NO MORE ANY!
+export function isUser(obj: unknown): obj is User {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as User).id === 'string' &&
+    typeof (obj as User).email === 'string' &&
+    typeof (obj as User).firstName === 'string' &&
+    typeof (obj as User).lastName === 'string'
+  );
 }
 
-export function isLeague(obj: any): obj is League {
-  return obj && typeof obj.id === 'string' && typeof obj.name === 'string';
+export function isLeague(obj: unknown): obj is League {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as League).id === 'string' &&
+    typeof (obj as League).name === 'string' &&
+    typeof (obj as League).inviteCode === 'string' &&
+    typeof (obj as League).active === 'boolean'
+  );
 }
 
-export function isMatch(obj: any): obj is Match {
-  return obj && typeof obj.id === 'string' && typeof obj.date === 'string';
+export function isMatch(obj: unknown): obj is Match {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as Match).id === 'string' &&
+    typeof (obj as Match).date === 'string' &&
+    typeof (obj as Match).location === 'string' &&
+    typeof (obj as Match).status === 'string'
+  );
 }
 
-// Utility type for API responses
-export interface ApiResponse<T = any> {
+export function isSkills(obj: unknown): obj is Skills {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as Skills).dribbling === 'number' &&
+    typeof (obj as Skills).shooting === 'number' &&
+    typeof (obj as Skills).passing === 'number' &&
+    typeof (obj as Skills).pace === 'number' &&
+    typeof (obj as Skills).defending === 'number' &&
+    typeof (obj as Skills).physical === 'number'
+  );
+}
+
+export function isNormalizedUser(obj: unknown): obj is NormalizedUser {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as NormalizedUser).id === 'string' &&
+    typeof (obj as NormalizedUser).firstName === 'string' &&
+    typeof (obj as NormalizedUser).lastName === 'string' &&
+    typeof (obj as NormalizedUser).position === 'string' &&
+    typeof (obj as NormalizedUser).positionType === 'string' &&
+    isSkills((obj as NormalizedUser).skills) &&
+    Array.isArray((obj as NormalizedUser).joinedLeagues) &&
+    Array.isArray((obj as NormalizedUser).managedLeagues)
+  );
+}
+
+export function isUserData(obj: unknown): obj is UserData {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    Array.isArray((obj as UserData).joinedLeagues) &&
+    Array.isArray((obj as UserData).managedLeagues) &&
+    Array.isArray((obj as UserData).homeTeamMatches) &&
+    Array.isArray((obj as UserData).awayTeamMatches) &&
+    Array.isArray((obj as UserData).availableMatches)
+  );
+}
+
+// Utility types for API responses - NO MORE ANY!
+export interface ApiResponse<T = User | League | Match | UserData> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
   token?: string;
+}
+
+// Specific API response types for better type safety
+export interface UserApiResponse extends ApiResponse<User> {
+  data?: User;
+}
+
+export interface LeagueApiResponse extends ApiResponse<League> {
+  data?: League;
+}
+
+export interface MatchApiResponse extends ApiResponse<Match> {
+  data?: Match;
+}
+
+export interface UserDataApiResponse extends ApiResponse<UserData> {
+  data?: UserData;
+}
+
+export interface LeaguesListApiResponse extends ApiResponse<League[]> {
+  data?: League[];
+}
+
+export interface MatchesListApiResponse extends ApiResponse<Match[]> {
+  data?: Match[];
+}
+
+// Authentication specific response types
+export interface LoginApiResponse extends ApiResponse<User> {
+  token?: string;
+  data?: User;
+}
+
+export interface RegisterApiResponse extends ApiResponse<User> {
+  token?: string;
+  data?: User;
+}
+
+// Generic error response
+export interface ErrorApiResponse extends ApiResponse<never> {
+  success: false;
+  error: string;
+  message?: string;
+}
+
+// Utility functions for API response validation
+export function isSuccessApiResponse<T>(
+  response: ApiResponse<T>
+): response is ApiResponse<T> & { success: true; data: T } {
+  return response.success === true && response.data !== undefined;
+}
+
+export function isErrorApiResponse(
+  response: ApiResponse<unknown>
+): response is ErrorApiResponse {
+  return response.success === false && typeof response.error === 'string';
+}
+
+// Array validation helpers
+export function isUserArray(obj: unknown): obj is User[] {
+  return Array.isArray(obj) && obj.every(item => isUser(item));
+}
+
+export function isLeagueArray(obj: unknown): obj is League[] {
+  return Array.isArray(obj) && obj.every(item => isLeague(item));
+}
+
+export function isMatchArray(obj: unknown): obj is Match[] {
+  return Array.isArray(obj) && obj.every(item => isMatch(item));
 }
