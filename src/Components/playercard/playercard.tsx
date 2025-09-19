@@ -416,7 +416,7 @@ const PlayerCard = ({
             sx={{ textTransform: 'uppercase' }}
             color='#fff'
           >
-            {name}
+            {calculateSkillsPercentage(stats)} {name}
           </Typography>
           <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
         </Box>
@@ -465,13 +465,11 @@ const PlayerCard = ({
             bgcolor: '#fff',
             width: '30%',
             mx: 'auto',
-            mt: 0.5,
+            mt: 2,
             height: '1px',
           }}
         />
-        <span className='mt-1 text-[20px] text-white font-bold'>
-        {calculateSkillsPercentage(stats)} 
-        </span>
+        
         {/* Render children (e.g. vote button) at the bottom */}
         {children && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>

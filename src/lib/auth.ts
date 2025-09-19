@@ -1,81 +1,4 @@
-<<<<<<< HEAD
-export interface League {
-  id: string;
-  name: string;
-  description?: string;
-  location?: string;
-  maxTeams?: number;
-  currentTeams?: number;
-  status?: 'active' | 'inactive' | 'completed';
-  createdAt?: string;
-  updatedAt?: string;
-  adminId?: string;
-  // Additional fields to match user.ts
-  image?: string;
-  inviteCode?: string;
-  members?: User[];
-  administrators?: User[];
-  matches?: Match[];
-  active?: boolean;
-  maxGames?: number;
-  showPoints?: boolean;
-}
-
-export interface Match {
-  id: string;
-  date: string;
-  location: string;
-  status: string;
-  homeTeamName: string;
-  awayTeamName: string;
-  homeTeamGoals?: number;
-  awayTeamGoals?: number;
-  availableUsers?: User[];
-  homeTeamUsers?: User[];
-  awayTeamUsers?: User[];
-  end: string;
-  active: boolean;
-  awayTeamImage: string;
-  homeTeamImage: string;
-  // Optional additional fields for compatibility
-  homeTeamId?: string;
-  awayTeamId?: string;
-  leagueId?: string;
-  scheduledAt?: string;
-  homeScore?: number;
-  awayScore?: number;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Add User interface for circular reference
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  age?: number;
-  gender?: string;
-  position?: string;
-  positionType?: string;
-  style?: string;
-  preferredFoot?: string;
-  shirtNumber?: string;
-  profilePicture?: string | null;
-  skills?: Skills;
-  joinedLeagues?: League[];
-  managedLeagues?: League[];
-  homeTeamMatches?: Match[];
-  awayTeamMatches?: Match[];
-  availableMatches?: Match[];
-  guestMatch?: Match | null;
-}
-
-export interface Skills {
-=======
 export interface SkillScores {
->>>>>>> parent of 06aa9e0 (*)
   dribbling: number;
   shooting: number;
   passing: number;
@@ -95,16 +18,6 @@ export interface NormalizedUser {
   positionType: string;
   style: string;
   preferredFoot: string;
-<<<<<<< HEAD
-  shirtNumber: string;
-  profilePicture: string | null;
-  skills: Skills;
-  joinedLeagues: League[];
-  managedLeagues: League[];
-  homeTeamMatches: Match[];
-  awayTeamMatches: Match[];
-  availableMatches: Match[];
-=======
   shirtNumber: number;
   profilePicture?: string | null;
   skills?: SkillScores | Record<string, unknown>;
@@ -113,7 +26,6 @@ export interface NormalizedUser {
   homeTeamMatches?: unknown[];
   awayTeamMatches?: unknown[];
   availableMatches?: unknown[];
->>>>>>> parent of 06aa9e0 (*)
 }
 
 export type UserData = Record<string, unknown>;

@@ -3,16 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt } from '@/lib/auth';
-<<<<<<< HEAD
-import { 
-  NormalizedUser, 
-  UserData, 
-  Skills, 
-  isLeagueArray, 
-  isMatchArray 
-} from '@/types/shared';
-=======
->>>>>>> parent of 06aa9e0 (*)
+import { Skills } from '@/types/user';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -124,13 +115,9 @@ function CallbackHandler() {
         console.log('[CALLBACK] Current URL:', window.location.href);
 
         if (error) {
-<<<<<<< HEAD
-          console.error('[CALLBACK] Auth error:', error);
-          router.replace('/?error=' + encodeURIComponent(error));
-=======
+
           console.error('[CALLBACK] Auth error from URL:', error);
           router.replace('/?error=' + error);
->>>>>>> parent of 06aa9e0 (*)
           return;
         }
 
@@ -162,16 +149,8 @@ function CallbackHandler() {
           console.warn('[CALLBACK] Token decode failed:', e);
         }
 
-<<<<<<< HEAD
-        // Set cookies and localStorage
-        console.log('[CALLBACK] Setting cookies and localStorage...');
-        
-        // 1. Set cookies first
-        const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-=======
         // Set client cookies
         const secure = window.location.protocol === 'https:';
->>>>>>> parent of 06aa9e0 (*)
         const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
         document.cookie = `token=${token}${attrs}`;
         document.cookie = `auth_token=${token}${attrs}`;
@@ -179,13 +158,9 @@ function CallbackHandler() {
 
         setMsg('Loading your profile…');
 
-<<<<<<< HEAD
-        // 3. Fetch user data
-        let userFromApi: RawUserData | null = null;
-=======
+
         // Fetch user data from API
         let userFromApi: any = null;
->>>>>>> parent of 06aa9e0 (*)
         if (API) {
           try {
             console.log('[CALLBACK] Fetching user data from:', `${API}/auth/data`);
@@ -214,58 +189,15 @@ function CallbackHandler() {
         } else {
           console.error('[CALLBACK] No API URL configured');
         }
-
-<<<<<<< HEAD
-        // 4. Normalize user data with proper defaults for social login
-        const u = userFromApi || {};
-        
-        // Validate and normalize skills
-        const defaultSkills: Skills = {
-          dribbling: 50,
-          shooting: 50,
-          passing: 50,
-          pace: 50,
-          defending: 50,
-          physical: 50
-        };
-        
-        const skills = isValidSkills(u.skills) ? u.skills : defaultSkills;
-        
-        // Validate and normalize arrays
-        const joinedLeagues = isLeagueArray(u.joinedLeagues) ? u.joinedLeagues : 
-                             isLeagueArray(u.leagues) ? u.leagues : [];
-        const managedLeagues = isLeagueArray(u.managedLeagues) ? u.managedLeagues : 
-                              isLeagueArray(u.administeredLeagues) ? u.administeredLeagues : [];
-        const homeTeamMatches = isMatchArray(u.homeTeamMatches) ? u.homeTeamMatches : [];
-        const awayTeamMatches = isMatchArray(u.awayTeamMatches) ? u.awayTeamMatches : [];
-        const availableMatches = isMatchArray(u.availableMatches) ? u.availableMatches : [];
-
-        const normalizedUser: NormalizedUser = {
-=======
         // Normalize user data
         const u = (userFromApi || {}) as Record<string, any>;
         const normalizedUser = {
->>>>>>> parent of 06aa9e0 (*)
           id: u.id || '',
           firstName: u.firstName || '',
           lastName: u.lastName || '',
           email: typeof u.email === 'string' ? u.email : null,
           age: typeof u.age === 'number' ? u.age : null,
           gender: typeof u.gender === 'string' ? u.gender : null,
-<<<<<<< HEAD
-          position: u.position || 'Goalkeeper (GK)',
-          positionType: u.positionType || 'Goalkeeper',
-          style: u.style || 'Axe',
-          preferredFoot: u.preferredFoot || 'Right',
-          shirtNumber: String(u.shirtNumber || '1'),
-          profilePicture: typeof u.profilePicture === 'string' ? u.profilePicture : null,
-          skills,
-          joinedLeagues,
-          managedLeagues,
-          homeTeamMatches,
-          awayTeamMatches,
-          availableMatches,
-=======
           position: u.position || '',
           positionType: u.positionType || '',
           style: u.style || '',
@@ -285,7 +217,6 @@ function CallbackHandler() {
           homeTeamMatches: u.homeTeamMatches ?? [],
           awayTeamMatches: u.awayTeamMatches ?? [],
           availableMatches: u.availableMatches ?? [],
->>>>>>> parent of 06aa9e0 (*)
         };
 
         const userData = {
