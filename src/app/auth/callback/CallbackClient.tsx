@@ -3,14 +3,97 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt } from '@/lib/auth';
-import type { NormalizedUser, UserData } from '@/lib/auth';
+import { 
+  NormalizedUser, 
+  UserData, 
+  Skills, 
+  League, 
+  Match, 
+  User,
+  isUser, 
+  isLeagueArray, 
+  isMatchArray 
+} from '@/types/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+// Type for API response payload
+interface AuthDataResponse {
+  user?: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    age?: number;
+    gender?: string;
+    position?: string;
+    positionType?: string;
+    style?: string;
+    preferredFoot?: string;
+    shirtNumber?: string | number;
+    profilePicture?: string;
+    skills?: Skills;
+    joinedLeagues?: unknown[];
+    managedLeagues?: unknown[];
+    administeredLeagues?: unknown[];
+    leagues?: unknown[];
+    homeTeamMatches?: unknown[];
+    awayTeamMatches?: unknown[];
+    availableMatches?: unknown[];
+  };
+  success?: boolean;
+  message?: string;
+}
+
+// Type for raw user data from API
+interface RawUserData {
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  age?: number;
+  gender?: string;
+  position?: string;
+  positionType?: string;
+  style?: string;
+  preferredFoot?: string;
+  shirtNumber?: string | number;
+  profilePicture?: string;
+  skills?: Skills | Record<string, unknown>;
+  joinedLeagues?: unknown[];
+  managedLeagues?: unknown[];
+  administeredLeagues?: unknown[];
+  leagues?: unknown[];
+  homeTeamMatches?: unknown[];
+  awayTeamMatches?: unknown[];
+  availableMatches?: unknown[];
+}
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return m ? decodeURIComponent(m[1]) : null;
+}
+
+function isValidSkills(obj: unknown): obj is Skills {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof (obj as Skills).dribbling === 'number' &&
+    typeof (obj as Skills).shooting === 'number' &&
+    typeof (obj as Skills).passing === 'number' &&
+    typeof (obj as Skills).pace === 'number' &&
+    typeof (obj as Skills).defending === 'number' &&
+    typeof (obj as Skills).physical === 'number'
+  );
+}
+
+function safeParseJson<T>(jsonString: string): T | null {
+  try {
+    return JSON.parse(jsonString) as T;
+  } catch {
+    return null;
+  }
 }
 
 export default function CallbackClient() {
@@ -78,7 +161,7 @@ export default function CallbackClient() {
         setMsg('Loading your profile…');
 
         // 3. Fetch user data
-        let userFromApi: any = null;
+        let userFromApi: RawUserData | null = null;
         if (API) {
           try {
             const res = await fetch(`${API}/auth/data`, {
@@ -88,7 +171,7 @@ export default function CallbackClient() {
             });
             
             if (res.ok) {
-              const payload = await res.json();
+              const payload = safeParseJson<AuthDataResponse>(await res.text());
               userFromApi = payload?.user ?? null;
               console.log('[CALLBACK] ✓ User data fetched');
             } else {
@@ -100,7 +183,29 @@ export default function CallbackClient() {
         }
 
         // 4. Normalize user data with proper defaults for social login
-        const u = (userFromApi || {}) as Record<string, any>;
+        const u = userFromApi || {};
+        
+        // Validate and normalize skills
+        const defaultSkills: Skills = {
+          dribbling: 50,
+          shooting: 50,
+          passing: 50,
+          pace: 50,
+          defending: 50,
+          physical: 50
+        };
+        
+        const skills = isValidSkills(u.skills) ? u.skills : defaultSkills;
+        
+        // Validate and normalize arrays
+        const joinedLeagues = isLeagueArray(u.joinedLeagues) ? u.joinedLeagues : 
+                             isLeagueArray(u.leagues) ? u.leagues : [];
+        const managedLeagues = isLeagueArray(u.managedLeagues) ? u.managedLeagues : 
+                              isLeagueArray(u.administeredLeagues) ? u.administeredLeagues : [];
+        const homeTeamMatches = isMatchArray(u.homeTeamMatches) ? u.homeTeamMatches : [];
+        const awayTeamMatches = isMatchArray(u.awayTeamMatches) ? u.awayTeamMatches : [];
+        const availableMatches = isMatchArray(u.availableMatches) ? u.availableMatches : [];
+
         const normalizedUser: NormalizedUser = {
           id: u.id || '',
           firstName: u.firstName || '',
@@ -112,23 +217,14 @@ export default function CallbackClient() {
           positionType: u.positionType || 'Goalkeeper',
           style: u.style || 'Axe',
           preferredFoot: u.preferredFoot || 'Right',
-          shirtNumber: String(u.shirtNumber || '1'), // Ensure it's always a string
+          shirtNumber: String(u.shirtNumber || '1'),
           profilePicture: typeof u.profilePicture === 'string' ? u.profilePicture : null,
-          skills: typeof u.skills === 'object' && u.skills !== null ? u.skills : {
-            dribbling: 50,
-            shooting: 50,
-            passing: 50,
-            pace: 50,
-            defending: 50,
-            physical: 50
-          },
-          joinedLeagues: Array.isArray(u.joinedLeagues) ? u.joinedLeagues : 
-                        Array.isArray(u.leagues) ? u.leagues : [],
-          managedLeagues: Array.isArray(u.managedLeagues) ? u.managedLeagues : 
-                         Array.isArray(u.administeredLeagues) ? u.administeredLeagues : [],
-          homeTeamMatches: Array.isArray(u.homeTeamMatches) ? u.homeTeamMatches : [],
-          awayTeamMatches: Array.isArray(u.awayTeamMatches) ? u.awayTeamMatches : [],
-          availableMatches: Array.isArray(u.availableMatches) ? u.availableMatches : [],
+          skills,
+          joinedLeagues,
+          managedLeagues,
+          homeTeamMatches,
+          awayTeamMatches,
+          availableMatches,
         };
 
         const userData: UserData = {

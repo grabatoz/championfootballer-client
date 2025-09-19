@@ -1,12 +1,3 @@
-export interface SkillScores {
-  dribbling: number;
-  shooting: number;
-  passing: number;
-  pace: number;
-  defending: number;
-  physical: number;
-}
-
 export interface League {
   id: string;
   name: string;
@@ -18,31 +9,75 @@ export interface League {
   createdAt?: string;
   updatedAt?: string;
   adminId?: string;
+  // Additional fields to match user.ts
+  image?: string;
+  inviteCode?: string;
+  members?: User[];
+  administrators?: User[];
+  matches?: Match[];
+  active?: boolean;
+  maxGames?: number;
+  showPoints?: boolean;
 }
 
 export interface Match {
   id: string;
-  homeTeamId: string;
-  awayTeamId: string;
-  leagueId: string;
-  scheduledAt: string;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  date: string;
+  location: string;
+  status: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeTeamGoals?: number;
+  awayTeamGoals?: number;
+  availableUsers?: User[];
+  homeTeamUsers?: User[];
+  awayTeamUsers?: User[];
+  end: string;
+  active: boolean;
+  awayTeamImage: string;
+  homeTeamImage: string;
+  // Optional additional fields for compatibility
+  homeTeamId?: string;
+  awayTeamId?: string;
+  leagueId?: string;
+  scheduledAt?: string;
   homeScore?: number;
   awayScore?: number;
-  location?: string;
   description?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface Team {
+// Add User interface for circular reference
+export interface User {
   id: string;
-  name: string;
-  leagueId: string;
-  captainId?: string;
-  players?: string[]; // User IDs
-  createdAt?: string;
-  updatedAt?: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  age?: number;
+  gender?: string;
+  position?: string;
+  positionType?: string;
+  style?: string;
+  preferredFoot?: string;
+  shirtNumber?: string;
+  profilePicture?: string | null;
+  skills?: Skills;
+  joinedLeagues?: League[];
+  managedLeagues?: League[];
+  homeTeamMatches?: Match[];
+  awayTeamMatches?: Match[];
+  availableMatches?: Match[];
+  guestMatch?: Match | null;
+}
+
+export interface Skills {
+  dribbling: number;
+  shooting: number;
+  passing: number;
+  pace: number;
+  defending: number;
+  physical: number;
 }
 
 export interface NormalizedUser {
@@ -58,7 +93,7 @@ export interface NormalizedUser {
   preferredFoot: string;
   shirtNumber: string;
   profilePicture: string | null;
-  skills: SkillScores;
+  skills: Skills;
   joinedLeagues: League[];
   managedLeagues: League[];
   homeTeamMatches: Match[];
