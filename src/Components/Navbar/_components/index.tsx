@@ -23,7 +23,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { logout, initializeFromStorage } from '@/lib/features/authSlice';
+import { logout, initializeFromStorage, forceLogout } from '@/lib/features/authSlice';
 import cflogo from '@/Components/images/champion football logo 3.png';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -331,13 +331,15 @@ export default function NavigationBar() {
 
   const handleSignOut = async () => {
     try {
-      await dispatch(logout());
+      await dispatch(logout()).unwrap();
       // Clear notifications on logout
       setNotifications([]);
       setUnreadCount(0);
       router.push('/');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Logout failed:', error);
+      // Force logout even if API fails
+      dispatch(forceLogout());
     }
   };
 

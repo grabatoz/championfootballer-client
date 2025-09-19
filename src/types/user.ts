@@ -78,4 +78,32 @@ export interface Match {
   active: boolean;
   awayTeamImage : string;
   homeTeamImage : string;
-} 
+}
+
+export interface NormalizedUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  age: number | null;
+  gender: string | null;
+  position: string;
+  positionType: string;
+  style: string;
+  preferredFoot: string;
+  shirtNumber: string; // Change from number to string
+  profilePicture: string | null;
+  skills: {
+    dribbling: number;
+    shooting: number;
+    passing: number;
+    pace: number;
+    defending: number;
+    physical: number;
+  };
+  joinedLeagues: any[];
+  managedLeagues: any[];
+  homeTeamMatches: any[];
+  awayTeamMatches: any[];
+  availableMatches: any[];
+}

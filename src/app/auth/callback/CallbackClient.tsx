@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeJwt } from '@/lib/auth';
+import type { NormalizedUser, UserData } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -21,7 +22,6 @@ export default function CallbackClient() {
     (async () => {
       try {
         console.log('[CALLBACK] Starting callback process');
-        console.log('[CALLBACK] API URL:', API);
         
         const tokenFromUrl = sp?.get('token') || null;
         const error = sp?.get('error') || null;
@@ -29,33 +29,25 @@ export default function CallbackClient() {
 
         console.log('[CALLBACK] URL params:', { 
           hasToken: !!tokenFromUrl, 
-          tokenPreview: tokenFromUrl?.substring(0, 50) + '...', 
           error, 
           next 
         });
-        console.log('[CALLBACK] Current URL:', window.location.href);
 
         if (error) {
-          console.error('[CALLBACK] Auth error from URL:', error);
+          console.error('[CALLBACK] Auth error:', error);
           router.replace('/?error=' + error);
           return;
         }
 
         const token = tokenFromUrl || getCookie('auth_token') || getCookie('token');
         
-        console.log('[CALLBACK] Token sources:', {
-          fromUrl: !!tokenFromUrl,
-          fromCookie: !!(getCookie('auth_token') || getCookie('token')),
-          finalToken: !!token
-        });
-
         if (!token) {
-          console.error('[CALLBACK] No token found anywhere');
+          console.error('[CALLBACK] No token found');
           router.replace('/');
           return;
         }
 
-        console.log('[CALLBACK] Using token:', token.substring(0, 50) + '...');
+        console.log('[CALLBACK] Processing token...');
 
         // Decode exp safely
         let exp = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
@@ -63,66 +55,64 @@ export default function CallbackClient() {
           const d = decodeJwt(token);
           if (d?.exp && typeof d.exp === 'number') {
             exp = d.exp;
-            console.log('[CALLBACK] Token expires at:', new Date(exp * 1000));
           }
         } catch (e) {
           console.warn('[CALLBACK] Token decode failed:', e);
         }
 
-        // Set client cookies
+        // **PEHLE HI SET KARO DONO - COOKIES AUR LOCALSTORAGE**
+        console.log('[CALLBACK] Setting cookies and localStorage...');
+        
+        // 1. Set cookies first
         const secure = window.location.protocol === 'https:';
         const attrs = `; Path=/; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`;
         document.cookie = `token=${token}${attrs}`;
         document.cookie = `auth_token=${token}${attrs}`;
-        console.log('[CALLBACK] Client cookies set');
+        console.log('[CALLBACK] ✓ Cookies set');
+
+        // 2. Set localStorage authentication immediately
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('sessionExpiry', new Date(exp * 1000).toISOString());
+        console.log('[CALLBACK] ✓ Basic auth state set');
 
         setMsg('Loading your profile…');
 
-        // Fetch user data from API
+        // 3. Fetch user data
         let userFromApi: any = null;
         if (API) {
           try {
-            console.log('[CALLBACK] Fetching user data from:', `${API}/auth/data`);
             const res = await fetch(`${API}/auth/data`, {
               headers: { Authorization: `Bearer ${token}` },
               cache: 'no-store',
               mode: 'cors',
             });
-            console.log('[CALLBACK] Auth data response status:', res.status);
             
             if (res.ok) {
               const payload = await res.json();
               userFromApi = payload?.user ?? null;
-              console.log('[CALLBACK] User data fetched successfully:', {
-                hasUser: !!userFromApi,
-                userId: userFromApi?.id,
-                userEmail: userFromApi?.email
-              });
+              console.log('[CALLBACK] ✓ User data fetched');
             } else {
-              const errorText = await res.text();
-              console.error('[CALLBACK] Auth data fetch failed:', res.status, errorText);
+              console.error('[CALLBACK] Failed to fetch user data:', res.status);
             }
           } catch (e) {
-            console.error('[CALLBACK] Network error fetching user data:', e);
+            console.error('[CALLBACK] Network error:', e);
           }
-        } else {
-          console.error('[CALLBACK] No API URL configured');
         }
 
-        // Normalize user data
+        // 4. Normalize user data with proper defaults for social login
         const u = (userFromApi || {}) as Record<string, any>;
-        const normalizedUser = {
+        const normalizedUser: NormalizedUser = {
           id: u.id || '',
           firstName: u.firstName || '',
           lastName: u.lastName || '',
           email: typeof u.email === 'string' ? u.email : null,
           age: typeof u.age === 'number' ? u.age : null,
           gender: typeof u.gender === 'string' ? u.gender : null,
-          position: u.position || '',
-          positionType: u.positionType || '',
-          style: u.style || '',
-          preferredFoot: u.preferredFoot || '',
-          shirtNumber: typeof u.shirtNumber === 'string' ? u.shirtNumber : '',
+          position: u.position || 'Goalkeeper (GK)',
+          positionType: u.positionType || 'Goalkeeper',
+          style: u.style || 'Axe',
+          preferredFoot: u.preferredFoot || 'Right',
+          shirtNumber: String(u.shirtNumber || '1'), // Ensure it's always a string
           profilePicture: typeof u.profilePicture === 'string' ? u.profilePicture : null,
           skills: typeof u.skills === 'object' && u.skills !== null ? u.skills : {
             dribbling: 50,
@@ -132,14 +122,16 @@ export default function CallbackClient() {
             defending: 50,
             physical: 50
           },
-          joinedLeagues: Array.isArray(u.leagues) ? u.leagues : (u.joinedLeagues ?? []),
-          managedLeagues: Array.isArray(u.administeredLeagues) ? u.administeredLeagues : (u.managedLeagues ?? []),
-          homeTeamMatches: u.homeTeamMatches ?? [],
-          awayTeamMatches: u.awayTeamMatches ?? [],
-          availableMatches: u.availableMatches ?? [],
+          joinedLeagues: Array.isArray(u.joinedLeagues) ? u.joinedLeagues : 
+                        Array.isArray(u.leagues) ? u.leagues : [],
+          managedLeagues: Array.isArray(u.managedLeagues) ? u.managedLeagues : 
+                         Array.isArray(u.administeredLeagues) ? u.administeredLeagues : [],
+          homeTeamMatches: Array.isArray(u.homeTeamMatches) ? u.homeTeamMatches : [],
+          awayTeamMatches: Array.isArray(u.awayTeamMatches) ? u.awayTeamMatches : [],
+          availableMatches: Array.isArray(u.availableMatches) ? u.availableMatches : [],
         };
 
-        const userData = {
+        const userData: UserData = {
           joinedLeagues: normalizedUser.joinedLeagues,
           managedLeagues: normalizedUser.managedLeagues,
           homeTeamMatches: normalizedUser.homeTeamMatches,
@@ -148,60 +140,29 @@ export default function CallbackClient() {
           guestMatch: null,
         };
 
-        console.log('[CALLBACK] Normalized user data:', {
-          id: normalizedUser.id,
-          email: normalizedUser.email,
-          hasJoinedLeagues: normalizedUser.joinedLeagues.length > 0,
-          hasManagedLeagues: normalizedUser.managedLeagues.length > 0
-        });
-
-        console.log('[CALLBACK] Writing to localStorage...');
-
-        // Check if localStorage is available
-        if (typeof Storage === 'undefined') {
-          console.error('[CALLBACK] localStorage not available');
-          router.replace(next);
-          return;
-        }
-
-        // Force write the 4 localStorage keys
+        // 5. Save complete user data to localStorage
         try {
-          const userJson = JSON.stringify(normalizedUser);
-          const userDataJson = JSON.stringify(userData);
-          const sessionExpiry = new Date(exp * 1000).toISOString();
-
-          console.log('[CALLBACK] Writing localStorage items...');
+          localStorage.setItem('user', JSON.stringify(normalizedUser));
+          localStorage.setItem('userData', JSON.stringify(userData));
+          console.log('[CALLBACK] ✓ Complete user data saved');
           
-          localStorage.setItem('user', userJson);
-          console.log('[CALLBACK] ✓ user written');
-          
-          localStorage.setItem('userData', userDataJson);
-          console.log('[CALLBACK] ✓ userData written');
-          
-          localStorage.setItem('isAuthenticated', 'true');
-          console.log('[CALLBACK] ✓ isAuthenticated written');
-          
-          localStorage.setItem('sessionExpiry', sessionExpiry);
-          console.log('[CALLBACK] ✓ sessionExpiry written');
-          
-          console.log('[CALLBACK] All localStorage keys written successfully');
-          
-          // Verify what was actually written
-          console.log('[CALLBACK] Verification check:');
-          console.log('- user length:', localStorage.getItem('user')?.length || 0);
-          console.log('- userData length:', localStorage.getItem('userData')?.length || 0);
+          // Verify everything is set
+          console.log('[CALLBACK] Final verification:');
+          console.log('- Cookies set:', !!(getCookie('token') || getCookie('auth_token')));
+          console.log('- localStorage user:', !!localStorage.getItem('user'));
+          console.log('- localStorage userData:', !!localStorage.getItem('userData'));
           console.log('- isAuthenticated:', localStorage.getItem('isAuthenticated'));
-          console.log('- sessionExpiry:', localStorage.getItem('sessionExpiry'));
           
         } catch (e) {
-          console.error('[CALLBACK] localStorage write failed:', e);
+          console.error('[CALLBACK] localStorage save failed:', e);
         }
 
-        console.log('[CALLBACK] Redirecting to:', next);
+        // 6. Navigate immediately
+        console.log('[CALLBACK] ✓ Redirecting to:', next);
         router.replace(next);
 
       } catch (error) {
-        console.error('[CALLBACK] Fatal callback error:', error);
+        console.error('[CALLBACK] Fatal error:', error);
         router.replace('/');
       }
     })();
@@ -211,7 +172,7 @@ export default function CallbackClient() {
     <div style={{ padding: 16 }}>
       <p>{msg}</p>
       <p style={{ fontSize: 12, color: '#666' }}>
-        Check browser console for debug logs...
+        Setting up your session...
       </p>
     </div>
   );

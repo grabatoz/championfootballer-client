@@ -155,12 +155,63 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
     if (typeof window !== 'undefined') {
-      // Clear all session data
+      // Clear ALL cookies (both possible token names)
       Cookies.remove('token', { path: '/' });
+      Cookies.remove('auth_token', { path: '/' });
+      
+      // Also try removing with different path configurations
+      Cookies.remove('token');
+      Cookies.remove('auth_token');
+      
+      // Clear ALL localStorage authentication data
       localStorage.removeItem('user');
       localStorage.removeItem('userData');
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('sessionExpiry');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      
+      // Clear any other potential auth-related storage
+      localStorage.removeItem('userPreferences');
+      localStorage.removeItem('lastLoginTime');
+      
+      console.log('[LOGOUT] All authentication data cleared');
+      console.log('[LOGOUT] Remaining localStorage keys:', Object.keys(localStorage));
+      console.log('[LOGOUT] Remaining cookies:', document.cookie);
+    }
+    return { success: true };
+  }
+);
+
+// New force logout action
+export const forceLogout = createAsyncThunk(
+  'auth/forceLogout',
+  async () => {
+    if (typeof window !== 'undefined') {
+      // Nuclear option - clear everything auth-related
+      
+      // Clear all possible cookies
+      const allCookies = document.cookie.split(';');
+      allCookies.forEach(cookie => {
+        const [name] = cookie.split('=');
+        const cleanName = name.trim();
+        if (cleanName.includes('token') || cleanName.includes('auth') || cleanName.includes('session')) {
+          document.cookie = `${cleanName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          document.cookie = `${cleanName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+        }
+      });
+      
+      // Clear localStorage completely (only auth keys)
+      const authKeys = Object.keys(localStorage).filter(key => 
+        key.includes('auth') || 
+        key.includes('user') || 
+        key.includes('token') || 
+        key.includes('session') ||
+        key === 'isAuthenticated'
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
+      
+      console.log('[FORCE LOGOUT] Nuclear cleanup completed');
     }
     return { success: true };
   }
@@ -185,6 +236,15 @@ const authSlice = createSlice({
       state.loading = sessionState.loading;
       state.error = sessionState.error;
     },
+    // Add a manual logout action for immediate state clearing
+    clearAuthState: (state) => {
+      state.isAuthenticated = false;
+      state.user = null;
+      state.userData = initialState.userData;
+      state.token = null;
+      state.error = null;
+      state.loading = false;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -273,23 +333,46 @@ const authSlice = createSlice({
         state.userData = initialState.userData;
         state.error = action.error.message || 'Authentication check failed';
       })
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(logout.fulfilled, (state) => {
+        // Reset entire state to initial values
         state.isAuthenticated = false;
         state.user = null;
         state.userData = initialState.userData;
         state.token = null;
         state.error = null;
-        // Clear all session data
+        state.loading = false;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Logout failed';
+        
+        // Even if logout API fails, clear local data
         if (typeof window !== 'undefined') {
           Cookies.remove('token', { path: '/' });
+          Cookies.remove('auth_token', { path: '/' });
           localStorage.removeItem('user');
           localStorage.removeItem('userData');
           localStorage.removeItem('isAuthenticated');
           localStorage.removeItem('sessionExpiry');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
         }
+      })
+      // Handle force logout
+      .addCase(forceLogout.fulfilled, (state) => {
+        // Complete state reset
+        state.isAuthenticated = false;
+        state.user = null;
+        state.userData = initialState.userData;
+        state.token = null;
+        state.error = null;
+        state.loading = false;
       });
   },
 });
 
-export const { clearError, syncWithStorage, initializeFromStorage } = authSlice.actions;
-export default authSlice.reducer; 
+export const { clearError, syncWithStorage, initializeFromStorage, clearAuthState } = authSlice.actions;
+export default authSlice.reducer;

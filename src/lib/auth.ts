@@ -7,31 +7,79 @@ export interface SkillScores {
   physical: number;
 }
 
+export interface League {
+  id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  maxTeams?: number;
+  currentTeams?: number;
+  status?: 'active' | 'inactive' | 'completed';
+  createdAt?: string;
+  updatedAt?: string;
+  adminId?: string;
+}
+
+export interface Match {
+  id: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  leagueId: string;
+  scheduledAt: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  homeScore?: number;
+  awayScore?: number;
+  location?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  leagueId: string;
+  captainId?: string;
+  players?: string[]; // User IDs
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface NormalizedUser {
   id: string;
   firstName: string;
   lastName: string;
   email: string | null;
-  age?: number | null;
-  gender?: string | null;
+  age: number | null;
+  gender: string | null;
   position: string;
   positionType: string;
   style: string;
   preferredFoot: string;
-  shirtNumber: number;
-  profilePicture?: string | null;
-  skills?: SkillScores | Record<string, unknown>;
-  joinedLeagues?: unknown[];
-  managedLeagues?: unknown[];
-  homeTeamMatches?: unknown[];
-  awayTeamMatches?: unknown[];
-  availableMatches?: unknown[];
+  shirtNumber: string;
+  profilePicture: string | null;
+  skills: SkillScores;
+  joinedLeagues: League[];
+  managedLeagues: League[];
+  homeTeamMatches: Match[];
+  awayTeamMatches: Match[];
+  availableMatches: Match[];
 }
 
-export type UserData = Record<string, unknown>;
+export interface UserData {
+  joinedLeagues: League[];
+  managedLeagues: League[];
+  homeTeamMatches: Match[];
+  awayTeamMatches: Match[];
+  availableMatches: Match[];
+  guestMatch: Match | null;
+}
 
 export interface JwtPayload {
   exp?: number;
+  userId?: string;
+  email?: string;
+  iat?: number;
 }
 
 export interface AuthSession {
