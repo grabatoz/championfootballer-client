@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export interface League {
   id: string;
   name: string;
@@ -72,6 +73,9 @@ export interface User {
 }
 
 export interface Skills {
+=======
+export interface SkillScores {
+>>>>>>> parent of 06aa9e0 (*)
   dribbling: number;
   shooting: number;
   passing: number;
@@ -85,12 +89,13 @@ export interface NormalizedUser {
   firstName: string;
   lastName: string;
   email: string | null;
-  age: number | null;
-  gender: string | null;
+  age?: number | null;
+  gender?: string | null;
   position: string;
   positionType: string;
   style: string;
   preferredFoot: string;
+<<<<<<< HEAD
   shirtNumber: string;
   profilePicture: string | null;
   skills: Skills;
@@ -99,22 +104,22 @@ export interface NormalizedUser {
   homeTeamMatches: Match[];
   awayTeamMatches: Match[];
   availableMatches: Match[];
+=======
+  shirtNumber: number;
+  profilePicture?: string | null;
+  skills?: SkillScores | Record<string, unknown>;
+  joinedLeagues?: unknown[];
+  managedLeagues?: unknown[];
+  homeTeamMatches?: unknown[];
+  awayTeamMatches?: unknown[];
+  availableMatches?: unknown[];
+>>>>>>> parent of 06aa9e0 (*)
 }
 
-export interface UserData {
-  joinedLeagues: League[];
-  managedLeagues: League[];
-  homeTeamMatches: Match[];
-  awayTeamMatches: Match[];
-  availableMatches: Match[];
-  guestMatch: Match | null;
-}
+export type UserData = Record<string, unknown>;
 
 export interface JwtPayload {
   exp?: number;
-  userId?: string;
-  email?: string;
-  iat?: number;
 }
 
 export interface AuthSession {

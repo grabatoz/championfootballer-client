@@ -82,6 +82,7 @@ export interface Match {
   awayTeamUsers: User[];
   end: string;
   active: boolean;
+<<<<<<< HEAD
   awayTeamImage: string;
   homeTeamImage: string;
   // Additional fields for compatibility
@@ -297,3 +298,8 @@ export function isLeagueArray(obj: unknown): obj is League[] {
 export function isMatchArray(obj: unknown): obj is Match[] {
   return Array.isArray(obj) && obj.every(item => isMatch(item));
 }
+=======
+  awayTeamImage : string;
+  homeTeamImage : string;
+} 
+>>>>>>> parent of 06aa9e0 (*)
