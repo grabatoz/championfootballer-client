@@ -9,7 +9,16 @@ export type UserProfile = {
   firstName?: string;
   lastName?: string;
   email?: string;
-  image?: string | null;
+  age?: number;
+  gender?: string;
+  position?: string;
+  positionType?: string;
+  style?: string;
+  preferredFoot?: string;
+  shirtNumber?: number;
+  profilePicture?: string | null;
+  image?: string | null; // alias
+  skills?: any;
 };
 
 export type UserDataShape = {
@@ -17,6 +26,7 @@ export type UserDataShape = {
   managedLeagues: any[];
   homeTeamMatches: any[];
   awayTeamMatches: any[];
+  availableMatches?: any[];
   [k: string]: any;
 };
 
@@ -33,7 +43,7 @@ function normalizeUserData(input?: Partial<UserDataShape>): UserDataShape {
 }
 
 function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
-  // Exact keys
+  // Exact keys you want in LS
   localStorage.setItem('isAuthenticated', 'true');
   localStorage.setItem('user', JSON.stringify(user));
   localStorage.setItem('userData', JSON.stringify(userData));
@@ -42,6 +52,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
   localStorage.setItem('sessionExpiry', expiryDate.toISOString());
 
+  // Backup bundle
   const authData = {
     token,
     user,
@@ -54,24 +65,19 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
   localStorage.setItem('authData', serialized);
   sessionStorage.setItem('authData', serialized);
 
-  // Write BOTH cookies via js-cookie
+  // Cookies for middleware
   Cookies.set('token', token, { expires: 365, path: '/', sameSite: 'lax' });
   Cookies.set('auth_token', token, { expires: 365, path: '/', sameSite: 'lax' });
-
-  // Fallback: also via document.cookie (some browsers/extensions)
+  // document.cookie fallback
   const maxAge = 365 * 24 * 60 * 60;
   document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
   document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-
-  // Sticky flag
-  localStorage.setItem('auth_bootstrapped', '1');
 }
 
 export const authStorage = {
-  saveAuthExact(user: UserProfile, userDataInput: Partial<UserDataShape>, token: string) {
+  saveAuthExact(user: UserProfile, userData: UserDataShape, token: string) {
     if (!hasWindow()) return false;
     try {
-      const userData = normalizeUserData(userDataInput);
       persistAll(user, userData, token);
       return true;
     } catch (e) {
@@ -79,25 +85,6 @@ export const authStorage = {
       return false;
     }
   },
-
-  saveAuth(userData: BasicUser, userId: string, token: string) {
-    if (!hasWindow()) return false;
-    try {
-      const user: UserProfile = {
-        id: userId,
-        email: userData.email,
-      };
-      const shaped = normalizeUserData({
-        joinedLeagues: userData.joinedLeagues ?? [],
-      });
-      persistAll(user, shaped, token);
-      return true;
-    } catch (e) {
-      console.error('[AUTH-STORAGE] saveAuth error', e);
-      return false;
-    }
-  },
-
   getAuth() {
     if (!hasWindow()) return null;
     try {
@@ -116,40 +103,14 @@ export const authStorage = {
           sessionExpiry,
         };
       }
-
       const local = localStorage.getItem('authData');
       if (local) return JSON.parse(local);
-
       const session = sessionStorage.getItem('authData');
       if (session) return JSON.parse(session);
-
       return null;
     } catch (e) {
       console.error('[AUTH-STORAGE] getAuth error', e);
       return null;
     }
-  },
-
-  clearAuth() {
-    if (!hasWindow()) return false;
-    try {
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('sessionExpiry');
-      localStorage.removeItem('authData');
-      sessionStorage.removeItem('authData');
-      Cookies.remove('token');
-      Cookies.remove('auth_token');
-      return true;
-    } catch (e) {
-      console.error('[AUTH-STORAGE] clearAuth error', e);
-      return false;
-    }
-  },
-
-  isAuthenticated() {
-    if (!hasWindow()) return false;
-    return localStorage.getItem('isAuthenticated') === 'true';
   },
 };
