@@ -1,8 +1,98 @@
-import React from 'react';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 import PlayerDashboard from './_components';
 import AuthCheck from '@/Components/AuthCheck';
+import { useDispatch } from 'react-redux';
 
 const PlayerCardSection: React.FC = () => {  
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Try to recover auth data from multiple sources
+    const recoverAuthData = () => {
+      console.log('[HOME] Attempting to recover auth data...');
+      
+      // 1. First try localStorage
+      const storedAuthData = window.localStorage.getItem('authData');
+      
+      // 2. If not in localStorage, try sessionStorage
+      const sessionAuthData = !storedAuthData ? window.sessionStorage.getItem('authData') : null;
+      
+      // 3. If not in storage, check URL fragment (our backup method)
+      let fragmentAuthData = null;
+      if (typeof window !== 'undefined' && window.location.hash.includes('#auth=')) {
+        const fragment = window.location.hash.split('#auth=')[1];
+        if (fragment) {
+          try {
+            fragmentAuthData = decodeURIComponent(fragment);
+            // Clear the fragment from URL for security
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (e) {
+            console.error('[HOME] Failed to parse auth fragment:', e);
+          }
+        }
+      }
+      
+      // Use the first available auth data source
+      const authDataStr = storedAuthData || sessionAuthData || fragmentAuthData;
+      
+      if (authDataStr) {
+        try {
+          const authData = JSON.parse(authDataStr);
+          
+          // Save this to localStorage if it came from elsewhere
+          if (!storedAuthData) {
+            window.localStorage.setItem('authData', authDataStr);
+            window.localStorage.setItem('isAuthenticated', 'true');
+            window.localStorage.setItem('user', JSON.stringify(authData.user));
+            window.localStorage.setItem('userData', JSON.stringify(authData.userData));
+          }
+          
+          // Set the cookie if it's missing
+          if (!Cookies.get('token') && authData.token) {
+            Cookies.set('token', authData.token, { 
+              expires: 30,
+              path: '/',
+              sameSite: 'lax'
+            });
+          }
+          
+          // Update Redux store
+          dispatch({
+            type: 'auth/loginSuccess',
+            payload: {
+              user: authData.user,
+              userData: authData.userData,
+              isAuthenticated: true
+            }
+          });
+          
+          console.log('[HOME] Auth data recovered and restored successfully!');
+          return true;
+        } catch (e) {
+          console.error('[HOME] Failed to parse or restore auth data:', e);
+        }
+      }
+      
+      return false;
+    };
+    
+    // Run the recovery function
+    const recovered = recoverAuthData();
+    
+    // If recovery failed, check if we should redirect to login
+    if (!recovered) {
+      console.log('🚨 HOME PAGE - Could not recover auth data!');
+      
+      // Uncomment this if you want to redirect to login when auth fails
+      // setTimeout(() => router.replace('/'), 500);
+    }
+  }, [dispatch, router]);
+
   return (
     <>
       <AuthCheck />
@@ -13,52 +103,10 @@ const PlayerCardSection: React.FC = () => {
 
 export default PlayerCardSection;
 
-
-
-
-
-
-
-
-
-
-
-
-
-// import PlayerCard from '@/Components/playercard/playercard';
-// import React from 'react';
-
-// const PlayerCardSection: React.FC = () => {
-//   return (
-//     <div className="relative w-full px-6 py-6 bg-gray-100">
-//       <div
-//         className="relative w-full bg-cover bg-center rounded-lg overflow-hidden"
-//         style={{ backgroundImage: "url('/assets/image3.svg')" }}
-//       >
-//         {/* Player Card positioned flexibly */}
-//         {/* min-sm:flex-row */}
-//         <div className="flex flex-row items-center">
-//           {/* Player card component (on left side for large screens) */}
-//           <div className="w-[210px]">
-//             <PlayerCard />
-//           </div>
-
-//           {/* Info Box */}
-//           <div className="w-[42%] bg-white/80 p-6 rounded-lg shadow-md text-center lg:text-left z-10">
-//             <h2 className="text-lg leading-5 font-bold text-gray-800 mb-2">Welcome, Unknown</h2>
-//             <hr className="border-gray-300" />
-//             <p className="text-gray-700 text-lg leading-6 ">
-//               You haven't setup your Player Card yet.
-//               Let's change that!
-//             </p>
-//             <button className="text-blue-600 font-semibold text-lg leading-6 hover:underline">
-//               Edit Profile & Player Card
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default PlayerCardSection;
+// Check your providers.tsx or layout.tsx
+export function Providers({ children }: { children: React.ReactNode }) {
+  // Create a new store for each request
+  const store = makeStore();
+  
+  return <Provider store={store}>{children}</Provider>;
+}

@@ -7,6 +7,7 @@ import AuthCheck from "@/Components/AuthCheck";
 import LayoutContent from './LayoutContent';
 import Footer from "@/Components/footer/_components";
 import ToasterProvider from '@/Components/ToasterProvider';
+import AuthBootstrap from '@/Components/AuthBootstrap';
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -40,6 +41,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.variable}`}
       >
         <Providers>
+          <AuthBootstrap />
           <AuthCheck />
           <LayoutContent>
             {children}

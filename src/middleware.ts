@@ -10,6 +10,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
+  // Add this condition to your middleware
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return NextResponse.next();
+  }
+  
   const token = request.cookies.get('token')?.value || request.cookies.get('auth_token')?.value;
   
   // Public routes

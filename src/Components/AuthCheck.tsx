@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { checkAuth, initializeFromStorage } from '@/lib/features/authSlice';
+import { initializeFromStorage } from '@/lib/features/authSlice';
 import { AppDispatch } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { AuthResponse } from '@/types/user';
+import Cookies from 'js-cookie';
 
 export default function AuthCheck() {
   const dispatch = useDispatch<AppDispatch>();
@@ -14,23 +15,42 @@ export default function AuthCheck() {
 
   useEffect(() => {
     setIsClient(true);
-    // Initialize from storage first
-    dispatch(initializeFromStorage());
 
-    const checkAuthentication = async () => {
-      try {
-        const result = await dispatch(checkAuth()) as { payload: AuthResponse };
-        if (!result.payload?.success) {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        router.push('/');
-      }
+    // Add storage event listener to handle changes from other tabs
+    const handleStorageChange = () => {
+      dispatch(initializeFromStorage());
     };
+    window.addEventListener('storage', handleStorageChange);
 
-    checkAuthentication();
-  }, [dispatch, router]);
+    // Initialize from storage before checking auth
+    setTimeout(() => {
+      try {
+        // Explicitly dispatch the action
+        dispatch({
+          type: 'auth/initializeFromStorage'
+        });
+
+        console.log('💾 Auth initialization complete');
+      } catch (err) {
+        console.error('Failed to initialize auth from storage:', err);
+      }
+    }, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('🔍 Auth Check - localStorage:', {
+        user: !!localStorage.getItem('user'),
+        userData: !!localStorage.getItem('userData'),
+        isAuthenticated: localStorage.getItem('isAuthenticated'),
+        token: !!Cookies.get('token'),
+      });
+    }
+  }, []);
 
   // Return null during SSR and initial client render
   if (!isClient) {
@@ -38,4 +58,4 @@ export default function AuthCheck() {
   }
 
   return null;
-} 
+}
