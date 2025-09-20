@@ -707,6 +707,45 @@ const getProfileImage = (u?: PlayerProfileLike): string | undefined => u?.profil
 const resultColor = (r: 'W' | 'D' | 'L') =>
   r === 'W' ? '#16a34a' : r === 'D' ? '#6b7280' : '#ef4444';
 
+// Helper: normalize leagues from /auth/data (user.leagues + administeredLeagues)
+const normalizeLeaguesFromAuthData = (u: any): League[] => {
+  const srcLeagues = [
+    ...(u?.leagues ?? []),
+    ...(u?.administeredLeagues ?? u?.adminLeagues ?? []),
+  ];
+
+  // de-duplicate by id
+  const byId: Record<string, any> = {};
+  srcLeagues.forEach((l: any) => { if (l?.id) byId[l.id] = l; });
+  const unique = Object.values(byId);
+
+  const toUser = (p: any): User => ({
+    id: String(p?.id ?? ''),
+    firstName: p?.firstName ?? '',
+    lastName: p?.lastName ?? '',
+    position: p?.positionType ?? p?.position ?? undefined,
+  });
+
+  const toMatch = (m: any): Match => ({
+    id: String(m?.id ?? ''),
+    homeTeamGoals: Number(m?.homeTeamGoals ?? 0),
+    awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
+    homeTeamUsers: (m?.homeTeamUsers ?? []).map(toUser),
+    awayTeamUsers: (m?.awayTeamUsers ?? []).map(toUser),
+    manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},      // optional in API
+    playerStats: m?.playerStats ?? {},                     // optional in API
+    status: (m?.status ?? 'scheduled') as Match['status'],
+  });
+
+  return unique.map((l: any) => ({
+    id: String(l?.id ?? ''),
+    name: l?.name ?? '',
+    members: (l?.members ?? []).map(toUser),
+    matches: (l?.matches ?? []).map(toMatch),
+    maxGames: Number(l?.maxGames ?? 0),
+  }));
+};
+
 // --- Main Page Component ---
 export default function GlobalTrophyRoom() {
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -737,17 +776,18 @@ export default function GlobalTrophyRoom() {
       if (!token) return;
       setLoading(true);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await response.json();
-        if (data.success) {
-          setLeagues(data.leagues || []);
+        const data = await res.json();
+        if (res.ok && data?.success && data?.user) {
+          const onlyMyLeagues = normalizeLeaguesFromAuthData(data.user);
+          setLeagues(onlyMyLeagues);
         } else {
-          setError(data.message || 'Failed to fetch leagues.');
+          setError(data?.message || 'Failed to load your leagues.');
         }
       } catch {
-        setError('An error occurred while fetching league data.');
+        setError('An error occurred while fetching your leagues.');
       } finally {
         setLoading(false);
       }
@@ -1081,7 +1121,7 @@ export default function GlobalTrophyRoom() {
                     position: posToShort(p.position),
                   } satisfies PlayerCardProps;
 
-                  return <PlayerCard {...playerCardProps} />;
+                  return <PlayerCard {...playerCardProps} hideEditIcon />;
                 })()}
                 {/* Icons row under the player card */}
                 <Box

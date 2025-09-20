@@ -128,6 +128,7 @@ interface PlayerCardProps {
   width?: number | string;
   height?: number | string;
   position: string;
+  hideEditIcon?: boolean; // NEW
 }
 
 // Import all possible vector images
@@ -159,6 +160,7 @@ const PlayerCard = ({
   width,
   height,
   position,
+  hideEditIcon = false, // NEW
 }: PlayerCardProps) => {
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
@@ -387,23 +389,26 @@ const PlayerCard = ({
                 </Box>
               </Avatar>
 
-              <IconButton
-                size="small"
-                onClick={handleEditIconClick}
-                style={{
-                  position: 'absolute',
-                  bottom: 4,
-                  right: -8,
-                  background: '#fff',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                  top: -13,
-                  height: 20,
-                  width: 20
-                }}
-                aria-label="edit profile image"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
+              {/* Show edit icon only if not hidden */}
+              {!hideEditIcon && (
+                <IconButton
+                  size="small"
+                  onClick={handleEditIconClick}
+                  style={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: -8,
+                    background: '#fff',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                    top: -13,
+                    height: 20,
+                    width: 20
+                  }}
+                  aria-label="edit profile image"
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              )}
             </div>
           </Box>
         </Box>
