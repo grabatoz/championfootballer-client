@@ -35,7 +35,7 @@ import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
-import StarKeeperImg from '@/Components/images/star.png'; // update path if needed
+import StarKeeperImg from '@/Components/images/brown.svg'; // update path if needed
 
 
 // --- Interfaces ---
@@ -44,7 +44,7 @@ interface User {
   firstName: string;
   lastName: string;
   position?: string; // align with app-wide User type
-  
+  xp?: number;
 } 
 
 interface Match {
@@ -110,6 +110,11 @@ const CARD_DIMENSIONS = {
   image: { xs: 60, sm: 72, md: 84 },
 } as const;
 
+// Blue helpers (hex + CSS filter to tint brown.svg to blue)
+const BLUE_HEX = '#3B82F6';
+const BLUE_FILTER =
+  'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
+
 // --- Reusable Trophy Card Component ---
 const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
   <Paper
@@ -164,7 +169,14 @@ const TrophyCard = ({ title, description, image, color, winner, onButtonClick }:
           alt={title}
           height={CARD_DIMENSIONS.image.md}
           width={CARD_DIMENSIONS.image.md}
-          style={{ height: '100%', width: '100%', objectFit: 'contain', objectPosition: 'center center' }}
+          style={{
+            height: '100%',
+            width: '100%',
+            objectFit: 'contain',
+            objectPosition: 'center center',
+            // Make only the Star Keeper trophy icon blue (source is brown.svg)
+            filter: title === 'Star Keeper' ? BLUE_FILTER : 'none',
+          }}
         />
       </Box>
     </Box>
@@ -405,7 +417,7 @@ type Badge = {
   image: StaticImageData;
   color: string;
   count: number;        // times earned
-  xp: number;           // XP per earn
+  xp: number;           // XP per earn (or level bucket for Rising XP)
   unlocked: boolean;
   progressText?: string;
 };
@@ -413,6 +425,9 @@ type Badge = {
 // Replace brown with Gold + a muted border for locked
 const medalGold = '#D4AF37';
 const medalMuted = '#CBD5E1'; // slate-300
+
+// Add this helper (used to format XP nicely)
+const formatNumber = (n: number) => new Intl.NumberFormat().format(n);
 
 const computeBadges = (user: User, leagues: League[]): Badge[] => {
   const summaries = summarizeUserMatches(user.id, leagues);
@@ -543,11 +558,29 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
     },
   ];
 
+  // Compute total profile XP across all leagues (exact total, not bucket)
+  const totalProfileXP = leagues.reduce((sum, lg) => {
+    const stats = calculatePlayerStats(lg)[user.id];
+    return sum + computeXPFromStats(stats);
+  }, 0);
+  // Add the blue Total XP box (simple info card)
+  badges.unshift({
+    id: 'rising_xp',
+    title: 'Total XP',
+    description: 'Your total XP across all matches and leagues.',
+    image: StarKeeperImg,     // still using brown.svg; we tint it blue via CSS filter
+    color: BLUE_HEX,          // blue accent
+    count: 0,
+    xp: Math.max(0, totalProfileXP),
+    unlocked: true,
+    progressText: undefined,
+  });
+
   return badges;
 };
 
 // --- Badge Card (gold medal) ---
-const BadgeCard = ({ title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => (
+const BadgeCard = ({ id, title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => (
   <Paper
     elevation={4}
     sx={{
@@ -567,15 +600,12 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
       py: { xs: 1.5, sm: 2, md: 3 },
       position: 'relative',
       backgroundColor: '#fff',
-      cursor: 'pointer',
+      cursor: onOpen ? 'pointer' : 'default',
     }}
     onClick={onOpen}
     role="button"
   >
     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333', mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.15rem' } }}>
-        {title}
-      </Typography>
       <Typography
         variant="body2"
         sx={{
@@ -587,6 +617,7 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
+          textAlign: 'center',
         }}
       >
         {description}
@@ -608,44 +639,76 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
           alt={title}
           height={CARD_DIMENSIONS.image.md}
           width={CARD_DIMENSIONS.image.md}
-          style={{ height: '100%', width: '100%', objectFit: 'contain', objectPosition: 'center center', filter: unlocked ? 'none' : 'grayscale(0.6)' }}
+          style={{
+            height: '100%',
+            width: '100%',
+            objectFit: 'contain',
+            objectPosition: 'center center',
+            // Make only the Total XP card’s icon blue
+            filter: id === 'rising_xp' ? BLUE_FILTER : (unlocked ? 'none' : 'grayscale(0.6)'),
+          }}
         />
-        {/* Count bubble xN */}
-        <Box sx={{ position: 'absolute', top: -6, right: -6, background: unlocked ? color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
-          x{count}
-        </Box>
-        {/* XP coin */}
-        <Box sx={{ position: 'absolute', bottom: -8, left: -8, background: '#FFD700', color: '#2b2b2b', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
-          {xp}
+        {id !== 'rising_xp' && (
+          <Box sx={{ position: 'absolute', top: -6, right: -6, background: unlocked ? color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
+            x{count}
+          </Box>
+        )}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 6,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: id === 'rising_xp' ? BLUE_HEX : 'transparent',
+            color: '#fff',
+            borderRadius: '50%',
+            width: 30,
+            height: 30,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+          }}
+        >
+          {id === 'rising_xp' ? formatNumber(xp) : xp}
         </Box>
       </Box>
 
-      <Typography variant="caption" sx={{ color: unlocked ? '#2e7d32' : '#888', mb: 1 }}>
-        {progressText}
+      {id !== 'rising_xp' && (
+        <Typography variant="caption" sx={{ color: unlocked ? '#2e7d32' : '#888', mb: 1 }}>
+          {progressText}
+        </Typography>
+      )}
+
+      <Typography variant="h6" sx={{ mt: 'auto', color: '#666', fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.05rem' }, textAlign: 'center' }}>
+        {title}
       </Typography>
     </Box>
 
-    <Button
-      variant="contained"
-      sx={{
-        backgroundColor: unlocked ? color : '#94a3b8',
-        color: '#ffffff',
-        fontWeight: 'bold',
-        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-        py: { xs: 0.6, sm: 0.8 },
-        mt: 1,
-        width: '100%',
-        boxShadow: 'none',
-        '&:hover': { backgroundColor: unlocked ? color : '#94a3b8', boxShadow: 'none', filter: 'brightness(0.95)' },
-      }}
-      onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
-    >
-      {unlocked ? 'UNLOCKED' : 'UNLOCK'}
-    </Button>
+    {id !== 'rising_xp' && (
+      <Button
+        variant="contained"
+        sx={{
+          backgroundColor: unlocked ? color : '#94a3b8',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+          py: { xs: 0.6, sm: 0.8 },
+          mt: 1,
+          width: '100%',
+          boxShadow: 'none',
+          '&:hover': { backgroundColor: unlocked ? color : '#94a3b8', boxShadow: 'none', filter: 'brightness(0.95)' },
+        }}
+        onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
+      >
+        {unlocked ? 'UNLOCKED' : 'UNLOCK'}
+      </Button>
+    )}
   </Paper>
 );
 
-// Add this helper (used to show XP on PlayerCard)
+// --- Helper function to compute XP from player stats ---
 const computeXPFromStats = (s?: PlayerStats): number => {
   if (!s) return 0;
   const base = s.played * 10;
@@ -944,8 +1007,11 @@ export default function GlobalTrophyRoom() {
   // Build My Achievements (badges) for the current user
   const myBadges: Badge[] = user ? computeBadges(user, leagues) : [];
 
-  // Total XP from badges (for summary chip)
-  const totalBadgeXP = useMemo(() => myBadges.reduce((sum, b) => sum + (b.xp * b.count), 0), [myBadges]);
+  // Total XP from badges (exclude Rising XP level box from this sum)
+  const totalBadgeXP = useMemo(
+    () => myBadges.reduce((sum, b) => sum + (b.id === 'rising_xp' ? 0 : b.xp * b.count), 0),
+    [myBadges]
+  );
 
   // Open modal for a trophy winner (uses the league of that trophy)
   const openPlayerQuickView = (trophy: TrophyType) => {
@@ -1094,7 +1160,8 @@ export default function GlobalTrophyRoom() {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
             {myBadges.length > 0 ? myBadges.map(b => (
               <Box key={b.id} sx={{ height: '100%' }}>
-                <BadgeCard {...b} onOpen={() => openBadgeDetail(b)} />
+                {/* Do not open modal for Total XP card */}
+                <BadgeCard {...b} onOpen={b.id === 'rising_xp' ? undefined : () => openBadgeDetail(b)} />
               </Box>
             )) : (
               <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
@@ -1103,7 +1170,7 @@ export default function GlobalTrophyRoom() {
             )}
           </Box>
 
-          {/* Badge detail modal (tap card or Unlock) */}
+          {/* Badge detail modal (tap card) */}
           <Dialog open={openBadgeDlg} onClose={closeBadgeDetail} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
             <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center' }}>
               {selectedBadge?.title}
@@ -1119,7 +1186,25 @@ export default function GlobalTrophyRoom() {
                     <Box sx={{ position: 'absolute', top: -6, right: -6, background: selectedBadge.unlocked ? selectedBadge.color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
                       x{selectedBadge.count}
                     </Box>
-                    <Box sx={{ position: 'absolute', bottom: -8, left: -8, background: '#FFD700', color: '#2b2b2b', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
+                    {/* Centered XP coin at bottom */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        // background: '#FFD700',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: 30,
+                        height: 30,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.900rem',
+                        fontWeight: 800,
+                      }}
+                    >
                       {selectedBadge.xp}
                     </Box>
                   </Box>
