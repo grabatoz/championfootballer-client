@@ -35,6 +35,7 @@ import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
+import StarKeeperImg from '@/Components/images/star.png'; // update path if needed
 
 
 // --- Interfaces ---
@@ -97,7 +98,9 @@ const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueNam
   { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
   { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
   { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
-  { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' }
+  { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' },
+  // NEW
+  { title: 'Star Keeper', description: 'Goalkeeper with the most clean sheets (or fewest goals conceded)', image: StarKeeperImg, color: '#3B82F6' },
 ];
 
 // Unified card dimensions (used by both TrophyCard and BadgeCard)
@@ -251,10 +254,38 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
 
   const sortedLeagueTable = [...allPlayerIds].sort((a, b) => (playerStats[b].wins * 3 + playerStats[b].draws) - (playerStats[a].wins * 3 + playerStats[a].draws));
 
+  // Compute Star Keeper (GKs only): most clean sheets, tie-breaker fewest goals conceded
+  const gkIds = league.members
+    .filter(p => (p.position ?? '').toLowerCase().includes('goalkeeper'))
+    .map(p => p.id);
+
+  const cleanSheetsByGk: Record<string, number> = {};
+  gkIds.forEach(id => (cleanSheetsByGk[id] = 0));
+
+  (league.matches ?? []).forEach(m => {
+    if (m.status !== 'completed') return;
+    const homeGKs = m.homeTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
+    const awayGKs = m.awayTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
+    if (m.awayTeamGoals === 0) homeGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
+    if (m.homeTeamGoals === 0) awayGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
+  });
+
+  const starKeeperWinner =
+    gkIds
+      .slice()
+      .sort((a, b) => {
+        const csA = cleanSheetsByGk[a] || 0;
+        const csB = cleanSheetsByGk[b] || 0;
+        if (csB !== csA) return csB - csA; // more clean sheets first
+        const gaA = playerStats[a]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
+        const gaB = playerStats[b]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
+        return gaA - gaB; // fewer goals conceded wins tiebreak
+      })[0] || null;
+
   const awards: Record<string, string | null> = {
     'League Champion': sortedLeagueTable[0] || null,
     'Runner-Up': sortedLeagueTable[1] || null,
-    'Ballon D\'or': [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
+    "Ballon D'or": [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
     'GOAT': [...allPlayerIds].sort((a, b) => {
       const ratioA = playerStats[a].played > 0 ? playerStats[a].wins / playerStats[a].played : 0;
       const ratioB = playerStats[b].played > 0 ? playerStats[b].wins / playerStats[b].played : 0;
@@ -270,7 +301,9 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
         const avgB = playerStats[b]?.played > 0 ? (playerStats[b].teamGoalsConceded / playerStats[b].played) : Infinity;
         return avgA - avgB;
       })[0] || null,
-    'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null
+    'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
+    // NEW
+    'Star Keeper': starKeeperWinner,
   };
 
   return trophies.map(trophy => {
@@ -377,7 +410,9 @@ type Badge = {
   progressText?: string;
 };
 
-const medalBrown = '#8B4513';
+// Replace brown with Gold + a muted border for locked
+const medalGold = '#D4AF37';
+const medalMuted = '#CBD5E1'; // slate-300
 
 const computeBadges = (user: User, leagues: League[]): Badge[] => {
   const summaries = summarizeUserMatches(user.id, leagues);
@@ -407,117 +442,100 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
   //   const isDefOrGk = ['defender','goalkeeper'].includes((user.position ?? '').toLowerCase());
 
   const badges: Badge[] = [
-    // 1) Hat-trick in 3 separate matches (single league)
     {
       id: 'hat_trick_3_matches',
       title: 'Hat-Trick x3',
       description: 'Scoring 3+ goals in 3 separate matches (Within a single league)',
       image: HatTrickBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(hatTricks / 3),
       xp: 100,
       unlocked: hatTricks >= 3,
       progressText: hatTricks >= 3 ? `x${Math.floor(hatTricks / 3)}` : `${3 - Math.min(hatTricks, 3)} hat-trick(s) to go`,
     },
-
-    // 2) 5 wins as captain (across all leagues) - placeholder until captain data exists
     {
       id: 'captain_5_wins',
       title: "Captain's 5 Wins",
       description: '5 wins as captain, leading the team to victory (Across all leagues)',
       image: CaptainsTriumphsBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(captainWins / 5),
       xp: 150,
       unlocked: captainWins >= 5,
       progressText: captainWins > 0 ? `Wins as captain: ${captainWins}` : 'Captain tracking not available',
     },
-
-    // 3) Assist in 10 consecutive matches (single league)
     {
       id: 'assist_10_consecutive',
       title: 'Assist Streak x10',
       description: 'Assist in 10 consecutive matches (Within a single league)',
       image: AssistMaestroBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxAssistStreakSingle / 10),
       xp: 200,
       unlocked: maxAssistStreakSingle >= 10,
       progressText: maxAssistStreakSingle >= 10 ? `Best streak: ${maxAssistStreakSingle}` : `${toNext(maxAssistStreakSingle, 10)} match(es) to go`,
     },
-
-    // 4) Scoring in 10 consecutive matches (single league)
     {
       id: 'scoring_10_consecutive',
       title: 'Scoring Streak x10',
       description: 'Scoring in 10 consecutive matches (Within a single league)',
       image: GoalMachineBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxScoringStreakSingle / 10),
       xp: 250,
       unlocked: maxScoringStreakSingle >= 10,
       progressText: maxScoringStreakSingle >= 10 ? `Best streak: ${maxScoringStreakSingle}` : `${toNext(maxScoringStreakSingle, 10)} match(es) to go`,
     },
-
-    // 5) 3 captain's performance picks (single league) - proxied by receiving any MOTM vote
     {
       id: 'captain_performance_3',
       title: "Captain's Picks x3",
       description: "Gets 3 captain's performance pick (Within a single league)",
       image: TripleImpactBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxCaptainPickCountSingle / 3),
       xp: 300,
       unlocked: maxCaptainPickCountSingle >= 3,
       progressText: maxCaptainPickCountSingle >= 3 ? `Picks: ${maxCaptainPickCountSingle}` : `${3 - Math.min(maxCaptainPickCountSingle, 3)} pick(s) to go`,
     },
-
-    // 6) 4 consecutive MOTM (across all leagues) - proxied by any MOTM vote
     {
       id: 'motm_4_consecutive',
       title: 'MOTM Streak x4',
       description: "4 consecutive 'Man of the Match' performance (Across all leagues)",
       image: StarPerformerBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxMotmStreakAll / 4),
       xp: 350,
       unlocked: maxMotmStreakAll >= 4,
       progressText: maxMotmStreakAll >= 4 ? `Best streak: ${maxMotmStreakAll}` : `${toNext(maxMotmStreakAll, 4)} match(es) to go`,
     },
-
-    // 7) 5 consecutive wins with clean sheets (across all leagues)
     {
       id: 'clean_sheet_5_wins',
       title: 'Clean-Sheet Win Streak x5',
       description: '5 consecutive wins with clean sheets (Across all leagues)',
       image: IronWallBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxCleanSheetWinStreakAll / 5),
       xp: 400,
       unlocked: maxCleanSheetWinStreakAll >= 5,
       progressText: maxCleanSheetWinStreakAll >= 5 ? `Best streak: ${maxCleanSheetWinStreakAll}` : `${toNext(maxCleanSheetWinStreakAll, 5)} match(es) to go`,
     },
-
-    // 8) Holding top spot for >10 matches (needs standings timeline) — placeholder
     {
       id: 'top_spot_10_matches',
       title: 'Top Spot x10 Matches',
       description: 'Holding top spot in the league for more than 10 matches',
       image: ChartTopperBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(topSpotMatches / 10),
       xp: 450,
       unlocked: topSpotMatches >= 10,
       progressText: 'League top-spot tracking not available',
     },
-
-    // 9) 10 consecutive victories in a single league
     {
       id: 'consecutive_10_victories',
       title: '10 In A Row',
       description: 'Securing 10 consecutive victories in a single league',
       image: UnbeatenBadge,
-      color: medalBrown,
+      color: medalGold, // changed
       count: Math.floor(maxWinStreakSingle / 10),
       xp: 500,
       unlocked: maxWinStreakSingle >= 10,
@@ -528,8 +546,8 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
   return badges;
 };
 
-// --- Badge Card (brown medal) ---
-const BadgeCard = ({ title, description, image, color, count, unlocked, progressText }: Badge) => (
+// --- Badge Card (gold medal) ---
+const BadgeCard = ({ title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => (
   <Paper
     elevation={4}
     sx={{
@@ -540,7 +558,7 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
       margin: '0 auto',
       textAlign: 'center',
       borderRadius: '16px',
-      border: `2px solid ${color}`,
+      border: `2px solid ${unlocked ? color : medalMuted}`,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-start',
@@ -549,7 +567,10 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
       py: { xs: 1.5, sm: 2, md: 3 },
       position: 'relative',
       backgroundColor: '#fff',
+      cursor: 'pointer',
     }}
+    onClick={onOpen}
+    role="button"
   >
     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333', mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.15rem' } }}>
@@ -570,6 +591,7 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
       >
         {description}
       </Typography>
+
       <Box
         sx={{
           position: 'relative',
@@ -586,20 +608,27 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
           alt={title}
           height={CARD_DIMENSIONS.image.md}
           width={CARD_DIMENSIONS.image.md}
-          style={{ height: '100%', width: '100%', objectFit: 'contain', objectPosition: 'center center' }}
+          style={{ height: '100%', width: '100%', objectFit: 'contain', objectPosition: 'center center', filter: unlocked ? 'none' : 'grayscale(0.6)' }}
         />
-        <Box sx={{ position: 'absolute', top: -6, right: -6, background: color, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
+        {/* Count bubble xN */}
+        <Box sx={{ position: 'absolute', top: -6, right: -6, background: unlocked ? color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
           x{count}
         </Box>
+        {/* XP coin */}
+        <Box sx={{ position: 'absolute', bottom: -8, left: -8, background: '#FFD700', color: '#2b2b2b', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+          {xp}
+        </Box>
       </Box>
+
       <Typography variant="caption" sx={{ color: unlocked ? '#2e7d32' : '#888', mb: 1 }}>
         {progressText}
       </Typography>
     </Box>
+
     <Button
       variant="contained"
       sx={{
-        backgroundColor: color,
+        backgroundColor: unlocked ? color : '#94a3b8',
         color: '#ffffff',
         fontWeight: 'bold',
         fontSize: { xs: '0.75rem', sm: '0.875rem' },
@@ -607,9 +636,9 @@ const BadgeCard = ({ title, description, image, color, count, unlocked, progress
         mt: 1,
         width: '100%',
         boxShadow: 'none',
-        '&:hover': { backgroundColor: color, boxShadow: 'none', filter: 'brightness(0.95)' },
+        '&:hover': { backgroundColor: unlocked ? color : '#94a3b8', boxShadow: 'none', filter: 'brightness(0.95)' },
       }}
-      disabled={!unlocked}
+      onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
     >
       {unlocked ? 'UNLOCKED' : 'UNLOCK'}
     </Button>
@@ -771,6 +800,12 @@ export default function GlobalTrophyRoom() {
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
+  // Badge detail modal state
+  const [openBadgeDlg, setOpenBadgeDlg] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const openBadgeDetail = (b: Badge) => { setSelectedBadge(b); setOpenBadgeDlg(true); };
+  const closeBadgeDetail = () => { setOpenBadgeDlg(false); setSelectedBadge(null); };
+
   useEffect(() => {
     const fetchLeagues = async () => {
       if (!token) return;
@@ -909,6 +944,9 @@ export default function GlobalTrophyRoom() {
   // Build My Achievements (badges) for the current user
   const myBadges: Badge[] = user ? computeBadges(user, leagues) : [];
 
+  // Total XP from badges (for summary chip)
+  const totalBadgeXP = useMemo(() => myBadges.reduce((sum, b) => sum + (b.xp * b.count), 0), [myBadges]);
+
   // Open modal for a trophy winner (uses the league of that trophy)
   const openPlayerQuickView = (trophy: TrophyType) => {
     if (!trophy.winnerId || !trophy.leagueId) return;
@@ -1045,17 +1083,62 @@ export default function GlobalTrophyRoom() {
       </Box>
 
       {filter === 'my' ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
-          {myBadges.length > 0 ? myBadges.map(b => (
-            <Box key={b.id} sx={{ height: '100%' }}>
-              <BadgeCard {...b} />
-            </Box>
-          )) : (
-            <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
-              No badge progress yet.
-            </Typography>
-          )}
-        </Box>
+        <>
+          {/* XP from badges summary */}
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+            <Paper elevation={0} sx={{ px: 2, py: 1, borderRadius: 999, border: '1px solid #E2E8F0', background: '#F8FAFC', fontWeight: 700 }}>
+              XP from badges: {totalBadgeXP}
+            </Paper>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
+            {myBadges.length > 0 ? myBadges.map(b => (
+              <Box key={b.id} sx={{ height: '100%' }}>
+                <BadgeCard {...b} onOpen={() => openBadgeDetail(b)} />
+              </Box>
+            )) : (
+              <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
+                No badge progress yet.
+              </Typography>
+            )}
+          </Box>
+
+          {/* Badge detail modal (tap card or Unlock) */}
+          <Dialog open={openBadgeDlg} onClose={closeBadgeDetail} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
+            <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+              {selectedBadge?.title}
+              <Box sx={{ flexGrow: 1 }} />
+              <IconButton onClick={closeBadgeDetail}><CloseIcon /></IconButton>
+            </DialogTitle>
+            <Divider />
+            <DialogContent sx={{ py: 2 }}>
+              {selectedBadge && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr' }, gap: 2 }}>
+                  <Box sx={{ position: 'relative', width: 96, height: 96, justifySelf: 'center' }}>
+                    <Image src={selectedBadge.image} alt={selectedBadge.title} width={96} height={96} style={{ objectFit: 'contain' }} />
+                    <Box sx={{ position: 'absolute', top: -6, right: -6, background: selectedBadge.unlocked ? selectedBadge.color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
+                      x{selectedBadge.count}
+                    </Box>
+                    <Box sx={{ position: 'absolute', bottom: -8, left: -8, background: '#FFD700', color: '#2b2b2b', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
+                      {selectedBadge.xp}
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ mb: 1.25 }}>{selectedBadge.description}</Typography>
+                    <Typography variant="body2" sx={{ color: '#334155', mb: 1 }}>
+                      {selectedBadge.unlocked
+                        ? `Earned x${selectedBadge.count} • Total XP from this medal: ${selectedBadge.count * selectedBadge.xp}`
+                        : (selectedBadge.progressText || 'Progress unavailable')}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                      XP from medals contributes to your total profile XP.
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
       ) : (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
           {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (

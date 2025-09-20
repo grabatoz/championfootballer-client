@@ -112,15 +112,8 @@ function calculateSkillsPercentage(stats: {
 interface PlayerCardProps {
   name: string;
   number: string;
-  points: number; // Now only pass points
-  stats: {
-    DRI: string;
-    SHO: string;
-    PAS: string;
-    PAC: string;
-    DEF: string;
-    PHY: string;
-  };
+  points: number;
+  stats: { DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string };
   foot: string;
   shirtIcon: string;
   profileImage?: string;
