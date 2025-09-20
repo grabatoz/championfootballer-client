@@ -115,6 +115,23 @@ const BLUE_HEX = '#3B82F6';
 const BLUE_FILTER =
   'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
 
+// Extract total XP from various possible backend fields
+const extractTotalXP = (u: any): number | undefined => {
+  const candidates = [
+    u?.totalXP,
+    u?.totalXp,
+    u?.xpTotal,
+    u?.xp,
+    u?.profile?.totalXP,
+    u?.profile?.xp,
+  ];
+  for (const v of candidates) {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+};
+
 // --- Reusable Trophy Card Component ---
 const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
   <Paper
@@ -429,7 +446,7 @@ const medalMuted = '#CBD5E1'; // slate-300
 // Add this helper (used to format XP nicely)
 const formatNumber = (n: number) => new Intl.NumberFormat().format(n);
 
-const computeBadges = (user: User, leagues: League[]): Badge[] => {
+const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): Badge[] => {
   const summaries = summarizeUserMatches(user.id, leagues);
   const byLeague = summarizeUserMatchesByLeague(user.id, leagues);
   const acrossAll = Object.values(byLeague).flat();
@@ -558,18 +575,20 @@ const computeBadges = (user: User, leagues: League[]): Badge[] => {
     },
   ];
 
-  // Compute total profile XP across all leagues (exact total, not bucket)
-  const totalProfileXP = leagues.reduce((sum, lg) => {
+  // Prefer backend XP; fallback to computed if missing
+  const computedXP = leagues.reduce((sum, lg) => {
     const stats = calculatePlayerStats(lg)[user.id];
     return sum + computeXPFromStats(stats);
   }, 0);
+  const totalProfileXP = typeof backendTotalXP === 'number' ? backendTotalXP : computedXP;
+
   // Add the blue Total XP box (simple info card)
   badges.unshift({
     id: 'rising_xp',
-    title: 'Total XP',
+    title: 'Rising Star',
     description: 'Your total XP across all matches and leagues.',
-    image: StarKeeperImg,     // still using brown.svg; we tint it blue via CSS filter
-    color: BLUE_HEX,          // blue accent
+    image: StarKeeperImg,
+    color: BLUE_HEX,
     count: 0,
     xp: Math.max(0, totalProfileXP),
     unlocked: true,
@@ -653,26 +672,29 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
             x{count}
           </Box>
         )}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 6,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: id === 'rising_xp' ? BLUE_HEX : 'transparent',
-            color: '#fff',
-            borderRadius: '50%',
-            width: 30,
-            height: 30,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.75rem',
-            fontWeight: 800,
-          }}
-        >
-          {id === 'rising_xp' ? formatNumber(xp) : xp}
-        </Box>
+        {/* Hide the image-bottom XP coin for Rising Star; keep for others */}
+        {id !== 'rising_xp' && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 6,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'transparent',
+              color: '#fff',
+              borderRadius: '50%',
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+            }}
+          >
+            {xp}
+          </Box>
+        )}
       </Box>
 
       {id !== 'rising_xp' && (
@@ -681,9 +703,27 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
         </Typography>
       )}
 
-      <Typography variant="h6" sx={{ mt: 'auto', color: '#666', fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.05rem' }, textAlign: 'center' }}>
+      <Typography
+        variant="h6"
+        sx={{
+          mt: 'auto',
+          color: id === 'rising_xp' ? BLUE_HEX : '#666',
+          fontWeight: 'bold',
+          fontSize: id === 'rising_xp'
+            ? { xs: '1.15rem', sm: '2.5rem' }
+            : { xs: '0.95rem', sm: '1.05rem' },
+          textAlign: 'center',
+        }}
+      >
         {title}
       </Typography>
+
+      {/* For Rising Star, show XP below the title with label */}
+      {id === 'rising_xp' && (
+        <Typography variant="subtitle2" sx={{ color: BLUE_HEX, fontWeight: 800, mt: 0.5 , fontSize: { xs: '0.9rem', sm: '2.5rem' } }}>
+          {formatNumber(xp)} XP
+        </Typography>
+      )}
     </Box>
 
     {id !== 'rising_xp' && (
@@ -841,6 +881,7 @@ const normalizeLeaguesFromAuthData = (u: any): League[] => {
 // --- Main Page Component ---
 export default function GlobalTrophyRoom() {
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
@@ -881,6 +922,8 @@ export default function GlobalTrophyRoom() {
         if (res.ok && data?.success && data?.user) {
           const onlyMyLeagues = normalizeLeaguesFromAuthData(data.user);
           setLeagues(onlyMyLeagues);
+          // capture exact backend XP
+          setBackendTotalXP(extractTotalXP(data.user));
         } else {
           setError(data?.message || 'Failed to load your leagues.');
         }
@@ -1004,8 +1047,8 @@ export default function GlobalTrophyRoom() {
       ? buildPlaceholders(selectedLeague)
       : trophiesToDisplayBase;
 
-  // Build My Achievements (badges) for the current user
-  const myBadges: Badge[] = user ? computeBadges(user, leagues) : [];
+  // Build My Achievements (badges) for the current user (use backend XP if provided)
+  const myBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
 
   // Total XP from badges (exclude Rising XP level box from this sum)
   const totalBadgeXP = useMemo(

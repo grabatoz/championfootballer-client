@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import PlayerDashboard from './_components';
 import AuthCheck from '@/Components/AuthCheck';
-import { useDispatch } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
+import { makeStore } from '@/lib/store';
 
 const PlayerCardSection: React.FC = () => {  
   const router = useRouter();
