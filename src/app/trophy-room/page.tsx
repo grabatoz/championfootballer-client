@@ -356,6 +356,33 @@ const isLeagueCompleted = (league: League) => {
   return max > 0 ? completedCount >= max : completedCount > 0;
 };
 
+// Freeze member positions for completed leagues (keep the position at league end)
+const freezeLeaguePositions = (league: League): League => {
+  // Only freeze if the league is completed; otherwise keep live (profile) positions
+  if (!isLeagueCompleted(league)) return league;
+
+  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
+  if (!completed.length) return league;
+
+  // Track last known position from completed matches (later matches overwrite earlier ones)
+  const lastPos: Record<string, string | undefined> = {};
+  completed.forEach(m => {
+    const take = (u: User) => {
+      const pos = (u.position ?? '').toString();
+      if (pos) lastPos[u.id] = pos;
+    };
+    (m.homeTeamUsers ?? []).forEach(take);
+    (m.awayTeamUsers ?? []).forEach(take);
+  });
+
+  const frozenMembers = (league.members ?? []).map(u => ({
+    ...u,
+    position: lastPos[u.id] ?? u.position,
+  }));
+
+  return { ...league, members: frozenMembers };
+};
+
 // --- Aggregated per-match summary for the current user (across leagues) ---
 type UserMatchSummary = {
   goals: number;
@@ -962,13 +989,16 @@ export default function GlobalTrophyRoom() {
       // Only calculate for completed leagues (robust)
       if (!isLeagueCompleted(league)) return;
 
-      console.log(`Processing completed league ${league.id} for achievements.`);
-      const playerStats = calculatePlayerStats(league);
-      const leagueTrophies = calculateLeagueWinners(league, playerStats);
+      // Use frozen positions for completed leagues
+      const frozenLeague = freezeLeaguePositions(league);
+
+      console.log(`Processing completed league ${frozenLeague.id} for achievements.`);
+      const playerStats = calculatePlayerStats(frozenLeague);
+      const leagueTrophies = calculateLeagueWinners(frozenLeague, playerStats);
 
       const userWonTrophies = leagueTrophies.filter(trophy => trophy.winnerId === user.id);
       if (userWonTrophies.length > 0) {
-        console.log(`User won ${userWonTrophies.length} trophies in league ${league.id}:`, userWonTrophies);
+        console.log(`User won ${userWonTrophies.length} trophies in league ${frozenLeague.id}:`, userWonTrophies);
       }
       achievements.push(...userWonTrophies);
     });
@@ -983,11 +1013,14 @@ export default function GlobalTrophyRoom() {
     leagues.forEach(league => {
       if (!league || !league.matches) return;
 
-      // Only completed leagues (robust)
+      // Only completed leagues are included here
       if (!isLeagueCompleted(league)) return;
 
-      const stats = calculatePlayerStats(league);
-      const winners = calculateLeagueWinners(league, stats);
+      // Freeze positions for finished leagues; active leagues stay live
+      const frozenLeague = freezeLeaguePositions(league);
+
+      const stats = calculatePlayerStats(frozenLeague);
+      const winners = calculateLeagueWinners(frozenLeague, stats);
       all.push(...winners);
     });
     return all;
@@ -1061,18 +1094,22 @@ export default function GlobalTrophyRoom() {
     if (!trophy.winnerId || !trophy.leagueId) return;
     const league = leagues.find(l => l.id === trophy.leagueId);
     if (!league) return;
-    const player = league.members.find(m => m.id === trophy.winnerId);
+
+    // Use frozen positions when league is completed
+    const frozenLeague = freezeLeaguePositions(league);
+
+    const player = frozenLeague.members.find(m => m.id === trophy.winnerId);
     if (!player) return;
 
-    const perLeague = summarizeUserMatchesByLeague(player.id, [league]);
-    const allMatches = perLeague[league.id] ?? [];
+    const perLeague = summarizeUserMatchesByLeague(player.id, [frozenLeague]);
+    const allMatches = perLeague[frozenLeague.id] ?? [];
     const list = allMatches.slice(-5).reverse();
-    const stats = calculatePlayerStats(league)[player.id];
+    const stats = calculatePlayerStats(frozenLeague)[player.id];
     const skills = computeSkillsFromStats(stats, player);
     const cleanSheets = allMatches.filter(m => m.conceded === 0).length;
     const motmCount = allMatches.filter(m => m.motmVotes > 0).length;
 
-    setQuickView({ player, league, lastFive: list, stats, trophyTitle: trophy.title, skills, cleanSheets, motmCount });
+    setQuickView({ player, league: frozenLeague, lastFive: list, stats, trophyTitle: trophy.title, skills, cleanSheets, motmCount });
     setOpenQuickView(true);
   };
 
