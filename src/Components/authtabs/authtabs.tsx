@@ -183,7 +183,6 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       return
     }
 
-    // Check if user is entering email in password field
     if (loginData.password === loginData.email) {
       const msg = "It looks like you entered your email in the password field. Please enter your actual password."
       setLoginError(msg)
@@ -192,7 +191,6 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       return
     }
 
-    // Check if password looks like an email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (emailRegex.test(loginData.password)) {
       const msg = "It looks like you entered an email address in the password field. Please enter your actual password."
@@ -206,15 +204,22 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       const result = await authDispatch(login(loginData)).unwrap()
       console.log("[AuthTabs] Login result from server:", result)
       if (result.success) {
-        if (result.token && result.user) {
-          const userData = {
-            joinedLeagues: result.user.joinedLeagues || [],
-            managedLeagues: result.user.managedLeagues || [],
-            homeTeamMatches: result.user.homeTeamMatches || [],
-            awayTeamMatches: result.user.awayTeamMatches || [],
-            availableMatches: result.user.availableMatches || [],
+        if (result.token && result.data) {
+          // Convert age and shirtNumber to numbers for UserProfile compatibility
+          const normalizedUser = {
+            ...result.data,
+            age: typeof result.data.age === "string" ? Number(result.data.age) : result.data.age,
+            shirtNumber: typeof result.data.shirtNumber === "string" ? Number(result.data.shirtNumber) : result.data.shirtNumber,
           }
-          authStorage.saveAuthExact(result.user, userData, result.token)
+
+          const userData = {
+            joinedLeagues: result.data.joinedLeagues || [],
+            managedLeagues: result.data.managedLeagues || [],
+            homeTeamMatches: result.data.homeTeamMatches || [],
+            awayTeamMatches: result.data.awayTeamMatches || [],
+            availableMatches: result.data.availableMatches || [],
+          }
+          authStorage.saveAuthExact(normalizedUser, userData, result.token)
         }
         toast.success(result.message || "Login successful!")
         window.location.href = "/home"
@@ -269,6 +274,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       console.log("[AuthTabs] Register result from server:", result)
       if (result.success && result.data) {
         if (result.token) {
+          // Convert age and shirtNumber to numbers for UserProfile compatibility
+          const normalizedUser = {
+            ...result.data,
+            age: typeof result.data.age === "string" ? Number(result.data.age) : result.data.age,
+            shirtNumber: typeof result.data.shirtNumber === "string" ? Number(result.data.shirtNumber) : result.data.shirtNumber,
+          }
+
           const userData = {
             joinedLeagues: result.data.joinedLeagues || [],
             managedLeagues: result.data.managedLeagues || [],
@@ -276,7 +288,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             awayTeamMatches: result.data.awayTeamMatches || [],
             availableMatches: result.data.availableMatches || [],
           }
-          authStorage.saveAuthExact(result.data, userData, result.token)
+          authStorage.saveAuthExact(normalizedUser, userData, result.token)
         }
         toast.success(result.message || "Registration successful!")
         window.location.href = "/home"
@@ -845,6 +857,17 @@ export default AuthTabs
 //       const result = await authDispatch(login(loginData)).unwrap();
 //       console.log('[AuthTabs] Login result from server:', result);
 //       if (result.success) {
+//         // Fix: use result.data (not result.user) and result.token
+//         if (result.token && result.data) {
+//           const userData = {
+//             joinedLeagues: result.data.joinedLeagues || [],
+//             managedLeagues: result.data.managedLeagues || [],
+//             homeTeamMatches: result.data.homeTeamMatches || [],
+//             awayTeamMatches: result.data.awayTeamMatches || [],
+//             availableMatches: result.data.availableMatches || [],
+//           }
+//           authStorage.saveAuthExact(result.data, userData, result.token)
+//         }
 //         toast.success(result.message || 'Login successful!');
 //         window.location.href = '/home';
 //       } else {
@@ -1376,9 +1399,7 @@ export default AuthTabs
 // // -                  backgroundColor: '#e4e4e4',
 // // -                  color: '#A7A7A7',
 // // -                  borderRadius: 1,
-// // -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-// // -                  '& fieldset': { borderColor: 'transparent' },
-// // -                },
+// // -                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
 // // -              }}
 //               sx={inputSx}
 //              />

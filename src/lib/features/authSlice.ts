@@ -56,6 +56,15 @@ const isSessionExpired = (): boolean => {
   return Number.isFinite(expiry) ? now > expiry : true
 }
 
+// Helper to normalize User to UserProfile
+const normalizeUserForStorage = (user: User): any => {
+  return {
+    ...user,
+    age: typeof user.age === "string" ? Number(user.age) || undefined : user.age,
+    shirtNumber: typeof user.shirtNumber === "string" ? Number(user.shirtNumber) || undefined : user.shirtNumber,
+  }
+}
+
 const syncStateWithStorage = (state: AuthState) => {
   if (typeof window === "undefined") return
 
@@ -74,7 +83,9 @@ const syncStateWithStorage = (state: AuthState) => {
   }
 
   if (state.token && state.user && state.userData) {
-    authStorage.saveAuthExact(state?.user, state.userData, state.token)
+    // Normalize user before saving
+    const normalizedUser = normalizeUserForStorage(state.user)
+    authStorage.saveAuthExact(normalizedUser, state.userData, state.token)
   }
 }
 
@@ -149,7 +160,9 @@ export const checkAuth = createAsyncThunk<ApiResponse<User>>("auth/check", async
     // Get token from cookies or localStorage
     const token = Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token")
     if (token) {
-      authStorage.saveAuthExact(response?.data, userData, token)
+      // Normalize user before saving
+      const normalizedUser = normalizeUserForStorage(response.data)
+      authStorage.saveAuthExact(normalizedUser, userData, token)
     }
   }
 
