@@ -4,13 +4,10 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { AppDispatch } from '@/lib/store';
-import { useRouter } from 'next/navigation';
-import { AuthResponse } from '@/types/user';
 import Cookies from 'js-cookie';
 
 export default function AuthCheck() {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {

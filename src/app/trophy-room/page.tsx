@@ -35,8 +35,7 @@ import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
-import StarKeeperImg from '@/Components/images/brown.svg'; // update path if needed
-
+import StarKeeperImg from '@/Components/images/brown.svg';
 
 // --- Interfaces ---
 interface User {
@@ -88,6 +87,67 @@ interface TrophyType {
   leagueName?: string;
 }
 
+// Backend API response types
+interface BackendUser {
+  id: string | number;
+  firstName?: string;
+  lastName?: string;
+  positionType?: string;
+  position?: string;
+  totalXP?: number;
+  totalXp?: number;
+  xpTotal?: number;
+  xp?: number;
+  profile?: {
+    totalXP?: number;
+    xp?: number;
+  };
+  leagues?: BackendLeague[];
+  administeredLeagues?: BackendLeague[];
+  adminLeagues?: BackendLeague[];
+}
+
+interface BackendMatch {
+  id: string | number;
+  homeTeamGoals?: number | string;
+  awayTeamGoals?: number | string;
+  homeTeamUsers?: BackendUser[];
+  awayTeamUsers?: BackendUser[];
+  manOfTheMatchVotes?: Record<string, string>;
+  playerStats?: Record<string, { goals: number | string; assists: number | string }>;
+  status?: string;
+}
+
+interface BackendLeague {
+  id: string | number;
+  name?: string;
+  members?: BackendUser[];
+  matches?: BackendMatch[];
+  maxGames?: number | string;
+  maxgames?: number | string;
+  max_matches?: number | string;
+  maxMatch?: number | string;
+  max?: number | string;
+  gamesCap?: number | string;
+  gamesTarget?: number | string;
+  fixturesTarget?: number | string;
+  plannedGames?: number | string;
+  totalGames?: number | string;
+  totalRounds?: number | string;
+  rounds?: number | string;
+  rules?: { maxGames?: number | string };
+  settings?: { maxGames?: number | string };
+  config?: { maxGames?: number | string };
+  options?: { maxGames?: number | string };
+  schedule?: { maxGames?: number | string };
+}
+
+interface ApiResponse {
+  success: boolean;
+  user?: BackendUser;
+  message?: string;
+}
+
 // --- Static Trophy Data ---
 const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
   // Renamed per spec: League Champion
@@ -116,7 +176,7 @@ const BLUE_FILTER =
   'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
 
 // Extract total XP from various possible backend fields
-const extractTotalXP = (u: any): number | undefined => {
+const extractTotalXP = (u: BackendUser): number | undefined => {
   const candidates = [
     u?.totalXP,
     u?.totalXp,
@@ -133,13 +193,13 @@ const extractTotalXP = (u: any): number | undefined => {
 };
 
 // Safely coerce any value to number
-const toNum = (v: any): number | undefined => {
+const toNum = (v: number | string | undefined): number | undefined => {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 };
 
 // Robustly read maxGames from various possible backend fields
-const extractLeagueMaxGames = (l: any): number => {
+const extractLeagueMaxGames = (l: BackendLeague): number => {
   const candidates = [
     l?.maxGames,
     l?.maxgames,
@@ -399,30 +459,6 @@ const isLeagueCompleted = (league: League) => {
     result,
   });
   return result;
-};
-
-// ADD: status normalizer (handles Completed, FINISHED, etc.)
-const normalizeMatchStatus = (s: any): Match['status'] => {
-  const v = String(s ?? '').toLowerCase();
-  if (['completed', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'completed';
-  if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ongoing';
-  return 'scheduled';
-};
-
-// ADD: ensure all completed matches have player stats for all participants (accept numeric strings)
-const allPlayersHaveStatsForCompletedMatches = (league: League): boolean => {
-  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
-  if (!completed.length) return false;
-  return completed.every(m => {
-    const players = [...(m.homeTeamUsers ?? []), ...(m.awayTeamUsers ?? [])];
-    if (!players.length) return false;
-    return players.every(p => {
-      const ps = m.playerStats?.[p.id];
-      const goalsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.goals));
-      const assistsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.assists));
-      return goalsOk && assistsOk;
-    });
-  });
 };
 
 // SIMPLIFY: Final standing = maxGames reached (no extra stats completeness check)
@@ -977,37 +1013,53 @@ const getProfileImage = (u?: PlayerProfileLike): string | undefined => u?.profil
 const resultColor = (r: 'W' | 'D' | 'L') =>
   r === 'W' ? '#16a34a' : r === 'D' ? '#6b7280' : '#ef4444';
 
+// ADD: status normalizer (handles Completed, FINISHED, etc.)
+const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
+  const v = String(s ?? '').toLowerCase();
+  if (['completed', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'completed';
+  if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ongoing';
+  return 'scheduled';
+};
+
 // Helper: normalize leagues from /auth/data (user.leagues + administeredLeagues)
-const normalizeLeaguesFromAuthData = (u: any): League[] => {
+const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
   const srcLeagues = [
     ...(u?.leagues ?? []),
     ...(u?.administeredLeagues ?? u?.adminLeagues ?? []),
   ];
 
   // de-duplicate by id
-  const byId: Record<string, any> = {};
-  srcLeagues.forEach((l: any) => { if (l?.id) byId[l.id] = l; });
+  const byId: Record<string, BackendLeague> = {};
+  srcLeagues.forEach((l: BackendLeague) => { if (l?.id) byId[String(l.id)] = l; });
   const unique = Object.values(byId);
 
-  const toUser = (p: any): User => ({
+  const toUser = (p: BackendUser): User => ({
     id: String(p?.id ?? ''),
     firstName: p?.firstName ?? '',
     lastName: p?.lastName ?? '',
     position: p?.positionType ?? p?.position ?? undefined,
   });
 
-  const toMatch = (m: any): Match => ({
+  const toMatch = (m: BackendMatch): Match => ({
     id: String(m?.id ?? ''),
     homeTeamGoals: Number(m?.homeTeamGoals ?? 0),
     awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
     homeTeamUsers: (m?.homeTeamUsers ?? []).map(toUser),
     awayTeamUsers: (m?.awayTeamUsers ?? []).map(toUser),
     manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
-    playerStats: m?.playerStats ?? {},
+    playerStats: Object.fromEntries(
+      Object.entries(m?.playerStats ?? {}).map(([playerId, stats]) => [
+        playerId,
+        {
+          goals: Number(stats.goals ?? 0),
+          assists: Number(stats.assists ?? 0),
+        }
+      ])
+    ),
     status: normalizeMatchStatus(m?.status),
   });
 
-  return unique.map((l: any) => {
+  return unique.map((l: BackendLeague) => {
     const maxGames = extractLeagueMaxGames(l);
     if (!maxGames && (l?.matches ?? []).length > 0) {
       console.warn('[TrophyRoom] maxGames missing/0 for league; using fallback rules', {

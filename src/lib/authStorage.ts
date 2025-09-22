@@ -32,15 +32,15 @@ export type UserDataShape = {
 
 const hasWindow = () => typeof window !== 'undefined';
 
-function normalizeUserData(input?: Partial<UserDataShape>): UserDataShape {
-  return {
-    joinedLeagues: input?.joinedLeagues ?? [],
-    managedLeagues: input?.managedLeagues ?? [],
-    homeTeamMatches: input?.homeTeamMatches ?? [],
-    awayTeamMatches: input?.awayTeamMatches ?? [],
-    ...input,
-  };
-}
+// function normalizeUserData(input?: Partial<UserDataShape>): UserDataShape {
+//   return {
+//     joinedLeagues: input?.joinedLeagues ?? [],
+//     managedLeagues: input?.managedLeagues ?? [],
+//     homeTeamMatches: input?.homeTeamMatches ?? [],
+//     awayTeamMatches: input?.awayTeamMatches ?? [],
+//     ...input,
+//   };
+// }
 
 function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
   // Exact keys you want in LS

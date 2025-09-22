@@ -1,6 +1,7 @@
+import { User } from '@/types/user';
 import Cookies from 'js-cookie';
 
-export function saveAuthData(userData: any, userId: string, token: string) {
+export function saveAuthData(userData: User, userId: string, token: string) {
   // Set token in cookie
   Cookies.set('token', token, { 
     expires: 30, 
