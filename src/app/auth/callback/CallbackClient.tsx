@@ -152,46 +152,74 @@ function CallbackHandler() {
   useEffect(() => {
     (async () => {
       try {
+        console.log('[CALLBACK] Starting OAuth callback process');
+        console.log('[CALLBACK] Current URL:', window.location.href);
+        console.log('[CALLBACK] API Base:', API_BASE);
+        
         const url = new URL(window.location.href);
         const token = url.searchParams.get('token');
+        const error = url.searchParams.get('error');
         const next = url.searchParams.get('next') || '/home';
 
-        if (!token) {
-          setMsg('Login failed: No token');
-          setTimeout(() => (window.location.href = '/'), 800);
+        if (error) {
+          console.error('[CALLBACK] OAuth error:', error);
+          setMsg(`Login failed: ${error}`);
+          setTimeout(() => (window.location.href = '/'), 2000);
           return;
         }
 
+        if (!token) {
+          console.error('[CALLBACK] No token found in URL');
+          setMsg('Login failed: No authentication token received');
+          setTimeout(() => (window.location.href = '/'), 2000);
+          return;
+        }
+
+        console.log('[CALLBACK] Token received, decoding...');
         const decoded = decodeJwt(token) as DecodedToken | null;
         if (!decoded?.userId) {
-          setMsg('Login failed: Invalid token');
-          setTimeout(() => (window.location.href = '/'), 800);
+          console.error('[CALLBACK] Invalid token:', decoded);
+          setMsg('Login failed: Invalid authentication token');
+          setTimeout(() => (window.location.href = '/'), 2000);
           return;
         }
 
-        // Pre-set cookies so middleware allows /auth/data if cookie-based
-        document.cookie = `token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
-        document.cookie = `auth_token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
+        console.log('[CALLBACK] Token decoded successfully, user ID:', decoded.userId);
 
-        // Try to get FULL user from API using the token
+        // Set cookies immediately
+        document.cookie = `token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax; Secure`;
+        document.cookie = `auth_token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax; Secure`;
+
+        setMsg('Getting user data...');
+
+        // Try to get user data from API
         let fullUser: BackendUser | null = null;
         try {
+          console.log('[CALLBACK] Fetching user data from:', `${API_BASE}/auth/data`);
           const res = await fetch(`${API_BASE}/auth/data`, {
             method: 'GET',
             headers: {
-              Authorization: `Bearer ${token}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           });
+          
+          console.log('[CALLBACK] API response status:', res.status);
+          
           if (res.ok) {
             const json = await res.json() as AuthDataResponse;
             fullUser = json?.user || null;
+            console.log('[CALLBACK] User data received:', fullUser ? 'Success' : 'No user data');
+          } else {
+            console.warn('[CALLBACK] API request failed with status:', res.status);
+            const errorText = await res.text();
+            console.warn('[CALLBACK] Error response:', errorText);
           }
         } catch (e) {
-          console.warn('[CALLBACK] Failed to fetch /auth/data, will fallback.', e);
+          console.warn('[CALLBACK] Failed to fetch user data, using fallback:', e);
         }
 
-        // Map server user -> exact objects we store
+        // Process user data
         const user: UserProfile = fullUser 
           ? normalizeUserProfile(fullUser, decoded)
           : createFallbackUserProfile(decoded);
@@ -200,24 +228,30 @@ function CallbackHandler() {
           ? normalizeUserData(fullUser)
           : createEmptyUserData();
 
+        console.log('[CALLBACK] Saving auth data to storage...');
         authStorage.saveAuthExact(user, userData, token);
 
-        // Ensure cookie exists before redirect (middleware)
-        for (let i = 0; i < 15; i++) {
+        // Verify cookies are set
+        let cookieAttempts = 0;
+        while (cookieAttempts < 5) {
           const hasCookie = document.cookie.includes('token=') || document.cookie.includes('auth_token=');
           if (hasCookie) break;
-          document.cookie = `token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
-          document.cookie = `auth_token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
+          
+          document.cookie = `token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax; Secure`;
+          document.cookie = `auth_token=${token}; path=/; max-age=${365*24*60*60}; SameSite=Lax; Secure`;
           await sleep(100);
+          cookieAttempts++;
         }
 
+        console.log('[CALLBACK] Auth setup complete, redirecting to:', next);
         setMsg('Login successful! Redirecting...');
-        await sleep(300);
+        await sleep(500);
         window.location.href = next;
+
       } catch (e) {
-        console.error(e);
+        console.error('[CALLBACK] Unexpected error:', e);
         setMsg('Login failed. Please try again.');
-        setTimeout(() => (window.location.href = '/'), 800);
+        setTimeout(() => (window.location.href = '/'), 2000);
       }
     })();
   }, []);
@@ -227,6 +261,9 @@ function CallbackHandler() {
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-4">Authentication</h2>
         <p>{msg}</p>
+        <div className="mt-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+        </div>
       </div>
     </div>
   );
