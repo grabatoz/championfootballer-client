@@ -32,10 +32,15 @@ import GoldenBootImg from '@/Components/images/goldenboot.png';
 import KingPlayMakerImg from '@/Components/images/kingplaymaker.png';
 import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
+import { BarChart } from '@mui/icons-material'; // Chart icon
+import StarKeeperImg from '@/Components/images/brown.svg';
 
 // Gradients
 const ORANGE_GRAD = 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)';
 const DARK_GRAD = 'linear-gradient(90deg, #767676 0%, #000000 100%)';
+
+// Add the blue filter constant
+const BLUE_FILTER = 'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
 
 type TrophyAward = {
     leagueName: string;
@@ -113,6 +118,8 @@ const trophyDetails: Record<string, { image: StaticImageData; label: string }> =
     'King Playmaker': { image: KingPlayMakerImg, label: 'King Playmaker' },
     'Legendary Shield': { image: ShieldImg, label: 'Legendary Shield' },
     'The Dark Horse': { image: DarkHorseImg, label: 'The Dark Horse' },
+    // ADD: Star Keeper trophy
+    'Star Keeper': { image: StarKeeperImg, label: 'Star Keeper' },
 };
 
 type StatTotals = {
@@ -150,6 +157,20 @@ function sumStatsFromMatches(matches: LeagueMatch[] = []): StatTotals {
         acc.penalties += s?.penalties ?? 0;
         return acc;
     }, { ...emptyTotals });
+}
+
+// Calculate XP from stats (sample calculation - adjust as needed)
+function calculateXP(stats: StatTotals): number {
+    return (
+        stats.goals * 10 +
+        stats.assists * 8 +
+        stats.cleanSheets * 5 +
+        stats.motmVotes * 15 +
+        stats.impact * 3 +
+        stats.defence * 2 +
+        stats.freeKicks * 4 +
+        stats.penalties * 6
+    );
 }
 
 export default function PlayerStatsPage() {
@@ -413,6 +434,15 @@ export default function PlayerStatsPage() {
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
 
+    // Calculate XP based on current filtration
+    const currentXP = useMemo(() => {
+        if (leagueId === 'all') {
+            return calculateXP(accumulativeTotals);
+        } else {
+            return calculateXP(currentLeagueTotals);
+        }
+    }, [leagueId, accumulativeTotals, currentLeagueTotals]);
+
     const yearsOptions = useMemo(() => {
         const nowYear = dayjs().year();
         const arr = ['all', ...Array.from({ length: 12 }, (_, i) => String(nowYear - i))];
@@ -585,7 +615,8 @@ export default function PlayerStatsPage() {
                 minHeight: '100vh',
                 background: ORANGE_GRAD,
                 mt: 5,
-                mb: 5
+                mb: 5,
+                borderRadius: 3, // Rounded corners for the background
             }}
         >
             {/* Top Filters Row (desktop: 3 columns incl. search) */}
@@ -614,7 +645,6 @@ export default function PlayerStatsPage() {
                         '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
                     }}
                 >
-                    {/* <InputLabel>Year</InputLabel> */}
                     <Select
                         label="Year"
                         value={year || String(latestYearInData)}
@@ -658,7 +688,6 @@ export default function PlayerStatsPage() {
                         '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
                     }}
                 >
-                    {/* <InputLabel>League</InputLabel> */}
                     <Select
                         label="League"
                         value={leagueId || 'all'}
@@ -875,61 +904,89 @@ export default function PlayerStatsPage() {
                             backdropFilter: 'blur(6px)',
                         }}
                     >
-                        {/* Profile Header (Avatar + Name + Position + Action button) */}
+                        {/* Profile Header - Updated Layout */}
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr auto' },
-                                gap: 2.5,
+                                gridTemplateColumns: { xs: '1fr auto 1fr', sm: '1fr auto 1fr' },
                                 alignItems: 'center',
+                                mb: 3,
                             }}
                         >
-                            {/* Left: Avatar */}
-                            <Avatar
-                                src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
-                                alt={playerName}
-                                sx={{
-                                    width: { xs: 76, md: 88 },
-                                    height: { xs: 76, md: 88 },
-                                    bgcolor: '#b2f5ea',
-                                    border: '2px solid #0bb77f',
-                                    justifySelf: { xs: 'center', sm: 'start' },
-                                }}
-                            />
-
-                            {/* Middle: Name + Position + Shirt */}
-                            <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                                <Typography sx={{ fontWeight: 900, color: '#064e3b', fontSize: { xs: 16, md: 20 } }}>
+                            {/* Left: Player Name and XP */}
+                            <Box sx={{ textAlign: { xs: 'center', sm: 'center' } }}>
+                                <Typography sx={{ fontWeight: 900, color: '#fff', fontSize: { xs: 18, md: 22 }, mb: 1 }}>
                                     {playerName}
                                 </Typography>
-                                <Typography sx={{ color: '#0b5e49', fontSize: { xs: 13, md: 14 }, fontWeight: 700 }}>
-                                    {playerPositionType}
+                                <Typography sx={{ 
+                                    color: '#fbbf24', 
+                                    fontSize: { xs: 14, md: 16 }, 
+                                    fontWeight: 700,
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                                }}>
+                                    XP: {currentXP.toLocaleString()}
                                 </Typography>
-                                {playerShirt ? (
-                                    <Typography sx={{ color: '#0b5e49', fontSize: 12, fontWeight: 700, mt: 0.5 }}>
-                                        Shirt No {playerShirt}
-                                    </Typography>
-                                ) : null}
                             </Box>
 
-                            {/* Right: Action */}
-                            <Box sx={{ textAlign: { xs: 'center', sm: 'right' } }}>
-                                <Button
-                                    variant="contained"
-                                    size="medium"
+                            {/* Center: Avatar */}
+                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <Avatar
+                                    src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
+                                    alt={playerName}
                                     sx={{
-                                        background: '#0bb77f',
-                                        fontWeight: 800,
-                                        textTransform: 'none',
-                                        borderRadius: 2,
-                                        px: 2.5,
-                                        py: 0.75,
-                                        '&:hover': { background: '#0bb77f' },
+                                        width: { xs: 90, md: 110 },
+                                        height: { xs: 90, md: 110 },
+                                        bgcolor: '#b2f5ea',
+                                        border: '3px solid #0bb77f',
+                                        boxShadow: '0 4px 20px rgba(11, 183, 127, 0.3)',
                                     }}
-                                    onClick={() => router.push(`/player/${playerId}/career`)}  // changed from ?tab=charts
-                                >
-                                    View Chart
-                                </Button>
+                                />
+                            </Box>
+
+                            {/* Right: Position Type, Chart Icon and Button */}
+                            <Box sx={{ textAlign: { xs: 'center', sm: 'center' } }}>
+                                <Typography sx={{ 
+                                    color: '#fff', 
+                                    fontSize: { xs: 12, md: 14 }, 
+                                    fontWeight: 700, 
+                                    mb: 1.5,
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                                }}>
+                                    {playerPositionType}
+                                </Typography>
+                                
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center' } }}>
+                                    <BarChart 
+                                        sx={{ 
+                                            color: '#0bb77f', 
+                                            fontSize: { xs: 28, md: 32 }, 
+                                            mb: 1,
+                                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                                        }} 
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        sx={{
+                                            background: '#0bb77f',
+                                            fontWeight: 800,
+                                            textTransform: 'none',
+                                            borderRadius: 2,
+                                            px: 2.5,
+                                            py: 0.75,
+                                            boxShadow: '0 4px 15px rgba(11, 183, 127, 0.3)',
+                                            '&:hover': { 
+                                                background: '#0bb77f',
+                                                boxShadow: '0 6px 20px rgba(11, 183, 127, 0.4)',
+                                                transform: 'translateY(-1px)'
+                                            },
+                                            transition: 'all 0.2s ease-in-out'
+                                        }}
+                                        onClick={() => router.push(`/player/${playerId}/career`)}
+                                    >
+                                        View Chart
+                                    </Button>
+                                </Box>
                             </Box>
                         </Box>
 
@@ -1014,7 +1071,17 @@ export default function PlayerStatsPage() {
                                             <Grid key={t.key} item xs={1} sm={1} md={1} lg={1}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                                                     <Box sx={{ width: 40, height: 40 }}>
-                                                        <Image src={t.image} alt={t.label} width={40} height={40} style={{ objectFit: 'contain' }} />
+                                                        <Image 
+                                                            src={t.image} 
+                                                            alt={t.label} 
+                                                            width={40} 
+                                                            height={40} 
+                                                            style={{ 
+                                                                objectFit: 'contain',
+                                                                // Apply blue filter only to Star Keeper trophy
+                                                                filter: t.label === 'Star Keeper' ? BLUE_FILTER : 'none'
+                                                            }} 
+                                                        />
                                                     </Box>
                                                     <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
                                                         {t.label}
