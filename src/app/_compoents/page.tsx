@@ -143,7 +143,6 @@ export default function LandingPage() {
           </Typography>
         </Box>
 
-<AuthSocialButtons/>
         {/* Auth area (right side inside top group) */}
         <Box
           sx={{
@@ -196,6 +195,10 @@ export default function LandingPage() {
             </Box>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
+            <Box sx={{ml: { sx: 0, sm: -3.5, md: 9.5 } }}>   
+<AuthSocialButtons/>
+              </Box>
+                
           </Paper>
         </Box>
       </Box>
