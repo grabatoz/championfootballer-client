@@ -5,16 +5,24 @@ import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import PlayerDashboard from './_components';
 import AuthCheck from '@/Components/AuthCheck';
-import { Provider, useDispatch } from 'react-redux';
-import { makeStore } from '@/lib/store';
+import { useAppDispatch } from '@/lib/hooks';
+import { authStorage, type UserProfile, type UserDataShape } from '@/lib/authStorage';
+
+// Define proper interfaces matching your auth storage
+interface AuthData {
+  user: UserProfile;
+  userData: UserDataShape;
+  token: string;
+  isAuthenticated: boolean;
+}
 
 const PlayerCardSection: React.FC = () => {  
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     // Try to recover auth data from multiple sources
-    const recoverAuthData = () => {
+    const recoverAuthData = (): boolean => {
       console.log('[HOME] Attempting to recover auth data...');
       
       // 1. First try localStorage
@@ -24,7 +32,7 @@ const PlayerCardSection: React.FC = () => {
       const sessionAuthData = !storedAuthData ? window.sessionStorage.getItem('authData') : null;
       
       // 3. If not in storage, check URL fragment (our backup method)
-      let fragmentAuthData = null;
+      let fragmentAuthData: string | null = null;
       if (typeof window !== 'undefined' && window.location.hash.includes('#auth=')) {
         const fragment = window.location.hash.split('#auth=')[1];
         if (fragment) {
@@ -43,14 +51,11 @@ const PlayerCardSection: React.FC = () => {
       
       if (authDataStr) {
         try {
-          const authData = JSON.parse(authDataStr);
+          const authData = JSON.parse(authDataStr) as AuthData;
           
-          // Save this to localStorage if it came from elsewhere
-          if (!storedAuthData) {
-            window.localStorage.setItem('authData', authDataStr);
-            window.localStorage.setItem('isAuthenticated', 'true');
-            window.localStorage.setItem('user', JSON.stringify(authData.user));
-            window.localStorage.setItem('userData', JSON.stringify(authData.userData));
+          // Save this to localStorage if it came from elsewhere using authStorage
+          if (!storedAuthData && authData.user && authData.userData && authData.token) {
+            authStorage.saveAuthExact(authData.user, authData.userData, authData.token);
           }
           
           // Set the cookie if it's missing
@@ -62,14 +67,9 @@ const PlayerCardSection: React.FC = () => {
             });
           }
           
-          // Update Redux store
-          dispatch({
-            type: 'auth/loginSuccess',
-            payload: {
-              user: authData.user,
-              userData: authData.userData,
-              isAuthenticated: true
-            }
+          // Use the initializeFromStorage action instead of manual dispatch
+          import('@/lib/features/authSlice').then(({ initializeFromStorage }) => {
+            dispatch(initializeFromStorage());
           });
           
           console.log('[HOME] Auth data recovered and restored successfully!');
@@ -105,9 +105,9 @@ const PlayerCardSection: React.FC = () => {
 export default PlayerCardSection;
 
 // Check your providers.tsx or layout.tsx
-export function Providers({ children }: { children: React.ReactNode }) {
-  // Create a new store for each request
-  const store = makeStore();
+// export function Providers({ children }: { children: React.ReactNode }) {
+//   // Create a new store for each request
+//   const store = makeStore();
   
-  return <Provider store={store}>{children}</Provider>;
-}
+//   return <Provider store={store}>{children}</Provider>;
+// }
