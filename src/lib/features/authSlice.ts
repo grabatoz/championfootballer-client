@@ -18,10 +18,10 @@ interface TokenResponse {
 }
 
 // Define normalized user interface - override specific properties
-interface NormalizedUser extends Omit<User, 'age' | 'shirtNumber'> {
-  age?: number;
-  shirtNumber?: number;
-}
+// interface NormalizedUser extends Omit<User, 'age' | 'shirtNumber'> {
+//   age?: number;
+//   shirtNumber?: number;
+// }
 
 // Update the AuthState to use UserDataShape from authStorage and UserProfile for user
 interface TypedAuthState extends Omit<AuthState, 'userData' | 'user'> {
