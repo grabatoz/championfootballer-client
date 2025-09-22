@@ -1,16 +1,17 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authAPI } from '../api';
-import Cookies from 'js-cookie';
-import { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from '@/types/api';
-import { User} from '@/types/user';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import { authAPI } from "../api"
+import Cookies from "js-cookie"
+import type { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from "@/types/api"
+import type { User } from "@/types/user"
+import { authStorage } from "../authStorage"
 
 // Cookie options for 7 days
 const COOKIE_OPTIONS = {
   expires: 7, // 7 days
-  path: '/',
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const
-};
+  path: "/",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+}
 
 // Initial state without any client-side data
 const initialState: AuthState = {
@@ -25,271 +26,629 @@ const initialState: AuthState = {
     homeTeamMatches: [],
     awayTeamMatches: [],
     availableMatches: [],
-    guestMatch: null
-  }
-};
+    guestMatch: null,
+  },
+}
 
-// Function to sync state with localStorage
+// Helper: extract token from various backend shapes
+const extractTokenFromResponse = (payload: any): string | null => {
+  const candidates = [
+    payload?.token,
+    payload?.accessToken,
+    payload?.jwt,
+    payload?.data?.token,
+    payload?.data?.accessToken,
+    payload?.data?.jwt,
+  ]
+  for (const t of candidates) {
+    if (typeof t === "string" && t.length > 0) return t
+  }
+  return null
+}
+
+// Helper: check if session is expired (7 days window saved in localStorage)
+const isSessionExpired = (): boolean => {
+  if (typeof window === "undefined") return true
+  const iso = localStorage.getItem("sessionExpiry")
+  if (!iso) return true // no expiry saved yet -> treat as expired
+  const expiry = new Date(iso).getTime()
+  const now = Date.now()
+  return Number.isFinite(expiry) ? now > expiry : true
+}
+
 const syncStateWithStorage = (state: AuthState) => {
-  if (typeof window === 'undefined') return;
-  
-  if (state.isAuthenticated && state.user && state.token) {
-    // Save to localStorage with 7 days expiry
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 7);
-    
-    localStorage.setItem('user', JSON.stringify(state.user));
-    localStorage.setItem('userData', JSON.stringify(state.userData));
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('sessionExpiry', expiryDate.toISOString());
-    
-    // Set cookie with 7 days expiry
-    Cookies.set('token', state.token, COOKIE_OPTIONS);
+  if (typeof window === "undefined") return
+
+  // If no auth signal at all (no token and not authenticated), clear storage
+  if (!state.isAuthenticated && !state.token) {
+    Cookies.remove("token", { path: "/" })
+    Cookies.remove("auth_token", { path: "/" })
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    localStorage.removeItem("userData")
+    localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("sessionExpiry")
+    localStorage.removeItem("authData")
+    sessionStorage.removeItem("authData")
+    return
   }
-};
 
-// Function to check if session is expired
-const isSessionExpired = () => {
-  if (typeof window === 'undefined') return true;
-  
-  const expiryDate = localStorage.getItem('sessionExpiry');
-  if (!expiryDate) return true;
-  
-  return new Date(expiryDate) < new Date();
-};
+  if (state.token && state.user && state.userData) {
+    authStorage.saveAuthExact(state?.user, state.userData, state.token)
+  }
+}
 
-// Function to load session from storage
 const loadSessionFromStorage = (): AuthState => {
-  if (typeof window === 'undefined') return initialState;
+  if (typeof window === "undefined") return initialState
 
-  // Check if session is expired
   if (isSessionExpired()) {
-    // Clear expired session
-    Cookies.remove('token', { path: '/' });
-    localStorage.removeItem('user');
-    localStorage.removeItem('userData');
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('sessionExpiry');
-    return initialState;
+    // clear any stale data
+    Cookies.remove("token", { path: "/" })
+    Cookies.remove("auth_token", { path: "/" })
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    localStorage.removeItem("userData")
+    localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("sessionExpiry")
+    localStorage.removeItem("authData")
+    sessionStorage.removeItem("authData")
+    return initialState
   }
 
-  const storedUser = localStorage.getItem('user');
-  const storedUserData = localStorage.getItem('userData');
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const token = Cookies.get('token');
+  // Use unified authStorage to get auth data
+  const authData = authStorage.getAuth()
 
-  if (storedUser && storedUserData && isAuthenticated && token) {
-    try {
-      const user = JSON.parse(storedUser);
-      const userData = JSON.parse(storedUserData);
-      return {
-        user,
-        userData,
-        token,
-        isAuthenticated: true,
-        loading: false,
-        error: null,
-      };
-    } catch (error) {
-      console.error('Error parsing stored user data:', error);
-      return initialState;
+  if (authData && authData.token && authData.user) {
+    return {
+      user: authData.user,
+      userData: authData.userData || initialState.userData,
+      token: authData.token,
+      isAuthenticated: true,
+      loading: false,
+      error: null,
     }
   }
 
-  return initialState;
-};
+  return initialState
+}
 
-export const login = createAsyncThunk<ApiResponse<User>, LoginCredentials>(
-  'auth/login',
-  async (credentials) => {
-    const response = await authAPI.login(credentials);
-    return response;
-  }
-);
+export const login = createAsyncThunk<ApiResponse<User>, LoginCredentials>("auth/login", async (credentials) => {
+  const response = await authAPI.login(credentials)
+  return response
+})
 
 export const register = createAsyncThunk<ApiResponse<User>, RegisterCredentials>(
-  'auth/register',
+  "auth/register",
   async (credentials) => {
-    const response = await authAPI.register(credentials);
-    return response;
-  }
-);
+    const response = await authAPI.register(credentials)
+    return response
+  },
+)
 
-export const checkAuth = createAsyncThunk<ApiResponse<User>>(
-  'auth/check',
-  async () => {
-    // Check if session is expired
-    if (isSessionExpired()) {
-      return {
-        success: false,
-        message: 'Session expired',
-        error: 'Session expired'
-      };
+export const checkAuth = createAsyncThunk<ApiResponse<User>>("auth/check", async () => {
+  // Check if session is expired
+  if (isSessionExpired()) {
+    return {
+      success: false,
+      message: "Session expired",
+      error: "Session expired",
     }
-    const response = await authAPI.checkAuth();
-    
-    // If successful, save the user data to localStorage
-    if (response.success && response.data) {
-      const userData = {
-        joinedLeagues: response.data.joinedLeagues || [],
-        managedLeagues: response.data.managedLeagues || [],
-        homeTeamMatches: response.data.homeTeamMatches || [],
-        awayTeamMatches: response.data.awayTeamMatches || [],
-        availableMatches: response.data.availableMatches || [],
-        guestMatch: response.data.guestMatch || null
-      };
-      
-      localStorage.setItem('user', JSON.stringify(response.data));
-      localStorage.setItem('userData', JSON.stringify(userData));
-      localStorage.setItem('isAuthenticated', 'true');
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 7);
-      localStorage.setItem('sessionExpiry', expiryDate.toISOString());
-    }
-    
-    return response;
   }
-);
+  const response = await authAPI.checkAuth()
 
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async () => {
-    if (typeof window !== 'undefined') {
-      // Clear all session data
-      Cookies.remove('token', { path: '/' });
-      localStorage.removeItem('user');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('sessionExpiry');
+  if (response.success && response.data) {
+    const userData = {
+      joinedLeagues: response.data.joinedLeagues || [],
+      managedLeagues: response.data.managedLeagues || [],
+      homeTeamMatches: response.data.homeTeamMatches || [],
+      awayTeamMatches: response.data.awayTeamMatches || [],
+      availableMatches: response.data.availableMatches || [],
+      guestMatch: response.data.guestMatch || null,
     }
-    return { success: true };
+
+    // Get token from cookies or localStorage
+    const token = Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token")
+    if (token) {
+      authStorage.saveAuthExact(response?.data, userData, token)
+    }
   }
-);
+
+  return response
+})
+
+export const logout = createAsyncThunk("auth/logout", async () => {
+  if (typeof window !== "undefined") {
+    Cookies.remove("token", { path: "/" })
+    Cookies.remove("auth_token", { path: "/" })
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    localStorage.removeItem("userData")
+    localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("sessionExpiry")
+    localStorage.removeItem("authData")
+    sessionStorage.removeItem("authData")
+  }
+  return { success: true }
+})
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     clearError: (state) => {
-      state.error = null;
+      state.error = null
     },
     syncWithStorage: (state) => {
-      syncStateWithStorage(state);
+      syncStateWithStorage(state)
     },
     initializeFromStorage: (state) => {
-      const sessionState = loadSessionFromStorage();
-      state.user = sessionState.user;
-      state.userData = sessionState.userData;
-      state.token = sessionState.token;
-      state.isAuthenticated = sessionState.isAuthenticated;
-      state.loading = sessionState.loading;
-      state.error = sessionState.error;
+      const sessionState = loadSessionFromStorage()
+      state.user = sessionState.user
+      state.userData = sessionState.userData
+      state.token = sessionState.token
+      state.isAuthenticated = sessionState.isAuthenticated
+      state.loading = sessionState.loading
+      state.error = sessionState.error
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(login.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.loading = true
+        state.error = null
       })
       .addCase(login.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading = false
         if (action.payload.success) {
-          state.isAuthenticated = true;
-          state.user = action.payload.data || null;
+          state.token = extractTokenFromResponse(action.payload)
+          state.isAuthenticated = Boolean(state.token) || true
+          state.user = action.payload.data || null
           state.userData = {
             joinedLeagues: action.payload.data?.joinedLeagues || [],
             managedLeagues: action.payload.data?.managedLeagues || [],
             homeTeamMatches: action.payload.data?.homeTeamMatches || [],
             awayTeamMatches: action.payload.data?.awayTeamMatches || [],
             availableMatches: action.payload.data?.availableMatches || [],
-            guestMatch: action.payload.data?.guestMatch || null
-          };
-          state.token = action.payload.token || null;
-          state.error = null;
-          syncStateWithStorage(state);
+            guestMatch: action.payload.data?.guestMatch || null,
+          }
+          state.error = null
+          syncStateWithStorage(state)
         } else {
-          state.error = action.payload.error || 'Login failed';
+          state.error = action.payload.error || "Login failed"
         }
       })
       .addCase(login.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Login failed';
+        state.loading = false
+        state.error = action.error.message || "Login failed"
       })
       .addCase(register.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.loading = true
+        state.error = null
       })
       .addCase(register.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.data || null;
+        state.loading = false
+        state.token = extractTokenFromResponse(action.payload)
+        state.isAuthenticated = Boolean(state.token) || true
+        state.user = action.payload.data || null
         state.userData = {
           joinedLeagues: action.payload.data?.joinedLeagues || [],
           managedLeagues: action.payload.data?.managedLeagues || [],
           homeTeamMatches: action.payload.data?.homeTeamMatches || [],
           awayTeamMatches: action.payload.data?.awayTeamMatches || [],
           availableMatches: action.payload.data?.availableMatches || [],
-          guestMatch: action.payload.data?.guestMatch || null
-        };
-        state.token = action.payload.token || null;
-        state.error = null;
-        syncStateWithStorage(state);
+          guestMatch: action.payload.data?.guestMatch || null,
+        }
+        state.error = null
+        syncStateWithStorage(state)
       })
       .addCase(register.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Registration failed';
+        state.loading = false
+        state.error = action.error.message || "Registration failed"
       })
       .addCase(checkAuth.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.loading = true
+        state.error = null
       })
       .addCase(checkAuth.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading = false
         if (action.payload.success) {
-          state.isAuthenticated = true;
-          state.user = action.payload.data || null;
+          state.isAuthenticated = true
+          state.user = action.payload.data || null
           state.userData = {
             joinedLeagues: action.payload.data?.joinedLeagues || [],
             managedLeagues: action.payload.data?.managedLeagues || [],
             homeTeamMatches: action.payload.data?.homeTeamMatches || [],
             awayTeamMatches: action.payload.data?.awayTeamMatches || [],
             availableMatches: action.payload.data?.availableMatches || [],
-            guestMatch: action.payload.data?.guestMatch || null
-          };
-          state.error = null;
-          syncStateWithStorage(state);
+            guestMatch: action.payload.data?.guestMatch || null,
+          }
+          // Keep any existing token; try to hydrate from cookie/LS if missing
+          state.token =
+            state.token || Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token") || null
+          state.error = null
+          syncStateWithStorage(state)
         } else {
-          state.isAuthenticated = false;
-          state.user = null;
-          state.userData = initialState.userData;
-          state.error = action.payload.error || 'Authentication check failed';
+          state.isAuthenticated = false
+          state.user = null
+          state.userData = initialState.userData
+          state.token = null
+          state.error = action.payload.error || "Authentication check failed"
+          syncStateWithStorage(state)
         }
       })
       .addCase(checkAuth.rejected, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.userData = initialState.userData;
-        state.error = action.error.message || 'Authentication check failed';
+        state.loading = false
+        state.isAuthenticated = false
+        state.user = null
+        state.userData = initialState.userData
+        state.error = action.error.message || "Authentication check failed"
       })
       .addCase(logout.fulfilled, (state) => {
-        state.isAuthenticated = false;
-        state.user = null;
-        state.userData = initialState.userData;
-        state.token = null;
-        state.error = null;
-        // Clear all session data
-        if (typeof window !== 'undefined') {
-          Cookies.remove('token', { path: '/' });
-          localStorage.removeItem('user');
-          localStorage.removeItem('userData');
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('sessionExpiry');
+        state.isAuthenticated = false
+        state.user = null
+        state.userData = initialState.userData
+        state.token = null
+        state.error = null
+        if (typeof window !== "undefined") {
+          Cookies.remove("token", { path: "/" })
+          Cookies.remove("auth_token", { path: "/" })
+          localStorage.removeItem("token")
+          localStorage.removeItem("user")
+          localStorage.removeItem("userData")
+          localStorage.removeItem("isAuthenticated")
+          localStorage.removeItem("sessionExpiry")
+          localStorage.removeItem("authData")
+          sessionStorage.removeItem("authData")
         }
-      });
+      })
   },
-});
+})
 
-export const { clearError, syncWithStorage, initializeFromStorage } = authSlice.actions;
-export default authSlice.reducer; 
+export const { clearError, syncWithStorage, initializeFromStorage } = authSlice.actions
+export default authSlice.reducer
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// import { authAPI } from '../api';
+// import Cookies from 'js-cookie';
+// import { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from '@/types/api';
+// import { User} from '@/types/user';
+
+// // Cookie options for 7 days
+// const COOKIE_OPTIONS = {
+//   expires: 7, // 7 days
+//   path: '/',
+//   secure: process.env.NODE_ENV === 'production',
+//   sameSite: 'strict' as const
+// };
+
+// // Initial state without any client-side data
+// const initialState: AuthState = {
+//   user: null,
+//   token: null,
+//   isAuthenticated: false,
+//   loading: false,
+//   error: null,
+//   userData: {
+//     joinedLeagues: [],
+//     managedLeagues: [],
+//     homeTeamMatches: [],
+//     awayTeamMatches: [],
+//     availableMatches: [],
+//     guestMatch: null
+//   }
+// };
+
+// // Helper: extract token from various backend shapes
+// const extractTokenFromResponse = (payload: any): string | null => {
+//   const candidates = [
+//     payload?.token,
+//     payload?.accessToken,
+//     payload?.jwt,
+//     payload?.data?.token,
+//     payload?.data?.accessToken,
+//     payload?.data?.jwt,
+//   ];
+//   for (const t of candidates) {
+//     if (typeof t === 'string' && t.length > 0) return t;
+//   }
+//   return null;
+// };
+
+// // Helper: check if session is expired (7 days window saved in localStorage)
+// const isSessionExpired = (): boolean => {
+//   if (typeof window === 'undefined') return true;
+//   const iso = localStorage.getItem('sessionExpiry');
+//   if (!iso) return true; // no expiry saved yet -> treat as expired
+//   const expiry = new Date(iso).getTime();
+//   const now = Date.now();
+//   return Number.isFinite(expiry) ? now > expiry : true;
+// };
+
+// // Function to sync state with localStorage
+// const syncStateWithStorage = (state: AuthState) => {
+//   if (typeof window === 'undefined') return;
+
+//   // If no auth signal at all (no token and not authenticated), clear storage
+//   if (!state.isAuthenticated && !state.token) {
+//     Cookies.remove('token', { path: '/' });
+//     localStorage.removeItem('token');
+//     localStorage.removeItem('user');
+//     localStorage.removeItem('userData');
+//     localStorage.removeItem('isAuthenticated');
+//     localStorage.removeItem('sessionExpiry');
+//     return;
+//   }
+
+//   // Persist token (cookie + LS) when available
+//   if (state.token) {
+//     Cookies.set('token', state.token, COOKIE_OPTIONS);
+//     localStorage.setItem('token', state.token);
+//   }
+
+//   // Mark session as authenticated if we have either a token or isAuthenticated
+//   const expiryDate = new Date();
+//   expiryDate.setDate(expiryDate.getDate() + 7);
+//   localStorage.setItem('isAuthenticated', 'true');
+//   localStorage.setItem('sessionExpiry', expiryDate.toISOString());
+
+//   // Persist user data only if available (login API may not send user)
+//   if (state.user) {
+//     localStorage.setItem('user', JSON.stringify(state.user));
+//     localStorage.setItem('userData', JSON.stringify(state.userData));
+//   }
+// };
+
+// // Function to load session from storage
+// const loadSessionFromStorage = (): AuthState => {
+//   if (typeof window === 'undefined') return initialState;
+
+//   if (isSessionExpired()) {
+//     // clear any stale data
+//     Cookies.remove('token', { path: '/' });
+//     localStorage.removeItem('token');
+//     localStorage.removeItem('user');
+//     localStorage.removeItem('userData');
+//     localStorage.removeItem('isAuthenticated');
+//     localStorage.removeItem('sessionExpiry');
+//     return initialState;
+//   }
+
+//   const token = Cookies.get('token') || localStorage.getItem('token') || null;
+//   const storedUser = localStorage.getItem('user');
+//   const storedUserData = localStorage.getItem('userData');
+
+//   if (token) {
+//     let user = null;
+//     let userData = initialState.userData;
+//     try {
+//       if (storedUser) user = JSON.parse(storedUser);
+//       if (storedUserData) userData = JSON.parse(storedUserData);
+//     } catch (e) {
+//       console.warn('Error parsing stored auth data:', e);
+//     }
+//     return {
+//       user,
+//       userData,
+//       token,
+//       isAuthenticated: true,
+//       loading: false,
+//       error: null,
+//     };
+//   }
+
+//   return initialState;
+// };
+
+// export const login = createAsyncThunk<ApiResponse<User>, LoginCredentials>(
+//   'auth/login',
+//   async (credentials) => {
+//     const response = await authAPI.login(credentials);
+//     return response;
+//   }
+// );
+
+// export const register = createAsyncThunk<ApiResponse<User>, RegisterCredentials>(
+//   'auth/register',
+//   async (credentials) => {
+//     const response = await authAPI.register(credentials);
+//     return response;
+//   }
+// );
+
+// export const checkAuth = createAsyncThunk<ApiResponse<User>>(
+//   'auth/check',
+//   async () => {
+//     // Check if session is expired
+//     if (isSessionExpired()) {
+//       return {
+//         success: false,
+//         message: 'Session expired',
+//         error: 'Session expired'
+//       };
+//     }
+//     const response = await authAPI.checkAuth();
+    
+//     // If successful, save the user data to localStorage
+//     if (response.success && response.data) {
+//       const userData = {
+//         joinedLeagues: response.data.joinedLeagues || [],
+//         managedLeagues: response.data.managedLeagues || [],
+//         homeTeamMatches: response.data.homeTeamMatches || [],
+//         awayTeamMatches: response.data.awayTeamMatches || [],
+//         availableMatches: response.data.availableMatches || [],
+//         guestMatch: response.data.guestMatch || null
+//       };
+      
+//       localStorage.setItem('user', JSON.stringify(response.data));
+//       localStorage.setItem('userData', JSON.stringify(userData));
+//       localStorage.setItem('isAuthenticated', 'true');
+//       const expiryDate = new Date();
+//       expiryDate.setDate(expiryDate.getDate() + 7);
+//       localStorage.setItem('sessionExpiry', expiryDate.toISOString());
+//     }
+    
+//     return response;
+//   }
+// );
+
+// export const logout = createAsyncThunk(
+//   'auth/logout',
+//   async () => {
+//     if (typeof window !== 'undefined') {
+//       // Clear all session data
+//       Cookies.remove('token', { path: '/' });
+//       localStorage.removeItem('token');
+//       localStorage.removeItem('user');
+//       localStorage.removeItem('userData');
+//       localStorage.removeItem('isAuthenticated');
+//       localStorage.removeItem('sessionExpiry');
+//     }
+//     return { success: true };
+//   }
+// );
+
+// const authSlice = createSlice({
+//   name: 'auth',
+//   initialState,
+//   reducers: {
+//     clearError: (state) => {
+//       state.error = null;
+//     },
+//     syncWithStorage: (state) => {
+//       syncStateWithStorage(state);
+//     },
+//     initializeFromStorage: (state) => {
+//       const sessionState = loadSessionFromStorage();
+//       state.user = sessionState.user;
+//       state.userData = sessionState.userData;
+//       state.token = sessionState.token;
+//       state.isAuthenticated = sessionState.isAuthenticated;
+//       state.loading = sessionState.loading;
+//       state.error = sessionState.error;
+//     },
+//   },
+//   extraReducers: (builder) => {
+//     builder
+//       .addCase(login.pending, (state) => {
+//         state.loading = true;
+//         state.error = null;
+//       })
+//       .addCase(login.fulfilled, (state, action) => {
+//         state.loading = false;
+//         if (action.payload.success) {
+//           // Accept token-only logins
+//           state.token = extractTokenFromResponse(action.payload);
+//           state.isAuthenticated = Boolean(state.token) || true; // keep true for legacy backends
+//           state.user = action.payload.data || null;
+//           state.userData = {
+//             joinedLeagues: action.payload.data?.joinedLeagues || [],
+//             managedLeagues: action.payload.data?.managedLeagues || [],
+//             homeTeamMatches: action.payload.data?.homeTeamMatches || [],
+//             awayTeamMatches: action.payload.data?.awayTeamMatches || [],
+//             availableMatches: action.payload.data?.availableMatches || [],
+//             guestMatch: action.payload.data?.guestMatch || null
+//           };
+//           state.error = null;
+//           syncStateWithStorage(state);
+//         } else {
+//           state.error = action.payload.error || 'Login failed';
+//         }
+//       })
+//       .addCase(login.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.error.message || 'Login failed';
+//       })
+//       .addCase(register.pending, (state) => {
+//         state.loading = true;
+//         state.error = null;
+//       })
+//       .addCase(register.fulfilled, (state, action) => {
+//         state.loading = false;
+//         state.token = extractTokenFromResponse(action.payload);
+//         state.isAuthenticated = Boolean(state.token) || true;
+//         state.user = action.payload.data || null;
+//         state.userData = {
+//           joinedLeagues: action.payload.data?.joinedLeagues || [],
+//           managedLeagues: action.payload.data?.managedLeagues || [],
+//           homeTeamMatches: action.payload.data?.homeTeamMatches || [],
+//           awayTeamMatches: action.payload.data?.awayTeamMatches || [],
+//           availableMatches: action.payload.data?.availableMatches || [],
+//           guestMatch: action.payload.data?.guestMatch || null
+//         };
+//         state.error = null;
+//         syncStateWithStorage(state);
+//       })
+//       .addCase(register.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.error.message || 'Registration failed';
+//       })
+//       .addCase(checkAuth.pending, (state) => {
+//         state.loading = true;
+//         state.error = null;
+//       })
+//       .addCase(checkAuth.fulfilled, (state, action) => {
+//         state.loading = false;
+//         if (action.payload.success) {
+//           state.isAuthenticated = true;
+//           state.user = action.payload.data || null;
+//           state.userData = {
+//             joinedLeagues: action.payload.data?.joinedLeagues || [],
+//             managedLeagues: action.payload.data?.managedLeagues || [],
+//             homeTeamMatches: action.payload.data?.homeTeamMatches || [],
+//             awayTeamMatches: action.payload.data?.awayTeamMatches || [],
+//             availableMatches: action.payload.data?.availableMatches || [],
+//             guestMatch: action.payload.data?.guestMatch || null
+//           };
+//           // Keep any existing token; try to hydrate from cookie/LS if missing
+//           state.token = state.token || Cookies.get('token') || localStorage.getItem('token') || null;
+//           state.error = null;
+//           syncStateWithStorage(state);
+//         } else {
+//           state.isAuthenticated = false;
+//           state.user = null;
+//           state.userData = initialState.userData;
+//           state.token = null;
+//           state.error = action.payload.error || 'Authentication check failed';
+//           syncStateWithStorage(state);
+//         }
+//       })
+//       .addCase(checkAuth.rejected, (state, action) => {
+//         state.loading = false;
+//         state.isAuthenticated = false;
+//         state.user = null;
+//         state.userData = initialState.userData;
+//         state.error = action.error.message || 'Authentication check failed';
+//       })
+//       .addCase(logout.fulfilled, (state) => {
+//         state.isAuthenticated = false;
+//         state.user = null;
+//         state.userData = initialState.userData;
+//         state.token = null;
+//         state.error = null;
+//         // Clear all session data
+//         if (typeof window !== 'undefined') {
+//           Cookies.remove('token', { path: '/' });
+//           localStorage.removeItem('token');
+//           localStorage.removeItem('user');
+//           localStorage.removeItem('userData');
+//           localStorage.removeItem('isAuthenticated');
+//           localStorage.removeItem('sessionExpiry');
+//         }
+//       });
+//   },
+// });
+
+// export const { clearError, syncWithStorage, initializeFromStorage } = authSlice.actions;
+// export default authSlice.reducer;
