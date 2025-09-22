@@ -132,6 +132,40 @@ const extractTotalXP = (u: any): number | undefined => {
   return undefined;
 };
 
+// Safely coerce any value to number
+const toNum = (v: any): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+// Robustly read maxGames from various possible backend fields
+const extractLeagueMaxGames = (l: any): number => {
+  const candidates = [
+    l?.maxGames,
+    l?.maxgames,
+    l?.max_matches,
+    l?.maxMatch,
+    l?.max,
+    l?.gamesCap,
+    l?.gamesTarget,
+    l?.fixturesTarget,
+    l?.plannedGames,
+    l?.totalGames,
+    l?.totalRounds,
+    l?.rounds,
+    l?.rules?.maxGames,
+    l?.settings?.maxGames,
+    l?.config?.maxGames,
+    l?.options?.maxGames,
+    l?.schedule?.maxGames,
+  ];
+  for (const c of candidates) {
+    const n = toNum(c);
+    if (n !== undefined) return n;
+  }
+  return 0;
+};
+
 // --- Reusable Trophy Card Component ---
 const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
   <Paper
@@ -235,8 +269,11 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
       if (!stats[playerId]) return;
       stats[playerId].played++;
       if (match.playerStats && match.playerStats[playerId]) {
-        stats[playerId].goals += match.playerStats[playerId].goals || 0;
-        stats[playerId].assists += match.playerStats[playerId].assists || 0;
+        // CAST to numbers to avoid "0" + "1" => "01"
+        const g = Number(match.playerStats[playerId].goals);
+        const a = Number(match.playerStats[playerId].assists);
+        stats[playerId].goals += Number.isFinite(g) ? g : 0;
+        stats[playerId].assists += Number.isFinite(a) ? a : 0;
       }
     });
 
@@ -353,34 +390,108 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
 const isLeagueCompleted = (league: League) => {
   const completedCount = (league.matches ?? []).filter(m => m.status === 'completed').length;
   const max = Number((league as League)?.maxGames ?? 0);
-  return max > 0 ? completedCount >= max : completedCount > 0;
+  const result = max > 0 ? completedCount >= max : completedCount > 0;
+  console.debug('[TrophyRoom] isLeagueCompleted()', {
+    leagueId: league?.id,
+    name: league?.name,
+    maxGames: max,
+    completedCount,
+    result,
+  });
+  return result;
 };
 
-// Freeze member positions for completed leagues (keep the position at league end)
-const freezeLeaguePositions = (league: League): League => {
-  // Only freeze if the league is completed; otherwise keep live (profile) positions
-  if (!isLeagueCompleted(league)) return league;
+// ADD: status normalizer (handles Completed, FINISHED, etc.)
+const normalizeMatchStatus = (s: any): Match['status'] => {
+  const v = String(s ?? '').toLowerCase();
+  if (['completed', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'completed';
+  if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ongoing';
+  return 'scheduled';
+};
 
+// ADD: ensure all completed matches have player stats for all participants (accept numeric strings)
+const allPlayersHaveStatsForCompletedMatches = (league: League): boolean => {
   const completed = (league.matches ?? []).filter(m => m.status === 'completed');
-  if (!completed.length) return league;
+  if (!completed.length) return false;
+  return completed.every(m => {
+    const players = [...(m.homeTeamUsers ?? []), ...(m.awayTeamUsers ?? [])];
+    if (!players.length) return false;
+    return players.every(p => {
+      const ps = m.playerStats?.[p.id];
+      const goalsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.goals));
+      const assistsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.assists));
+      return goalsOk && assistsOk;
+    });
+  });
+};
 
-  // Track last known position from completed matches (later matches overwrite earlier ones)
-  const lastPos: Record<string, string | undefined> = {};
+// SIMPLIFY: Final standing = maxGames reached (no extra stats completeness check)
+const isFinalLeagueStanding = (league: League): boolean => {
+  const max = Number(league?.maxGames ?? 0);
+  const completedCount = countCompletedMatches(league);
+  if (max > 0) {
+    const result = completedCount >= max;
+    console.debug('[TrophyRoom] isFinalLeagueStanding(max rule)', {
+      leagueId: league?.id, name: league?.name, maxGames: max, completedCount, result,
+    });
+    return result;
+  }
+  // Fallback rule when backend doesn't provide maxGames
+  const total = league.matches?.length ?? 0;
+  const allCompleted = total > 0 && (league.matches ?? []).every(m => m.status === 'completed');
+  console.debug('[TrophyRoom] isFinalLeagueStanding(fallback all-completed rule)', {
+    leagueId: league?.id, name: league?.name, totalMatches: total, completedCount, allCompleted,
+  });
+  return allCompleted;
+};
+
+// ADD: quick counter for completed matches
+const countCompletedMatches = (league: League) =>
+  (league.matches ?? []).filter(m => m.status === 'completed').length;
+
+// Audit helper: check missing player stats in completed matches
+const auditLeagueData = (league: League) => {
+  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
+  const uniqueStatuses = Array.from(new Set((league.matches ?? []).map(m => m.status)));
+  let totalMissing = 0;
+  const perMatchMissing: Array<{ matchId: string; missingFor: string[] }> = [];
+
   completed.forEach(m => {
-    const take = (u: User) => {
-      const pos = (u.position ?? '').toString();
-      if (pos) lastPos[u.id] = pos;
-    };
-    (m.homeTeamUsers ?? []).forEach(take);
-    (m.awayTeamUsers ?? []).forEach(take);
+    const players = [...(m.homeTeamUsers ?? []), ...(m.awayTeamUsers ?? [])];
+    const missingFor = players
+      .filter(p => {
+        const ps = m.playerStats?.[p.id];
+        const goalsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.goals));
+        const assistsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.assists));
+        return !(goalsOk && assistsOk);
+      })
+      .map(p => `${p.firstName} ${p.lastName} (${p.id})`);
+    if (missingFor.length) {
+      totalMissing += missingFor.length;
+      perMatchMissing.push({ matchId: m.id, missingFor });
+    }
   });
 
-  const frozenMembers = (league.members ?? []).map(u => ({
-    ...u,
-    position: lastPos[u.id] ?? u.position,
-  }));
-
-  return { ...league, members: frozenMembers };
+  console.groupCollapsed('[TrophyRoom][Audit] League data', league.name);
+  console.log({
+    leagueId: league.id,
+    name: league.name,
+    maxGames: league.maxGames,
+    totalMatches: league.matches?.length ?? 0,
+    completedCount: completed.length,
+    statuses: uniqueStatuses,
+    totalMissingPlayerStats: totalMissing,
+  });
+  if (perMatchMissing.length) {
+    console.table(
+      perMatchMissing.slice(0, 10).map(x => ({
+        matchId: x.matchId,
+        missingForCount: x.missingFor.length,
+        missingForSample: x.missingFor.slice(0, 5).join(' | ')
+      }))
+    );
+  }
+  console.groupEnd();
 };
 
 // --- Aggregated per-match summary for the current user (across leagues) ---
@@ -891,18 +1002,58 @@ const normalizeLeaguesFromAuthData = (u: any): League[] => {
     awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
     homeTeamUsers: (m?.homeTeamUsers ?? []).map(toUser),
     awayTeamUsers: (m?.awayTeamUsers ?? []).map(toUser),
-    manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},      // optional in API
-    playerStats: m?.playerStats ?? {},                     // optional in API
-    status: (m?.status ?? 'scheduled') as Match['status'],
+    manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
+    playerStats: m?.playerStats ?? {},
+    status: normalizeMatchStatus(m?.status),
   });
 
-  return unique.map((l: any) => ({
-    id: String(l?.id ?? ''),
-    name: l?.name ?? '',
-    members: (l?.members ?? []).map(toUser),
-    matches: (l?.matches ?? []).map(toMatch),
-    maxGames: Number(l?.maxGames ?? 0),
+  return unique.map((l: any) => {
+    const maxGames = extractLeagueMaxGames(l);
+    if (!maxGames && (l?.matches ?? []).length > 0) {
+      console.warn('[TrophyRoom] maxGames missing/0 for league; using fallback rules', {
+        leagueId: l?.id, name: l?.name, rawMaxGames: l?.maxGames
+      });
+    }
+    return {
+      id: String(l?.id ?? ''),
+      name: l?.name ?? '',
+      members: (l?.members ?? []).map(toUser),
+      matches: (l?.matches ?? []).map(toMatch),
+      maxGames: maxGames,
+    };
+  });
+};
+
+// Freeze member positions for completed leagues (keep the position at league end)
+const freezeLeaguePositions = (league: League): League => {
+  if (!isLeagueCompleted(league)) return league;
+
+  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
+  if (!completed.length) return league;
+
+  const lastPos: Record<string, string | undefined> = {};
+  completed.forEach(m => {
+    const take = (u: User) => {
+      const pos = (u.position ?? '').toString();
+      if (pos) lastPos[u.id] = pos;
+    };
+    (m.homeTeamUsers ?? []).forEach(take);
+    (m.awayTeamUsers ?? []).forEach(take);
+  });
+
+  const frozenMembers = (league.members ?? []).map(u => ({
+    ...u,
+    position: lastPos[u.id] ?? u.position,
   }));
+
+  console.debug('[TrophyRoom] freezeLeaguePositions()', {
+    leagueId: league.id,
+    name: league.name,
+    completedMatches: completed.length,
+    membersFrozen: frozenMembers.length,
+  });
+
+  return { ...league, members: frozenMembers };
 };
 
 // --- Main Page Component ---
@@ -948,13 +1099,33 @@ export default function GlobalTrophyRoom() {
         const data = await res.json();
         if (res.ok && data?.success && data?.user) {
           const onlyMyLeagues = normalizeLeaguesFromAuthData(data.user);
+
+          // Debug summary of leagues after normalization
+          console.groupCollapsed('[TrophyRoom] Leagues loaded');
+          console.table(
+            onlyMyLeagues.map(l => ({
+              id: l.id,
+              name: l.name,
+              maxGames: l.maxGames,
+              totalMatches: l.matches?.length ?? 0,
+              completed: (l.matches ?? []).filter(m => m.status === 'completed').length,
+              statuses: Array.from(new Set((l.matches ?? []).map(m => m.status))).join(', ')
+            }))
+          );
+          console.groupEnd();
+
+          // Per-league audit (missing player stats etc.)
+          onlyMyLeagues.forEach(auditLeagueData);
+
           setLeagues(onlyMyLeagues);
           // capture exact backend XP
           setBackendTotalXP(extractTotalXP(data.user));
         } else {
+          console.error('[TrophyRoom] fetchLeagues bad response', { status: res.status, data });
           setError(data?.message || 'Failed to load your leagues.');
         }
-      } catch {
+      } catch (e) {
+        console.error('[TrophyRoom] fetchLeagues error', e);
         setError('An error occurred while fetching your leagues.');
       } finally {
         setLoading(false);
@@ -1063,6 +1234,30 @@ export default function GlobalTrophyRoom() {
 
   const selectedLeague =
     selectedLeagueId === 'all' ? null : leagues.find(l => l.id === selectedLeagueId);
+
+  // Add debug + flags for the standing label
+  const selectedLeagueFlags = useMemo(() => {
+    if (!selectedLeague) return null;
+    const completedCount = countCompletedMatches(selectedLeague);
+    const max = Number(selectedLeague.maxGames ?? 0);
+    const final = isFinalLeagueStanding(selectedLeague);
+    const statuses = Array.from(new Set((selectedLeague.matches ?? []).map(m => m.status)));
+
+    console.debug('[Standing Label]', {
+      leagueId: selectedLeague.id,
+      name: selectedLeague.name,
+      maxGames: max,
+      completedCount,
+      statuses,
+      final,
+    });
+    if (!final) {
+      console.debug('[Standing Label] Not final yet', {
+        missingToMaxGames: Math.max(0, max - completedCount),
+      });
+    }
+    return { final, completedCount, max, statuses };
+  }, [selectedLeague]);
 
   // Helper to build placeholder trophies for a league (winners TBC)
   const buildPlaceholders = (league: League): TrophyType[] =>
@@ -1305,20 +1500,33 @@ export default function GlobalTrophyRoom() {
           </Dialog>
         </>
       ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
-          {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (
-            <Box key={`${trophy.title}-${trophy.leagueId || 'global'}-${index}`} sx={{ height: '100%' }}>
-              <TrophyCard
-                {...trophy}
-                onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
-              />
+        <>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
+            {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (
+              <Box key={`${trophy.title}-${trophy.leagueId || 'global'}-${index}`} sx={{ height: '100%' }}>
+                <TrophyCard
+                  {...trophy}
+                  onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                />
+              </Box>
+            )) : (
+              <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
+                No trophies to display (no completed leagues found).
+              </Typography>
+            )}
+          </Box>
+
+          {selectedLeague && (
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 700, color: selectedLeagueFlags?.final ? '#16a34a' : '#334155' }}
+              >
+                {selectedLeagueFlags?.final ? 'Final League Standing' : 'Current League Standing'}
+              </Typography>
             </Box>
-          )) : (
-            <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
-              No trophies to display (no completed leagues found).
-            </Typography>
           )}
-        </Box>
+        </>
       )}
 
       {/* Player Quick View Modal */}
@@ -1420,7 +1628,7 @@ export default function GlobalTrophyRoom() {
                       </Box>
                       <Typography
                         variant="caption"
-                        sx={{
+                        sx={ {
                           color: '#64748b',
                           lineHeight: 1,
                           height: 16,                // lock label height to avoid shift
@@ -1453,7 +1661,7 @@ export default function GlobalTrophyRoom() {
                           fontWeight: 800,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                                                   justifyContent: 'center',
                           fontSize: '0.85rem',
                         }}
                       >
