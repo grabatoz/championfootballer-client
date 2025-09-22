@@ -151,10 +151,10 @@ export default function LandingPage() {
             justifyContent: 'center',
             alignItems: 'center',
             background: 'transparent',
-            mt: {xs:'90%',sm:'20%',md:'13%'},              // md: ensure Paper itself is centered
+            mt: { xs: '90%', sm: '20%', md: '13%' },              // md: ensure Paper itself is centered
             // ml: { sm: '50%' }
           }}
-          
+
         >
           <Paper
             elevation={8}
@@ -167,38 +167,38 @@ export default function LandingPage() {
               bgcolor: 'transparent',
               // ensure paper itself is transparent and doesn't force white backgrounds on children
               boxShadow: 'none',
-                alignSelf: { md: 'center' }, 
+              alignSelf: { md: 'center' },
               '& .MuiPaper-root': { background: 'transparent' },
-              ml:{xs:'0%' , sm:'30%' , md:0}
+              ml: { xs: '0%', sm: '30%', md: 0 }
             }}
           >
 
             {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
-            <Box sx={{ width: '100%', overflow: 'visible' , mb:4}}>
-            <Box sx={{ display: 'flex', justifyContent: {xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
-              <Button
-                variant="contained"
-                onClick={() => setShowLogin(!showLogin)}
-                sx={{
-                  color: 'white',
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  backgroundColor: '#000000',
-                  '&:hover': { backgroundColor: '#000000' },
-                  borderRadius: 2,
-                  px: 2,
-                }}
-              >
-                {showLogin ? 'Join' : 'Login'}
-              </Button>
-            </Box>
+            <Box sx={{ width: '100%', overflow: 'visible', mb: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setShowLogin(!showLogin)}
+                  sx={{
+                    color: 'white',
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    backgroundColor: '#000000',
+                    '&:hover': { backgroundColor: '#000000' },
+                    borderRadius: 2,
+                    px: 2,
+                  }}
+                >
+                  {showLogin ? 'Join' : 'Login'}
+                </Button>
+              </Box>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
-            <Box sx={{ml: { sx: 0, sm: -3.5, md: 9.5 } }}>   
-<AuthSocialButtons/>
-              </Box>
-                
+            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } }}>
+              <AuthSocialButtons />
+            </Box>
+
           </Paper>
         </Box>
       </Box>
@@ -212,8 +212,8 @@ export default function LandingPage() {
           justifyContent: 'center',
           px: { xs: 2, md: 0 },
           pointerEvents: 'none',
-          mt:{sx:0,sm:0,md:20},
-          mb:4,
+          mt: { sx: 0, sm: 0, md: 20 },
+          mb: 4,
         }}
       >
         <Box
@@ -242,14 +242,14 @@ export default function LandingPage() {
                 bgcolor: '#eaeae8',
                 border: '1px solid rgba(255,255,255,0.2)',
                 p: 2,
-               
+
               }}
             >
               {/* <Typography variant="overline" sx={{ color: '#000000', letterSpacing: 1, fontWeight: 700 }}>
                 {f.id}
               </Typography> */}
               <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', md: '1.5rem' }, color: '#000000', fontWeight: 700, mt: 0.5 }}>
-             {f.id}. {f.title}
+                {f.id}. {f.title}
               </Typography>
               <Box sx={{ mt: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Box
