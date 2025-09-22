@@ -262,7 +262,7 @@ const PlayerProfileCard = () => {
         positionType,
         style,
         preferredFoot,
-        shirtNumber,
+        shirtNumber: String(shirtNumber), // Convert to string
         skills: {
           dribbling: dribbling ?? 50,
           shooting: shooting ?? 50,
