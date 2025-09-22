@@ -2,9 +2,37 @@
 
 import Cookies from 'js-cookie';
 
-export type BasicUser = { id: string; email?: string; joinedLeagues?: any[] };
+// Define proper interfaces for League, Match, etc.
+interface League {
+  id: string;
+  name: string;
+  // Add other league properties as needed
+}
 
-export type UserProfile = {
+interface Match {
+  id: string;
+  homeTeamGoals: number;
+  awayTeamGoals: number;
+  status: 'completed' | 'scheduled' | 'ongoing';
+  // Add other match properties as needed
+}
+
+interface UserSkills {
+  dribbling?: number;
+  shooting?: number;
+  passing?: number;
+  pace?: number;
+  defending?: number;
+  physical?: number;
+}
+
+export interface BasicUser { 
+  id: string; 
+  email?: string; 
+  joinedLeagues?: League[];
+}
+
+export interface UserProfile {
   id: string;
   firstName?: string;
   lastName?: string;
@@ -18,31 +46,38 @@ export type UserProfile = {
   shirtNumber?: number;
   profilePicture?: string | null;
   image?: string | null; // alias
-  skills?: any;
-};
+  skills?: UserSkills;
+}
 
-export type UserDataShape = {
-  joinedLeagues: any[];
-  managedLeagues: any[];
-  homeTeamMatches: any[];
-  awayTeamMatches: any[];
-  availableMatches?: any[];
-  [k: string]: any;
-};
+export interface UserDataShape {
+  joinedLeagues: League[];
+  managedLeagues: League[];
+  homeTeamMatches: Match[];
+  awayTeamMatches: Match[];
+  availableMatches?: Match[];
+  guestMatch?: Match | null;
+}
 
-const hasWindow = () => typeof window !== 'undefined';
+interface AuthData {
+  token: string;
+  user: UserProfile;
+  userData: UserDataShape;
+  isAuthenticated: boolean;
+  sessionExpiry: string;
+  timestamp: number;
+}
 
-// function normalizeUserData(input?: Partial<UserDataShape>): UserDataShape {
-//   return {
-//     joinedLeagues: input?.joinedLeagues ?? [],
-//     managedLeagues: input?.managedLeagues ?? [],
-//     homeTeamMatches: input?.homeTeamMatches ?? [],
-//     awayTeamMatches: input?.awayTeamMatches ?? [],
-//     ...input,
-//   };
-// }
+interface AuthResult {
+  token?: string;
+  user: UserProfile;
+  userData: UserDataShape;
+  isAuthenticated: boolean;
+  sessionExpiry?: string;
+}
 
-function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
+const hasWindow = (): boolean => typeof window !== 'undefined';
+
+function persistAll(user: UserProfile, userData: UserDataShape, token: string): void {
   // Exact keys you want in LS
   localStorage.setItem('isAuthenticated', 'true');
   localStorage.setItem('user', JSON.stringify(user));
@@ -53,7 +88,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
   localStorage.setItem('sessionExpiry', expiryDate.toISOString());
 
   // Backup bundle
-  const authData = {
+  const authData: AuthData = {
     token,
     user,
     userData,
@@ -68,6 +103,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
   // Cookies for middleware
   Cookies.set('token', token, { expires: 365, path: '/', sameSite: 'lax' });
   Cookies.set('auth_token', token, { expires: 365, path: '/', sameSite: 'lax' });
+  
   // document.cookie fallback
   const maxAge = 365 * 24 * 60 * 60;
   document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
@@ -75,7 +111,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string) {
 }
 
 export const authStorage = {
-  saveAuthExact(user: UserProfile, userData: UserDataShape, token: string) {
+  saveAuthExact(user: UserProfile, userData: UserDataShape, token: string): boolean {
     if (!hasWindow()) return false;
     try {
       persistAll(user, userData, token);
@@ -85,7 +121,8 @@ export const authStorage = {
       return false;
     }
   },
-  getAuth() {
+
+  getAuth(): AuthResult | null {
     if (!hasWindow()) return null;
     try {
       const isAuthenticated = localStorage.getItem('isAuthenticated');
@@ -97,16 +134,37 @@ export const authStorage = {
       if (isAuthenticated === 'true' && user && userData) {
         return {
           token,
-          user: JSON.parse(user),
-          userData: JSON.parse(userData),
+          user: JSON.parse(user) as UserProfile,
+          userData: JSON.parse(userData) as UserDataShape,
           isAuthenticated: true,
-          sessionExpiry,
+          sessionExpiry: sessionExpiry || undefined,
         };
       }
+
       const local = localStorage.getItem('authData');
-      if (local) return JSON.parse(local);
+      if (local) {
+        const parsed = JSON.parse(local) as AuthData;
+        return {
+          token: parsed.token,
+          user: parsed.user,
+          userData: parsed.userData,
+          isAuthenticated: parsed.isAuthenticated,
+          sessionExpiry: parsed.sessionExpiry,
+        };
+      }
+
       const session = sessionStorage.getItem('authData');
-      if (session) return JSON.parse(session);
+      if (session) {
+        const parsed = JSON.parse(session) as AuthData;
+        return {
+          token: parsed.token,
+          user: parsed.user,
+          userData: parsed.userData,
+          isAuthenticated: parsed.isAuthenticated,
+          sessionExpiry: parsed.sessionExpiry,
+        };
+      }
+
       return null;
     } catch (e) {
       console.error('[AUTH-STORAGE] getAuth error', e);

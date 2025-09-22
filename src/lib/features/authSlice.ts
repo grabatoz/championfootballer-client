@@ -3,7 +3,7 @@ import { authAPI } from "../api"
 import Cookies from "js-cookie"
 import type { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from "@/types/api"
 import type { User } from "@/types/user"
-import { authStorage } from "../authStorage"
+import { authStorage, type UserDataShape, type UserProfile } from "../authStorage"
 
 // Define proper types for token extraction
 interface TokenResponse {
@@ -23,8 +23,14 @@ interface NormalizedUser extends Omit<User, 'age' | 'shirtNumber'> {
   shirtNumber?: number;
 }
 
+// Update the AuthState to use UserDataShape from authStorage and UserProfile for user
+interface TypedAuthState extends Omit<AuthState, 'userData' | 'user'> {
+  userData: UserDataShape;
+  user: UserProfile | null;
+}
+
 // Initial state without any client-side data
-const initialState: AuthState = {
+const initialState: TypedAuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
@@ -67,15 +73,29 @@ const isSessionExpired = (): boolean => {
 }
 
 // Helper to normalize User to UserProfile
-const normalizeUserForStorage = (user: User): NormalizedUser => {
+const normalizeUserForStorage = (user: User): UserProfile => {
+  // Type assertion to access potentially missing properties
+  const userWithImage = user as User & { image?: string };
+  
   return {
-    ...user,
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
     age: typeof user.age === "string" ? Number(user.age) || undefined : user.age,
+    gender: user.gender,
+    position: user.position,
+    positionType: user.positionType,
+    style: user.style,
+    preferredFoot: user.preferredFoot,
     shirtNumber: typeof user.shirtNumber === "string" ? Number(user.shirtNumber) || undefined : user.shirtNumber,
+    profilePicture: user.profilePicture || null,
+    image: userWithImage.image || user.profilePicture || null,
+    skills: user.skills,
   }
 }
 
-const syncStateWithStorage = (state: AuthState): void => {
+const syncStateWithStorage = (state: TypedAuthState): void => {
   if (typeof window === "undefined") return
 
   // If no auth signal at all (no token and not authenticated), clear storage
@@ -93,13 +113,11 @@ const syncStateWithStorage = (state: AuthState): void => {
   }
 
   if (state.token && state.user && state.userData) {
-    // Normalize user before saving
-    const normalizedUser = normalizeUserForStorage(state.user)
-    authStorage.saveAuthExact(normalizedUser, state.userData, state.token)
+    authStorage.saveAuthExact(state.user, state.userData, state.token)
   }
 }
 
-const loadSessionFromStorage = (): AuthState => {
+const loadSessionFromStorage = (): TypedAuthState => {
   if (typeof window === "undefined") return initialState
 
   if (isSessionExpired()) {
@@ -133,6 +151,46 @@ const loadSessionFromStorage = (): AuthState => {
   return initialState
 }
 
+// Helper to normalize API response data to UserDataShape
+const normalizeUserData = (data: User | undefined | null): UserDataShape => {
+  if (!data) return initialState.userData;
+  
+  return {
+    joinedLeagues: (data.joinedLeagues || []).map(league => ({
+      id: String(league.id || ''),
+      name: league.name || '',
+    })),
+    managedLeagues: (data.managedLeagues || []).map(league => ({
+      id: String(league.id || ''),
+      name: league.name || '',
+    })),
+    homeTeamMatches: (data.homeTeamMatches || []).map(match => ({
+      id: String(match.id || ''),
+      homeTeamGoals: Number(match.homeTeamGoals || 0),
+      awayTeamGoals: Number(match.awayTeamGoals || 0),
+      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+    })),
+    awayTeamMatches: (data.awayTeamMatches || []).map(match => ({
+      id: String(match.id || ''),
+      homeTeamGoals: Number(match.homeTeamGoals || 0),
+      awayTeamGoals: Number(match.awayTeamGoals || 0),
+      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+    })),
+    availableMatches: (data.availableMatches || []).map(match => ({
+      id: String(match.id || ''),
+      homeTeamGoals: Number(match.homeTeamGoals || 0),
+      awayTeamGoals: Number(match.awayTeamGoals || 0),
+      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+    })),
+    guestMatch: data.guestMatch ? {
+      id: String(data.guestMatch.id || ''),
+      homeTeamGoals: Number(data.guestMatch.homeTeamGoals || 0),
+      awayTeamGoals: Number(data.guestMatch.awayTeamGoals || 0),
+      status: (data.guestMatch.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+    } : null,
+  };
+}
+
 export const login = createAsyncThunk<ApiResponse<User>, LoginCredentials>("auth/login", async (credentials) => {
   const response = await authAPI.login(credentials)
   return response
@@ -158,14 +216,7 @@ export const checkAuth = createAsyncThunk<ApiResponse<User>>("auth/check", async
   const response = await authAPI.checkAuth()
 
   if (response.success && response.data) {
-    const userData = {
-      joinedLeagues: response.data.joinedLeagues || [],
-      managedLeagues: response.data.managedLeagues || [],
-      homeTeamMatches: response.data.homeTeamMatches || [],
-      awayTeamMatches: response.data.awayTeamMatches || [],
-      availableMatches: response.data.availableMatches || [],
-      guestMatch: response.data.guestMatch || null,
-    }
+    const userData = normalizeUserData(response.data)
 
     // Get token from cookies or localStorage
     const token = Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token")
@@ -225,15 +276,8 @@ const authSlice = createSlice({
         if (action.payload.success) {
           state.token = extractTokenFromResponse(action.payload as TokenResponse)
           state.isAuthenticated = Boolean(state.token) || true
-          state.user = action.payload.data || null
-          state.userData = {
-            joinedLeagues: action.payload.data?.joinedLeagues || [],
-            managedLeagues: action.payload.data?.managedLeagues || [],
-            homeTeamMatches: action.payload.data?.homeTeamMatches || [],
-            awayTeamMatches: action.payload.data?.awayTeamMatches || [],
-            availableMatches: action.payload.data?.availableMatches || [],
-            guestMatch: action.payload.data?.guestMatch || null,
-          }
+          state.user = action.payload.data ? normalizeUserForStorage(action.payload.data) : null
+          state.userData = normalizeUserData(action.payload.data)
           state.error = null
           syncStateWithStorage(state)
         } else {
@@ -252,15 +296,8 @@ const authSlice = createSlice({
         state.loading = false
         state.token = extractTokenFromResponse(action.payload as TokenResponse)
         state.isAuthenticated = Boolean(state.token) || true
-        state.user = action.payload.data || null
-        state.userData = {
-          joinedLeagues: action.payload.data?.joinedLeagues || [],
-          managedLeagues: action.payload.data?.managedLeagues || [],
-          homeTeamMatches: action.payload.data?.homeTeamMatches || [],
-          awayTeamMatches: action.payload.data?.awayTeamMatches || [],
-          availableMatches: action.payload.data?.availableMatches || [],
-          guestMatch: action.payload.data?.guestMatch || null,
-        }
+        state.user = action.payload.data ? normalizeUserForStorage(action.payload.data) : null
+        state.userData = normalizeUserData(action.payload.data)
         state.error = null
         syncStateWithStorage(state)
       })
@@ -276,15 +313,8 @@ const authSlice = createSlice({
         state.loading = false
         if (action.payload.success) {
           state.isAuthenticated = true
-          state.user = action.payload.data || null
-          state.userData = {
-            joinedLeagues: action.payload.data?.joinedLeagues || [],
-            managedLeagues: action.payload.data?.managedLeagues || [],
-            homeTeamMatches: action.payload.data?.homeTeamMatches || [],
-            awayTeamMatches: action.payload.data?.awayTeamMatches || [],
-            availableMatches: action.payload.data?.availableMatches || [],
-            guestMatch: action.payload.data?.guestMatch || null,
-          }
+          state.user = action.payload.data ? normalizeUserForStorage(action.payload.data) : null
+          state.userData = normalizeUserData(action.payload.data)
           // Keep any existing token; try to hydrate from cookie/LS if missing
           state.token =
             state.token || Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token") || null

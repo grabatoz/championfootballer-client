@@ -40,9 +40,9 @@ import StarKeeperImg from '@/Components/images/brown.svg';
 // --- Interfaces ---
 interface User {
   id: string;
-  firstName: string;
-  lastName: string;
-  position?: string; // align with app-wide User type
+  firstName?: string; // Make optional to match UserProfile
+  lastName?: string;  // Make optional to match UserProfile
+  position?: string;
   xp?: number;
 } 
 
@@ -142,11 +142,11 @@ interface BackendLeague {
   schedule?: { maxGames?: number | string };
 }
 
-interface ApiResponse {
-  success: boolean;
-  user?: BackendUser;
-  message?: string;
-}
+// interface ApiResponse {
+//   success: boolean;
+//   user?: BackendUser;
+//   message?: string;
+// }
 
 // --- Static Trophy Data ---
 const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
