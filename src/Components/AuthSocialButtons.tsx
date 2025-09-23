@@ -27,14 +27,14 @@ export default function AuthSocialButtons() {
     minHeight: '48px'
   };
 
-  const hoverStyle = {
-    ':hover': {
-      backgroundColor: '#f5f5f5',
-      borderColor: '#d0d0d0',
-      transform: 'translateY(-1px)',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-    }
-  };
+  // const hoverStyle = {
+  //   ':hover': {
+  //     backgroundColor: '#f5f5f5',
+  //     borderColor: '#d0d0d0',
+  //     transform: 'translateY(-1px)',
+  //     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  //   }
+  // };
   
   return (
     <div style={{ display: 'grid', gap: 12, width: '100%', maxWidth: '300px' }}>

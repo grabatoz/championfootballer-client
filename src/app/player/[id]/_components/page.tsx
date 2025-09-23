@@ -551,7 +551,7 @@ export default function PlayerStatsPage() {
             : data?.leagues?.[0]?.name || 'Current League';
 
     const playerName = fullPlayerData?.player?.name || 'Player';
-    const playerShirt = fullPlayerData?.player?.shirtNo || '';
+    // const playerShirt = fullPlayerData?.player?.shirtNo || '';
     const playerPositionType = fullPlayerData?.player?.positionType || fullPlayerData?.player?.position || 'Player';
 
     // Count only trophies this player actually won
