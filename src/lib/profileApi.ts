@@ -2,7 +2,7 @@ import { ApiResponse } from '@/types/api';
 import { User } from '@/types/user';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export const profileAPI = {
   getProfile: async (): Promise<ApiResponse<User>> => {

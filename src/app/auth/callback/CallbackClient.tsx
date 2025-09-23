@@ -67,7 +67,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms)); 
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Helper function to normalize backend user data to UserDataShape
 const normalizeUserData = (fullUser: BackendUser): UserDataShape => {
