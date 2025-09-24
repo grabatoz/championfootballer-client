@@ -54,19 +54,19 @@ const themeColors = {
 };
 
 // Mock data to match Flutter UI
-const influenceData = [
-  { metric: "Goals", playerValue: 10, leagueAvg: 6 },
-  { metric: "Assists", playerValue: 8, leagueAvg: 5 },
-  { metric: "Clean Sheets", playerValue: 7, leagueAvg: 4 },
-  { metric: "Defence", playerValue: 5, leagueAvg: 3 },
-  { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
-];
+// const influenceData = [
+//   { metric: "Goals", playerValue: 10, leagueAvg: 6 },
+//   { metric: "Assists", playerValue: 8, leagueAvg: 5 },
+//   { metric: "Clean Sheets", playerValue: 7, leagueAvg: 4 },
+//   { metric: "Defence", playerValue: 5, leagueAvg: 3 },
+//   { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
+// ];
 
-const winLossData = [
-  { name: 'Win', value: 45, color: '#15b67a' },
-  { name: 'Loss', value: 35, color: '#d32f2f' },
-  { name: 'Draw', value: 20, color: '#ffb300' },
-];
+// const winLossData = [
+//   { name: 'Win', value: 45, color: '#15b67a' },
+//   { name: 'Loss', value: 35, color: '#d32f2f' },
+//   { name: 'Draw', value: 20, color: '#ffb300' },
+// ];
 
 // Threshold used for auto switch from weekly to monthly aggregation
 const AUTO_SWITCH_THRESHOLD = 26;
@@ -594,33 +594,33 @@ export default function CareerPage() {
   }, [matches]);
 
   // Enhanced positive impact messages with better detection
-  const positiveImpactMsgs = useMemo(() => {
-    const msgs: string[] = [];
-    const { last, prev } = lastPrev10;
+  // const positiveImpactMsgs = useMemo(() => {
+  //   const msgs: string[] = [];
+  //   const { last, prev } = lastPrev10;
     
-    console.log('Debug - Impact comparison:', { last, prev });
+  //   console.log('Debug - Impact comparison:', { last, prev });
     
-    if (prev.n > 0) {
-      const winDelta = last.winRate - prev.winRate;
-      if (winDelta > 5) msgs.push(`Win ratio improved by ${winDelta.toFixed(1)}% over the previous 10 games.`);
+  //   if (prev.n > 0) {
+  //     const winDelta = last.winRate - prev.winRate;
+  //     if (winDelta > 5) msgs.push(`Win ratio improved by ${winDelta.toFixed(1)}% over the previous 10 games.`);
 
-      const impactDelta = last.impactAvg - prev.impactAvg;
-      if (impactDelta > 0.5) msgs.push(`Impact increased by ${impactDelta.toFixed(1)} per game versus the previous 10.`);
+  //     const impactDelta = last.impactAvg - prev.impactAvg;
+  //     if (impactDelta > 0.5) msgs.push(`Impact increased by ${impactDelta.toFixed(1)} per game versus the previous 10.`);
 
-      const motmDelta = last.motmVotes - prev.motmVotes;
-      if (motmDelta > 0) msgs.push(`Earned ${motmDelta} more MOTM votes in the last 10 games.`);
+  //     const motmDelta = last.motmVotes - prev.motmVotes;
+  //     if (motmDelta > 0) msgs.push(`Earned ${motmDelta} more MOTM votes in the last 10 games.`);
 
-      const gaDelta = last.ga - prev.ga;
-      if (gaDelta > 1) msgs.push(`Produced ${gaDelta} more goal contributions (G+A) in the last 10 games.`);
-    } else if (last.n > 0) {
-      // If no previous 10, show current performance
-      if (last.winRate > 50) msgs.push(`Excellent win rate of ${last.winRate.toFixed(1)}% in recent games!`);
-      if (last.impactAvg > 5) msgs.push(`Strong impact average of ${last.impactAvg.toFixed(1)} per game!`);
-      if (last.ga > 5) msgs.push(`Great offensive output with ${last.ga} goal contributions!`);
-    }
+  //     const gaDelta = last.ga - prev.ga;
+  //     if (gaDelta > 1) msgs.push(`Produced ${gaDelta} more goal contributions (G+A) in the last 10 games.`);
+  //   } else if (last.n > 0) {
+  //     // If no previous 10, show current performance
+  //     if (last.winRate > 50) msgs.push(`Excellent win rate of ${last.winRate.toFixed(1)}% in recent games!`);
+  //     if (last.impactAvg > 5) msgs.push(`Strong impact average of ${last.impactAvg.toFixed(1)} per game!`);
+  //     if (last.ga > 5) msgs.push(`Great offensive output with ${last.ga} goal contributions!`);
+  //   }
     
-    return msgs.slice(0, 3);
-  }, [lastPrev10]);
+  //   return msgs.slice(0, 3);
+  // }, [lastPrev10]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
@@ -1314,7 +1314,7 @@ export default function CareerPage() {
                                 paddingAngle={3}
                                 startAngle={90}
                                 endAngle={450}
-                                label={({ cx, cy, midAngle, innerRadius, outerRadius, value, name }) => {
+                                label={({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
                                   // Add safety check for value
                                   const safeValue = value ?? 0;
                                   
@@ -1324,7 +1324,7 @@ export default function CareerPage() {
                                   const safeCx = cx || 0;
                                   const safeCy = cy || 0;
                                   const safeMidAngle = midAngle || 0;
-                                  const safeInnerRadius = innerRadius || 0;
+                                  // const safeInnerRadius = innerRadius || 0;
                                   const safeOuterRadius = outerRadius || 0;
                                   
                                   const RADIAN = Math.PI / 180;
@@ -1505,7 +1505,7 @@ export default function CareerPage() {
                   {/* Guidance per spec */}
                   <Box sx={{ mt: 2, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.05)' }}>
                     <Typography sx={{ fontSize: 12, color: themeColors.textDim, lineHeight: 1.4 }}>
-                      This tracks the selected player's performance over their last {lastPrev10.last.n} games using the key metrics shown in the table. It measures their progress based on the previous {lastPrev10.prev.n} games they played. If a player has not yet completed 10 games, it will still show the most recent games played. <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Refer to the Key Stats</span> reference tab to understand the algorithm for each metric. Replace % Impact stat with <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Game Contribution</span> <span style={{ color: themeColors.danger, fontWeight: 'bold' }}>(this is the same calculation as the Contribution Index described</span>
+                     {` This tracks the selected player's performance over their last`} {lastPrev10.last.n} {`games using the key metrics shown in the table. It measures their progress based on the previous`} {lastPrev10.prev.n} {`games they played. If a player has not yet completed 10 games, it will still show the most recent games played.`} <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Refer to the Key Stats</span> reference tab to understand the algorithm for each metric. Replace % Impact stat with <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Game Contribution</span> <span style={{ color: themeColors.danger, fontWeight: 'bold' }}>(this is the same calculation as the Contribution Index described</span>
                     </Typography>
                   </Box>
 
