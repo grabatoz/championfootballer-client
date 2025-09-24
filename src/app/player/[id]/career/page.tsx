@@ -26,7 +26,7 @@ import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '@/lib/useAuth';
-import api from '@/lib/api'; // Adjust the import based on your project structure
+// import api from '@/lib/api'; // Adjust the import based on your project structure
 
 // ---------- THEME (Brand) ----------
 const themeColors = {
@@ -88,6 +88,16 @@ interface LeagueMatch {
   id: string;
   date: string;
   playerStats?: PlayerMatchStats;
+  // Add missing properties
+  result?: 'W' | 'L' | 'D';
+  outcome?: string;
+  homeTeamGoals?: number;
+  awayTeamGoals?: number;
+  homeTeamId?: string;
+  team1Score?: number;
+  team2Score?: number;
+  team1Id?: string;
+  team1Players?: Array<{ id: string }>;
 }
 interface LeagueWithMatches {
   id: string;
@@ -634,7 +644,7 @@ export default function CareerPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${NEXT_PUBLIC_API_URL}/api/players/${playerId}`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/players/${playerId}`, { cache: 'no-store' });
         if (!res.ok) {
           console.warn('Player name fetch failed:', res.status, res.statusText);
           return;
@@ -826,7 +836,7 @@ export default function CareerPage() {
     const fetchMatchResults = async () => {
       try {
         // Call your matches API endpoint
-        const response = await fetch(`${NEXT_PUBLIC_API_URL}/api/players/${playerId}/matches`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/players/${playerId}/matches`);
         if (response.ok) {
           const matchData = await response.json();
           console.log('Match results from API:', matchData);
@@ -1051,9 +1061,9 @@ export default function CareerPage() {
                           formatter={(value: unknown, name: unknown) => {
                             const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
                             const n = typeof name === 'string' ? name : String(name ?? '');
-                            if (n.includes('Avg Points')) return [v, `Avg Points/${groupingType === 'weekly' ? 'Week' : 'Month'}`] as [string | number, string];
-                            if (n.includes('Accumulative')) return [v, 'Cumulative XP Points'] as [string | number, string];
-                            return [v, n] as [string | number, string];
+                            if (n.includes('Avg Points')) return [v, `Avg Points/${groupingType === 'weekly' ? 'Week' : 'Month'}`];
+                            if (n.includes('Accumulative')) return [v, 'Cumulative XP Points'];
+                            return [v, n];
                           }}
                           labelFormatter={(label) => {
                             const activeData = (chartData.length > 0 ? chartData : performanceData).find(d => d.label === label);
@@ -1197,6 +1207,9 @@ export default function CareerPage() {
                               }}
                               className="radar-axis"
                               tickSize={8}
+                              // Add missing required properties
+                              reversed={false}
+                              scale="auto"
                             />
                             <PolarRadiusAxis 
                               tick={{ 
@@ -1255,7 +1268,7 @@ export default function CareerPage() {
                                 marginBottom: 4
                               }}
                               formatter={(value: unknown, name: unknown) => [
-                                value,
+                                String(value ?? ''),
                                 name === (playerName || 'Player') ? (playerName || 'Player') : 'League Avg'
                               ]}
                             />
@@ -1302,8 +1315,11 @@ export default function CareerPage() {
                                 startAngle={90}
                                 endAngle={450}
                                 label={({ cx, cy, midAngle, innerRadius, outerRadius, value, name }) => {
+                                  // Add safety check for value
+                                  const safeValue = value ?? 0;
+                                  
                                   // Only show label if value > 5 (to avoid cluttered display)
-                                  if (value < 5) return null;
+                                  if (safeValue < 5) return null;
                                   
                                   const safeCx = cx || 0;
                                   const safeCy = cy || 0;
@@ -1329,7 +1345,7 @@ export default function CareerPage() {
                                         filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.8))'
                                       }}
                                     >
-                                      {`${value}%`}
+                                      {`${safeValue}%`}
                                     </text>
                                   );
                                 }}
@@ -1589,7 +1605,7 @@ export default function CareerPage() {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  <span style={{ color: themeColors.primaryAlt }}>Zohaib</span>: Won <span style={{ color: themeColors.success }}>55%</span> Lost <span style={{ color: themeColors.danger }}>45%</span>
+                  <span style={{ color: themeColors.primary }}>Zohaib</span>: Won <span style={{ color: themeColors.success }}>55%</span> Lost <span style={{ color: themeColors.danger }}>45%</span>
                 </Typography>
               </Box>
 

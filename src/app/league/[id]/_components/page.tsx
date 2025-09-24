@@ -979,153 +979,440 @@ export default function LeagueDetailPage() {
 
     // Add this component before the main return statement
 
-    const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
-        if (!match) return null;
+    // const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
+    //     if (!match) return null;
 
-        return (
-            <Dialog
-                open={open}
-                onClose={onClose}
-                fullWidth
-                maxWidth="sm"
-                PaperProps={{
-                    sx: {
-                        bgcolor: 'rgba(15,15,15,0.95)',
-                        color: '#E5E7EB',
-                        borderRadius: 3,
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        backdropFilter: 'blur(20px)',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-                        overflow: 'hidden',
-                    },
+    //     return (
+    //         <Dialog
+    //             open={open}
+    //             onClose={onClose}
+    //             fullWidth
+    //             maxWidth="sm"
+    //             PaperProps={{
+    //                 sx: {
+    //                     bgcolor: 'rgba(15,15,15,0.95)',
+    //                     color: '#E5E7EB',
+    //                     borderRadius: 3,
+    //                     border: '1px solid rgba(255,255,255,0.1)',
+    //                     backdropFilter: 'blur(20px)',
+    //                     boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+    //                     overflow: 'hidden',
+    //                 },
+    //             }}
+    //         >
+    //             <DialogTitle
+    //                 sx={{
+    //                     fontWeight: 'bold',
+    //                     position: 'relative',
+    //                     color: '#E5E7EB',
+    //                     background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+    //                     borderBottom: '1px solid rgba(255,255,255,0.1)',
+    //                     py: 2.5
+    //                 }}
+    //             >
+    //                 Match Details
+    //                 <IconButton
+    //                     aria-label="close"
+    //                     onClick={onClose}
+    //                     sx={{
+    //                         position: 'absolute',
+    //                         right: 8,
+    //                         top: 8,
+    //                         color: '#9CA3AF',
+    //                         '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+    //                     }}
+    //                 >
+    //                     <CloseIcon />
+    //                 </IconButton>
+    //             </DialogTitle>
+
+    //             <DialogContent sx={{ p: 0 }}>
+    //                 {/* Match Header */}
+    //                 <Box sx={{ 
+    //                     p: 3, 
+    //                     background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+    //                     color: 'white'
+    //                 }}>
+    //                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    //                         {/* Home Team */}
+    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    //                             <Image
+    //                                 src={match.homeTeamImage || homeImg}
+    //                                 alt={match.homeTeamName}
+    //                                 width={32}
+    //                                 height={32}
+    //                                 style={{ borderRadius: '4px' }}
+    //                             />
+    //                             <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
+    //                                 {formatMatchName(match.homeTeamName)}
+    //                             </Typography>
+    //                             {match.status === 'completed' && (
+    //                                 <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
+    //                                     {match.homeTeamGoals || 0}
+    //                                 </Typography>
+    //                             )}
+    //                         </Box>
+
+    //                         {/* VS Divider */}
+    //                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1 }}>
+    //                             <Typography variant="body2" sx={{ 
+    //                                 backgroundColor: 'rgba(255,255,255,0.2)', 
+    //                                 px: 2, 
+    //                                 py: 0.5, 
+    //                                 borderRadius: 2,
+    //                                 fontWeight: 'bold'
+    //                             }}>
+    //                                 VS
+    //                             </Typography>
+    //                         </Box>
+
+    //                         {/* Away Team */}
+    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    //                             <Image
+    //                                 src={match.awayTeamImage || awayImg}
+    //                                 alt={match.awayTeamName}
+    //                                 width={32}
+    //                                 height={32}
+    //                                 style={{ borderRadius: '4px' }}
+    //                             />
+    //                             <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
+    //                                 {formatMatchName(match.awayTeamName)}
+    //                             </Typography>
+    //                             {match.status === 'completed' && (
+    //                                 <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
+    //                                     {match.awayTeamGoals || 0}
+    //                                 </Typography>
+    //                             )}
+    //                         </Box>
+    //                     </Box>
+    //                 </Box>
+
+    //                 {/* Match Info */}
+    //                 <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+    //                     {/* Date & Time */}
+    //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    //                         <Calendar size={20} color="#E5E7EB" />
+    //                         <Box>
+    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+    //                                 Date & Time
+    //                             </Typography>
+    //                             <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+    //                                 {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
+    //                             </Typography>
+    //                         </Box>
+    //                     </Box>
+
+    //                     {/* Location */}
+    //                     {match.location && (
+    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    //                             <Box sx={{ 
+    //                                 width: 20, 
+    //                                 height: 20, 
+    //                                 display: 'flex', 
+    //                                 alignItems: 'center', 
+    //                                 justifyContent: 'center' 
+    //                             }}>
+    //                                 📍
+    //                             </Box>
+    //                             <Box>
+    //                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+    //                                     Location
+    //                                 </Typography>
+    //                                 <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+    //                                     {match.location}
+    //                                 </Typography>
+    //                             </Box>
+    //                         </Box>
+    //                     )}
+
+    //                     {/* Status */}
+    //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    //                         <Box sx={{ 
+    //                             width: 20, 
+    //                             height: 20, 
+    //                             display: 'flex', 
+    //                             alignItems: 'center', 
+    //                             justifyContent: 'center' 
+    //                         }}>
+    //                             {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
+    //                         </Box>
+    //                         <Box>
+    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+    //                                 Status
+    //                             </Typography>
+    //                             <Chip 
+    //                                 label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
+    //                                 size="small"
+    //                                 sx={{
+    //                                     backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
+    //                                     color: 'white',
+    //                                     fontWeight: 'bold',
+    //                                     fontSize: '0.75rem'
+    //                                 }}
+    //                             />
+    //                         </Box>
+    //                     </Box>
+
+    //                     {/* Availability Info for Scheduled Matches */}
+    //                     {match.status === 'scheduled' && (
+    //                         <Box sx={{ 
+    //                             mt: 2, 
+    //                             p: 2, 
+    //                             backgroundColor: 'rgba(255,255,255,0.05)', 
+    //                             borderRadius: 2,
+    //                             border: '1px solid rgba(255,255,255,0.1)'
+    //                         }}>
+    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
+    //                                 Player Availability
+    //                             </Typography>
+    //                             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+    //                                 <Chip 
+    //                                     label={`Available: ${getAvailabilityCounts(match).availableCount}`}
+    //                                     size="small"
+    //                                     sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
+    //                                 />
+    //                                 <Chip 
+    //                                     label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
+    //                                     size="small"
+    //                                     sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
+    //                                 />
+    //                             </Box>
+    //                         </Box>
+    //                     )}
+    //                 </Box>
+    //             </DialogContent>
+
+    //             <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+    //                 <Button
+    //                     onClick={onClose}
+    //                     variant="outlined"
+    //                     sx={{
+    //                         color: '#E5E7EB',
+    //                         borderColor: 'rgba(255,255,255,0.2)',
+    //                         '&:hover': {
+    //                             backgroundColor: 'rgba(255,255,255,0.05)',
+    //                             borderColor: 'rgba(255,255,255,0.3)'
+    //                         }
+    //                     }}
+    //                 >
+    //                     Close
+    //                 </Button>
+    //                 <Link href={`/match/${match.id}`} passHref>
+    //                     <Button
+    //                         variant="contained"
+    //                         sx={{
+    //                             backgroundColor: '#0388E3',
+    //                             '&:hover': { backgroundColor: '#0369a1' }
+    //                         }}
+    //                     >
+    //                         View Full Details
+    //                     </Button>
+    //                 </Link>
+    //             </DialogActions>
+    //         </Dialog>
+    //     );
+    // };
+
+    // Replace your MatchDetailModal component with this updated version
+
+const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
+    if (!match) return null;
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md" // Changed to md for more width
+            PaperProps={{
+                sx: {
+                    bgcolor: 'rgba(15,15,15,0.95)',
+                    color: '#E5E7EB',
+                    borderRadius: 3,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                    overflow: 'hidden',
+                },
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    fontWeight: 'bold',
+                    position: 'relative',
+                    color: '#E5E7EB',
+                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    py: 2.5
                 }}
             >
-                <DialogTitle
+                Match Details
+                <IconButton
+                    aria-label="close"
+                    onClick={onClose}
                     sx={{
-                        fontWeight: 'bold',
-                        position: 'relative',
-                        color: '#E5E7EB',
-                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        py: 2.5
+                        position: 'absolute',
+                        right: 8,
+                        top: 8,
+                        color: '#9CA3AF',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                     }}
                 >
-                    Match Details
-                    <IconButton
-                        aria-label="close"
-                        onClick={onClose}
-                        sx={{
-                            position: 'absolute',
-                            right: 8,
-                            top: 8,
-                            color: '#9CA3AF',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-                        }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                </DialogTitle>
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
 
-                <DialogContent sx={{ p: 0 }}>
-                    {/* Match Header */}
-                    <Box sx={{ 
-                        p: 3, 
-                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                        color: 'white'
-                    }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {/* Home Team */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Image
-                                    src={match.homeTeamImage || homeImg}
-                                    alt={match.homeTeamName}
-                                    width={32}
-                                    height={32}
-                                    style={{ borderRadius: '4px' }}
-                                />
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
+            <DialogContent sx={{ p: 0 }}>
+                {/* Match Header - Teams Side by Side */}
+                <Box sx={{ 
+                    p: 3, 
+                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                    color: 'white'
+                }}>
+                    {/* Teams in a row layout */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        {/* Home Team */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2, 
+                            flex: 1,
+                            minWidth: 0 // Prevent overflow
+                        }}>
+                            <Image
+                                src={match.homeTeamImage || homeImg}
+                                alt={match.homeTeamName}
+                                width={40}
+                                height={40}
+                                style={{ borderRadius: '6px', flexShrink: 0 }}
+                            />
+                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
                                     {formatMatchName(match.homeTeamName)}
                                 </Typography>
-                                {match.status === 'completed' && (
-                                    <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
+                                <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                        opacity: 0.8,
+                                        fontSize: '0.8rem'
+                                    }}
+                                >
+                                    Home
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {/* Score Section */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2,
+                            flexShrink: 0
+                        }}>
+                            {match.status === 'completed' && (
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 1,
+                                    backgroundColor: 'rgba(255,255,255,0.15)',
+                                    px: 2,
+                                    py: 1,
+                                    borderRadius: 2
+                                }}>
+                                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                                         {match.homeTeamGoals || 0}
                                     </Typography>
-                                )}
-                            </Box>
-
-                            {/* VS Divider */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1 }}>
-                                <Typography variant="body2" sx={{ 
-                                    backgroundColor: 'rgba(255,255,255,0.2)', 
-                                    px: 2, 
-                                    py: 0.5, 
-                                    borderRadius: 2,
-                                    fontWeight: 'bold'
-                                }}>
-                                    VS
-                                </Typography>
-                            </Box>
-
-                            {/* Away Team */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Image
-                                    src={match.awayTeamImage || awayImg}
-                                    alt={match.awayTeamName}
-                                    width={32}
-                                    height={32}
-                                    style={{ borderRadius: '4px' }}
-                                />
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                    {formatMatchName(match.awayTeamName)}
-                                </Typography>
-                                {match.status === 'completed' && (
-                                    <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
+                                    <Typography variant="h6" sx={{ opacity: 0.7 }}>
+                                        -
+                                    </Typography>
+                                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                                         {match.awayTeamGoals || 0}
                                     </Typography>
-                                )}
+                                </Box>
+                            )}
+                            {match.status === 'scheduled' && (
+                                <Box sx={{ 
+                                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                                    px: 2, 
+                                    py: 1, 
+                                    borderRadius: 2
+                                }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                        VS
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* Away Team */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2, 
+                            flex: 1,
+                            flexDirection: 'row-reverse', // Reverse order for visual balance
+                            minWidth: 0
+                        }}>
+                            <Image
+                                src={match.awayTeamImage || awayImg}
+                                alt={match.awayTeamName}
+                                width={40}
+                                height={40}
+                                style={{ borderRadius: '6px', flexShrink: 0 }}
+                            />
+                            <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
+                                <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {formatMatchName(match.awayTeamName)}
+                                </Typography>
+                                <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                        opacity: 0.8,
+                                        fontSize: '0.8rem'
+                                    }}
+                                >
+                                    Away
+                                </Typography>
                             </Box>
                         </Box>
                     </Box>
+                </Box>
 
-                    {/* Match Info */}
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {/* Date & Time */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Calendar size={20} color="#E5E7EB" />
-                            <Box>
-                                <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                    Date & Time
-                                </Typography>
-                                <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-                                    {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
-                                </Typography>
-                            </Box>
+                {/* Match Info */}
+                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                    {/* Date & Time */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Calendar size={20} color="#E5E7EB" />
+                        <Box>
+                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                Date & Time
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
+                            </Typography>
                         </Box>
+                    </Box>
 
-                        {/* Location */}
-                        {match.location && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ 
-                                    width: 20, 
-                                    height: 20, 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center' 
-                                }}>
-                                    📍
-                                </Box>
-                                <Box>
-                                    <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                        Location
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-                                        {match.location}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        )}
-
-                        {/* Status */}
+                    {/* Location */}
+                    {match.location && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Box sx={{ 
                                 width: 20, 
@@ -1134,84 +1421,191 @@ export default function LeagueDetailPage() {
                                 alignItems: 'center', 
                                 justifyContent: 'center' 
                             }}>
-                                {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
+                                📍
                             </Box>
                             <Box>
                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                    Status
+                                    Location
                                 </Typography>
+                                <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                    {match.location}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    )}
+
+                    {/* Status */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                            width: 20, 
+                            height: 20, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                        }}>
+                            {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
+                        </Box>
+                        <Box>
+                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                Status
+                            </Typography>
+                            <Chip 
+                                label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
+                                size="small"
+                                sx={{
+                                    backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.75rem'
+                                }}
+                            />
+                        </Box>
+                    </Box>
+
+                    {/* Availability Info for Scheduled Matches */}
+                    {match.status === 'scheduled' && (
+                        <Box sx={{ 
+                            mt: 2, 
+                            p: 2, 
+                            backgroundColor: 'rgba(255,255,255,0.05)', 
+                            borderRadius: 2,
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
+                                Player Availability
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                                 <Chip 
-                                    label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
+                                    label={`Available: ${getAvailabilityCounts(match).availableCount}`}
                                     size="small"
-                                    sx={{
-                                        backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
-                                        color: 'white',
-                                        fontWeight: 'bold',
-                                        fontSize: '0.75rem'
-                                    }}
+                                    sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
+                                />
+                                <Chip 
+                                    label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
+                                    size="small"
+                                    sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
                                 />
                             </Box>
                         </Box>
+                    )}
 
-                        {/* Availability Info for Scheduled Matches */}
-                        {match.status === 'scheduled' && (
+                    {/* Team Lineups for Completed/Ongoing Matches */}
+                    {(match.status === 'completed' || match.status === 'ongoing') && 
+                     (match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="h6" sx={{ color: '#E5E7EB', mb: 2, fontWeight: 'bold' }}>
+                                Team Lineups
+                            </Typography>
                             <Box sx={{ 
-                                mt: 2, 
-                                p: 2, 
-                                backgroundColor: 'rgba(255,255,255,0.05)', 
-                                borderRadius: 2,
-                                border: '1px solid rgba(255,255,255,0.1)'
+                                display: 'grid', 
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                gap: 3 
                             }}>
-                                <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
-                                    Player Availability
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                    <Chip 
-                                        label={`Available: ${getAvailabilityCounts(match).availableCount}`}
-                                        size="small"
-                                        sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
-                                    />
-                                    <Chip 
-                                        label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
-                                        size="small"
-                                        sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
-                                    />
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
-                </DialogContent>
+                                {/* Home Team Players */}
+                                {match.homeTeamUsers?.length > 0 && (
+                                    <Box sx={{ 
+                                        backgroundColor: 'rgba(255,255,255,0.05)', 
+                                        borderRadius: 2,
+                                        p: 2,
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }}>
+                                        <Typography variant="body2" sx={{ 
+                                            color: '#9CA3AF', 
+                                            fontSize: '0.8rem', 
+                                            mb: 1.5,
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {formatMatchName(match.homeTeamName)} ({match.homeTeamUsers.length})
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {match.homeTeamUsers.map((player, index) => (
+                                                <Chip 
+                                                    key={player.id}
+                                                    label={`${player.firstName} ${player.lastName}`}
+                                                    size="small"
+                                                    sx={{ 
+                                                        backgroundColor: 'rgba(229, 106, 22, 0.7)',
+                                                        color: 'white', 
+                                                        fontWeight: 'bold',
+                                                        justifyContent: 'flex-start',
+                                                        '& .MuiChip-label': { fontSize: '0.75rem' }
+                                                    }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
 
-                <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                {/* Away Team Players */}
+                                {match.awayTeamUsers?.length > 0 && (
+                                    <Box sx={{ 
+                                        backgroundColor: 'rgba(255,255,255,0.05)', 
+                                        borderRadius: 2,
+                                        p: 2,
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }}>
+                                        <Typography variant="body2" sx={{ 
+                                            color: '#9CA3AF', 
+                                            fontSize: '0.8rem', 
+                                            mb: 1.5,
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {formatMatchName(match.awayTeamName)} ({match.awayTeamUsers.length})
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {match.awayTeamUsers.map((player, index) => (
+                                                <Chip 
+                                                    key={player.id}
+                                                    label={`${player.firstName} ${player.lastName}`}
+                                                    size="small"
+                                                    sx={{ 
+                                                        backgroundColor: 'rgba(207, 35, 38, 0.7)',
+                                                        color: 'white', 
+                                                        fontWeight: 'bold',
+                                                        justifyContent: 'flex-start',
+                                                        '& .MuiChip-label': { fontSize: '0.75rem' }
+                                                    }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Box>
+            </DialogContent>
+
+            <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <Button
+                    onClick={onClose}
+                    variant="outlined"
+                    sx={{
+                        color: '#E5E7EB',
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        '&:hover': {
+                            backgroundColor: 'rgba(255,255,255,0.05)',
+                            borderColor: 'rgba(255,255,255,0.3)'
+                        }
+                    }}
+                >
+                    Close
+                </Button>
+                <Link href={`/match/${match.id}`} passHref>
                     <Button
-                        onClick={onClose}
-                        variant="outlined"
+                        variant="contained"
                         sx={{
-                            color: '#E5E7EB',
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.05)',
-                                borderColor: 'rgba(255,255,255,0.3)'
-                            }
+                            backgroundColor: '#0388E3',
+                            '&:hover': { backgroundColor: '#0369a1' }
                         }}
                     >
-                        Close
+                        View Full Details
                     </Button>
-                    <Link href={`/match/${match.id}`} passHref>
-                        <Button
-                            variant="contained"
-                            sx={{
-                                backgroundColor: '#0388E3',
-                                '&:hover': { backgroundColor: '#0369a1' }
-                            }}
-                        >
-                            View Full Details
-                        </Button>
-                    </Link>
-                </DialogActions>
-            </Dialog>
-        );
-    };
+                </Link>
+            </DialogActions>
+        </Dialog>
+    );
+};
 
     // Add this handler before the return statement
 
