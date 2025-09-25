@@ -1941,3 +1941,4 @@ function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1
 
   return { team1, team2 };
 }
+
