@@ -88,7 +88,6 @@ interface LeagueMatch {
   id: string;
   date: string;
   playerStats?: PlayerMatchStats;
-  // Add missing properties
   result?: 'W' | 'L' | 'D';
   outcome?: string;
   homeTeamGoals?: number;
@@ -97,7 +96,8 @@ interface LeagueMatch {
   team1Score?: number;
   team2Score?: number;
   team1Id?: string;
-  team1Players?: Array<{ id: string }>;
+  team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
+  team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
 }
 interface LeagueWithMatches {
   id: string;
@@ -222,6 +222,10 @@ const StrengthRow = ({ title, you, diff, up, showComparison }: {
     )}
   </TableRow>
 );
+
+// Helper to extract a display name from a player-like object
+const extractPlayerDisplayName = (p: { id: string; name?: string; profile?: { name?: string } } | undefined): string =>
+  (p?.name || p?.profile?.name || p?.id || '').trim();
 
 // ---------- HELPERS ----------
 function calcPoints(ps: PlayerMatchStats | undefined): number {
@@ -644,7 +648,7 @@ export default function CareerPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/players/${playerId}`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, { cache: 'no-store' });
         if (!res.ok) {
           console.warn('Player name fetch failed:', res.status, res.statusText);
           return;
@@ -836,7 +840,7 @@ export default function CareerPage() {
     const fetchMatchResults = async () => {
       try {
         // Call your matches API endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/players/${playerId}/matches`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`);
         if (response.ok) {
           const matchData = await response.json();
           console.log('Match results from API:', matchData);
@@ -861,6 +865,147 @@ export default function CareerPage() {
     console.log('Data source:', matches.length > 0 ? 'REAL BACKEND DATA' : 'SAMPLE DATA');
     console.log('========================');
   }, [matches, influenceRadarData, playerName]);
+
+  console.log('ONE MATCH RAW', matches[0]);
+  matches.slice(0,5).forEach((m,i)=>{
+    const t = extractTeamsForPairing(m, String(playerId));
+    console.log('PAIRING TEST IDX', i, 'T1', t.team1.map(p=>p.id), 'T2', t.team2.map(p=>p.id));
+  });
+
+  // --- Simple Synergy API state ---
+  const [synergyLoading, setSynergyLoading] = useState(false);
+  const [synergyError, setSynergyError] = useState<string|null>(null);
+  const [bestPairing, setBestPairing] = useState<any>(null);
+  const [toughestRival, setToughestRival] = useState<any>(null);
+  const [participatedMatches, setParticipatedMatches] = useState<number>(0);
+  const [selectedSynergyLeagueId, setSelectedSynergyLeagueId] = useState<string | null>(null);
+
+  // Fetch Simple Synergy (backend: /players/:playerId/simple-synergy)
+  useEffect(() => {
+    if (!playerId) return;
+
+    // If no matches yet, reset & skip fetch
+    if (!matches || matches.length === 0) {
+      setSynergyLoading(false);
+      setSynergyError(null);
+      setBestPairing(null);
+      setToughestRival(null);
+      setParticipatedMatches(0);
+      setSelectedSynergyLeagueId(null);
+      return;
+    }
+
+    let aborted = false;
+    (async () => {
+      try {
+        setSynergyLoading(true);
+        setSynergyError(null);
+
+        const leagueParam = (filters.leagueId && filters.leagueId !== 'all')
+          ? `?leagueId=${encodeURIComponent(filters.leagueId)}`
+          : '';
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
+        const res = await fetch(url);
+
+        // Gracefully treat 404 / 204 as "no data" (not an error)
+        if (res.status === 404 || res.status === 204) {
+          if (!aborted) {
+            setBestPairing(null);
+            setToughestRival(null);
+            setParticipatedMatches(0);
+            setSelectedSynergyLeagueId(filters.leagueId || null);
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          // Real server error -> show error
+            throw new Error(`Server error ${res.status}`);
+        }
+
+        let dataParsed: any = null;
+        try {
+          dataParsed = await res.json();
+        } catch {
+          // Empty / invalid JSON -> treat as no data
+          if (!aborted) {
+            setBestPairing(null);
+            setToughestRival(null);
+            setParticipatedMatches(0);
+            setSelectedSynergyLeagueId(filters.leagueId || null);
+          }
+          return;
+        }
+        if (aborted) return;
+
+        console.log('Synergy API', dataParsed);
+
+        const isSingle =
+          dataParsed &&
+          (Object.prototype.hasOwnProperty.call(dataParsed, 'bestPairing') ||
+           Object.prototype.hasOwnProperty.call(dataParsed, 'toughestRival') ||
+           Object.prototype.hasOwnProperty.call(dataParsed, 'participatedMatches'));
+
+        const isMulti =
+          dataParsed &&
+          Array.isArray(dataParsed.leagues);
+
+        if (isSingle) {
+          setBestPairing(dataParsed.bestPairing || null);
+          setToughestRival(dataParsed.toughestRival || null);
+          setParticipatedMatches(dataParsed.participatedMatches || 0);
+          setSelectedSynergyLeagueId(dataParsed.leagueId || filters.leagueId || null);
+          return;
+        }
+
+        if (isMulti) {
+          const leagues = (dataParsed.leagues as Array<{
+            leagueId: string;
+            participatedMatches: number;
+            bestPairing?: any;
+            toughestRival?: any;
+          }>).slice();
+
+          let chosen = leagues
+            .filter(l => l.participatedMatches > 0)
+            .sort((a, b) => b.participatedMatches - a.participatedMatches)[0];
+          if (!chosen && leagues.length) chosen = leagues[0];
+
+          if (chosen) {
+            setBestPairing(chosen.bestPairing || null);
+            setToughestRival(chosen.toughestRival || null);
+            setParticipatedMatches(chosen.participatedMatches || 0);
+            setSelectedSynergyLeagueId(chosen.leagueId || null);
+          } else {
+            setBestPairing(null);
+            setToughestRival(null);
+            setParticipatedMatches(0);
+            setSelectedSynergyLeagueId(null);
+          }
+          return;
+        }
+
+        // Unexpected shape -> treat as no data (not error)
+        setBestPairing(null);
+        setToughestRival(null);
+        setParticipatedMatches(0);
+        setSelectedSynergyLeagueId(filters.leagueId || null);
+      } catch (e:any) {
+        if (!aborted) {
+          console.warn('Synergy fetch error:', e);
+          setSynergyError(e.message || 'Failed to load synergy');
+          setBestPairing(null);
+          setToughestRival(null);
+          setParticipatedMatches(0);
+          setSelectedSynergyLeagueId(null);
+        }
+      } finally {
+        if (!aborted) setSynergyLoading(false);
+      }
+    })();
+
+    return () => { aborted = true; };
+  }, [playerId, matches, filters.leagueId]);
 
   return (
     <Box
@@ -1466,7 +1611,8 @@ export default function CareerPage() {
                             return (
                               <>
                                 <ImpactRow 
-                                  title="% Impact" 
+// -                                  title="% Impact" 
+                                  title="Game Contribution" 
                                   value={last.impactAvg.toFixed(1)} 
                                   change={prev.n > 0 ? deltaNum(last.impactAvg, prev.impactAvg) : '0.0'} 
                                   up={last.impactAvg >= prev.impactAvg} 
@@ -1492,6 +1638,7 @@ export default function CareerPage() {
                                 <ImpactRow 
                                   title="Goals + Assist" 
                                   value={`${last.ga}`} 
+                                 
                                   change={prev.n > 0 ? deltaInt(last.ga, prev.ga) : '0'} 
                                   up={last.ga >= prev.ga} 
                                 />
@@ -1579,33 +1726,66 @@ export default function CareerPage() {
                 </CardContent>
               </GlassCard>
 
-              {/* Play Best With + Rivalries */}
+              {/* Play Best With + Rivalries (Dynamic) */}
               <Box sx={{ mb: 2 }}>
                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-                  You Play Best With 
-                  <Box 
-                    component="img"
-                    src="/assets/icons/shirt.png"
-                    alt="shirt"
-                    sx={{ width: 20, height: 20 }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                  <span style={{ color: themeColors.primary }}>Bilal</span>: Total points accumulated <span style={{ color: themeColors.success }}>100xp</span>
+                  You Play Best With
+                  {/* {selectedSynergyLeagueId && (
+                    <span style={{ fontSize: 11, color: themeColors.textFaint }}>
+                      (League {selectedSynergyLeagueId})
+                    </span>
+                  )} */}
+                  <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
+                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
+                  {playerId && synergyError && (
+                    <span style={{ color: themeColors.danger }}>{synergyError}</span>
+                  )}
+                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
+                    <span style={{ color: themeColors.textDim }}>No matches yet.</span>
+                  )}
+                  {!synergyLoading && !synergyError && bestPairing && (
+                    <>
+                      <span style={{ color: themeColors.primary }}>{bestPairing.name || 'Player'}</span>:
+                      Wins together <span style={{ color: themeColors.success }}>{bestPairing.winsTogether}</span>
+                      <span style={{ color: themeColors.textDim, fontSize: 12 }}>
+                        {` (${bestPairing.matchesTogether} matches • ${bestPairing.winRate}% win rate)`}
+                      </span>
+                    </>
+                  )}
+                  {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && (
+                    <span style={{ color: themeColors.textDim }}>Need team wins.</span>
+                  )}
                 </Typography>
+
                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-                  Most Rivalries Against 
-                  <Box 
-                    component="img"
-                    src="/assets/icons/awayshirt.png"
-                    alt="away shirt"
-                    sx={{ width: 20, height: 20 }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                  <span style={{ color: themeColors.primary }}>Zohaib</span>: Won <span style={{ color: themeColors.success }}>55%</span> Lost <span style={{ color: themeColors.danger }}>45%</span>
+                  Toughest Rival
+                  {/* {selectedSynergyLeagueId && (
+                    <span style={{ fontSize: 11, color: themeColors.textFaint }}>
+                      (League {selectedSynergyLeagueId})
+                    </span>
+                  )} */}
+                  <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
+                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
+                  {playerId && synergyError && (
+                    <span style={{ color: themeColors.danger }}>{synergyError}</span>
+                  )}
+                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
+                    <span style={{ color: themeColors.textDim }}>No matches yet.</span>
+                  )}
+                  {!synergyLoading && !synergyError && toughestRival && (
+                    <>
+                      <span style={{ color: themeColors.primary }}>{toughestRival.name || 'Player'}</span>:
+                      Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
+                      <span style={{ color: themeColors.textDim, fontSize: 12 }}>
+                        {` (${toughestRival.matchesAgainst} matches • ${toughestRival.lossRate}% loss rate)`}
+                      </span>
+                    </>
+                  )}
+                  {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && (
+                    <span style={{ color: themeColors.textDim }}>Need losses data.</span>
+                  )}
                 </Typography>
               </Box>
 
@@ -1641,4 +1821,78 @@ export default function CareerPage() {
       </Container>
     </Box>
   );
+}
+
+// ---------- SHARED PLAYER TEAM EXTRACTION (moved out for reuse/debug) ----------
+type PairingPlayerLite = { id: string; name?: string; profile?: { name?: string } };
+
+const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
+  if (!Array.isArray(val)) return [];
+  return val
+    .filter(p => p && typeof p === 'object')
+    .map(p => {
+      const obj = p as any;
+      return {
+        id: String(obj.id ?? obj.playerId ?? obj._id ?? ''),
+        name: typeof obj.name === 'string'
+          ? obj.name
+          : (typeof obj.profile?.name === 'string' ? obj.profile.name : undefined),
+        profile: obj.profile && typeof obj.profile === 'object' ? obj.profile : undefined
+      };
+    })
+    .filter(p => p.id);
+};
+
+// Reusable extraction (same logic you had inside useMemo)
+function extractTeamsForPairing(match: any, playerId?: string) {
+  let team1 = coercePlayersArray(match.team1Players) || [];
+  let team2 = coercePlayersArray(match.team2Players) || [];
+
+  const altKeysTeam1 = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
+  const altKeysTeam2 = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
+
+  if (team1.length === 0) {
+    for (const k of altKeysTeam1) {
+      const arr = coercePlayersArray(match[k]);
+      if (arr.length) { team1 = arr; break; }
+    }
+  }
+  if (team2.length === 0) {
+    for (const k of altKeysTeam2) {
+      const arr = coercePlayersArray(match[k]);
+      if (arr.length) { team2 = arr; break; }
+    }
+  }
+
+  if (team1.length === 0 && team2.length === 0) {
+    const flat = coercePlayersArray(match.players)
+      .concat(coercePlayersArray(match.participants))
+      .concat(coercePlayersArray(match.playerList));
+    const unique = new Map<string, PairingPlayerLite>();
+    flat.forEach(p => unique.set(p.id, p));
+    const arr = Array.from(unique.values());
+    if (arr.length >= 2) {
+      if (arr.length >= 4) {
+        const half = Math.floor(arr.length / 2);
+        team1 = arr.slice(0, half);
+        team2 = arr.slice(half);
+      } else {
+        const pid = playerId ? String(playerId) : undefined;
+        const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
+        if (selfIdx >= 0) {
+          const self = arr[selfIdx];
+          const others = arr.filter((_, i) => i !== selfIdx);
+            if (others.length === 1) {
+              team1 = [self];
+              team2 = others;
+            } else {
+              team1 = [self, ...others];
+            }
+        } else {
+          team1 = arr;
+        }
+      }
+    }
+  }
+  return { team1, team2 };
 }
