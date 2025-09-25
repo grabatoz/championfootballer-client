@@ -856,27 +856,28 @@ export default function CareerPage() {
     }
   }, [playerId]);
 
-  // Add this useEffect to debug the data
-  useEffect(() => {
-    console.log('=== RADAR CHART DEBUG ===');
-    console.log('Raw matches data:', matches);
-    console.log('Player name:', playerName);
-    console.log('Radar chart data:', influenceRadarData);
-    console.log('Data source:', matches.length > 0 ? 'REAL BACKEND DATA' : 'SAMPLE DATA');
-    console.log('========================');
-  }, [matches, influenceRadarData, playerName]);
+  // Add synergy types (place near other interfaces)
+  interface SynergyPairing {
+    name?: string;
+    winsTogether: number;
+    matchesTogether: number;
+    winRate: number;
+    playerId?: string;
+  }
 
-  console.log('ONE MATCH RAW', matches[0]);
-  matches.slice(0,5).forEach((m,i)=>{
-    const t = extractTeamsForPairing(m, String(playerId));
-    console.log('PAIRING TEST IDX', i, 'T1', t.team1.map(p=>p.id), 'T2', t.team2.map(p=>p.id));
-  });
+  interface SynergyRival {
+    name?: string;
+    lossesAgainst: number;
+    matchesAgainst: number;
+    lossRate: number;
+    playerId?: string;
+  }
 
   // --- Simple Synergy API state ---
   const [synergyLoading, setSynergyLoading] = useState(false);
   const [synergyError, setSynergyError] = useState<string|null>(null);
-  const [bestPairing, setBestPairing] = useState<any>(null);
-  const [toughestRival, setToughestRival] = useState<any>(null);
+  const [bestPairing, setBestPairing] = useState<SynergyPairing | null>(null);
+  const [toughestRival, setToughestRival] = useState<SynergyRival | null>(null);
   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
   const [selectedSynergyLeagueId, setSelectedSynergyLeagueId] = useState<string | null>(null);
 
@@ -923,11 +924,32 @@ export default function CareerPage() {
             throw new Error(`Server error ${res.status}`);
         }
 
-        let dataParsed: any = null;
+        // Type-safe synergy response models
+        interface SimpleSynergySingle {
+          leagueId?: string;
+          participatedMatches?: number;
+          bestPairing?: SynergyPairing | null;
+          toughestRival?: SynergyRival | null;
+        }
+        interface SimpleSynergyMulti {
+          leagues: SimpleSynergySingle[];
+        }
+        type SimpleSynergyResponse = SimpleSynergySingle | SimpleSynergyMulti;
+
+        const isSimpleSynergySingle = (v: unknown): v is SimpleSynergySingle =>
+          typeof v === 'object' &&
+          v !== null &&
+          !Array.isArray((v as { leagues?: unknown }).leagues);
+
+        const isSimpleSynergyMulti = (v: unknown): v is SimpleSynergyMulti =>
+          typeof v === 'object' &&
+          v !== null &&
+          Array.isArray((v as { leagues?: unknown }).leagues);
+
+        let parsed: unknown = null;
         try {
-          dataParsed = await res.json();
+          parsed = await res.json();
         } catch {
-          // Empty / invalid JSON -> treat as no data
           if (!aborted) {
             setBestPairing(null);
             setToughestRival(null);
@@ -938,42 +960,26 @@ export default function CareerPage() {
         }
         if (aborted) return;
 
-        console.log('Synergy API', dataParsed);
+        console.log('Synergy API', parsed);
 
-        const isSingle =
-          dataParsed &&
-          (Object.prototype.hasOwnProperty.call(dataParsed, 'bestPairing') ||
-           Object.prototype.hasOwnProperty.call(dataParsed, 'toughestRival') ||
-           Object.prototype.hasOwnProperty.call(dataParsed, 'participatedMatches'));
-
-        const isMulti =
-          dataParsed &&
-          Array.isArray(dataParsed.leagues);
-
-        if (isSingle) {
-          setBestPairing(dataParsed.bestPairing || null);
-          setToughestRival(dataParsed.toughestRival || null);
-          setParticipatedMatches(dataParsed.participatedMatches || 0);
-          setSelectedSynergyLeagueId(dataParsed.leagueId || filters.leagueId || null);
+        if (isSimpleSynergySingle(parsed)) {
+          setBestPairing(parsed.bestPairing ?? null);
+          setToughestRival(parsed.toughestRival ?? null);
+          setParticipatedMatches(parsed.participatedMatches || 0);
+          setSelectedSynergyLeagueId(parsed.leagueId || filters.leagueId || null);
           return;
         }
 
-        if (isMulti) {
-          const leagues = (dataParsed.leagues as Array<{
-            leagueId: string;
-            participatedMatches: number;
-            bestPairing?: any;
-            toughestRival?: any;
-          }>).slice();
-
+        if (isSimpleSynergyMulti(parsed)) {
+          const leagues = parsed.leagues.filter(l => l && typeof l === 'object');
           let chosen = leagues
-            .filter(l => l.participatedMatches > 0)
-            .sort((a, b) => b.participatedMatches - a.participatedMatches)[0];
+            .filter(l => (l.participatedMatches || 0) > 0)
+            .sort((a, b) => (b.participatedMatches || 0) - (a.participatedMatches || 0))[0];
           if (!chosen && leagues.length) chosen = leagues[0];
 
           if (chosen) {
-            setBestPairing(chosen.bestPairing || null);
-            setToughestRival(chosen.toughestRival || null);
+            setBestPairing(chosen.bestPairing ?? null);
+            setToughestRival(chosen.toughestRival ?? null);
             setParticipatedMatches(chosen.participatedMatches || 0);
             setSelectedSynergyLeagueId(chosen.leagueId || null);
           } else {
@@ -985,15 +991,16 @@ export default function CareerPage() {
           return;
         }
 
-        // Unexpected shape -> treat as no data (not error)
+        // Unexpected shape
         setBestPairing(null);
         setToughestRival(null);
         setParticipatedMatches(0);
         setSelectedSynergyLeagueId(filters.leagueId || null);
-      } catch (e:any) {
+      } catch (err: unknown) {
         if (!aborted) {
-          console.warn('Synergy fetch error:', e);
-          setSynergyError(e.message || 'Failed to load synergy');
+          const message = err instanceof Error ? err.message : 'Failed to load synergy';
+          console.warn('Synergy fetch error:', err);
+          setSynergyError(message);
           setBestPairing(null);
           setToughestRival(null);
           setParticipatedMatches(0);
@@ -1737,6 +1744,9 @@ export default function CareerPage() {
                   )} */}
                   <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
+
+
+
                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
                   {playerId && synergyError && (
                     <span style={{ color: themeColors.danger }}>{synergyError}</span>
@@ -1824,32 +1834,63 @@ export default function CareerPage() {
 }
 
 // ---------- SHARED PLAYER TEAM EXTRACTION (moved out for reuse/debug) ----------
-type PairingPlayerLite = { id: string; name?: string; profile?: { name?: string } };
+type PairingPlayerLite = {
+  id: string;
+  name?: string;
+  profile?: { name?: string };
+};
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === 'object' && !Array.isArray(v);
 
 const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
   if (!Array.isArray(val)) return [];
   return val
-    .filter(p => p && typeof p === 'object')
-    .map(p => {
-      const obj = p as any;
-      return {
-        id: String(obj.id ?? obj.playerId ?? obj._id ?? ''),
-        name: typeof obj.name === 'string'
+    .filter(isPlainObject)
+    .map((obj): PairingPlayerLite | null => {
+      const idRaw = obj.id ?? (obj as Record<string, unknown>).playerId ?? (obj as Record<string, unknown>)._id;
+      const id = (typeof idRaw === 'string' || typeof idRaw === 'number') ? String(idRaw) : '';
+      if (!id) return null;
+
+      const profileVal = (obj as Record<string, unknown>).profile;
+      const profile = isPlainObject(profileVal) ? (profileVal as { name?: string }) : undefined;
+
+      const name =
+        typeof obj.name === 'string'
           ? obj.name
-          : (typeof obj.profile?.name === 'string' ? obj.profile.name : undefined),
-        profile: obj.profile && typeof obj.profile === 'object' ? obj.profile : undefined
-      };
+          : (profile && typeof profile.name === 'string' ? profile.name : undefined);
+
+      return { id, name, profile };
     })
-    .filter(p => p.id);
+    .filter((p): p is PairingPlayerLite => !!p);
 };
 
-// Reusable extraction (same logic you had inside useMemo)
-function extractTeamsForPairing(match: any, playerId?: string) {
-  let team1 = coercePlayersArray(match.team1Players) || [];
-  let team2 = coercePlayersArray(match.team2Players) || [];
+interface PairingMatch {
+  team1Players?: unknown;
+  team2Players?: unknown;
+  team1?: unknown;
+  homePlayers?: unknown;
+  lineup1?: unknown;
+  squad1?: unknown;
+  playersTeam1?: unknown;
+  side1?: unknown;
+  team2?: unknown;
+  awayPlayers?: unknown;
+  lineup2?: unknown;
+  squad2?: unknown;
+  playersTeam2?: unknown;
+  side2?: unknown;
+  players?: unknown;
+  participants?: unknown;
+  playerList?: unknown;
+}
 
-  const altKeysTeam1 = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
-  const altKeysTeam2 = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
+function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
+  let team1 = coercePlayersArray(match.team1Players);
+  let team2 = coercePlayersArray(match.team2Players);
+
+  const altKeysTeam1: (keyof PairingMatch)[] = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
+  const altKeysTeam2: (keyof PairingMatch)[] = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
 
   if (team1.length === 0) {
     for (const k of altKeysTeam1) {
@@ -1865,12 +1906,15 @@ function extractTeamsForPairing(match: any, playerId?: string) {
   }
 
   if (team1.length === 0 && team2.length === 0) {
-    const flat = coercePlayersArray(match.players)
-      .concat(coercePlayersArray(match.participants))
-      .concat(coercePlayersArray(match.playerList));
+    const flat = [
+      ...coercePlayersArray(match.players),
+      ...coercePlayersArray(match.participants),
+      ...coercePlayersArray(match.playerList),
+    ];
     const unique = new Map<string, PairingPlayerLite>();
     flat.forEach(p => unique.set(p.id, p));
     const arr = Array.from(unique.values());
+
     if (arr.length >= 2) {
       if (arr.length >= 4) {
         const half = Math.floor(arr.length / 2);
@@ -1881,18 +1925,19 @@ function extractTeamsForPairing(match: any, playerId?: string) {
         const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
         if (selfIdx >= 0) {
           const self = arr[selfIdx];
-          const others = arr.filter((_, i) => i !== selfIdx);
-            if (others.length === 1) {
-              team1 = [self];
-              team2 = others;
-            } else {
-              team1 = [self, ...others];
-            }
+            const others = arr.filter((_, i) => i !== selfIdx);
+          if (others.length === 1) {
+            team1 = [self];
+            team2 = others;
+          } else {
+            team1 = [self, ...others];
+          }
         } else {
           team1 = arr;
         }
       }
     }
   }
+
   return { team1, team2 };
 }
