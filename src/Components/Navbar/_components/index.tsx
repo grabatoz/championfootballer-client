@@ -830,6 +830,7 @@ export default function NavigationBar() {
               </Typography>
             </Box>
           ) : (
+            
             notifications.map((notification, index) => (
               <Box key={notification.id}>
                 <Box
