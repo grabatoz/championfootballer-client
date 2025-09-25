@@ -1834,56 +1834,56 @@ export default function CareerPage() {
 }
 
 // ---------- SHARED PLAYER TEAM EXTRACTION (moved out for reuse/debug) ----------
-type PairingPlayerLite = {
-  id: string;
-  name?: string;
-  profile?: { name?: string };
-};
+// type PairingPlayerLite = {
+//   id: string;
+//   name?: string;
+//   profile?: { name?: string };
+// };
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === 'object' && !Array.isArray(v);
+// const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+//   !!v && typeof v === 'object' && !Array.isArray(v);
 
-const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
-  if (!Array.isArray(val)) return [];
-  return val
-    .filter(isPlainObject)
-    .map((obj): PairingPlayerLite | null => {
-      const idRaw = obj.id ?? (obj as Record<string, unknown>).playerId ?? (obj as Record<string, unknown>)._id;
-      const id = (typeof idRaw === 'string' || typeof idRaw === 'number') ? String(idRaw) : '';
-      if (!id) return null;
+// const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
+//   if (!Array.isArray(val)) return [];
+//   return val
+//     .filter(isPlainObject)
+//     .map((obj): PairingPlayerLite | null => {
+//       const idRaw = obj.id ?? (obj as Record<string, unknown>).playerId ?? (obj as Record<string, unknown>)._id;
+//       const id = (typeof idRaw === 'string' || typeof idRaw === 'number') ? String(idRaw) : '';
+//       if (!id) return null;
 
-      const profileVal = (obj as Record<string, unknown>).profile;
-      const profile = isPlainObject(profileVal) ? (profileVal as { name?: string }) : undefined;
+//       const profileVal = (obj as Record<string, unknown>).profile;
+//       const profile = isPlainObject(profileVal) ? (profileVal as { name?: string }) : undefined;
 
-      const name =
-        typeof obj.name === 'string'
-          ? obj.name
-          : (profile && typeof profile.name === 'string' ? profile.name : undefined);
+//       const name =
+//         typeof obj.name === 'string'
+//           ? obj.name
+//           : (profile && typeof profile.name === 'string' ? profile.name : undefined);
 
-      return { id, name, profile };
-    })
-    .filter((p): p is PairingPlayerLite => !!p);
-};
+//       return { id, name, profile };
+//     })
+//     .filter((p): p is PairingPlayerLite => !!p);
+// };
 
-interface PairingMatch {
-  team1Players?: unknown;
-  team2Players?: unknown;
-  team1?: unknown;
-  homePlayers?: unknown;
-  lineup1?: unknown;
-  squad1?: unknown;
-  playersTeam1?: unknown;
-  side1?: unknown;
-  team2?: unknown;
-  awayPlayers?: unknown;
-  lineup2?: unknown;
-  squad2?: unknown;
-  playersTeam2?: unknown;
-  side2?: unknown;
-  players?: unknown;
-  participants?: unknown;
-  playerList?: unknown;
-}
+// interface PairingMatch {
+//   team1Players?: unknown;
+//   team2Players?: unknown;
+//   team1?: unknown;
+//   homePlayers?: unknown;
+//   lineup1?: unknown;
+//   squad1?: unknown;
+//   playersTeam1?: unknown;
+//   side1?: unknown;
+//   team2?: unknown;
+//   awayPlayers?: unknown;
+//   lineup2?: unknown;
+//   squad2?: unknown;
+//   playersTeam2?: unknown;
+//   side2?: unknown;
+//   players?: unknown;
+//   participants?: unknown;
+//   playerList?: unknown;
+// }
 
 // function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
 //   let team1 = coercePlayersArray(match.team1Players);
