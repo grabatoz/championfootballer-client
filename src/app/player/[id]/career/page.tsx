@@ -224,8 +224,8 @@ const StrengthRow = ({ title, you, diff, up, showComparison }: {
 );
 
 // Helper to extract a display name from a player-like object
-const extractPlayerDisplayName = (p: { id: string; name?: string; profile?: { name?: string } } | undefined): string =>
-  (p?.name || p?.profile?.name || p?.id || '').trim();
+// const extractPlayerDisplayName = (p: { id: string; name?: string; profile?: { name?: string } } | undefined): string =>
+//   (p?.name || p?.profile?.name || p?.id || '').trim();
 
 // ---------- HELPERS ----------
 function calcPoints(ps: PlayerMatchStats | undefined): number {
@@ -879,7 +879,7 @@ export default function CareerPage() {
   const [bestPairing, setBestPairing] = useState<SynergyPairing | null>(null);
   const [toughestRival, setToughestRival] = useState<SynergyRival | null>(null);
   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
-  const [selectedSynergyLeagueId, setSelectedSynergyLeagueId] = useState<string | null>(null);
+  const [, setSelectedSynergyLeagueId] = useState<string | null>(null);
 
   // Fetch Simple Synergy (backend: /players/:playerId/simple-synergy)
   useEffect(() => {
@@ -934,7 +934,7 @@ export default function CareerPage() {
         interface SimpleSynergyMulti {
           leagues: SimpleSynergySingle[];
         }
-        type SimpleSynergyResponse = SimpleSynergySingle | SimpleSynergyMulti;
+        // type SimpleSynergyResponse = SimpleSynergySingle | SimpleSynergyMulti;
 
         const isSimpleSynergySingle = (v: unknown): v is SimpleSynergySingle =>
           typeof v === 'object' &&
@@ -1461,12 +1461,12 @@ export default function CareerPage() {
                                 nameKey="name"
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={25}
+                                // innerRadius={25}
                                 outerRadius={55}
                                 paddingAngle={3}
                                 startAngle={90}
                                 endAngle={450}
-                                label={({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+                                label={({ cx, cy, midAngle, outerRadius, value }) => {
                                   // Add safety check for value
                                   const safeValue = value ?? 0;
                                   
@@ -1885,60 +1885,60 @@ interface PairingMatch {
   playerList?: unknown;
 }
 
-function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
-  let team1 = coercePlayersArray(match.team1Players);
-  let team2 = coercePlayersArray(match.team2Players);
+// function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
+//   let team1 = coercePlayersArray(match.team1Players);
+//   let team2 = coercePlayersArray(match.team2Players);
 
-  const altKeysTeam1: (keyof PairingMatch)[] = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
-  const altKeysTeam2: (keyof PairingMatch)[] = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
+//   const altKeysTeam1: (keyof PairingMatch)[] = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
+//   const altKeysTeam2: (keyof PairingMatch)[] = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
 
-  if (team1.length === 0) {
-    for (const k of altKeysTeam1) {
-      const arr = coercePlayersArray(match[k]);
-      if (arr.length) { team1 = arr; break; }
-    }
-  }
-  if (team2.length === 0) {
-    for (const k of altKeysTeam2) {
-      const arr = coercePlayersArray(match[k]);
-      if (arr.length) { team2 = arr; break; }
-    }
-  }
+//   if (team1.length === 0) {
+//     for (const k of altKeysTeam1) {
+//       const arr = coercePlayersArray(match[k]);
+//       if (arr.length) { team1 = arr; break; }
+//     }
+//   }
+//   if (team2.length === 0) {
+//     for (const k of altKeysTeam2) {
+//       const arr = coercePlayersArray(match[k]);
+//       if (arr.length) { team2 = arr; break; }
+//     }
+//   }
 
-  if (team1.length === 0 && team2.length === 0) {
-    const flat = [
-      ...coercePlayersArray(match.players),
-      ...coercePlayersArray(match.participants),
-      ...coercePlayersArray(match.playerList),
-    ];
-    const unique = new Map<string, PairingPlayerLite>();
-    flat.forEach(p => unique.set(p.id, p));
-    const arr = Array.from(unique.values());
+//   if (team1.length === 0 && team2.length === 0) {
+//     const flat = [
+//       ...coercePlayersArray(match.players),
+//       ...coercePlayersArray(match.participants),
+//       ...coercePlayersArray(match.playerList),
+//     ];
+//     const unique = new Map<string, PairingPlayerLite>();
+//     flat.forEach(p => unique.set(p.id, p));
+//     const arr = Array.from(unique.values());
 
-    if (arr.length >= 2) {
-      if (arr.length >= 4) {
-        const half = Math.floor(arr.length / 2);
-        team1 = arr.slice(0, half);
-        team2 = arr.slice(half);
-      } else {
-        const pid = playerId ? String(playerId) : undefined;
-        const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
-        if (selfIdx >= 0) {
-          const self = arr[selfIdx];
-            const others = arr.filter((_, i) => i !== selfIdx);
-          if (others.length === 1) {
-            team1 = [self];
-            team2 = others;
-          } else {
-            team1 = [self, ...others];
-          }
-        } else {
-          team1 = arr;
-        }
-      }
-    }
-  }
+//     if (arr.length >= 2) {
+//       if (arr.length >= 4) {
+//         const half = Math.floor(arr.length / 2);
+//         team1 = arr.slice(0, half);
+//         team2 = arr.slice(half);
+//       } else {
+//         const pid = playerId ? String(playerId) : undefined;
+//         const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
+//         if (selfIdx >= 0) {
+//           const self = arr[selfIdx];
+//             const others = arr.filter((_, i) => i !== selfIdx);
+//           if (others.length === 1) {
+//             team1 = [self];
+//             team2 = others;
+//           } else {
+//             team1 = [self, ...others];
+//           }
+//         } else {
+//           team1 = arr;
+//         }
+//       }
+//     }
+//   }
 
-  return { team1, team2 };
-}
+//   return { team1, team2 };
+// }
 
