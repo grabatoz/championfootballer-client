@@ -1518,7 +1518,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                             {formatMatchName(match.homeTeamName)} ({match.homeTeamUsers.length})
                                         </Typography>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                            {match.homeTeamUsers.map((player, index) => (
+                                            {match.homeTeamUsers.map((player) => (
                                                 <Chip 
                                                     key={player.id}
                                                     label={`${player.firstName} ${player.lastName}`}
@@ -1553,7 +1553,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                             {formatMatchName(match.awayTeamName)} ({match.awayTeamUsers.length})
                                         </Typography>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                            {match.awayTeamUsers.map((player, index) => (
+                                            {match.awayTeamUsers.map((player) => (
                                                 <Chip 
                                                     key={player.id}
                                                     label={`${player.firstName} ${player.lastName}`}
