@@ -202,7 +202,55 @@ export default function NavigationBar() {
   const [availabilitySelections, setAvailabilitySelections] = useState<Record<string,'YES'|'NO'>>({});
   const [savingAvailability, setSavingAvailability] = useState<Record<string, boolean>>({});
 
-  // 🔥 REMOVED DUPLICATE useAuth CALLS - NOW USING COMPONENT LEVEL VALUES
+  // >>> ADD THIS HELPER (after state declarations)
+  async function syncAvailabilityFromServer(notifs: Notification[]) {
+    if (!token || !user?.id) return;
+    // Collect unique matchIds from match-type notifications
+    const matchIds = Array.from(
+      new Set(
+        notifs
+          .filter(n => isMatchCreated(n) && (n.meta?.matchId || (n.meta as any)?.match_id))
+          .map(n => (n.meta?.matchId as string) || (n.meta as any)?.match_id as string)
+          .filter(Boolean)
+      )
+    );
+    if (matchIds.length === 0) return;
+
+    try {
+      const results = await Promise.all(
+        matchIds.map(async (mid) => {
+          try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${mid}/availability`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) return { mid, available: false };
+            const data = await res.json();
+            const availableUserIds: string[] = data.availableUserIds || [];
+            const isAvailable = availableUserIds.map(String).includes(String(user.id));
+            return { mid, available: isAvailable };
+          } catch {
+            return { mid, available: false };
+          }
+        })
+      );
+
+      setAvailabilitySelections(prev => {
+        const next = { ...prev };
+        results.forEach(r => {
+          if (r.available) {
+            next[r.mid] = 'YES'; // highlight YES
+          } else {
+            // Do not force NO; leave untouched so user can choose
+            if (next[r.mid] === 'YES') delete next[r.mid];
+          }
+        });
+        return next;
+      });
+    } catch (e) {
+      console.error('Error syncing availability', e);
+    }
+  }
+  // >>> END ADDITION
 
   // 🔥 UPDATED FETCH NOTIFICATIONS - USE COMPONENT LEVEL TOKEN
   const fetchNotifications = async (showLogs?: boolean) => {
@@ -270,15 +318,14 @@ export default function NavigationBar() {
       }
       
       if (data.success) {
-        const notificationList = data.notifications || [];
+        const notificationList: Notification[] = data.notifications || [];
         setNotifications(notificationList);
-        
-        const unread = notificationList.filter((n: Notification) => !n.read).length;
+        const unread = notificationList.filter((n) => !n.read).length;
         setUnreadCount(unread);
-        
-        if (showLogs) {
-          console.log(`📊 Total: ${notificationList.length}, Unread: ${unread}`);
-        }
+
+        // >>> CALL SYNC AFTER WE SET NOTIFICATIONS
+        syncAvailabilityFromServer(notificationList);
+        // >>> END
       } else {
         console.error('API returned error:', data.message);
       }
@@ -414,10 +461,8 @@ export default function NavigationBar() {
   // };
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
-    console.log('🔔 Notification bell clicked');
     setNotificationAnchor(event.currentTarget);
-    // Fetch fresh notifications when opening
-    fetchNotifications(true);
+    fetchNotifications(true); // already triggers sync
   };
 
   const handleNotificationClose = () => {
