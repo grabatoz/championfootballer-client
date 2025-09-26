@@ -146,7 +146,7 @@ export default function NavigationBar() {
         console.log('✅ Using userId:', userId);
       }
 
-      const response = await fetch(`http://localhost:5000/notifications?userId=${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications?userId=${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ export default function NavigationBar() {
         return;
       }
       
-      const response = await fetch(`http://localhost:5000/notifications/${notificationId}/read`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -250,8 +250,8 @@ export default function NavigationBar() {
         console.log('❌ No token or user ID found for markAllAsRead');
         return;
       }
-      
-      const response = await fetch(`http://localhost:5000/notifications/read-all?userId=${userId}`, {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/read-all?userId=${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -830,7 +830,7 @@ export default function NavigationBar() {
               </Typography>
             </Box>
           ) : (
-            
+
             notifications.map((notification, index) => (
               <Box key={notification.id}>
                 <Box
