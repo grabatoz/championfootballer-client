@@ -65,10 +65,68 @@ interface Notification {
   type: NotificationKind;
   title: string;
   body: string;
-  meta?: NotificationMeta;
+  meta?: NotificationMeta;  // will be safely widened via MatchMeta casts where needed
   read: boolean;
   created_at: string;
 }
+// ADD: strongly typed match meta (all optional)
+interface MatchMeta extends NotificationMeta {
+  matchId?: string; match_id?: string;
+  leagueId?: string; league_id?: string;
+  leagueName?: string; league_name?: string;
+  leagueTitle?: string; league_title?: string;
+  league?: string | {
+    name?: string;
+    title?: string;
+    leagueName?: string;
+  };
+
+  matchNumber?: number|string; match_no?: number|string;
+  matchIndex?: number|string; match_index?: number|string;
+
+  // Start variants
+  startTime?: string; start_time?: string; start?: string;
+  kickoff?: string; kickOff?: string; kick_off?: string;
+  kickoffTime?: string; kickoff_time?: string;
+  scheduledStart?: string; scheduled_start?: string;
+  startAt?: string; start_at?: string;
+  matchStart?: string; match_start?: string;
+  from?: string; time_from?: string;
+  startDateTime?: string; start_datetime?: string; start_date_time?: string;
+  begin?: string; beginTime?: string; begin_time?: string;
+
+  // End variants
+  endTime?: string; end_time?: string; end?: string;
+  finishTime?: string; finish_time?: string; finish?: string;
+  endAt?: string; end_at?: string;
+  to?: string; time_to?: string;
+  matchEnd?: string; match_end?: string;
+  scheduledEnd?: string; scheduled_end?: string;
+  endingTime?: string; ending_time?: string;
+  matchEndTime?: string; match_end_time?: string;
+  endtime?: string; stop?: string; stopTime?: string; stop_time?: string;
+  finishAt?: string; finish_at?: string;
+  endDateTime?: string; end_datetime?: string; end_date_time?: string;
+
+  // Duration variants
+  duration?: string|number;
+  durationMinutes?: string|number;
+  duration_minutes?: string|number;
+  matchDuration?: string|number;
+  lengthMinutes?: string|number;
+  length?: string|number;
+
+  // Date variants
+  date?: string; matchDate?: string; match_date?: string;
+  day?: string; playDate?: string; play_date?: string;
+  scheduledDate?: string; scheduled_date?: string;
+  startDate?: string; start_date?: string;
+
+  // Venue/location variants
+  venue?: string; location?: string; ground?: string;
+  pitch?: string; place?: string; field?: string;
+}
+// ADD THIS TYPE (was missing and caused TS error)
 interface BuiltNotificationDisplay {
   title: string;
   plain: string;
@@ -210,9 +268,7 @@ function pickFirst(obj: Record<string, unknown>, keys: string[]): string | undef
 function normalizePossibleDate(raw?: string): string | undefined {
   if (!raw) return undefined;
   let s = String(raw).trim();
-  // Ignore pure time-only values (HH:MM...)
   if (/^\d{1,2}:\d{2}(\s?(AM|PM|am|pm))?$/.test(s)) return undefined;
-  // Fix malformed 2025:09:26T...
   if (/^\d{4}:\d{2}:\d{2}T/.test(s)) {
     s = s.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T');
   }
@@ -221,9 +277,25 @@ function normalizePossibleDate(raw?: string): string | undefined {
   return d.toISOString();
 }
 
+// >>> ADDED helper (fixes 'Cannot find name extractLeagueName')
+function extractLeagueName(meta: MatchMeta, resolvedLeagueName?: string): string {
+  if (resolvedLeagueName) return resolvedLeagueName;
+  if (meta.leagueName) return meta.leagueName;
+  if (meta.league_name) return meta.league_name;
+  if (meta.leagueTitle) return meta.leagueTitle;
+  if (meta.league_title) return meta.league_title;
+  const lg = meta.league;
+  if (typeof lg === 'string') return lg;
+  if (lg && typeof lg === 'object') {
+    return lg.name || lg.title || lg.leagueName || 'League';
+  }
+  return 'League';
+}
+// >>> END helper
+
 // >>> ADD THIS HELPER (needed for the render where matchHasStarted is used)
 function matchHasStarted(
-  meta: any,
+  meta: MatchMeta,
   timesOverride?: { start?: string },
   now: Date = new Date()
 ): boolean {
@@ -282,6 +354,15 @@ function matchHasStarted(
 }
 // >>> END ADDED HELPER
 
+// Safely extract a match id from meta (supports matchId / match_id)
+function getMatchId(meta?: NotificationMeta): string | undefined {
+  if (!meta) return undefined;
+  const m = meta as MatchMeta;
+  const raw = m.matchId ?? m.match_id;
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  return String(raw);
+}
+
 function buildNotificationDisplay(
   n: Notification,
   derivedMatchNo?: number,
@@ -289,7 +370,7 @@ function buildNotificationDisplay(
   timesOverride?: { start?: string; end?: string }
 ): BuiltNotificationDisplay {
   if (isMatchCreated(n)) {
-    const meta = (n.meta || {}) as NotificationMeta & Record<string, unknown>;
+    const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
 
     // Match number (backend or derived)
     const backendMatchNo = pickFirst(meta, [
@@ -299,19 +380,8 @@ function buildNotificationDisplay(
       ? String(backendMatchNo)
       : (derivedMatchNo ? String(derivedMatchNo) : '');
 
-    // League name (check cache first, then meta, then nested object)
-    const rawLeague = meta.league;
-    const leagueName =
-      resolvedLeagueName ||
-      (typeof meta.leagueName === 'string' && meta.leagueName) ||
-      (typeof meta.league_name === 'string' && meta.league_name) ||
-      (typeof meta.leagueTitle === 'string' && meta.leagueTitle) ||
-      (typeof meta.league_title === 'string' && meta.league_title) ||
-      (typeof rawLeague === 'string' ? rawLeague :
-        (rawLeague as any)?.name ||
-        (rawLeague as any)?.title ||
-        (rawLeague as any)?.leagueName) ||
-      'League';
+    // REPLACED unsafe rawLeague access with helper
+    const leagueName = extractLeagueName(meta, resolvedLeagueName);
 
     // Times / Date / Venue
     let startRaw = pickFirst(meta, [
@@ -336,8 +406,6 @@ function buildNotificationDisplay(
     const venue = pickFirst(meta, [
       'venue','location','ground','pitch','place','field'
     ]) || '';
-
-    // ...existing fallback extraction for times (unchanged) ...
 
     // ---- dateLine derivation (REPLACED) ----
     // 1. Use explicit date field if valid
@@ -602,7 +670,7 @@ export default function NavigationBar() {
 
     for (const n of sorted) {
       if (!isMatchCreated(n)) continue;
-      const meta: any = n.meta || {};
+      const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
       const leagueKey =
         meta.leagueId ||
         meta.league_id ||
@@ -644,9 +712,9 @@ export default function NavigationBar() {
     const matchIds = Array.from(
       new Set(
         notifs
-          .filter(n => isMatchCreated(n) && (n.meta?.matchId || (n.meta as any)?.match_id))
-          .map(n => (n.meta?.matchId as string) || (n.meta as any)?.match_id as string)
-          .filter(Boolean)
+          .filter(n => isMatchCreated(n))
+          .map(n => getMatchId(n.meta))
+          .filter((v): v is string => !!v)
       )
     );
     if (matchIds.length === 0) return;
@@ -673,9 +741,8 @@ export default function NavigationBar() {
         const next = { ...prev };
         results.forEach(r => {
           if (r.available) {
-            next[r.mid] = 'YES'; // highlight YES
+            next[r.mid] = 'YES';
           } else {
-            // Do not force NO; leave untouched so user can choose
             if (next[r.mid] === 'YES') delete next[r.mid];
           }
         });
@@ -693,18 +760,27 @@ export default function NavigationBar() {
 
     notifs.forEach(n => {
       if (!isMatchCreated(n)) return;
-      const meta: any = n.meta || {};
+      const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
       const leagueId = meta.leagueId || meta.league_id;
+
+      // SAFE narrowing
+      let leagueInline: string | undefined;
+      if (typeof meta.league === 'string') {
+        leagueInline = meta.league;
+      } else if (meta.league && typeof meta.league === 'object') {
+        leagueInline = meta.league.name || meta.league.title || meta.league.leagueName;
+      }
+
       const hasName =
         meta.leagueName ||
         meta.league_name ||
         meta.leagueTitle ||
         meta.league_title ||
-        meta.league ||
-        meta.league?.name ||
-        meta.league?.title ||
-        meta.league?.leagueName;
-      if (leagueId && !hasName && !leagueNames[leagueId]) pending.add(String(leagueId));
+        leagueInline;
+
+      if (leagueId && !hasName && !leagueNames[leagueId as string]) {
+        pending.add(String(leagueId));
+      }
     });
 
     if (pending.size === 0) return;
@@ -751,7 +827,7 @@ export default function NavigationBar() {
     const targets: string[] = [];
     for (const n of notifs) {
       if (!isMatchCreated(n)) continue;
-      const meta: any = n.meta || {};
+      const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
       const matchId = meta.matchId || meta.match_id;
       if (!matchId) continue;
       const endMeta = meta.endTime || meta.end_time || meta.end || meta.finishTime || meta.finish_time;
@@ -1579,7 +1655,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
             notifications.map((notification, index) => {
               console.log('Render notif', notification.id, 'type=', notification.type);
               
-              const meta: any = notification.meta || {};
+              const meta: MatchMeta = (notification.meta ?? {}) as MatchMeta;
               const leagueKeyForIndex =
                 meta.leagueId ||
                 meta.league_id ||
@@ -1588,9 +1664,10 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                 'default';
               const derivedMatchNo = leagueMatchIndexMap[leagueKeyForIndex]?.[notification.id];
 
-              // Resolve league name (cache beats meta fallback inside builder)
+              // Resolve league name safely (avoid indexing with undefined)
+              const leagueIdKey = meta.leagueId || meta.league_id;
               const resolvedLeagueName =
-                leagueNames[meta.leagueId || meta.league_id] ||
+                (leagueIdKey ? leagueNames[leagueIdKey] : undefined) ||
                 leagueNames[leagueKeyForIndex];
 
               // Insert times override beforehand:
@@ -1599,7 +1676,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                 meta.match_id ||
                 '';
               const timesOverride = matchMetaId ? matchTimes[matchMetaId] : undefined;
-              const isMatchType = isMatchCreated(notification as any);
+              const isMatchType = isMatchCreated(notification); // removed: as any
               if (isMatchType && matchMetaId) {
                 console.log('🧪 timesOverride for', matchMetaId, timesOverride);
               }
@@ -1817,15 +1894,17 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                   Profile
                 </Button>
               </ListItem>
-            )}
+                       )}
             
             {/* MOBILE NAVIGATION LINKS */}
             {isAuthenticated && (
               navItems.map(({ label, href }) => {
                 const active = pathname?.startsWith(href);
+               
                 return (
                   <ListItem key={href} disablePadding>
                     <Button
+                     
                       component={Link}
                       href={href}
                       fullWidth
@@ -1839,6 +1918,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                         textTransform: 'none',
                         fontWeight: 700,
                         background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+                       
                         borderRadius: 1,
                         mb: 0.5,
                         '&:hover': { 
