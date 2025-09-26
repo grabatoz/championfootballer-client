@@ -47,7 +47,7 @@ import play from '@/Components/images/play.png'
 import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
-
+import React from 'react';
 
 // Notification interface
 type NotificationKind =
@@ -74,6 +74,95 @@ interface Notification {
   meta?: NotificationMeta;
   read: boolean;
   created_at: string;
+}
+
+// Helper now returns rich node for UI
+interface BuiltNotificationDisplay {
+  title: string;
+  plain: string;
+  node: React.ReactNode;
+}
+
+// Added helper to decide if this is a match-created style notification even if backend uses a different type string.
+function isMatchCreated(n: Notification) {
+  const t = (n.type || '').toUpperCase();
+  const titleBody = (n.title + ' ' + n.body).toUpperCase();
+  return (
+    t === 'MATCH_CREATED' ||
+    t === 'MATCH_SCHEDULED' ||
+    t === 'NEW_MATCH' ||
+    /MATCH\s+CREATED/.test(titleBody) ||
+    /MATCH\s+SCHEDULED/.test(titleBody)
+  );
+}
+
+function buildNotificationDisplay(n: Notification): BuiltNotificationDisplay {
+  if (isMatchCreated(n)) {
+    const matchNo = (n.meta?.matchNumber as string) || (n.meta?.match_no as string) || '';
+    const leagueName = (n.meta?.leagueName as string) || (n.meta?.league_name as string) || 'League';
+    const startTime = (n.meta?.startTime as string) || (n.meta?.start_time as string) || '';
+    const endTime = (n.meta?.endTime as string) || (n.meta?.end_time as string) || '';
+    const date = (n.meta?.date as string) || (n.meta?.matchDate as string) || '';
+    const venue = (n.meta?.venue as string) || (n.meta?.location as string) || '';
+    const matchId = (n.meta?.matchId as string) || (n.meta?.match_id as string) || '';
+    const fromTo = startTime && endTime ? `${startTime} to ${endTime}` : (startTime || '');
+    const seeDetailsHref = matchId ? `/match/${matchId}` : '#';
+
+    const title = '';
+    const plain = `${fromTo}\n${date}\n${venue}`;
+    const node = (
+      <Box>
+        <Typography
+          component="div"
+          sx={{ fontWeight: 800, color: '#111', fontSize: '14px', lineHeight: 1.35 }}
+        >
+          New Match Scheduled!{' '}
+          <Box component="span" sx={{ fontWeight: 900 }}>
+            ⚽ Match {matchNo} for {leagueName}
+          </Box>{' '}is scheduled.{' '}
+          {matchId && (
+            <Typography
+              component={Link}
+              href={seeDetailsHref}
+              sx={{
+                fontWeight: 700,
+                color: '#0b57d0',
+                textDecoration: 'underline',
+                '&:hover': { color: '#063a8f' }
+              }}
+            >
+              See details
+            </Typography>
+          )}
+        </Typography>
+        <Typography sx={{ mt: 1.25, fontSize: '13px', color: '#333', whiteSpace: 'pre-line' }}>
+          {fromTo && `${fromTo}\n`}
+          {date && `${date}\n`}
+          {venue && `${venue}\n`}
+        </Typography>
+      </Box>
+    );
+    return { title, plain, node };
+  }
+
+  const title = n.title || 'Notification';
+  const bodyText = n.body?.length ? n.body : 'New update available.';
+  return {
+    title,
+    plain: bodyText,
+    node: (
+      <Typography
+        sx={{
+          color: '#444',
+            fontSize: '13px',
+          lineHeight: 1.45,
+          whiteSpace: 'pre-wrap'
+        }}
+      >
+        {bodyText}
+      </Typography>
+    )
+  };
 }
 
 // Custom SlideFade transition
@@ -109,6 +198,9 @@ export default function NavigationBar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const openNotifications = Boolean(notificationAnchor);
+
+  const [availabilitySelections, setAvailabilitySelections] = useState<Record<string,'YES'|'NO'>>({});
+  const [savingAvailability, setSavingAvailability] = useState<Record<string, boolean>>({});
 
   // 🔥 REMOVED DUPLICATE useAuth CALLS - NOW USING COMPONENT LEVEL VALUES
 
@@ -268,6 +360,37 @@ export default function NavigationBar() {
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const handleSetAvailability = async (
+    matchId: string,
+    value: 'YES'|'NO',
+    notificationId: string
+  ) => {
+    if (!token || !user?.id) return;
+    setAvailabilitySelections(prev => ({ ...prev, [matchId]: value }));
+    setSavingAvailability(prev => ({ ...prev, [matchId]: true }));
+    const action = value === 'YES' ? 'available' : 'unavailable';
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/availability?action=${action}`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      if (!res.ok) {
+        console.error('Availability update failed', res.status);
+      } else {
+        const n = notifications.find(n => n.id === notificationId);
+        if (n && !n.read) await markAsRead(notificationId);
+      }
+    } catch (e) {
+      console.error('Error setting availability', e);
+    } finally {
+      setSavingAvailability(prev => ({ ...prev, [matchId]: false }));
     }
   };
 
@@ -830,71 +953,166 @@ export default function NavigationBar() {
               </Typography>
             </Box>
           ) : (
+            notifications.map((notification, index) => {
+              console.log('Render notif', notification.id, 'type=', notification.type);
+              const display = buildNotificationDisplay(notification);
+              const isMatchType = isMatchCreated(notification as any);
+              const matchId =
+                (notification.meta?.matchId as string) ||
+                (notification.meta?.match_id as string) || '';
+              const selected = matchId ? availabilitySelections[matchId] : undefined;
+              const saving = matchId ? savingAvailability[matchId] : false;
 
-            notifications.map((notification, index) => (
-              <Box key={notification.id}>
-                <Box
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                  sx={{
-                    p: 2,
-                    cursor: notification.read ? 'default' : 'pointer',
-                    bgcolor: notification.read ? '#fff' : '#f8f9ff',
-                    borderLeft: notification.read ? 'none' : '4px solid #1976d2',
-                    '&:hover': { bgcolor: notification.read ? '#f9f9f9' : '#f0f4ff' },
-                    transition: 'background-color 0.2s',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ flex: 1, pr: 1 }}>
-                      <Typography 
-                        variant="subtitle2" 
-                        sx={{ 
-                          fontWeight: notification.read ? 500 : 700,
-                          color: '#333',
-                          mb: 0.5,
-                          fontSize: '14px'
-                        }}
-                      >
-                        {notification.title}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#666',
-                          fontSize: '13px',
-                          lineHeight: 1.4,
-                          mb: 1
-                        }}
-                      >
-                        {notification.body}
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: '#999',
-                          fontSize: '11px'
-                        }}
-                      >
-                        {new Date(notification.created_at).toLocaleString()}
-                      </Typography>
+              return (
+                <Box key={notification.id}>
+                  <Box
+                    onClick={() => !notification.read && !isMatchType && markAsRead(notification.id)}
+                    sx={{
+                      p: 2,
+                      cursor: notification.read || isMatchType ? 'default' : 'pointer',
+                      position: 'relative',
+                      bgcolor: notification.read
+                        ? '#ffffff'
+                        : 'linear-gradient(135deg,#f0f6ff 0%, #ffffff 60%)',
+                      borderLeft: notification.read ? '4px solid transparent' : '4px solid #1976d2',
+                      '&:hover': {
+                        bgcolor: notification.read
+                          ? '#fafafa'
+                          : (isMatchType
+                              ? 'linear-gradient(135deg,#e8f2ff 0%, #ffffff 60%)'
+                              : '#e8f2ff')
+                      },
+                      transition: 'background-color 0.25s, box-shadow 0.25s',
+                      boxShadow: notification.read
+                        ? 'inset 0 0 0 1px #eee'
+                        : '0 2px 8px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ flex: 1, pr: 1 }}>
+                        {!isMatchType && notification.type !== 'MATCH_CREATED' && (
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: notification.read ? 500 : 700,
+                              color: '#222',
+                              mb: 0.5,
+                              fontSize: '14px'
+                            }}
+                          >
+                            {display.title}
+                          </Typography>
+                        )}
+
+                        {!isMatchType && display.node}
+
+                        {isMatchType && (
+                          <Box>
+                            {display.node}
+                            {matchId && (
+                              <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
+                                  Can you play?
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Box
+                                    component="button"
+                                    disabled={saving}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetAvailability(matchId, 'YES', notification.id);
+                                    }}
+                                    style={{ all: 'unset', cursor: 'pointer' }}
+                                    aria-pressed={selected === 'YES'}
+                                  >
+                                    <Box sx={{
+                                      px: 1.2,
+                                      py: 0.5,
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      borderRadius: 1,
+                                      border: '1px solid',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.5,
+                                      transition: '0.2s',
+                                      bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
+                                      color: selected === 'YES' ? '#fff' : '#0d7a33',
+                                      borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
+                                      boxShadow: selected === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
+                                      opacity: saving && selected === 'YES' ? 0.7 : 1
+                                    }}>
+                                      ✅ Yes
+                                    </Box>
+                                  </Box>
+                                  <Box
+                                    component="button"
+                                    disabled={saving}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetAvailability(matchId, 'NO', notification.id);
+                                    }}
+                                    style={{ all: 'unset', cursor: 'pointer' }}
+                                    aria-pressed={selected === 'NO'}
+                                  >
+                                    <Box sx={{
+                                      px: 1.2,
+                                      py: 0.5,
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      borderRadius: 1,
+                                      border: '1px solid',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.5,
+                                      transition: '0.2s',
+                                      bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
+                                      color: selected === 'NO' ? '#fff' : '#c62828',
+                                      borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
+                                      boxShadow: selected === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
+                                      opacity: saving && selected === 'NO' ? 0.7 : 1
+                                    }}>
+                                      ❌ No
+                                    </Box>
+                                  </Box>
+                                </Box>
+                                {saving && (
+                                  <Typography sx={{ fontSize: '11px', color: '#555' }}>
+                                    Saving...
+                                  </Typography>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+
+                        <Typography
+                          variant="caption"
+                          sx={{ display: 'block', mt: 1.25, color: '#888', fontSize: '11px' }}
+                        >
+                          {new Date(notification.created_at).toLocaleString()}
+                        </Typography>
+                      </Box>
+
+                      {!notification.read && (
+                        <Box
+                          sx={{
+                            width: 10,
+                            height: 10,
+                            bgcolor: 'linear-gradient(135deg,#1976d2,#0d47a1)',
+                            borderRadius: '50%',
+                            mt: 0.5,
+                            flexShrink: 0,
+                            boxShadow: '0 0 0 3px rgba(25,118,210,0.15)'
+                          }}
+                        />
+                      )}
                     </Box>
-                    {!notification.read && (
-                      <Box 
-                        sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          bgcolor: '#1976d2', 
-                          borderRadius: '50%',
-                          mt: 0.5,
-                          flexShrink: 0
-                        }} 
-                      />
-                    )}
                   </Box>
+                  {index < notifications.length - 1 && <Divider />}
                 </Box>
-                {index < notifications.length - 1 && <Divider />}
-              </Box>
-            ))
+              );
+            })
           )}
         </Box>
       </Popover>
