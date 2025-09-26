@@ -157,7 +157,7 @@ function formatTime(raw?: string | number): string {
     if (!isNaN(d.getTime())) return toHHMM(d);
   }
 
-  let str = String(raw).trim();
+  const str = String(raw).trim();
 
   // 1) Direct malformed pattern like 2025:09:26T06:12:00:000Z
   const malformedFull = str.match(/^(\d{4}):(\d{2}):(\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?::\d{3})?Z?$/);
@@ -232,9 +232,9 @@ function parseClockTimeToMinutes(str: string): ParsedClock | null {
   return { mins: h * 60 + mm, is12h: !!ap, hadAmPm };
 }
 
-function minutesToClock(total: number, _is12h: boolean, _hadAmPm: boolean): string {
+function minutesToClock(total: number): string {
   // Always return 24h HH:MM
-  let mins = ((total % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const mins = ((total % (24 * 60)) + (24 * 60)) % (24 * 60);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
@@ -409,12 +409,11 @@ function buildNotificationDisplay(
 
     // ---- dateLine derivation (REPLACED) ----
     // 1. Use explicit date field if valid
-    let dateIso =
+    const dateIso =
       normalizePossibleDate(explicitDateRaw) ||
       normalizePossibleDate(startRaw) ||
       normalizePossibleDate(endRaw) ||
       normalizePossibleDate(n.created_at);
-
     const dateLine = dateIso ? formatDateLine(dateIso) : '';
 
     // 2) Fallback parse from title/body if not provided OR if one missing
@@ -468,10 +467,10 @@ function buildNotificationDisplay(
         let dur = 90;
         if (durMeta) {
           const dNum = parseInt(String(durMeta), 10);
-            if (!isNaN(dNum) && dNum > 0 && dNum < 600) dur = dNum;
+          if (!isNaN(dNum) && dNum > 0 && dNum < 600) dur = dNum;
         }
         const endMins = parsed.mins + dur;
-        endRaw = minutesToClock(endMins, parsed.is12h, parsed.hadAmPm);
+        endRaw = minutesToClock(endMins);
       }
     }
 
