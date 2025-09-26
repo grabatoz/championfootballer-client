@@ -195,7 +195,7 @@ export default function LandingPage() {
               </Box>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
-            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } }}>
+            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } , mb:3 }}>
               <AuthSocialButtons />
             </Box>
 

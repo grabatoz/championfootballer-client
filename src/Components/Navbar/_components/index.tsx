@@ -1,5 +1,4 @@
 'use client';
-
 import {
   AppBar,
   Box,
@@ -21,7 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
 import cflogo from '@/Components/images/champion football logo 3.png';
@@ -48,8 +47,6 @@ import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
 import React from 'react';
-
-// Notification interface
 type NotificationKind =
   | 'MATCH_CREATED'
   | 'MATCH_UPDATED'
@@ -57,15 +54,12 @@ type NotificationKind =
   | 'AVAILABILITY_REMINDER'
   | 'RESULT_PUBLISHED'
   | 'GENERAL';
-
 interface NotificationMeta {
   matchId?: string;
   leagueId?: string;
   playerId?: string;
-  // extra arbitrary key/value if backend sends more
   [key: string]: unknown;
 }
-
 interface Notification {
   id: string;
   type: NotificationKind;
@@ -75,15 +69,11 @@ interface Notification {
   read: boolean;
   created_at: string;
 }
-
-// Helper now returns rich node for UI
 interface BuiltNotificationDisplay {
   title: string;
   plain: string;
   node: React.ReactNode;
 }
-
-// Added helper to decide if this is a match-created style notification even if backend uses a different type string.
 function isMatchCreated(n: Notification) {
   const t = (n.type || '').toUpperCase();
   const titleBody = (n.title + ' ' + n.body).toUpperCase();
@@ -96,20 +86,370 @@ function isMatchCreated(n: Notification) {
   );
 }
 
-function buildNotificationDisplay(n: Notification): BuiltNotificationDisplay {
+// >>> REPLACE the current formatTime + toHHMM with this version (handles malformed 2025:09:26T06:12:00:000Z) <<<
+
+function formatTime(raw?: string | number): string {
+  if (raw === undefined || raw === null || raw === '') return '';
+
+  // Epoch (seconds or ms)
+  if (typeof raw === 'number' || /^\d{10,13}$/.test(String(raw))) {
+    const num = typeof raw === 'number' ? raw : Number(raw);
+    const ms = String(raw).length === 10 ? num * 1000 : num;
+    const d = new Date(ms);
+    if (!isNaN(d.getTime())) return toHHMM(d);
+  }
+
+  let str = String(raw).trim();
+
+  // 1) Direct malformed pattern like 2025:09:26T06:12:00:000Z
+  const malformedFull = str.match(/^(\d{4}):(\d{2}):(\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?::\d{3})?Z?$/);
+  if (malformedFull) {
+    return `${malformedFull[4]}:${malformedFull[5]}`;
+  }
+
+  // 2) Extract time part after T if present (standard ISO or similar)
+  const tPart = str.match(/T(\d{2}):(\d{2})/);
+  if (tPart) {
+    return `${tPart[1]}:${tPart[2]}`;
+  }
+
+  // 3) Plain clock with optional seconds / am/pm
+  const clockMatch = str.replace(/[.\-]/g, ':').match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?$/);
+  if (clockMatch) {
+    let h = parseInt(clockMatch[1], 10);
+    const m = clockMatch[2];
+    const ap = clockMatch[3];
+    if (ap) {
+      const up = ap.toUpperCase();
+      if (up === 'AM' && h === 12) h = 0;
+      if (up === 'PM' && h < 12) h += 12;
+    }
+    return `${String(h).padStart(2,'0')}:${m}`;
+  }
+
+  // 4) Try to sanitize malformed colon-date into ISO then parse
+  let sanitized = str;
+  sanitized = sanitized
+    .replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T')      // fix date part
+    .replace(/:(\d{3})Z$/, '.$1Z');                        // fix ms separator if present
+  const d2 = new Date(sanitized);
+  if (!isNaN(d2.getTime())) return toHHMM(d2);
+
+  // 5) Final attempt plain Date
+  const d3 = new Date(str);
+  if (!isNaN(d3.getTime())) return toHHMM(d3);
+
+  // 6) Fallback: try to pull first HH:MM anywhere
+  const loose = str.match(/(\d{2}):(\d{2})/);
+  if (loose) return `${loose[1]}:${loose[2]}`;
+
+  return str;
+}
+
+function toHHMM(d: Date): string {
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// Added helpers previously missing (prevent TS errors) - kept minimal and 24h oriented
+interface ParsedClock {
+  mins: number;     // minutes from midnight
+  is12h: boolean;   // original had am/pm
+  hadAmPm: boolean; // explicit am/pm present
+}
+
+function parseClockTimeToMinutes(str: string): ParsedClock | null {
+  const m = str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?$/);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
+  const ap = m[3];
+  let hadAmPm = false;
+  if (ap) {
+    hadAmPm = true;
+    const up = ap.toUpperCase();
+    if (up === 'AM' && h === 12) h = 0;
+    if (up === 'PM' && h < 12) h += 12;
+  }
+  if (h > 23 || mm > 59) return null;
+  return { mins: h * 60 + mm, is12h: !!ap, hadAmPm };
+}
+
+function minutesToClock(total: number, _is12h: boolean, _hadAmPm: boolean): string {
+  // Always return 24h HH:MM
+  let mins = ((total % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+// Change day from '2-digit' to 'numeric' (gives 9 not 09)
+function formatDateLine(raw?: string): string {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+// REPLACE the whole current buildNotificationDisplay (and its small helpers inside) with this fixed version:
+
+// Helper to safely pick the first non-empty string value
+function pickFirst(obj: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const k of keys) {
+    const v = obj[k];
+    if (v !== undefined && v !== null && v !== '') return String(v);
+  }
+  return undefined;
+}
+
+// Add helper (place above buildNotificationDisplay)
+function normalizePossibleDate(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  let s = String(raw).trim();
+  // Ignore pure time-only values (HH:MM...)
+  if (/^\d{1,2}:\d{2}(\s?(AM|PM|am|pm))?$/.test(s)) return undefined;
+  // Fix malformed 2025:09:26T...
+  if (/^\d{4}:\d{2}:\d{2}T/.test(s)) {
+    s = s.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T');
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return undefined;
+  return d.toISOString();
+}
+
+// >>> ADD THIS HELPER (needed for the render where matchHasStarted is used)
+function matchHasStarted(
+  meta: any,
+  timesOverride?: { start?: string },
+  now: Date = new Date()
+): boolean {
+  // Gather possible start time fields
+  let startRaw =
+    timesOverride?.start ||
+    meta.startTime || meta.start_time || meta.start ||
+    meta.kickoff || meta.kickOff || meta.kick_off ||
+    meta.kickoffTime || meta.kickoff_time ||
+    meta.scheduledStart || meta.scheduled_start ||
+    meta.startAt || meta.start_at ||
+    meta.matchStart || meta.match_start ||
+    meta.from || meta.time_from ||
+    meta.startDateTime || meta.start_datetime || meta.start_date_time ||
+    meta.begin || meta.beginTime || meta.begin_time;
+
+  if (!startRaw) return false;
+  startRaw = String(startRaw).trim();
+
+  // If only time (HH:MM[/ AM/PM]) try to combine with a date field if present
+  const clockOnly = startRaw.match(/^(\d{1,2}):(\d{2})(?:\s?(AM|PM|am|pm))?$/);
+  if (clockOnly) {
+    const dateField =
+      meta.date || meta.matchDate || meta.match_date ||
+      meta.day || meta.playDate || meta.play_date ||
+      meta.scheduledDate || meta.scheduled_date ||
+      meta.startDate || meta.start_date;
+    if (dateField) {
+      let dateStr = String(dateField).trim();
+      if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
+        dateStr = dateStr.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+      }
+      let h = parseInt(clockOnly[1], 10);
+      const m = clockOnly[2];
+      const ap = clockOnly[3];
+      if (ap) {
+        const up = ap.toUpperCase();
+        if (up === 'AM' && h === 12) h = 0;
+        if (up === 'PM' && h < 12) h += 12;
+      }
+      startRaw = `${dateStr}T${String(h).padStart(2,'0')}:${m}:00`;
+    } else {
+      // Cannot decide without a date
+      return false;
+    }
+  }
+
+  // Fix malformed 2025:09:26T...
+  if (/^\d{4}:\d{2}:\d{2}T/.test(startRaw)) {
+    startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T');
+  }
+
+  const d = new Date(startRaw);
+  if (isNaN(d.getTime())) return false;
+  return now.getTime() >= d.getTime();
+}
+// >>> END ADDED HELPER
+
+function buildNotificationDisplay(
+  n: Notification,
+  derivedMatchNo?: number,
+  resolvedLeagueName?: string,
+  timesOverride?: { start?: string; end?: string }
+): BuiltNotificationDisplay {
   if (isMatchCreated(n)) {
-    const matchNo = (n.meta?.matchNumber as string) || (n.meta?.match_no as string) || '';
-    const leagueName = (n.meta?.leagueName as string) || (n.meta?.league_name as string) || 'League';
-    const startTime = (n.meta?.startTime as string) || (n.meta?.start_time as string) || '';
-    const endTime = (n.meta?.endTime as string) || (n.meta?.end_time as string) || '';
-    const date = (n.meta?.date as string) || (n.meta?.matchDate as string) || '';
-    const venue = (n.meta?.venue as string) || (n.meta?.location as string) || '';
-    const matchId = (n.meta?.matchId as string) || (n.meta?.match_id as string) || '';
-    const fromTo = startTime && endTime ? `${startTime} to ${endTime}` : (startTime || '');
+    const meta = (n.meta || {}) as NotificationMeta & Record<string, unknown>;
+
+    // Match number (backend or derived)
+    const backendMatchNo = pickFirst(meta, [
+      'matchNumber','match_no','matchIndex','match_index'
+    ]);
+    const matchNo = backendMatchNo
+      ? String(backendMatchNo)
+      : (derivedMatchNo ? String(derivedMatchNo) : '');
+
+    // League name (check cache first, then meta, then nested object)
+    const rawLeague = meta.league;
+    const leagueName =
+      resolvedLeagueName ||
+      (typeof meta.leagueName === 'string' && meta.leagueName) ||
+      (typeof meta.league_name === 'string' && meta.league_name) ||
+      (typeof meta.leagueTitle === 'string' && meta.leagueTitle) ||
+      (typeof meta.league_title === 'string' && meta.league_title) ||
+      (typeof rawLeague === 'string' ? rawLeague :
+        (rawLeague as any)?.name ||
+        (rawLeague as any)?.title ||
+        (rawLeague as any)?.leagueName) ||
+      'League';
+
+    // Times / Date / Venue
+    let startRaw = pickFirst(meta, [
+      'startTime','start_time','start','kickoff','kickOff','kick_off','kickoffTime','kickoff_time',
+      'scheduledStart','scheduled_start','startAt','start_at','matchStart','match_start','from','time_from',
+      'startDateTime','start_datetime','start_date_time','begin','beginTime','begin_time'
+    ]) || timesOverride?.start;
+
+    let endRaw = pickFirst(meta, [
+      'endTime','end_time','end','finishTime','finish_time','finish','endAt','end_at',
+      'to','time_to','matchEnd','match_end','scheduledEnd','scheduled_end',
+      'endingTime','ending_time','matchEndTime','match_end_time','endtime',
+      'stop','stopTime','stop_time','finishAt','finish_at','endDateTime','end_datetime','end_date_time'
+    ]) || timesOverride?.end;
+
+    const explicitDateRaw = pickFirst(meta, [
+      'date','matchDate','match_date','day','playDate','play_date','scheduledDate','scheduled_date',
+      'startDate','start_date'
+    ]);
+
+    // NEW: broaden venue keys unchanged
+    const venue = pickFirst(meta, [
+      'venue','location','ground','pitch','place','field'
+    ]) || '';
+
+    // ...existing fallback extraction for times (unchanged) ...
+
+    // ---- dateLine derivation (REPLACED) ----
+    // 1. Use explicit date field if valid
+    let dateIso =
+      normalizePossibleDate(explicitDateRaw) ||
+      normalizePossibleDate(startRaw) ||
+      normalizePossibleDate(endRaw) ||
+      normalizePossibleDate(n.created_at);
+
+    const dateLine = dateIso ? formatDateLine(dateIso) : '';
+
+    // 2) Fallback parse from title/body if not provided OR if one missing
+    if ((!startRaw || !endRaw) && (n.title || n.body)) {
+      const agg = `${n.title ?? ''} ${n.body ?? ''}`;
+      const range = agg.match(
+        /\b(\d{1,2}[:.]\d{2}\s?(?:AM|PM|am|pm)?)\s?(?:to|-)\s?(\d{1,2}[:.]\d{2}\s?(?:AM|PM|am|pm)?)\b/
+      );
+      if (range) {
+        if (!startRaw) startRaw = range[1];
+        if (!endRaw) endRaw = range[2];
+      } else {
+        const times = agg.match(/\b\d{1,2}[:.]\d{2}\s?(?:AM|PM|am|pm)?\b/g);
+        if (!startRaw && times && times[0]) startRaw = times[0];
+        if (!endRaw && times && times[1]) endRaw = times[1];
+      }
+    }
+
+    // NEW: Compute from duration at meta level if still missing end
+    if (!endRaw && startRaw) {
+      const durMeta = pickFirst(meta, [
+        'duration','durationMinutes','duration_minutes','matchDuration','lengthMinutes','length'
+      ]);
+      if (durMeta) {
+        const durNum = parseInt(String(durMeta),10);
+        const sDate = new Date(startRaw);
+        if (!isNaN(durNum) && !isNaN(sDate.getTime())) {
+          const eDate = new Date(sDate.getTime() + durNum * 60000);
+          endRaw = eDate.toISOString();
+        }
+      }
+    }
+
+    // FINAL: If still no end, still compute default 90 from start
+    if (!endRaw && startRaw) {
+      const sDate = new Date(startRaw);
+      if (!isNaN(sDate.getTime())) {
+        const eDef = new Date(sDate.getTime() + 90 * 60000);
+        endRaw = eDef.toISOString();
+      }
+    }
+
+    // --- PATCH: robust manual end time computation for plain clock values ---
+    // If endRaw missing but startRaw is a plain time (no date), compute using duration OR default 90
+    if (!endRaw && startRaw && /^[0-9]{1,2}:[0-9]{2}(\s?(AM|PM|am|pm))?$/.test(String(startRaw).trim())) {
+      const parsed = parseClockTimeToMinutes(String(startRaw).trim());
+      if (parsed) {
+        const durMeta = pickFirst(meta, [
+          'duration','durationMinutes','duration_minutes','matchDuration','lengthMinutes','length'
+        ]);
+        let dur = 90;
+        if (durMeta) {
+          const dNum = parseInt(String(durMeta), 10);
+            if (!isNaN(dNum) && dNum > 0 && dNum < 600) dur = dNum;
+        }
+        const endMins = parsed.mins + dur;
+        endRaw = minutesToClock(endMins, parsed.is12h, parsed.hadAmPm);
+      }
+    }
+
+    const startFmt = formatTime(startRaw);
+    let endFmt = formatTime(endRaw);
+
+    // If endFmt still empty AND we have ISO-ish startRaw + computed duration, fallback again
+    if (!endFmt && startRaw && !endRaw) {
+      const durMeta = pickFirst(meta, [
+        'duration','durationMinutes','duration_minutes','matchDuration','lengthMinutes','length'
+      ]);
+      let dur = 90;
+      if (durMeta) {
+        const dNum = parseInt(String(durMeta), 10);
+        if (!isNaN(dNum) && dNum > 0 && dNum < 600) dur = dNum;
+      }
+      const sDate = new Date(startRaw);
+      if (!isNaN(sDate.getTime())) {
+        const eDate = new Date(sDate.getTime() + dur * 60000);
+        // CHANGED: force 24h HH:MM instead of locale string with AM/PM
+        endFmt = toHHMM(eDate);
+      }
+    }
+
+    if (!endFmt) {
+      console.log('🚨 STILL NO END (after all fallbacks)', {
+        notifId: n.id,
+        matchMetaId: meta.matchId || meta.match_id,
+        startRaw,
+        endRaw,
+        computedEndFmt: endFmt,
+        triedPlainClock: /^[0-9]{1,2}:[0-9]{2}(\s?(AM|PM|am|pm))?$/.test(String(startRaw || '')),
+
+        metaKeys: Object.keys(meta)
+      });
+    }
+
+    // Match id & link
+    const matchId = pickFirst(meta, ['matchId','match_id','id']) || '';
     const seeDetailsHref = matchId ? `/match/${matchId}` : '#';
 
-    const title = '';
-    const plain = `${fromTo}\n${date}\n${venue}`;
+    const plainParts: string[] = [];
+    if (dateLine) plainParts.push(dateLine);
+    if (venue) plainParts.push(venue);
+    const plain = plainParts.join('\n');
+
     const node = (
       <Box>
         <Typography
@@ -118,7 +458,7 @@ function buildNotificationDisplay(n: Notification): BuiltNotificationDisplay {
         >
           New Match Scheduled!{' '}
           <Box component="span" sx={{ fontWeight: 900 }}>
-            ⚽ Match {matchNo} for {leagueName}
+            ⚽ Match {matchNo || '?'} for {leagueName}
           </Box>{' '}is scheduled.{' '}
           {matchId && (
             <Typography
@@ -135,16 +475,61 @@ function buildNotificationDisplay(n: Notification): BuiltNotificationDisplay {
             </Typography>
           )}
         </Typography>
-        <Typography sx={{ mt: 1.25, fontSize: '13px', color: '#333', whiteSpace: 'pre-line' }}>
-          {fromTo && `${fromTo}\n`}
-          {date && `${date}\n`}
-          {venue && `${venue}\n`}
-        </Typography>
+
+        {(startFmt || endFmt) && (
+          <Box sx={{ mt: 1 }}>
+            <Typography
+              sx={{
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#111',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                flexWrap: 'wrap'
+              }}
+            >
+              {startFmt && <Box component="span">{startFmt}</Box>}
+              {startFmt && endFmt && <Box component="span" sx={{ mx: 0.25 }}>-</Box>}
+              {endFmt && <Box component="span">{endFmt}</Box>}
+            </Typography>
+          </Box>
+        )}
+
+        {/* NEW: Always show dateLine if available (even without times) */}
+        {dateLine && (
+          <Typography
+            sx={{
+              mt: 0.6,
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#444'
+            }}
+          >
+            {dateLine}
+          </Typography>
+        )}
+
+        {venue && (
+          <Typography
+            sx={{
+              mt: 0.4,
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#555'
+            }}
+          >
+            {venue}
+          </Typography>
+        )}
       </Box>
     );
-    return { title, plain, node };
+
+    const uiTitle = `Match ${matchNo || ''} Scheduled`;
+    return { title: uiTitle, plain, node };
   }
 
+  // Non-match notification fallback
   const title = n.title || 'Notification';
   const bodyText = n.body?.length ? n.body : 'New update available.';
   return {
@@ -154,7 +539,7 @@ function buildNotificationDisplay(n: Notification): BuiltNotificationDisplay {
       <Typography
         sx={{
           color: '#444',
-            fontSize: '13px',
+          fontSize: '13px',
           lineHeight: 1.45,
           whiteSpace: 'pre-wrap'
         }}
@@ -201,6 +586,56 @@ export default function NavigationBar() {
 
   const [availabilitySelections, setAvailabilitySelections] = useState<Record<string,'YES'|'NO'>>({});
   const [savingAvailability, setSavingAvailability] = useState<Record<string, boolean>>({});
+
+  // ADD THIS (league name cache)
+  const [leagueNames, setLeagueNames] = useState<Record<string,string>>({});
+
+  // Build per-league incremental match indices.
+  // Uses backend matchNumber if present to sync sequence; otherwise increments.
+  const leagueMatchIndexMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    // Sort by created_at ascending for stable sequence
+    const sorted = [...notifications].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    const counters: Record<string, number> = {};
+
+    for (const n of sorted) {
+      if (!isMatchCreated(n)) continue;
+      const meta: any = n.meta || {};
+      const leagueKey =
+        meta.leagueId ||
+        meta.league_id ||
+        meta.leagueName ||
+        meta.league_name ||
+        'default';
+
+      if (!counters[leagueKey]) counters[leagueKey] = 0;
+      // If backend already sends a match number, adopt it as current baseline
+      const backendNumRaw =
+        meta.matchNumber ||
+        meta.match_no;
+      let assigned: number;
+
+      const parsed = backendNumRaw != null && backendNumRaw !== ''
+        ? parseInt(String(backendNumRaw), 10)
+        : NaN;
+
+      if (!isNaN(parsed)) {
+        // Ensure counter jumps forward if backend number is higher
+        if (parsed > counters[leagueKey]) counters[leagueKey] = parsed;
+        assigned = parsed;
+      } else {
+        // Increment locally
+        counters[leagueKey] += 1;
+        assigned = counters[leagueKey];
+      }
+
+      if (!map[leagueKey]) map[leagueKey] = {};
+      map[leagueKey][n.id] = assigned;
+    }
+    return map;
+  }, [notifications]);
 
   // >>> ADD THIS HELPER (after state declarations)
   async function syncAvailabilityFromServer(notifs: Notification[]) {
@@ -251,6 +686,146 @@ export default function NavigationBar() {
     }
   }
   // >>> END ADDITION
+
+  async function hydrateLeagueNames(notifs: Notification[]) {
+    if (!token) return;
+    const pending: Set<string> = new Set();
+
+    notifs.forEach(n => {
+      if (!isMatchCreated(n)) return;
+      const meta: any = n.meta || {};
+      const leagueId = meta.leagueId || meta.league_id;
+      const hasName =
+        meta.leagueName ||
+        meta.league_name ||
+        meta.leagueTitle ||
+        meta.league_title ||
+        meta.league ||
+        meta.league?.name ||
+        meta.league?.title ||
+        meta.league?.leagueName;
+      if (leagueId && !hasName && !leagueNames[leagueId]) pending.add(String(leagueId));
+    });
+
+    if (pending.size === 0) return;
+
+    const ids = Array.from(pending);
+    try {
+      const results = await Promise.all(
+        ids.map(async id => {
+          try {
+            // Adjust endpoint if your API differs
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: 'no-store'
+            });
+            if (!res.ok) return { id, name: undefined };
+            const data = await res.json();
+            const name =
+              data.name ||
+              data.leagueName ||
+              data.title ||
+              data.league_title ||
+              data.league?.name ||
+              data.league?.title;
+            return { id, name };
+          } catch {
+            return { id, name: undefined };
+          }
+        })
+      );
+      setLeagueNames(prev => {
+        const next = { ...prev };
+        results.forEach(r => { if (r.name) next[r.id] = r.name; });
+        return next;
+      });
+    } catch (e) {
+      console.error('hydrateLeagueNames error', e);
+    }
+  }
+
+  // ---- 2) ADD FETCH FUNCTION (place after hydrateLeagueNames) ----
+  async function fetchMissingMatchTimes(notifs: Notification[]) {
+    if (!token) return;
+
+    const targets: string[] = [];
+    for (const n of notifs) {
+      if (!isMatchCreated(n)) continue;
+      const meta: any = n.meta || {};
+      const matchId = meta.matchId || meta.match_id;
+      if (!matchId) continue;
+      const endMeta = meta.endTime || meta.end_time || meta.end || meta.finishTime || meta.finish_time;
+      const cached = matchTimes[matchId];
+      if (!endMeta && (!cached || !cached.end)) {
+        targets.push(String(matchId));
+      }
+    }
+    if (targets.length === 0) return;
+
+    const unique = Array.from(new Set(targets));
+    console.log('⏱ Fetching match detail for end times:', unique);
+    try {
+      const results = await Promise.all(unique.map(async id => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store'
+          });
+          if (!res.ok) {
+            console.log('⚠️ Match detail failed', id, res.status);
+            return { id, start: undefined, end: undefined };
+          }
+          const data = await res.json();
+          console.log('🛈 Match detail', id, data);
+
+          const pick = (...keys: string[]) => {
+              for (const k of keys) {
+                const v = data[k];
+                if (v !== undefined && v !== null && v !== '') return v;
+              }
+              return undefined;
+            };
+
+          const start = pick(
+            'startTime','start_time','kickoff','kickOff','kickoffTime','scheduledStart','start','matchStart'
+          );
+          let end = pick(
+            'endTime','end_time','finishTime','finish_time','scheduledEnd','end','matchEnd','match_end'
+          );
+
+          if (!end && start) {
+            const durationRaw = pick(
+              'duration','durationMinutes','duration_minutes','matchDuration','lengthMinutes','length'
+            );
+            const durNum = durationRaw ? parseInt(String(durationRaw),10) : NaN;
+            const startDate = new Date(start);
+            if (!isNaN(startDate.getTime())) {
+              const mins = !isNaN(durNum) && durNum > 0 ? durNum : 90;
+              const endDate = new Date(startDate.getTime() + mins * 60000);
+              end = endDate.toISOString();
+            }
+          }
+
+          return { id, start, end };
+        } catch (e) {
+          console.log('❌ Match detail error', id, e);
+          return { id, start: undefined, end: undefined };
+        }
+      }));
+
+      setMatchTimes(prev => {
+        const next = { ...prev };
+        results.forEach(r => {
+          if (!next[r.id]) next[r.id] = {};
+          if (r.start && !next[r.id].start) next[r.id].start = r.start;
+          if (r.end && !next[r.id].end) next[r.id].end = r.end;
+        });
+        return next;
+      });
+    } catch (e) {
+      console.error('fetchMissingMatchTimes error', e);
+    }
+  }
 
   // 🔥 UPDATED FETCH NOTIFICATIONS - USE COMPONENT LEVEL TOKEN
   const fetchNotifications = async (showLogs?: boolean) => {
@@ -325,6 +900,8 @@ export default function NavigationBar() {
 
         // >>> CALL SYNC AFTER WE SET NOTIFICATIONS
         syncAvailabilityFromServer(notificationList);
+        await hydrateLeagueNames(notificationList);
+        await fetchMissingMatchTimes(notificationList);
         // >>> END
       } else {
         console.error('API returned error:', data.message);
@@ -349,7 +926,6 @@ export default function NavigationBar() {
       console.log(`📖 Marking notification ${notificationId} as read`);
       
       // 🔥 REMOVED: const { token } = useAuth(); - USING COMPONENT LEVEL TOKEN
-      
       if (!token) {
         console.log('❌ No token found for markAsRead');
         return;
@@ -384,7 +960,6 @@ export default function NavigationBar() {
       
       // 🔥 REMOVED: const { token } = useAuth(); - USING COMPONENT LEVEL TOKEN
       const userId = user?.id; // 🔥 USE COMPONENT LEVEL USER
-      
       if (!token || !userId) {
         console.log('❌ No token or user ID found for markAllAsRead');
         return;
@@ -440,6 +1015,9 @@ export default function NavigationBar() {
       setSavingAvailability(prev => ({ ...prev, [matchId]: false }));
     }
   };
+
+  // ---- 1) ADD STATE (near other useState declarations) ----
+const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:string}>>({});
 
   // 🔥 HELPER FUNCTION - KEEP FOR BACKWARD COMPATIBILITY
   // const getUserId = () => {
@@ -1000,8 +1578,32 @@ export default function NavigationBar() {
           ) : (
             notifications.map((notification, index) => {
               console.log('Render notif', notification.id, 'type=', notification.type);
-              const display = buildNotificationDisplay(notification);
+              
+              const meta: any = notification.meta || {};
+              const leagueKeyForIndex =
+                meta.leagueId ||
+                meta.league_id ||
+                meta.leagueName ||
+                meta.league_name ||
+                'default';
+              const derivedMatchNo = leagueMatchIndexMap[leagueKeyForIndex]?.[notification.id];
+
+              // Resolve league name (cache beats meta fallback inside builder)
+              const resolvedLeagueName =
+                leagueNames[meta.leagueId || meta.league_id] ||
+                leagueNames[leagueKeyForIndex];
+
+              // Insert times override beforehand:
+              const matchMetaId =
+                meta.matchId ||
+                meta.match_id ||
+                '';
+              const timesOverride = matchMetaId ? matchTimes[matchMetaId] : undefined;
               const isMatchType = isMatchCreated(notification as any);
+              if (isMatchType && matchMetaId) {
+                console.log('🧪 timesOverride for', matchMetaId, timesOverride);
+              }
+              const display = buildNotificationDisplay(notification, derivedMatchNo, resolvedLeagueName, timesOverride);
               const matchId =
                 (notification.meta?.matchId as string) ||
                 (notification.meta?.match_id as string) || '';
@@ -1054,80 +1656,85 @@ export default function NavigationBar() {
                         {isMatchType && (
                           <Box>
                             {display.node}
-                            {matchId && (
-                              <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
-                                  Can you play?
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <Box
-                                    component="button"
-                                    disabled={saving}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetAvailability(matchId, 'YES', notification.id);
-                                    }}
-                                    style={{ all: 'unset', cursor: 'pointer' }}
-                                    aria-pressed={selected === 'YES'}
-                                  >
-                                    <Box sx={{
-                                      px: 1.2,
-                                      py: 0.5,
-                                      fontSize: '12px',
-                                      fontWeight: 700,
-                                      borderRadius: 1,
-                                      border: '1px solid',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: 0.5,
-                                      transition: '0.2s',
-                                      bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
-                                      color: selected === 'YES' ? '#fff' : '#0d7a33',
-                                      borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
-                                      boxShadow: selected === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
-                                      opacity: saving && selected === 'YES' ? 0.7 : 1
-                                    }}>
-                                      ✅ Yes
-                                    </Box>
-                                  </Box>
-                                  <Box
-                                    component="button"
-                                    disabled={saving}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetAvailability(matchId, 'NO', notification.id);
-                                    }}
-                                    style={{ all: 'unset', cursor: 'pointer' }}
-                                    aria-pressed={selected === 'NO'}
-                                  >
-                                    <Box sx={{
-                                      px: 1.2,
-                                      py: 0.5,
-                                      fontSize: '12px',
-                                      fontWeight: 700,
-                                      borderRadius: 1,
-                                      border: '1px solid',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: 0.5,
-                                      transition: '0.2s',
-                                      bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
-                                      color: selected === 'NO' ? '#fff' : '#c62828',
-                                      borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
-                                      boxShadow: selected === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
-                                      opacity: saving && selected === 'NO' ? 0.7 : 1
-                                    }}>
-                                      ❌ No
-                                    </Box>
-                                  </Box>
-                                </Box>
-                                {saving && (
-                                  <Typography sx={{ fontSize: '11px', color: '#555' }}>
-                                    Saving...
+                            {matchId && (() => {
+                              const started = matchHasStarted(meta, timesOverride);
+                              const showAvailability = !started;
+                              if (!showAvailability) return null;
+                              return (
+                                <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
+                                    Can you play?
                                   </Typography>
-                                )}
-                              </Box>
-                            )}
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Box
+                                      component="button"
+                                      disabled={saving}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetAvailability(matchId, 'YES', notification.id);
+                                      }}
+                                      style={{ all: 'unset', cursor: 'pointer' }}
+                                      aria-pressed={selected === 'YES'}
+                                    >
+                                      <Box sx={{
+                                        px: 1.2,
+                                        py: 0.5,
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        borderRadius: 1,
+                                        border: '1px solid',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        transition: '0.2s',
+                                        bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
+                                        color: selected === 'YES' ? '#fff' : '#0d7a33',
+                                        borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
+                                        boxShadow: selected === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
+                                        opacity: saving && selected === 'YES' ? 0.7 : 1
+                                      }}>
+                                        ✅ Yes
+                                      </Box>
+                                    </Box>
+                                    <Box
+                                      component="button"
+                                      disabled={saving}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetAvailability(matchId, 'NO', notification.id);
+                                      }}
+                                      style={{ all: 'unset', cursor: 'pointer' }}
+                                      aria-pressed={selected === 'NO'}
+                                    >
+                                      <Box sx={{
+                                        px: 1.2,
+                                        py: 0.5,
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        borderRadius: 1,
+                                        border: '1px solid',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        transition: '0.2s',
+                                        bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
+                                        color: selected === 'NO' ? '#fff' : '#c62828',
+                                        borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
+                                        boxShadow: selected === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
+                                        opacity: saving && selected === 'NO' ? 0.7 : 1
+                                      }}>
+                                        ❌ No
+                                      </Box>
+                                    </Box>
+                                  </Box>
+                                  {saving && (
+                                    <Typography sx={{ fontSize: '11px', color: '#555' }}>
+                                      Saving...
+                                    </Typography>
+                                  )}
+                                </Box>
+                              );
+                            })()}
                           </Box>
                         )}
 
@@ -1323,7 +1930,7 @@ export default function NavigationBar() {
           <Typography variant="body1" sx={{ mb: 2 }}>
             In the league setting as the league admin, it is good practice to enter the total number of matches to be played in the league. Once you have reached the maximum number of games in the league, virtual awards will be finalised on the home page.
           </Typography>
-          {/* Step 3: Play Matches & Track Progress */}
+          {/* Step  3: Play Matches & Track Progress */}
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             3. Play Matches & Track Progress
           </Typography>
@@ -1345,7 +1952,7 @@ export default function NavigationBar() {
               <li>Win: 30 XP &nbsp;|&nbsp; Draw: 15 XP &nbsp;|&nbsp; Loss: 10 XP</li>
               <li>Goal: 3 XP (win), 2 XP (loss)</li>
               <li>Assist: 2 XP (win), 1 XP (loss)</li>
-              <li>Clean Sheet (GK): 5 XP</li>
+              <li>Clean Sheet (GK):  5 XP</li>
               <li>Man of the Match: 10 XP (win), 5 XP (loss)</li>
               <li>Special Achievements: Extra XP for milestones (e.g., hat-trick, win streaks, etc.)</li>
             </ul>
@@ -1364,6 +1971,7 @@ export default function NavigationBar() {
             {`To create a new match, select `}<b>Matches</b> {`> click on to`} <b>Schedule New Match </b>{`and enter the relevant match details >`} <b>Schedule Match</b>{`. The new match will be visible to all players in the league. `}
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
+           
             {`Players can select their availability to play the match by logging in to their home page > click on to`} Matches {`>`}<b> Mark yourself as available</b>.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
@@ -1418,10 +2026,6 @@ export default function NavigationBar() {
           <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
             <li style={{ listStyleType: 'disc' }}>Play fair</li>
-            <li style={{ listStyleType: 'disc' }}>Play safe</li>
-            <li style={{ listStyleType: 'disc' }}>Show respect</li>
-            <li style={{ listStyleType: 'disc' }}>Play as a team</li>
-            <li style={{ listStyleType: 'disc' }}>Commit to play</li>
             <li style={{ listStyleType: 'disc' }}>Pick balance teams</li>
             <li style={{ listStyleType: 'disc' }}>Rise to the challenge</li>
             <li style={{ listStyleType: 'disc' }}>Have fun!</li>
@@ -1432,8 +2036,6 @@ export default function NavigationBar() {
             <li><span style={{ fontWeight: 900 }}>H</span>opeful</li>
             <li><span style={{ fontWeight: 900 }}>A</span>ppreciative</li>
             <li><span style={{ fontWeight: 900 }}>M</span>odest</li>
-            <li><span style={{ fontWeight: 900 }}>P</span>erseverant</li>
-            <li><span style={{ fontWeight: 900 }}>I</span>nspired</li>
             <li><span style={{ fontWeight: 900 }}>O</span>ptimistic</li>
             <li><span style={{ fontWeight: 900 }}>N</span>oble</li>
           </ul>
