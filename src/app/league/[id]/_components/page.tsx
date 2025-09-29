@@ -37,14 +37,12 @@ import {
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2 } from 'lucide-react';
+import { Tooltip } from '@mui/material';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import TrophyRoom from '@/Components/TrophyRoom';
-// import FirstBadge from '@/Components/images/1st.png';
-// import SecondBadge from '@/Components/images/2nd.png';
-// import ThirdBadge from '@/Components/images/3rd.png';
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
@@ -98,6 +96,7 @@ interface Match {
     awayTeamUsers: User[];
     end: string;
     active: boolean;
+    archived?: boolean; // <-- NEW
 }
 
 interface LeagueSettingsDialogProps {
@@ -417,6 +416,11 @@ export default function LeagueDetailPage() {
     // Match detail modal state
     const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
     const [selectedMatchDetail, setSelectedMatchDetail] = useState<Match | null>(null);
+
+    // Confirmation dialog state
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
+    const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
 
     // Example stat change handler
     const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
@@ -832,7 +836,7 @@ export default function LeagueDetailPage() {
     const tableData: TableData[] = React.useMemo(() => {
         if (!league) return [];
         const playerStats = new Map<string, TableData>();
-        const adminId = league.administrators?.[0]?.id; // Assuming the first admin is the league admin
+        const adminId = league.administrators?.[0]?.id;
         league.members.forEach((member) => {
             playerStats.set(member.id, {
                 id: member.id,
@@ -848,33 +852,27 @@ export default function LeagueDetailPage() {
             });
         });
         league.matches
-            .filter((match) => match.status === 'completed' && match.homeTeamGoals != null && match.awayTeamGoals != null)
-            .forEach((match) => {
+            .filter(m => !m.archived) // <-- exclude archived
+            .filter(m => m.status === 'completed' && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
                 const isDraw = match.homeTeamGoals === match.awayTeamGoals;
-                const processPlayer = (player: User, isHome: boolean) => {
-                    if (playerStats.has(player.id)) {
-                        const stats = playerStats.get(player.id)!;
-                        stats.played++;
-                        if ((isHome && homeWon) || (!isHome && awayWon)) {
-                            stats.wins++;
-                        } else if (isDraw) {
-                            stats.draws++;
-                        } else {
-                            stats.losses++;
-                        }
-                    }
+                const processPlayer = (p: User, isHome: boolean) => {
+                    const stats = playerStats.get(p.id);
+                    if (!stats) return;
+                    stats.played++;
+                    if ((isHome && homeWon) || (!isHome && awayWon)) stats.wins++;
+                    else if (isDraw) stats.draws++;
+                    else stats.losses++;
                 };
-                match.homeTeamUsers.forEach((player) => processPlayer(player, true));
-                match.awayTeamUsers.forEach((player) => processPlayer(player, false));
+                match.homeTeamUsers.forEach(p => processPlayer(p, true));
+                match.awayTeamUsers.forEach(p => processPlayer(p, false));
             });
-        const arr = Array.from(playerStats.values()).map((stats) => ({
-            ...stats,
-            winPercentage: stats.played > 0 ? `${Math.round((stats.wins / stats.played) * 100)}%` : '0%',
-        }));
-        arr.sort((a, b) => b.wins - a.wins || b.draws - a.draws || a.losses - b.losses);
-        return arr;
+        return Array.from(playerStats.values()).map(s => ({
+            ...s,
+            winPercentage: s.played ? `${Math.round((s.wins / s.played) * 100)}%` : '0%'
+        })).sort((a, b) => b.wins - a.wins || b.draws - a.draws || a.losses - b.losses);
     }, [league]);
 
     const getAvailabilityCounts = (match: Match) => {
@@ -1215,397 +1213,515 @@ export default function LeagueDetailPage() {
 
     // Replace your MatchDetailModal component with this updated version
 
-const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
-    if (!match) return null;
+    const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
+        if (!match) return null;
 
-    return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            fullWidth
-            maxWidth="md" // Changed to md for more width
-            PaperProps={{
-                sx: {
-                    bgcolor: 'rgba(15,15,15,0.95)',
-                    color: '#E5E7EB',
-                    borderRadius: 3,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-                    overflow: 'hidden',
-                },
-            }}
-        >
-            <DialogTitle
-                sx={{
-                    fontWeight: 'bold',
-                    position: 'relative',
-                    color: '#E5E7EB',
-                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    py: 2.5
+        return (
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="md" // Changed to md for more width
+                PaperProps={{
+                    sx: {
+                        bgcolor: 'rgba(15,15,15,0.95)',
+                        color: '#E5E7EB',
+                        borderRadius: 3,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(20px)',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                        overflow: 'hidden',
+                    },
                 }}
             >
-                Match Details
-                <IconButton
-                    aria-label="close"
-                    onClick={onClose}
+                <DialogTitle
                     sx={{
-                        position: 'absolute',
-                        right: 8,
-                        top: 8,
-                        color: '#9CA3AF',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                        fontWeight: 'bold',
+                        position: 'relative',
+                        color: '#E5E7EB',
+                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        py: 2.5
                     }}
                 >
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
+                    Match Details
+                    <IconButton
+                        aria-label="close"
+                        onClick={onClose}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: '#9CA3AF',
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
 
-            <DialogContent sx={{ p: 0 }}>
-                {/* Match Header - Teams Side by Side */}
-                <Box sx={{ 
-                    p: 3, 
-                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                    color: 'white'
-                }}>
-                    {/* Teams in a row layout */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        {/* Home Team */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 2, 
-                            flex: 1,
-                            minWidth: 0 // Prevent overflow
-                        }}>
-                            <Image
-                                src={match.homeTeamImage || homeImg}
-                                alt={match.homeTeamName}
-                                width={40}
-                                height={40}
-                                style={{ borderRadius: '6px', flexShrink: 0 }}
-                            />
-                            <Box sx={{ minWidth: 0, flex: 1 }}>
-                                <Typography 
-                                    variant="h6" 
-                                    sx={{ 
-                                        fontWeight: 'bold',
-                                        fontSize: { xs: '1rem', sm: '1.25rem' },
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                >
-                                    {formatMatchName(match.homeTeamName)}
-                                </Typography>
-                                <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                        opacity: 0.8,
-                                        fontSize: '0.8rem'
-                                    }}
-                                >
-                                    Home
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        {/* Score Section */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 2,
-                            flexShrink: 0
-                        }}>
-                            {match.status === 'completed' && (
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: 1,
-                                    backgroundColor: 'rgba(255,255,255,0.15)',
-                                    px: 2,
-                                    py: 1,
-                                    borderRadius: 2
-                                }}>
-                                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                                        {match.homeTeamGoals || 0}
-                                    </Typography>
-                                    <Typography variant="h6" sx={{ opacity: 0.7 }}>
-                                        -
-                                    </Typography>
-                                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                                        {match.awayTeamGoals || 0}
-                                    </Typography>
-                                </Box>
-                            )}
-                            {match.status === 'scheduled' && (
-                                <Box sx={{ 
-                                    backgroundColor: 'rgba(255,255,255,0.2)', 
-                                    px: 2, 
-                                    py: 1, 
-                                    borderRadius: 2
-                                }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                        VS
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-
-                        {/* Away Team */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 2, 
-                            flex: 1,
-                            flexDirection: 'row-reverse', // Reverse order for visual balance
-                            minWidth: 0
-                        }}>
-                            <Image
-                                src={match.awayTeamImage || awayImg}
-                                alt={match.awayTeamName}
-                                width={40}
-                                height={40}
-                                style={{ borderRadius: '6px', flexShrink: 0 }}
-                            />
-                            <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
-                                <Typography 
-                                    variant="h6" 
-                                    sx={{ 
-                                        fontWeight: 'bold',
-                                        fontSize: { xs: '1rem', sm: '1.25rem' },
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                >
-                                    {formatMatchName(match.awayTeamName)}
-                                </Typography>
-                                <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                        opacity: 0.8,
-                                        fontSize: '0.8rem'
-                                    }}
-                                >
-                                    Away
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
-
-                {/* Match Info */}
-                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                    {/* Date & Time */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Calendar size={20} color="#E5E7EB" />
-                        <Box>
-                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                Date & Time
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-                                {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    {/* Location */}
-                    {match.location && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Box sx={{ 
-                                width: 20, 
-                                height: 20, 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center' 
+                <DialogContent sx={{ p: 0 }}>
+                    {/* Match Header - Teams Side by Side */}
+                    <Box sx={{
+                        p: 3,
+                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                        color: 'white'
+                    }}>
+                        {/* Teams in a row layout */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            {/* Home Team */}
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flex: 1,
+                                minWidth: 0 // Prevent overflow
                             }}>
-                                📍
+                                <Image
+                                    src={match.homeTeamImage || homeImg}
+                                    alt={match.homeTeamName}
+                                    width={40}
+                                    height={40}
+                                    style={{ borderRadius: '6px', flexShrink: 0 }}
+                                />
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontWeight: 'bold',
+                                            fontSize: { xs: '1rem', sm: '1.25rem' },
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {formatMatchName(match.homeTeamName)}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            opacity: 0.8,
+                                            fontSize: '0.8rem'
+                                        }}
+                                    >
+                                        Home
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {/* Score Section */}
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flexShrink: 0
+                            }}>
+                                {match.status === 'completed' && (
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        backgroundColor: 'rgba(255,255,255,0.15)',
+                                        px: 2,
+                                        py: 1,
+                                        borderRadius: 2
+                                    }}>
+                                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                                            {match.homeTeamGoals || 0}
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ opacity: 0.7 }}>
+                                            -
+                                        </Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                                            {match.awayTeamGoals || 0}
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {match.status === 'scheduled' && (
+                                    <Box sx={{
+                                        backgroundColor: 'rgba(255,255,255,0.2)',
+                                        px: 2,
+                                        py: 1,
+                                        borderRadius: 2
+                                    }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                            VS
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+
+                            {/* Away Team */}
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flex: 1,
+                                flexDirection: 'row-reverse', // Reverse order for visual balance
+                                minWidth: 0
+                            }}>
+                                <Image
+                                    src={match.awayTeamImage || awayImg}
+                                    alt={match.awayTeamName}
+                                    width={40}
+                                    height={40}
+                                    style={{ borderRadius: '6px', flexShrink: 0 }}
+                                />
+                                <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontWeight: 'bold',
+                                            fontSize: { xs: '1rem', sm: '1.25rem' },
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {formatMatchName(match.awayTeamName)}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            opacity: 0.8,
+                                            fontSize: '0.8rem'
+                                        }}
+                                    >
+                                        Away
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    {/* Match Info */}
+                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                        {/* Date & Time */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Calendar size={20} color="#E5E7EB" />
+                            <Box>
+                                <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                    Date & Time
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                    {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {/* Location */}
+                        {match.location && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box sx={{
+                                    width: 20,
+                                    height: 20,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    📍
+                                </Box>
+                                <Box>
+                                    <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                        Location
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                        {match.location}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Status */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{
+                                width: 20,
+                                height: 20,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
                             </Box>
                             <Box>
                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                    Location
+                                    Status
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-                                    {match.location}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    )}
-
-                    {/* Status */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                            width: 20, 
-                            height: 20, 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                        }}>
-                            {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-                                Status
-                            </Typography>
-                            <Chip 
-                                label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
-                                size="small"
-                                sx={{
-                                    backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    fontSize: '0.75rem'
-                                }}
-                            />
-                        </Box>
-                    </Box>
-
-                    {/* Availability Info for Scheduled Matches */}
-                    {match.status === 'scheduled' && (
-                        <Box sx={{ 
-                            mt: 2, 
-                            p: 2, 
-                            backgroundColor: 'rgba(255,255,255,0.05)', 
-                            borderRadius: 2,
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
-                                Player Availability
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                <Chip 
-                                    label={`Available: ${getAvailabilityCounts(match).availableCount}`}
+                                <Chip
+                                    label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
                                     size="small"
-                                    sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
-                                />
-                                <Chip 
-                                    label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
-                                    size="small"
-                                    sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
+                                    sx={{
+                                        backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.75rem'
+                                    }}
                                 />
                             </Box>
                         </Box>
-                    )}
 
-                    {/* Team Lineups for Completed/Ongoing Matches */}
-                    {(match.status === 'completed' || match.status === 'ongoing') && 
-                     (match.homeTeamUsers?.length > 0 || match.awayTeamUsers?.length > 0) && (
-                        <Box sx={{ mt: 2 }}>
-                            <Typography variant="h6" sx={{ color: '#E5E7EB', mb: 2, fontWeight: 'bold' }}>
-                                Team Lineups
-                            </Typography>
-                            <Box sx={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                                gap: 3 
+                        {/* Availability Info for Scheduled Matches */}
+                        {match.status === 'scheduled' && (
+                            <Box sx={{
+                                mt: 2,
+                                p: 2,
+                                backgroundColor: 'rgba(255,255,255,0.05)',
+                                borderRadius: 2,
+                                border: '1px solid rgba(255,255,255,0.1)'
                             }}>
-                                {/* Home Team Players */}
-                                {match.homeTeamUsers?.length > 0 && (
-                                    <Box sx={{ 
-                                        backgroundColor: 'rgba(255,255,255,0.05)', 
-                                        borderRadius: 2,
-                                        p: 2,
-                                        border: '1px solid rgba(255,255,255,0.1)'
-                                    }}>
-                                        <Typography variant="body2" sx={{ 
-                                            color: '#9CA3AF', 
-                                            fontSize: '0.8rem', 
-                                            mb: 1.5,
-                                            fontWeight: 'bold'
-                                        }}>
-                                            {formatMatchName(match.homeTeamName)} ({match.homeTeamUsers.length})
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                            {match.homeTeamUsers.map((player) => (
-                                                <Chip 
-                                                    key={player.id}
-                                                    label={`${player.firstName} ${player.lastName}`}
-                                                    size="small"
-                                                    sx={{ 
-                                                        backgroundColor: 'rgba(229, 106, 22, 0.7)',
-                                                        color: 'white', 
-                                                        fontWeight: 'bold',
-                                                        justifyContent: 'flex-start',
-                                                        '& .MuiChip-label': { fontSize: '0.75rem' }
-                                                    }}
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Box>
-                                )}
-
-                                {/* Away Team Players */}
-                                {match.awayTeamUsers?.length > 0 && (
-                                    <Box sx={{ 
-                                        backgroundColor: 'rgba(255,255,255,0.05)', 
-                                        borderRadius: 2,
-                                        p: 2,
-                                        border: '1px solid rgba(255,255,255,0.1)'
-                                    }}>
-                                        <Typography variant="body2" sx={{ 
-                                            color: '#9CA3AF', 
-                                            fontSize: '0.8rem', 
-                                            mb: 1.5,
-                                            fontWeight: 'bold'
-                                        }}>
-                                            {formatMatchName(match.awayTeamName)} ({match.awayTeamUsers.length})
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                            {match.awayTeamUsers.map((player) => (
-                                                <Chip 
-                                                    key={player.id}
-                                                    label={`${player.firstName} ${player.lastName}`}
-                                                    size="small"
-                                                    sx={{ 
-                                                        backgroundColor: 'rgba(207, 35, 38, 0.7)',
-                                                        color: 'white', 
-                                                        fontWeight: 'bold',
-                                                        justifyContent: 'flex-start',
-                                                        '& .MuiChip-label': { fontSize: '0.75rem' }
-                                                    }}
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Box>
-                                )}
+                                <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
+                                    Player Availability
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                    <Chip
+                                        label={`Available: ${getAvailabilityCounts(match).availableCount}`}
+                                        size="small"
+                                        sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
+                                    />
+                                    <Chip
+                                        label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
+                                        size="small"
+                                        sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
+                                    />
+                                </Box>
                             </Box>
-                        </Box>
-                    )}
-                </Box>
-            </DialogContent>
+                        )}
+                    </Box>
+                </DialogContent>
 
-            <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <Button
-                    onClick={onClose}
-                    variant="outlined"
-                    sx={{
-                        color: '#E5E7EB',
-                        borderColor: 'rgba(255,255,255,0.2)',
-                        '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            borderColor: 'rgba(255,255,255,0.3)'
-                        }
-                    }}
-                >
-                    Close
-                </Button>
-                <Link href={`/match/${match.id}`} passHref>
+                <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                     <Button
-                        variant="contained"
+                        onClick={onClose}
+                        variant="outlined"
                         sx={{
-                            backgroundColor: '#0388E3',
-                            '&:hover': { backgroundColor: '#0369a1' }
+                            color: '#E5E7EB',
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            '&:hover': {
+                                backgroundColor: 'rgba(255,255,255,0.05)',
+                                borderColor: 'rgba(255,255,255,0.3)'
+                            }
                         }}
                     >
-                        View Full Details
+                        Close
                     </Button>
-                </Link>
-            </DialogActions>
-        </Dialog>
-    );
-};
+                    <Link href={`/match/${match.id}`} passHref>
+                        <Button
+                            variant="contained"
+                            sx={{
+                                backgroundColor: '#0388E3',
+                                '&:hover': { backgroundColor: '#0369a1' }
+                            }}
+                        >
+                            View Full Details
+                        </Button>
+                    </Link>
+                </DialogActions>
+            </Dialog>
+        );
+    };
+
+    // Add these handlers before the return statement
+
+    const handleRequestDeleteMatch = (match: Match) => {
+        setMatchPendingDelete(match);
+        setConfirmDeleteOpen(true);
+    };
+
+    // const handleConfirmDeleteMatch = async () => {
+    //     if (!matchPendingDelete || !token || !league) return;
+    //     const m = matchPendingDelete;
+    //     setConfirmDeleteOpen(false);
+
+    //     const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
+    //                       (m.awayTeamGoals ?? 0) > 0 ||
+    //                       m.status === 'completed';
+
+    //     try {
+    //         if (hasScores) {
+    //             // Archive
+    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+    //                 method: 'PATCH',
+    //                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    //                 body: JSON.stringify({ archived: true })
+    //             });
+    //             if (!res.ok) throw new Error('Failed to archive match');
+
+    //             setLeague(prev => prev ? {
+    //                 ...prev,
+    //                 matches: prev.matches.map(mm => mm.id === m.id ? { ...mm, archived: true } : mm)
+    //             } : prev);
+    //             setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
+    //             setToastMessage('Match archived. (Canceled by Admin)');
+    //         } else {
+    //             // Hard delete
+    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+    //                 method: 'DELETE',
+    //                 headers: { 'Authorization': `Bearer ${token}` }
+    //             });
+    //             if (!res.ok) throw new Error('Failed to delete match');
+
+    //             setLeague(prev => prev ? {
+    //                 ...prev,
+    //                 matches: prev.matches.filter(mm => mm.id !== m.id)
+    //             } : prev);
+    //             setUndoInfo({ match: m, action: 'delete' });
+    //             setToastMessage('Match deleted.');
+    //         }
+    //     } catch (e) {
+    //         console.error(e);
+    //         toast.error('Delete/Archive failed');
+    //     } finally {
+    //         setMatchPendingDelete(null);
+    //     }
+    // };
+
+    // Replace the existing handleConfirmDeleteMatch function with this:
+
+    const handleConfirmDeleteMatch = async () => {
+        if (!matchPendingDelete || !token || !league) return;
+        const m = matchPendingDelete;
+        setConfirmDeleteOpen(false);
+
+        const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
+            (m.awayTeamGoals ?? 0) > 0 ||
+            m.status === 'completed';
+
+        try {
+            if (hasScores) {
+                // Archive the match
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ archived: true })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.text();
+                    console.error('Archive failed:', errorData);
+                    throw new Error('Failed to archive match');
+                }
+
+                const data = await res.json();
+                console.log('Archive response:', data); // Debug log
+
+                // Update local state
+                setLeague(prev => prev ? {
+                    ...prev,
+                    matches: prev.matches.map(mm =>
+                        mm.id === m.id ? { ...mm, archived: true } : mm
+                    )
+                } : prev);
+
+                setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
+                setToastMessage('Match archived (Canceled by Admin)');
+
+            } else {
+                // Hard delete
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Failed to delete match');
+
+                setLeague(prev => prev ? {
+                    ...prev,
+                    matches: prev.matches.filter(mm => mm.id !== m.id)
+                } : prev);
+
+                setUndoInfo({ match: m, action: 'delete' });
+                setToastMessage('Match deleted permanently');
+            }
+
+            // Refresh league data to ensure sync
+            fetchLeagueDetails();
+
+        } catch (e) {
+            console.error('Delete/Archive operation failed:', e);
+            toast.error(`Failed to ${hasScores ? 'archive' : 'delete'} match`);
+        } finally {
+            setMatchPendingDelete(null);
+        }
+    };
+    // const handleUndo = async () => {
+    //     if (!undoInfo || !token) return;
+    //     const { match, action } = undoInfo;
+    //     try {
+    //         if (action === 'archive') {
+    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+    //                 method: 'PATCH',
+    //                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    //                 body: JSON.stringify({ archived: false })
+    //             });
+    //             if (!res.ok) throw new Error('Failed to restore');
+
+    //             setLeague(prev => prev ? {
+    //                 ...prev,
+    //                 matches: prev.matches.map(mm => mm.id === match.id ? { ...mm, archived: false } : mm)
+    //             } : prev);
+    //             setToastMessage('Match restored.');
+    //         } else {
+    //             toast.error('Undo not available for permanent delete.');
+    //         }
+    //     } catch {
+    //         toast.error('Undo failed');
+    //     } finally {
+    //         setUndoInfo(null);
+    //     }
+    // };
+
+    const handleUndo = async () => {
+        if (!undoInfo || !token) return;
+        const { match, action } = undoInfo;
+
+        try {
+            if (action === 'archive') {
+                // Restore archived match
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ archived: false })
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to restore match');
+                }
+
+                const data = await res.json();
+                console.log('Restore response:', data);
+
+                // Update local state
+                setLeague(prev => prev ? {
+                    ...prev,
+                    matches: prev.matches.map(mm =>
+                        mm.id === match.id ? { ...mm, archived: false } : mm
+                    )
+                } : prev);
+
+                setToastMessage('Match restored successfully.');
+                toast.success('Match restored successfully!');
+
+            } else if (action === 'delete') {
+                // For permanent deletes, we can't undo - but we can recreate if we have the data
+                toast.error('Cannot undo permanent deletion. Match data is permanently lost.');
+            }
+
+            // Refresh data to ensure sync
+            fetchLeagueDetails();
+
+        } catch (error) {
+            console.error('Undo operation failed:', error);
+            toast.error('Failed to undo the action');
+        } finally {
+            setUndoInfo(null);
+        }
+    };
 
     // Add this handler before the return statement
 
@@ -1613,12 +1729,179 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
         // Prevent opening modal if clicking on buttons
         const target = event.target as HTMLElement;
         const isButton = target.closest('button') || target.closest('a');
-        
+
         if (!isButton) {
             setSelectedMatchDetail(match);
             setMatchDetailModalOpen(true);
         }
     };
+
+    // Archive match (scores exist)
+    const archiveMatch = async (matchId: string, archived: boolean) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ archived })
+        });
+        return response.json();
+    };
+
+    // Delete match (no scores)
+    const deleteMatch = async (matchId: string) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.json();
+    };
+
+    // Usage in your component:
+    const handleDeleteMatch = async (match: Match) => {
+        const hasScores = (match.homeTeamGoals || 0) > 0 ||
+            (match.awayTeamGoals || 0) > 0 ||
+            match.status === 'completed';
+
+        try {
+            if (hasScores) {
+                await archiveMatch(match.id, true);
+                toast.success('Match archived successfully');
+            } else {
+                await deleteMatch(match.id);
+                toast.success('Match deleted successfully');
+            }
+            // Refresh data - FIXED: Use fetchLeagueDetails instead of fetchMatches
+            fetchLeagueDetails();
+        } catch (error) {
+            toast.error('Failed to delete/archive match');
+        }
+    };
+
+
+    // Add these functions before your return statement
+
+    const handlePermanentDelete = async (match: Match) => {
+        if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to permanently delete match');
+            }
+
+            // Remove from local state
+            setLeague(prev => prev ? {
+                ...prev,
+                matches: prev.matches.filter(mm => mm.id !== match.id)
+            } : prev);
+
+            toast.success('Match permanently deleted');
+            fetchLeagueDetails();
+
+        } catch (error) {
+            console.error('Permanent delete failed:', error);
+            toast.error('Failed to permanently delete match');
+        }
+    };
+
+    const handleRestoreMatch = async (match: Match) => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ archived: false })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to restore match');
+            }
+
+            // Update local state
+            setLeague(prev => prev ? {
+                ...prev,
+                matches: prev.matches.map(mm =>
+                    mm.id === match.id ? { ...mm, archived: false } : mm
+                )
+            } : prev);
+
+            toast.success('Match restored successfully');
+            fetchLeagueDetails();
+
+        } catch (error) {
+            console.error('Restore failed:', error);
+            toast.error('Failed to restore match');
+        }
+    };
+
+
+    // Add this new dialog before your return statement
+const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
+    open: boolean; 
+    onClose: () => void; 
+    match: Match | null 
+}) => {
+    if (!match) return null;
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
+                Archived Match Actions
+            </DialogTitle>
+            <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                    This match is currently archived. What would you like to do?
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                    • <strong>Restore:</strong> Bring the match back to active status
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                    • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
+                </Typography>
+            </DialogContent>
+            <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
+                <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
+                    Cancel
+                </Button>
+                <Button 
+                    onClick={() => {
+                        handleRestoreMatch(match);
+                        onClose();
+                    }}
+                    variant="contained" 
+                    sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
+                    startIcon={<Undo2 size={16} />}
+                >
+                    Restore Match
+                </Button>
+                <Button 
+                    onClick={() => {
+                        handlePermanentDelete(match);
+                        onClose();
+                    }}
+                    variant="contained" 
+                    color="error"
+                    startIcon={<Trash2 size={16} />}
+                >
+                    Permanently Delete
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
 
     return (
         <Box
@@ -1907,7 +2190,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                     }}
                                 >
 
-                                      <Button
+                                    <Button
                                         variant="text"
                                         size="small"
                                         sx={{
@@ -1938,7 +2221,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                         League Table
                                     </Button>
 
-                                     <Button
+                                    <Button
                                         variant="text"
                                         size="small"
                                         sx={{
@@ -1961,7 +2244,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                             router.replace(`/league/${leagueId}?tab=results`);
                                         }}
                                     >
-                                      Match Results
+                                        Match Results
                                     </Button>
 
                                     <Button
@@ -1988,7 +2271,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                         }}
                                     >
                                         Fixtures
-                                    </Button>  
+                                    </Button>
 
                                     <Button
                                         variant="text"
@@ -2016,7 +2299,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                         Awards
                                     </Button>
 
-                                     <Button
+                                    <Button
                                         variant="text"
                                         size="small"
                                         sx={{
@@ -2255,8 +2538,8 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                                 const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                                                 const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                 return (
-                                                    <Card 
-                                                        key={match.id} 
+                                                    <Card
+                                                        key={match.id}
                                                         onClick={(event) => handleMatchCardClick(match, event)}
                                                         sx={{
                                                             position: 'relative',
@@ -2271,33 +2554,103 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                                         }}
                                                     >
                                                         <CardContent sx={{ p: 2 }}>
+                                                            {/* {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    <Tooltip title="Edit">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                            }}
+                                                                            sx={{ color: 'white' }}
+                                                                            disabled={!league?.active}
+                                                                        >
+                                                                            <Edit size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Delete / Archive">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleRequestDeleteMatch(match);
+                                                                            }}
+                                                                            sx={{ color: '#ffb4b4' }}
+                                                                        >
+                                                                            <Trash2 size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                </Box>
+                                                            )} */}
+
+// Update your admin buttons in the match cards
                                                             {isAdmin && (
-                                                                // Remove Link wrapper and make it a button instead
-                                                                <IconButton
-                                                                    size="small"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation(); // Prevent card click
-                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
-                                                                    }}
-                                                                    sx={{ 
-                                                                        position: 'absolute', 
-                                                                        top: 8, 
-                                                                        right: 8, 
-                                                                        color: 'white',
-                                                                        zIndex: 10
-                                                                    }}
-                                                                    disabled={!league?.active}
-                                                                >
-                                                                    <span style={{
-                                                                        color: 'white',
-                                                                        fontWeight: 'bold',
-                                                                        fontSize: '1rem',
-                                                                    }} className='mr-2'>Edit</span>
-                                                                    <Edit size={22} />
-                                                                </IconButton>
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    <Tooltip title="Edit">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                            }}
+                                                                            sx={{ color: 'white' }}
+                                                                            disabled={!league?.active}
+                                                                        >
+                                                                            <Edit size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title={match.archived ? "Permanently Delete" : "Archive / Delete"}>
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (match.archived) {
+                                                                                    // If already archived, offer permanent delete
+                                                                                    handlePermanentDelete(match);
+                                                                                } else {
+                                                                                    // Normal archive/delete flow
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }
+                                                                            }}
+                                                                            sx={{ color: match.archived ? '#ff4444' : '#ffb4b4' }}
+                                                                        >
+                                                                            <Trash2 size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    {match.archived && (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRestoreMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Box>
                                                             )}
 
-                                                            {/* Match content - remove any Link wrappers */}
+                                                            {/* Add archived label */}
+                                                            {/* {match.archived && (
+                                                                <Chip
+                                                                    label="Canceled by Admin"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        position: 'absolute',
+                                                                        top: 8,
+                                                                        left: 8,
+                                                                        backgroundColor: '#b91c1c',
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold'
+                                                                    }}
+                                                                />
+                                                            )} */}
+
                                                             <Box sx={{
                                                                 display: 'flex',
                                                                 flexDirection: 'column',
@@ -2446,7 +2799,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                                                             color: 'white',
                                                                             fontSize: '0.75rem',
                                                                             py: 0.5,
-                                                                            px: 1.5,
+                                                                            px: 1,
                                                                             borderRadius: 1,
                                                                             boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
                                                                             transition: 'all 0.2s ease-in-out',
@@ -2486,10 +2839,6 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                     '&::-webkit-scrollbar': { display: 'none' },
                                     p: 2
                                 }}>
-                                    {/* <Typography variant="h6" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
-                                        Match Results
-                                    </Typography>
-                                    <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} /> */}
                                     {league?.matches && league.matches.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
@@ -2499,22 +2848,49 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                             {league.matches.filter(match => match.status === 'completed').map((match) => (
 
                                                 <Card key={match.id} sx={{
-                                                    // background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
-                                                    // background: '#3B8271',
-                                                    // background: 'rgba(255,255,255,0.1)',
                                                     position: 'relative',
                                                     borderRadius: 3,
                                                     backdropFilter: 'blur(10px)',
-                                                    // background: '#01c697',
                                                     background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                    // border: '2px solid #02a880',
                                                     '&:hover': {
-                                                        // border: '3px solid #02a880',
                                                         transform: 'translateY(-2px)',
                                                         boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                                     }
                                                 }}>
                                                     <CardContent sx={{ p: 2 }}>
+                                                        {isAdmin && (
+                                                            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                <Tooltip title="Delete / Archive">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleRequestDeleteMatch(match);
+                                                                        }}
+                                                                        sx={{ color: '#ffb4b4' }}
+                                                                    >
+                                                                        <Trash2 size={20} />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        )}
+
+                                                        {/* Add archived label */}
+                                                        {match.archived && (
+                                                            <Chip
+                                                                label="Canceled by Admin"
+                                                                size="small"
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    top: 8,
+                                                                    left: 8,
+                                                                    backgroundColor: '#b91c1c',
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold'
+                                                                }}
+                                                            />
+                                                        )}
+
                                                         <Link href={`/match/${match?.id}`}>
                                                             <Box sx={{
                                                                 display: 'flex',
@@ -2661,7 +3037,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                                                                 boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
                                                                                 transition: 'all 0.2s ease-in-out', // Smooth hover effects
                                                                                 '&:hover': {
-                                                                                    bgcolor: '#0388E3',
+                                                                                    backgroundColor: '#0388E3',
                                                                                     boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
                                                                                     transform: 'translateY(-1px)', // Slight lift effect
                                                                                 },
@@ -2723,6 +3099,7 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                 <div className="w-full mx-auto">
                                     <Card sx={{
                                         // backgroundColor: 'transparent',
+                                        // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
                                         // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
                                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                         backdropFilter: 'blur(10px)',
@@ -2914,6 +3291,46 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                                 Admin have disabled the points option. You will not see the points in the table.
                             </Alert>
                         </Snackbar>
+                        // Add this after your Snackbar components, before the closing Container tag
+                        {/* Undo Snackbar */}
+                        {undoInfo && (
+                            <Snackbar
+                                open={!!undoInfo}
+                                autoHideDuration={10000} // 10 seconds to undo
+                                onClose={() => setUndoInfo(null)}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                                action={
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Button
+                                            color="inherit"
+                                            size="small"
+                                            onClick={handleUndo}
+                                            sx={{
+                                                color: '#fff',
+                                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                                '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+                                            }}
+                                            startIcon={<Undo2 size={16} />}
+                                        >
+                                            Undo
+                                        </Button>
+                                        <IconButton
+                                            size="small"
+                                            aria-label="close"
+                                            color="inherit"
+                                            onClick={() => setUndoInfo(null)}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                }
+                                message={
+                                    undoInfo.action === 'archive'
+                                        ? `Match archived. ${toastMessage}`
+                                        : 'Match deleted permanently'
+                                }
+                            />
+                        )}
                         <PlayerStatsDialog
                             open={statsDialogOpen}
                             onClose={() => setStatsDialogOpen(false)}
@@ -2932,6 +3349,26 @@ const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: ()
                     </>
                 )}
             </Container>
+
+            {/* Confirmation Dialog */}
+            <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Are you sure you want to delete this match?</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        {(matchPendingDelete?.homeTeamGoals ?? 0) > 0 ||
+                            (matchPendingDelete?.awayTeamGoals ?? 0) > 0 ||
+                            matchPendingDelete?.status === 'completed'
+                            ? 'Scores exist. It will be archived (Canceled by Admin) and removed from stats. You can undo.'
+                            : 'No scores yet. It will be permanently deleted.'}
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+                    <Button color="error" variant="contained" onClick={handleConfirmDeleteMatch}>
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
