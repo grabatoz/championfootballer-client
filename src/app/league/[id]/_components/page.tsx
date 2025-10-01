@@ -1737,28 +1737,28 @@ export default function LeagueDetailPage() {
     };
 
     // Archive match (scores exist)
-    const archiveMatch = async (matchId: string, archived: boolean) => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ archived })
-        });
-        return response.json();
-    };
+    // const archiveMatch = async (matchId: string, archived: boolean) => {
+    //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+    //         method: 'PATCH',
+    //         headers: {
+    //             'Authorization': `Bearer ${token}`,
+    //             'Content-Type': 'application/json'
+    //         },
+    //         body: JSON.stringify({ archived })
+    //     });
+    //     return response.json();
+    // };
 
     // Delete match (no scores)
-    const deleteMatch = async (matchId: string) => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        return response.json();
-    };
+    // const deleteMatch = async (matchId: string) => {
+    //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+    //         method: 'DELETE',
+    //         headers: {
+    //             'Authorization': `Bearer ${token}`
+    //         }
+    //     });
+    //     return response.json();
+    // };
 
     // Usage in your component:
     // const handleDeleteMatch = async (match: Match) => {

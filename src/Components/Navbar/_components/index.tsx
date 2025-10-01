@@ -349,64 +349,64 @@ function extractLeagueName(meta: MatchMeta, resolvedLeagueName?: string): string
 // >>> END helper
 
 // >>> ADD THIS HELPER (needed for the render where matchHasStarted is used)
-function matchHasStarted(
-  meta: MatchMeta,
-  timesOverride?: { start?: string },
-  now: Date = new Date()
-): boolean {
-  // Gather possible start time fields
-  let startRaw =
-    timesOverride?.start ||
-    meta.startTime || meta.start_time || meta.start ||
-    meta.kickoff || meta.kickOff || meta.kick_off ||
-    meta.kickoffTime || meta.kickoff_time ||
-    meta.scheduledStart || meta.scheduled_start ||
-    meta.startAt || meta.start_at ||
-    meta.matchStart || meta.match_start ||
-    meta.from || meta.time_from ||
-    meta.startDateTime || meta.start_datetime || meta.start_date_time ||
-    meta.begin || meta.beginTime || meta.begin_time;
+// function matchHasStarted(
+//   meta: MatchMeta,
+//   timesOverride?: { start?: string },
+//   now: Date = new Date()
+// ): boolean {
+//   // Gather possible start time fields
+//   let startRaw =
+//     timesOverride?.start ||
+//     meta.startTime || meta.start_time || meta.start ||
+//     meta.kickoff || meta.kickOff || meta.kick_off ||
+//     meta.kickoffTime || meta.kickoff_time ||
+//     meta.scheduledStart || meta.scheduled_start ||
+//     meta.startAt || meta.start_at ||
+//     meta.matchStart || meta.match_start ||
+//     meta.from || meta.time_from ||
+//     meta.startDateTime || meta.start_datetime || meta.start_date_time ||
+//     meta.begin || meta.beginTime || meta.begin_time;
 
-  if (!startRaw) return false;
-  startRaw = String(startRaw).trim();
+//   if (!startRaw) return false;
+//   startRaw = String(startRaw).trim();
 
-  // If only time (HH:MM[/ AM/PM]) try to combine with a date field if present
-  const clockOnly = startRaw.match(/^(\d{1,2}):(\d{2})(?:\s?(AM|PM|am|pm))?$/);
-  if (clockOnly) {
-    const dateField =
-      meta.date || meta.matchDate || meta.match_date ||
-      meta.day || meta.playDate || meta.play_date ||
-      meta.scheduledDate || meta.scheduled_date ||
-      meta.startDate || meta.start_date;
-    if (dateField) {
-      let dateStr = String(dateField).trim();
-      if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
-        dateStr = dateStr.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
-      }
-      let h = parseInt(clockOnly[1], 10);
-      const m = clockOnly[2];
-      const ap = clockOnly[3];
-      if (ap) {
-        const up = ap.toUpperCase();
-        if (up === 'AM' && h === 12) h = 0;
-        if (up === 'PM' && h < 12) h += 12;
-      }
-      startRaw = `${dateStr}T${String(h).padStart(2,'0')}:${m}:00`;
-    } else {
-      // Cannot decide without a date
-      return false;
-    }
-  }
+//   // If only time (HH:MM[/ AM/PM]) try to combine with a date field if present
+//   const clockOnly = startRaw.match(/^(\d{1,2}):(\d{2})(?:\s?(AM|PM|am|pm))?$/);
+//   if (clockOnly) {
+//     const dateField =
+//       meta.date || meta.matchDate || meta.match_date ||
+//       meta.day || meta.playDate || meta.play_date ||
+//       meta.scheduledDate || meta.scheduled_date ||
+//       meta.startDate || meta.start_date;
+//     if (dateField) {
+//       let dateStr = String(dateField).trim();
+//       if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
+//         dateStr = dateStr.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+//       }
+//       let h = parseInt(clockOnly[1], 10);
+//       const m = clockOnly[2];
+//       const ap = clockOnly[3];
+//       if (ap) {
+//         const up = ap.toUpperCase();
+//         if (up === 'AM' && h === 12) h = 0;
+//         if (up === 'PM' && h < 12) h += 12;
+//       }
+//       startRaw = `${dateStr}T${String(h).padStart(2,'0')}:${m}:00`;
+//     } else {
+//       // Cannot decide without a date
+//       return false;
+//     }
+//   }
 
-  // Fix malformed 2025:09:26T...
-  if (/^\d{4}:\d{2}:\d{2}T/.test(startRaw)) {
-    startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3');
-  }
+//   // Fix malformed 2025:09:26T...
+//   if (/^\d{4}:\d{2}:\d{2}T/.test(startRaw)) {
+//     startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3');
+//   }
 
-  const d = new Date(startRaw);
-  if (isNaN(d.getTime())) return false;
-  return now.getTime() >= d.getTime();
-}
+//   const d = new Date(startRaw);
+//   if (isNaN(d.getTime())) return false;
+//   return now.getTime() >= d.getTime();
+// }
 // >>> END ADDED HELPER
 
 // >>> add below matchHasStarted
@@ -1749,7 +1749,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     return 'A player';
   };
 
-  
+
   const notifyAdminOnResultRejected = async (
     matchId: string,
     notifMeta?: NotificationMeta,

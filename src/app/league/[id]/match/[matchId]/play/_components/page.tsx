@@ -40,6 +40,17 @@ import Coin from '@/Components/images/icon.png'
 import Shirt from '@/Components/images/shirtimg.png'
 import Image from 'next/image'
 
+type MatchApiResponse = {
+    success?: boolean;
+    match?: Partial<MatchWithGuests> | null;
+    message?: string;
+};
+type LeagueApiResponse = {
+    success?: boolean;
+    league?: League;
+    message?: string;
+};
+
 // Helper to always return safe arrays on the match object
 const normalizeMatch = (m: Partial<MatchWithGuests> | null | undefined): MatchWithGuests => {
     const safe = (m ?? {}) as MatchWithGuests;
@@ -276,7 +287,7 @@ export default function PlayMatchPage() {
         try {
             if (!silent) setLoading(true);
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
-            let matchData: any | null = null;
+            let matchData: MatchApiResponse | null = null;
             let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -300,10 +311,10 @@ export default function PlayMatchPage() {
 
             // 2) Fetch league using a reliable id (prefer id from match if present)
             const effectiveLeagueId = m.leagueId || leagueId;
-            let leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}`, {
+            const leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let leagueData: any | null = null;
+            let leagueData: LeagueApiResponse | null = null;
             try {
                 leagueData = await leagueResp.json();
             } catch {
@@ -347,8 +358,8 @@ export default function PlayMatchPage() {
             if (!res.ok) throw new Error('Failed to upload result');
             // Ensure state stays full by refetching without blanking the page
             await fetchLeagueAndMatchDetails(true);
-        } catch (e: any) {
-            setError(e.message || 'Failed to save');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to save');
         } finally {
             setSavingMatchDetails(false);
         }
@@ -472,72 +483,72 @@ export default function PlayMatchPage() {
         }
     };
 
-    const handleOpenStatsModal = async () => {
-        if (!user) return;
+    // const handleOpenStatsModal = async () => {
+    //     if (!user) return;
 
-        try {
-            // Fetch existing stats for the current user
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    //     try {
+    //         // Fetch existing stats for the current user
+    //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+    //             headers: { 'Authorization': `Bearer ${token}` }
+    //         });
 
-            // Check if endpoint exists (not 404 or 405)
-            if (response.status === 404 || response.status === 405) {
-                // Endpoint doesn't exist, use default stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-                setIsStatsModalOpen(true);
-                return;
-            }
+    //         // Check if endpoint exists (not 404 or 405)
+    //         if (response.status === 404 || response.status === 405) {
+    //             // Endpoint doesn't exist, use default stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //             setIsStatsModalOpen(true);
+    //             return;
+    //         }
 
-            const data = await response.json();
+    //         const data = await response.json();
 
-            if (data.success && data.stats) {
-                // Use existing stats if available
-                setStats({
-                    goals: data.stats.goals || 0,
-                    assists: data.stats.assists || 0,
-                    cleanSheets: data.stats.cleanSheets || 0,
-                    penalties: data.stats.penalties || 0,
-                    freeKicks: data.stats.freeKicks || 0,
-                    defence: data.stats.defence || 0,
-                    impact: data.stats.impact || 0,
-                });
-            } else {
-                // Reset to 0 if no existing stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch existing stats:', error);
-            // Reset to 0 on error
-            setStats({
-                goals: 0,
-                assists: 0,
-                cleanSheets: 0,
-                penalties: 0,
-                freeKicks: 0,
-                defence: 0,
-                impact: 0
-            });
-        }
+    //         if (data.success && data.stats) {
+    //             // Use existing stats if available
+    //             setStats({
+    //                 goals: data.stats.goals || 0,
+    //                 assists: data.stats.assists || 0,
+    //                 cleanSheets: data.stats.cleanSheets || 0,
+    //                 penalties: data.stats.penalties || 0,
+    //                 freeKicks: data.stats.freeKicks || 0,
+    //                 defence: data.stats.defence || 0,
+    //                 impact: data.stats.impact || 0,
+    //             });
+    //         } else {
+    //             // Reset to 0 if no existing stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to fetch existing stats:', error);
+    //         // Reset to 0 on error
+    //         setStats({
+    //             goals: 0,
+    //             assists: 0,
+    //             cleanSheets: 0,
+    //             penalties: 0,
+    //             freeKicks: 0,
+    //             defence: 0,
+    //             impact: 0
+    //         });
+    //     }
 
-        setIsStatsModalOpen(true);
-    };
+    //     setIsStatsModalOpen(true);
+    // };
 
     const handleCloseStatsModal = () => setIsStatsModalOpen(false);
 
