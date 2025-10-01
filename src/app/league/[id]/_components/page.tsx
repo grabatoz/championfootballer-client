@@ -1761,25 +1761,25 @@ export default function LeagueDetailPage() {
     };
 
     // Usage in your component:
-    const handleDeleteMatch = async (match: Match) => {
-        const hasScores = (match.homeTeamGoals || 0) > 0 ||
-            (match.awayTeamGoals || 0) > 0 ||
-            match.status === 'completed' || match.status === 'RESULT_PUBLISHED';
+    // const handleDeleteMatch = async (match: Match) => {
+    //     const hasScores = (match.homeTeamGoals || 0) > 0 ||
+    //         (match.awayTeamGoals || 0) > 0 ||
+    //         match.status === 'completed' || match.status === 'RESULT_PUBLISHED';
 
-        try {
-            if (hasScores) {
-                await archiveMatch(match.id, true);
-                toast.success('Match archived successfully');
-            } else {
-                await deleteMatch(match.id);
-                toast.success('Match deleted successfully');
-            }
-            // Refresh data - FIXED: Use fetchLeagueDetails instead of fetchMatches
-            fetchLeagueDetails();
-        } catch (error) {
-            toast.error('Failed to delete/archive match');
-        }
-    };
+    //     try {
+    //         if (hasScores) {
+    //             await archiveMatch(match.id, true);
+    //             toast.success('Match archived successfully');
+    //         } else {
+    //             await deleteMatch(match.id);
+    //             toast.success('Match deleted successfully');
+    //         }
+    //         // Refresh data - FIXED: Use fetchLeagueDetails instead of fetchMatches
+    //         fetchLeagueDetails();
+    //     } catch (error) {
+    //         toast.error('Failed to delete/archive match');
+    //     }
+    // };
 
 
     // Add these functions before your return statement
@@ -1848,59 +1848,59 @@ export default function LeagueDetailPage() {
 
 
     // Add this new dialog before your return statement
-const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
-    open: boolean; 
-    onClose: () => void; 
-    match: Match | null 
-}) => {
-    if (!match) return null;
+// const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
+//     open: boolean; 
+//     onClose: () => void; 
+//     match: Match | null 
+// }) => {
+//     if (!match) return null;
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
-                Archived Match Actions
-            </DialogTitle>
-            <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                    This match is currently archived. What would you like to do?
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-                    • <strong>Restore:</strong> Bring the match back to active status
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-                    • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
-                </Typography>
-            </DialogContent>
-            <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
-                <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
-                    Cancel
-                </Button>
-                <Button 
-                    onClick={() => {
-                        handleRestoreMatch(match);
-                        onClose();
-                    }}
-                    variant="contained" 
-                    sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
-                    startIcon={<Undo2 size={16} />}
-                >
-                    Restore Match
-                </Button>
-                <Button 
-                    onClick={() => {
-                        handlePermanentDelete(match);
-                        onClose();
-                    }}
-                    variant="contained" 
-                    color="error"
-                    startIcon={<Trash2 size={16} />}
-                >
-                    Permanently Delete
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-};
+//     return (
+//         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+//             <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
+//                 Archived Match Actions
+//             </DialogTitle>
+//             <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
+//                 <Typography variant="body1" sx={{ mb: 2 }}>
+//                     This match is currently archived. What would you like to do?
+//                 </Typography>
+//                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+//                     • <strong>Restore:</strong> Bring the match back to active status
+//                 </Typography>
+//                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+//                     • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
+//                 </Typography>
+//             </DialogContent>
+//             <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
+//                 <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
+//                     Cancel
+//                 </Button>
+//                 <Button 
+//                     onClick={() => {
+//                         handleRestoreMatch(match);
+//                         onClose();
+//                     }}
+//                     variant="contained" 
+//                     sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
+//                     startIcon={<Undo2 size={16} />}
+//                 >
+//                     Restore Match
+//                 </Button>
+//                 <Button 
+//                     onClick={() => {
+//                         handlePermanentDelete(match);
+//                         onClose();
+//                     }}
+//                     variant="contained" 
+//                     color="error"
+//                     startIcon={<Trash2 size={16} />}
+//                 >
+//                     Permanently Delete
+//                 </Button>
+//             </DialogActions>
+//         </Dialog>
+//     );
+// };
 
 
     return (

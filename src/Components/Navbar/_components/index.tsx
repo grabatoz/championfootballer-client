@@ -64,6 +64,30 @@ interface NotificationMeta {
   playerId?: string;
   [key: string]: unknown;
 }
+
+type LeagueRole = {
+  userId?: string | number;
+  user_id?: string | number;
+  role?: string;
+  name?: string;
+  user?: { id?: string | number };
+};
+
+type NotificationPayloadBase = {
+  type?: string;
+  title?: string;
+  body?: string;
+  meta?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+type NotificationCreateBody = NotificationPayloadBase & {
+  userId?: string | number;
+  user_id?: string | number;
+  receiverId?: string | number;
+  receiver_id?: string | number;
+};
+
 interface Notification {
   id: string;
   type: NotificationKind;
@@ -136,6 +160,13 @@ interface BuiltNotificationDisplay {
   plain: string;
   node: React.ReactNode;
 }
+
+// ADD: availability record type from the API
+type AvailabilityRecord = {
+  userId?: string | number;
+  user_id?: string | number;
+  status?: string | number | boolean;
+};
 function isMatchCreated(n: Notification) {
   const t = (n.type || '').toUpperCase();
   const titleBody = (n.title + ' ' + n.body).toUpperCase();
@@ -278,9 +309,11 @@ function formatDateLine(raw?: string): string {
 // REPLACE the whole current buildNotificationDisplay (and its small helpers inside) with this fixed version:
 
 // Helper to safely pick the first non-empty string value
-function pickFirst(obj: Record<string, unknown>, keys: string[]): string | undefined {
+function pickFirst(obj: unknown, keys: string[]): string | undefined {
+  if (!obj || typeof obj !== 'object') return undefined;
+  const rec = obj as Record<string, unknown>;
   for (const k of keys) {
-    const v = obj[k];
+    const v = rec[k];
     if (v !== undefined && v !== null && v !== '') return String(v);
   }
   return undefined;
@@ -497,39 +530,80 @@ function sanitizeMatchId(v: unknown): string | undefined {
   return s.length ? s : undefined;
 }
 
-// Extract matchId from meta with multiple fallbacks
+// Extract matchId from meta with multiple fallbacks (no `any`)
 function getMatchId(meta?: NotificationMeta): string | undefined {
   if (!meta) return undefined;
-  const m = meta as any;
+
+  // In case meta comes as a string from backend (defensive)
+  const raw = meta as unknown;
+  if (typeof raw === 'string') return sanitizeMatchId(raw);
+
+  const obj = meta as Record<string, unknown>;
+
+  const read = (o: Record<string, unknown>, key: string): string | undefined => {
+    const v = o[key];
+    if (typeof v === 'string') return v;
+    if (typeof v === 'number') return String(v);
+    return undefined;
+  };
 
   // 1) Common keys
   let id =
-    m.matchId ?? m.match_id ?? m.id ??
-    // 2) Nested shapes
-    m.match?.id ?? m.match?.matchId ?? m.match?.match_id ??
-    // 3) Sometimes servers embed as stringified object
-    (typeof m === 'string' && m);
+    read(obj, 'matchId') ??
+    read(obj, 'match_id') ??
+    read(obj, 'id');
 
-  // 4) If still not found, try to scan for a UUID in stringified meta
+  // 2) Nested shapes
   if (!id) {
-    const blob = JSON.stringify(meta);
-    const uuid = blob.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/);
-    if (uuid) id = uuid[0];
+    const nested = obj['match'];
+    if (nested && typeof nested === 'object') {
+      const mo = nested as Record<string, unknown>;
+      id = read(mo, 'id') ?? read(mo, 'matchId') ?? read(mo, 'match_id');
+    }
+  }
+
+  // 3) Scan for UUID in stringified meta
+  if (!id) {
+    try {
+      const blob = JSON.stringify(meta);
+      const uuid = blob.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/);
+      if (uuid) id = uuid[0];
+    } catch {
+      // ignore
+    }
   }
 
   return sanitizeMatchId(id);
 }
 
-// If missing, add this helper once (used to build "See" links)
+// If missing, add this helper once (used to build "See" links) - no `any`
 function getSeeHref(meta?: NotificationMeta): string | undefined {
   if (!meta) return undefined;
-  const m = meta as any;
-  const path = m?.cta?.href || m?.ctaHref || m?.href;
-  const url = m?.url;
+
+  const obj = meta as Record<string, unknown>;
+
+  // cta href
+  let path: string | undefined;
+  const cta = obj['cta'];
+  if (cta && typeof cta === 'object') {
+    const href = (cta as Record<string, unknown>)['href'];
+    if (typeof href === 'string') path = href;
+  }
+  if (!path && typeof obj['ctaHref'] === 'string') path = obj['ctaHref'] as string;
+  if (!path && typeof obj['href'] === 'string') path = obj['href'] as string;
+
+  // direct url
+  const url = typeof obj['url'] === 'string' ? (obj['url'] as string) : undefined;
+
   if (path) return String(path);
   if (url) return String(url);
+
   const matchId = getMatchId(meta);
-  const leagueId = m.leagueId || m.league_id;
+
+  const leagueId =
+    (typeof obj['leagueId'] === 'string' ? (obj['leagueId'] as string) : undefined) ??
+    (typeof obj['league_id'] === 'string' ? (obj['league_id'] as string) : undefined);
+
   if (leagueId && matchId) return `/league/${String(leagueId)}/match/${String(matchId)}/play`;
   if (matchId) return `/match/${String(matchId)}`;
   return undefined;
@@ -785,13 +859,13 @@ function buildNotificationDisplay(
     '';
 
   const matchNo =
-    pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']) ||
+    pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']) ||
     cached?.matchNumber ||
     '';
 
   const dateIso =
     normalizePossibleDate(
-      pickFirst(meta as any, [
+      pickFirst(meta, [
         'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
         'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoff_time','kickoffTime'
       ]) || cached?.date
@@ -959,9 +1033,10 @@ export default function NavigationBar() {
             if (Array.isArray(data.availableUserIds)) {
               availableUserIds = data.availableUserIds.map(String);
             } else if (Array.isArray(data.availability)) {
-              availableUserIds = data.availability
-                .filter((r: any) => (r.status || '').toString().toUpperCase() === 'YES')
-                .map((r: any) => String(r.userId ?? r.user_id));
+              const records = data.availability as AvailabilityRecord[];
+              availableUserIds = records
+                .filter((r) => String(r.status ?? '').toUpperCase() === 'YES')
+                .map((r) => String(r.userId ?? r.user_id));
             }
 
             const isAvailable = availableUserIds.includes(String(user.id));
@@ -1145,8 +1220,8 @@ export default function NavigationBar() {
       const mid = getMatchId(meta);
       if (!mid) continue;
 
-      const hasMatchNo = !!pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']);
-      const hasDate = !!pickFirst(meta as any, [
+      const hasMatchNo = !!pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']);
+      const hasDate = !!pickFirst(meta, [
         'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
         'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time'
       ]);
@@ -1519,14 +1594,13 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
         data.createdBy || data.created_by ||
         data.createdByUserId || data.created_by_user_id ||
         (Array.isArray(data.roles)
-          ? (
-              data.roles.find((r: any) =>
-                String(r.role || r.name || '').toUpperCase().includes('ADMIN')
-              )?.userId ||
-              data.roles.find((r: any) =>
-                String(r.role || r.name || '').toUpperCase().includes('ADMIN')
-              )?.user_id
-            )
+          ? (() => {
+            const roles = data.roles as LeagueRole[];
+            const admin = roles.find(r =>
+              String(r.role ?? r.name ?? '').toUpperCase().includes('ADMIN')
+            );
+            return admin?.userId ?? admin?.user_id ?? admin?.user?.id;
+          })()
           : undefined);
       return adminId ? String(adminId) : undefined;
     } catch {
@@ -1534,30 +1608,81 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     }
   };
 
-  const getUsersTeamName = (match: any, userId: string): string | undefined => {
-    const u = String(userId);
-    const inArr = (arr: any) =>
-      Array.isArray(arr) && arr.some((p: any) => String(p?.id ?? p?.userId ?? p?.user_id ?? p) === u);
+  // Typed helpers for match/team/player shapes used by getUsersTeamName
+type IdValue = string | number;
+type PlayerLike = IdValue | { id?: IdValue; userId?: IdValue; user_id?: IdValue };
+interface TeamLike {
+  name?: string;
+  teamName?: string;
+  title?: string;
+  players?: PlayerLike[];
+  roster?: PlayerLike[];
+  // NEW: captain variants
+  captainId?: IdValue;
+  captain_id?: IdValue;
+  captain?: { id?: IdValue };
+}
+interface MatchLike {
+  homeTeamName?: string;
+  home_team_name?: string;
+  home?: TeamLike;
 
-    const homeName = match.homeTeamName || match.home_team_name || match.home?.name || 'Home';
-    const awayName = match.awayTeamName || match.away_team_name || match.away?.name || 'Away';
+  awayTeamName?: string;
+  away_team_name?: string;
+  away?: TeamLike;
 
-    if (inArr(match.homeTeamPlayers) || inArr(match.home_players) || inArr(match.home?.players)) return homeName;
-    if (inArr(match.awayTeamPlayers) || inArr(match.away_players) || inArr(match.away?.players)) return awayName;
+  homeTeamPlayers?: PlayerLike[];
+  home_players?: PlayerLike[];
 
-    if (Array.isArray(match.teams)) {
-      for (const t of match.teams) {
-        const tName = t?.name || t?.teamName || t?.title;
-        if (inArr(t?.players) || inArr(t?.roster)) return tName || 'Team';
-      }
-    }
-    return undefined;
+  awayTeamPlayers?: PlayerLike[];
+  away_players?: PlayerLike[];
+
+  teams?: TeamLike[];
+
+  // NEW: captain id variants on root
+  home_captain_id?: IdValue;
+  away_captain_id?: IdValue;
+
+  // NEW: roles array (reuse LeagueRole)
+  roles?: LeagueRole[];
+}
+
+const getUsersTeamName = (match: MatchLike, userId: string): string | undefined => {
+  const u = String(userId);
+
+  const sameId = (p: PlayerLike): boolean => {
+    if (p == null) return false;
+    if (typeof p === 'string' || typeof p === 'number') return String(p) === u;
+    const pid = p.id ?? p.userId ?? p.user_id;
+    return pid != null && String(pid) === u;
   };
 
+  const inArr = (arr: unknown): boolean =>
+    Array.isArray(arr) && (arr as PlayerLike[]).some(sameId);
+
+  const homeName = match.homeTeamName || match.home_team_name || match.home?.name || 'Home';
+  const awayName = match.awayTeamName || match.away_team_name || match.away?.name || 'Away';
+
+  if (inArr(match.homeTeamPlayers) || inArr(match.home_players) || inArr(match.home?.players) || inArr(match.home?.roster)) {
+    return homeName;
+  }
+  if (inArr(match.awayTeamPlayers) || inArr(match.away_players) || inArr(match.away?.players) || inArr(match.away?.roster)) {
+    return awayName;
+  }
+
+  if (Array.isArray(match.teams)) {
+    for (const t of match.teams) {
+      const tName = t?.name || t?.teamName || t?.title;
+      if (inArr(t?.players) || inArr(t?.roster)) return tName || 'Team';
+    }
+  }
+  return undefined;
+};
+
   // NEW: detect if current user is a team captain in this match
-  const isUserTeamCaptain = (match: any, userId: string): boolean => {
+  const isUserTeamCaptain = (match: MatchLike, userId: string): boolean => {
     const u = String(userId);
-    const eq = (a: any) => a != null && String(a) === u;
+    const eq = (a: unknown) => a != null && String(a) === u;
     // common fields
     if (eq(match.home?.captainId) || eq(match.home_captain_id) || eq(match.home?.captain?.id)) return true;
     if (eq(match.away?.captainId) || eq(match.away_captain_id) || eq(match.away?.captain?.id)) return true;
@@ -1569,22 +1694,27 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     }
     // roles fallback
     if (Array.isArray(match.roles)) {
-      if (match.roles.some((r: any) =>
-        (String(r.role || r.name || '').toUpperCase().includes('CAPTAIN')) &&
+      const isCap = match.roles.some((r: LeagueRole) =>
+        String(r.role ?? r.name ?? '').toUpperCase().includes('CAPTAIN') &&
         (eq(r.userId) || eq(r.user_id) || eq(r.user?.id))
-      )) return true;
+      );
+      if (isCap) return true;
     }
+
     return false;
   };
 
   // NEW: robust poster that tries multiple endpoints/body shapes
-  const postAdminNotification = async (adminUserId: string, payloadBase: any) => {
-    const endpoints = [
+  const postAdminNotification = async (
+    adminUserId: string,
+    payloadBase: NotificationPayloadBase
+  ): Promise<boolean> => {
+    const endpoints: string[] = [
       `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
       `${process.env.NEXT_PUBLIC_API_URL}/users/${adminUserId}/notifications`,
       `${process.env.NEXT_PUBLIC_API_URL}/notifications/create`
     ];
-    const bodies = [
+    const bodies: NotificationCreateBody[] = [
       { userId: adminUserId, ...payloadBase },
       { user_id: adminUserId, ...payloadBase },
       { receiverId: adminUserId, ...payloadBase },
@@ -1608,6 +1738,18 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     return false;
   };
 
+
+    // Helper: safely get a user's display name without using `any`
+  const getUserDisplayName = (u: unknown): string => {
+    if (u && typeof u === 'object') {
+      const r = u as Record<string, unknown>;
+      const v = r.fullName ?? r.name ?? r.username ?? r.email;
+      if (typeof v === 'string' && v.trim()) return v;
+    }
+    return 'A player';
+  };
+
+  
   const notifyAdminOnResultRejected = async (
     matchId: string,
     notifMeta?: NotificationMeta,
@@ -1648,24 +1790,19 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     } catch {}
 
     if ((!leagueId || !leagueName || !usersTeam) && notifMeta) {
-      const m = notifMeta as any;
-      leagueId = leagueId || (m.leagueId || m.league_id ? String(m.leagueId ?? m.league_id) : undefined);
-      leagueName =
-        leagueName ||
-        m.leagueName || m.league_name || m.leagueTitle || m.league_title ||
-        (typeof m.league === 'string'
-          ? m.league
-          : m.league && typeof m.league === 'object'
-            ? (m.league.name || m.league.title || m.league.leagueName)
-            : undefined);
-      usersTeam = usersTeam || m.teamName || m.team_name || m.myTeam || m.team || undefined;
+      const lid = pickFirst(notifMeta, ['leagueId','league_id']);
+      if (!leagueId && lid) leagueId = String(lid);
+
+      leagueName = leagueName || extractLeagueName(notifMeta as MatchMeta, leagueName);
+
+      const team = pickFirst(notifMeta, ['teamName','team_name','myTeam','team']);
+      usersTeam = usersTeam || (team ? String(team) : undefined);
     }
 
     const adminUserId = leagueId ? await getLeagueAdminUserId(leagueId) : undefined;
     if (!adminUserId) { console.warn('No league admin to notify'); return; }
 
-    const actorName =
-      (user as any)?.fullName || (user as any)?.name || (user as any)?.username || (user as any)?.email || 'A player';
+    const actorName = getUserDisplayName(user);
     const role = actorIsCaptain ? 'Captain' : 'Player';
     const title = `${role} rejected result confirmation`;
     const body = [
@@ -1708,9 +1845,11 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       if (!token) return;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}`, {
         headers: { Authorization: `Bearer ${token}` }, cache: 'no-store'
+     
       });
       let home = '', away = '';
       if (res.ok) {
+       
         const data = await res.json();
         const h = data.homeTeamGoals ?? data.home_goals ?? data.home?.goals;
         const a = data.awayTeamGoals ?? data.away_goals ?? data.away?.goals;
@@ -1759,7 +1898,9 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
 
     const urlCandidates = [
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
+     
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm-result`,
+     
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
     ];
 
@@ -2340,15 +2481,15 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
                 '';
 
               const confirmMatchNo =
-                pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']) ||
+                pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']) ||
                 (matchMetaId ? matchMetaCache[matchMetaId]?.matchNumber : '') ||
                 '';
 
               const confirmDateIso =
                 normalizePossibleDate(
-                  pickFirst(meta as any, [
+                  pickFirst(meta, [
                     'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
-                    'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoff_time','kickoffTime'
+                    'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time'
                   ]) || (matchMetaId ? matchMetaCache[matchMetaId]?.date : '') || timesOverride?.start
                 ) || undefined;
 
@@ -2413,7 +2554,7 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
                           <Box>
                             {display.node}
                             {matchId && (() => {
-                              const started = matchHasStarted(meta, timesOverride);
+                              // const started = matchHasStarted(meta, timesOverride);
                               const ended = matchHasEnded(meta, timesOverride);
                               const showAvailability = ALWAYS_SHOW_AVAILABILITY ? true : !ended;
                               if (!showAvailability) return null;
