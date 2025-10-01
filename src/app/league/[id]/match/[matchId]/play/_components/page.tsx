@@ -262,22 +262,25 @@ export default function PlayMatchPage() {
     const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
     const [loadingVote, setLoadingVote] = useState(false);
 
+    // NEW: local saving flag (do not blank the page)
+    const [savingMatchDetails, setSavingMatchDetails] = useState(false);
+
     const { user, token } = useAuth();
     const params = useParams();
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
     const matchId = params?.matchId ? String(params.matchId) : '';
 
-    const fetchLeagueAndMatchDetails = useCallback(async () => {
+    // CHANGED: add "silent" flag to avoid flipping global loading during save
+    const fetchLeagueAndMatchDetails = useCallback(async (silent: boolean = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
             let matchData: any | null = null;
             let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (matchResp.status === 404) {
-                // leagueId from URL is invalid for this match, try fallback
                 matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -309,20 +312,19 @@ export default function PlayMatchPage() {
             if (leagueResp.ok && leagueData?.success && leagueData.league) {
                 setLeague(leagueData.league);
             } else {
-                // If league is still not found, set a minimal fallback to keep UI functional
                 console.warn('League not found, using fallback league object');
                 setLeague({
                     id: effectiveLeagueId || 'unknown',
                     name: m.leagueName || 'League',
                     administrators: [],
-                    active: true, // allow UI to render; toggle to false if you want to lock actions
+                    active: true,
                 });
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
             setError(errorMessage);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }, [leagueId, matchId, token]);
 
@@ -332,22 +334,23 @@ export default function PlayMatchPage() {
         }
     }, [leagueId, matchId, token, fetchLeagueAndMatchDetails]);
 
+    // CHANGED: do not toggle global loading; refetch silently and show local spinner on button
     const handleSaveDetails = async () => {
         if (!token || !matchId) return;
         try {
-            setLoading(true);
+            setSavingMatchDetails(true);
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/upload-result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
             });
             if (!res.ok) throw new Error('Failed to upload result');
-            const data = await res.json();
-            setMatch(normalizeMatch(data.match));
+            // Ensure state stays full by refetching without blanking the page
+            await fetchLeagueAndMatchDetails(true);
         } catch (e: any) {
             setError(e.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setSavingMatchDetails(false);
         }
     };
 
@@ -1459,13 +1462,20 @@ export default function PlayMatchPage() {
                             InputLabelProps={{ style: { color: 'white' } }}
                         />
                     </Box>
-                    <Button sx={{
-                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                    }}
-                        variant="contained" color="primary" onClick={handleSaveDetails} disabled={!league.active}>Save Match Details</Button>
+                    <Button
+                        sx={{
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                        }}
+                        variant="contained"
+                        color="primary"
+                        onClick={handleSaveDetails}
+                        disabled={!league.active || savingMatchDetails}
+                    >
+                        {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save Match Details'}
+                    </Button>
                 </Box>
             )}
 
