@@ -47,12 +47,16 @@ import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
 import React from 'react';
+import TextField from '@mui/material/TextField';
 type NotificationKind =
   | 'MATCH_CREATED'
   | 'MATCH_UPDATED'
   | 'TEAM_SELECTION'
   | 'AVAILABILITY_REMINDER'
   | 'RESULT_PUBLISHED'
+  | 'RESULT_CONFIRMATION_REQUEST'
+  | 'CAPTAIN_CONFIRMED'
+  | 'CAPTAIN_REVISION_SUGGESTED'
   | 'GENERAL';
 interface NotificationMeta {
   matchId?: string;
@@ -144,7 +148,25 @@ function isMatchCreated(n: Notification) {
   );
 }
 
-// >>> REPLACE the current formatTime + toHHMM with this version (handles malformed 2025:09:26T06:12:00:000Z) <<<
+// Broaden availability kinds to include text-based matches too
+function isAvailabilityNotification(n: Notification) {
+  const t = (n.type || '').toUpperCase();
+  return (
+    ['MATCH_CREATED', 'MATCH_UPDATED', 'TEAM_SELECTION', 'AVAILABILITY_REMINDER'].includes(t) ||
+    isMatchCreated(n)
+  );
+}
+
+// Identify "Confirm result" notifications
+function isResultConfirmationNotification(n: Notification) {
+  const t = (n.type || '').toUpperCase();
+  if (t === 'RESULT_CONFIRMATION_REQUEST') return true;
+  const titleBody = ((n.title || '') + ' ' + (n.body || '')).toUpperCase();
+  return /CONFIRM\s+RESULT/.test(titleBody);
+}
+
+// Global switch to force availability buttons (use true for testing, false for prod)
+const ALWAYS_SHOW_AVAILABILITY = true;
 
 function formatTime(raw?: string | number): string {
   if (raw === undefined || raw === null || raw === '') return '';
@@ -345,7 +367,7 @@ function matchHasStarted(
 
   // Fix malformed 2025:09:26T...
   if (/^\d{4}:\d{2}:\d{2}T/.test(startRaw)) {
-    startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T');
+    startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3');
   }
 
   const d = new Date(startRaw);
@@ -354,20 +376,172 @@ function matchHasStarted(
 }
 // >>> END ADDED HELPER
 
-// Safely extract a match id from meta (supports matchId / match_id)
-function getMatchId(meta?: NotificationMeta): string | undefined {
-  if (!meta) return undefined;
-  const m = meta as MatchMeta;
-  const raw = m.matchId ?? m.match_id;
-  if (raw === undefined || raw === null || raw === '') return undefined;
-  return String(raw);
+// >>> add below matchHasStarted
+function matchHasEnded(
+  meta: MatchMeta,
+  timesOverride?: { start?: string; end?: string },
+  now: Date = new Date()
+): boolean {
+  // Prefer explicit end time (override or meta)
+  let endRaw =
+    timesOverride?.end ||
+    meta.endTime || meta.end_time || meta.end ||
+    meta.finishTime || meta.finish_time || meta.finish ||
+    meta.endAt || meta.end_at ||
+    meta.to || meta.time_to ||
+    meta.matchEnd || meta.match_end ||
+    meta.scheduledEnd || meta.scheduled_end ||
+    meta.endingTime || meta.ending_time ||
+    meta.matchEndTime || meta.match_end_time ||
+    meta.endtime || meta.stop || meta.stopTime || meta.stop_time ||
+    meta.finishAt || meta.finish_at ||
+    meta.endDateTime || meta.end_datetime || meta.end_date_time;
+
+  // If only clock, combine with a date on meta
+  const clockOnly = (s: string) => s.match(/^(\d{1,2}):(\d{2})(?:\s?(AM|PM|am|pm))?$/);
+  const getDateField = () =>
+    meta.date || meta.matchDate || meta.match_date ||
+    meta.day || meta.playDate || meta.play_date ||
+    meta.scheduledDate || meta.scheduled_date ||
+    meta.startDate || meta.start_date;
+
+  if (endRaw && clockOnly(String(endRaw).trim())) {
+    const d = String(getDateField() || '').trim();
+    if (d) {
+      let dateStr = d;
+      if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
+        dateStr = dateStr.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+      }
+      const m = clockOnly(String(endRaw).trim())!;
+      let h = parseInt(m[1], 10);
+      const mm = m[2];
+      const ap = m[3];
+      if (ap) {
+        const up = ap.toUpperCase();
+        if (up === 'AM' && h === 12) h = 0;
+        if (up === 'PM' && h < 12) h += 12;
+      }
+      endRaw = `${dateStr}T${String(h).padStart(2,'0')}:${mm}:00`;
+    }
+  }
+
+  // If still no end, derive from start + duration (default 90)
+  if (!endRaw) {
+    let startRaw =
+      timesOverride?.start ||
+      meta.startTime || meta.start_time || meta.start ||
+      meta.kickoff || meta.kickOff || meta.kick_off ||
+      meta.kickoffTime || meta.kickoff_time ||
+      meta.scheduledStart || meta.scheduled_start ||
+      meta.startAt || meta.start_at ||
+      meta.matchStart || meta.match_start ||
+      meta.from || meta.time_from ||
+      meta.startDateTime || meta.start_datetime || meta.start_date_time ||
+      meta.begin || meta.beginTime || meta.begin_time;
+
+    if (startRaw) {
+      startRaw = String(startRaw).trim();
+      if (/^\d{4}:\d{2}:\d{2}T/.test(startRaw)) {
+        startRaw = startRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3');
+      }
+      // combine plain clock with date if needed
+      const clock = clockOnly(startRaw);
+      if (clock) {
+        const d = String(getDateField() || '').trim();
+        if (!d) return false; // cannot decide end without a date
+        let dateStr = d;
+        if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
+          dateStr = dateStr.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+        }
+        let h = parseInt(clock[1], 10);
+        const mm = clock[2];
+        const ap = clock[3];
+        if (ap) {
+          const up = ap.toUpperCase();
+          if (up === 'AM' && h === 12) h = 0;
+          if (up === 'PM' && h < 12) h += 12;
+        }
+        startRaw = `${dateStr}T${String(h).padStart(2,'0')}:${mm}:00`;
+      }
+
+      const durRaw =
+        meta.duration || meta.durationMinutes || meta.duration_minutes ||
+        meta.matchDuration || meta.lengthMinutes || meta.length;
+      const dur = durRaw ? parseInt(String(durRaw), 10) : 90;
+
+      const sd = new Date(startRaw);
+      if (!isNaN(sd.getTime())) {
+        const ed = new Date(sd.getTime() + (isNaN(dur) ? 90 : dur) * 60000);
+        return now.getTime() >= ed.getTime();
+      }
+      return false;
+    }
+    return false;
+  }
+
+  // fix malformed YYYY:MM:DDT...
+  endRaw = String(endRaw).trim();
+  if (/^\d{4}:\d{2}:\d{2}T/.test(endRaw)) {
+    endRaw = endRaw.replace(/^(\d{4}):(\d{2}):(\d{2})T/, '$1-$2-$3T');
+  }
+
+  const d = new Date(endRaw);
+  if (isNaN(d.getTime())) return false;
+  return now.getTime() >= d.getTime();
 }
 
+// Safely normalize any match id (trim, remove all whitespace)
+function sanitizeMatchId(v: unknown): string | undefined {
+  if (v === undefined || v === null) return undefined;
+  const s = String(v).trim().replace(/\s+/g, '');
+  return s.length ? s : undefined;
+}
+
+// Extract matchId from meta with multiple fallbacks
+function getMatchId(meta?: NotificationMeta): string | undefined {
+  if (!meta) return undefined;
+  const m = meta as any;
+
+  // 1) Common keys
+  let id =
+    m.matchId ?? m.match_id ?? m.id ??
+    // 2) Nested shapes
+    m.match?.id ?? m.match?.matchId ?? m.match?.match_id ??
+    // 3) Sometimes servers embed as stringified object
+    (typeof m === 'string' && m);
+
+  // 4) If still not found, try to scan for a UUID in stringified meta
+  if (!id) {
+    const blob = JSON.stringify(meta);
+    const uuid = blob.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/);
+    if (uuid) id = uuid[0];
+  }
+
+  return sanitizeMatchId(id);
+}
+
+// If missing, add this helper once (used to build "See" links)
+function getSeeHref(meta?: NotificationMeta): string | undefined {
+  if (!meta) return undefined;
+  const m = meta as any;
+  const path = m?.cta?.href || m?.ctaHref || m?.href;
+  const url = m?.url;
+  if (path) return String(path);
+  if (url) return String(url);
+  const matchId = getMatchId(meta);
+  const leagueId = m.leagueId || m.league_id;
+  if (leagueId && matchId) return `/league/${String(leagueId)}/match/${String(matchId)}/play`;
+  if (matchId) return `/match/${String(matchId)}`;
+  return undefined;
+}
+
+// Build notification display for match-related notifications
 function buildNotificationDisplay(
   n: Notification,
   derivedMatchNo?: number,
   resolvedLeagueName?: string,
-  timesOverride?: { start?: string; end?: string }
+  timesOverride?: { start?: string; end?: string },
+  metaCache?: Record<string, { matchNumber?: string; date?: string; leagueName?: string }>
 ): BuiltNotificationDisplay {
   if (isMatchCreated(n)) {
     const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
@@ -509,7 +683,7 @@ function buildNotificationDisplay(
     }
 
     // Match id & link
-    const matchId = pickFirst(meta, ['matchId','match_id','id']) || '';
+    const matchId = getMatchId(meta) || '';
     const seeDetailsHref = matchId ? `/match/${matchId}` : '#';
 
     const plainParts: string[] = [];
@@ -596,23 +770,74 @@ function buildNotificationDisplay(
     return { title: uiTitle, plain, node };
   }
 
-  // Non-match notification fallback
+  // Non-match notification fallback (show league, match no/index, date, and CTA)
   const title = n.title || 'Notification';
   const bodyText = n.body?.length ? n.body : 'New update available.';
+  const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
+
+  // Use matchId to read cache fallbacks
+  const matchId = getMatchId(meta);
+  const cached = matchId && metaCache ? metaCache[matchId] : undefined;
+
+  const leagueName =
+    extractLeagueName(meta, resolvedLeagueName) ||
+    cached?.leagueName ||
+    '';
+
+  const matchNo =
+    pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']) ||
+    cached?.matchNumber ||
+    '';
+
+  const dateIso =
+    normalizePossibleDate(
+      pickFirst(meta as any, [
+        'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
+        'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoff_time','kickoffTime'
+      ]) || cached?.date
+    ) || undefined;
+
+  const dateLine = dateIso ? formatDateLine(dateIso) : '';
+  const seeHref = getSeeHref(n.meta);
+  const hasAnyMeta = !!(leagueName || matchNo || dateLine);
+
   return {
     title,
-    plain: bodyText,
+    plain: [bodyText, dateLine, leagueName, matchNo ? `Match ${matchNo}` : ''].filter(Boolean).join('\n'),
     node: (
-      <Typography
-        sx={{
-          color: '#444',
-          fontSize: '13px',
-          lineHeight: 1.45,
-          whiteSpace: 'pre-wrap'
-        }}
-      >
-        {bodyText}
-      </Typography>
+      <Box>
+        <Typography sx={{ color: '#444', fontSize: '13px', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
+          {bodyText}
+        </Typography>
+
+        {hasAnyMeta && (
+          <Box sx={{ mt: 0.75 }}>
+            {leagueName && (
+              <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600 }}>
+                League: {leagueName}
+              </Typography>
+            )}
+            {matchNo && (
+              <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600 }}>
+                Match: {matchNo}
+              </Typography>
+            )}
+            {dateLine && (
+              <Typography sx={{ fontSize: '12px', color: '#555', fontWeight: 600 }}>
+                {dateLine}
+              </Typography>
+            )}
+          </Box>
+        )}
+
+        {seeHref && (
+          <Box sx={{ mt: 1 }}>
+            <Button component={Link} href={seeHref} size="small" variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }}>
+              See
+            </Button>
+          </Box>
+        )}
+      </Box>
     )
   };
 }
@@ -707,11 +932,10 @@ export default function NavigationBar() {
   // >>> ADD THIS HELPER (after state declarations)
   async function syncAvailabilityFromServer(notifs: Notification[]) {
     if (!token || !user?.id) return;
-    // Collect unique matchIds from match-type notifications
     const matchIds = Array.from(
       new Set(
         notifs
-          .filter(n => isMatchCreated(n))
+          .filter(isAvailabilityNotification)
           .map(n => getMatchId(n.meta))
           .filter((v): v is string => !!v)
       )
@@ -722,13 +946,25 @@ export default function NavigationBar() {
       const results = await Promise.all(
         matchIds.map(async (mid) => {
           try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${mid}/availability`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/availability`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) return { mid, available: false };
             const data = await res.json();
-            const availableUserIds: string[] = data.availableUserIds || [];
-            const isAvailable = availableUserIds.map(String).includes(String(user.id));
+
+            // Support both shapes:
+            // 1) { availableUserIds: [] }
+            // 2) { availability: [{ user_id|userId, status }] }
+            let availableUserIds: string[] = [];
+            if (Array.isArray(data.availableUserIds)) {
+              availableUserIds = data.availableUserIds.map(String);
+            } else if (Array.isArray(data.availability)) {
+              availableUserIds = data.availability
+                .filter((r: any) => (r.status || '').toString().toUpperCase() === 'YES')
+                .map((r: any) => String(r.userId ?? r.user_id));
+            }
+
+            const isAvailable = availableUserIds.includes(String(user.id));
             return { mid, available: isAvailable };
           } catch {
             return { mid, available: false };
@@ -739,11 +975,8 @@ export default function NavigationBar() {
       setAvailabilitySelections(prev => {
         const next = { ...prev };
         results.forEach(r => {
-          if (r.available) {
-            next[r.mid] = 'YES';
-          } else {
-            if (next[r.mid] === 'YES') delete next[r.mid];
-          }
+          if (r.available) next[r.mid] = 'YES';
+          else if (next[r.mid] === 'YES') delete next[r.mid];
         });
         return next;
       });
@@ -827,7 +1060,7 @@ export default function NavigationBar() {
     for (const n of notifs) {
       if (!isMatchCreated(n)) continue;
       const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
-      const matchId = meta.matchId || meta.match_id;
+      const matchId = getMatchId(meta);
       if (!matchId) continue;
       const endMeta = meta.endTime || meta.end_time || meta.end || meta.finishTime || meta.finish_time;
       const cached = matchTimes[matchId];
@@ -842,7 +1075,7 @@ export default function NavigationBar() {
     try {
       const results = await Promise.all(unique.map(async id => {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${id}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(id)}`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store'
           });
@@ -899,6 +1132,85 @@ export default function NavigationBar() {
       });
     } catch (e) {
       console.error('fetchMissingMatchTimes error', e);
+    }
+  }
+
+  // Fetch matchNumber/date/leagueName for notifications missing them (e.g., RESULT_CONFIRMATION_REQUEST)
+  async function fetchMissingMatchMeta(notifs: Notification[]) {
+    if (!token) return;
+
+    const targets: string[] = [];
+    for (const n of notifs) {
+      const meta = (n.meta ?? {}) as MatchMeta;
+      const mid = getMatchId(meta);
+      if (!mid) continue;
+
+      const hasMatchNo = !!pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']);
+      const hasDate = !!pickFirst(meta as any, [
+        'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
+        'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time'
+      ]);
+
+      const cached = matchMetaCache[mid];
+      const cacheHasMatchNo = !!cached?.matchNumber;
+      const cacheHasDate = !!cached?.date;
+
+      if (!hasMatchNo && !cacheHasMatchNo) targets.push(mid);
+      else if (!hasDate && !cacheHasDate) targets.push(mid);
+    }
+
+    const unique = Array.from(new Set(targets));
+    if (unique.length === 0) return;
+
+    try {
+      const results = await Promise.all(unique.map(async (id) => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(id)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store'
+          });
+          if (!res.ok) return { id, matchNumber: undefined, date: undefined, leagueName: undefined };
+          const data = await res.json();
+
+          const pick = (...keys: string[]) => {
+            for (const k of keys) {
+              const v = data[k];
+              if (v !== undefined && v !== null && v !== '') return v;
+            }
+            return undefined;
+          };
+
+          const matchNumber =
+          pick('matchNumber','match_no','index','matchIndex');
+          const dateRaw =
+          pick('date','startDate','start_date','startDateTime','start_datetime','start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time');
+
+          const leagueName =
+            data.league?.name || data.league?.title || data.leagueName || data.league_name;
+
+        return {
+          id,
+          matchNumber: matchNumber != null ? String(matchNumber) : undefined,
+          date: dateRaw ? String(dateRaw) : undefined,
+          leagueName: leagueName ? String(leagueName) : undefined
+        };
+        } catch {
+          return { id, matchNumber: undefined, date: undefined, leagueName: undefined };
+        }
+      }));
+
+      setMatchMetaCache(prev => {
+        const next = { ...prev };
+        results.forEach(r => {
+          if (!next[r.id]) next[r.id] = {};
+          if (r.matchNumber && !next[r.id].matchNumber) next[r.id].matchNumber = r.matchNumber;
+          if (r.date && !next[r.id].date) next[r.id].date = r.date;
+          if (r.leagueName && !next[r.id].leagueName) next[r.id].leagueName = r.leagueName;
+        });
+        return next;
+      });
+    } catch (e) {
+      console.error('fetchMissingMatchMeta error', e);
     }
   }
 
@@ -973,11 +1285,11 @@ export default function NavigationBar() {
         const unread = notificationList.filter((n) => !n.read).length;
         setUnreadCount(unread);
 
-        // >>> CALL SYNC AFTER WE SET NOTIFICATIONS
         syncAvailabilityFromServer(notificationList);
         await hydrateLeagueNames(notificationList);
         await fetchMissingMatchTimes(notificationList);
-        // >>> END
+        // ADD: fetch meta (match number + date) for non-match notifications
+        await fetchMissingMatchMeta(notificationList);
       } else {
         console.error('API returned error:', data.message);
       }
@@ -1066,13 +1378,15 @@ export default function NavigationBar() {
     notificationId: string
   ) => {
     if (!token || !user?.id) return;
-    setAvailabilitySelections(prev => ({ ...prev, [matchId]: value }));
-    setSavingAvailability(prev => ({ ...prev, [matchId]: true }));
+    const mid = sanitizeMatchId(matchId)!;
+    debugId('POST set availability mid', mid);
+    setAvailabilitySelections(prev => ({ ...prev, [mid]: value }));
+    setSavingAvailability(prev => ({ ...prev, [mid]: true }));
     const action = value === 'YES' ? 'available' : 'unavailable';
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/availability?action=${action}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/availability?action=${action}`,
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
@@ -1087,12 +1401,24 @@ export default function NavigationBar() {
     } catch (e) {
       console.error('Error setting availability', e);
     } finally {
-      setSavingAvailability(prev => ({ ...prev, [matchId]: false }));
+      setSavingAvailability(prev => ({ ...prev, [mid]: false }));
     }
   };
 
   // ---- 1) ADD STATE (near other useState declarations) ----
 const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:string}>>({});
+const [resultSelections, setResultSelections] = useState<Record<string, 'YES'|'NO'>>({});
+const [savingResult, setSavingResult] = useState<Record<string, boolean>>({});
+// ADD: rejection panel + suggestions state
+const [resultRejectPending, setResultRejectPending] = useState<Record<string, boolean>>({});
+const [resultSuggestion, setResultSuggestion] = useState<Record<string, { home: string; away: string }>>({});
+
+// ADD: cache for non-match meta (match number + date + league name)
+const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
+  matchNumber?: string;
+  date?: string;         // ISO or raw
+  leagueName?: string;
+}>>({});
 
   // 🔥 HELPER FUNCTION - KEEP FOR BACKWARD COMPATIBILITY
   // const getUserId = () => {
@@ -1177,6 +1503,348 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
     handleSignOut();
   };
 
+  // Notify league admin when user rejects result confirmation
+  const getLeagueAdminUserId = async (leagueId: string): Promise<string | undefined> => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const adminId =
+        data.adminId || data.admin_id ||
+        data.ownerId || data.owner_id ||
+        data.createdBy || data.created_by ||
+        data.createdByUserId || data.created_by_user_id ||
+        (Array.isArray(data.roles)
+          ? (
+              data.roles.find((r: any) =>
+                String(r.role || r.name || '').toUpperCase().includes('ADMIN')
+              )?.userId ||
+              data.roles.find((r: any) =>
+                String(r.role || r.name || '').toUpperCase().includes('ADMIN')
+              )?.user_id
+            )
+          : undefined);
+      return adminId ? String(adminId) : undefined;
+    } catch {
+      return;
+    }
+  };
+
+  const getUsersTeamName = (match: any, userId: string): string | undefined => {
+    const u = String(userId);
+    const inArr = (arr: any) =>
+      Array.isArray(arr) && arr.some((p: any) => String(p?.id ?? p?.userId ?? p?.user_id ?? p) === u);
+
+    const homeName = match.homeTeamName || match.home_team_name || match.home?.name || 'Home';
+    const awayName = match.awayTeamName || match.away_team_name || match.away?.name || 'Away';
+
+    if (inArr(match.homeTeamPlayers) || inArr(match.home_players) || inArr(match.home?.players)) return homeName;
+    if (inArr(match.awayTeamPlayers) || inArr(match.away_players) || inArr(match.away?.players)) return awayName;
+
+    if (Array.isArray(match.teams)) {
+      for (const t of match.teams) {
+        const tName = t?.name || t?.teamName || t?.title;
+        if (inArr(t?.players) || inArr(t?.roster)) return tName || 'Team';
+      }
+    }
+    return undefined;
+  };
+
+  // NEW: detect if current user is a team captain in this match
+  const isUserTeamCaptain = (match: any, userId: string): boolean => {
+    const u = String(userId);
+    const eq = (a: any) => a != null && String(a) === u;
+    // common fields
+    if (eq(match.home?.captainId) || eq(match.home_captain_id) || eq(match.home?.captain?.id)) return true;
+    if (eq(match.away?.captainId) || eq(match.away_captain_id) || eq(match.away?.captain?.id)) return true;
+    // teams array
+    if (Array.isArray(match.teams)) {
+      for (const t of match.teams) {
+        if (eq(t?.captainId) || eq(t?.captain_id) || eq(t?.captain?.id)) return true;
+      }
+    }
+    // roles fallback
+    if (Array.isArray(match.roles)) {
+      if (match.roles.some((r: any) =>
+        (String(r.role || r.name || '').toUpperCase().includes('CAPTAIN')) &&
+        (eq(r.userId) || eq(r.user_id) || eq(r.user?.id))
+      )) return true;
+    }
+    return false;
+  };
+
+  // NEW: robust poster that tries multiple endpoints/body shapes
+  const postAdminNotification = async (adminUserId: string, payloadBase: any) => {
+    const endpoints = [
+      `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
+      `${process.env.NEXT_PUBLIC_API_URL}/users/${adminUserId}/notifications`,
+      `${process.env.NEXT_PUBLIC_API_URL}/notifications/create`
+    ];
+    const bodies = [
+      { userId: adminUserId, ...payloadBase },
+      { user_id: adminUserId, ...payloadBase },
+      { receiverId: adminUserId, ...payloadBase },
+      { receiver_id: adminUserId, ...payloadBase }
+    ];
+    for (const url of endpoints) {
+      for (const body of bodies) {
+        try {
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(body)
+          });
+          if (resp.ok) return true;
+          console.warn('notify admin failed', resp.status, url);
+        } catch (e) {
+          console.warn('notify admin error', url, e);
+        }
+      }
+    }
+    return false;
+  };
+
+  const notifyAdminOnResultRejected = async (
+    matchId: string,
+    notifMeta?: NotificationMeta,
+    suggestedHomeGoals?: number,
+    suggestedAwayGoals?: number
+  ) => {
+    if (!token || !user?.id) return;
+    const mid = sanitizeMatchId(matchId)!;
+    debugId('POST notify admin mid', mid);
+
+    let leagueId: string | undefined;
+    let leagueName: string | undefined;
+    let matchLabel: string | undefined;
+    let usersTeam: string | undefined;
+    let actorIsCaptain = false;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const match = await res.json();
+        leagueId = String(match.leagueId ?? match.league_id ?? match.league?.id ?? '') || undefined;
+        leagueName =
+          (leagueId ? leagueNames[leagueId] : undefined) ||
+          match.league?.name || match.league?.title ||
+          match.leagueName || match.league_name;
+
+        const matchNo = match.matchNumber ?? match.match_no ?? match.index ?? match.matchIndex;
+        const home = match.homeTeamName || match.home_team_name || match.home?.name;
+        const away = match.awayTeamName || match.away_team_name || match.away?.name;
+        matchLabel = matchNo ? `Match ${matchNo}` : (home && away ? `${home} vs ${away}` : `Match ${matchId}`);
+
+        usersTeam = getUsersTeamName(match, String(user.id));
+        actorIsCaptain = isUserTeamCaptain(match, String(user.id));
+      }
+    } catch {}
+
+    if ((!leagueId || !leagueName || !usersTeam) && notifMeta) {
+      const m = notifMeta as any;
+      leagueId = leagueId || (m.leagueId || m.league_id ? String(m.leagueId ?? m.league_id) : undefined);
+      leagueName =
+        leagueName ||
+        m.leagueName || m.league_name || m.leagueTitle || m.league_title ||
+        (typeof m.league === 'string'
+          ? m.league
+          : m.league && typeof m.league === 'object'
+            ? (m.league.name || m.league.title || m.league.leagueName)
+            : undefined);
+      usersTeam = usersTeam || m.teamName || m.team_name || m.myTeam || m.team || undefined;
+    }
+
+    const adminUserId = leagueId ? await getLeagueAdminUserId(leagueId) : undefined;
+    if (!adminUserId) { console.warn('No league admin to notify'); return; }
+
+    const actorName =
+      (user as any)?.fullName || (user as any)?.name || (user as any)?.username || (user as any)?.email || 'A player';
+    const role = actorIsCaptain ? 'Captain' : 'Player';
+    const title = `${role} rejected result confirmation`;
+    const body = [
+      `${role} ${actorName} selected "No" on result confirmation.`,
+      leagueName ? `League: ${leagueName}` : null,
+      matchLabel ? `Match: ${matchLabel}` : `Match ID: ${mid}`,
+      usersTeam ? `Team: ${usersTeam}` : null,
+      (Number.isFinite(suggestedHomeGoals) && Number.isFinite(suggestedAwayGoals))
+        ? `Suggested score: ${suggestedHomeGoals}-${suggestedAwayGoals}`
+        : null
+    ].filter(Boolean).join(' | ');
+
+    const meta = {
+      kind: 'RESULT_CONFIRMATION_REJECTED',
+      leagueId,
+      leagueName,
+      matchId: mid,
+      matchLabel,
+      teamName: usersTeam,
+      rejectedByUserId: String(user.id),
+      actorRole: role,
+      suggestedHomeGoals,
+      suggestedAwayGoals
+    };
+
+    await postAdminNotification(adminUserId, {
+      type: 'RESULT_CONFIRMATION_REJECTED',
+      title,
+      body,
+      meta
+    });
+  };
+
+  // NEW: open reject panel and prefill with current score if available
+  const openRejectPanel = async (matchId: string) => {
+    const mid = sanitizeMatchId(matchId)!;
+    setResultRejectPending(prev => ({ ...prev, [mid]: true }));
+    // Prefill by fetching match once (best-effort)
+    try {
+      if (!token) return;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}`, {
+        headers: { Authorization: `Bearer ${token}` }, cache: 'no-store'
+      });
+      let home = '', away = '';
+      if (res.ok) {
+        const data = await res.json();
+        const h = data.homeTeamGoals ?? data.home_goals ?? data.home?.goals;
+        const a = data.awayTeamGoals ?? data.away_goals ?? data.away?.goals;
+        if (Number.isFinite(h)) home = String(h);
+        if (Number.isFinite(a)) away = String(a);
+      }
+      setResultSuggestion(prev => ({ ...prev, [mid]: { home, away } }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const cancelReject = (matchId: string) => {
+    const mid = sanitizeMatchId(matchId)!;
+    setResultRejectPending(prev => ({ ...prev, [mid]: false }));
+    setResultSuggestion(prev => {
+      const next = { ...prev };
+      delete next[mid];
+      return next;
+    });
+    setResultSelections(prev => {
+      const next = { ...prev };
+      delete next[mid];
+      return next;
+    });
+  };
+
+  // NEW: submit suggested scores with decision NO
+  const submitResultSuggestion = async (matchId: string, notificationId: string) => {
+    if (!token || !user?.id) return;
+    const mid = sanitizeMatchId(matchId)!;
+    const s = resultSuggestion[mid] || { home: '', away: '' };
+    const h = parseInt(String(s.home), 10);
+    const a = parseInt(String(s.away), 10);
+    if (!Number.isFinite(h) || h < 0 || !Number.isFinite(a) || a < 0) {
+      console.warn('Invalid suggested scores');
+      return;
+    }
+
+    setSavingResult(prev => ({ ...prev, [mid]: true }));
+    const body = JSON.stringify({
+      decision: 'NO',
+      suggestedHomeGoals: h,
+      suggestedAwayGoals: a
+    });
+
+    const urlCandidates = [
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm-result`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
+    ];
+
+    let ok = false;
+    for (const url of urlCandidates) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body
+        });
+        if (res.ok) { ok = true; break; }
+        console.warn('⚠️ revision submit failed', res.status, await res.text());
+      } catch (err) {
+        console.warn('⚠️ revision submit error', err);
+      }
+    }
+
+    const n = notifications.find(n => n.id === notificationId);
+    if (n && !n.read) await markAsRead(notificationId);
+    await notifyAdminOnResultRejected(mid, n?.meta, h, a);
+
+    if (!ok) console.error('Failed to submit suggested scores');
+
+    setSavingResult(prev => ({ ...prev, [mid]: false }));
+    cancelReject(mid);
+  };
+
+  // Keep YES flow immediate
+  const handleConfirmResult = async (
+    matchId: string,
+    value: 'YES'|'NO',
+    notificationId: string
+  ) => {
+    if (value === 'NO') {
+      setResultSelections(prev => ({ ...prev, [matchId]: 'NO' }));
+      openRejectPanel(matchId);
+      return;
+    }
+
+    if (!token || !user?.id) return;
+    const mid = sanitizeMatchId(matchId)!;
+    debugId('POST confirm-result mid', mid);
+
+    setResultSelections(prev => ({ ...prev, [mid]: value }));
+    setSavingResult(prev => ({ ...prev, [mid]: true }));
+
+    const urlCandidates = [
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm-result?action=confirm`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm?action=confirm`
+    ];
+
+    let ok = false;
+    for (const url of urlCandidates) {
+      try {
+        console.log('➡️ POST', url);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision: 'YES' })
+        });
+        if (res.ok) { ok = true; break; }
+        console.warn('⚠️ confirm failed', res.status, await res.text());
+      } catch (err) { console.warn('⚠️ confirm error', err); }
+    }
+
+    const n = notifications.find(n => n.id === notificationId);
+    if (n && !n.read) await markAsRead(notificationId);
+
+    if (!ok) console.error('Result confirmation update failed');
+    setSavingResult(prev => ({ ...prev, [mid]: false }));
+  };
+
+  // Safe debug helper (used in availability/result flows)
+  function debugId(label: string, id?: string) {
+    if (!id) return;
+    try {
+      const codes = Array.from(id).map(c => c.charCodeAt(0));
+      console.debug(`🔎 ${label}:`, id, '| len=', id.length, '| codes=', codes.join(','));
+    } catch {
+      console.debug(`🔎 ${label}:`, id);
+    }
+  }
+
   const navItems: { label: string; href: string }[] = [
     { label: 'Leagues', href: '/all-leagues' },
     { label: 'Matches', href: '/all-matches' },
@@ -1226,30 +1894,15 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
               '&::after': {
                 content: '""',
                 position: 'absolute',
-                left: '50%',
-                bottom: -6,
-                height: '3px',
-                width: active ? '80%' : 0,
-                transform: 'translateX(-50%)',
-                backgroundColor: '#fff',
-                borderRadius: '2px',
-                transition: 'width 0.3s ease',
-                boxShadow: active ? '0 0 8px rgba(255,255,255,0.6)' : 'none',
-              },
-              '&:hover::after': {
-                width: '80%',
-                boxShadow: '0 0 8px rgba(255,255,255,0.6)',
-              },
-              '&:focus-visible': {
-                outline: '2px solid #fff',
-                outlineOffset: 2,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-              },
-              // Active state styling
-              ...(active && {
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-              }),
+                width: '100%',
+                height: '2px',
+                bottom: 0,
+                left: 0,
+                borderRadius: '2px 2px 0 0',
+                transform: active ? 'scaleX(1)' : 'scaleX(0)',
+                transition: 'transform 0.3s ease',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.7), rgba(255,255,255,0))'
+              }
             }}
           >
             {label}
@@ -1428,7 +2081,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,0.15)',
                       }
-                    }}
+                                       }}
                   >
                     <MenuIcon />
                   </IconButton>
@@ -1487,7 +2140,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                       fontWeight: 600,
                       borderRadius: 1.5,
                       mx: 0.5,
-                      my: 0.25,
+                                           my: 0.25,
                       py: 1.25,
                       px: 1.5,
                       transition: 'all 0.2s ease',
@@ -1516,7 +2169,7 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,0.02))',
                         color: '#FFFFFF',
                       },
                     }}
@@ -1605,7 +2258,8 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                   animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
                   '@keyframes spin': {
                     '0%': { transform: 'rotate(0deg)' },
-                    '100%': { transform: 'rotate(360deg)' }
+                    '50%': { transform: 'rotate(360deg)' },
+                    '100%': { transform: 'rotate(0deg)' }
                   }
                 }}
               />
@@ -1670,26 +2324,52 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                 leagueNames[leagueKeyForIndex];
 
               // Insert times override beforehand:
-              const matchMetaId =
-                meta.matchId ||
-                meta.match_id ||
-                '';
+              const matchMetaId = getMatchId(meta) || '';
               const timesOverride = matchMetaId ? matchTimes[matchMetaId] : undefined;
               const isMatchType = isMatchCreated(notification); // removed: as any
-              if (isMatchType && matchMetaId) {
+              const isAvailType = isAvailabilityNotification(notification);
+              const isResultConfirm = isResultConfirmationNotification(notification);
+              if (isAvailType && matchMetaId) {
                 console.log('🧪 timesOverride for', matchMetaId, timesOverride);
               }
-              const display = buildNotificationDisplay(notification, derivedMatchNo, resolvedLeagueName, timesOverride);
-              const matchId =
-                (notification.meta?.matchId as string) ||
-                (notification.meta?.match_id as string) || '';
-              const selected = matchId ? availabilitySelections[matchId] : undefined;
-              const saving = matchId ? savingAvailability[matchId] : false;
+
+              // >>> ADD: derive league/match/date for the Confirm result panel
+              const confirmLeagueName =
+                extractLeagueName(meta, resolvedLeagueName) ||
+                (matchMetaId ? matchMetaCache[matchMetaId]?.leagueName : '') ||
+                '';
+
+              const confirmMatchNo =
+                pickFirst(meta as any, ['matchNumber','match_no','matchIndex','match_index']) ||
+                (matchMetaId ? matchMetaCache[matchMetaId]?.matchNumber : '') ||
+                '';
+
+              const confirmDateIso =
+                normalizePossibleDate(
+                  pickFirst(meta as any, [
+                    'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
+                    'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoff_time','kickoffTime'
+                  ]) || (matchMetaId ? matchMetaCache[matchMetaId]?.date : '') || timesOverride?.start
+                ) || undefined;
+
+              const confirmDateLine = confirmDateIso ? formatDateLine(confirmDateIso) : '';
+              // <<< END ADD
+
+              const display = buildNotificationDisplay(
+                notification,
+                derivedMatchNo,
+                resolvedLeagueName,
+                timesOverride,
+                matchMetaCache
+              );
+              const matchId = getMatchId(notification.meta) || '';
+               const selected = matchId ? availabilitySelections[matchId] : undefined;
+               const saving = matchId ? savingAvailability[matchId] : false;
 
               return (
                 <Box key={notification.id}>
                   <Box
-                    onClick={() => !notification.read && !isMatchType && markAsRead(notification.id)}
+                    onClick={() => !notification.read && !isAvailType && markAsRead(notification.id)}
                     sx={{
                       p: 2,
                       cursor: notification.read || isMatchType ? 'default' : 'pointer',
@@ -1723,18 +2403,19 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                               fontSize: '14px'
                             }}
                           >
-                            {display.title}
+                                                       {display.title}
                           </Typography>
                         )}
 
                         {!isMatchType && display.node}
 
-                        {isMatchType && (
+                        {isAvailType && (
                           <Box>
                             {display.node}
                             {matchId && (() => {
                               const started = matchHasStarted(meta, timesOverride);
-                              const showAvailability = !started;
+                              const ended = matchHasEnded(meta, timesOverride);
+                              const showAvailability = ALWAYS_SHOW_AVAILABILITY ? true : !ended;
                               if (!showAvailability) return null;
                               return (
                                 <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1753,16 +2434,8 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                                       aria-pressed={selected === 'YES'}
                                     >
                                       <Box sx={{
-                                        px: 1.2,
-                                        py: 0.5,
-                                        fontSize: '12px',
-                                        fontWeight: 700,
-                                        borderRadius: 1,
-                                        border: '1px solid',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        transition: '0.2s',
+                                        px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                        display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
                                         bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
                                         color: selected === 'YES' ? '#fff' : '#0d7a33',
                                         borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
@@ -1783,16 +2456,8 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                                       aria-pressed={selected === 'NO'}
                                     >
                                       <Box sx={{
-                                        px: 1.2,
-                                        py: 0.5,
-                                        fontSize: '12px',
-                                        fontWeight: 700,
-                                        borderRadius: 1,
-                                        border: '1px solid',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        transition: '0.2s',
+                                        px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                        display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
                                         bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
                                         color: selected === 'NO' ? '#fff' : '#c62828',
                                         borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
@@ -1814,6 +2479,135 @@ const [matchTimes, setMatchTimes] = useState<Record<string,{start?:string; end?:
                           </Box>
                         )}
 
+                        {isResultConfirm && matchId && (
+                          <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            {/* >>> SHOW league, match index and date inside confirm panel */}
+                            {(confirmLeagueName || confirmMatchNo || confirmDateLine) && (
+                              <Box sx={{ width: '100%', mb: 0.5 }}>
+                                {confirmLeagueName && (
+                                  <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>
+                                    {/* League: {confirmLeagueName} */}
+                                  </Typography>
+                                )}
+                                {confirmMatchNo && (
+                                  <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>
+                                    Match: {confirmMatchNo}
+                                  </Typography>
+                                )}
+                                {confirmDateLine && (
+                                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#555' }}>
+                                    {confirmDateLine}
+                                  </Typography>
+                                )}
+                              </Box>
+                            )}
+                            {/* <<< END added header */}
+                            <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
+                              Confirm result?
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Box
+                                component="button"
+                                disabled={!!savingResult[matchId]}
+                                onClick={(e) => { e.stopPropagation(); handleConfirmResult(matchId, 'YES', notification.id); }}
+                                style={{ all: 'unset', cursor: 'pointer' }}
+                                aria-pressed={resultSelections[matchId] === 'YES'}
+                              >
+                                <Box sx={{
+                                  px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                  display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
+                                  bgcolor: resultSelections[matchId] === 'YES' ? '#0d7a33' : '#e6f9ed',
+                                  color: resultSelections[matchId] === 'YES' ? '#fff' : '#0d7a33',
+                                  borderColor: resultSelections[matchId] === 'YES' ? '#0d7a33' : '#a8e4bf',
+                                  boxShadow: resultSelections[matchId] === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
+                                }}>
+                                  ✅ Yes
+                                </Box>
+                              </Box>
+                              <Box
+                                component="button"
+                                disabled={!!savingResult[matchId]}
+                                onClick={(e) => { e.stopPropagation(); handleConfirmResult(matchId, 'NO', notification.id); }}
+                                style={{ all: 'unset', cursor: 'pointer' }}
+                                aria-pressed={resultSelections[matchId] === 'NO'}
+                              >
+                                <Box sx={{
+                                  px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                  display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
+                                  bgcolor: resultSelections[matchId] === 'NO' ? '#c62828' : '#ffecef',
+                                  color: resultSelections[matchId] === 'NO' ? '#fff' : '#c62828',
+                                  borderColor: resultSelections[matchId] === 'NO' ? '#c62828' : '#f5b5c0',
+                                  boxShadow: resultSelections[matchId] === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
+                                }}>
+                                  ❌ No
+                                </Box>
+                              </Box>
+                            </Box>
+                            {resultRejectPending[matchId] && (
+                              <Box
+                                sx={{
+                                  mt: 1,
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: '1px solid #eee',
+                                  bgcolor: '#fafafa',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  width: '100%',
+                                  flexWrap: 'wrap'
+                                }}
+                                onClick={(e)=>e.stopPropagation()}
+                              >
+                                <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>Suggest score:</Typography>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  inputProps={{ min: 0 }}
+                                  sx={{ width: 90 }}
+                                  label="Home"
+                                  value={resultSuggestion[matchId]?.home ?? ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setResultSuggestion(prev => ({ ...prev, [matchId]: { home: val, away: prev[matchId]?.away ?? '' } }));
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  inputProps={{ min: 0 }}
+                                  sx={{ width: 90 }}
+                                  label="Away"
+                                  value={resultSuggestion[matchId]?.away ?? ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setResultSuggestion(prev => ({ ...prev, [matchId]: { home: prev[matchId]?.home ?? '', away: val } }));
+                                  }}
+                                />
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  disabled={!!savingResult[matchId]}
+                                  onClick={() => submitResultSuggestion(matchId, notification.id)}
+                                >
+                                  Send suggestion
+                                </Button>
+                                <Button
+                                  size="small"
+                                  color="inherit"
+                                  disabled={!!savingResult[matchId]}
+                                  onClick={() => cancelReject(matchId)}
+                                >
+                                  Cancel
+                                </Button>
+                                {savingResult[matchId] && (
+                                  <Typography sx={{ fontSize: '11px', color: '#555' }}>Saving...</Typography>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+                        
                         <Typography
                           variant="caption"
                           sx={{ display: 'block', mt: 1.25, color: '#888', fontSize: '11px' }}

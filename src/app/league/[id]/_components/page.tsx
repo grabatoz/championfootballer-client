@@ -853,7 +853,7 @@ export default function LeagueDetailPage() {
         });
         league.matches
             .filter(m => !m.archived) // <-- exclude archived
-            .filter(m => m.status === 'completed' && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .filter(m => (m.status === 'completed' || m.status === 'RESULT_PUBLISHED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
@@ -1316,7 +1316,7 @@ export default function LeagueDetailPage() {
                                 gap: 2,
                                 flexShrink: 0
                             }}>
-                                {match.status === 'completed' && (
+                                {match.status === 'completed' || match.status === 'RESULT_PUBLISHED' && (
                                     <Box sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -1337,7 +1337,7 @@ export default function LeagueDetailPage() {
                                         </Typography>
                                     </Box>
                                 )}
-                                {match.status === 'scheduled' && (
+                                {match.status === 'SCHEDULED' && (
                                     <Box sx={{
                                         backgroundColor: 'rgba(255,255,255,0.2)',
                                         px: 2,
@@ -1441,17 +1441,17 @@ export default function LeagueDetailPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
+                                {match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
                             </Box>
                             <Box>
                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
                                     Status
                                 </Typography>
                                 <Chip
-                                    label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
+                                    label={match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'SCHEDULED'}
                                     size="small"
                                     sx={{
-                                        backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
+                                        backgroundColor: match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
                                         color: 'white',
                                         fontWeight: 'bold',
                                         fontSize: '0.75rem'
@@ -1461,7 +1461,7 @@ export default function LeagueDetailPage() {
                         </Box>
 
                         {/* Availability Info for Scheduled Matches */}
-                        {match.status === 'scheduled' && (
+                        {match.status === 'SCHEDULED' && (
                             <Box sx={{
                                 mt: 2,
                                 p: 2,
@@ -1584,7 +1584,7 @@ export default function LeagueDetailPage() {
 
         const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
             (m.awayTeamGoals ?? 0) > 0 ||
-            m.status === 'completed';
+            m.status === 'completed' || m.status === 'RESULT_PUBLISHED';
 
         try {
             if (hasScores) {
@@ -1764,7 +1764,7 @@ export default function LeagueDetailPage() {
     const handleDeleteMatch = async (match: Match) => {
         const hasScores = (match.homeTeamGoals || 0) > 0 ||
             (match.awayTeamGoals || 0) > 0 ||
-            match.status === 'completed';
+            match.status === 'completed' || match.status === 'RESULT_PUBLISHED';
 
         try {
             if (hasScores) {
@@ -2534,7 +2534,7 @@ const ArchivedMatchActionDialog = ({ open, onClose, match }: {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 2
                                         }}>
-                                            {league.matches.filter(match => match.status === 'scheduled').map((match) => {
+                                            {league.matches.filter(match => match.status === 'SCHEDULED').map((match) => {
                                                 const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                                                 const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                 return (
@@ -2584,7 +2584,7 @@ const ArchivedMatchActionDialog = ({ open, onClose, match }: {
                                                                 </Box>
                                                             )} */}
 
-// Update your admin buttons in the match cards
+{/* // Update your admin buttons in the match cards */}
                                                             {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Edit">
@@ -2845,7 +2845,7 @@ const ArchivedMatchActionDialog = ({ open, onClose, match }: {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 3
                                         }}>
-                                            {league.matches.filter(match => match.status === 'completed').map((match) => (
+                                            {league.matches.filter(match => match.status === 'completed' || match.status === 'RESULT_PUBLISHED').map((match) => (
 
                                                 <Card key={match.id} sx={{
                                                     position: 'relative',
@@ -3291,7 +3291,7 @@ const ArchivedMatchActionDialog = ({ open, onClose, match }: {
                                 Admin have disabled the points option. You will not see the points in the table.
                             </Alert>
                         </Snackbar>
-                        // Add this after your Snackbar components, before the closing Container tag
+                        {/* // Add this after your Snackbar components, before the closing Container tag */}
                         {/* Undo Snackbar */}
                         {undoInfo && (
                             <Snackbar
@@ -3357,7 +3357,7 @@ const ArchivedMatchActionDialog = ({ open, onClose, match }: {
                     <Typography variant="body2" sx={{ mt: 1 }}>
                         {(matchPendingDelete?.homeTeamGoals ?? 0) > 0 ||
                             (matchPendingDelete?.awayTeamGoals ?? 0) > 0 ||
-                            matchPendingDelete?.status === 'completed'
+                            matchPendingDelete?.status === 'completed' || matchPendingDelete?.status === 'RESULT_PUBLISHED'
                             ? 'Scores exist. It will be archived (Canceled by Admin) and removed from stats. You can undo.'
                             : 'No scores yet. It will be permanently deleted.'}
                     </Typography>

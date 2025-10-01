@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -41,6 +40,17 @@ import Coin from '@/Components/images/icon.png'
 import Shirt from '@/Components/images/shirtimg.png'
 import Image from 'next/image'
 
+// Helper to always return safe arrays on the match object
+const normalizeMatch = (m: Partial<MatchWithGuests> | null | undefined): MatchWithGuests => {
+    const safe = (m ?? {}) as MatchWithGuests;
+    return {
+        ...safe,
+        homeTeamUsers: Array.isArray(safe.homeTeamUsers) ? safe.homeTeamUsers : [],
+        awayTeamUsers: Array.isArray(safe.awayTeamUsers) ? safe.awayTeamUsers : [],
+        guests: Array.isArray(safe.guests) ? safe.guests : [],
+    };
+};
+
 interface User {
     id: string;
     firstName: string;
@@ -81,6 +91,9 @@ interface Match {
     start?: string;
     homeCaptainId?: string;
     awayCaptainId?: string;
+    // Optional fields that may come from API to help recover league
+    leagueId?: string;
+    leagueName?: string;
 }
 
 // Guest player representation coming from backend (via /leagues/:leagueId/matches/:matchId)
@@ -258,24 +271,53 @@ export default function PlayMatchPage() {
     const fetchLeagueAndMatchDetails = useCallback(async () => {
         try {
             setLoading(true);
-            const [leagueRes, matchRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+            // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
+            let matchData: any | null = null;
+            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (matchResp.status === 404) {
+                // leagueId from URL is invalid for this match, try fallback
+                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-            ]);
+                });
+            }
+            try {
+                matchData = await matchResp.json();
+            } catch {
+                matchData = null;
+            }
+            if (!matchResp.ok || !matchData?.success || !matchData.match) {
+                throw new Error(matchData?.message || 'Failed to fetch match details');
+            }
+            const m = normalizeMatch(matchData.match);
+            setMatch(m);
+            setHomeGoals(typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0);
+            setAwayGoals(typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0);
 
-            const leagueData = await leagueRes.json();
-            const matchData = await matchRes.json();
-
-            if (leagueData.success) setLeague(leagueData.league);
-            else throw new Error(leagueData.message || 'Failed to fetch league details');
-
-            if (matchData.success) setMatch(matchData.match); // match may include guests
-            else throw new Error(matchData.message || 'Failed to fetch match details');
-
+            // 2) Fetch league using a reliable id (prefer id from match if present)
+            const effectiveLeagueId = m.leagueId || leagueId;
+            let leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            let leagueData: any | null = null;
+            try {
+                leagueData = await leagueResp.json();
+            } catch {
+                leagueData = null;
+            }
+            if (leagueResp.ok && leagueData?.success && leagueData.league) {
+                setLeague(leagueData.league);
+            } else {
+                // If league is still not found, set a minimal fallback to keep UI functional
+                console.warn('League not found, using fallback league object');
+                setLeague({
+                    id: effectiveLeagueId || 'unknown',
+                    name: m.leagueName || 'League',
+                    administrators: [],
+                    active: true, // allow UI to render; toggle to false if you want to lock actions
+                });
+            }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
             setError(errorMessage);
@@ -291,35 +333,21 @@ export default function PlayMatchPage() {
     }, [leagueId, matchId, token, fetchLeagueAndMatchDetails]);
 
     const handleSaveDetails = async () => {
+        if (!token || !matchId) return;
         try {
-            const [goalsResponse, notesResponse] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/goals`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ homeGoals, awayGoals }),
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/note`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ note }),
-                })
-            ]);
-
-            const goalsData = await goalsResponse.json();
-            const notesData = await notesResponse.json();
-
-            // Update cache with new match data
-            if (goalsData.success && goalsData.match) {
-                cacheManager.updateMatchesCache(goalsData.match);
-            }
-            if (notesData.success && notesData.match) {
-                cacheManager.updateMatchesCache(notesData.match);
-            }
-
-            fetchLeagueAndMatchDetails();
-        } catch {
-            console.error('Failed to save details');
-            setError('Failed to save details.');
+            setLoading(true);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/upload-result`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
+            });
+            if (!res.ok) throw new Error('Failed to upload result');
+            const data = await res.json();
+            setMatch(normalizeMatch(data.match));
+        } catch (e: any) {
+            setError(e.message || 'Failed to save');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -358,8 +386,8 @@ export default function PlayMatchPage() {
 
     // Hooks for computed Impact must be unconditionally called (before any early returns)
     // Compute safe team goals context for the current user
-    const playerOnHomeTeamSafe = !!(match && user && match.homeTeamUsers.some(p => p.id === user.id));
-    const playerOnAwayTeamSafe = !!(match && user && match.awayTeamUsers.some(p => p.id === user.id));
+    const playerOnHomeTeamSafe = !!(match && user && (match.homeTeamUsers ?? []).some(p => p.id === user.id));
+    const playerOnAwayTeamSafe = !!(match && user && (match.awayTeamUsers ?? []).some(p => p.id === user.id));
     const teamGoalsSafe = (match && user)
         ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
         : 0;
@@ -395,8 +423,8 @@ export default function PlayMatchPage() {
     // For admin modal: compute impact for selected player using that player's team goals
     const adminSelectedTeamGoals = useMemo(() => {
         if (!match || !selectedPlayerForAdmin) return teamGoalsSafe;
-        const isHome = match.homeTeamUsers.some(p => p.id === selectedPlayerForAdmin.id);
-        const isAway = match.awayTeamUsers.some(p => p.id === selectedPlayerForAdmin.id);
+        const isHome = (match.homeTeamUsers ?? []).some(p => p.id === selectedPlayerForAdmin.id);
+        const isAway = (match.awayTeamUsers ?? []).some(p => p.id === selectedPlayerForAdmin.id);
         if (isHome) return match.homeTeamGoals || 0;
         if (isAway) return match.awayTeamGoals || 0;
         return teamGoalsSafe;
@@ -686,6 +714,13 @@ export default function PlayMatchPage() {
         }
     };
 
+    const canSubmitStats = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
+
+    const openStats = () => {
+        if (!canSubmitStats) return; // or show toast
+        setIsStatsModalOpen(true);
+    };
+
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
     }
@@ -726,8 +761,8 @@ export default function PlayMatchPage() {
             isGuest: true
         } as User & { isGuest: true }));
 
-    const homePlayersAll: (User & { isGuest?: boolean })[] = [...match.homeTeamUsers, ...guestUsersHome];
-    const awayPlayersAll: (User & { isGuest?: boolean })[] = [...match.awayTeamUsers, ...guestUsersAway];
+    const homePlayersAll: (User & { isGuest?: boolean })[] = [ ...(match?.homeTeamUsers ?? []), ...guestUsersHome ];
+    const awayPlayersAll: (User & { isGuest?: boolean })[] = [ ...(match?.awayTeamUsers ?? []), ...guestUsersAway ];
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
@@ -767,10 +802,10 @@ export default function PlayMatchPage() {
                             </Typography>
 
                             {/* Add Stats Button for Home Team */}
-                            {user && match.status === 'completed' && league.active &&
-                                match.homeTeamUsers.some(player => player.id === user.id) && (
+                            {user && canSubmitStats && league.active &&
+                                (match.homeTeamUsers ?? []).some(player => player.id === user.id) && (
                                     <Button
-                                        onClick={handleOpenStatsModal}
+                                        onClick={openStats}
                                         startIcon={<Add />}
                                         variant="contained"
                                         size="small"
@@ -818,7 +853,7 @@ export default function PlayMatchPage() {
                                                         // -                                                        border: '1px solid #43a047',
                                                         // -                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
                                                         border: '1px solid #4b4b4b',
-                                                        borderBottom: index === match.homeTeamUsers.length - 1 ? '1px solid #4b4b4b' : 'none',
+                                                        borderBottom: index === homePlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
                                                         minHeight: { xs: 40, sm: 60, md: 100 },
                                                         position: 'relative',
                                                         '&:hover': {
@@ -829,7 +864,7 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                        {canSubmitStats && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{
                                                                 position: 'absolute',
                                                                 top: { xs: 2, sm: 4, md: 8 },
@@ -1014,10 +1049,10 @@ export default function PlayMatchPage() {
                             </Typography>
 
                             {/* Add Stats Button for Away Team */}
-                            {user && match.status === 'completed' && league.active &&
-                                match.awayTeamUsers.some(player => player.id === user.id) && (
+                            {user && canSubmitStats && league.active &&
+                                (match.awayTeamUsers ?? []).some(player => player.id === user.id) && (
                                     <Button
-                                        onClick={handleOpenStatsModal}
+                                        onClick={openStats}
                                         startIcon={<Add />}
                                         variant="contained"
                                         size="small"
@@ -1065,7 +1100,7 @@ export default function PlayMatchPage() {
                                                         // -                                                        border: '1px solid #43a047',
                                                         // -                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #43a047' : 'none',
                                                         border: '1px solid #4b4b4b',
-                                                        borderBottom: index === match.awayTeamUsers.length - 1 ? '1px solid #4b4b4b' : 'none',
+                                                        borderBottom: index === awayPlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
                                                         minHeight: { xs: 40, sm: 60, md: 100 },
                                                         position: 'relative',
                                                         '&:hover': {
@@ -1076,7 +1111,7 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                        {canSubmitStats && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{
                                                                 position: 'absolute',
                                                                 top: { xs: 2, sm: 4, md: 8 },
@@ -1187,7 +1222,7 @@ export default function PlayMatchPage() {
                                                                         fontSize: { xs: 6, sm: 8, md: 12 },
                                                                         fontWeight: 'bold',
                                                                         textTransform: 'none',
-                                                                        height: { xs: 16, sm: 20, md: 28 },
+                                                                        height: { xs: 15, sm: 20, md: 28 },
                                                                         minWidth: { xs: 'auto', sm: 'auto' },
                                                                         '&:hover': {
                                                                             background: 'linear-gradient(90deg, #000000 0%, #767676 100%)'
@@ -1277,9 +1312,9 @@ export default function PlayMatchPage() {
 
                 {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
                 <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                    {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                        .filter(player => playerVotes[player.id] > 0)
-                        .map((player) => (
+                    {[...(match.homeTeamUsers ?? []), ...(match.awayTeamUsers ?? [])]
+                         .filter(player => playerVotes[player.id] > 0)
+                         .map((player) => (
                             <Link key={player.id} href={`/player/${player.id}`}>
                                 <div className="group">
                                     {/* Mobile layout: Image on top center */}
