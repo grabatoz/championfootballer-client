@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment } from '@mui/material';
+import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
@@ -42,7 +42,7 @@ export default function EditMatchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
   // Form
   const [homeTeamName, setHomeTeamName] = useState('');
   const [awayTeamName, setAwayTeamName] = useState('');
@@ -66,6 +66,10 @@ export default function EditMatchPage() {
   const [awayGuests, setAwayGuests] = useState<StagedGuest[]>([]);
   const originalGuestIds = useRef<Set<string>>(new Set());
 
+  // Track original registered player ids to detect actual changes
+  const originalHomeIdsRef = useRef<string[] | null>(null);
+  const originalAwayIdsRef = useRef<string[] | null>(null);
+
   // Guest dialog
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
@@ -74,6 +78,25 @@ export default function EditMatchPage() {
   // NEW: availability map
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityRecord['status']>>({});
   const [availabilityVersion, setAvailabilityVersion] = useState(0);
+
+  const MIN_PLAYERS = 6;
+
+  // Counts for UI banner (registered = non-guest)
+  const registeredHomeCount = React.useMemo(
+    () => homeTeamUsers.filter(p => !p.isGuest).length,
+    [homeTeamUsers]
+  );
+  const registeredAwayCount = React.useMemo(
+    () => awayTeamUsers.filter(p => !p.isGuest).length,
+    [awayTeamUsers]
+  );
+  const selectedRegistered = registeredHomeCount + registeredAwayCount;
+  const hasMinPlayers = selectedRegistered >= MIN_PLAYERS;
+
+  // REMOVE client notification route/helper – backend handles it on PATCH
+  // const NOTIFY_ROUTE = ...
+  // type NotifyPayload = ...
+  // const notifySelectedPlayers = useCallback(..., [] as any);
 
   const parseJson = async (res: Response) => {
     const ct = res.headers.get('content-type') || '';
@@ -168,6 +191,11 @@ export default function EditMatchPage() {
       const awayUsers = (m.awayTeamUsers || []).map(u => ({ ...u }));
       setHomeTeamUsers([...homeUsers, ...homeG.map(g => guestToPlayer(g))]);
       setAwayTeamUsers([...awayUsers, ...awayG.map(g => guestToPlayer(g))]);
+
+      // Track original registered player ids to detect actual changes
+      originalHomeIdsRef.current = homeUsers.map(u => u.id);
+      originalAwayIdsRef.current = awayUsers.map(u => u.id);
+
       if (m.homeCaptainId) {
         const cap = homeUsers.find(u => u.id === m.homeCaptainId);
         if (cap) setHomeCaptain(cap as PlayerOption);
@@ -273,44 +301,84 @@ export default function EditMatchPage() {
   const handleUpdateMatch = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true); setError(null);
 
-    // Require at least 6 players across both teams
-    if ((homeTeamUsers.length + awayTeamUsers.length) < 6) {
-      toast.error('At least 6 players required');
-      setIsSubmitting(false);
-      return;
+    const registered = (arr: PlayerOption[]) => arr.filter(u => !u.isGuest).map(u => u.id);
+    const newHomeIds = registered(homeTeamUsers);
+    const newAwayIds = registered(awayTeamUsers);
+
+    const sameSet = (a: string[], b: string[]) => {
+      if (a.length !== b.length) return false;
+      const B = new Set(b);
+      return a.every(x => B.has(x));
+    };
+
+    const homeOrig = originalHomeIdsRef.current;
+    const awayOrig = originalAwayIdsRef.current;
+    const teamsChanged =
+      homeOrig !== null &&
+      awayOrig !== null &&
+      (!sameSet(newHomeIds, homeOrig) || !sameSet(newAwayIds, awayOrig));
+
+    const selectedRegistered = newHomeIds.length + newAwayIds.length;
+
+    // Notify whenever < 6 (regardless of teamsChanged)
+    const needsMore = selectedRegistered > 0 && selectedRegistered < MIN_PLAYERS;
+
+    if (needsMore) {
+      toast('Fewer than 6 players. Not saving teams, notifying selected players.', { icon: '🔔' });
     }
 
-    if (!matchDate || !startTime) { setError('Date/time required'); setIsSubmitting(false); return; }
-    if (!homeCaptain || !awayCaptain) { setError('Select captains'); setIsSubmitting(false); return; }
-    const start = matchDate.hour(startTime.hour()).minute(startTime.minute()).second(0).millisecond(0);
-    const matchDuration = duration || 90; const end = start.add(matchDuration, 'minute');
     try {
       const formData = new FormData();
+
       formData.append('homeTeamName', homeTeamName);
       formData.append('awayTeamName', awayTeamName);
-      formData.append('date', start.toISOString());
-      formData.append('start', start.toISOString());
-      formData.append('end', end.toISOString());
+
+      if (matchDate && startTime) {
+        const start = matchDate.hour(startTime.hour()).minute(startTime.minute()).second(0).millisecond(0);
+        const matchDuration = duration || 90; const end = start.add(matchDuration, 'minute');
+        formData.append('date', start.toISOString());
+        formData.append('start', start.toISOString());
+        formData.append('end', end.toISOString());
+      }
+
       formData.append('location', location);
-      formData.append('homeTeamUsers', JSON.stringify(homeTeamUsers.filter(u => !u.isGuest).map(u => u.id)));
-      formData.append('awayTeamUsers', JSON.stringify(awayTeamUsers.filter(u => !u.isGuest).map(u => u.id)));
-      formData.append('homeCaptain', homeCaptain.id);
-      formData.append('awayCaptain', awayCaptain.id);
+
+      // Send teams when notifying OR when changed
+      if (needsMore || teamsChanged) {
+        formData.append('homeTeamUsers', JSON.stringify(newHomeIds));
+        formData.append('awayTeamUsers', JSON.stringify(newAwayIds));
+
+        if (needsMore) {
+          // Let backend know this is a notify-only action (safe to ignore if unsupported)
+          formData.append('notifyOnly', 'true');
+        } else {
+          if (homeCaptain) formData.append('homeCaptain', homeCaptain.id);
+          if (awayCaptain) formData.append('awayCaptain', awayCaptain.id);
+        }
+      }
+
       if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
       if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}` }, body: formData });
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
       const j = await res.json().catch(() => ({}));
       if (!j.success) throw new Error(j.message || 'Update failed');
-      // Sync guests (create new, delete removed)
+
+      // Guests sync unchanged
       const currentGuests = [...homeGuests, ...awayGuests];
       const currentExistingIds = new Set(currentGuests.filter(g => g.existingId).map(g => g.existingId!));
       const toDelete = [...originalGuestIds.current].filter(id => !currentExistingIds.has(id));
       await Promise.allSettled(toDelete.map(id => fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })));
       const newOnes = currentGuests.filter(g => !g.existingId);
       await Promise.allSettled(newOnes.map(g => fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ team: g.team, firstName: g.firstName, lastName: g.lastName, shirtNumber: g.shirtNumber }) })));
-      // Clear matches cache so updated match list refetches
-      try { cacheManager.clearCache('matches_cache'); } catch { /* ignore cache clear issues */ }
+      // Clear matches cache and navigate
+      try { cacheManager.clearCache('matches_cache'); } catch {}
       toast.success('Match updated');
+      if (needsMore) toast.success('Players notified (server), teams not saved');
       router.push(`/league/${leagueId}`);
     } catch (er: unknown) {
       const msg = er instanceof Error ? er.message : 'Update error';
@@ -552,6 +620,13 @@ export default function EditMatchPage() {
                         Shuffle Teams
                       </Button>
                     </Box>
+
+                    {/* Warn when fewer than 6 registered players are selected */}
+                    {selectedRegistered > 0 && !hasMinPlayers && (
+                      <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+                        Only {selectedRegistered} registered players selected. On Save, players will be notified and teams won’t be saved yet.
+                      </Alert>
+                    )}
 
                     {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
                       <Box sx={{ mb: 3, p: 3, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -833,7 +908,6 @@ export default function EditMatchPage() {
                               {...params}
                               label="Select Home Captain"
                               placeholder="Choose captain"
-                              required
                               sx={autocompleteStyles}
                             />
                           )}
@@ -873,7 +947,6 @@ export default function EditMatchPage() {
                               {...params}
                               label="Select Away Captain"
                               placeholder="Choose captain"
-                              required
                               sx={autocompleteStyles}
                             />
                           )}
@@ -909,10 +982,41 @@ export default function EditMatchPage() {
                 <Typography variant='h6' sx={{ mb: 3, fontWeight: 600 }}>Match Details</Typography>
                 <Typography variant='body2' sx={{ mb: 2, color: '#9CA3AF' }}>These fields are required by the API to save your match.</Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}><DatePicker label='Match Date' value={matchDate} onChange={nv => setMatchDate(dayjs(nv))} slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }} /></Grid>
-                  <Grid item xs={12} md={6}><TimePicker label='Start Time' value={startTime} onChange={nv => setStartTime(dayjs(nv))} slotProps={{ textField: { fullWidth: true, required: true, sx: inputStyles } }} /></Grid>
-                  <Grid item xs={12} md={6}><TextField label='Duration (minutes)' type='number' value={duration} onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))} required fullWidth sx={{ ...inputStyles }} /></Grid>
-                  <Grid item xs={12} md={6}><TextField label='Location' value={location} onChange={e => setLocation(e.target.value)} required fullWidth sx={{ ...inputStyles }} /></Grid>
+                  <Grid item xs={12} md={6}>
+                    <DatePicker
+                      label='Match Date'
+                      value={matchDate}
+                      onChange={nv => setMatchDate(dayjs(nv))}
+                      slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TimePicker
+                      label='Start Time'
+                      value={startTime}
+                      onChange={nv => setStartTime(dayjs(nv))}
+                      slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label='Duration (minutes)'
+                      type='number'
+                      value={duration}
+                      onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))}
+                      fullWidth
+                      sx={{ ...inputStyles }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label='Location'
+                      value={location}
+                      onChange={e => setLocation(e.target.value)}
+                      fullWidth
+                      sx={{ ...inputStyles }}
+                    />
+                  </Grid>
                 </Grid>
                 {error && <Typography color='error' sx={{ my: 3, p: 2, bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2, border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Typography>}
               </Paper>
@@ -1266,7 +1370,7 @@ export default function EditMatchPage() {
                           fontWeight="bold"
                           sx={{
                             fontSize: { xs: 6.5, sm: 8, md: 12 },
-                            color: 'white',
+                                                       color: 'white',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -1289,7 +1393,7 @@ export default function EditMatchPage() {
                           )}
                         </Typography>
                         <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
                           Skill: {calcSkill(awayCaptain)}
                         </Typography>
                       </Box>
