@@ -27,7 +27,7 @@ interface Match {
     date: string;
     availablePlayers: number;
     pendingPlayers: number;
-    status: 'scheduled' | 'completed';
+    status: 'SCHEDULED' | 'RESULT_PUBLISHED';
     leagueId: string;
     league?: {
         id: string;
@@ -867,7 +867,7 @@ export default function AllMatches() {
                             // const isScheduled = match.status === 'scheduled';
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
-                            const isCompleted = match.status === 'completed';
+                            const isCompleted = match.status === 'RESULT_PUBLISHED';
                             return (
                                 isCompleted ? (
                                     <Card key={match.id} sx={{

@@ -110,25 +110,25 @@ const normalizeUserData = (data: User): UserDataShape => {
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     })),
     awayTeamMatches: (data.awayTeamMatches || []).map(match => ({
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED  ',
     })),
     availableMatches: (data.availableMatches || []).map(match => ({
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     })),
     guestMatch: data.guestMatch ? {
       id: String(data.guestMatch.id || ''),
       homeTeamGoals: Number(data.guestMatch.homeTeamGoals || 0),
       awayTeamGoals: Number(data.guestMatch.awayTeamGoals || 0),
-      status: (data.guestMatch.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (data.guestMatch.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     } : null,
   };
 }

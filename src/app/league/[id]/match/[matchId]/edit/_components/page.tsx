@@ -259,6 +259,10 @@ export default function EditMatchPage() {
   const homeWinChance = winPct(homeStrength, awayStrength);
   const awayWinChance = winPct(awayStrength, homeStrength);
 
+  // Minimum players required
+  // const totalSelectedPlayers = homeTeamUsers.length + awayTeamUsers.length;
+  // const hasMinPlayers = totalSelectedPlayers >= 6;
+
   // Images
   const handleHomeTeamImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (!f) return; if (!f.type.startsWith('image/')) return toast.error('Image only'); if (f.size > 5 * 1024 * 1024) return toast.error('Max 5MB'); setHomeTeamImage(f); const r = new FileReader(); r.onload = ev => setHomeTeamImagePreview(ev.target?.result as string); r.readAsDataURL(f); };
   const handleAwayTeamImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (!f) return; if (!f.type.startsWith('image/')) return toast.error('Image only'); if (f.size > 5 * 1024 * 1024) return toast.error('Max 5MB'); setAwayTeamImage(f); const r = new FileReader(); r.onload = ev => setAwayTeamImagePreview(ev.target?.result as string); r.readAsDataURL(f); };
@@ -268,6 +272,14 @@ export default function EditMatchPage() {
   // Submit (PATCH)
   const handleUpdateMatch = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true); setError(null);
+
+    // Require at least 6 players across both teams
+    if ((homeTeamUsers.length + awayTeamUsers.length) < 6) {
+      toast.error('At least 6 players required');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!matchDate || !startTime) { setError('Date/time required'); setIsSubmitting(false); return; }
     if (!homeCaptain || !awayCaptain) { setError('Select captains'); setIsSubmitting(false); return; }
     const start = matchDate.hour(startTime.hour()).minute(startTime.minute()).second(0).millisecond(0);
@@ -904,7 +916,13 @@ export default function EditMatchPage() {
                 </Grid>
                 {error && <Typography color='error' sx={{ my: 3, p: 2, bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2, border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Typography>}
               </Paper>
-              <Button type='submit' variant='contained' fullWidth sx={{ py: 2, background: '#ff6a00', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: 2, boxShadow: '0 2px 8px rgba(255,106,0,0.2)', '&:hover': { background: '#cf2326' } }} disabled={isSubmitting}>
+              <Button
+                type='submit'
+                variant='contained'
+                fullWidth
+                sx={{ py: 2, background: '#ff6a00', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: 2, boxShadow: '0 2px 8px rgba(255,106,0,0.2)', '&:hover': { background: '#cf2326' } }}
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE MATCH'}
               </Button>
             </form>
@@ -1182,7 +1200,7 @@ export default function EditMatchPage() {
                               />
                             )}
                           </Typography>
-                          <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                             Skill: {calcSkill(user)}
                           </Typography>
                         </Box>

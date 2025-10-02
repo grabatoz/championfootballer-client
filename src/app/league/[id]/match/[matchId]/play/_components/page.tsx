@@ -1001,7 +1001,7 @@ export default function PlayMatchPage() {
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && (
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && !player.hasOwnProperty('isGuest') && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
@@ -1248,7 +1248,7 @@ export default function PlayMatchPage() {
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'completed' && league.active && !player.hasOwnProperty('isGuest') && (
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && !player.hasOwnProperty('isGuest') && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}

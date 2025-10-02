@@ -84,19 +84,19 @@ const normalizeUserData = (fullUser: BackendUser): UserDataShape => {
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     })),
     awayTeamMatches: (fullUser.awayTeamMatches || []).map(match => ({
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     })),
     availableMatches: (fullUser.availableMatches || []).map(match => ({
       id: String(match.id || ''),
       homeTeamGoals: Number(match.homeTeamGoals || 0),
       awayTeamGoals: Number(match.awayTeamGoals || 0),
-      status: (match.status as 'completed' | 'scheduled' | 'ongoing') || 'scheduled',
+      status: (match.status as 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING') || 'SCHEDULED',
     })),
     guestMatch: null,
   };

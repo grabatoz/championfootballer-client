@@ -193,7 +193,7 @@ export default function MatchDetailsPage() {
   useEffect(() => {
     if (matchId && token) fetchVotes();
   }, [matchId, token, fetchVotes]);
-  const showGoals = match?.status === 'started' || match?.status === 'completed';
+  const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
 
   function getTeamSkillAvg(players: User[]) {
     if (!players.length) return 0;
@@ -216,7 +216,7 @@ export default function MatchDetailsPage() {
   let winPercentRight = 0;
 
   if (match) {
-    if (match.status === 'completed') {
+    if (match.status === 'RESULT_PUBLISHED') {
       const homeGoals = match.homeTeamGoals ?? 0;
       const awayGoals = match.awayTeamGoals ?? 0;
       if (homeGoals > awayGoals) {

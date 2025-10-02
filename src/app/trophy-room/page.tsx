@@ -54,7 +54,7 @@ interface Match {
   awayTeamUsers: User[];
   manOfTheMatchVotes: Record<string, string>;
   playerStats: Record<string, { goals: number; assists: number }>;
-  status: 'completed' | 'scheduled' | 'ongoing';
+  status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
 }
 
 interface League {
@@ -321,7 +321,7 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
     stats[p.id] = { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
   });
 
-  league.matches.filter(m => m.status === 'completed').forEach(match => {
+  league.matches.filter(m => m.status === 'RESULT_PUBLISHED').forEach(match => {
     const homePlayers = match.homeTeamUsers.map(p => p.id);
     const awayPlayers = match.awayTeamUsers.map(p => p.id);
 
@@ -389,7 +389,7 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
   gkIds.forEach(id => (cleanSheetsByGk[id] = 0));
 
   (league.matches ?? []).forEach(m => {
-    if (m.status !== 'completed') return;
+    if (m.status !== 'RESULT_PUBLISHED') return;
     const homeGKs = m.homeTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
     const awayGKs = m.awayTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
     if (m.awayTeamGoals === 0) homeGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
@@ -448,7 +448,7 @@ const calculateLeagueWinners = (league: League, playerStats: Record<string, Play
 // - maxGames is provided: completedCount >= Number(maxGames)
 // - else: any completed match exists
 const isLeagueCompleted = (league: League) => {
-  const completedCount = (league.matches ?? []).filter(m => m.status === 'completed').length;
+  const completedCount = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
   const max = Number((league as League)?.maxGames ?? 0);
   const result = max > 0 ? completedCount >= max : completedCount > 0;
   console.debug('[TrophyRoom] isLeagueCompleted()', {
@@ -474,7 +474,7 @@ const isFinalLeagueStanding = (league: League): boolean => {
   }
   // Fallback rule when backend doesn't provide maxGames
   const total = league.matches?.length ?? 0;
-  const allCompleted = total > 0 && (league.matches ?? []).every(m => m.status === 'completed');
+  const allCompleted = total > 0 && (league.matches ?? []).every(m => m.status === 'RESULT_PUBLISHED');
   console.debug('[TrophyRoom] isFinalLeagueStanding(fallback all-completed rule)', {
     leagueId: league?.id, name: league?.name, totalMatches: total, completedCount, allCompleted,
   });
@@ -483,11 +483,11 @@ const isFinalLeagueStanding = (league: League): boolean => {
 
 // ADD: quick counter for completed matches
 const countCompletedMatches = (league: League) =>
-  (league.matches ?? []).filter(m => m.status === 'completed').length;
+  (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
 
 // Audit helper: check missing player stats in completed matches
 const auditLeagueData = (league: League) => {
-  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
+  const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
   const uniqueStatuses = Array.from(new Set((league.matches ?? []).map(m => m.status)));
   let totalMissing = 0;
   const perMatchMissing: Array<{ matchId: string; missingFor: string[] }> = [];
@@ -543,7 +543,7 @@ const summarizeUserMatches = (userId: string, leagues: League[]): UserMatchSumma
   const matches: UserMatchSummary[] = [];
   leagues.forEach(league => {
     (league.matches ?? []).forEach(m => {
-      if (m.status !== 'completed') return;
+      if (m.status !== 'RESULT_PUBLISHED') return;
       const isHome = m.homeTeamUsers.some(u => u.id === userId);
       const isAway = m.awayTeamUsers.some(u => u.id === userId);
       if (!isHome && !isAway) return;
@@ -570,7 +570,7 @@ const summarizeUserMatchesByLeague = (userId: string, leagues: League[]): Record
   leagues.forEach(league => {
     const arr: UserMatchSummary[] = [];
     (league.matches ?? []).forEach(m => {
-      if (m.status !== 'completed') return;
+      if (m.status !== 'RESULT_PUBLISHED') return;
       const isHome = m.homeTeamUsers.some(u => u.id === userId);
       const isAway = m.awayTeamUsers.some(u => u.id === userId);
       if (!isHome && !isAway) return;
@@ -1016,9 +1016,9 @@ const resultColor = (r: 'W' | 'D' | 'L') =>
 // ADD: status normalizer (handles Completed, FINISHED, etc.)
 const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
   const v = String(s ?? '').toLowerCase();
-  if (['completed', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'completed';
-  if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ongoing';
-  return 'scheduled';
+  if (['RESULT_PUBLISHED', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'RESULT_PUBLISHED';
+  if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ONGOING';
+  return 'SCHEDULED';
 };
 
 // Helper: normalize leagues from /auth/data (user.leagues + administeredLeagues)
@@ -1080,7 +1080,7 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
 const freezeLeaguePositions = (league: League): League => {
   if (!isLeagueCompleted(league)) return league;
 
-  const completed = (league.matches ?? []).filter(m => m.status === 'completed');
+  const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
   if (!completed.length) return league;
 
   const lastPos: Record<string, string | undefined> = {};
@@ -1160,7 +1160,7 @@ export default function GlobalTrophyRoom() {
               name: l.name,
               maxGames: l.maxGames,
               totalMatches: l.matches?.length ?? 0,
-              completed: (l.matches ?? []).filter(m => m.status === 'completed').length,
+              completed: (l.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length,
               statuses: Array.from(new Set((l.matches ?? []).map(m => m.status))).join(', ')
             }))
           );

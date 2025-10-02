@@ -254,14 +254,14 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 color: 'white',
                 fontWeight: 'bold',
                 //  bgcolor: '#2B2B2B',
-                backgroundColor: matchStatus === 'completed' ? '#2B2B2B' : '#2B2B2B',
+                backgroundColor: matchStatus === 'RESULT_PUBLISHED' ? '#2B2B2B' : '#2B2B2B',
                 px: { xs: 1, sm: 1.5, md: 2 },
                 py: { xs: 0.3, sm: 0.5, md: 0.7 },
                 borderRadius: 1,
                 fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
               }}
             >
-              {matchStatus === 'completed' ? 'COMPLETED' : 'UPCOMING'}
+              {matchStatus === 'RESULT_PUBLISHED' ? 'RESULT_PUBLISHED' : 'UPCOMING'}
             </Typography>
           </Box>
         </Box>

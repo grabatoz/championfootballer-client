@@ -13,7 +13,7 @@ interface Match {
   id: string;
   homeTeamGoals: number;
   awayTeamGoals: number;
-  status: 'completed' | 'scheduled' | 'ongoing';
+  status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
   // Add other match properties as needed
 }
 

@@ -73,7 +73,7 @@ export interface CreateLeagueDTO {
     location?: string;
     scoreA?: number;
     scoreB?: number;
-    status?: 'scheduled' | 'completed' | 'cancelled'; // Example values
+    status?: 'SCHEDULED' | 'RESULT_PUBLISHED' | 'cancelled'; // Example values
   }
     
 // --- API Response Types for Backend Integration ---

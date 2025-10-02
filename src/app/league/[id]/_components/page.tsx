@@ -853,7 +853,7 @@ export default function LeagueDetailPage() {
         });
         league.matches
             .filter(m => !m.archived) // <-- exclude archived
-            .filter(m => (m.status === 'completed' || m.status === 'RESULT_PUBLISHED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .filter(m => (m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_PUBLISHED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
@@ -1316,7 +1316,7 @@ export default function LeagueDetailPage() {
                                 gap: 2,
                                 flexShrink: 0
                             }}>
-                                {match.status === 'completed' || match.status === 'RESULT_PUBLISHED' && (
+                                {match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_PUBLISHED' && (
                                     <Box sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -1441,17 +1441,17 @@ export default function LeagueDetailPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                {match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
+                                {match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_PUBLISHED' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
                             </Box>
                             <Box>
                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
                                     Status
                                 </Typography>
                                 <Chip
-                                    label={match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'SCHEDULED'}
+                                    label={match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_PUBLISHED' ? 'RESULT_PUBLISHED' : match.status === 'ongoing' ? 'Live' : 'SCHEDULED'}
                                     size="small"
                                     sx={{
-                                        backgroundColor: match.status === 'completed' || match.status === 'RESULT_PUBLISHED' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
+                                        backgroundColor: match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_PUBLISHED' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
                                         color: 'white',
                                         fontWeight: 'bold',
                                         fontSize: '0.75rem'
@@ -1584,7 +1584,7 @@ export default function LeagueDetailPage() {
 
         const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
             (m.awayTeamGoals ?? 0) > 0 ||
-            m.status === 'completed' || m.status === 'RESULT_PUBLISHED';
+            m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_PUBLISHED';
 
         try {
             if (hasScores) {
@@ -1848,59 +1848,59 @@ export default function LeagueDetailPage() {
 
 
     // Add this new dialog before your return statement
-// const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
-//     open: boolean; 
-//     onClose: () => void; 
-//     match: Match | null 
-// }) => {
-//     if (!match) return null;
+    // const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
+    //     open: boolean; 
+    //     onClose: () => void; 
+    //     match: Match | null 
+    // }) => {
+    //     if (!match) return null;
 
-//     return (
-//         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-//             <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
-//                 Archived Match Actions
-//             </DialogTitle>
-//             <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
-//                 <Typography variant="body1" sx={{ mb: 2 }}>
-//                     This match is currently archived. What would you like to do?
-//                 </Typography>
-//                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-//                     • <strong>Restore:</strong> Bring the match back to active status
-//                 </Typography>
-//                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-//                     • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
-//                 </Typography>
-//             </DialogContent>
-//             <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
-//                 <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
-//                     Cancel
-//                 </Button>
-//                 <Button 
-//                     onClick={() => {
-//                         handleRestoreMatch(match);
-//                         onClose();
-//                     }}
-//                     variant="contained" 
-//                     sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
-//                     startIcon={<Undo2 size={16} />}
-//                 >
-//                     Restore Match
-//                 </Button>
-//                 <Button 
-//                     onClick={() => {
-//                         handlePermanentDelete(match);
-//                         onClose();
-//                     }}
-//                     variant="contained" 
-//                     color="error"
-//                     startIcon={<Trash2 size={16} />}
-//                 >
-//                     Permanently Delete
-//                 </Button>
-//             </DialogActions>
-//         </Dialog>
-//     );
-// };
+    //     return (
+    //         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    //             <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
+    //                 Archived Match Actions
+    //             </DialogTitle>
+    //             <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
+    //                 <Typography variant="body1" sx={{ mb: 2 }}>
+    //                     This match is currently archived. What would you like to do?
+    //                 </Typography>
+    //                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+    //                     • <strong>Restore:</strong> Bring the match back to active status
+    //                 </Typography>
+    //                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+    //                     • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
+    //                 </Typography>
+    //             </DialogContent>
+    //             <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
+    //                 <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
+    //                     Cancel
+    //                 </Button>
+    //                 <Button 
+    //                     onClick={() => {
+    //                         handleRestoreMatch(match);
+    //                         onClose();
+    //                     }}
+    //                     variant="contained" 
+    //                     sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
+    //                     startIcon={<Undo2 size={16} />}
+    //                 >
+    //                     Restore Match
+    //                 </Button>
+    //                 <Button 
+    //                     onClick={() => {
+    //                         handlePermanentDelete(match);
+    //                         onClose();
+    //                     }}
+    //                     variant="contained" 
+    //                     color="error"
+    //                     startIcon={<Trash2 size={16} />}
+    //                 >
+    //                     Permanently Delete
+    //                 </Button>
+    //             </DialogActions>
+    //         </Dialog>
+    //     );
+    // };
 
 
     return (
@@ -2140,6 +2140,8 @@ export default function LeagueDetailPage() {
                                                                 height: '40px',
                                                                 display: 'inline-flex',
                                                                 '& .MuiChip-label': { px: 0.5 },
+
+
 
                                                                 //  borderRadius: '4px', 
                                                             }}
@@ -2584,7 +2586,7 @@ export default function LeagueDetailPage() {
                                                                 </Box>
                                                             )} */}
 
-{/* // Update your admin buttons in the match cards */}
+                                                            {/* // Update your admin buttons in the match cards */}
                                                             {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Edit">
@@ -2728,6 +2730,7 @@ export default function LeagueDetailPage() {
                                                                     </Box>
                                                                 </Box>
 
+
                                                                 {/* Date and Status - Right Side */}
                                                                 <Box sx={{
                                                                     display: 'flex',
@@ -2740,13 +2743,13 @@ export default function LeagueDetailPage() {
                                                                     <Typography variant="body2" sx={{
                                                                         color: 'white',
                                                                         fontWeight: 'bold',
-                                                                        fontSize: '0.9rem'
+                                                                        fontSize: '0.75rem'
                                                                     }}>
                                                                         {formatMatchDate(match.date)}
                                                                     </Typography>
                                                                     <Typography variant="body2" sx={{
                                                                         color: 'white',
-                                                                        fontSize: '0.8rem'
+                                                                        fontSize: '0.65rem'
                                                                     }}>
                                                                         {formatMatchTime(match.date)}
                                                                     </Typography>
@@ -2845,247 +2848,371 @@ export default function LeagueDetailPage() {
                                             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                             gap: 3
                                         }}>
-                                            {league.matches.filter(match => match.status === 'completed' || match.status === 'RESULT_PUBLISHED').map((match) => (
-
-                                                <Card key={match.id} sx={{
-                                                    position: 'relative',
-                                                    borderRadius: 3,
-                                                    backdropFilter: 'blur(10px)',
-                                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
-                                                    }
-                                                }}>
-                                                    <CardContent sx={{ p: 2 }}>
-                                                        {isAdmin && (
-                                                            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                <Tooltip title="Delete / Archive">
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleRequestDeleteMatch(match);
-                                                                        }}
-                                                                        sx={{ color: '#ffb4b4' }}
-                                                                    >
-                                                                        <Trash2 size={20} />
-                                                                    </IconButton>
-                                                                </Tooltip>
-                                                            </Box>
-                                                        )}
-
-                                                        {/* Add archived label */}
-                                                        {match.archived && (
-                                                            <Chip
-                                                                label="Canceled by Admin"
-                                                                size="small"
-                                                                sx={{
-                                                                    position: 'absolute',
-                                                                    top: 8,
-                                                                    left: 8,
-                                                                    backgroundColor: '#b91c1c',
-                                                                    color: 'white',
-                                                                    fontWeight: 'bold'
-                                                                }}
-                                                            />
-                                                        )}
-
-                                                        <Link href={`/match/${match?.id}`}>
-                                                            <Box sx={{
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: 1,
-                                                                minHeight: 80
-                                                            }}>
-
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    width: '100%'
-                                                                }}>
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 1,
-                                                                        flex: 1,
-                                                                    }}>
-                                                                        <Image
-                                                                            src={match.homeTeamImage || homeImg}
-                                                                            alt={match.homeTeamName}
-                                                                            width={24}
-                                                                            height={24}
-                                                                            style={{ borderRadius: '2px' }}
-                                                                        />
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            sx={{
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.85rem'
-                                                                            }}
-                                                                            title={match.homeTeamName}
-                                                                        >
-                                                                            {formatMatchName(match.homeTeamName)}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Typography
-                                                                        variant="h6"
-                                                                        sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: '1.1rem',
-                                                                            minWidth: 20,
-                                                                            textAlign: 'right',
-                                                                            mr: 9
-                                                                        }}
-                                                                    >
-                                                                        {match.homeTeamGoals || 0}
-                                                                    </Typography>
-                                                                </Box>
-
-                                                                {/* Bottom Row - Away Team */}
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'space-between',
-                                                                    width: '100%'
-                                                                }}>
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 1,
-                                                                        flex: 1
-                                                                    }}>
-                                                                        <Image
-                                                                            src={match.awayTeamImage || awayImg}
-                                                                            alt={match.awayTeamName}
-                                                                            width={24}
-                                                                            height={24}
-                                                                            style={{ borderRadius: '2px' }}
-                                                                        />
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            sx={{
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.85rem'
-                                                                            }}
-                                                                            title={match.awayTeamName}
-                                                                        >
-                                                                            {formatMatchName(match.awayTeamName)}
-                                                                        </Typography>
-
-                                                                    </Box>
-                                                                    <Typography
-                                                                        variant="h6"
-                                                                        sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: '1.1rem',
-                                                                            minWidth: 20,
-                                                                            textAlign: 'right',
-                                                                            mr: 9
-                                                                        }}
-                                                                    >
-                                                                        {match.awayTeamGoals || 0}
-                                                                    </Typography>
-                                                                </Box>
-
-
-                                                                {/* Date and Status - Right Side */}
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    alignItems: 'flex-end',
-                                                                    position: 'absolute',
-                                                                    top: 32,
-                                                                    right: 8
-                                                                }}>
-                                                                    <Typography variant="body2" sx={{
-                                                                        color: 'white',
-                                                                        fontWeight: 'bold',
-                                                                        fontSize: '0.75rem'
-                                                                    }}>
-                                                                        {formatMatchDate(match.date)}
-                                                                    </Typography>
-                                                                    <Typography variant="body2" sx={{
-                                                                        color: 'white',
-                                                                        fontSize: '0.65rem'
-                                                                    }}>
-                                                                        Full time
-                                                                    </Typography>
-                                                                    <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
-                                                                </Box>
-                                                            </Box>
-                                                        </Link>
-
-                                                        {/* Action buttons */}
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                                {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
-                                                                    <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
-                                                                        <Button
+                                            {league.matches
+                                                .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED') // include uploaded
+                                                .map((match) => (
+                                                    <Card key={match.id} sx={{
+                                                        position: 'relative',
+                                                        borderRadius: 3,
+                                                        backdropFilter: 'blur(10px)',
+                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                        '&:hover': {
+                                                            transform: 'translateY(-2px)',
+                                                            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                                                        }
+                                                    }}>
+                                                        <CardContent sx={{ p: 2 }}>
+                                                            {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    <Tooltip title="Delete / Archive">
+                                                                        <IconButton
                                                                             size="small"
-                                                                            sx={{
-                                                                                backgroundColor: '#0388E3', // Slightly more opaque
-                                                                                color: 'white',
-                                                                                fontSize: '0.75rem',
-                                                                                py: 0.5,
-                                                                                px: 1, // Add horizontal padding for better proportions
-                                                                                borderRadius: 1, // Slightly rounded corners
-                                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
-                                                                                transition: 'all 0.2s ease-in-out', // Smooth hover effects
-                                                                                '&:hover': {
-                                                                                    backgroundColor: '#0388E3',
-                                                                                    boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', // Stronger glow on hover
-                                                                                    transform: 'translateY(-1px)', // Slight lift effect
-                                                                                },
-                                                                                '&:active': {
-                                                                                    transform: 'translateY(0)', // Reset when clicked
-                                                                                },
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleRequestDeleteMatch(match);
                                                                             }}
-                                                                            disabled={!league?.active}
+                                                                            sx={{ color: '#ffb4b4' }}
                                                                         >
-                                                                            {isAdmin ? 'Update Score Card' : 'MOMT'}
-                                                                        </Button>
-                                                                    </Link>
-                                                                )}
-                                                            </Box>
-                                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                <Button
+                                                                            <Trash2 size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Archived label */}
+                                                            {match.archived && (
+                                                                <Chip
+                                                                    label="Canceled by Admin"
                                                                     size="small"
                                                                     sx={{
-                                                                        backgroundColor: '#FA5836', // Slightly more opaque
+                                                                        position: 'absolute',
+                                                                        top: 8,
+                                                                        left: 8,
+                                                                        backgroundColor: '#b91c1c',
                                                                         color: 'white',
-                                                                        fontSize: '0.75rem',
-                                                                        py: 0.5,
-                                                                        px: 1, // Add horizontal padding for better proportions
-                                                                        borderRadius: 1, // Slightly rounded corners
-                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', // Soft blue glow
-                                                                        transition: 'all 0.2s ease-in-out', // Smooth hover effects
-                                                                        '&:hover': {
-                                                                            bgcolor: '#FA5836',
-                                                                            boxShadow: '0 4px 8px #FA5836', // Stronger glow on hover
-                                                                            transform: 'translateY(-1px)', // Slight lift effect
-                                                                        },
-                                                                        '&:active': {
-                                                                            transform: 'translateY(0)', // Reset when clicked
-                                                                        },
+                                                                        fontWeight: 'bold'
                                                                     }}
-                                                                    onClick={() => {
-                                                                        setActiveMatchId(match.id);
-                                                                        setStatsDialogOpen(true);
-                                                                        fetchExistingStats(match.id);
+                                                                />
+                                                            )}
+
+                                                            {/* Awaiting confirmation label for RESULT_UPLOADED */}
+                                                            {!match.archived && match.status === 'RESULT_UPLOADED' && (
+                                                                <Chip
+                                                                    label="Awaiting Confirmation"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        position: 'absolute',
+                                                                        top: 8,
+                                                                        left: 8,
+                                                                        backgroundColor: '#F59E0B', // amber
+                                                                        color: 'black',
+                                                                        fontWeight: 'bold'
+                                                                    }}
+                                                                />
+                                                            )}
+
+                                                            {match.status === 'RESULT_PUBLISHED' ? (
+                                                                <Link href={`/match/${match?.id}`}>
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        gap: 1,
+                                                                        minHeight: 80
+                                                                    }}>
+
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                                                                                <Image
+                                                                                    src={match.homeTeamImage || homeImg}
+                                                                                    alt={match.homeTeamName}
+                                                                                    width={24}
+                                                                                    height={24}
+                                                                                    style={{ borderRadius: '2px' }}
+                                                                                />
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                                                                    title={match.homeTeamName}
+                                                                                >
+                                                                                    {formatMatchName(match.homeTeamName)}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Typography
+                                                                                variant="h6"
+                                                                                sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem', minWidth: 20, textAlign: 'right', mr: 9 }}
+                                                                            >
+                                                                                {match.homeTeamGoals || 0}
+                                                                            </Typography>
+                                                                        </Box>
+
+                                                                        {/* Away row */}
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                                                                                <Image
+                                                                                    src={match.awayTeamImage || awayImg}
+                                                                                    alt={match.awayTeamName}
+                                                                                    width={24}
+                                                                                    height={24}
+                                                                                    style={{ borderRadius: '2px' }}
+                                                                                />
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                                                                    title={match.awayTeamName}
+                                                                                >
+                                                                                    {formatMatchName(match.awayTeamName)}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Typography
+                                                                                variant="h6"
+                                                                                sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem', minWidth: 20, textAlign: 'right', mr: 9 }}
+                                                                            >
+                                                                                {match.awayTeamGoals || 0}
+                                                                            </Typography>
+                                                                        </Box>
+
+                                                                        {/* Date and Status - Right Side */}
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 32, right: 8 }}>
+                                                                            <Typography variant="body2" sx={{
+                                                                                color: 'white',
+                                                                                fontWeight: 'bold',
+                                                                                fontSize: '0.75rem'
+                                                                            }}>
+                                                                                {formatMatchDate(match.date)}
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem'
+                                                                            }}>
+                                                                                Full time
+                                                                            </Typography>
+                                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                        </Box>
+                                                                    </Box>
+                                                                </Link>
+                                                            ) : (
+                                                                // RESULT_UPLOADED: non-navigable, show toast on click
+                                                                <Box
+                                                                    // onClick={() => toast.info("Captains haven't confirmed the score yet.")}
+                                                                    onClick={() => toast("Captains haven't confirmed the score yet.", { icon: 'ℹ️' })}
+                                                                    sx={{
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        gap: 1,
+                                                                        minHeight: 80,
+                                                                        cursor: 'not-allowed',
+                                                                        opacity: 0.95
                                                                     }}
                                                                 >
-                                                                    Add Your Stats
-                                                                </Button>
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                                                                            <Image
+                                                                                src={match.homeTeamImage || homeImg}
+                                                                                alt={match.homeTeamName}
+                                                                                width={24}
+                                                                                height={24}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                                                                title={match.homeTeamName}
+                                                                            >
+                                                                                {formatMatchName(match.homeTeamName)}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        <Typography
+                                                                            variant="h6"
+                                                                            sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem', minWidth: 20, textAlign: 'right', mr: 9 }}
+                                                                        >
+                                                                            {match.homeTeamGoals || 0}
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    {/* Away row */}
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                                                                            <Image
+                                                                                src={match.awayTeamImage || awayImg}
+                                                                                alt={match.awayTeamName}
+                                                                                width={24}
+                                                                                height={24}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                                                                title={match.awayTeamName}
+                                                                            >
+                                                                                {formatMatchName(match.awayTeamName)}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        <Typography
+                                                                            variant="h6"
+                                                                            sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem', minWidth: 20, textAlign: 'right', mr: 9 }}
+                                                                        >
+                                                                            {match.awayTeamGoals || 0}
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    {/* Date and Status - Right Side */}
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 32, right: 8 }}>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '0.75rem'
+                                                                        }}>
+                                                                            {formatMatchDate(match.date)}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'white',
+                                                                            fontSize: '0.65rem'
+                                                                        }}>
+                                                                            Pending confirmation
+                                                                        </Typography>
+                                                                        <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                    </Box>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Action buttons */}
+                                                            {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                        {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                          <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
+                                                            <Button
+                                                              size="small"
+                                                              sx={{
+                                                                backgroundColor: '#0388E3',
+                                                                color: 'white',
+                                                                fontSize: '0.75rem',
+                                                                py: 0.5,
+                                                                px: 1,
+                                                                borderRadius: 1,
+                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                transition: 'all 0.2s ease-in-out',
+                                                                '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                '&:active': { transform: 'translateY(0)' },
+                                                              }}
+                                                              disabled={!league?.active}
+                                                            >
+                                                              {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                            </Button>
+                                                          </Link>
+                                                        )}
+                                                      </Box>
+                                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                        <Button
+                                                          size="small"
+                                                          sx={{
+                                                            backgroundColor: '#FA5836',
+                                                            color: 'white',
+                                                            fontSize: '0.75rem',
+                                                            py: 0.5,
+                                                            px: 1,
+                                                            borderRadius: 1,
+                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                            transition: 'all 0.2s ease-in-out',
+                                                            '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                            '&:active': { transform: 'translateY(0)' },
+                                                          }}
+                                                          onClick={() => {
+                                                            setActiveMatchId(match.id);
+                                                            setStatsDialogOpen(true);
+                                                            fetchExistingStats(match.id);
+                                                          }}
+                                                        >
+                                                          Add Your Stats
+                                                        </Button>
+                                                      </Box>
+                                                    </Box> */}
+
+                                                        {/* // ...existing code... */}
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                                    {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                                        match.status === 'RESULT_UPLOADED' ? (
+                                                                            <Tooltip title="Awaiting captain confirmation">
+                                                                                <span>
+                                                                                    <Button
+                                                                                        size="small"
+                                                                                        disabled
+                                                                                        sx={{
+                                                                                            backgroundColor: '#0388E3',
+                                                                                            color: 'white',
+                                                                                            fontSize: '0.75rem',
+                                                                                            py: 0.5,
+                                                                                            px: 1,
+                                                                                            borderRadius: 1,
+                                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                            transition: 'all 0.2s ease-in-out',
+                                                                                            '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                            '&:active': { transform: 'translateY(0)' },
+                                                                                        }}
+                                                                                    >
+                                                                                        {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                                                    </Button>
+                                                                                </span>
+                                                                            </Tooltip>
+                                                                        ) : (
+                                                                            <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        backgroundColor: '#0388E3',
+                                                                                        color: 'white',
+                                                                                        fontSize: '0.75rem',
+                                                                                        py: 0.5,
+                                                                                        px: 1,
+                                                                                        borderRadius: 1,
+                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                        transition: 'all 0.2s ease-in-out',
+                                                                                        '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                        '&:active': { transform: 'translateY(0)' },
+                                                                                    }}
+                                                                                    disabled={!league?.active}
+                                                                                >
+                                                                                    {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                                                </Button>
+                                                                            </Link>
+                                                                        )
+                                                                    )}
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                        <span>
+                                                                            <Button
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    backgroundColor: '#FA5836',
+                                                                                    color: 'white',
+                                                                                    fontSize: '0.75rem',
+                                                                                    py: 0.5,
+                                                                                    px: 1,
+                                                                                    borderRadius: 1,
+                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                    '&:active': { transform: 'translateY(0)' },
+                                                                                }}
+                                                                                disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                                                onClick={() => {
+                                                                                    setActiveMatchId(match.id);
+                                                                                    setStatsDialogOpen(true);
+                                                                                    fetchExistingStats(match.id);
+                                                                                }}
+                                                                            >
+                                                                                Add Your Stats
+                                                                            </Button>
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                </Box>
                                                             </Box>
-                                                        </Box>
-                                                    </CardContent>
-                                                </Card>
-                                            ))}
+                                                            {/* // ...existing code... */}
+
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
                                         </Box>
                                     ) : (
                                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -3357,7 +3484,7 @@ export default function LeagueDetailPage() {
                     <Typography variant="body2" sx={{ mt: 1 }}>
                         {(matchPendingDelete?.homeTeamGoals ?? 0) > 0 ||
                             (matchPendingDelete?.awayTeamGoals ?? 0) > 0 ||
-                            matchPendingDelete?.status === 'completed' || matchPendingDelete?.status === 'RESULT_PUBLISHED'
+                            matchPendingDelete?.status === 'RESULT_PUBLISHED' || matchPendingDelete?.status === 'RESULT_PUBLISHED'
                             ? 'Scores exist. It will be archived (Canceled by Admin) and removed from stats. You can undo.'
                             : 'No scores yet. It will be permanently deleted.'}
                     </Typography>

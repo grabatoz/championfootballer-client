@@ -40,7 +40,7 @@ interface Match {
         goals: number;
         assists: number;
     }>;
-    status: 'completed' | 'scheduled' | 'ongoing';
+    status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
 }
 
 interface League {
@@ -201,7 +201,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
             stats[p.id] = { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
         });
 
-        league.matches.filter(m => m.status === 'completed').forEach(match => {
+        league.matches.filter(m => m.status === 'RESULT_PUBLISHED').forEach(match => {
             const homePlayers = match.homeTeamUsers.map(p => p.id);
             const awayPlayers = match.awayTeamUsers.map(p => p.id);
 
@@ -339,7 +339,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
     }, [leagueId, token, fetchLeagueData]);
 
     useEffect(() => {
-        if (league && league.matches.filter(m => m.status === 'completed').length >= league.maxGames) {
+        if (league && league.matches.filter(m => m.status === 'RESULT_PUBLISHED').length >= league.maxGames) {
             calculateWinners();
         }
     }, [league, playerStats, calculateWinners]);
