@@ -81,13 +81,13 @@ export default function EditMatchPage() {
 
   const MIN_PLAYERS = 6;
 
-  // Counts for UI banner (registered = non-guest)
+  // Counts for UI banner (include guests now)
   const registeredHomeCount = React.useMemo(
-    () => homeTeamUsers.filter(p => !p.isGuest).length,
+    () => homeTeamUsers.length,
     [homeTeamUsers]
   );
   const registeredAwayCount = React.useMemo(
-    () => awayTeamUsers.filter(p => !p.isGuest).length,
+    () => awayTeamUsers.length,
     [awayTeamUsers]
   );
   const selectedRegistered = registeredHomeCount + registeredAwayCount;
@@ -134,8 +134,8 @@ export default function EditMatchPage() {
 
   const canAddPlayer = (id: string, isGuest?: boolean) => {
     if (isGuest) return true;
-    // Only enable if marked available
-    return availabilityMap[id] === 'available';
+    // Allow adding unless explicitly unavailable
+    return availabilityMap[id] !== 'unavailable';
   };
 
   // Add (or merge) this style object near other styles if you want reuse
@@ -318,7 +318,24 @@ export default function EditMatchPage() {
       awayOrig !== null &&
       (!sameSet(newHomeIds, homeOrig) || !sameSet(newAwayIds, awayOrig));
 
-    const selectedRegistered = newHomeIds.length + newAwayIds.length;
+    // NEW: include guests in PATCH so server can count and sync them in one step
+    const homeGuestsPayload = homeGuests.map(g => ({
+      id: g.existingId,
+      team: 'home',
+      firstName: g.firstName,
+      lastName: g.lastName,
+      shirtNumber: g.shirtNumber
+    }));
+    const awayGuestsPayload = awayGuests.map(g => ({
+      id: g.existingId,
+      team: 'away',
+      firstName: g.firstName,
+      lastName: g.lastName,
+      shirtNumber: g.shirtNumber
+    }));
+
+    // NEW: include guests in the min-players check
+    const selectedRegistered = homeTeamUsers.length + awayTeamUsers.length;
 
     // Notify whenever < 6 (regardless of teamsChanged)
     const needsMore = selectedRegistered > 0 && selectedRegistered < MIN_PLAYERS;
@@ -347,13 +364,12 @@ export default function EditMatchPage() {
       if (needsMore || teamsChanged) {
         formData.append('homeTeamUsers', JSON.stringify(newHomeIds));
         formData.append('awayTeamUsers', JSON.stringify(newAwayIds));
+        // Guests go with PATCH so backend can count them toward MIN_PLAYERS
+        formData.append('homeGuests', JSON.stringify(homeGuestsPayload));
+        formData.append('awayGuests', JSON.stringify(awayGuestsPayload));
 
         if (needsMore) {
-          // Let backend know this is a notify-only action (safe to ignore if unsupported)
           formData.append('notifyOnly', 'true');
-        } else {
-          if (homeCaptain) formData.append('homeCaptain', homeCaptain.id);
-          if (awayCaptain) formData.append('awayCaptain', awayCaptain.id);
         }
       }
 
@@ -368,13 +384,7 @@ export default function EditMatchPage() {
       const j = await res.json().catch(() => ({}));
       if (!j.success) throw new Error(j.message || 'Update failed');
 
-      // Guests sync unchanged
-      const currentGuests = [...homeGuests, ...awayGuests];
-      const currentExistingIds = new Set(currentGuests.filter(g => g.existingId).map(g => g.existingId!));
-      const toDelete = [...originalGuestIds.current].filter(id => !currentExistingIds.has(id));
-      await Promise.allSettled(toDelete.map(id => fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })));
-      const newOnes = currentGuests.filter(g => !g.existingId);
-      await Promise.allSettled(newOnes.map(g => fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/guests`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ team: g.team, firstName: g.firstName, lastName: g.lastName, shirtNumber: g.shirtNumber }) })));
+      // Guests already synced via PATCH; no extra POST/DELETE calls needed
       // Clear matches cache and navigate
       try { cacheManager.clearCache('matches_cache'); } catch {}
       toast.success('Match updated');
@@ -396,7 +406,7 @@ export default function EditMatchPage() {
     const baseSize = typeof size === 'number' ? size : (size.sm || size.xs);
     const fontSize = baseSize >= 56 ? 16 : baseSize >= 48 ? 14 : baseSize >= 40 ? 12 : baseSize >= 32 ? 10 : 8;
     return (
-      <Box sx={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1, overflow: 'hidden', flexShrink: 0 }}>
+      <Box sx={{ position: 'relative', width: baseSize, height: baseSize, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1, overflow: 'hidden', flexShrink: 0 }}>
         <img src={ShirtImg.src} alt='Shirt' style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
         <Typography component='span' sx={{ position: 'relative', zIndex: 1, fontWeight: 800, fontSize, color: '#111', textShadow: '0 1px 1px rgba(255,255,255,0.6)', lineHeight: 1 }}>
           {number || '0'}
@@ -894,8 +904,8 @@ export default function EditMatchPage() {
                         />
                       </Grid>
 
-                      {/* NEW: Captain selectors appear under team selection */}
-                      <Grid item xs={12} md={6}>
+                      {/* Removed manual captain selectors (auto-captain handled by backend) */}
+                      {/* <Grid item xs={12} md={6}>
                         <Autocomplete<PlayerOption, false, false>
                           options={homeTeamUsers}
                           value={homeCaptain}
@@ -1052,476 +1062,476 @@ export default function EditMatchPage() {
                 Match Preview
               </Typography>
 
-              {/* Win Probability */}
-              {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Win Probability</Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{homeWinChance}%</Typography>
-                      <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
+                  {/* Win Probability */}
+                  {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
+                    <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Win Probability</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{homeWinChance}%</Typography>
+                          <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{awayWinChance}%</Typography>
+                          <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
+                        </Box>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={homeWinChance}
+                        sx={{
+                          height: { xs: 6, sm: 8 },
+                          borderRadius: { xs: 3, sm: 4 },
+                          bgcolor: 'rgba(239, 83, 80, 0.3)',
+                          '& .MuiLinearProgress-bar': {
+                            bgcolor: '#43a047',
+                            borderRadius: { xs: 3, sm: 4 }
+                          }
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
+                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength}</Typography>
+                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength}</Typography>
+                      </Box>
                     </Box>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{awayWinChance}%</Typography>
-                      <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
+                  )}
+
+                  {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
+
+                  { /* Team names row (no logos) + VS in center */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'stretch',
+                      px: { xs: 1, sm: 2, md: 3 },
+                      gap: { xs: 1, sm: 2, md: 3 },
+                      mb: { xs: 1, sm: 1.5, md: 2 }
+                    }}
+                  >
+                    {/* Home */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: '#43a047',
+                          fontWeight: 700,
+                          fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
+                          lineHeight: 1.2
+                        }}
+                      >
+                        {homeTeamName || 'Home'}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#9CA3AF',
+                          fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
+                        }}
+                      >
+                        {homeTeamUsers.length} players
+                      </Typography>
                     </Box>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={homeWinChance}
-                    sx={{
-                      height: { xs: 6, sm: 8 },
-                      borderRadius: { xs: 3, sm: 4 },
-                      bgcolor: 'rgba(239, 83, 80, 0.3)',
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: '#43a047',
-                        borderRadius: { xs: 3, sm: 4 }
-                      }
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
-                  </Box>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
-                    <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength}</Typography>
-                    <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength}</Typography>
-                  </Box>
-                </Box>
-              )}
-
-              {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
-
-              { /* Team names row (no logos) + VS in center */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'stretch',
-                  px: { xs: 1, sm: 2, md: 3 },
-                  gap: { xs: 1, sm: 2, md: 3 },
-                  mb: { xs: 1, sm: 1.5, md: 2 }
-                }}
-              >
-                {/* Home */}
-                <Box sx={{ flex: 1, textAlign: 'left' }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: '#43a047',
-                      fontWeight: 700,
-                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                      lineHeight: 1.2
-                    }}
-                  >
-                    {homeTeamName || 'Home'}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#9CA3AF',
-                      fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                    }}
-                  >
-                    {homeTeamUsers.length} players
-                  </Typography>
-                </Box>
-
-                {/* VS Center */}
-                <Box
-                  sx={{
-                    px: { xs: 1.5, sm: 2 },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderLeft: '1px solid rgba(255,255,255,0.25)',
-                    borderRight: '1px solid rgba(255,255,255,0.25)'
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: 800,
-                      letterSpacing: 1,
-                      fontSize: { xs: '0.7rem', sm: '0.85rem', md: '1rem' },
-                      background: 'linear-gradient(135deg,#43a047,#ef5350)',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent'
-                    }}
-                  >
-                    VS
-                  </Typography>
-                </Box>
-
-                {/* Away */}
-                <Box sx={{ flex: 1, textAlign: 'right' }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: '#ef5350',
-                      fontWeight: 700,
-                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                      lineHeight: 1.2
-                    }}
-                  >
-                    {awayTeamName || 'Away'}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#9CA3AF',
-                      fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                    }}
-                  >
-                    {awayTeamUsers.length} players
-                  </Typography>
-                </Box>
-              </Box>
-
-              { /* Player lists (headers WITHOUT avatars now) */}
-              <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
-                {/* Home Team list (header removed) */}
-                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  {homeCaptain && (
+                    {/* VS Center */}
                     <Box
                       sx={{
+                        px: { xs: 1.5, sm: 2 },
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        mb: { xs: 0.5, sm: 1, md: 1.5 },
-                        p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                        bgcolor: 'rgba(255, 215, 0, 0.1)',
-                        borderRadius: { xs: 1, sm: 2, md: 3 },
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        cursor: 'pointer',
-                        minHeight: { xs: 28, sm: 35, md: 50 },
-                        '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
-                        overflow: 'hidden'
+                        justifyContent: 'center',
+                        borderLeft: '1px solid rgba(255,255,255,0.25)',
+                        borderRight: '1px solid rgba(255,255,255,0.25)'
                       }}
-                      draggable
-                      onDragEnd={() => movePlayer(homeCaptain, 'away')}
                     >
-                      <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
-                      <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                        <Typography
-                          fontWeight="bold"
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          letterSpacing: 1,
+                          fontSize: { xs: '0.7rem', sm: '0.85rem', md: '1rem' },
+                          background: 'linear-gradient(135deg,#43a047,#ef5350)',
+                          WebkitBackgroundClip: 'text',
+                          color: 'transparent'
+                        }}
+                      >
+                        VS
+                      </Typography>
+                    </Box>
+
+                    {/* Away */}
+                    <Box sx={{ flex: 1, textAlign: 'right' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: '#ef5350',
+                          fontWeight: 700,
+                          fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
+                          lineHeight: 1.2
+                        }}
+                      >
+                        {awayTeamName || 'Away'}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#9CA3AF',
+                          fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
+                        }}
+                      >
+                        {awayTeamUsers.length} players
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  { /* Player lists (headers WITHOUT avatars now) */}
+                  <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
+                    {/* Home Team list (header removed) */}
+                    <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                      {homeCaptain && (
+                        <Box
                           sx={{
-                            fontSize: { xs: 6.5, sm: 8, md: 12 },
-                            color: 'white',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: { xs: 0.5, sm: 1, md: 1.5 },
+                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
+                            bgcolor: 'rgba(255, 215, 0, 0.1)',
+                            borderRadius: { xs: 1, sm: 2, md: 3 },
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            cursor: 'pointer',
+                            minHeight: { xs: 28, sm: 35, md: 50 },
+                            '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                            overflow: 'hidden'
                           }}
+                          draggable
+                          onDragEnd={() => movePlayer(homeCaptain, 'away')}
                         >
-                          {homeCaptain.firstName} {homeCaptain.lastName}
+                          <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
+                            <Typography
+                              fontWeight="bold"
+                              sx={{
+                                fontSize: { xs: 6.5, sm: 8, md: 12 },
+                                color: 'white',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {homeCaptain.firstName} {homeCaptain.lastName}
+                              {homeCaptain.isGuest && (
+                                <Chip
+                                  label="G"
+                                  size="small"
+                                  sx={{
+                                    ml: { xs: 0.3, sm: 0.5, md: 0.8 },
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                    bgcolor: '#e67e22',
+                                    color: 'white',
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                  }}
+                                />
+                              )}
+                            </Typography>
+                            <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                              Skill: {calcSkill(homeCaptain)}
+                            </Typography>
+                          </Box>
                           {homeCaptain.isGuest && (
-                            <Chip
-                              label="G"
+                            <IconButton
                               size="small"
                               sx={{
-                                ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                height: { xs: 10, sm: 12, md: 16 },
-                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                bgcolor: '#e67e22',
-                                color: 'white',
-                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                color: '#f44336',
+                                ml: { xs: 0.2, sm: 0.3 },
+                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                minWidth: { xs: 14, sm: 18, md: 22 },
+                                width: { xs: 14, sm: 18, md: 22 },
+                                height: { xs: 14, sm: 18, md: 22 }
                               }}
-                            />
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHomeCaptain(null);
+                                const g = homeGuests.find(g => g.tempId === homeCaptain.guestTempId);
+                                if (g) removeStagedGuest('home', g.tempId);
+                              }}
+                            >
+                              <X size={8} />
+                            </IconButton>
                           )}
-                        </Typography>
-                        <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                          Skill: {calcSkill(homeCaptain)}
-                        </Typography>
-                      </Box>
-                      {homeCaptain.isGuest && (
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: '#f44336',
-                            ml: { xs: 0.2, sm: 0.3 },
-                            p: { xs: 0.1, sm: 0.2, md: 0.3 },
-                            minWidth: { xs: 14, sm: 18, md: 22 },
-                            width: { xs: 14, sm: 18, md: 22 },
-                            height: { xs: 14, sm: 18, md: 22 }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setHomeCaptain(null);
-                            const g = homeGuests.find(g => g.tempId === homeCaptain.guestTempId);
-                            if (g) removeStagedGuest('home', g.tempId);
-                          }}
-                        >
-                          <X size={8} />
-                        </IconButton>
+                        </Box>
                       )}
-                    </Box>
-                  )}
 
-                  {homeTeamUsers
-                    .filter(u => u.id !== homeCaptain?.id)
-                    .map(user => (
-                      <Box
-                        key={user.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: { xs: 0.3, sm: 0.5, md: 1 },
-                          p: { xs: 0.3, sm: 0.5, md: 1 },
-                          bgcolor: 'rgba(255,255,255,0.03)',
-                          borderRadius: { xs: 1, sm: 2, md: 3 },
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          cursor: 'pointer',
-                          minHeight: { xs: 24, sm: 30, md: 40 },
-                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                          overflow: 'hidden'
-                        }}
-                        draggable
-                        onDragEnd={() => movePlayer(user, 'away')}
-                      >
-                        <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                        <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
-                          <Typography
-                            fontWeight={500}
+                      {homeTeamUsers
+                        .filter(u => u.id !== homeCaptain?.id)
+                        .map(user => (
+                          <Box
+                            key={user.id}
                             sx={{
-                              fontSize: { xs: 6, sm: 7.5, md: 10 },
-                              color: 'white',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: { xs: 0.3, sm: 0.5, md: 1 },
+                              p: { xs: 0.3, sm: 0.5, md: 1 },
+                              bgcolor: 'rgba(255,255,255,0.03)',
+                              borderRadius: { xs: 1, sm: 2, md: 3 },
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              cursor: 'pointer',
+                              minHeight: { xs: 24, sm: 30, md: 40 },
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+                              overflow: 'hidden'
                             }}
+                            draggable
+                            onDragEnd={() => movePlayer(user, 'away')}
                           >
-                            {user.firstName} {user.lastName}
+                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
+                            <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                              <Typography
+                                fontWeight={500}
+                                sx={{
+                                  fontSize: { xs: 6, sm: 7.5, md: 10 },
+                                  color: 'white',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {user.firstName} {user.lastName}
+                                {user.isGuest && (
+                                  <Chip
+                                    label="G"
+                                    size="small"
+                                    sx={{
+                                      ml: { xs: 0.2, sm: 0.4, md: 0.6 },
+                                      height: { xs: 8, sm: 10, md: 14 },
+                                      fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                      bgcolor: '#e67e22',
+                                      color: 'white',
+                                      '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                    }}
+                                  />
+                                )}
+                              </Typography>
+                              <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                                Skill: {calcSkill(user)}
+                              </Typography>
+                            </Box>
                             {user.isGuest && (
-                              <Chip
-                                label="G"
+                              <IconButton
                                 size="small"
                                 sx={{
-                                  ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                  height: { xs: 8, sm: 10, md: 14 },
-                                  fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
-                                  bgcolor: '#e67e22',
-                                  color: 'white',
-                                  '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                  color: '#f44336',
+                                  ml: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                  p: { xs: 0.1, sm: 0.15, md: 0.2 },
+                                  minWidth: { xs: 12, sm: 16, md: 20 },
+                                  width: { xs: 12, sm: 16, md: 20 },
+                                  height: { xs: 12, sm: 16, md: 20 }
                                 }}
-                              />
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const g = homeGuests.find(g => g.tempId === user.guestTempId);
+                                  if (g) removeStagedGuest('home', g.tempId);
+                                }}
+                              >
+                                <X size={7} />
+                              </IconButton>
                             )}
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Skill: {calcSkill(user)}
-                          </Typography>
-                        </Box>
-                        {user.isGuest && (
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: '#f44336',
-                              ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                              p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                              minWidth: { xs: 12, sm: 16, md: 20 },
-                              width: { xs: 12, sm: 16, md: 20 },
-                              height: { xs: 12, sm: 16, md: 20 }
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const g = homeGuests.find(g => g.tempId === user.guestTempId);
-                              if (g) removeStagedGuest('home', g.tempId);
-                            }}
-                          >
-                            <X size={7} />
-                          </IconButton>
-                        )}
-                      </Box>
-                    ))}
-                </Box>
+                          </Box>
+                        ))}
+                    </Box>
 
-                {/* Middle divider */}
-                <Box
-                  sx={{
-                    width: { xs: '1px', sm: '2px', md: '3px' },
-                    bgcolor: 'rgba(255,255,255,0.4)',
-                    minHeight: { xs: 60, sm: 80, md: 120 },
-                    borderRadius: 0.5,
-                    alignSelf: 'stretch',
-                    flexShrink: 0
-                  }}
-                />
-
-                {/* Away Team list (header removed) */}
-                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  {awayCaptain && (
+                    {/* Middle divider */}
                     <Box
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        mb: { xs: 0.5, sm: 1, md: 1.5 },
-                        p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                        bgcolor: 'rgba(255, 215, 0, 0.1)',
-                        borderRadius: { xs: 1, sm: 2, md: 3 },
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        cursor: 'pointer',
-                        minHeight: { xs: 28, sm: 35, md: 50 },
-                        '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
-                        overflow: 'hidden'
+                        width: { xs: '1px', sm: '2px', md: '3px' },
+                        bgcolor: 'rgba(255,255,255,0.4)',
+                        minHeight: { xs: 60, sm: 80, md: 120 },
+                        borderRadius: 0.5,
+                        alignSelf: 'stretch',
+                        flexShrink: 0
                       }}
-                      draggable
-                      onDragEnd={() => movePlayer(awayCaptain, 'home')}
-                    >
-                      <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
-                      <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                        <Typography
-                          fontWeight="bold"
+                    />
+
+                    {/* Away Team list (header removed) */}
+                    <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                      {awayCaptain && (
+                        <Box
                           sx={{
-                            fontSize: { xs: 6.5, sm: 8, md: 12 },
-                                                       color: 'white',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: { xs: 0.5, sm: 1, md: 1.5 },
+                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
+                            bgcolor: 'rgba(255, 215, 0, 0.1)',
+                            borderRadius: { xs: 1, sm: 2, md: 3 },
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            cursor: 'pointer',
+                            minHeight: { xs: 28, sm: 35, md: 50 },
+                            '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                            overflow: 'hidden'
                           }}
+                          draggable
+                          onDragEnd={() => movePlayer(awayCaptain, 'home')}
                         >
-                          {awayCaptain.firstName} {awayCaptain.lastName}
+                          <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
+                            <Typography
+                              fontWeight="bold"
+                              sx={{
+                                fontSize: { xs: 6.5, sm: 8, md: 12 },
+                                color: 'white',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {awayCaptain.firstName} {awayCaptain.lastName}
+                              {awayCaptain.isGuest && (
+                                <Chip
+                                  label="G"
+                                  size="small"
+                                  sx={{
+                                    ml: { xs: 0.3, sm: 0.5, md: 0.8 },
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                    bgcolor: '#e67e22',
+                                    color: 'white',
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                  }}
+                                />
+                              )}
+                            </Typography>
+                            <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
+                              Skill: {calcSkill(awayCaptain)}
+                            </Typography>
+                          </Box>
                           {awayCaptain.isGuest && (
-                            <Chip
-                              label="G"
+                            <IconButton
                               size="small"
                               sx={{
-                                ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                height: { xs: 10, sm: 12, md: 16 },
-                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                bgcolor: '#e67e22',
-                                color: 'white',
-                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                color: '#f44336',
+                                ml: { xs: 0.2, sm: 0.3 },
+                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                minWidth: { xs: 14, sm: 18, md: 22 },
+                                width: { xs: 14, sm: 18, md: 22 },
+                                height: { xs: 14, sm: 18, md: 22 }
                               }}
-                            />
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAwayCaptain(null);
+                                const g = awayGuests.find(g => g.tempId === awayCaptain.guestTempId);
+                                if (g) removeStagedGuest('away', g.tempId);
+                              }}
+                            >
+                              <X size={8} />
+                            </IconButton>
                           )}
-                        </Typography>
-                        <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
-                          Skill: {calcSkill(awayCaptain)}
-                        </Typography>
-                      </Box>
-                      {awayCaptain.isGuest && (
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: '#f44336',
-                            ml: { xs: 0.2, sm: 0.3 },
-                            p: { xs: 0.1, sm: 0.2, md: 0.3 },
-                            minWidth: { xs: 14, sm: 18, md: 22 },
-                            width: { xs: 14, sm: 18, md: 22 },
-                            height: { xs: 14, sm: 18, md: 22 }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAwayCaptain(null);
-                            const g = awayGuests.find(g => g.tempId === awayCaptain.guestTempId);
-                            if (g) removeStagedGuest('away', g.tempId);
-                          }}
-                        >
-                          <X size={8} />
-                        </IconButton>
+                        </Box>
                       )}
-                    </Box>
-                  )}
 
-                  {awayTeamUsers
-                    .filter(u => u.id !== awayCaptain?.id)
-                    .map(user => (
-                      <Box
-                        key={user.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: { xs: 0.3, sm: 0.5, md: 1 },
-                          p: { xs: 0.3, sm: 0.5, md: 1 },
-                          bgcolor: 'rgba(255,255,255,0.03)',
-                          borderRadius: { xs: 1, sm: 2, md: 3 },
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          cursor: 'pointer',
-                          minHeight: { xs: 24, sm: 30, md: 40 },
-                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                          overflow: 'hidden'
-                        }}
-                        draggable
-                        onDragEnd={() => movePlayer(user, 'home')}
-                      >
-                        <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                        <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
-                          <Typography
-                            fontWeight={500}
+                      {awayTeamUsers
+                        .filter(u => u.id !== awayCaptain?.id)
+                        .map(user => (
+                          <Box
+                            key={user.id}
                             sx={{
-                              fontSize: { xs: 6, sm: 7.5, md: 10 },
-                              color: 'white',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: { xs: 0.3, sm: 0.5, md: 1 },
+                              p: { xs: 0.3, sm: 0.5, md: 1 },
+                              bgcolor: 'rgba(255,255,255,0.03)',
+                              borderRadius: { xs: 1, sm: 2, md: 3 },
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              cursor: 'pointer',
+                              minHeight: { xs: 24, sm: 30, md: 40 },
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+                              overflow: 'hidden'
                             }}
+                            draggable
+                            onDragEnd={() => movePlayer(user, 'home')}
                           >
-                            {user.firstName} {user.lastName}
+                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
+                            <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                              <Typography
+                                fontWeight={500}
+                                sx={{
+                                  fontSize: { xs: 6, sm: 7.5, md: 10 },
+                                  color: 'white',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {user.firstName} {user.lastName}
+                                {user.isGuest && (
+                                  <Chip
+                                    label="G"
+                                    size="small"
+                                    sx={{
+                                      ml: { xs: 0.2, sm: 0.4, md: 0.6 },
+                                      height: { xs: 8, sm: 10, md: 14 },
+                                      fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                      bgcolor: '#e67e22',
+                                      color: 'white',
+                                      '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                    }}
+                                  />
+                                )}
+                              </Typography>
+                              <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                                Skill: {calcSkill(user)}
+                              </Typography>
+                            </Box>
                             {user.isGuest && (
-                              <Chip
-                                label="G"
+                              <IconButton
                                 size="small"
                                 sx={{
-                                  ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                  height: { xs: 8, sm: 10, md: 14 },
-                                  fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
-                                  bgcolor: '#e67e22',
-                                  color: 'white',
-                                  '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                  color: '#f44336',
+                                  ml: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                  p: { xs: 0.1, sm: 0.15, md: 0.2 },
+                                  minWidth: { xs: 12, sm: 16, md: 20 },
+                                  width: { xs: 12, sm: 16, md: 20 },
+                                  height: { xs: 12, sm: 16, md: 20 }
                                 }}
-                              />
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const g = awayGuests.find(g => g.tempId === user.guestTempId);
+                                  if (g) removeStagedGuest('away', g.tempId);
+                                }}
+                              >
+                                <X size={7} />
+                              </IconButton>
                             )}
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Skill: {calcSkill(user)}
-                          </Typography>
-                        </Box>
-                        {user.isGuest && (
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: '#f44336',
-                              ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                              p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                              minWidth: { xs: 12, sm: 16, md: 20 },
-                              width: { xs: 12, sm: 16, md: 20 },
-                              height: { xs: 12, sm: 16, md: 20 }
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const g = awayGuests.find(g => g.tempId === user.guestTempId);
-                              if (g) removeStagedGuest('away', g.tempId);
-                            }}
-                          >
-                            <X size={7} />
-                          </IconButton>
-                        )}
-                      </Box>
-                    ))}
-                </Box>
+                          </Box>
+                        ))}
+                    </Box>
+                  </Box>
+                </Paper>
               </Box>
-            </Paper>
+            </Box>
           </Box>
-        </Box>
-      </Box>
-      <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
-        <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
-        <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
-          <RadioGroup
-            row
-            value={guestTeam}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestTeam(e.target.value as 'home' | 'away')}
-            sx={{ mb: 3, justifyContent: 'center' }}
-          >
-            <FormControlLabel value='home' control={<Radio sx={{ color: '#43a047' }} />} label='Home Team' />
-            <FormControlLabel value='away' control={<Radio sx={{ color: '#ef5350' }} />} label='Away Team' />
-          </RadioGroup>
-          <TextField autoFocus label='Guest Full Name' value={guestName} onChange={e => setGuestName(e.target.value)} fullWidth placeholder='e.g. John Doe' sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9CA3AF' } }} />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, bgcolor: 'rgba(15,15,15,0.95)' }}>
-          <Button onClick={() => setGuestDialogOpen(false)} sx={{ color: '#9CA3AF' }}>Cancel</Button>
-          <Button onClick={handleAddGuest} variant='contained' sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' } }}>Add Guest</Button>
-        </DialogActions>
-      </Dialog>
-      <Toaster position='top-center' reverseOrder={false} />
-    </LocalizationProvider>
-  );
-}
+          <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
+            <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
+            <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
+              <RadioGroup
+                row
+                value={guestTeam}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestTeam(e.target.value as 'home' | 'away')}
+                sx={{ mb: 3, justifyContent: 'center' }}
+              >
+                <FormControlLabel value='home' control={<Radio sx={{ color: '#43a047' }} />} label='Home Team' />
+                <FormControlLabel value='away' control={<Radio sx={{ color: '#ef5350' }} />} label='Away Team' />
+              </RadioGroup>
+              <TextField autoFocus label='Guest Full Name' value={guestName} onChange={e => setGuestName(e.target.value)} fullWidth placeholder='e.g. John Doe' sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9CA3AF' } }} />
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 3, bgcolor: 'rgba(15,15,15,0.95)' }}>
+              <Button onClick={() => setGuestDialogOpen(false)} sx={{ color: '#9CA3AF' }}>Cancel</Button>
+              <Button onClick={handleAddGuest} variant='contained' sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' } }}>Add Guest</Button>
+            </DialogActions>
+          </Dialog>
+          <Toaster position='top-center' reverseOrder={false} />
+        </LocalizationProvider>
+      );
+    }
