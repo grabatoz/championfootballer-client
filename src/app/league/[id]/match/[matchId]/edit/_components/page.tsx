@@ -654,61 +654,55 @@ export default function EditMatchPage() {
                           options={homePlayerOptions}
                           disableCloseOnSelect
                           getOptionLabel={option => `${option.firstName} ${option.lastName}`}
-                          getOptionDisabled={option => !canAddPlayer(option.id, option.isGuest)}
+                          // List all players: do not disable by availability
+                          getOptionDisabled={() => false}
                           isOptionEqualToValue={(o, v) => o.id === v.id}
                           ListboxProps={{
                             sx: {
                               display: 'grid',
                               gridTemplateColumns: 'repeat(2, 1fr)',
                               gap: 1,
-                              p: 1,
-                              '& li[aria-disabled="true"]': disabledOptionStyles
+                              p: 1
                             }
                           }}
                           renderOption={(props, option) => {
-                            const st = availabilityMap[option.id] || 'pending';
-                            const meta = availabilityStyle(st);
-                            const disabled = !canAddPlayer(option.id, option.isGuest);
+                            const isAvailable = availabilityMap[option.id] === 'available';
+                            const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                             return (
                               <Box
                                 component="li"
                                 {...props}
-                                aria-disabled={disabled ? 'true' : 'false'}
                                 sx={{
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
                                   p: 1,
-                                  position: 'relative',
-                                  ...(disabled ? disabledOptionStyles : {})
+                                  position: 'relative'
                                 }}
                               >
                                 <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5 }} />
                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 }}>
                                   {option.firstName}
                                 </Typography>
+                                {/* Show shirt number: green if available, black otherwise */}
                                 <Box sx={{
                                   mt: 0.4,
                                   px: 0.6,
                                   py: 0.25,
                                   borderRadius: 1,
-                                  fontSize: '0.55rem',
-                                  fontWeight: 700,
-                                  background: meta.bg,
-                                  color: meta.color,
-                                  width: '100%',
-                                  letterSpacing: '.5px',
-                                  textAlign: 'center'
+                                  fontSize: '0.65rem',
+                                  fontWeight: 800,
+                                  color: isAvailable ? '#43a047' : '#111'
                                 }}>
-                                  {meta.label}
+                                  {number}
                                 </Box>
                               </Box>
                             );
                           }}
                           renderTags={(value, getTagProps) =>
                             value.map((opt, index) => {
-                              const st = availabilityMap[opt.id] || 'pending';
-                              const meta = availabilityStyle(st);
+                              const isAvailable = availabilityMap[opt.id] === 'available';
+                              const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                               return (
                                 <Box
                                   {...getTagProps({ index })}
@@ -723,28 +717,22 @@ export default function EditMatchPage() {
                                 >
                                   <Avatar
                                     src={opt.profilePicture || defaultTeamImage}
-                                    sx={{
-                                      width: 32,
-                                      height: 32,
-                                      mb: 0.3,
-                                      outline: (canAddPlayer(opt.id, opt.isGuest)) ? '2px solid #2e7d32' : '2px solid #b71c1c'
-                                    }}
+                                    sx={{ width: 32, height: 32, mb: 0.3 }}
                                   />
                                   <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1 }}>
                                     {opt.firstName}
                                   </Typography>
+                                  {/* Shirt number instead of availability text */}
                                   <Box sx={{
                                     mt: 0.2,
                                     px: 0.4,
                                     py: 0.15,
                                     borderRadius: 1,
-                                    fontSize: '0.45rem',
-                                    fontWeight: 700,
-                                    background: meta.bg,
-                                    color: meta.color,
-                                    letterSpacing: '.5px'
+                                    fontSize: '0.55rem',
+                                    fontWeight: 800,
+                                    color: isAvailable ? 'green' : '#fff'
                                   }}>
-                                    {meta.label.replace('UNAVAILABLE', 'UNAV')}
+                                    {number}
                                   </Box>
                                 </Box>
                               );
@@ -752,15 +740,7 @@ export default function EditMatchPage() {
                           }
                           value={homeTeamUsers}
                           onChange={(_, newValue) => {
-                            // keep guests + selectable + already selected
-                            setHomeTeamUsers(prev => {
-                              const prevIds = new Set(prev.map(p => p.id));
-                              return newValue.filter(p =>
-                                p.isGuest ||
-                                canAddPlayer(p.id, p.isGuest) ||
-                                prevIds.has(p.id)
-                              );
-                            });
+                            setHomeTeamUsers(newValue);
                             if (homeCaptain && !newValue.some(u => u.id === homeCaptain.id)) {
                               setHomeCaptain(null);
                             }
@@ -769,7 +749,7 @@ export default function EditMatchPage() {
                             <TextField
                               {...params}
                               label="Select Home Players"
-                              helperText="Only AVAILABLE players can be added"
+                              // helperText="Green number = available; white = unavailable"
                               FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
                               sx={{ ...autocompleteStyles }}
                             />
@@ -783,61 +763,55 @@ export default function EditMatchPage() {
                           options={awayPlayerOptions}
                           disableCloseOnSelect
                           getOptionLabel={option => `${option.firstName} ${option.lastName}`}
-                          getOptionDisabled={option => !canAddPlayer(option.id, option.isGuest)}
+                          // List all players: do not disable by availability
+                          getOptionDisabled={() => false}
                           isOptionEqualToValue={(o, v) => o.id === v.id}
                           ListboxProps={{
                             sx: {
                               display: 'grid',
                               gridTemplateColumns: 'repeat(2, 1fr)',
                               gap: 1,
-                              p: 1,
-                              '& li[aria-disabled="true"]': disabledOptionStyles
+                              p: 1
                             }
                           }}
                           renderOption={(props, option) => {
-                            // const st = availabilityMap[option.id] || 'pending';
-                            // const meta = availabilityStyle(st);
-                            const disabled = !canAddPlayer(option.id, option.isGuest);
+                            const isAvailable = availabilityMap[option.id] === 'available';
+                            const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                             return (
                               <Box
                                 component="li"
                                 {...props}
-                                aria-disabled={disabled ? 'true' : 'false'}
                                 sx={{
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
                                   p: 1,
-                                  position: 'relative',
-                                  ...(disabled ? disabledOptionStyles : {})
+                                  position: 'relative'
                                 }}
                               >
                                 <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5 }} />
                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 }}>
                                   {option.firstName}
                                 </Typography>
-                                {/* <Box sx={{
+                                {/* Shirt number: green if available, black otherwise */}
+                                <Box sx={{
                                   mt: 0.4,
                                   px: 0.6,
                                   py: 0.25,
                                   borderRadius: 1,
-                                  fontSize: '0.55rem',
-                                  fontWeight: 700,
-                                  background: meta.bg,
-                                  color: meta.color,
-                                  width: '100%',
-                                  letterSpacing: '.5px',
-                                  textAlign: 'center'
+                                  fontSize: '0.65rem',
+                                  fontWeight: 800,
+                                  color: isAvailable ? '#43a047' : '#111'
                                 }}>
-                                  {meta.label}
-                                </Box> */}
+                                  {number}
+                                </Box>
                               </Box>
                             );
                           }}
                           renderTags={(value, getTagProps) =>
                             value.map((opt, index) => {
-                              // const st = availabilityMap[opt.id] || 'pending';
-                              // const meta = availabilityStyle(st);
+                              const isAvailable = availabilityMap[opt.id] === 'available';
+                              const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                               return (
                                 <Box
                                   {...getTagProps({ index })}
@@ -851,43 +825,30 @@ export default function EditMatchPage() {
                                 >
                                   <Avatar
                                     src={opt.profilePicture || defaultTeamImage}
-                                    sx={{
-                                      width: 32,
-                                      height: 32,
-                                      mb: 0.3,
-                                      outline: (canAddPlayer(opt.id, opt.isGuest)) ? '2px solid #c62828' : '2px solid #616161'
-                                    }}
+                                    sx={{ width: 32, height: 32, mb: 0.3 }}
                                   />
                                   <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1 }}>
                                     {opt.firstName}
                                   </Typography>
-                                  {/* <Box sx={{
+                                  {/* Shirt number instead of availability text */}
+                                  <Box sx={{
                                     mt: 0.2,
                                     px: 0.4,
                                     py: 0.15,
                                     borderRadius: 1,
-                                    fontSize: '0.45rem',
-                                    fontWeight: 700,
-                                    background: meta.bg,
-                                    color: meta.color,
-                                    letterSpacing: '.5px'
+                                    fontSize: '0.55rem',
+                                    fontWeight: 800,
+                                    color: isAvailable ? '#43a047' : '#fff'
                                   }}>
-                                    {meta.label.replace('UNAVAILABLE', 'UNAV')}
-                                  </Box> */}
+                                    {number}
+                                  </Box>
                                 </Box>
                               );
                             })
                           }
                           value={awayTeamUsers}
                           onChange={(_, newValue) => {
-                            setAwayTeamUsers(prev => {
-                              const prevIds = new Set(prev.map(p => p.id));
-                              return newValue.filter(p =>
-                                p.isGuest ||
-                                canAddPlayer(p.id, p.isGuest) ||
-                                prevIds.has(p.id)
-                              );
-                            });
+                            setAwayTeamUsers(newValue);
                             if (awayCaptain && !newValue.some(u => u.id === awayCaptain.id)) {
                               setAwayCaptain(null);
                             }
@@ -896,7 +857,7 @@ export default function EditMatchPage() {
                             <TextField
                               {...params}
                               label="Select Away Players"
-                              helperText="Only AVAILABLE players can be added"
+                              // helperText="Green number = available; white = unavailable"
                               FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
                               sx={{ ...autocompleteStyles }}
                             />
