@@ -420,7 +420,128 @@ export default function LeagueDetailPage() {
     // Confirmation dialog state
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
+    // const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
     const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
+
+    const [archivedActionOpen, setArchivedActionOpen] = useState(false);
+    const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
+    const [archivedActionChecking, setArchivedActionChecking] = useState(false);
+    const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
+
+    const checkCanHardDelete = useCallback(async (matchId: string) => {
+        if (!token) return;
+        setArchivedActionChecking(true);
+        setArchivedActionHasStats(null);
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('check failed');
+            const data = await res.json();
+            setArchivedActionHasStats(!!data.hasStats);
+        } catch {
+            // fail-safe: if unknown, prevent hard delete
+            setArchivedActionHasStats(true);
+        } finally {
+            setArchivedActionChecking(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        if (archivedActionOpen && archivedActionMatch?.id) {
+            checkCanHardDelete(archivedActionMatch.id);
+        }
+    }, [archivedActionOpen, archivedActionMatch, checkCanHardDelete]);
+
+
+    const getHasStats = useCallback(async (matchId: string): Promise<boolean> => {
+        if (!token) return true; // default safe
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) return true;
+            const data = await res.json();
+            return !!data.hasStats;
+        } catch {
+            return true; // safe default
+        }
+    }, [token]);
+
+        const handlePermanentDelete = async (match: Match) => {
+        // if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
+        //     return;
+        // }
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.status === 400) {
+                // Backend says cannot delete (likely stats exist)
+                let msg = 'Cannot permanently delete this match. It may have player stats.';
+                try {
+                    const err = await res.json();
+                    if (err?.message) msg = err.message;
+                } catch { }
+                toast.error(msg);
+                setArchivedActionHasStats(true);
+                return;
+            }
+
+            if (!res.ok) {
+                throw new Error('Failed to permanently delete match');
+            }
+
+            setLeague(prev => prev ? {
+                ...prev,
+                matches: prev.matches.filter(mm => mm.id !== match.id)
+            } : prev);
+
+            toast.success('Match permanently deleted');
+            fetchLeagueDetails();
+
+        } catch (error) {
+            console.error('Permanent delete failed:', error);
+            toast.error('Failed to permanently delete match');
+        }
+    };
+    
+    const tryHardDeleteFromDialog = useCallback(async () => {
+        if (!archivedActionMatch) return;
+
+        // If already confirmed no stats, proceed
+        if (archivedActionHasStats === false) {
+            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
+            if (ok) {
+                await handlePermanentDelete(archivedActionMatch);
+                setArchivedActionOpen(false);
+            }
+            return;
+        }
+
+        // Unknown or previously blocked: re-check now
+        setArchivedActionChecking(true);
+        try {
+            const hasStats = await getHasStats(archivedActionMatch.id);
+            setArchivedActionHasStats(hasStats);
+
+            if (hasStats) {
+                toast.error('Player stats exist. Permanent delete is disabled.');
+                return;
+            }
+
+            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
+            if (ok) {
+                await handlePermanentDelete(archivedActionMatch);
+                setArchivedActionOpen(false);
+            }
+        } finally {
+            setArchivedActionChecking(false);
+        }
+    }, [archivedActionMatch, archivedActionHasStats, getHasStats, handlePermanentDelete]);
 
     // Example stat change handler
     const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
@@ -1646,6 +1767,73 @@ export default function LeagueDetailPage() {
             setMatchPendingDelete(null);
         }
     };
+
+    // ...existing code...
+    // const handleConfirmDeleteMatch = async () => {
+    //     if (!matchPendingDelete || !token || !league) return;
+    //     const m = matchPendingDelete;
+    //     setConfirmDeleteOpen(false);
+
+    //     try {
+    //         const hasStats = await getHasStats(m.id);
+
+    //         if (hasStats) {
+    //             // Archive the match if any player stats exist
+    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+    //                 method: 'PATCH',
+    //                 headers: {
+    //                     'Authorization': `Bearer ${token}`,
+    //                     'Content-Type': 'application/json'
+    //                 },
+    //                 body: JSON.stringify({ archived: true })
+    //             });
+
+    //             if (!res.ok) {
+    //                 const errorData = await res.text();
+    //                 console.error('Archive failed:', errorData);
+    //                 throw new Error('Failed to archive match');
+    //             }
+
+    //             setLeague(prev => prev ? {
+    //                 ...prev,
+    //                 matches: prev.matches.map(mm =>
+    //                     mm.id === m.id ? { ...mm, archived: true } : mm
+    //                 )
+    //             } : prev);
+
+    //             setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
+    //             setToastMessage('Match archived (Canceled by Admin)');
+    //         } else {
+    //             // Permanently delete if no player stats exist
+    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
+    //                 method: 'DELETE',
+    //                 headers: { 'Authorization': `Bearer ${token}` }
+    //             });
+
+    //             if (!res.ok) throw new Error('Failed to delete match');
+
+    //             setLeague(prev => prev ? {
+    //                 ...prev,
+    //                 matches: prev.matches.filter(mm => mm.id !== m.id)
+    //             } : prev);
+
+    //             setUndoInfo({ match: m, action: 'delete' });
+    //             setToastMessage('Match deleted permanently');
+    //         }
+
+    //         // Refresh league data to ensure sync
+    //         fetchLeagueDetails();
+
+    //     } catch (e) {
+    //         console.error('Delete/Archive operation failed:', e);
+    //         toast.error('Failed to process match delete/archive');
+    //     } finally {
+    //         setMatchPendingDelete(null);
+    //     }
+    // };
+    // ...existing code...
+
+
     // const handleUndo = async () => {
     //     if (!undoInfo || !token) return;
     //     const { match, action } = undoInfo;
@@ -1784,35 +1972,39 @@ export default function LeagueDetailPage() {
 
     // Add these functions before your return statement
 
-    const handlePermanentDelete = async (match: Match) => {
-        if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
-            return;
-        }
+    // const handlePermanentDelete = async (match: Match) => {
+    //     if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
+    //         return;
+    //     }
 
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    //     try {
+    //         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
+    //             method: 'DELETE',
+    //             headers: { 'Authorization': `Bearer ${token}` }
+    //         });
 
-            if (!res.ok) {
-                throw new Error('Failed to permanently delete match');
-            }
+    //         if (!res.ok) {
+    //             throw new Error('Failed to permanently delete match');
+    //         }
 
-            // Remove from local state
-            setLeague(prev => prev ? {
-                ...prev,
-                matches: prev.matches.filter(mm => mm.id !== match.id)
-            } : prev);
+    //         // Remove from local state
+    //         setLeague(prev => prev ? {
+    //             ...prev,
+    //             matches: prev.matches.filter(mm => mm.id !== match.id)
+    //         } : prev);
 
-            toast.success('Match permanently deleted');
-            fetchLeagueDetails();
+    //         toast.success('Match permanently deleted');
+    //         fetchLeagueDetails();
 
-        } catch (error) {
-            console.error('Permanent delete failed:', error);
-            toast.error('Failed to permanently delete match');
-        }
-    };
+    //     } catch (error) {
+    //         console.error('Permanent delete failed:', error);
+    //         toast.error('Failed to permanently delete match');
+    //     }
+    // };
+
+    // ...existing code...
+
+    // ...existing code...
 
     const handleRestoreMatch = async (match: Match) => {
         try {
@@ -2367,7 +2559,9 @@ export default function LeagueDetailPage() {
                             // backdropFilter: 'blur(10px)',
                             // border: '1px solid rgba(59, 130, 246, 0.3)',
                             borderRadius: 3,
-                            boxShadow: 'none'
+                            boxShadow: 'none',
+                            mt: 1.2,
+                            // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
                                 // Members Section
@@ -2556,7 +2750,7 @@ export default function LeagueDetailPage() {
                                                         }}
                                                     >
                                                         <CardContent sx={{ p: 2 }}>
-                                                            {/* {isAdmin && (
+                                                            {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Edit">
                                                                         <IconButton
@@ -2571,23 +2765,23 @@ export default function LeagueDetailPage() {
                                                                             <Edit size={20} />
                                                                         </IconButton>
                                                                     </Tooltip>
-                                                                    <Tooltip title="Delete / Archive">
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleRequestDeleteMatch(match);
-                                                                            }}
-                                                                            sx={{ color: '#ffb4b4' }}
-                                                                        >
-                                                                            <Trash2 size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
+                                                                   <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
                                                                 </Box>
-                                                            )} */}
+                                                            )}
 
                                                             {/* // Update your admin buttons in the match cards */}
-                                                            {isAdmin && (
+                                                            {/* {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Edit">
                                                                         <IconButton
@@ -2635,7 +2829,81 @@ export default function LeagueDetailPage() {
                                                                         </Tooltip>
                                                                     )}
                                                                 </Box>
-                                                            )}
+                                                            )} */}
+
+                                                            {/* // ...existing code... */}
+                                                            {/* // ...existing code... */}
+                                                            {/* {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    {match.archived ? (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    // Open actions dialog and run deletable check (results card)
+                                                                                    setArchivedActionMatch(match);
+                                                                                    setArchivedActionOpen(true);
+                                                                                    checkCanHardDelete(match.id);
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Box>
+                                                            )} */}
+
+                                                            {/* {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    {match.archived ? (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setArchivedActionMatch(match);
+                                                                                    setArchivedActionOpen(true); // check will auto-run via useEffect
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Box>
+                                                            )} */}
+
+
+                                                            {/* // ...existing code... */}
+                                                            {/* // ...existing code... */}
 
                                                             {/* Add archived label */}
                                                             {/* {match.archived && (
@@ -2862,7 +3130,7 @@ export default function LeagueDetailPage() {
                                                         }
                                                     }}>
                                                         <CardContent sx={{ p: 2 }}>
-                                                            {isAdmin && (
+                                                            {/* {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Delete / Archive">
                                                                         <IconButton
@@ -2877,6 +3145,71 @@ export default function LeagueDetailPage() {
                                                                         </IconButton>
                                                                     </Tooltip>
                                                                 </Box>
+                                                            )} */}
+                                                            {/* {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    {match.archived ? (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRestoreMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Box>
+                                                            )} */}
+
+                                                            {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                    {match.archived ? (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    // Open actions dialog instead of immediate restore
+                                                                                    setArchivedActionMatch(match);
+                                                                                    setArchivedActionOpen(true);
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Box>
                                                             )}
 
                                                             {/* Archived label */}
@@ -2890,7 +3223,10 @@ export default function LeagueDetailPage() {
                                                                         left: 8,
                                                                         backgroundColor: '#b91c1c',
                                                                         color: 'white',
-                                                                        fontWeight: 'bold'
+                                                                        fontWeight: 'bold',
+                                                                        textAlign:'center',
+                                                                        justifyContent:'center',
+                                                                        ml:'25%'
                                                                     }}
                                                                 />
                                                             )}
@@ -2901,12 +3237,14 @@ export default function LeagueDetailPage() {
                                                                     label="Awaiting Confirmation"
                                                                     size="small"
                                                                     sx={{
-                                                                        position: 'absolute',
+                                                                        // position: {sm: 'static', xs: 'static', md: 'absolute'},
+                                                                        position:'absolute',
                                                                         top: 8,
                                                                         left: 8,
                                                                         backgroundColor: '#F59E0B', // amber
                                                                         color: 'black',
-                                                                        fontWeight: 'bold'
+                                                                        fontWeight: 'bold',
+                                                                        ml:'25%',
                                                                     }}
                                                                 />
                                                             )}
@@ -2956,8 +3294,7 @@ export default function LeagueDetailPage() {
                                                                                     style={{ borderRadius: '2px' }}
                                                                                 />
                                                                                 <Typography
-                                                                                    variant="body2"
-                                                                                    sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                                                                    variant="body2" sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}
                                                                                     title={match.awayTeamName}
                                                                                 >
                                                                                     {formatMatchName(match.awayTeamName)}
@@ -3127,7 +3464,7 @@ export default function LeagueDetailPage() {
                                                       </Box>
                                                     </Box> */}
 
-                                                        {/* // ...existing code... */}
+                                                            {/* // ...existing code... */}
                                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
                                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                                     {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
@@ -3458,6 +3795,16 @@ export default function LeagueDetailPage() {
                                 }
                             />
                         )}
+                        {/* <PlayerStatsDialog
+                            open={statsDialogOpen}
+                            onClose={() => setStatsDialogOpen(false)}
+                            onSave={handleSaveStats}
+                            isSubmitting={isSubmittingStats}
+                            stats={stats}
+                            handleStatChange={handleStatChange}
+                            teamGoals={getMatchGoals()}
+                        /> */}
+
                         <PlayerStatsDialog
                             open={statsDialogOpen}
                             onClose={() => setStatsDialogOpen(false)}
@@ -3467,7 +3814,12 @@ export default function LeagueDetailPage() {
                             handleStatChange={handleStatChange}
                             teamGoals={getMatchGoals()}
                         />
-                        {/* Match Detail Modal */}
+
+                        {/* <MatchDetailModal
+                            open={matchDetailModalOpen}
+                            onClose={() => setMatchDetailModalOpen(false)}
+                            match={selectedMatchDetail}
+                        /> */}
                         <MatchDetailModal
                             open={matchDetailModalOpen}
                             onClose={() => setMatchDetailModalOpen(false)}
@@ -3477,7 +3829,7 @@ export default function LeagueDetailPage() {
                 )}
             </Container>
 
-            {/* Confirmation Dialog */}
+
             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
                 <DialogTitle sx={{ fontWeight: 'bold' }}>Are you sure you want to delete this match?</DialogTitle>
                 <DialogContent>
@@ -3496,6 +3848,161 @@ export default function LeagueDetailPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+            {/* <Dialog
+                open={archivedActionOpen}
+                onClose={() => setArchivedActionOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Archived Match Actions</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2">
+                        Choose an action for this archived match.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            if (!archivedActionMatch) return;
+                            handleRestoreMatch(archivedActionMatch);
+                            setArchivedActionOpen(false);
+                        }}
+                        startIcon={<Undo2 size={16} />}
+                    >
+                        Undo
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                            if (!archivedActionMatch) return;
+                            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
+                            if (ok) {
+                                handlePermanentDelete(archivedActionMatch);
+                                setArchivedActionOpen(false);
+                            }
+                        }}
+                        startIcon={<Trash2 size={16} />}
+                    >
+                        Permanently Delete
+                    </Button>
+                </DialogActions>
+            </Dialog> */}
+
+            {/* // ...existing code... */}
+            <Dialog
+                open={archivedActionOpen}
+                onClose={() => setArchivedActionOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Archived Match Actions</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        Choose an action for this archived match.
+                    </Typography>
+                    {archivedActionChecking && (
+                        <Typography variant="body2">Checking deletable status…</Typography>
+                    )}
+                    {archivedActionHasStats === true && (
+                        <Alert severity="warning" sx={{ mt: 1 }}>
+                            This match has player stats. Permanent delete is disabled.
+                        </Alert>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            if (!archivedActionMatch) return;
+                            handleRestoreMatch(archivedActionMatch);
+                            setArchivedActionOpen(false);
+                        }}
+                        startIcon={<Undo2 size={16} />}
+                    >
+                        Undo
+                    </Button>
+                    {/* <Tooltip
+                        title={
+                            archivedActionHasStats ? 'Match has stats. Cannot permanently delete.' : ''
+                        }
+                    >
+                        <span>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                disabled={archivedActionChecking || archivedActionHasStats === true}
+                                onClick={() => {
+                                    if (!archivedActionMatch) return;
+                                    const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
+                                    if (ok) {
+                                        handlePermanentDelete(archivedActionMatch);
+                                        setArchivedActionOpen(false);
+                                    }
+                                }}
+                                startIcon={<Trash2 size={16} />}
+                            >
+                                Permanently Delete
+                            </Button>
+                        </span>
+                    </Tooltip> */}
+                    {/* // ...existing code... */}
+                    {/* <Tooltip
+                        title={
+                            archivedActionHasStats !== false
+                                ? 'Match cannot be permanently deleted (stats present or status unknown).'
+                                : ''
+                        }
+                    >
+                        <span>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                disabled={archivedActionChecking || archivedActionHasStats !== false}
+                                onClick={() => {
+                                    if (!archivedActionMatch) return;
+                                    const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
+                                    if (ok) {
+                                        handlePermanentDelete(archivedActionMatch);
+                                        setArchivedActionOpen(false);
+                                    }
+                                }}
+                                startIcon={<Trash2 size={16} />}
+                            >
+                                Permanently Delete
+                            </Button>
+                        </span>
+                    </Tooltip> */}
+                       <Tooltip
+                        title={
+                            archivedActionHasStats === true
+                                ? 'Match has player stats. Permanent delete is disabled.'
+                                : archivedActionHasStats === null
+                                    ? 'Status unknown. Click to check and delete if possible.'
+                                    : ''
+                        }
+                    >
+                        <span>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                // Disable only while checking, or if we KNOW stats exist
+                                disabled={archivedActionChecking || archivedActionHasStats === true}
+                                onClick={() => {
+                                    // Re-check if needed, then delete
+                                    tryHardDeleteFromDialog();
+                                }}
+                                startIcon={<Trash2 size={16} />}
+                            >
+                                {archivedActionChecking ? 'Checking…' : 'Permanently Delete'}
+                            </Button>
+                        </span>
+                    </Tooltip>
+                    {/* // ...existing code... */}
+                </DialogActions>
+            </Dialog>
+            {/* // ...existing code... */}
         </Box>
     );
 }
