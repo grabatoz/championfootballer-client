@@ -132,29 +132,29 @@ export default function EditMatchPage() {
   // const isAlreadyPicked = (id: string) =>
     // homeTeamUsers.some(p => p.id === id) || awayTeamUsers.some(p => p.id === id);
 
-  const canAddPlayer = (id: string, isGuest?: boolean) => {
-    if (isGuest) return true;
-    // Allow adding unless explicitly unavailable
-    return availabilityMap[id] !== 'unavailable';
-  };
+  // const canAddPlayer = (id: string, isGuest?: boolean) => {
+  //   if (isGuest) return true;
+  //   // Allow adding unless explicitly unavailable
+  //   return availabilityMap[id] !== 'unavailable';
+  // };
 
   // Add (or merge) this style object near other styles if you want reuse
-  const disabledOptionStyles = {
-    opacity: 0.35,
-    filter: 'grayscale(0.6)',
-    pointerEvents: 'none',
-    cursor: 'not-allowed'
-  };
+  // const disabledOptionStyles = {
+  //   opacity: 0.35,
+  //   filter: 'grayscale(0.6)',
+  //   pointerEvents: 'none',
+  //   cursor: 'not-allowed'
+  // };
 
   // Badge meta
-  const availabilityStyle = (st: string) => {
-    switch (st) {
-      case 'available': return { bg: '#1b5e20', color: '#a5d6a7', label: 'AVAILABLE' };
-      case 'maybe': return { bg: '#795548', color: '#ffe0b2', label: 'MAYBE' };
-      case 'unavailable': return { bg: '#b71c1c', color: '#ffcdd2', label: 'UNAVAILABLE' };
-      default: return { bg: '#424242', color: '#e0e0e0', label: 'NO RESPONSE' };
-    }
-  };
+  // const availabilityStyle = (st: string) => {
+  //   switch (st) {
+  //     case 'available': return { bg: '#1b5e20', color: '#a5d6a7', label: 'AVAILABLE' };
+  //     case 'maybe': return { bg: '#795548', color: '#ffe0b2', label: 'MAYBE' };
+  //     case 'unavailable': return { bg: '#b71c1c', color: '#ffcdd2', label: 'UNAVAILABLE' };
+  //     default: return { bg: '#424242', color: '#e0e0e0', label: 'NO RESPONSE' };
+  //   }
+  // };
 
   const fetchData = useCallback(async () => {
     try {
