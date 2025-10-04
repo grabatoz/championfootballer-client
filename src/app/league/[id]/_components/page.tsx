@@ -3065,7 +3065,7 @@ export default function LeagueDetailPage() {
                                                                         </Button>
                                                                     )}
                                                                 </Box>
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                     <Button
                                                                         size="small"
                                                                         onClick={(e) => e.stopPropagation()} // Prevent card click
@@ -3090,6 +3090,30 @@ export default function LeagueDetailPage() {
                                                                     >
                                                                         Available: {availableCount} | Pending: {pendingCount}
                                                                     </Button>
+                                                                </Box> */}
+                                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                        <span>
+                                                                            <Button
+                                                                                size="small"
+                                                                                onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId, matchId: match.id }); setViewTeamOpen(true); }}
+                                                                                sx={{
+                                                                                    backgroundColor: '#FA5836',
+                                                                                    color: 'white',
+                                                                                    fontSize: '0.75rem',
+                                                                                    py: 0.5,
+                                                                                    px: 1,
+                                                                                    borderRadius: 1,
+                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                    '&:active': { transform: 'translateY(0)' },
+                                                                                }}
+                                                                            >
+                                                                                view team
+                                                                            </Button>
+                                                                        </span>
+                                                                    </Tooltip>
                                                                 </Box>
                                                             </Box>
                                                         </CardContent>

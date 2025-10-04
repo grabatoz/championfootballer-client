@@ -1,26 +1,48 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Paper,
   Typography,
   IconButton,
-  Stack,
-  Divider
+  Divider,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ShareIcon from '@mui/icons-material/Share';
-import Pitch from "@/Components/images/pitch.jpg";
-import Shirt from "@/Components/images/shirtimg.png";
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import FlagIcon from '@mui/icons-material/Flag';
+import Pitch from '@/Components/images/pitch.jpg';
+import Shirt from '@/Components/images/shirtimg.png';
 import { useAuth } from '@/lib/hooks';
 
 function debounce<F extends (...args: any[]) => void>(fn: F, wait: number) {
-  let t: any; return (...args: Parameters<F>) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  let t: any;
+  return (...args: Parameters<F>) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
 }
 
-type Player = { id?: string; name: string; number: string; position: 'GK' | 'DF' | 'MD' | 'FW'; isCaptain?: boolean; xp?: number };
+// Add this helper so references to normalizeTeam compile
+const normalizeTeam = (v: any): 'home' | 'away' =>
+  String(v).toLowerCase() === 'away' ? 'away' : 'home';
+
+type Player = {
+  id?: string;
+  name: string;
+  number: string;
+  position: 'GK' | 'DF' | 'MD' | 'FW';
+  isCaptain?: boolean;
+  xp?: number;
+};
 
 // API types (minimal)
 type ApiPlayer = {
@@ -54,6 +76,7 @@ type TeamViewPayload = {
     awayTeam: ApiPlayer[];
     guests?: Guest[];
     positions?: { home?: TeamPositions; away?: TeamPositions }; // server-saved positions
+    removed?: { home?: string[]; away?: string[] }; // NEW
   };
 };
 
@@ -61,7 +84,7 @@ const primaryColor = 'rgb(229,106,22)';
 const primaryColor2 = 'rgb(207,35,38)';
 const textColor = '#111';
 
-// Default fallback demo players (shown until real data loads)
+// Default fallback demo players (keep if you want preview only)
 const demoHome: Player[] = [
   { name: 'Xavi', number: '01', position: 'GK' },
   { name: 'John', number: '03', position: 'DF' },
@@ -102,7 +125,9 @@ function normalizeRole(input?: string | null): 'GK' | 'DF' | 'MD' | 'FW' {
 }
 
 // Auto-formation roles by team size (matches API logic)
+// Return [] when there are no players
 function targetRolesBySize(n: number): Array<'GK'|'DF'|'MD'|'FW'> {
+  if (n <= 0) return [];
   if (n < 5) { const r: Array<'GK'|'DF'|'MD'|'FW'> = ['GK']; for (let i = 1; i < n; i++) r.push('DF'); return r; }
   if (n === 5) return ['GK','DF','DF','FW','FW'];
   if (n === 6) return ['GK','DF','DF','DF','FW','FW'];
@@ -112,8 +137,9 @@ function targetRolesBySize(n: number): Array<'GK'|'DF'|'MD'|'FW'> {
   return arr;
 }
 
-// Reorder incoming API players to match target roles, preferring players’ own roles
+// Reorder incoming API players to match target roles
 function arrangePlayers(list: ApiPlayer[], captainId?: string): Player[] {
+  if (!Array.isArray(list) || list.length === 0) return [];
   const buckets: Record<'GK'|'DF'|'MD'|'FW', ApiPlayer[]> = { GK: [], DF: [], MD: [], FW: [] };
   list.forEach(p => buckets[normalizeRole(p.role || p.positionType)].push(p));
 
@@ -125,7 +151,10 @@ function arrangePlayers(list: ApiPlayer[], captainId?: string): Player[] {
 
   const targets = targetRolesBySize(list.length);
   const ordered: ApiPlayer[] = [];
-  for (const role of targets) ordered.push(take(role) || takeAny()!);
+  for (const role of targets) {
+    const picked = take(role) || takeAny();
+    if (picked) ordered.push(picked);
+  }
   (['GK','DF','MD','FW'] as const).forEach(r => { while (buckets[r].length) ordered.push(buckets[r].shift()!); });
 
   return ordered.map(p => mapApiToPlayer(p, captainId));
@@ -145,16 +174,26 @@ function mapApiToPlayer(u: ApiPlayer, captainId?: string): Player {
 }
 
 export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: string; matchId?: string }) {
-  const { token, user } = useAuth() as any; // needs user?.id
+  const { token, user } = useAuth() as any;
 
-  // State: team name labels and players
+  // Start with empty lists; fill with API data when loaded
   const [homeTeamName, setHomeTeamName] = React.useState<string>('Home');
   const [awayTeamName, setAwayTeamName] = React.useState<string>('Away');
-  const [homePlayers, setHomePlayers] = React.useState<Player[]>(demoHome);
-  const [awayPlayers, setAwayPlayers] = React.useState<Player[]>(demoAway);
+  const [homePlayers, setHomePlayers] = React.useState<Player[]>([]);
+  const [awayPlayers, setAwayPlayers] = React.useState<Player[]>([]);
   const [guests, setGuests] = React.useState<Guest[]>([]);
   const [matchStatus, setMatchStatus] = React.useState<string | undefined>(undefined);
   const [dataLoaded, setDataLoaded] = React.useState(false);
+
+  // Removed tracking from server
+  const [removed, setRemoved] = React.useState<{ home: string[]; away: string[] }>({ home: [], away: [] });
+
+  // current user / league admin
+  const meId: string = String(user?.id || user?.userId || '');
+  // REMOVE any role-based "admin" usage and use league admin instead
+  // const isAdmin: boolean = Boolean(user?.isAdmin || user?.role === 'admin');
+  const [leagueAdminId, setLeagueAdminId] = React.useState<string>('');
+  const isLeagueAdmin = Boolean(meId && leagueAdminId && meId === leagueAdminId);
 
   const [isHomeTeam, setIsHomeTeam] = React.useState(true);
   const teamTitle = isHomeTeam ? homeTeamName : awayTeamName;
@@ -164,7 +203,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const [awayCaptainId, setAwayCaptainId] = React.useState<string | undefined>(undefined);
   const [homePos, setHomePos] = React.useState<TeamPositions>({});
   const [awayPos, setAwayPos] = React.useState<TeamPositions>({});
-  // Keep live refs of positions so we can save latest on pointerup
+  // live refs
   const homePosRef = React.useRef<TeamPositions>({});
   const awayPosRef = React.useRef<TeamPositions>({});
   React.useEffect(() => { homePosRef.current = homePos; }, [homePos]);
@@ -212,16 +251,15 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   }, []);
 
   const isCaptain = React.useMemo(() => {
-    const uid = String(user?.id || '');
-    return isHomeTeam ? uid && uid === homeCaptainId : uid && uid === awayCaptainId;
-  }, [user?.id, isHomeTeam, homeCaptainId, awayCaptainId]);
+    return isHomeTeam ? (meId && meId === homeCaptainId) : (meId && meId === awayCaptainId);
+  }, [meId, isHomeTeam, homeCaptainId, awayCaptainId]);
 
-  // Any captain (home or away) can drag any player (including guests)
-  const canDrag = React.useMemo(() => {
-    const uid = String(user?.id || '');
-    if (!uid) return false;
-    return uid === homeCaptainId || uid === awayCaptainId;
-  }, [user?.id, homeCaptainId, awayCaptainId]);
+  // team-side specific drag permission (league admin or captain)
+  const canDragTeam = React.useCallback((t: 'home'|'away') => {
+    if (isLeagueAdmin) return true;
+    if (!meId) return false;
+    return t === 'home' ? meId === homeCaptainId : meId === awayCaptainId;
+  }, [isLeagueAdmin, meId, homeCaptainId, awayCaptainId]);
 
   // Auto layout by roles and team size (home=top half, away=bottom half)
   const autoLayout = React.useCallback((players: Player[], teamSide: 'home'|'away'): TeamPositions => {
@@ -261,7 +299,6 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           body: JSON.stringify({ team: teamSide, positions })
         });
         if (!res.ok) {
-          // surface in dev tools without changing UI
           console.warn('Debounced save failed', res.status, await res.text());
         }
       } catch (e) { console.warn('Debounced save error', e); }
@@ -285,7 +322,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     } catch (e) { console.warn('Immediate save error', e); }
   }, [leagueId, matchId, token]);
 
-  // Load data + saved positions
+  // Load data + saved positions (+ removed)
   React.useEffect(() => {
     let active = true;
     const fetchTeams = async () => {
@@ -310,14 +347,20 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         setHomeCaptainId(m.homeCaptainId);
         setAwayCaptainId(m.awayCaptainId);
 
+        setRemoved({
+          home: (m.removed?.home || []).map(String),
+          away: (m.removed?.away || []).map(String),
+        });
+
         const serverHome = m.positions?.home || {};
         const serverAway = m.positions?.away || {};
         setHomePos(Object.keys(serverHome).length ? serverHome : autoLayout(home, 'home'));
         setAwayPos(Object.keys(serverAway).length ? serverAway : autoLayout(away, 'away'));
-      } catch {
-        // fallback for demo
-        setHomePos(prev => (Object.keys(prev).length ? prev : autoLayout(demoHome, 'home')));
-        setAwayPos(prev => (Object.keys(prev).length ? prev : autoLayout(demoAway, 'away')));
+      } catch (e) {
+        console.warn('team-view load failed', e);
+        // keep players empty instead of showing demo
+        setHomePos(prev => (Object.keys(prev).length ? prev : {}));
+        setAwayPos(prev => (Object.keys(prev).length ? prev : {}));
       } finally {
         if (active) setDataLoaded(true);
       }
@@ -326,12 +369,74 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     return () => { active = false; };
   }, [leagueId, matchId, token, autoLayout]);
 
-  // Drag helpers
-  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  // Fetch league adminId once (so we can check league administrator)
+  React.useEffect(() => {
+    if (!leagueId || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        // Try common shapes
+        const adminId = String(
+          (data?.league?.adminId ??
+           data?.adminId ??
+           data?.ownerId ??
+           data?.createdById ??
+           data?.owner?.id ??
+           '') || ''
+        );
+        if (!cancelled) setLeagueAdminId(adminId);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [leagueId, token]);
 
-  // Allow dragging anywhere on the pitch image (within image bounds)
-  const onDrag = (e: React.PointerEvent, pid: string, teamSide: 'home'|'away') => {
-    if (!canDrag || !pitchRef.current) return;
+  // Build removed sets from server state
+  const removedHomeSet = useMemo(
+    () => new Set((removed.home || []).map(String)),
+    [removed.home]
+  );
+  const removedAwaySet = useMemo(
+    () => new Set((removed.away || []).map(String)),
+    [removed.away]
+  );
+
+  const isCaptainOf = (t: 'home'|'away') => {
+    const cap = t === 'home' ? String(homeCaptainId || '') : String(awayCaptainId || '');
+    return cap !== '' && cap === meId;
+  };
+
+  // clamp helpers (0..1 pitch coordinates)
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, Number(n) || 0));
+  const normalizeX = (x: number) => clamp01(x);
+  const normalizeY = (y: number) => clamp01(y);
+
+  // Drop handler (not used by pointer drag, but kept for future)
+  const onDrop = async (t: 'home'|'away', uid: string, pt: { x: number; y: number }) => {
+    try {
+      await fetch(`/leagues/${leagueId}/matches/${matchId}/layout`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          team: t,
+          positions: { [uid]: { x: normalizeX(pt.x), y: normalizeY(pt.y) } }
+        })
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  // Pointer drag within pitch bounds and team half
+  const onDrag = (e: PointerEvent | React.PointerEvent, pid: string, teamSide: 'home'|'away') => {
+    if (!canDragTeam(teamSide) || !pitchRef.current) return;
     const rect = pitchRef.current.getBoundingClientRect();
 
     // Keep the icon fully inside the visible pitch image
@@ -341,14 +446,19 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const marginY = (SHIRT_H / 2) / rect.height;
 
     const bounds = getPitchBoundsNorm(rect);
+    const midY = (bounds.top + bounds.bottom) / 2;
 
     const minX = bounds.left + marginX;
     const maxX = bounds.right - marginX;
-    const minY = bounds.top + marginY;
-    const maxY = bounds.bottom - marginY;
 
-    let x = clamp01((e.clientX - rect.left) / rect.width);
-    let y = clamp01((e.clientY - rect.top) / rect.height);
+    // limit Y to the team’s half
+    const halfTop = teamSide === 'home' ? bounds.top : midY;
+    const halfBottom = teamSide === 'home' ? midY : bounds.bottom;
+    const minY = halfTop + marginY;
+    const maxY = halfBottom - marginY;
+
+    let x = clamp01(((e as any).clientX - rect.left) / rect.width);
+    let y = clamp01(((e as any).clientY - rect.top) / rect.height);
 
     x = Math.max(minX, Math.min(maxX, x));
     y = Math.max(minY, Math.min(maxY, y));
@@ -369,8 +479,12 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   };
 
   const startDrag = (pid: string, teamSide: 'home'|'away') => (e: React.PointerEvent) => {
-    if (!canDrag) return;
-    const move = (ev: PointerEvent) => onDrag(ev as any, pid, teamSide);
+    // block dragging if removed
+    const removedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
+    if (removedHere) return;
+    if (!canDragTeam(teamSide)) return;
+
+    const move = (ev: PointerEvent) => onDrag(ev, pid, teamSide);
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
@@ -422,25 +536,164 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     return map;
   }, [selectedGuests, teamSide]);
 
+  // Context Menu
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<null | { id: string; name: string; team: 'home'|'away'; isRemoved: boolean }>(null);
+  const [switchMode, setSwitchMode] = useState<null | { team: 'home'|'away'; aId: string }>(null);
+
+  const openMenu = (e: React.MouseEvent, t: 'home'|'away', id: string, name: string) => {
+    e.preventDefault();
+    const pid = String(id); // ensure string
+    const isRemoved = t === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
+    setMenuTarget({ id: pid, name, team: t, isRemoved });
+    setMenuAnchor(e.currentTarget as HTMLElement);
+  };
+  const closeMenu = () => { setMenuAnchor(null); setMenuTarget(null); };
+
+  // Actions
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
+  const handleRemove = async () => {
+    if (!leagueId || !matchId || !token || !menuTarget) return;
+    const { id, team } = menuTarget;
+    try {
+      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team, playerId: id }) // include team
+      });
+      if (res.ok) {
+        setRemoved(prev => ({
+          ...prev,
+          [team]: Array.from(new Set([...(prev[team] || []), String(id)]))
+        }) as any);
+      } else {
+        console.warn('Remove failed', await res.text());
+      }
+    } catch (e) { console.warn('Remove error', e); }
+    closeMenu();
+  };
+
+  const handleReplace = async () => {
+    if (!leagueId || !matchId || !token || !menuTarget) return;
+    const removedId = menuTarget.id;
+    const team = menuTarget.team; // include team
+    const replacementId = window.prompt('Enter replacement user ID (same league, not already on a team):');
+    if (!replacementId) return;
+    try {
+      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/replace`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team, removedId, replacementId })
+      });
+      if (res.ok) {
+        const r = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/team-view`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const p: TeamViewPayload = await r.json();
+        if (p?.success && p.match) {
+          const m = p.match;
+          setHomePlayers(arrangePlayers(m.homeTeam || [], m.homeCaptainId));
+          setAwayPlayers(arrangePlayers(m.awayTeam || [], m.awayCaptainId));
+          setGuests(m.guests || []);
+          setHomeCaptainId(m.homeCaptainId);
+          setAwayCaptainId(m.awayCaptainId);
+          setRemoved({
+            home: (m.removed?.home || []).map(String),
+            away: (m.removed?.away || []).map(String),
+          });
+          setHomePos(m.positions?.home || {});
+          setAwayPos(m.positions?.away || {});
+        }
+      } else {
+        console.warn('Replace failed', await res.text());
+      }
+    } catch (e) { console.warn('Replace error', e); }
+    closeMenu();
+  };
+
+  const handleStartSwitch = () => {
+    if (!menuTarget) return;
+    setSwitchMode({ team: menuTarget.team, aId: menuTarget.id });
+    closeMenu();
+    alert('Switch mode: click another player on the same team to swap positions.');
+  };
+
+  const tryCompleteSwitch = async (team: 'home'|'away', bId: string) => {
+    if (!switchMode || switchMode.team !== team || switchMode.aId === bId) return;
+    try {
+      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team, aId: switchMode.aId, bId })
+      });
+      if (!res.ok) {
+        console.warn('Switch failed', await res.text());
+      } else {
+        // Swap locally for snappy UX
+        const src = team === 'home' ? homePosRef.current : awayPosRef.current;
+        const pA = src[switchMode.aId];
+        const pB = src[bId];
+        if (pA || pB) {
+          const next = { ...src };
+          next[switchMode.aId] = pB || pA;
+          next[bId] = pA || pB;
+          if (team === 'home') setHomePos(next); else setAwayPos(next);
+        }
+      }
+    } catch (e) { console.warn('Switch error', e); }
+    setSwitchMode(null);
+  };
+
+  const handleMakeCaptain = async () => {
+    if (!menuTarget) return;
+    try {
+      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/make-captain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team: menuTarget.team, userId: menuTarget.id })
+      });
+      if (res.ok) {
+        if (menuTarget.team === 'home') setHomeCaptainId(menuTarget.id);
+        else setAwayCaptainId(menuTarget.id);
+      } else {
+        console.warn('Make captain failed', await res.text());
+      }
+    } catch (e) { console.warn('Make captain error', e); }
+    closeMenu();
+  };
+
   const ShirtDot = ({ player }: { player: Player }) => {
     const pid = String(player.id || player.name);
     const pos = positions[pid];
     if (!pos) return null;
+    const isRemovedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
     const shirtLabel = player.position === 'FW' ? 'CF' : player.position;
+    const onClick = (e: React.MouseEvent) => {
+      if (switchMode) {
+        tryCompleteSwitch(teamSide, pid);
+      } else {
+        openMenu(e, teamSide, pid, player.name);
+      }
+    };
+    const isCaptainNow = (teamSide === 'home' ? homeCaptainId : awayCaptainId) === pid; // <-- use live captain ids
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
+        onClick={onClick}
+        onContextMenu={onClick}
         sx={{
           position: 'absolute',
           left: `${pos.x * 100}%`,
           top: `${pos.y * 100}%`,
           transform: 'translate(-50%, -50%)',
-          cursor: canDrag ? 'grab' : 'default',
+          cursor: canDragTeam(teamSide) && !isRemovedHere ? 'grab' : 'pointer',
           touchAction: 'none',
+          opacity: isRemovedHere ? 0.75 : 1,
+          filter: isRemovedHere ? 'grayscale(0.85)' : 'none',
         }}
       >
         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
-          {/* The icon itself; clamping in onDrag ensures it stays inside the visible pitch */}
           <img src={Shirt.src} alt="shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'opacity(0.85)' }} />
           <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
@@ -450,7 +703,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         </Box>
         <Box sx={{ height: 6 }} />
         <Typography sx={{ fontSize: 10, fontWeight: 600, color: textColor, textAlign: 'center' }}>
-          {player.name} {player.isCaptain ? '• C' : ''}
+          {player.name} {isCaptainNow ? '• C' : ''}   {/* // <-- change here */}
         </Typography>
         {matchStatus === 'RESULT_PUBLISHED' && typeof player.xp === 'number' && (
           <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#0B6623', textAlign: 'center' }}>
@@ -461,21 +714,23 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     );
   };
 
-  // Guest shirt (draggable by captain; persisted in same positions map using guest id)
-  const GuestDot = ({ guestId, name, number }: { guestId: string; name: string; number?: string }) => {
+  const GuestDot = ({ guestId, name }: { guestId: string; name: string; number?: string }) => {
     const pid = String(guestId);
     const pos = positions[pid] || guestRowPositions[pid];
     if (!pos) return null;
-    const shirtLabel = 'CF';
+    const onClick = (e: React.MouseEvent) => {
+      if (switchMode) tryCompleteSwitch(teamSide, pid);
+    };
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
+        onClick={onClick}
         sx={{
           position: 'absolute',
           left: `${pos.x * 100}%`,
           top: `${pos.y * 100}%`,
           transform: 'translate(-50%, -50%)',
-          cursor: canDrag ? 'grab' : 'default',
+          cursor: canDragTeam(teamSide) ? 'grab' : 'pointer',
           touchAction: 'none',
         }}
       >
@@ -483,7 +738,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <img src={Shirt.src} alt="guest-shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'opacity(0.85)' }} />
           <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
-              {shirtLabel}
+              CF
             </Typography>
           </Box>
         </Box>
@@ -570,13 +825,54 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                     key={`guest-${g.id}`}
                     guestId={String(g.id)}
                     name={`${g.firstName} ${g.lastName}`.trim()}
-                    number={(g.shirtNumber || '00').toString().padStart(2, '0')}
                   />
                 ))}
               </>
             )}
           </Box>
         </Paper>
+
+        {/* Context Menu */}
+        <Menu open={Boolean(menuAnchor)} anchorEl={menuAnchor} onClose={closeMenu}>
+          <MenuItem
+            onClick={handleRemove}
+            disabled={
+              !menuTarget ||
+              !(isLeagueAdmin || isCaptainOf(menuTarget.team) || String(menuTarget.id) === String(meId))
+            }
+          >
+            <ListItemIcon><DeleteOutlineIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Remove</ListItemText>
+          </MenuItem>
+
+          <MenuItem
+            onClick={handleReplace}
+            disabled={
+              !menuTarget ||
+              !menuTarget.isRemoved ||
+              !(isLeagueAdmin || isCaptainOf(menuTarget.team))
+            }
+          >
+            <ListItemIcon><PublishedWithChangesIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Replace</ListItemText>
+          </MenuItem>
+
+          <MenuItem
+            onClick={handleStartSwitch}
+            disabled={!menuTarget || !(isLeagueAdmin || isCaptainOf(menuTarget.team))}
+          >
+            <ListItemIcon><SwapHorizIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Switch</ListItemText>
+          </MenuItem>
+
+          <MenuItem
+            onClick={handleMakeCaptain}
+            disabled={!menuTarget || !(isLeagueAdmin || isCaptainOf(menuTarget.team))} // <= allow captain
+          >
+            <ListItemIcon><FlagIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Make Captain</ListItemText>
+          </MenuItem>
+        </Menu>
 
         <Box sx={{ height: 12 }} />
 
