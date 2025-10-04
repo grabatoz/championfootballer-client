@@ -51,6 +51,7 @@ import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import ShirtImg from '@/Components/images/shirtimg.png'
 import homeImg from '@/Components/images/matches.png'
 import awayImg from '@/Components/images/2nd champion icon football.png'
+import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
@@ -408,6 +409,9 @@ export default function LeagueDetailPage() {
     });
     const [isSubmittingStats, setIsSubmittingStats] = React.useState(false);
 
+
+    const [viewTeamOpen, setViewTeamOpen] = React.useState(false);
+    const [viewTeamMatch, setViewTeamMatch] = React.useState<{ leagueId: string; matchId: string } | null>(null);
     // Leagues dropdown state
     const [allLeagues, setAllLeagues] = useState<League[]>([]);
     const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
@@ -468,7 +472,7 @@ export default function LeagueDetailPage() {
         }
     }, [token]);
 
-        const handlePermanentDelete = async (match: Match) => {
+    const handlePermanentDelete = async (match: Match) => {
         // if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
         //     return;
         // }
@@ -508,7 +512,7 @@ export default function LeagueDetailPage() {
             toast.error('Failed to permanently delete match');
         }
     };
-    
+
     const tryHardDeleteFromDialog = useCallback(async () => {
         if (!archivedActionMatch) return;
 
@@ -2765,18 +2769,18 @@ export default function LeagueDetailPage() {
                                                                             <Edit size={20} />
                                                                         </IconButton>
                                                                     </Tooltip>
-                                                                   <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
+                                                                    <Tooltip title="Delete / Archive">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleRequestDeleteMatch(match);
+                                                                            }}
+                                                                            sx={{ color: '#ffb4b4' }}
+                                                                        >
+                                                                            <Trash2 size={20} />
+                                                                        </IconButton>
+                                                                    </Tooltip>
                                                                 </Box>
                                                             )}
 
@@ -3224,9 +3228,9 @@ export default function LeagueDetailPage() {
                                                                         backgroundColor: '#b91c1c',
                                                                         color: 'white',
                                                                         fontWeight: 'bold',
-                                                                        textAlign:'center',
-                                                                        justifyContent:'center',
-                                                                        ml:'25%'
+                                                                        textAlign: 'center',
+                                                                        justifyContent: 'center',
+                                                                        ml: '25%'
                                                                     }}
                                                                 />
                                                             )}
@@ -3238,13 +3242,13 @@ export default function LeagueDetailPage() {
                                                                     size="small"
                                                                     sx={{
                                                                         // position: {sm: 'static', xs: 'static', md: 'absolute'},
-                                                                        position:'absolute',
+                                                                        position: 'absolute',
                                                                         top: 8,
                                                                         left: 8,
                                                                         backgroundColor: '#F59E0B', // amber
                                                                         color: 'black',
                                                                         fontWeight: 'bold',
-                                                                        ml:'25%',
+                                                                        ml: '25%',
                                                                     }}
                                                                 />
                                                             )}
@@ -3401,12 +3405,12 @@ export default function LeagueDetailPage() {
                                                                         }}>
                                                                             {formatMatchDate(match.date)}
                                                                         </Typography>
-                                                                        <Typography variant="body2" sx={{
+                                                                        {/* <Typography variant="body2" sx={{
                                                                             color: 'white',
                                                                             fontSize: '0.65rem'
                                                                         }}>
                                                                             Pending confirmation
-                                                                        </Typography>
+                                                                        </Typography> */}
                                                                         <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
                                                                     </Box>
                                                                 </Box>
@@ -3520,6 +3524,30 @@ export default function LeagueDetailPage() {
                                                                         <span>
                                                                             <Button
                                                                                 size="small"
+                                                                                onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId, matchId: match.id }); setViewTeamOpen(true); }}
+                                                                                sx={{
+                                                                                    backgroundColor: '#FA5836',
+                                                                                    color: 'white',
+                                                                                    fontSize: '0.75rem',
+                                                                                    py: 0.5,
+                                                                                    px: 1,
+                                                                                    borderRadius: 1,
+                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                    '&:active': { transform: 'translateY(0)' },
+                                                                                }}
+                                                                            >
+                                                                                view team
+                                                                            </Button>
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                </Box>
+                                                                {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                        <span>
+                                                                            <Button
+                                                                                size="small"
                                                                                 sx={{
                                                                                     backgroundColor: '#FA5836',
                                                                                     color: 'white',
@@ -3543,7 +3571,7 @@ export default function LeagueDetailPage() {
                                                                             </Button>
                                                                         </span>
                                                                     </Tooltip>
-                                                                </Box>
+                                                                </Box> */}
                                                             </Box>
                                                             {/* // ...existing code... */}
 
@@ -3974,7 +4002,7 @@ export default function LeagueDetailPage() {
                             </Button>
                         </span>
                     </Tooltip> */}
-                       <Tooltip
+                    <Tooltip
                         title={
                             archivedActionHasStats === true
                                 ? 'Match has player stats. Permanent delete is disabled.'
@@ -4003,6 +4031,15 @@ export default function LeagueDetailPage() {
                 </DialogActions>
             </Dialog>
             {/* // ...existing code... */}
+            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Team Preview</DialogTitle>
+                <DialogContent dividers sx={{ p: 0 }}>
+                    <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setViewTeamOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
