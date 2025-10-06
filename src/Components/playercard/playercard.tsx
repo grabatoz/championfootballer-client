@@ -165,8 +165,14 @@ const PlayerCard = ({
   const [imgUrl, setImgUrl] = useState<string | null>(profileImage ?? null);
   // const [imgVersion, setImgVersion] = useState(0);
   const { token } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement | null>(null); // NEW
-  const [imgVersion, setImgVersion] = useState(0);            // NEW: cache-bust counter
+  const fileInputRef = useRef<HTMLInputElement | null>(null);     // gallery picker
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);   // (kept for fallback if needed)
+  const [imgVersion, setImgVersion] = useState(0);                // NEW: cache-bust counter
+
+  // NEW: in-app camera state
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Helper to build display src with cache-busting
   // const withVersion = (url?: string | null, v?: number) =>
@@ -210,12 +216,12 @@ const PlayerCard = ({
   }, [profileImage]);
 
   // Auto-click the file input when the image modal opens
-  useEffect(() => {
-    if (imgModalOpen) {
-      // small delay to ensure the input is mounted
-      setTimeout(() => fileInputRef.current?.click(), 150);
-    }
-  }, [imgModalOpen]);
+  // useEffect(() => {
+  //   if (imgModalOpen) {
+  //     // small delay to ensure the input is mounted
+  //     setTimeout(() => fileInputRef.current?.click(), 150);
+  //   }
+  // }, [imgModalOpen]);
 
   // Click avatar to open picker directly
   const handleAvatarClick = () => {
@@ -261,6 +267,65 @@ const PlayerCard = ({
   const handleUpdateOnlyImage = () => {
     setEditOptionsOpen(false);
     setImgModalOpen(true);
+  };
+
+  const openGalleryPicker = () => fileInputRef.current?.click();
+
+  // NEW: open camera via getUserMedia
+  const handleOpenCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      // attach stream to video
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error('Camera is unavailable or permission denied.');
+    }
+  };
+
+  const stopStream = () => {
+    try {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    } catch {}
+    streamRef.current = null;
+  };
+
+  const handleCloseCamera = () => {
+    stopStream();
+    setCameraOpen(false);
+  };
+
+  const handleTakePhoto = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    const w = video.videoWidth || 720;
+    const h = video.videoHeight || 720;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, w, h);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], 'camera.jpg', { type: 'image/jpeg' });
+      const blobUrl = URL.createObjectURL(blob);
+      setImageFile(file);
+      setImagePreview(blobUrl);
+      setImgUrl(blobUrl);
+      setImgVersion(v => v + 1);
+      handleCloseCamera();
+    }, 'image/jpeg', 0.92);
   };
 
   const handleProfileUpdate = () => {
@@ -629,52 +694,70 @@ const PlayerCard = ({
             Update Profile Image
           </Typography>
 
-          {/* Guidance message (prompt) */}
           <Typography sx={{ mb: 2, fontSize: 14, color: 'text.secondary', textAlign: 'center' }}>
-            Please use a high‑quality, waist‑up photo with a white or clear background. Center your face. 
-            On mobile, you can take a new photo now.
+            Choose how you want to add your photo.
           </Typography>
-          
-          <Box sx={{ mb: 3 }}>
-            <input
-              ref={fileInputRef}               // NEW
-              type="file"
-              accept="image/*"
-              capture="user"                   // NEW: hint to open front camera on mobile
-              onChange={handleFileChange}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '2px dashed #1976d2',
-                borderRadius: '8px',
-                backgroundColor: '#f5f5f5'
-              }}
-            />
+
+          {/* Option buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenCamera}        // CHANGED: open in-app camera
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            >
+              Take a new photo
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={openGalleryPicker}
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            >
+              Upload a new photo
+            </Button>
           </Box>
-          
+
+          {/* Hidden inputs: camera (fallback) and gallery */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+
           {imagePreview && (
             <Box sx={{ mb: 3, textAlign: 'center' }}>
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
-                style={{ 
-                  width: 120, 
-                  height: 120, 
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{
+                  width: 120,
+                  height: 120,
                   objectFit: 'cover',
                   borderRadius: '8px',
                   border: '2px solid #1976d2'
-                }} 
+                }}
               />
             </Box>
           )}
-          
+
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-            <Button 
-              onClick={handleUploadImage} 
+            <Button
+              onClick={handleUploadImage}
               disabled={uploading || !imageFile}
               variant="contained"
               color="primary"
-              sx={{ 
+              sx={{
                 px: 3,
                 py: 1.5,
                 fontSize: '1rem',
@@ -684,11 +767,11 @@ const PlayerCard = ({
             >
               {uploading ? 'Uploading...' : 'Upload'}
             </Button>
-            <Button 
+            <Button
               onClick={handleModalClose}
               variant="outlined"
               color="primary"
-              sx={{ 
+              sx={{
                 px: 3,
                 py: 1.5,
                 fontSize: '1rem',
@@ -697,6 +780,46 @@ const PlayerCard = ({
               }}
             >
               Cancel
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* NEW: In-app Camera Modal */}
+      <Modal open={cameraOpen} onClose={handleCloseCamera}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 2,
+            borderRadius: 2,
+            width: 360,
+            maxWidth: '90vw',
+            border: '2px solid #1976d2',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 1.5, textAlign: 'center', color: '#1976d2' }}>
+            Camera
+          </Typography>
+          <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', bgcolor: '#000', mb: 2 }}>
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button onClick={handleTakePhoto} variant="contained" color="primary" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+              Capture
+            </Button>
+            <Button onClick={handleCloseCamera} variant="outlined" color="primary" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+              Close
             </Button>
           </Box>
         </Box>
@@ -888,8 +1011,9 @@ export default PlayerCard;
 //   const [imgUrl, setImgUrl] = useState<string | null>(profileImage ?? null);
 //   // const [imgVersion, setImgVersion] = useState(0);
 //   const { token } = useAuth();
-//   const fileInputRef = useRef<HTMLInputElement | null>(null); // NEW
-//   const [imgVersion, setImgVersion] = useState(0);            // NEW: cache-bust counter
+//   const fileInputRef = useRef<HTMLInputElement | null>(null);     // gallery picker
+//   const cameraInputRef = useRef<HTMLInputElement | null>(null);   // camera picker
+//   const [imgVersion, setImgVersion] = useState(0);                // NEW: cache-bust counter
 
 //   // Helper to build display src with cache-busting
 //   const withVersion = (url?: string | null, v?: number) =>
@@ -933,12 +1057,12 @@ export default PlayerCard;
 //   }, [profileImage]);
 
 //   // Auto-click the file input when the image modal opens
-//   useEffect(() => {
-//     if (imgModalOpen) {
-//       // small delay to ensure the input is mounted
-//       setTimeout(() => fileInputRef.current?.click(), 150);
-//     }
-//   }, [imgModalOpen]);
+//   // useEffect(() => {
+//   //   if (imgModalOpen) {
+//   //     // small delay to ensure the input is mounted
+//   //     setTimeout(() => fileInputRef.current?.click(), 150);
+//   //   }
+//   // }, [imgModalOpen]);
 
 //   // Click avatar to open picker directly
 //   const handleAvatarClick = () => {
@@ -981,252 +1105,255 @@ export default PlayerCard;
 
 //   const handleEditOptionsClose = () => setEditOptionsOpen(false);
 
-//   const handleUpdateOnlyImage = () => {
-//     setEditOptionsOpen(false);
-//     setImgModalOpen(true);
-//   };
+  // const handleUpdateOnlyImage = () => {
+  //   setEditOptionsOpen(false);
+  //   setImgModalOpen(true);
+  // };
+
+  // const openGalleryPicker = () => fileInputRef.current?.click();
+  // const openCameraPicker = () => cameraInputRef.current?.click();
 
 //   const handleProfileUpdate = () => {
 //     window.location.href = '/profile';
 //   };
 
-//   const handleModalClose = () => {
-//     setImgModalOpen(false);
-//     setImageFile(null);
-//     if (imagePreview) {
-//       URL.revokeObjectURL(imagePreview);       // NEW: cleanup
-//     }
-//     setImagePreview(null);
-//   };
+  // const handleModalClose = () => {
+  //   setImgModalOpen(false);
+  //   setImageFile(null);
+  //   if (imagePreview) {
+  //     URL.revokeObjectURL(imagePreview);       // NEW: cleanup
+  //   }
+  //   setImagePreview(null);
+  // };
 
-//   const handleUploadImage = async () => {
-//     if (!imageFile || !token) return;
-//     setUploading(true);
-//     const formData = new FormData();
-//     formData.append('profilePicture', imageFile);
+  // const handleUploadImage = async () => {
+  //   if (!imageFile || !token) return;
+  //   setUploading(true);
+  //   const formData = new FormData();
+  //   formData.append('profilePicture', imageFile);
 
-//     try {
-//       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
-//         method: 'POST',
-//         headers: { Authorization: `Bearer ${token}` },
-//         body: formData,
-//         cache: 'no-store',
-//       });
-//       const data = await res.json();
-//       if (data.success) {
-//         if (data.user) cacheManager.updatePlayersCache(data.user);
+    // try {
+    //   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
+    //     method: 'POST',
+    //     headers: { Authorization: `Bearer ${token}` },
+    //     body: formData,
+    //     cache: 'no-store',
+    //   });
+    //   const data = await res.json();
+    //   if (data.success) {
+    //     if (data.user) cacheManager.updatePlayersCache(data.user);
 
-//         const newUrl: string | undefined = data.user?.profilePicture;
-//         if (newUrl) {
-//           setImgUrl(newUrl);
-//           // persist so refresh uses the newest Cloudinary path
-//           if (typeof window !== 'undefined') {
-//             localStorage.setItem('avatar_url', newUrl);
-//           }
-//         }
+        // const newUrl: string | undefined = data.user?.profilePicture;
+        // if (newUrl) {
+        //   setImgUrl(newUrl);
+        //   // persist so refresh uses the newest Cloudinary path
+        //   if (typeof window !== 'undefined') {
+        //     localStorage.setItem('avatar_url', newUrl);
+        //   }
+        // }
 
-//         const bump = Number(data.cacheBuster) ||
-//           (typeof newUrl === 'string' ? Number(newUrl.match(/\/v(\d+)\//)?.[1] ?? 0) : 0) ||
-//           Date.now();
-//         setImgVersion(Number(bump));
-//         if (typeof window !== 'undefined') {
-//           localStorage.setItem('avatar_v', String(bump));
-//         }
+        // const bump = Number(data.cacheBuster) ||
+        //   (typeof newUrl === 'string' ? Number(newUrl.match(/\/v(\d+)\//)?.[1] ?? 0) : 0) ||
+        //   Date.now();
+        // setImgVersion(Number(bump));
+        // if (typeof window !== 'undefined') {
+        //   localStorage.setItem('avatar_v', String(bump));
+        // }
 
-//         toast.success('Profile picture updated!');
-//         setImgModalOpen(false);
-//       } else {
-//         toast.error('Failed to upload image');
-//       }
-//     } catch (err) {
-//       console.error('Error uploading image:', err);
-//       toast.error('Failed to upload image');
-//     } finally {
-//       setUploading(false);
-//     }
-//   };
+  //       toast.success('Profile picture updated!');
+  //       setImgModalOpen(false);
+  //     } else {
+  //       toast.error('Failed to upload image');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error uploading image:', err);
+  //     toast.error('Failed to upload image');
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
 
-//   // Build a safe src for <Image /> that is never undefined
-//   const displaySrc: string | StaticImageData = imgUrl
-//     ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
-//     : imgicon;
+  // Build a safe src for <Image /> that is never undefined
+  // const displaySrc: string | StaticImageData = imgUrl
+  //   ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
+  //   : imgicon;
 
-//   const avgSkill = calculateAverageSkill(stats);
+  // const avgSkill = calculateAverageSkill(stats);
 
-//   return (
-//     <Box
-//       sx={{
-//         width: width || 260,
-//         height: height || 380,
-//         position: 'relative',
-//         fontWeight: 'bold',
-//         color: '#fff',
-//       }}
-//     >
-//       {/* Background Image */}
-//       <Image
-//         src={vectorImg}
-//         alt="Card Background"
-//         layout="fill"
-//         objectFit="contain"
-//         className="z-0"
-//       />
+  // return (
+  //   <Box
+  //     sx={{
+  //       width: width || 260,
+  //       height: height || 380,
+  //       position: 'relative',
+  //       fontWeight: 'bold',
+  //       color: '#fff',
+  //     }}
+  //   >
+  //     {/* Background Image */}
+  //     <Image
+  //       src={vectorImg}
+  //       alt="Card Background"
+  //       layout="fill"
+  //       objectFit="contain"
+  //       className="z-0"
+  //     />
 
-//       {/* Overlay Content */}
-//       <Box
-//         sx={{
-//           position: 'absolute',
-//           inset: 0,
-//           zIndex: 10,
-//           px: 2,
-//           py: 2,
-//           textAlign: 'center',
-//           display: 'flex',
-//           flexDirection: 'column',
-//           color: '#fff',
-//           // mt:{md:0}
-//         }}
-//       >
-//         {/* Top: Shirt Number */}
-//         <Box sx={{ mt: 1 }}>
-//           <Typography fontWeight={'bold'} fontSize="18px" color={'#fff'}>
-//             <span className='font-bold text-[22px]'> {points} xp </span>
-//           </Typography>
-//         </Box>
+      // {/* Overlay Content */}
+      // <Box
+      //   sx={{
+      //     position: 'absolute',
+      //     inset: 0,
+      //     zIndex: 10,
+      //     px: 2,
+      //     py: 2,
+      //     textAlign: 'center',
+      //     display: 'flex',
+      //     flexDirection: 'column',
+      //     color: '#fff',
+      //     // mt:{md:0}
+      //   }}
+      // >
+      //   {/* Top: Shirt Number */}
+      //   <Box sx={{ mt: 1 }}>
+      //     <Typography fontWeight={'bold'} fontSize="18px" color={'#fff'}>
+      //       <span className='font-bold text-[22px]'> {points} xp </span>
+      //     </Typography>
+      //   </Box>
 
-//         <Box
-//           display="flex"
-//           justifyContent="space-between"
-//           alignItems="flex-start"
-//           px={2}
-//          sx={{mt:{xs:2,sm:2,md:2}}} 
-//         >
-//           {/* Left: Number, XXX, Foot */}
-//           <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
-//             <Image
-//               src={Title}
-//               alt="Shoe"
-//               width={22}
-//               height={10}
-//               style={{ marginLeft: '7px' }}
-//             />
-//             <Divider sx={{ bgcolor: '#fff'}}/>
-//             <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>
-//               {getPositionShortForm(position)}
-//             </Typography>
-//             <Divider sx={{ bgcolor: '#fff'}}/>
-//             <Box
-//               display="flex"
-//               alignItems="center"
-//               gap={0.5}
-//               mt={0.5}
-//             >
-//               <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
-//                 <Image
-//                   src={Foot}
-//                   alt="Shoe"
-//                   width={22}
-//                   height={10}
-//                 />
-//               </Box>
-//               <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
-//             </Box>
-//           </Box>
+        // <Box
+        //   display="flex"
+        //   justifyContent="space-between"
+        //   alignItems="flex-start"
+        //   px={2}
+        //  sx={{mt:{xs:2,sm:2,md:2}}} 
+        // >
+        //   {/* Left: Number, XXX, Foot */}
+        //   <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
+        //     <Image
+        //       src={Title}
+        //       alt="Shoe"
+        //       width={22}
+        //       height={10}
+        //       style={{ marginLeft: '7px' }}
+        //     />
+        //     <Divider sx={{ bgcolor: '#fff'}}/>
+        //     <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>
+        //       {getPositionShortForm(position)}
+        //     </Typography>
+        //     <Divider sx={{ bgcolor: '#fff'}}/>
+        //     <Box
+        //       display="flex"
+        //       alignItems="center"
+        //       gap={0.5}
+        //       mt={0.5}
+        //     >
+        //       <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
+        //         <Image
+        //           src={Foot}
+        //           alt="Shoe"
+        //           width={22}
+        //           height={10}
+        //         />
+        //       </Box>
+        //       <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
+        //     </Box>
+        //   </Box>
 
-//           {/* Right: Avatar with edit icon */}
-//           <Box
-//             sx={{
-//               position: 'relative',
-//               width: 100,
-//               height: 100,
-//               border: `2px solid #fff`,
-//               borderRadius: '10px',
-//               display: 'flex',
-//               alignItems: 'center',
-//               justifyContent: 'center',
-//               cursor: 'pointer', // NEW
-//             }}
-//             onClick={handleAvatarClick} // NEW
-//           >
-//             <div style={{ position: 'relative', display: 'inline-block' }}>
-//               {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}
-//               <Avatar
-//                 key={`avatar-${imgVersion}`}   // ensure rerender without undefined
-//                 variant="square"
-//                 sx={{
-//                   width: 85,
-//                   height: 85,
-//                   borderRadius: 0,
-//                   // overflow: 'hidden',
-//                   p: 0
-//                 }}
-//                 data-testid="profile-avatar"
-//               >
-//                 <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-//                   <Image
-//                     src={displaySrc}
-//                     alt="Profile"
-//                     fill
-//                     sizes="85px"
-//                     unoptimized // NEW: bypass Next image cache for avatars
-//                     priority={!imgUrl}
-//                     style={{ objectFit: 'cover', imageRendering: 'auto' }}
-//                   />
-//                 </Box>
-//               </Avatar>
+          // {/* Right: Avatar with edit icon */}
+          // <Box
+          //   sx={{
+          //     position: 'relative',
+          //     width: 100,
+          //     height: 100,
+          //     border: `2px solid #fff`,
+          //     borderRadius: '10px',
+          //     display: 'flex',
+          //     alignItems: 'center',
+          //     justifyContent: 'center',
+          //     cursor: 'pointer', // NEW
+          //   }}
+          //   onClick={handleAvatarClick} // NEW
+          // >
+          //   <div style={{ position: 'relative', display: 'inline-block' }}>
+          //     {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}
+          //     <Avatar
+          //       key={`avatar-${imgVersion}`}   // ensure rerender without undefined
+          //       variant="square"
+          //       sx={{
+          //         width: 85,
+          //         height: 85,
+          //         borderRadius: 0,
+          //         // overflow: 'hidden',
+          //         p: 0
+          //       }}
+          //       data-testid="profile-avatar"
+          //     >
+          //       <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+          //         <Image
+          //           src={displaySrc}
+          //           alt="Profile"
+          //           fill
+          //           sizes="85px"
+          //           unoptimized // NEW: bypass Next image cache for avatars
+          //           priority={!imgUrl}
+          //           style={{ objectFit: 'cover', imageRendering: 'auto' }}
+          //         />
+          //       </Box>
+          //     </Avatar>
 
-//               {/* Show edit icon only if not hidden */}
-//               {/* {!hideEditIcon && (
-//                 <IconButton
-//                   size="small"
-//                   onClick={handleEditIconClick}
-//                   style={{
-//                     position: 'absolute',
-//                     bottom: 4,
-//                     right: -8,
-//                     background: '#fff',
-//                     boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-//                     top: -13,
-//                     height: 20,
-//                     width: 20
-//                   }}
-//                   aria-label="edit profile image"
-//                 >
-//                   <EditIcon fontSize="small" />
-//                 </IconButton>
-//               )} */}
-//             </div>
-//           </Box>
+        //       {/* Show edit icon only if not hidden */}
+        //       {/* {!hideEditIcon && (
+        //         <IconButton
+        //           size="small"
+        //           onClick={handleEditIconClick}
+        //           style={{
+        //             position: 'absolute',
+        //             bottom: 4,
+        //             right: -8,
+        //             background: '#fff',
+        //             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        //             top: -13,
+        //             height: 20,
+        //             width: 20
+        //           }}
+        //           aria-label="edit profile image"
+        //         >
+        //           <EditIcon fontSize="small" />
+        //         </IconButton>
+        //       )} */}
+        //     </div>
+        //   </Box>
           
-//         </Box>
+        // </Box>
 
-//         {/* Name and Title (from static logic) */}
-//         <Box sx={{ mt: {xs:0,sm:0,md:2 }}}>
-//           <Typography
-//             fontSize="18px"
-//             fontWeight="bold"
-//             sx={{ textTransform: 'uppercase' }}
-//             color='#fff'
-//           >
-//               {avgSkill < 60 && (
-//                 <>
-//                 {avgSkill}
-//               </>
-//             )} {name}
-//           </Typography>
-//           <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
-//         </Box>
+        // {/* Name and Title (from static logic) */}
+        // <Box sx={{ mt: {xs:0,sm:0,md:2 }}}>
+        //   <Typography
+        //     fontSize="18px"
+        //     fontWeight="bold"
+        //     sx={{ textTransform: 'uppercase' }}
+        //     color='#fff'
+        //   >
+        //       {avgSkill < 60 && (
+        //         <>
+        //         {avgSkill}
+        //       </>
+        //     )} {name}
+        //   </Typography>
+        //   <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
+        // </Box>
 
-//         {/* Divider */}
-//         <Divider
-//           sx={{
-//             bgcolor: '#fff',
-//             width: '50%',
-//             mx: 'auto',
-//             my: 1,
-//             height: '1px',
-//           }}
-//         />
+        // {/* Divider */}
+        // <Divider
+        //   sx={{
+        //     bgcolor: '#fff',
+        //     width: '50%',
+        //     mx: 'auto',
+        //     my: 1,
+        //     height: '1px',
+        //   }}
+        // />
 
 //         {/* Stats */}
 //         <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
@@ -1352,52 +1479,70 @@ export default PlayerCard;
 //             Update Profile Image
 //           </Typography>
 
-//           {/* Guidance message (prompt) */}
 //           <Typography sx={{ mb: 2, fontSize: 14, color: 'text.secondary', textAlign: 'center' }}>
-//             Please use a high‑quality, waist‑up photo with a white or clear background. Center your face. 
-//             On mobile, you can take a new photo now.
+//             Choose how you want to add your photo.
 //           </Typography>
-          
-//           <Box sx={{ mb: 3 }}>
-//             <input
-//               ref={fileInputRef}               // NEW
-//               type="file"
-//               accept="image/*"
-//               capture="user"                   // NEW: hint to open front camera on mobile
-//               onChange={handleFileChange}
-//               style={{
-//                 width: '100%',
-//                 padding: '10px',
-//                 border: '2px dashed #1976d2',
-//                 borderRadius: '8px',
-//                 backgroundColor: '#f5f5f5'
-//               }}
-//             />
+
+//           {/* Option buttons */}
+//           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 2 }}>
+//             <Button
+//               variant="contained"
+//               color="primary"
+//               onClick={openCameraPicker}
+//               sx={{ textTransform: 'none', fontWeight: 'bold' }}
+//             >
+//               Take a new photo
+//             </Button>
+//             <Button
+//               variant="outlined"
+//               color="primary"
+//               onClick={openGalleryPicker}
+//               sx={{ textTransform: 'none', fontWeight: 'bold' }}
+//             >
+//               Upload a new photo
+//             </Button>
 //           </Box>
-          
+
+//           {/* Hidden inputs: camera and gallery */}
+//           <input
+//             ref={cameraInputRef}
+//             type="file"
+//             accept="image/*"
+//             capture="user"
+//             onChange={handleFileChange}
+//             style={{ display: 'none' }}
+//           />
+//           <input
+//             ref={fileInputRef}
+//             type="file"
+//             accept="image/*"
+//             onChange={handleFileChange}
+//             style={{ display: 'none' }}
+//           />
+
 //           {imagePreview && (
 //             <Box sx={{ mb: 3, textAlign: 'center' }}>
-//               <img 
-//                 src={imagePreview} 
-//                 alt="Preview" 
-//                 style={{ 
-//                   width: 120, 
-//                   height: 120, 
+//               <img
+//                 src={imagePreview}
+//                 alt="Preview"
+//                 style={{
+//                   width: 120,
+//                   height: 120,
 //                   objectFit: 'cover',
 //                   borderRadius: '8px',
 //                   border: '2px solid #1976d2'
-//                 }} 
+//                 }}
 //               />
 //             </Box>
 //           )}
-          
+
 //           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-//             <Button 
-//               onClick={handleUploadImage} 
+//             <Button
+//               onClick={handleUploadImage}
 //               disabled={uploading || !imageFile}
 //               variant="contained"
 //               color="primary"
-//               sx={{ 
+//               sx={{
 //                 px: 3,
 //                 py: 1.5,
 //                 fontSize: '1rem',
@@ -1407,11 +1552,11 @@ export default PlayerCard;
 //             >
 //               {uploading ? 'Uploading...' : 'Upload'}
 //             </Button>
-//             <Button 
+//             <Button
 //               onClick={handleModalClose}
 //               variant="outlined"
 //               color="primary"
-//               sx={{ 
+//               sx={{
 //                 px: 3,
 //                 py: 1.5,
 //                 fontSize: '1rem',
@@ -1420,6 +1565,46 @@ export default PlayerCard;
 //               }}
 //             >
 //               Cancel
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Modal>
+
+//       {/* NEW: In-app Camera Modal */}
+//       <Modal open={cameraOpen} onClose={handleCloseCamera}>
+//         <Box
+//           sx={{
+//             position: 'absolute',
+//             top: '50%',
+//             left: '50%',
+//             transform: 'translate(-50%, -50%)',
+//             bgcolor: 'background.paper',
+//             boxShadow: 24,
+//             p: 2,
+//             borderRadius: 2,
+//             width: 360,
+//             maxWidth: '90vw',
+//             border: '2px solid #1976d2',
+//           }}
+//         >
+//           <Typography variant="h6" sx={{ mb: 1.5, textAlign: 'center', color: '#1976d2' }}>
+//             Camera
+//           </Typography>
+//           <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', bgcolor: '#000', mb: 2 }}>
+//             <video
+//               ref={videoRef}
+//               playsInline
+//               autoPlay
+//               muted
+//               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+//             />
+//           </Box>
+//           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+//             <Button onClick={handleTakePhoto} variant="contained" color="primary" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+//               Capture
+//             </Button>
+//             <Button onClick={handleCloseCamera} variant="outlined" color="primary" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+//               Close
 //             </Button>
 //           </Box>
 //         </Box>
