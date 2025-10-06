@@ -238,6 +238,16 @@ const JerseyAvatar = ({
     </Box>
 );
 
+type EditWindow = {
+  resultsUploaded: boolean;
+  isWithinLastTwo: boolean;
+  isOlderThanTwo: boolean;
+  canPlayerSubmit: boolean;
+  adminCanSubmit: boolean;
+  isAdmin: boolean;
+  indexFromEnd: number | null; // 0=current, 1=previous, >1 older
+};
+
 export default function PlayMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
     const [match, setMatch] = useState<MatchWithGuests | null>(null);
@@ -275,6 +285,7 @@ export default function PlayMatchPage() {
 
     // NEW: local saving flag (do not blank the page)
     const [savingMatchDetails, setSavingMatchDetails] = useState(false);
+    const [editWindow, setEditWindow] = useState<EditWindow | null>(null);
 
     const { user, token } = useAuth();
     const params = useParams();
@@ -685,6 +696,33 @@ export default function PlayMatchPage() {
         }));
     };
 
+
+    const baseCanSubmit = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
+    const isAdmin = league?.administrators?.some(a => a.id === user?.id) ?? false;
+
+    const canPlayerSubmitStats = baseCanSubmit && (editWindow?.canPlayerSubmit ?? false);
+    const canAdminSubmitStats = baseCanSubmit && (editWindow?.adminCanSubmit ?? false);
+
+    // Fetch edit window details
+    const fetchEditWindow = useCallback(async () => {
+        if (!token || !matchId) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats-window`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to fetch stats window');
+            const data = await res.json();
+            if (data.success) setEditWindow(data.window as EditWindow);
+        } catch (e) {
+            setEditWindow(null);
+        }
+    }, [matchId, token]);
+
+    useEffect(() => {
+        if (matchId && token) fetchEditWindow();
+    }, [matchId, token, fetchEditWindow]);
+
+
     const handleSaveAdminStats = async () => {
         if (!selectedPlayerForAdmin) return;
 
@@ -730,8 +768,30 @@ export default function PlayMatchPage() {
 
     const canSubmitStats = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
 
+    // Replace old openStats with window-aware version
     const openStats = () => {
-        if (!canSubmitStats) return; // or show toast
+        if (!baseCanSubmit) {
+            toast.error('Stats are available after result upload.');
+            return;
+        }
+
+        // Admins can always edit (per rule)
+        if (isAdmin && canAdminSubmitStats) {
+            setIsStatsModalOpen(true);
+            return;
+        }
+
+        // Player path
+        if (!editWindow?.canPlayerSubmit) {
+            toast.error("It's not possible to add stats for earlier games. Please ask the admin to make changes to older games.");
+            return;
+        }
+
+        // Previous match info toast
+        if (editWindow.indexFromEnd === 1) {
+            toast('You are adding stats for the previous match.', { icon: 'ℹ️' });
+        }
+
         setIsStatsModalOpen(true);
     };
 
@@ -752,7 +812,7 @@ export default function PlayMatchPage() {
 
     if (!user) return null;
 
-    const isAdmin = league.administrators?.some(admin => admin.id === user.id);
+    // const isAdmin = league.administrators?.some(admin => admin.id === user.id);
 
     // Transform guests into pseudo User objects for display purposes (no links/stats for guests)
     const guestUsersHome: (User & { isGuest: true })[] = (match.guests || [])
@@ -816,7 +876,8 @@ export default function PlayMatchPage() {
                             </Typography>
 
                             {/* Add Stats Button for Home Team */}
-                            {user && canSubmitStats && league.active &&
+                               {user && canPlayerSubmitStats && league.active &&
+                            // {user && canPlayerSubmitStats && league.active &&
                                 (match.homeTeamUsers ?? []).some(player => player.id === user.id) && (
                                     <Button
                                         onClick={openStats}
@@ -878,24 +939,14 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {canSubmitStats && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
-                                                            <Box sx={{
-                                                                position: 'absolute',
-                                                                top: { xs: 2, sm: 4, md: 8 },
-                                                                right: { xs: 2, sm: 4, md: 8 },
-                                                                zIndex: 3
-                                                            }}>
+                                                        {baseCanSubmit && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                            <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
                                                                     disabled={loadingVote}
                                                                     color="#43a047"
-                                                                    sx={{
-                                                                        width: { xs: 20, sm: 35, md: 65 },
-                                                                        height: { xs: 20, sm: 35, md: 65 },
-                                                                        mr: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                        mt: { xs: 0.25, sm: 0.5, md: 1 }
-                                                                    }}
+                                                                    sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
                                                             </Box>
                                                         )}
@@ -1063,6 +1114,7 @@ export default function PlayMatchPage() {
                             </Typography>
 
                             {/* Add Stats Button for Away Team */}
+                            {/* {user && canPlayerSubmitStats && league.active && */}
                             {user && canSubmitStats && league.active &&
                                 (match.awayTeamUsers ?? []).some(player => player.id === user.id) && (
                                     <Button
@@ -1125,24 +1177,14 @@ export default function PlayMatchPage() {
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {canSubmitStats && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
-                                                            <Box sx={{
-                                                                position: 'absolute',
-                                                                top: { xs: 2, sm: 4, md: 8 },
-                                                                right: { xs: 2, sm: 4, md: 8 },
-                                                                zIndex: 3
-                                                            }}>
+                                                        {baseCanSubmit && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                            <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
                                                                     disabled={loadingVote}
                                                                     color="#43a047"
-                                                                    sx={{
-                                                                        width: { xs: 20, sm: 35, md: 65 },
-                                                                        height: { xs: 20, sm: 35, md: 65 },
-                                                                        mr: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                        mt: { xs: 0.25, sm: 0.5, md: 1 }
-                                                                    }}
+                                                                    sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
                                                             </Box>
                                                         )}
@@ -1598,6 +1640,7 @@ export default function PlayMatchPage() {
                 <DialogActions>
                     <Button
                         onClick={handleCloseAdminStatsModal}
+                       
                         variant="outlined"
                         sx={{
                             color: '#111',
