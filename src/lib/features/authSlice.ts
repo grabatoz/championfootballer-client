@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit"
 import { authAPI } from "../api"
 import Cookies from "js-cookie"
 import type { AuthState, LoginCredentials, RegisterCredentials, ApiResponse } from "@/types/api"
@@ -264,6 +264,14 @@ const authSlice = createSlice({
       state.loading = sessionState.loading
       state.error = sessionState.error
     },
+    // NEW: merge incoming fields into current user and keep store hot
+    mergeUser: (state, action: PayloadAction<Partial<UserProfile>>) => {
+      if (!state.user) {
+        state.user = action.payload as UserProfile
+      } else {
+        state.user = { ...state.user, ...action.payload }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -357,5 +365,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { clearError, syncWithStorage, initializeFromStorage } = authSlice.actions
+export const { clearError, syncWithStorage, initializeFromStorage, mergeUser } = authSlice.actions
 export default authSlice.reducer

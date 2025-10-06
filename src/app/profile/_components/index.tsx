@@ -45,6 +45,9 @@ import Defending from '@/Components/images/defending.png'
 import Image from "next/image"
 import type { StaticImageData } from "next/image"
 import imgicon from "@/Components/images/imgicon.png"
+import { useDispatch } from "react-redux"
+import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
+
 
 // ===== THEME (brand palette reused) =====
 const themeColors = {
@@ -196,6 +199,7 @@ const getErrorMessage = (e: unknown): string => {
 // }
 
 const PlayerProfileCard = () => {
+  const dispatch = useDispatch()
   const { user, token, isAuthenticated } = useAuth()
   const [step, setStep] = useState(1)
   const [dribbling, setDribbling] = useState(user?.skills?.dribbling)
@@ -262,7 +266,7 @@ const PlayerProfileCard = () => {
         positionType,
         style,
         preferredFoot,
-        shirtNumber: String(shirtNumber), // Convert to string
+        shirtNumber: String(shirtNumber),
         skills: {
           dribbling: dribbling ?? 50,
           shooting: shooting ?? 50,
@@ -276,11 +280,36 @@ const PlayerProfileCard = () => {
 
       const { ok, data } = await updateProfile(token, updateData)
       if (!ok) throw new Error(data.message || "Failed to update profile")
-      if (data.user) cacheManager.updatePlayersCache(data.user)
+
+      if (data.user) {
+        // 1) Hot-merge user to Redux
+        dispatch(mergeUser({
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          email: data.user.email,
+          age: typeof data.user.age === "string" ? Number(data.user.age) || undefined : data.user.age,
+          gender: data.user.gender,
+          position: data.user.position,
+          positionType: data.user.positionType,
+          style: data.user.style,
+          preferredFoot: data.user.preferredFoot,
+          shirtNumber: typeof data.user.shirtNumber === "string" ? Number(data.user.shirtNumber) || undefined : data.user.shirtNumber,
+          profilePicture: data.user.profilePicture || null,
+          image: data.user.profilePicture || null,
+          skills: data.user.skills,
+          id: data.user.id,
+        }))
+        // 2) Persist quickly
+        dispatch(syncWithStorage())
+        // 3) Update any other caches you keep
+        cacheManager.updatePlayersCache(data.user)
+      }
+
       toast.success("Profile updated successfully!")
+      // Optional: refresh app router cache for any server components
+      // router.refresh?.()
       router.push("/home")
     } catch (err: unknown) {
-      // err typed as unknown; safely extract message
       setError(getErrorMessage(err))
     } finally {
       setIsUpdating(false)
@@ -310,14 +339,33 @@ const PlayerProfileCard = () => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-      body: formData
+      body: formData,
+      cache: "no-store", // avoid stale response
     })
     const data = await res.json()
     if (data.success) {
+      const newUrl: string | undefined = data.user?.profilePicture
       if (data.user) cacheManager.updatePlayersCache(data.user)
+
+      if (newUrl) {
+        // Update UI immediately
+        setImgSrc(newUrl)
+        setImagePreview(null)
+
+        // Hot-merge into Redux user
+        dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
+        dispatch(syncWithStorage())
+
+        // Update PlayerCard’s localStorage readers
+        localStorage.setItem("avatar_url", newUrl)
+        localStorage.setItem("avatar_v", String(Date.now()))
+      }
+
       toast.success("Profile picture updated!")
-      window.location.reload()
-    } else toast.error("Upload failed")
+      // No reload needed
+    } else {
+      toast.error("Upload failed")
+    }
   }
 
   // ---------- STEP 1 ----------
