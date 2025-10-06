@@ -26,17 +26,31 @@ import Pitch from '@/Components/images/pitch.jpg';
 import Shirt from '@/Components/images/shirtimg.png';
 import { useAuth } from '@/lib/hooks';
 
-function debounce<F extends (...args: any[]) => void>(fn: F, wait: number) {
-  let t: any;
-  return (...args: Parameters<F>) => {
-    clearTimeout(t);
+// Define the expected shape from useAuth
+type AuthUser = {
+  id?: string | number;
+  userId?: string | number;
+  firstName?: string;
+  lastName?: string;
+  isAdmin?: boolean;
+  role?: string | null;
+};
+type UseAuthResult = {
+  token?: string | null;
+  user?: AuthUser | null;
+};
+
+function debounce<A extends unknown[], R>(fn: (...args: A) => R, wait: number) {
+  let t: ReturnType<typeof setTimeout> | null = null;
+  return (...args: A) => {
+    if (t !== null) clearTimeout(t);
     t = setTimeout(() => fn(...args), wait);
   };
 }
 
 // Add this helper so references to normalizeTeam compile
-const normalizeTeam = (v: any): 'home' | 'away' =>
-  String(v).toLowerCase() === 'away' ? 'away' : 'home';
+// const normalizeTeam = (v: any): 'home' | 'away' =>
+//   String(v).toLowerCase() === 'away' ? 'away' : 'home';
 
 type Player = {
   id?: string;
@@ -90,35 +104,35 @@ const primaryColor2 = 'rgb(207,35,38)';
 const textColor = '#111';
 
 // Default fallback demo players (keep if you want preview only)
-const demoHome: Player[] = [
-  { name: 'Xavi', number: '01', position: 'GK' },
-  { name: 'John', number: '03', position: 'DF' },
-  { name: 'Didi', number: '02', position: 'DF' },
-  { name: 'Vava', number: '05', position: 'MD' },
-  { name: 'Pele', number: '04', position: 'MD', isCaptain: true },
-  { name: 'Kaka', number: '06', position: 'MD' },
-  { name: 'Gerd', number: '09', position: 'FW' },
-  { name: 'Eric', number: '07', position: 'FW' },
-  { name: 'Dean', number: '08', position: 'FW' },
-  { name: 'Sad', number: '10', position: 'FW' },
-  { name: 'Viv', number: '12', position: 'FW' },
-  { name: 'Mia', number: '11', position: 'FW' }
-];
+// const demoHome: Player[] = [
+//   { name: 'Xavi', number: '01', position: 'GK' },
+//   { name: 'John', number: '03', position: 'DF' },
+//   { name: 'Didi', number: '02', position: 'DF' },
+//   { name: 'Vava', number: '05', position: 'MD' },
+//   { name: 'Pele', number: '04', position: 'MD', isCaptain: true },
+//   { name: 'Kaka', number: '06', position: 'MD' },
+//   { name: 'Gerd', number: '09', position: 'FW' },
+//   { name: 'Eric', number: '07', position: 'FW' },
+//   { name: 'Dean', number: '08', position: 'FW' },
+//   { name: 'Sad', number: '10', position: 'FW' },
+//   { name: 'Viv', number: '12', position: 'FW' },
+//   { name: 'Mia', number: '11', position: 'FW' }
+// ];
 
-const demoAway: Player[] = [
-  { name: 'Casillas', number: '01', position: 'GK' },
-  { name: 'Ramos', number: '03', position: 'DF' },
-  { name: 'Puyol', number: '02', position: 'DF' },
-  { name: 'Modric', number: '05', position: 'MD' },
-  { name: 'Zidane', number: '04', position: 'MD', isCaptain: true },
-  { name: 'Ronaldinho', number: '06', position: 'MD' },
-  { name: 'Henry', number: '09', position: 'FW' },
-  { name: 'Rooney', number: '07', position: 'FW' },
-  { name: 'Ronaldo', number: '08', position: 'FW' },
-  { name: 'Beckham', number: '10', position: 'FW' },
-  { name: 'Messi', number: '12', position: 'FW' },
-  { name: 'Neymar', number: '11', position: 'FW' }
-];
+// const demoAway: Player[] = [
+//   { name: 'Casillas', number: '01', position: 'GK' },
+//   { name: 'Ramos', number: '03', position: 'DF' },
+//   { name: 'Puyol', number: '02', position: 'DF' },
+//   { name: 'Modric', number: '05', position: 'MD' },
+//   { name: 'Zidane', number: '04', position: 'MD', isCaptain: true },
+//   { name: 'Ronaldinho', number: '06', position: 'MD' },
+//   { name: 'Henry', number: '09', position: 'FW' },
+//   { name: 'Rooney', number: '07', position: 'FW' },
+//   { name: 'Ronaldo', number: '08', position: 'FW' },
+//   { name: 'Beckham', number: '10', position: 'FW' },
+//   { name: 'Messi', number: '12', position: 'FW' },
+//   { name: 'Neymar', number: '11', position: 'FW' }
+// ];
 
 function normalizeRole(input?: string | null): 'GK' | 'DF' | 'MD' | 'FW' {
   const v = (input || '').toLowerCase();
@@ -179,7 +193,7 @@ function mapApiToPlayer(u: ApiPlayer, captainId?: string): Player {
 }
 
 export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: string; matchId?: string }) {
-  const { token, user } = useAuth() as any;
+  const { token, user }: UseAuthResult = useAuth();
 
   // Start with empty lists; fill with API data when loaded
   const [homeTeamName, setHomeTeamName] = React.useState<string>('Home');
@@ -217,11 +231,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Track natural size of the pitch image to compute drawn bounds when using background-size: contain
   const pitchImgSizeRef = React.useRef<{ w: number; h: number } | null>(null);
   React.useEffect(() => {
-    const img = new Image();
+    const img: HTMLImageElement = new Image();
     img.src = Pitch.src;
     const onload = () => {
-      const w = (img.naturalWidth || (img as any).width) || 1;
-      const h = (img.naturalHeight || (img as any).height) || 1;
+      const w = img.naturalWidth || img.width || 1;
+      const h = img.naturalHeight || img.height || 1;
       pitchImgSizeRef.current = { w, h };
     };
     if (img.complete) onload(); else img.onload = onload;
@@ -391,7 +405,22 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           data?.league?.administeredLeagues ??
           data?.administrators ??
           [];
-        const adminIds = Array.isArray(admins) ? admins.map((a: any) => String(a.id)) : [];
+
+        type AdminLike = { id?: string | number; userId?: string | number; adminId?: string | number } | string | number | null | undefined;
+        const adminIdOf = (a: AdminLike): string | null => {
+          if (a == null) return null;
+          if (typeof a === 'string' || typeof a === 'number') return String(a);
+          if (typeof a === 'object') {
+            if ('id' in a && a.id != null) return String(a.id);
+            if ('userId' in a && a.userId != null) return String(a.userId);
+            if ('adminId' in a && a.adminId != null) return String(a.adminId);
+          }
+          return null;
+        };
+
+        const adminIds: string[] = Array.isArray(admins)
+          ? admins.map(adminIdOf).filter((v): v is string => !!v)
+          : [];
 
         // Fallback single owner/admin id fields if present
         const ownerId = String(
@@ -434,27 +463,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const normalizeX = (x: number) => clamp01(x);
   const normalizeY = (y: number) => clamp01(y);
 
-  // Drop handler (not used by pointer drag, but kept for future)
-  const onDrop = async (t: 'home'|'away', uid: string, pt: { x: number; y: number }) => {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/layout`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          team: t,
-          positions: { [uid]: { x: normalizeX(pt.x), y: normalizeY(pt.y) } }
-        })
-      });
-    } catch {
-      // ignore
-    }
-  };
+  // Event shape for pointer coords
+  type HasClientXY = { clientX: number; clientY: number };
 
   // Pointer drag within pitch bounds and team half
-  const onDrag = (e: PointerEvent | React.PointerEvent, pid: string, teamSide: 'home'|'away') => {
+  const onDrag = (e: HasClientXY, pid: string, teamSide: 'home'|'away') => {
     if (!canDragTeam(teamSide) || !pitchRef.current) return;
     const rect = pitchRef.current.getBoundingClientRect();
 
@@ -476,8 +489,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const minY = halfTop + marginY;
     const maxY = halfBottom - marginY;
 
-    let x = clamp01(((e as any).clientX - rect.left) / rect.width);
-    let y = clamp01(((e as any).clientY - rect.top) / rect.height);
+    let x = clamp01((e.clientX - rect.left) / rect.width);
+    let y = clamp01((e.clientY - rect.top) / rect.height);
 
     x = Math.max(minX, Math.min(maxX, x));
     y = Math.max(minY, Math.min(maxY, y));
@@ -547,7 +560,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const selectedGuests = React.useMemo(() => {
     const side = teamSide;
     const m = new Map<string, Guest>();
-    (guests || []).forEach((g: any) => {
+    guests.forEach((g: Guest) => {
       if (g.team !== side) return;
       const id = String(g.id);
       if (!m.has(id)) m.set(id, g);
@@ -606,14 +619,38 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     if (!leagueId || !token) return;
     setReplaceLoading(true);
 
-    const mapUsers = (arr: any[]): BasicUser[] =>
-      (Array.isArray(arr) ? arr : []).map((u: any) => {
-        const id = String(u?.id ?? u?.userId ?? u?.playerId ?? '');
-        const firstName = String(u?.firstName ?? u?.givenName ?? u?.name ?? '').split(' ')[0] || '';
-        const lastName = String(u?.lastName ?? (String(u?.name ?? '').split(' ').slice(1).join(' ')) ?? '');
-        const shirtNumber = u?.shirtNumber ?? u?.number ?? null;
-        return id ? { id, firstName, lastName, shirtNumber } : null;
-      }).filter(Boolean) as BasicUser[];
+    type UserLike = Partial<{
+      id: string | number;
+      userId: string | number;
+      playerId: string | number;
+      firstName: string;
+      givenName: string;
+      name: string;
+      lastName: string;
+      shirtNumber: string | number | null;
+      number: string | number | null;
+    }>;
+
+    const mapUsers = (arr: unknown[]): BasicUser[] =>
+      (Array.isArray(arr) ? arr : [])
+        .map((u): BasicUser | null => {
+          if (!u || typeof u !== 'object') return null;
+          const o = u as UserLike;
+          const idRaw = o.id ?? o.userId ?? o.playerId;
+          if (idRaw == null) return null;
+          const id = String(idRaw);
+          const baseName = String(o.firstName ?? o.givenName ?? o.name ?? '').trim();
+          const firstName = baseName.split(' ')[0] || '';
+          const lastName = o.lastName ?? baseName.split(' ').slice(1).join(' ');
+          let shirtNumber: string | null | undefined = undefined;
+          if (o.shirtNumber != null) {
+            shirtNumber = o.shirtNumber === null ? null : String(o.shirtNumber);
+          } else if (o.number != null) {
+            shirtNumber = o.number === null ? null : String(o.number);
+          }
+          return { id, firstName, lastName: lastName || '', shirtNumber };
+        })
+        .filter((u): u is BasicUser => !!u);
 
     const tryFetch = async (path: string) => {
       try {
@@ -668,10 +705,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         body: JSON.stringify({ team, playerId: id }) // include team
       });
       if (res.ok) {
-        setRemoved(prev => ({
-          ...prev,
-          [team]: Array.from(new Set([...(prev[team] || []), String(id)]))
-        }) as any);
+        setRemoved(prev => {
+          const updated = Array.from(new Set([...(prev[team] || []), String(id)]));
+          return { ...prev, [team]: updated };
+        });
       } else {
         console.warn('Remove failed', await res.text());
       }
