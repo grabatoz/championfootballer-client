@@ -11,6 +11,9 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Dialog, DialogTitle, DialogContent,    // added
+  TextField, List, ListItemButton,        // added
+  CircularProgress,                       // added
 } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -79,6 +82,8 @@ type TeamViewPayload = {
     removed?: { home?: string[]; away?: string[] }; // NEW
   };
 };
+
+type BasicUser = { id: string; firstName: string; lastName?: string; shirtNumber?: string | null }; // added
 
 const primaryColor = 'rgb(229,106,22)';
 const primaryColor2 = 'rgb(207,35,38)';
@@ -192,8 +197,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const meId: string = String(user?.id || user?.userId || '');
   // REMOVE any role-based "admin" usage and use league admin instead
   // const isAdmin: boolean = Boolean(user?.isAdmin || user?.role === 'admin');
-  const [leagueAdminId, setLeagueAdminId] = React.useState<string>('');
-  const isLeagueAdmin = Boolean(meId && leagueAdminId && meId === leagueAdminId);
+  const [isLeagueAdmin, setIsLeagueAdmin] = React.useState<boolean>(false);
 
   const [isHomeTeam, setIsHomeTeam] = React.useState(true);
   const teamTitle = isHomeTeam ? homeTeamName : awayTeamName;
@@ -371,7 +375,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
   // Fetch league adminId once (so we can check league administrator)
   React.useEffect(() => {
-    if (!leagueId || !token) return;
+    if (!leagueId || !token || !meId) return;
     let cancelled = false;
     (async () => {
       try {
@@ -380,20 +384,35 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         });
         if (!res.ok) return;
         const data = await res.json();
-        // Try common shapes
-        const adminId = String(
+
+        // Prefer array of administrators; support multiple shapes from API
+        const admins =
+          data?.league?.administrators ??
+          data?.league?.administeredLeagues ??
+          data?.administrators ??
+          [];
+        const adminIds = Array.isArray(admins) ? admins.map((a: any) => String(a.id)) : [];
+
+        // Fallback single owner/admin id fields if present
+        const ownerId = String(
           (data?.league?.adminId ??
-           data?.adminId ??
-           data?.ownerId ??
-           data?.createdById ??
-           data?.owner?.id ??
-           '') || ''
+            data?.adminId ??
+            data?.ownerId ??
+            data?.createdById ??
+            data?.owner?.id ??
+            '') || ''
         );
-        if (!cancelled) setLeagueAdminId(adminId);
-      } catch { /* ignore */ }
+
+        const isAdmin = adminIds.includes(meId) || (!!ownerId && ownerId === meId);
+        if (!cancelled) setIsLeagueAdmin(isAdmin);
+      } catch {
+        /* ignore */
+      }
     })();
-    return () => { cancelled = true; };
-  }, [leagueId, token]);
+    return () => {
+      cancelled = true;
+    };
+  }, [leagueId, token, meId]);
 
   // Build removed sets from server state
   const removedHomeSet = useMemo(
@@ -418,7 +437,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Drop handler (not used by pointer drag, but kept for future)
   const onDrop = async (t: 'home'|'away', uid: string, pt: { x: number; y: number }) => {
     try {
-      await fetch(`/leagues/${leagueId}/matches/${matchId}/layout`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/layout`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -507,9 +526,22 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   };
 
   // Absolute-positioned shirt
-  const positions = isHomeTeam ? homePos : awayPos;
   const renderTeam = isHomeTeam ? homePlayers : awayPlayers;
-  const teamSide: 'home'|'away' = isHomeTeam ? 'home' : 'away';
+  const teamSide: 'home' | 'away' = isHomeTeam ? 'home' : 'away';
+  const positions = React.useMemo(() => {
+    const base = (isHomeTeam ? homePos : awayPos) || {};
+    const players = renderTeam || [];
+    // Fill only missing player keys using auto layout; keep all saved positions intact
+    const merged: TeamPositions = { ...base };
+    if (players.length) {
+      const auto = autoLayout(players, teamSide);
+      players.forEach(p => {
+        const k = String(p.id || p.name);
+        if (!merged[k] && auto[k]) merged[k] = auto[k];
+      });
+    }
+    return merged;
+  }, [isHomeTeam, homePos, awayPos, renderTeam, teamSide, autoLayout]);
 
   // Guests for current side (dedupe by id)
   const selectedGuests = React.useMemo(() => {
@@ -553,6 +585,79 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Actions
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
+  // Replace dialog state (added)
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceLoading, setReplaceLoading] = useState(false);
+  const [replaceSearch, setReplaceSearch] = useState('');
+  const [replaceCandidates, setReplaceCandidates] = useState<BasicUser[]>([]);
+  const [replaceCtx, setReplaceCtx] = useState<null | { team: 'home'|'away'; removedId: string }>(null);
+
+  // Users already in this match (exclude from list) (added)
+  const matchUserIdSet = React.useMemo(() => {
+    const ids = new Set<string>();
+    homePlayers.forEach(p => p.id && ids.add(String(p.id)));
+    awayPlayers.forEach(p => p.id && ids.add(String(p.id)));
+    (guests || []).forEach(g => g.id && ids.add(String(g.id)));
+    return ids;
+  }, [homePlayers, awayPlayers, guests]);
+
+  // Load league members (tries common endpoints/shapes) (added)
+  const loadReplacementCandidates = React.useCallback(async (excludeId?: string) => {
+    if (!leagueId || !token) return;
+    setReplaceLoading(true);
+
+    const mapUsers = (arr: any[]): BasicUser[] =>
+      (Array.isArray(arr) ? arr : []).map((u: any) => {
+        const id = String(u?.id ?? u?.userId ?? u?.playerId ?? '');
+        const firstName = String(u?.firstName ?? u?.givenName ?? u?.name ?? '').split(' ')[0] || '';
+        const lastName = String(u?.lastName ?? (String(u?.name ?? '').split(' ').slice(1).join(' ')) ?? '');
+        const shirtNumber = u?.shirtNumber ?? u?.number ?? null;
+        return id ? { id, firstName, lastName, shirtNumber } : null;
+      }).filter(Boolean) as BasicUser[];
+
+    const tryFetch = async (path: string) => {
+      try {
+        const r = await fetch(`${apiBase}/leagues/${leagueId}/${path}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!r.ok) return [] as BasicUser[];
+        const data = await r.json();
+        if (Array.isArray(data)) return mapUsers(data);
+        if (Array.isArray(data?.members)) return mapUsers(data.members);
+        if (Array.isArray(data?.players)) return mapUsers(data.players);
+        if (Array.isArray(data?.users)) return mapUsers(data.users);
+        if (Array.isArray(data?.data)) return mapUsers(data.data);
+        return [] as BasicUser[];
+      } catch { return [] as BasicUser[]; }
+    };
+
+    let list: BasicUser[] = [];
+    for (const endpoint of ['members', 'players', 'users']) {
+      const got = await tryFetch(endpoint);
+      if (got.length) { list = got; break; }
+    }
+    if (!list.length) {
+      try {
+        const r = await fetch(`${apiBase}/leagues/${leagueId}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+          const d = await r.json();
+          const guesses =
+            d?.league?.members ??
+            d?.league?.players ??
+            d?.members ??
+            d?.players ??
+            d?.league?.users ??
+            d?.users ?? [];
+          list = mapUsers(guesses);
+        }
+      } catch { /* ignore */ }
+    }
+
+    const removedId = excludeId || replaceCtx?.removedId || '';
+    const filtered = list.filter(u => !matchUserIdSet.has(String(u.id)) && String(u.id) !== removedId);
+
+    setReplaceCandidates(filtered);
+    setReplaceLoading(false);
+  }, [leagueId, token, apiBase, matchUserIdSet, replaceCtx?.removedId]);
+
   const handleRemove = async () => {
     if (!leagueId || !matchId || !token || !menuTarget) return;
     const { id, team } = menuTarget;
@@ -574,42 +679,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     closeMenu();
   };
 
+  // REPLACED: open dialog and load candidates instead of window.prompt (minimal change)
   const handleReplace = async () => {
     if (!leagueId || !matchId || !token || !menuTarget) return;
-    const removedId = menuTarget.id;
-    const team = menuTarget.team; // include team
-    const replacementId = window.prompt('Enter replacement user ID (same league, not already on a team):');
-    if (!replacementId) return;
-    try {
-      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/replace`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ team, removedId, replacementId })
-      });
-      if (res.ok) {
-        const r = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/team-view`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const p: TeamViewPayload = await r.json();
-        if (p?.success && p.match) {
-          const m = p.match;
-          setHomePlayers(arrangePlayers(m.homeTeam || [], m.homeCaptainId));
-          setAwayPlayers(arrangePlayers(m.awayTeam || [], m.awayCaptainId));
-          setGuests(m.guests || []);
-          setHomeCaptainId(m.homeCaptainId);
-          setAwayCaptainId(m.awayCaptainId);
-          setRemoved({
-            home: (m.removed?.home || []).map(String),
-            away: (m.removed?.away || []).map(String),
-          });
-          setHomePos(m.positions?.home || {});
-          setAwayPos(m.positions?.away || {});
-        }
-      } else {
-        console.warn('Replace failed', await res.text());
-      }
-    } catch (e) { console.warn('Replace error', e); }
+    setReplaceCtx({ team: menuTarget.team, removedId: String(menuTarget.id) });
+    setReplaceSearch('');
+    setReplaceOpen(true);
     closeMenu();
+    await loadReplacementCandidates(String(menuTarget.id));
   };
 
   const handleStartSwitch = () => {
@@ -662,6 +739,54 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     } catch (e) { console.warn('Make captain error', e); }
     closeMenu();
   };
+   const doReplace = async (replacementId: string) => {
+    if (!leagueId || !matchId || !token || !replaceCtx) return;
+    try {
+      setReplaceLoading(true);
+      const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/replace`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team: replaceCtx.team, removedId: replaceCtx.removedId, replacementId })
+      });
+      if (res.ok) {
+        const r = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/team-view`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const p: TeamViewPayload = await r.json();
+        if (p?.success && p.match) {
+          const m = p.match;
+          setHomePlayers(arrangePlayers(m.homeTeam || [], m.homeCaptainId));
+          setAwayPlayers(arrangePlayers(m.awayTeam || [], m.awayCaptainId));
+          setGuests(m.guests || []);
+          setHomeCaptainId(m.homeCaptainId);
+          setAwayCaptainId(m.awayCaptainId);
+          setRemoved({
+            home: (m.removed?.home || []).map(String),
+            away: (m.removed?.away || []).map(String),
+          });
+          setHomePos(m.positions?.home || {});
+          setAwayPos(m.positions?.away || {});
+        }
+        setReplaceOpen(false);
+      } else {
+        console.warn('Replace failed', await res.text());
+      }
+    } catch (e) {
+      console.warn('Replace error', e);
+    } finally {
+      setReplaceLoading(false);
+    }
+  };
+
+  // Filter candidates by search (added)
+  const filteredCandidates = React.useMemo(() => {
+    const q = replaceSearch.trim().toLowerCase();
+    if (!q) return replaceCandidates;
+    return replaceCandidates.filter(u => {
+      const name = `${u.firstName || ''} ${u.lastName || ''}`.trim().toLowerCase();
+      return name.includes(q) || String(u.shirtNumber || '').toLowerCase().includes(q);
+    });
+  }, [replaceCandidates, replaceSearch]);
 
   const ShirtDot = ({ player }: { player: Player }) => {
     const pid = String(player.id || player.name);
@@ -718,9 +843,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const pid = String(guestId);
     const pos = positions[pid] || guestRowPositions[pid];
     if (!pos) return null;
-    const onClick = (e: React.MouseEvent) => {
-      if (switchMode) tryCompleteSwitch(teamSide, pid);
-    };
+    // Guests are not swappable via server endpoint; ignore clicks in switch mode
+    const onClick = (e: React.MouseEvent) => { /* no-op for guests */ };
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
@@ -849,7 +973,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             onClick={handleReplace}
             disabled={
               !menuTarget ||
-              !menuTarget.isRemoved ||
+              !menuTarget.isRemoved ||                          // keep existing rule
               !(isLeagueAdmin || isCaptainOf(menuTarget.team))
             }
           >
@@ -873,6 +997,45 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <ListItemText>Make Captain</ListItemText>
           </MenuItem>
         </Menu>
+
+        {/* Replace Dialog (fixed JSX) */}
+        <Dialog open={replaceOpen} onClose={() => setReplaceOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Select replacement</DialogTitle>
+          <DialogContent>
+            {replaceLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search by name or number..."
+                  value={replaceSearch}
+                  onChange={e => setReplaceSearch(e.target.value)}
+                  sx={{ mb: 1.5 }}
+                />
+                <List dense>
+                  {filteredCandidates.length === 0 ? (
+                    <Typography sx={{ px: 1, py: 1.5, color: 'text.secondary' }}>
+                      No eligible members found.
+                    </Typography>
+                  ) : (
+                    filteredCandidates.map(u => (
+                      <ListItemButton key={u.id} onClick={() => doReplace(u.id)}>
+                        <ListItemText
+                          primary={`${u.firstName || ''} ${u.lastName || ''}`.trim() || `User ${u.id}`}
+                          secondary={u.shirtNumber ? `#${u.shirtNumber}` : undefined}
+                        />
+                      </ListItemButton>
+                    ))
+                  )}
+                </List>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Box sx={{ height: 12 }} />
 
