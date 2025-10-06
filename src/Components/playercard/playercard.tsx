@@ -84,29 +84,24 @@ function getPositionShortForm(position: string): string {
   return position.toUpperCase().substring(0, 3);
 }
 
-// Function to calculate skills percentage
-function calculateSkillsPercentage(stats: {
-  DRI: string;
-  SHO: string;
-  PAS: string;
-  PAC: string;
-  DEF: string;
-  PHY: string;
+// Function to calculate average skill (simple mean, 0–99 clamp)
+function calculateAverageSkill(stats: {
+  DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string;
 }): number {
-  const skills = [
-    parseInt(stats.DRI) || 50,
-    parseInt(stats.SHO) || 50,
-    parseInt(stats.PAS) || 50,
-    parseInt(stats.PAC) || 50,
-    parseInt(stats.DEF) || 50,
-    parseInt(stats.PHY) || 50
-  ];
-  
-  const total = skills.reduce((sum, skill) => sum + skill, 0);
-  const average = total / skills.length;
-  
-  // Convert to percentage (assuming max skill value is 99)
-  return Math.round((average / 99) * 100);
+  const keys = ['DRI','SHO','PAS','PAC','DEF','PHY'] as const;
+  const values = keys.map(k => {
+    const n = parseInt((stats as any)[k], 10);
+    return Number.isFinite(n) ? Math.max(0, Math.min(99, n)) : 0;
+  });
+  const sum = values.reduce((a, b) => a + b, 0);
+  return Math.round(sum / values.length);
+}
+
+// Backward-compat: old function now returns the average number (not a percent)
+function calculateSkillsPercentage(stats: {
+  DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string;
+}): number {
+  return calculateAverageSkill(stats);
 }
 
 interface PlayerCardProps {
@@ -153,7 +148,7 @@ const PlayerCard = ({
   width,
   height,
   position,
-  hideEditIcon = false, // NEW
+  hideEditIcon = false,
 }: PlayerCardProps) => {
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
@@ -333,6 +328,8 @@ const PlayerCard = ({
     ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
     : imgicon;
 
+  const avgSkill = calculateAverageSkill(stats);
+
   return (
     <Box
       sx={{
@@ -341,7 +338,6 @@ const PlayerCard = ({
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
-        // ml: 20,
       }}
     >
       {/* Background Image */}
@@ -488,7 +484,11 @@ const PlayerCard = ({
             sx={{ textTransform: 'uppercase' }}
             color='#fff'
           >
-            {name}
+              {avgSkill < 60 && (
+                <>
+                {avgSkill}
+              </>
+            )} {name}
           </Typography>
           <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
         </Box>
@@ -542,7 +542,11 @@ const PlayerCard = ({
           }}
         />
         <span className='text-[20px] mt-1' style={{ color: '#fff' }}>
-        {calculateSkillsPercentage(stats)}
+       {avgSkill >= 60 && (
+      <>
+            {avgSkill}
+      </>
+      )}
         </span>
         {/* Render children (e.g. vote button) at the bottom */}
         {children && (
