@@ -1629,7 +1629,7 @@ export default function GlobalTrophyRoom() {
                     position: posToShort(p.position),
                   } satisfies PlayerCardProps;
 
-                  return <PlayerCard {...playerCardProps} hideEditIcon />;
+                  return <PlayerCard {...playerCardProps} />;
                 })()}
                 {/* Icons row under the player card */}
                 <Box
