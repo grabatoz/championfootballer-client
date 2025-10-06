@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
-import EditIcon from '@mui/icons-material/Edit';
-import IconButton from '@mui/material/IconButton';
+// import EditIcon from '@mui/icons-material/Edit';
+// import IconButton from '@mui/material/IconButton';
 import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
@@ -98,11 +98,11 @@ function calculateAverageSkill(stats: {
 }
 
 // Backward-compat: old function now returns the average number (not a percent)
-function calculateSkillsPercentage(stats: {
-  DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string;
-}): number {
-  return calculateAverageSkill(stats);
-}
+// function calculateSkillsPercentage(stats: {
+//   DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string;
+// }): number {
+//   return calculateAverageSkill(stats);
+// }
 
 interface PlayerCardProps {
   name: string;
@@ -116,7 +116,7 @@ interface PlayerCardProps {
   width?: number | string;
   height?: number | string;
   position: string;
-  hideEditIcon?: boolean; // NEW
+  // hideEditIcon?: boolean; // NEW
 }
 
 // Import all possible vector images
@@ -148,7 +148,7 @@ const PlayerCard = ({
   width,
   height,
   position,
-  hideEditIcon = false,
+  // hideEditIcon = false,
 }: PlayerCardProps) => {
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
@@ -251,10 +251,10 @@ const PlayerCard = ({
     }
   };
 
-  const handleEditIconClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditOptionsOpen(true);
-  };
+  // const handleEditIconClick = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   setEditOptionsOpen(true);
+  // };
 
   const handleEditOptionsClose = () => setEditOptionsOpen(false);
 

@@ -268,9 +268,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     };
   }, []);
 
-  const isCaptain = React.useMemo(() => {
-    return isHomeTeam ? (meId && meId === homeCaptainId) : (meId && meId === awayCaptainId);
-  }, [meId, isHomeTeam, homeCaptainId, awayCaptainId]);
+  // const isCaptain = React.useMemo(() => {
+  //   return isHomeTeam ? (meId && meId === homeCaptainId) : (meId && meId === awayCaptainId);
+  // }, [meId, isHomeTeam, homeCaptainId, awayCaptainId]);
 
   // team-side specific drag permission (league admin or captain)
   const canDragTeam = React.useCallback((t: 'home'|'away') => {
@@ -460,8 +460,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
   // clamp helpers (0..1 pitch coordinates)
   const clamp01 = (n: number) => Math.max(0, Math.min(1, Number(n) || 0));
-  const normalizeX = (x: number) => clamp01(x);
-  const normalizeY = (y: number) => clamp01(y);
+  // const normalizeX = (x: number) => clamp01(x);
+  // const normalizeY = (y: number) => clamp01(y);
 
   // Event shape for pointer coords
   type HasClientXY = { clientX: number; clientY: number };
@@ -510,7 +510,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     }
   };
 
-  const startDrag = (pid: string, teamSide: 'home'|'away') => (e: React.PointerEvent) => {
+  const startDrag = (pid: string, teamSide: 'home'|'away') => () => {
     // block dragging if removed
     const removedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
     if (removedHere) return;
@@ -881,7 +881,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const pos = positions[pid] || guestRowPositions[pid];
     if (!pos) return null;
     // Guests are not swappable via server endpoint; ignore clicks in switch mode
-    const onClick = (e: React.MouseEvent) => { /* no-op for guests */ };
+    const onClick = () => { /* no-op for guests */ };
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
