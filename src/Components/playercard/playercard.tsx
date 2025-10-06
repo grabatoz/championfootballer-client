@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import {
   Box,
@@ -167,16 +167,65 @@ const PlayerCard = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imgUrl, setImgUrl] = useState(profileImage);
-  const [imageKey,] = useState(0); // Add key for forcing re-render
+  const [imgUrl, setImgUrl] = useState<string | null>(profileImage ?? null);
+  // const [imgVersion, setImgVersion] = useState(0);
   const { token } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null); // NEW
+  const [imgVersion, setImgVersion] = useState(0);            // NEW: cache-bust counter
 
-  // Update imgUrl when profileImage prop changes
+  // Helper to build display src with cache-busting
+  const withVersion = (url?: string | null, v?: number) =>
+    url && typeof url === 'string'
+      ? `${url}${url.includes('?') ? '&' : '?'}v=${v ?? imgVersion}`
+      : url;
+
+  // Extract Cloudinary version (path like .../v1696000000/...)
+  const extractVersionFromUrl = (url?: string | null) => {
+    if (!url) return 0;
+    const m = url.match(/\/v(\d+)\//);
+    return m ? Number(m[1]) : 0;
+  };
+
+  // Hydrate from localStorage first (survives refresh), then fallback to prop
   useEffect(() => {
-    if (profileImage) {
-      setImgUrl(profileImage);
+    if (typeof window !== 'undefined') {
+      const storedUrl = localStorage.getItem('avatar_url');
+      const storedV = localStorage.getItem('avatar_v');
+      if (storedUrl) setImgUrl(storedUrl);             // use latest known URL
+      if (storedV) setImgVersion(Number(storedV) || 0); // use latest cache buster
     }
+  }, []);
+
+  // When prop changes (e.g. after user fetch), only set if we don't have a storedUrl
+  useEffect(() => {
+    const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('avatar_url') : null;
+    if (!storedUrl && profileImage) setImgUrl(profileImage);
+
+    // prefer persisted cache-buster; fallback to Cloudinary version in URL
+    let v = 0;
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('avatar_v');
+      if (stored) v = Number(stored) || 0;
+    }
+    if (!v && profileImage) {
+      const m = profileImage.match(/\/v(\d+)\//);
+      if (m) v = Number(m[1]);
+    }
+    if (v) setImgVersion(v);
   }, [profileImage]);
+
+  // Auto-click the file input when the image modal opens
+  useEffect(() => {
+    if (imgModalOpen) {
+      // small delay to ensure the input is mounted
+      setTimeout(() => fileInputRef.current?.click(), 150);
+    }
+  }, [imgModalOpen]);
+
+  // Click avatar to open picker directly
+  const handleAvatarClick = () => {
+    setImgModalOpen(true);
+  };
 
   // Function to force image reload
   // const forceImageReload = (imageUrl: string) => {
@@ -197,8 +246,13 @@ const PlayerCard = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-      setImagePreview(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      const blobUrl = URL.createObjectURL(file);
+      setImageFile(file);
+      setImagePreview(blobUrl);
+      // Optimistically show the new image right away
+      setImgUrl(blobUrl);
+      setImgVersion(v => v + 1);
     }
   };
 
@@ -221,42 +275,63 @@ const PlayerCard = ({
   const handleModalClose = () => {
     setImgModalOpen(false);
     setImageFile(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);       // NEW: cleanup
+    }
     setImagePreview(null);
   };
 
   const handleUploadImage = async () => {
     if (!imageFile || !token) return;
     setUploading(true);
-    
     const formData = new FormData();
-    formData.append("profilePicture", imageFile);
-    
+    formData.append('profilePicture', imageFile);
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
-        method: "POST",
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
+        cache: 'no-store',
       });
-      
-      
-      const data = await res.json()
+      const data = await res.json();
       if (data.success) {
-        // Update cache with new user data
-        if (data.user) {
-          cacheManager.updatePlayersCache(data.user);
+        if (data.user) cacheManager.updatePlayersCache(data.user);
+
+        const newUrl: string | undefined = data.user?.profilePicture;
+        if (newUrl) {
+          setImgUrl(newUrl);
+          // persist so refresh uses the newest Cloudinary path
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('avatar_url', newUrl);
+          }
         }
-        toast.success("Profile picture updated!")
-        window.location.reload()
+
+        const bump = Number(data.cacheBuster) ||
+          (typeof newUrl === 'string' ? (newUrl.match(/\/v(\d+)\//)?.[1] as any) : 0) ||
+          Date.now();
+        setImgVersion(Number(bump));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('avatar_v', String(bump));
+        }
+
+        toast.success('Profile picture updated!');
+        setImgModalOpen(false);
       } else {
-        toast.error("Failed to upload image")
+        toast.error('Failed to upload image');
       }
-    } catch (error) {
-      console.error('Error uploading image:', error);
+    } catch (err) {
+      console.error('Error uploading image:', err);
       toast.error('Failed to upload image');
     } finally {
       setUploading(false);
     }
   };
+
+  // Build a safe src for <Image /> that is never undefined
+  const displaySrc: string | StaticImageData = imgUrl
+    ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
+    : imgicon;
 
   return (
     <Box
@@ -350,13 +425,14 @@ const PlayerCard = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              // overflow: 'hidden'
+              cursor: 'pointer', // NEW
             }}
+            onClick={handleAvatarClick} // NEW
           >
             <div style={{ position: 'relative', display: 'inline-block' }}>
               {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}
               <Avatar
-                key={`${imgUrl}-${imageKey}`}
+                key={`avatar-${imgVersion}`}   // ensure rerender without undefined
                 variant="square"
                 sx={{
                   width: 85,
@@ -369,15 +445,13 @@ const PlayerCard = ({
               >
                 <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
                   <Image
-                    src={imgUrl && typeof imgUrl === 'string' ? imgUrl : imgicon}
+                    src={displaySrc}
                     alt="Profile"
                     fill
                     sizes="85px"
+                    unoptimized // NEW: bypass Next image cache for avatars
                     priority={!imgUrl}
-                    style={{
-                      objectFit: 'cover',
-                      imageRendering: 'auto',
-                    }}
+                    style={{ objectFit: 'cover', imageRendering: 'auto' }}
                   />
                 </Box>
               </Avatar>
@@ -546,14 +620,22 @@ const PlayerCard = ({
             border: '2px solid #1976d2',
           }}
         >
-          <Typography variant="h6" component="h2" sx={{ mb: 3, textAlign: 'center', color: '#1976d2' }}>
+          <Typography variant="h6" component="h2" sx={{ mb: 1.5, textAlign: 'center', color: '#1976d2' }}>
             Update Profile Image
+          </Typography>
+
+          {/* Guidance message (prompt) */}
+          <Typography sx={{ mb: 2, fontSize: 14, color: 'text.secondary', textAlign: 'center' }}>
+            Please use a high‑quality, waist‑up photo with a white or clear background. Center your face. 
+            On mobile, you can take a new photo now.
           </Typography>
           
           <Box sx={{ mb: 3 }}>
-            <input 
-              type="file" 
-              accept="image/*" 
+            <input
+              ref={fileInputRef}               // NEW
+              type="file"
+              accept="image/*"
+              capture="user"                   // NEW: hint to open front camera on mobile
               onChange={handleFileChange}
               style={{
                 width: '100%',

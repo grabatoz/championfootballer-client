@@ -72,7 +72,7 @@ const GreenDialogTextField = styled(TextField)(() => ({
   }
 }));
 
-const LeagueSelectionComponent = ({ }: { user: User }) => {
+const LeagueSelectionComponent = ({ }: { user: User }) => {  
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
@@ -717,7 +717,7 @@ export default function PlayerDashboard() {
   //   { label: 'Trophy Room', icon: trophy, url: 'trophy-room' },
   //   { label: 'Leader Board', icon: leaderboard, url: 'leader-board' },
   // ];
-
+  
   return (
     <Box sx={{ px: { xs: 1, md: 3 }, py: { xs: 1, md: 4 }, minHeight: '100vh' }}>
       <Toaster position="top-center" reverseOrder={false} />
