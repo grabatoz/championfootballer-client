@@ -248,6 +248,31 @@ type EditWindow = {
   indexFromEnd: number | null; // 0=current, 1=previous, >1 older
 };
 
+// --- NEW: client helpers ---
+const getTotalMatchGoals = (match?: MatchWithGuests | null) =>
+  (match?.homeTeamGoals ?? 0) + (match?.awayTeamGoals ?? 0);
+
+type StatsForm = {
+  goals?: number;
+  assists?: number;
+  cleanSheets?: number;
+  penalties?: number;
+  freeKicks?: number;
+  defence?: number;
+  impact?: number;
+};
+
+function validateStatsCapsClient(stats: StatsForm, totalGoals: number): string | null {
+  const caps: Array<keyof StatsForm> = ['goals', 'assists', 'cleanSheets'];
+  for (const key of caps) {
+    const v = Number.isFinite(Number(stats[key])) ? Math.trunc(Number(stats[key])) : 0;
+    if (v < 0) return `“${key}” cannot be negative.`;
+    if (v > totalGoals) return `A player's ${key} cannot exceed total match goals (${totalGoals}).`;
+  }
+  return null;
+}
+// --- end helpers ---
+
 export default function PlayMatchPage() {
     const [league, setLeague] = useState<League | null>(null);
     const [match, setMatch] = useState<MatchWithGuests | null>(null);
@@ -463,7 +488,13 @@ export default function PlayMatchPage() {
         [adminStats.goals, adminStats.assists, adminStats.cleanSheets, adminStats.defence, adminSelectedTeamGoals, computeImpactPercent]
     );
 
+    // Prevent self-vote in UI too
     const handleVote = async (playerId: string) => {
+        if (!user) return;
+        if (playerId === user.id) {
+          toast.error('You cannot vote for yourself as Man of the Match.');
+          return;
+        }
         setLoadingVote(true);
         try {
             // If user already voted for this player, unvote them
@@ -944,7 +975,7 @@ export default function PlayMatchPage() {
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
-                                                                    disabled={loadingVote}
+                                                                    disabled={loadingVote || player.id === user?.id}
                                                                     color="#43a047"
                                                                     sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
@@ -1182,7 +1213,7 @@ export default function PlayMatchPage() {
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
-                                                                    disabled={loadingVote}
+                                                                    disabled={loadingVote || player.id === user?.id}
                                                                     color="#43a047"
                                                                     sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
