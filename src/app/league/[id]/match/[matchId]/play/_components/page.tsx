@@ -253,8 +253,8 @@ type CaptainPickCategory = 'defence' | 'influence';
 type CaptainPicks = { defence?: string; influence?: string };
 // --- end new types ---,
 
-const getTotalMatchGoals = (match?: MatchWithGuests | null) =>
-  (match?.homeTeamGoals ?? 0) + (match?.awayTeamGoals ?? 0);
+// const getTotalMatchGoals = (match?: MatchWithGuests | null) =>
+//   (match?.homeTeamGoals ?? 0) + (match?.awayTeamGoals ?? 0);
 
 type StatsForm = {
   goals?: number;
@@ -266,15 +266,15 @@ type StatsForm = {
   impact?: number;
 };
 
-function validateStatsCapsClient(stats: StatsForm, totalGoals: number): string | null {
-  const caps: Array<keyof StatsForm> = ['goals', 'assists', 'cleanSheets'];
-  for (const key of caps) {
-    const v = Number.isFinite(Number(stats[key])) ? Math.trunc(Number(stats[key])) : 0;
-    if (v < 0) return `“${key}” cannot be negative.`;
-    if (v > totalGoals) return `A player's ${key} cannot exceed total match goals (${totalGoals}).`;
-  }
-  return null;
-}
+// function validateStatsCapsClient(stats: StatsForm, totalGoals: number): string | null {
+//   const caps: Array<keyof StatsForm> = ['goals', 'assists', 'cleanSheets'];
+//   for (const key of caps) {
+//     const v = Number.isFinite(Number(stats[key])) ? Math.trunc(Number(stats[key])) : 0;
+//     if (v < 0) return `“${key}” cannot be negative.`;
+//     if (v > totalGoals) return `A player's ${key} cannot exceed total match goals (${totalGoals}).`;
+//   }
+//   return null;
+// }
 // --- end helpers ---
 
 export default function PlayMatchPage() {
@@ -871,8 +871,12 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
             applyLocal();
             toast.success('Captain pick saved.');
-        } catch (e: any) {
-            toast.error(e?.message || 'Failed to save pick');
+        }  catch (err: unknown) {
+            const message =
+                err instanceof Error ? err.message :
+                typeof err === 'string' ? err :
+                'Failed to save pick';
+            toast.error(message);
         } finally {
             setSavingPick(false);
             setIsPickDialogOpen(false);
@@ -893,7 +897,8 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
             if (!res.ok) throw new Error('Failed to fetch stats window');
             const data = await res.json();
             if (data.success) setEditWindow(data.window as EditWindow);
-        } catch (e) {
+        } catch (err: unknown) {
+            console.error('fetchEditWindow failed', err);
             setEditWindow(null);
         }
     }, [matchId, token]);
