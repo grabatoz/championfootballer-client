@@ -256,15 +256,15 @@ type CaptainPicks = { defence?: string; influence?: string };
 // const getTotalMatchGoals = (match?: MatchWithGuests | null) =>
 //   (match?.homeTeamGoals ?? 0) + (match?.awayTeamGoals ?? 0);
 
-type StatsForm = {
-  goals?: number;
-  assists?: number;
-  cleanSheets?: number;
-  penalties?: number;
-  freeKicks?: number;
-  defence?: number;
-  impact?: number;
-};
+// type StatsForm = {
+//   goals?: number;
+//   assists?: number;
+//   cleanSheets?: number;
+//   penalties?: number;
+//   freeKicks?: number;
+//   defence?: number;
+//   impact?: number;
+// };
 
 // function validateStatsCapsClient(stats: StatsForm, totalGoals: number): string | null {
 //   const caps: Array<keyof StatsForm> = ['goals', 'assists', 'cleanSheets'];
