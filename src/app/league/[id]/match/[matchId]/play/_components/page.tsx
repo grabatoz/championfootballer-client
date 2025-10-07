@@ -1603,7 +1603,85 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         ))}
                 </div>
             </div>
-            {isAdmin && (
+          
+
+
+
+
+
+
+
+  <Paper
+                sx={{
+                    p: { xs: 1.5, sm: 2 },
+                    my: 2,
+                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    border: '1px solid #3a3a3a',
+                }}
+            >
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                    Captains Bonus Pick
+                </Typography>
+                <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
+
+                <Box sx={{ display: 'grid', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography sx={{ fontWeight: 600 }}>Defensive Impact</Typography>
+                        {isCaptainUser ? (
+                            <Button
+                                onClick={() => openPickDialog('defence')}
+                                variant="contained"
+                                size="small"
+                                disabled={!league?.active || !baseCanSubmit}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    color: 'white',
+                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                }}
+                            >
+                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Select Player'}
+                            </Button>
+                        ) : (
+                            <Typography sx={{ opacity: 0.9 }}>
+                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Not selected'}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography sx={{ fontWeight: 600 }}>Influence</Typography>
+                        {isCaptainUser ? (
+                            <Button
+                                onClick={() => openPickDialog('influence')}
+                                variant="contained"
+                                size="small"
+                                disabled={!league?.active || !baseCanSubmit}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    color: 'white',
+                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                }}
+                            >
+                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Select Player'}
+                            </Button>
+                        ) : (
+                            <Typography sx={{ opacity: 0.9 }}>
+                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Not selected'}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    {!isCaptainUser && (
+                        <Typography variant="caption" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.7)' }}>
+                            Only the captain from each team can select these options.
+                        </Typography>
+                    )}
+                </Box>
+            </Paper>
+
+  {isAdmin && (
                 <Box sx={{
                     mt: 4,
                     mb: 4,
@@ -1713,83 +1791,6 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                     </Button>
                 </Box>
             )}
-
-
-
-
-
-
-
-  <Paper
-                sx={{
-                    p: { xs: 1.5, sm: 2 },
-                    my: 2,
-                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-                    color: 'white',
-                    borderRadius: 3,
-                    border: '1px solid #3a3a3a',
-                }}
-            >
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
-                    Captains Bonus Pick
-                </Typography>
-                <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
-
-                <Box sx={{ display: 'grid', gap: 1.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography sx={{ fontWeight: 600 }}>Defensive Impact</Typography>
-                        {isCaptainUser ? (
-                            <Button
-                                onClick={() => openPickDialog('defence')}
-                                variant="contained"
-                                size="small"
-                                disabled={!league?.active || !baseCanSubmit}
-                                sx={{
-                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                    color: 'white',
-                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                }}
-                            >
-                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Select Player'}
-                            </Button>
-                        ) : (
-                            <Typography sx={{ opacity: 0.9 }}>
-                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Not selected'}
-                            </Typography>
-                        )}
-                    </Box>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography sx={{ fontWeight: 600 }}>Influence</Typography>
-                        {isCaptainUser ? (
-                            <Button
-                                onClick={() => openPickDialog('influence')}
-                                variant="contained"
-                                size="small"
-                                disabled={!league?.active || !baseCanSubmit}
-                                sx={{
-                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                    color: 'white',
-                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                }}
-                            >
-                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Select Player'}
-                            </Button>
-                        ) : (
-                            <Typography sx={{ opacity: 0.9 }}>
-                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Not selected'}
-                            </Typography>
-                        )}
-                    </Box>
-
-                    {!isCaptainUser && (
-                        <Typography variant="caption" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.7)' }}>
-                            Only the captain from each team can select these options.
-                        </Typography>
-                    )}
-                </Box>
-            </Paper>
-
             {/* --- NEW: Player selection dialog (team-restricted) --- */}
             <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle>
