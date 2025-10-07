@@ -248,7 +248,11 @@ type EditWindow = {
   indexFromEnd: number | null; // 0=current, 1=previous, >1 older
 };
 
-// --- NEW: client helpers ---
+// --- NEW: captain picks types ---
+type CaptainPickCategory = 'defence' | 'influence';
+type CaptainPicks = { defence?: string; influence?: string };
+// --- end new types ---,
+
 const getTotalMatchGoals = (match?: MatchWithGuests | null) =>
   (match?.homeTeamGoals ?? 0) + (match?.awayTeamGoals ?? 0);
 
@@ -311,6 +315,15 @@ export default function PlayMatchPage() {
     // NEW: local saving flag (do not blank the page)
     const [savingMatchDetails, setSavingMatchDetails] = useState(false);
     const [editWindow, setEditWindow] = useState<EditWindow | null>(null);
+
+    // --- NEW: Captain Picks state ---
+    const [captainPicks, setCaptainPicks] = useState<CaptainPicks>({});
+    const [isPickDialogOpen, setIsPickDialogOpen] = useState(false);
+    const [pickCategory, setPickCategory] = useState<CaptainPickCategory | null>(null);
+    const [savingPick, setSavingPick] = useState(false);
+    // Capability flag – avoid POST if API is not available
+    const [captainApiAvailable, setCaptainApiAvailable] = useState(false);
+    // --- end captain picks state ---
 
     const { user, token } = useAuth();
     const params = useParams();
@@ -731,6 +744,142 @@ export default function PlayMatchPage() {
     const baseCanSubmit = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
     const isAdmin = league?.administrators?.some(a => a.id === user?.id) ?? false;
 
+    // NEW: captain role flags
+const isHomeCaptain = !!(user && match && user.id === match.homeCaptainId);
+const isAwayCaptain = !!(user && match && user.id === match.awayCaptainId);
+const isCaptainUser = isHomeCaptain || isAwayCaptain;
+
+ const myTeamPlayers: User[] = useMemo(() => {
+        if (!match) return [];
+        const team = isHomeCaptain ? match.homeTeamUsers : isAwayCaptain ? match.awayTeamUsers : [];
+        // Only real users, no guests
+        return (team ?? []) as User[];
+    }, [match, isHomeCaptain, isAwayCaptain]);
+
+     const playerNameById = useCallback((id?: string | null) => {
+        if (!id) return '';
+        const p = myTeamPlayers.find(u => u.id === id);
+        return p ? `${p.firstName} ${p.lastName}` : '';
+    }, [myTeamPlayers]);
+
+    useEffect(() => {
+        const loadPicks = async () => {
+            if (!token || !matchId) return;
+
+            // 1) Try local storage first so UI shows something even if API is missing
+            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            const storageKey = teamKey ? `captain_picks_${matchId}_${teamKey}` : null;
+            if (storageKey && typeof window !== 'undefined') {
+                const raw = localStorage.getItem(storageKey);
+                if (raw) {
+                    try {
+                        const ls = JSON.parse(raw) as CaptainPicks;
+                        setCaptainPicks({
+                            defence: ls.defence || undefined,
+                            influence: ls.influence || undefined,
+                        });
+                    } catch {}
+                }
+            }
+
+            // 2) Probe API; if 404/405, mark unavailable and stop
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/captain-picks`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.status === 404 || res.status === 405) {
+                    setCaptainApiAvailable(false);
+                    return; // avoid further calls (prevents POST 404 spam)
+                }
+
+                if (!res.ok) return;
+
+                setCaptainApiAvailable(true);
+                const data = await res.json();
+                // Expecting shape like { home: { defence, influence }, away: { defence, influence } }
+                const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+                const picks = teamKey ? data?.[teamKey] : data?.picks;
+                if (picks && typeof picks === 'object') {
+                    setCaptainPicks({
+                        defence: picks.defence || undefined,
+                        influence: picks.influence || undefined,
+                    });
+                }
+            } catch {
+                // keep local-only mode
+                setCaptainApiAvailable(false);
+            }
+        };
+        loadPicks();
+    }, [token, matchId, isHomeCaptain, isAwayCaptain]);
+
+     // --- NEW: open pick dialog handler ---
+    const openPickDialog = (category: CaptainPickCategory) => {
+        if (!isCaptainUser) {
+            toast.error('Only the team captain can make this selection.');
+            return;
+        }
+        if (!league?.active) {
+            toast.error('League is inactive.');
+            return;
+        }
+        if (!baseCanSubmit) {
+            toast.error('Available after result upload.');
+            return;
+        }
+        setPickCategory(category);
+        setIsPickDialogOpen(true);
+    };
+
+    // --- NEW: save selected player for a category ---
+    const handleSelectPick = async (playerId: string) => {
+        if (!pickCategory) return;
+
+        // Local update + localStorage persist
+        const applyLocal = () => {
+            setCaptainPicks(prev => ({ ...prev, [pickCategory]: playerId }));
+            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            if (teamKey && typeof window !== 'undefined') {
+                const key = `captain_picks_${matchId}_${teamKey}`;
+                const next = { ...captainPicks, [pickCategory]: playerId };
+                localStorage.setItem(key, JSON.stringify(next));
+            }
+        };
+
+        // If API not available, avoid POST 404 entirely
+        if (!captainApiAvailable) {
+            applyLocal();
+            toast.success('Saved locally (captain picks API not enabled).');
+            setIsPickDialogOpen(false);
+            setPickCategory(null);
+            return;
+        }
+
+        setSavingPick(true);
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/captain-picks`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ category: pickCategory, playerId })
+            });
+
+            if (!res.ok) throw new Error('Failed to save pick');
+
+            applyLocal();
+            toast.success('Captain pick saved.');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to save pick');
+        } finally {
+            setSavingPick(false);
+            setIsPickDialogOpen(false);
+            setPickCategory(null);
+        }
+    };
+
     const canPlayerSubmitStats = baseCanSubmit && (editWindow?.canPlayerSubmit ?? false);
     const canAdminSubmitStats = baseCanSubmit && (editWindow?.adminCanSubmit ?? false);
 
@@ -761,16 +910,13 @@ export default function PlayMatchPage() {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     playerId: selectedPlayerForAdmin.id,
                     ...adminStats,
                     // Override impact with computed admin impact
                     impact: computedAdminImpact,
-                })
+                }),
             });
 
             // Check if endpoint exists (not 404 or 405)
@@ -1562,6 +1708,129 @@ export default function PlayMatchPage() {
                     </Button>
                 </Box>
             )}
+
+
+
+
+
+
+
+  <Paper
+                sx={{
+                    p: { xs: 1.5, sm: 2 },
+                    my: 2,
+                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    border: '1px solid #3a3a3a',
+                }}
+            >
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                    Captains Bonus Pick
+                </Typography>
+                <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
+
+                <Box sx={{ display: 'grid', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography sx={{ fontWeight: 600 }}>Defensive Impact</Typography>
+                        {isCaptainUser ? (
+                            <Button
+                                onClick={() => openPickDialog('defence')}
+                                variant="contained"
+                                size="small"
+                                disabled={!league?.active || !baseCanSubmit}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    color: 'white',
+                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                }}
+                            >
+                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Select Player'}
+                            </Button>
+                        ) : (
+                            <Typography sx={{ opacity: 0.9 }}>
+                                {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Not selected'}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography sx={{ fontWeight: 600 }}>Influence</Typography>
+                        {isCaptainUser ? (
+                            <Button
+                                onClick={() => openPickDialog('influence')}
+                                variant="contained"
+                                size="small"
+                                disabled={!league?.active || !baseCanSubmit}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    color: 'white',
+                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                }}
+                            >
+                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Select Player'}
+                            </Button>
+                        ) : (
+                            <Typography sx={{ opacity: 0.9 }}>
+                                {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Not selected'}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    {!isCaptainUser && (
+                        <Typography variant="caption" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.7)' }}>
+                            Only the captain from each team can select these options.
+                        </Typography>
+                    )}
+                </Box>
+            </Paper>
+
+            {/* --- NEW: Player selection dialog (team-restricted) --- */}
+            <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs">
+                <DialogTitle>
+                    {pickCategory === 'defence' ? 'Select player for Defensive Impact' : 'Select player for Influence'}
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'grid', gap: 1 }}>
+                        {myTeamPlayers.map(p => (
+                            <Button
+                                key={p.id}
+                                onClick={() => handleSelectPick(p.id)}
+                                disabled={savingPick}
+                                variant="outlined"
+                                sx={{
+                                    justifyContent: 'flex-start',
+                                    borderColor: '#bdbdbd',
+                                    color: '#111',
+                                    '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                }}
+                            >
+                                {p.firstName} {p.lastName} {p.shirtNumber ? `#${p.shirtNumber}` : ''}
+                            </Button>
+                        ))}
+                        {myTeamPlayers.length === 0 && (
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                No players available.
+                            </Typography>
+                        )}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setIsPickDialogOpen(false)}
+                        variant="outlined"
+                        disabled={savingPick}
+                        sx={{
+                            color: '#111',
+                            borderColor: '#bdbdbd',
+                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                        }}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
 
             <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Your Stats for the Match</DialogTitle>
