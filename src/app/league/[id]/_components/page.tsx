@@ -34,10 +34,11 @@ import {
     List,
     ListItem,
     ListItemAvatar,
+    LinearProgress,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame } from 'lucide-react';
 import { Tooltip } from '@mui/material';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -107,6 +108,28 @@ interface LeagueSettingsDialogProps {
     onUpdate: (data: Partial<League & { admins: string[] }>) => void;
     onDelete: () => void;
 }
+
+
+type LeagueStatistics = {
+    playedMatches: number;
+    remaining: number;
+    players: number;
+    created: string;
+    bestPairing: null | {
+        ids: [string, string];
+        names: [string, string];
+        togetherMatches: number;
+        togetherWins: number;
+        combinedGoals: number;
+        combinedAssists: number;
+    };
+    hottestPlayer: null | {
+        playerId: string;
+        name: string;
+        xpInLast5: number;
+        matchesConsidered: number;
+    };
+};
 
 // const getBadgeForPosition = (position: number) => {
 //     switch (position) {
@@ -340,7 +363,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: Lea
                                 }}
                             />
                         }
-                        label="Show points in league table?"
+                        label="CF Advance Point Scoring"
                         sx={{ color: '#E5E7EB' }}
                     />
                 </Box>
@@ -397,7 +420,7 @@ export default function LeagueDetailPage() {
     const [, setUserLeagueXP] = useState<Record<string, number>>({});
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
-    const [activeMatchId, ] = React.useState<string | null>(null);
+    const [activeMatchId,] = React.useState<string | null>(null);
     // setActiveMatchId
     const [stats, setStats] = React.useState({
         goals: 0,
@@ -1000,6 +1023,30 @@ export default function LeagueDetailPage() {
             winPercentage: s.played ? `${Math.round((s.wins / s.played) * 100)}%` : '0%'
         })).sort((a, b) => b.wins - a.wins || b.draws - a.draws || a.losses - b.losses);
     }, [league]);
+
+    const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
+    // ...existing code...
+
+    // REMOVE the old useMemo leagueStats block
+    // ...existing code...
+    // { deleted useMemo computing leagueStats }
+    // ...existing code...
+
+    useEffect(() => {
+        if (!league?.id || !token) return;
+        (async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/statistics`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const json = await res.json();
+                if (json?.success) setLeagueStats(json.data);
+            } catch (e) {
+                console.error('Failed to load league statistics', e);
+                setLeagueStats(null);
+            }
+        })();
+    }, [league?.id, token]);
 
     const getAvailabilityCounts = (match: Match) => {
         // Find the league for this match
@@ -2409,10 +2456,10 @@ export default function LeagueDetailPage() {
                                         }}
                                         onClick={() => {
                                             // Check if points are disabled
-                                            if (league?.showPoints === false) {
-                                                setShowPointsAlert(true);
-                                                return;
-                                            }
+                                            // if (league?.showPoints === false) {
+                                            //     setShowPointsAlert(true);
+                                            //     return;
+                                            // }
                                             setSection('table');
                                             router.replace(`/league/${leagueId}?tab=table`);
                                         }}
@@ -3092,7 +3139,7 @@ export default function LeagueDetailPage() {
                                                                         Available: {availableCount} | Pending: {pendingCount}
                                                                     </Button>
                                                                 </Box> */}
-                                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                     <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                                         <span>
                                                                             <Button
@@ -3641,8 +3688,13 @@ export default function LeagueDetailPage() {
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">D</div>
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">L</div>
                                                     <div className="min-w-10 text-center text-xs sm:text-sm md:text-base">W%</div>
-                                                    <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
-                                                    <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP </div>
+                                                    {/* <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
+                                                    <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP </div> */}
+                                                    {league?.showPoints === false ? (
+                                                        <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
+                                                    ) : (
+                                                        <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP</div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -3714,10 +3766,17 @@ export default function LeagueDetailPage() {
                                                                     <div className="min-w-10 text-center text-white text-xs sm:text-sm md:text-base">
                                                                         {player.winPercentage}
                                                                     </div>
-                                                                    <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
+                                                                    {/* <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
                                                                     <div className="min-w-[50px] text-center text-white text-xs sm:text-sm md:text-base">
                                                                         {player.xp}
-                                                                    </div>
+                                                                    </div> */}
+                                                                    {league?.showPoints === false ? (
+                                                                        <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
+                                                                    ) : (
+                                                                        <div className="min-w-[50px] text-center text-white text-xs sm:text-sm md:text-base">
+                                                                            {player.xp}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="h-[1px] bg-white"></div>
@@ -3727,6 +3786,169 @@ export default function LeagueDetailPage() {
                                             </div>
                                         </div>
                                     </Card>
+                                    {/* // ...existing code... */}
+                                    {league && (
+                                        <Box sx={{ mt: 2 }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 2,
+                                                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 0.92) 26%, rgba(207, 35, 38, 0.92) 100%)',
+                                                    border: '1px solid rgba(255,255,255,0.15)',
+                                                    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                                                }}
+                                            >
+                                                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                                                    Statistics
+                                                </Typography>
+
+                                                <Box
+                                                    sx={{
+                                                        p: 2,
+                                                        borderRadius: 2,
+                                                        // border: '1px solid rgba(255,255,255,0.2)',
+                                                        // background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.18) 100%)',
+                                                        // boxShadow: 'inset 0 0 30px rgba(0,0,0,0.25)',
+                                                    }}
+                                                >
+                                                    {!leagueStats ? (
+                                                        <Typography variant="body2" sx={{ color: 'white' }}>
+                                                            Loading statistics…
+                                                        </Typography>
+                                                    ) : (
+                                                        (() => {
+                                                            const played = leagueStats.playedMatches ?? 0;
+                                                            const remaining = leagueStats.remaining ?? Math.max((league?.maxGames ?? 0) - played, 0);
+                                                            const total = (league?.maxGames ?? (played + remaining)) || (played + remaining);
+                                                            const pct = total > 0 ? Math.round((played / total) * 100) : 0;
+
+                                                            const createdD = leagueStats.created ? new Date(leagueStats.created) : null;
+                                                            const createdStr = createdD
+                                                                ? `Created On ${createdD.toLocaleDateString('en-GB', {
+                                                                    weekday: 'long',
+                                                                    day: '2-digit',
+                                                                    month: 'long',
+                                                                    year: 'numeric',
+                                                                })} At ${createdD.toLocaleTimeString('en-GB', {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    hour12: false,
+                                                                })}`
+                                                                : 'Created On -';
+
+                                                            return (
+                                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                                                                    {/* Season progress */}
+                                                                    <Box
+                                                                        sx={{
+                                                                            p: 1.5,
+                                                                            borderRadius: 1.5,
+                                                                            border: '1px solid rgba(52,211,153,0.35)',
+                                                                            background: 'linear-gradient(180deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.07) 100%)',
+                                                                        }}
+                                                                    >
+                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
+                                                                            Season Progress
+                                                                        </Typography>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 0.75, mb: 1 }}>
+                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700 }}>
+                                                                                {played} Played
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{ color: '#34d399', fontWeight: 700 }}>
+                                                                                {remaining} Remaining
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        <LinearProgress
+                                                                            variant="determinate"
+                                                                            value={pct}
+                                                                            sx={{
+                                                                                height: 8,
+                                                                                borderRadius: 999,
+                                                                                backgroundColor: 'rgba(255,255,255,0.15)',
+                                                                                '& .MuiLinearProgress-bar': { backgroundColor: '#34d399' },
+                                                                            }}
+                                                                        />
+                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.75, display: 'block' }}>
+                                                                            {pct}% complete
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    {/* Players + Created */}
+                                                                    <Box
+                                                                        sx={{
+                                                                            p: 1.5,
+                                                                            borderRadius: 1.5,
+                                                                            border: '1px solid rgba(245,158,11,0.35)',
+                                                                            background: 'linear-gradient(180deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.07) 100%)',
+                                                                        }}
+                                                                    >
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                            <Users size={18} color="#F59E0B" />
+                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700 }}>
+                                                                                {(leagueStats.players ?? league?.members?.length ?? 0)} Players
+                                                                            </Typography>
+                                                                        </Box>
+
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                                                            <Calendar size={18} color="#F59E0B" />
+                                                                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.95)' }}>
+                                                                                {createdStr}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </Box>
+
+                                                                    {/* Best pairing + Hottest */}
+                                                                    <Box
+                                                                        sx={{
+                                                                            gridColumn: { xs: '1 / -1', sm: '1 / -1' },
+                                                                            display: 'flex',
+                                                                            flexWrap: 'wrap',
+                                                                            gap: 1,
+                                                                            mt: 0.5,
+                                                                        }}
+                                                                    >
+                                                                        <Chip
+                                                                            label={
+                                                                                leagueStats.bestPairing
+                                                                                    ? `Best pairing: ${leagueStats.bestPairing.names[0]} and ${leagueStats.bestPairing.names[1]}`
+                                                                                    : 'Best pairing will appear when enough matches are completed.'
+                                                                            }
+                                                                            sx={{
+                                                                                color: 'white',
+                                                                                border: '1px solid rgba(59,130,246,0.4)',
+                                                                                background: leagueStats.bestPairing
+                                                                                    ? 'linear-gradient(180deg, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.10) 100%)'
+                                                                                    : 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%)',
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        />
+                                                                        <Chip
+                                                                            icon={<Flame size={16} color="#F97316" />}
+                                                                            label={
+                                                                                leagueStats.hottestPlayer
+                                                                                    ? `${leagueStats.hottestPlayer.name} is the hottest player right now!`
+                                                                                    : 'Hottest player will appear after recent matches with stats.'
+                                                                            }
+                                                                            sx={{
+                                                                                color: 'white',
+                                                                                border: '1px solid rgba(249,115,22,0.4)',
+                                                                                background: leagueStats.hottestPlayer
+                                                                                    ? 'linear-gradient(180deg, rgba(249,115,22,0.25) 0%, rgba(249,115,22,0.10) 100%)'
+                                                                                    : 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%)',
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        />
+                                                                    </Box>
+                                                                </Box>
+                                                            );
+                                                        })()
+                                                    )}
+                                                </Box>
+                                            </Paper>
+                                        </Box>
+                                    )}
+                                    {/* // ...existing code... */}
                                 </div>
                             )}
 
