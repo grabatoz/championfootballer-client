@@ -92,6 +92,7 @@ const normalizeUserForStorage = (user: User): UserProfile => {
     profilePicture: user.profilePicture || null,
     image: userWithImage.image || user.profilePicture || null,
     skills: user.skills,
+    xp: user.xp,
   }
 }
 

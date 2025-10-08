@@ -47,6 +47,7 @@ export interface UserProfile {
   profilePicture?: string | null;
   image?: string | null; // alias
   skills?: UserSkills;
+  xp?: number;
 }
 
 export interface UserDataShape {

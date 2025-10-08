@@ -1016,7 +1016,8 @@ const resultColor = (r: 'W' | 'D' | 'L') =>
 // ADD: status normalizer (handles Completed, FINISHED, etc.)
 const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
   const v = String(s ?? '').toLowerCase();
-  if (['RESULT_PUBLISHED', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'RESULT_PUBLISHED';
+  // fix: compare against lowercase 'result_published'
+  if (['result_published', 'complete', 'finished', 'ended', 'done'].includes(v)) return 'RESULT_PUBLISHED';
   if (['ongoing', 'inprogress', 'in_progress', 'live', 'playing'].includes(v)) return 'ONGOING';
   return 'SCHEDULED';
 };
@@ -1030,8 +1031,10 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
 
   // de-duplicate by id
   const byId: Record<string, BackendLeague> = {};
-  srcLeagues.forEach((l: BackendLeague) => { if (l?.id) byId[String(l.id)] = l; });
-  const unique = Object.values(byId);
+  srcLeagues.forEach((l: BackendLeague) => {
+    if (l?.id !== undefined && l?.id !== null) byId[String(l.id)] = l;
+  });
+  const uniqueList = Object.values(byId);
 
   const toUser = (p: BackendUser): User => ({
     id: String(p?.id ?? ''),
@@ -1049,32 +1052,57 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
     manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
     playerStats: Object.fromEntries(
       Object.entries(m?.playerStats ?? {}).map(([playerId, stats]) => [
-        playerId,
+        String(playerId),
         {
-          goals: Number(stats.goals ?? 0),
-          assists: Number(stats.assists ?? 0),
-        }
+          goals: Number((stats as any)?.goals ?? 0),
+          assists: Number((stats as any)?.assists ?? 0),
+        },
       ])
     ),
     status: normalizeMatchStatus(m?.status),
   });
 
-  return unique.map((l: BackendLeague) => {
-    const maxGames = extractLeagueMaxGames(l);
-    if (!maxGames && (l?.matches ?? []).length > 0) {
-      console.warn('[TrophyRoom] maxGames missing/0 for league; using fallback rules', {
-        leagueId: l?.id, name: l?.name, rawMaxGames: l?.maxGames
-      });
-    }
-    return {
-      id: String(l?.id ?? ''),
-      name: l?.name ?? '',
-      members: (l?.members ?? []).map(toUser),
-      matches: (l?.matches ?? []).map(toMatch),
-      maxGames: maxGames,
-    };
-  });
+  return uniqueList.map((l: BackendLeague): League => ({
+    id: String(l?.id ?? ''),
+    name: l?.name ?? '',
+    members: (l?.members ?? []).map(toUser),
+    matches: (l?.matches ?? []).map(toMatch),
+    maxGames: extractLeagueMaxGames(l),
+  }));
 };
+
+// Helper to normalize simple user from API leagues
+const toUserBasic = (p: any): User => ({
+  id: String(p?.id ?? ''),
+  firstName: p?.firstName ?? '',
+  lastName: p?.lastName ?? '',
+  position: p?.positionType ?? p?.position ?? undefined,
+});
+
+// Keep this for /leagues/trophy-room response
+const normalizeLeagueFromApi = (l: any): League => ({
+  id: String(l?.id ?? ''),
+  name: l?.name ?? '',
+  members: Array.isArray(l?.members) ? l.members.map(toUserBasic) : [],
+  matches: Array.isArray(l?.matches)
+    ? l.matches.map((m: any): Match => ({
+        id: String(m?.id ?? ''),
+        homeTeamGoals: Number(m?.homeTeamGoals ?? 0),
+        awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
+        homeTeamUsers: Array.isArray(m?.homeTeamUsers) ? m.homeTeamUsers.map(toUserBasic) : [],
+        awayTeamUsers: Array.isArray(m?.awayTeamUsers) ? m.awayTeamUsers.map(toUserBasic) : [],
+        manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
+        playerStats: Object.fromEntries(
+          Object.entries(m?.playerStats ?? {}).map(([pid, s]: any) => [
+            String(pid),
+            { goals: Number(s?.goals ?? 0), assists: Number(s?.assists ?? 0) },
+          ])
+        ),
+        status: normalizeMatchStatus(m?.status),
+      }))
+    : [],
+  maxGames: Number(l?.maxGames ?? 0),
+});
 
 // Freeze member positions for completed leagues (keep the position at league end)
 const freezeLeaguePositions = (league: League): League => {
@@ -1134,121 +1162,7 @@ export default function GlobalTrophyRoom() {
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
-  // Badge detail modal state
-  const [openBadgeDlg, setOpenBadgeDlg] = useState(false);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
-  const openBadgeDetail = (b: Badge) => { setSelectedBadge(b); setOpenBadgeDlg(true); };
-  const closeBadgeDetail = () => { setOpenBadgeDlg(false); setSelectedBadge(null); };
-
-  useEffect(() => {
-    const fetchLeagues = async () => {
-      if (!token) return;
-      setLoading(true);
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok && data?.success && data?.user) {
-          const onlyMyLeagues = normalizeLeaguesFromAuthData(data.user);
-
-          // Debug summary of leagues after normalization
-          console.groupCollapsed('[TrophyRoom] Leagues loaded');
-          console.table(
-            onlyMyLeagues.map(l => ({
-              id: l.id,
-              name: l.name,
-              maxGames: l.maxGames,
-              totalMatches: l.matches?.length ?? 0,
-              completed: (l.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length,
-              statuses: Array.from(new Set((l.matches ?? []).map(m => m.status))).join(', ')
-            }))
-          );
-          console.groupEnd();
-
-          // Per-league audit (missing player stats etc.)
-          onlyMyLeagues.forEach(auditLeagueData);
-
-          setLeagues(onlyMyLeagues);
-          // capture exact backend XP
-          setBackendTotalXP(extractTotalXP(data.user));
-        } else {
-          console.error('[TrophyRoom] fetchLeagues bad response', { status: res.status, data });
-          setError(data?.message || 'Failed to load your leagues.');
-        }
-      } catch (e) {
-        console.error('[TrophyRoom] fetchLeagues error', e);
-        setError('An error occurred while fetching your leagues.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLeagues();
-  }, [token]);
-
-  // Auto-select a default league (prefer a completed league, else first)
-  useEffect(() => {
-    if (!leagues?.length) return;
-    // Don't override if user has already selected a league that exists
-    if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
-
-    const completed = leagues.find(l => isLeagueCompleted(l));
-    const defaultId = completed?.id ?? leagues[0].id;
-    setSelectedLeagueId(defaultId);
-  }, [leagues]);
-
-  const myAchievements = useMemo(() => {
-    if (!user || !leagues.length) return [];
-    console.log("Calculating achievements for user:", user.id);
-    console.log("Leagues data:", leagues);
-
-    const achievements: TrophyType[] = [];
-    leagues.forEach(league => {
-      if (!league || !league.matches) {
-        console.warn("Skipping league due to incomplete data:", league?.id);
-        return;
-      }
-
-      // Only calculate for completed leagues (robust)
-      if (!isLeagueCompleted(league)) return;
-
-      // Use frozen positions for completed leagues
-      const frozenLeague = freezeLeaguePositions(league);
-
-      console.log(`Processing completed league ${frozenLeague.id} for achievements.`);
-      const playerStats = calculatePlayerStats(frozenLeague);
-      const leagueTrophies = calculateLeagueWinners(frozenLeague, playerStats);
-
-      const userWonTrophies = leagueTrophies.filter(trophy => trophy.winnerId === user.id);
-      if (userWonTrophies.length > 0) {
-        console.log(`User won ${userWonTrophies.length} trophies in league ${frozenLeague.id}:`, userWonTrophies);
-      }
-      achievements.push(...userWonTrophies);
-    });
-    console.log("Final achievements:", achievements);
-    return achievements;
-  }, [leagues, user]);
-
-  // Compute ALL trophies across every completed league (for the "All Trophies" tab)
-  const allTrophyWinners = useMemo(() => {
-    if (!leagues.length) return [] as TrophyType[];
-    const all: TrophyType[] = [];
-    leagues.forEach(league => {
-      if (!league || !league.matches) return;
-
-      // Only completed leagues are included here
-      if (!isLeagueCompleted(league)) return;
-
-      // Freeze positions for finished leagues; active leagues stay live
-      const frozenLeague = freezeLeaguePositions(league);
-
-      const stats = calculatePlayerStats(frozenLeague);
-      const winners = calculateLeagueWinners(frozenLeague, stats);
-      all.push(...winners);
-    });
-    return all;
-  }, [leagues]);
-
+  // Add missing handlers
   const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
     setLeaguesDropdownAnchor(event.currentTarget);
     setLeaguesDropdownOpen(true);
@@ -1258,27 +1172,119 @@ export default function GlobalTrophyRoom() {
     setLeaguesDropdownAnchor(null);
   };
   const handleLeagueSelect = (id: string | 'all') => {
-    setSelectedLeagueId(id);
+    setSelectedLeagueId(id === 'all' ? 'all' : String(id));
     handleLeaguesDropdownClose();
   };
 
-  // Hide/close league menu when viewing My Achievements (overall, not league-based)
-  useEffect(() => {
-    if (filter === 'my') {
-      setLeaguesDropdownOpen(false);
-      setLeaguesDropdownAnchor(null);
-    }
-  }, [filter]);
-
+  // Helper to format the league button label
   const formatLeagueName = (name: string): string => {
     if (!name) return '';
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-    const words = name.split(' ');
-    const initials = words.map(w => w.charAt(0).toUpperCase()).join('');
-    return `${capitalizedName} (${initials})`;
+    const trimmed = String(name).trim();
+    const words = trimmed.split(/\s+/);
+    const initials = words.map(w => (w[0] || '').toUpperCase()).join('');
+    const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    return `${capitalized} (${initials})`;
   };
 
-  const baseTrophies: TrophyType[] = filter === 'all' ? allTrophyWinners : myAchievements;
+  // Badge detail modal state
+  const [openBadgeDlg, setOpenBadgeDlg] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const openBadgeDetail = (b: Badge) => { setSelectedBadge(b); setOpenBadgeDlg(true); };
+  const closeBadgeDetail = () => { setOpenBadgeDlg(false); setSelectedBadge(null); };
+
+  const [apiAllWinners, setApiAllWinners] = useState<TrophyType[] | null>(null);
+
+
+  // Helper to attach local meta (image/color/description) by title
+  const attachTrophyMeta = (items: Array<{ title: string; winnerId: string | number | null; winner: string | null; leagueId?: string | number; leagueName?: string; }>): TrophyType[] => {
+    return items.map(it => {
+      const meta = trophies.find(t => t.title === it.title);
+      return {
+        title: it.title,
+        description: meta?.description ?? '',
+        image: meta?.image ?? TrophyImg,
+        color: meta?.color ?? '#999',
+        winner: it.winner ?? null,
+        winnerId: it.winnerId != null ? String(it.winnerId) : null,
+        leagueId: it.leagueId != null ? String(it.leagueId) : undefined,
+        leagueName: it.leagueName,
+      };
+    });
+  };
+
+
+  useEffect(() => {
+    // Fetch all leagues once (independent of the selected filter)
+    if (!token) return;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && (data?.user || data?.success)) {
+          const userPayload = data?.user ?? data;
+          setLeagues(normalizeLeaguesFromAuthData(userPayload));
+        } else {
+          setLeagues([]);
+        }
+      } catch {
+        setLeagues([]);
+      }
+    })();
+  }, [token]);
+
+  useEffect(() => {
+    const fetchWinners = async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const q =
+          selectedLeagueId && selectedLeagueId !== 'all'
+            ? `?leagueId=${encodeURIComponent(String(selectedLeagueId))}`
+            : '';
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room${q}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (res.ok && data?.success) {
+          // Only update winners and XP; DO NOT overwrite leagues here
+          setApiAllWinners(Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : []);
+          setBackendTotalXP(typeof data.backendTotalXP === 'number' ? data.backendTotalXP : undefined);
+          setError(null);
+        } else {
+          console.error('[TrophyRoom] /leagues/trophy-room bad response', { status: res.status, data });
+          setApiAllWinners([]);
+          setError(data?.message || 'Failed to load trophy room.');
+        }
+      } catch (e) {
+        console.error('[TrophyRoom] fetchWinners error', e);
+        setApiAllWinners([]);
+        setError('An error occurred while fetching trophy room.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWinners();
+  }, [token, selectedLeagueId]);
+
+  // Auto-select a default league (prefer a completed league, else first)
+  useEffect(() => {
+    if (!leagues?.length) return;
+    // If current selection doesn't exist, pick default
+    if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
+    const completed = leagues.find(l => isLeagueCompleted(l));
+    const defaultId = completed?.id ?? leagues[0].id;
+    setSelectedLeagueId(String(defaultId));
+  }, [leagues]);
+
+  // Use API-provided winners directly (already filtered by selectedLeagueId on the server)
+  const baseTrophies: TrophyType[] =
+    filter === 'all'
+      ? (apiAllWinners ?? [])
+      : [];
+
   const trophiesToDisplayBase: TrophyType[] =
     selectedLeagueId === 'all'
       ? baseTrophies
@@ -1337,27 +1343,93 @@ export default function GlobalTrophyRoom() {
   );
 
   // Open modal for a trophy winner (uses the league of that trophy)
-  const openPlayerQuickView = (trophy: TrophyType) => {
-    if (!trophy.winnerId || !trophy.leagueId) return;
-    const league = leagues.find(l => l.id === trophy.leagueId);
-    if (!league) return;
+  const openPlayerQuickView = async (trophy: TrophyType) => {
+    if (!trophy.winnerId || !trophy.leagueId || !token) return;
 
-    // Use frozen positions when league is completed
-    const frozenLeague = freezeLeaguePositions(league);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (!res.ok || !data?.success) return;
 
-    const player = frozenLeague.members.find(m => m.id === trophy.winnerId);
-    if (!player) return;
+      const league = leagues.find(l => l.id === String(data.league?.id)) ?? null;
 
-    const perLeague = summarizeUserMatchesByLeague(player.id, [frozenLeague]);
-    const allMatches = perLeague[frozenLeague.id] ?? [];
-    const list = allMatches.slice(-5).reverse();
-    const stats = calculatePlayerStats(frozenLeague)[player.id];
-    const skills = computeSkillsFromStats(stats, player);
-    const cleanSheets = allMatches.filter(m => m.conceded === 0).length;
-    const motmCount = allMatches.filter(m => m.motmVotes > 0).length;
+      const player: User & PlayerProfileLike = {
+        id: String(data.player?.id ?? trophy.winnerId),
+        firstName: data.player?.firstName ?? '',
+        lastName: data.player?.lastName ?? '',
+        position: data.player?.position,
+        preferredFoot: data.player?.preferredFoot,
+        shirtNumber: data.player?.shirtNumber,
+        profilePicture: data.player?.profilePicture,
+        avatarUrl: data.player?.profilePicture,
+      };
 
-    setQuickView({ player, league: frozenLeague, lastFive: list, stats, trophyTitle: trophy.title, skills, cleanSheets, motmCount });
-    setOpenQuickView(true);
+      const stats: PlayerStats = {
+        played: Number(data.stats?.played ?? 0),
+        wins: Number(data.stats?.wins ?? 0),
+        draws: Number(data.stats?.draws ?? 0),
+        losses: Number(data.stats?.losses ?? 0),
+        goals: Number(data.stats?.goals ?? 0),
+        assists: Number(data.stats?.assists ?? 0),
+        motmVotes: Number(data.stats?.motmVotes ?? 0),
+        teamGoalsConceded: Number(data.stats?.teamGoalsConceded ?? 0),
+      };
+
+      // Use skills from backend only (no client calculation)
+      const skills: Skills | undefined = data.skills
+        ? {
+            dribbling: Number(data.skills.dribbling ?? 0),
+            shooting: Number(data.skills.shooting ?? 0),
+            passing: Number(data.skills.passing ?? 0),
+            pace: Number(data.skills.pace ?? 0),
+            defending: Number(data.skills.defending ?? 0),
+            physical: Number(data.skills.physical ?? 0),
+          }
+        : undefined;
+
+      const lastFive: UserMatchSummary[] = Array.isArray(data.lastFive) ? data.lastFive : [];
+      const cleanSheets: number = Number(data.cleanSheets ?? 0);
+      const motmCount: number = Number(data.motmCount ?? 0);
+
+      setQuickView({
+        player,
+        league: league ?? undefined,
+        lastFive,
+        stats,
+        trophyTitle: trophy.title,
+        skills, // only DB values; undefined shows zeros in UI
+        cleanSheets,
+        motmCount,
+      });
+      setOpenQuickView(true);
+    } catch {
+      // On API error, do not compute skills locally
+      const league = leagues.find(l => l.id === trophy.leagueId);
+      if (!league) return;
+      const player = league.members.find(m => m.id === trophy.winnerId);
+      if (!player) return;
+
+      // You may still show basic stats from local league if desired, but no skills calculation
+      const perLeague = summarizeUserMatchesByLeague(player.id, [league]);
+      const allMatches = perLeague[league.id] ?? [];
+      const list = allMatches.slice(-5).reverse();
+      const stats = calculatePlayerStats(league)[player.id];
+
+      setQuickView({
+        player,
+        league,
+        lastFive: list,
+        stats,
+        trophyTitle: trophy.title,
+        skills: undefined, // no local compute
+        cleanSheets: allMatches.filter(m => m.conceded === 0).length,
+        motmCount: allMatches.filter(m => m.motmVotes > 0).length,
+      });
+      setOpenQuickView(true);
+    }
   };
 
   if (loading) {
@@ -1387,6 +1459,7 @@ export default function GlobalTrophyRoom() {
             <>
               <Button
                 onClick={handleLeaguesDropdownOpen}
+                disabled={!leagues.length}
                 sx={{
                   textTransform: 'uppercase',
                   fontSize: { xs: '1rem', sm: '1.1rem' },
@@ -1404,7 +1477,9 @@ export default function GlobalTrophyRoom() {
                 }}
                 endIcon={<ChevronDown size={20} />}
               >
-                {selectedLeague ? formatLeagueName(selectedLeague.name) : 'All Leagues'}
+                {selectedLeague
+                  ? formatLeagueName(selectedLeague.name)
+                  : (leagues.length ? 'All Leagues' : 'No leagues found')}
               </Button>
               <Menu
                 anchorEl={leaguesDropdownAnchor}
@@ -1413,7 +1488,7 @@ export default function GlobalTrophyRoom() {
               >
                 <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem>
                 {leagues.map(l => (
-                  <MenuItem key={l.id} onClick={() => handleLeagueSelect(l.id)}>
+                  <MenuItem key={l.id} onClick={() => handleLeagueSelect(String(l.id))}>
                     {l.name}
                   </MenuItem>
                 ))}
@@ -1568,6 +1643,8 @@ export default function GlobalTrophyRoom() {
             )}
           </Box>
 
+
+
           {selectedLeague && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
               <Typography
@@ -1692,6 +1769,7 @@ export default function GlobalTrophyRoom() {
                       >
                         {it.label}
                       </Typography>
+                      
                     </Box>
                   ))}
                 </Box>
