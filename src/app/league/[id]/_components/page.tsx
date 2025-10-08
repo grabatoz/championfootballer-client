@@ -456,6 +456,35 @@ export default function LeagueDetailPage() {
     const [archivedActionChecking, setArchivedActionChecking] = useState(false);
     const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
 
+    const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
+
+
+    useEffect(() => {
+        if (!token || !leagueId) return;
+        (async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${encodeURIComponent(leagueId)}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (!res.ok || !data?.success || !Array.isArray(data?.trophyWinners)) {
+                    setLeagueWinners({});
+                    return;
+                }
+                const winners = data.trophyWinners as Array<{ title: string; winnerId: string | number | null }>;
+                const byTitle = (t: string) => winners.find(w => (w.title || '').toLowerCase() === t.toLowerCase());
+                const champion = byTitle('League Champion')?.winnerId;
+                const runnerUp = byTitle('Runner-Up')?.winnerId;
+                setLeagueWinners({
+                    champion: champion != null ? String(champion) : undefined,
+                    runnerUp: runnerUp != null ? String(runnerUp) : undefined,
+                });
+            } catch {
+                setLeagueWinners({});
+            }
+        })();
+    }, [token, leagueId]);
+
     const checkCanHardDelete = useCallback(async (matchId: string) => {
         if (!token) return;
         setArchivedActionChecking(true);
@@ -1018,11 +1047,35 @@ export default function LeagueDetailPage() {
                 match.homeTeamUsers.forEach(p => processPlayer(p, true));
                 match.awayTeamUsers.forEach(p => processPlayer(p, false));
             });
-        return Array.from(playerStats.values()).map(s => ({
+
+        const list = Array.from(playerStats.values()).map(s => ({
             ...s,
             winPercentage: s.played ? `${Math.round((s.wins / s.played) * 100)}%` : '0%'
-        })).sort((a, b) => b.wins - a.wins || b.draws - a.draws || a.losses - b.losses);
-    }, [league]);
+        }));
+
+        // Place Champion at 1st and Runner-Up at 2nd
+        const championId = leagueWinners?.champion;
+        const runnerUpId = leagueWinners?.runnerUp;
+
+        list.sort((a, b) => {
+            // Champion always first
+            if (championId) {
+                if (a.id === championId && b.id !== championId) return -1;
+                if (b.id === championId && a.id !== championId) return 1;
+            }
+            // Runner-up second (unless the other is champion)
+            if (runnerUpId) {
+                if (a.id === runnerUpId && b.id !== runnerUpId && b.id !== championId) return -1;
+                if (b.id === runnerUpId && a.id !== runnerUpId && a.id !== championId) return 1;
+            }
+            // Fallback: normal table sort
+            if (b.wins !== a.wins) return b.wins - a.wins;
+            if (b.draws !== a.draws) return b.draws - a.draws;
+            return a.losses - b.losses;
+        });
+
+        return list;
+    }, [league, leagueWinners]);
 
     const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
     // ...existing code...
@@ -3706,6 +3759,11 @@ export default function LeagueDetailPage() {
                                                     const firstName = player.name.split(" ")[0] || player.name; // Ensure first name exists
                                                     const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
 
+                                                    // NEW: mark champion/runner-up from trophy room data
+                                                    const isChampion = leagueWinners.champion === player.id;
+                                                    const isRunnerUp = leagueWinners.runnerUp === player.id;
+
+                                                    
                                                     return (
                                                         <Link key={player.id} href={`/player/${player.id}`} className="block">
                                                             {/* ${getRowStyles(index)} */}

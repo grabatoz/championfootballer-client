@@ -1155,6 +1155,11 @@ export default function GlobalTrophyRoom() {
     skills?: Skills;
     cleanSheets?: number;   // all matches in this league
     motmCount?: number;     // matches with any MOTM vote in this league
+    // NEW: backend XP fields
+    xp?: number;
+    xpLatest?: number;
+    xpRecentTotal?: number;
+    profileXP?: number;
   }>({});
 
   // League filter dropdown (like league page)
@@ -1394,15 +1399,33 @@ export default function GlobalTrophyRoom() {
       const cleanSheets: number = Number(data.cleanSheets ?? 0);
       const motmCount: number = Number(data.motmCount ?? 0);
 
+      // NEW: prefer backend XP fields
+      const pickNumber = (...vals: any[]) => {
+        for (const v of vals) {
+          const n = Number(v);
+          if (Number.isFinite(n)) return n;
+        }
+        return 0;
+      };
+      const xp = pickNumber(data.xp, data.profileXP, data.xpLatest, data.xpRecentTotal, data.player?.xp);
+      const xpLatest = pickNumber(data.xpLatest);
+      const xpRecentTotal = pickNumber(data.xpRecentTotal);
+      const profileXP = pickNumber(data.profileXP, data.player?.xp);
+
       setQuickView({
         player,
         league: league ?? undefined,
         lastFive,
         stats,
         trophyTitle: trophy.title,
-        skills, // only DB values; undefined shows zeros in UI
+        skills,
         cleanSheets,
         motmCount,
+        // NEW: backend XP
+        xp,
+        xpLatest,
+        xpRecentTotal,
+        profileXP,
       });
       setOpenQuickView(true);
     } catch {
@@ -1691,7 +1714,8 @@ export default function GlobalTrophyRoom() {
                   const playerCardProps = {
                     name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
                     number: getShirtNumber(p),
-                    points: computeXPFromStats(quickView.stats),
+                    // Use backend XP only
+                    points: Number(quickView.xp ?? 0),
                     stats: {
                       DRI: String(quickView.skills?.dribbling ?? 0),
                       SHO: String(quickView.skills?.shooting ?? 0),
