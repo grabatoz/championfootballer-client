@@ -1,8 +1,8 @@
 "use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
-import { useState, useEffect } from "react"
-import { Edit, Person, Sports, AccountCircle } from "@mui/icons-material"
+import { useState, useEffect, useRef } from "react"
+import { Person, Sports, AccountCircle } from "@mui/icons-material"
 import { Visibility, VisibilityOff, ArrowBack, ArrowForward } from "@mui/icons-material"
 import {
   Box,
@@ -30,6 +30,7 @@ import {
   Grid,
   Container,
   Fade,
+  Modal,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
@@ -227,6 +228,12 @@ const PlayerProfileCard = () => {
   const fallbackImgSrc = (imgicon as StaticImageData).src
   const safeSrc = (v: unknown) => typeof v === "string" && v.trim().length ? v : fallbackImgSrc
   const [imgSrc, setImgSrc] = useState<string>(safeSrc(user?.profilePicture))
+  // For avatar options and camera
+  const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const router = useRouter()
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
 
@@ -326,11 +333,93 @@ const PlayerProfileCard = () => {
     } else toast.error("Failed to delete account.")
   }
 
+  const performUpload = async (file: File) => {
+    try {
+      if (!token) throw new Error('Not authenticated')
+      setImageFile(file)
+      setImagePreview(URL.createObjectURL(file))
+      setIsUpdating(true)
+      const formData = new FormData()
+      formData.append('profilePicture', file)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+        cache: 'no-store',
+      })
+      const data = await res.json()
+      if (data.success) {
+        const newUrl: string | undefined = data.user?.profilePicture
+        if (data.user) cacheManager.updatePlayersCache(data.user)
+        if (newUrl) {
+          setImgSrc(newUrl)
+          setImagePreview(null)
+          dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
+          dispatch(syncWithStorage())
+          localStorage.setItem('avatar_url', newUrl)
+          localStorage.setItem('avatar_v', String(Date.now()))
+        }
+        toast.success('Profile picture updated!')
+      } else {
+        toast.error(data?.message || 'Upload failed')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Upload failed')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
-      setImageFile(e.target.files[0])
-      setImagePreview(URL.createObjectURL(e.target.files[0]))
+      setAvatarOptionsOpen(false)
+      void performUpload(e.target.files[0])
     }
+  }
+  const openGalleryPicker = () => fileInputRef.current?.click()
+  const handleAvatarClick = () => setAvatarOptionsOpen(true)
+  const handleOpenCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      streamRef.current = stream
+      setCameraOpen(true)
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play().catch(() => {})
+        }
+      })
+    } catch (e) {
+      console.error(e)
+      toast.error('Camera is unavailable or permission denied.')
+    }
+  }
+  const stopStream = () => {
+    try { streamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop()) } catch {}
+    streamRef.current = null
+  }
+  const handleCloseCamera = () => { stopStream(); setCameraOpen(false) }
+  const handleTakePhoto = () => {
+    const video = videoRef.current
+    if (!video) return
+    const canvas = document.createElement('canvas')
+    const w = video.videoWidth || 720
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0, w, h)
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const file = new File([blob], 'camera.jpg', { type: 'image/jpeg' })
+      const blobUrl = URL.createObjectURL(blob)
+      setAvatarOptionsOpen(false)
+      handleCloseCamera()
+      // Auto-upload captured photo
+      void performUpload(file)
+    }, 'image/jpeg', 0.92)
   }
   const handleUploadImage = async () => {
     if (!imageFile || !token) return
@@ -578,6 +667,7 @@ const PlayerProfileCard = () => {
                 }}>
                   <Box sx={{ position: 'relative' }}>
                     <Avatar
+                      onClick={handleAvatarClick}
                       src={imagePreview || imgSrc}
                       alt="Profile"
                       imgProps={{
@@ -589,45 +679,16 @@ const PlayerProfileCard = () => {
                         height: { xs: 150, sm: 185, md: 180 },
                         border: `3px solid ${themeColors.primary}`,
                         borderRadius: 4,
-                        background: "#2c2e32"
+                        background: "#2c2e32",
+                        cursor: 'pointer'
                       }}
                     >
                       <Person sx={{ fontSize: 70, color: themeColors.textFaint }} />
                     </Avatar>
-                    <IconButton
-                      component="label"
-                      sx={{
-                        position: 'absolute',
-                        top: -12,
-                        left: '95%',
-                        transform: 'translateX(-50%)',
-                        background: themeColors.primaryGradient,
-                        color: '#fff',
-                        width: 34,
-                        height: 34,
-                        border: '2px solid #fff',
-                        boxShadow: "0 6px 18px -6px rgba(0,0,0,0.65)",
-                        '&:hover': { opacity: .9 }
-                      }}
-                    >
-                      <Edit fontSize="small" />
-                      <input type="file" accept="image/*" hidden onChange={handleImageChange} />
-                    </IconButton>
+                    {/* Hidden file input for gallery */}
+                    <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />
                   </Box>
-                  {imageFile && (
-                    <Button
-                      variant="contained"
-                      onClick={handleUploadImage}
-                      sx={{
-                        mt: 3,
-                        fontWeight: 700,
-                        background: themeColors.primaryGradient,
-                        borderRadius: 3,
-                        px: 3,
-                        '&:hover': { opacity: .9 }
-                      }}
-                    >Upload Image</Button>
-                  )}
+                  {/* Removed bottom Upload button per request */}
                 </Box>
 
                 <Box sx={{ flex: 1 }}>
@@ -860,6 +921,44 @@ const PlayerProfileCard = () => {
                 >Next</Button>
               </Stack>
             </StyledPaper>
+            {/* Avatar Options Modal */}
+            <Modal open={avatarOptionsOpen} onClose={() => setAvatarOptionsOpen(false)}>
+              <Box sx={{
+                position: 'absolute',
+                top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                bgcolor: '#1f2125', color: '#fff', p: 3, borderRadius: 2,
+                minWidth: 320, border: `1px solid ${themeColors.border}`,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>Update Profile Image</Typography>
+                <Stack direction="row" spacing={2} justifyContent="center">
+                  <Button variant="contained" onClick={handleOpenCamera} sx={{ textTransform: 'none', fontWeight: 700, background: themeColors.primaryGradient }}>
+                    Take a new photo
+                  </Button>
+                  <Button variant="outlined" onClick={openGalleryPicker} sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.primary, color: '#fff' }}>
+                    Upload a new photo
+                  </Button>
+                </Stack>
+              </Box>
+            </Modal>
+
+            {/* Camera Modal */}
+            <Modal open={cameraOpen} onClose={handleCloseCamera}>
+              <Box sx={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                bgcolor: '#1f2125', color: '#fff', p: 2, borderRadius: 2, width: 360, maxWidth: '90vw',
+                border: `1px solid ${themeColors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}>
+                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>Camera</Typography>
+                <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', bgcolor: '#000', mb: 2, borderRadius: 1 }}>
+                  <video ref={videoRef} playsInline autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                </Box>
+                <Stack direction="row" spacing={2} justifyContent="center">
+                  <Button onClick={handleTakePhoto} variant="contained" sx={{ textTransform: 'none', fontWeight: 700, background: themeColors.primaryGradient }}>Capture</Button>
+                  <Button onClick={handleCloseCamera} variant="outlined" sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.primary, color: '#fff' }}>Close</Button>
+                </Stack>
+              </Box>
+            </Modal>
           </Box>
         </Fade>
       </Container>
