@@ -32,7 +32,7 @@ import toast, { Toaster } from 'react-hot-toast';
 // import trophy from '@/Components/images/trophy.png'
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { initializeFromStorage } from '@/lib/features/authSlice';
+import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
 import { League, User } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { ChevronRight, CloudUpload, X } from 'lucide-react';
@@ -72,7 +72,7 @@ const GreenDialogTextField = styled(TextField)(() => ({
   }
 }));
 
-const LeagueSelectionComponent = ({ }: { user: User }) => {  
+const LeagueSelectionComponent = ({ user }: { user: User }) => {  
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
@@ -595,6 +595,50 @@ export default function PlayerDashboard() {
   useEffect(() => {
     dispatch(initializeFromStorage());
   }, [dispatch]);
+
+  // Debug: log user details when it becomes available/changes
+  useEffect(() => {
+    console.log('[PlayerDashboard] User from store:', user);
+    if (user) {
+      try {
+        console.log('[PlayerDashboard] User details:', {
+          id: (user as any)?.id,
+          name: `${user?.firstName || ''} ${((user as any)?.lastName || '')}`.trim(),
+          email: (user as any)?.email,
+          position: user?.position,
+          xp: user?.xp,
+          shirtNumber: user?.shirtNumber,
+          profilePicture: user?.profilePicture
+        });
+      } catch (e) {
+        console.warn('[PlayerDashboard] Failed to log user details:', e);
+      }
+    }
+  }, [user]);
+
+  // Fallback: if xp is missing after auth init, fetch it from /auth/data and merge
+  useEffect(() => {
+    const maybeFetchXP = async () => {
+      try {
+        if (!token) return;
+        // Only fetch if no xp present
+        if (!user || typeof user.xp === 'number') return;
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const xp = data?.user?.xp;
+        if (typeof xp === 'number') {
+          // Merge xp into store user
+          (dispatch as AppDispatch)(mergeUser({ xp }));
+        }
+      } catch (e) {
+        console.warn('XP fallback fetch failed', e);
+      }
+    };
+    maybeFetchXP();
+  }, [dispatch, token, user]);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) return;

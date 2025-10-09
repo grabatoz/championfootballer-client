@@ -754,7 +754,12 @@ const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): 
     const stats = calculatePlayerStats(lg)[user.id];
     return sum + computeXPFromStats(stats);
   }, 0);
-  const totalProfileXP = typeof backendTotalXP === 'number' ? backendTotalXP : computedXP;
+  // Prefer authenticated user's profile XP when available
+  const authXP = toNum(user?.xp);
+  const totalProfileXP =
+    (authXP !== undefined ? authXP : undefined) ??
+    (typeof backendTotalXP === 'number' ? backendTotalXP : undefined) ??
+    computedXP;
 
   // Add the blue Total XP box (simple info card)
   badges.unshift({
@@ -1230,6 +1235,14 @@ export default function GlobalTrophyRoom() {
         if (res.ok && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
           setLeagues(normalizeLeaguesFromAuthData(userPayload));
+          // If server didn't send backendTotalXP via /leagues/trophy-room yet, derive from auth payload user
+          try {
+            const maybeUser = (data?.user ?? {}) as any;
+            const derivedXP = extractTotalXP(maybeUser);
+            if (typeof derivedXP === 'number' && Number.isFinite(derivedXP)) {
+              setBackendTotalXP(derivedXP);
+            }
+          } catch {}
         } else {
           setLeagues([]);
         }
@@ -1343,7 +1356,13 @@ export default function GlobalTrophyRoom() {
 
   // Total XP from badges (exclude Rising XP level box from this sum)
   const totalBadgeXP = useMemo(
-    () => myBadges.reduce((sum, b) => sum + (b.id === 'rising_xp' ? 0 : b.xp * b.count), 0),
+    () => myBadges.reduce((sum, b) => {
+      if (b.id === 'rising_xp') return sum; // exclude profile XP box
+      const xp = Number(b.xp);
+      const count = Number(b.count);
+      const add = (Number.isFinite(xp) ? xp : 0) * (Number.isFinite(count) ? count : 0);
+      return sum + add;
+    }, 0),
     [myBadges]
   );
 
@@ -1576,11 +1595,11 @@ export default function GlobalTrophyRoom() {
       {filter === 'my' ? (
         <>
           {/* XP from badges summary */}
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+          {/* <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
             <Paper elevation={0} sx={{ px: 2, py: 1, borderRadius: 999, border: '1px solid #E2E8F0', background: '#F8FAFC', fontWeight: 700 }}>
-              XP from badges: {totalBadgeXP}
+              XP from badges: {new Intl.NumberFormat().format(Number.isFinite(totalBadgeXP) ? totalBadgeXP : 0)}
             </Paper>
-          </Box>
+          </Box> */}
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
             {myBadges.length > 0 ? myBadges.map(b => (
