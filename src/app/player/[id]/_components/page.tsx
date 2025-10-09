@@ -583,16 +583,41 @@ export default function PlayerStatsPage() {
     // const playerShirt = fullPlayerData?.player?.shirtNo || '';
     const playerPositionType = fullPlayerData?.player?.positionType || fullPlayerData?.player?.position || 'Player';
 
-    // Count only trophies this player actually won
-    const awardCount = (key: keyof typeof trophyDetails) =>
-        allTrophyAwards.filter(a => a.key === key).length;
+    // Accumulative trophies via backend API with fallback to local computation
+    const [trophyCounts, setTrophyCounts] = useState<Record<string, number>>({});
+    const [trophiesLoading, setTrophiesLoading] = useState(false);
 
-    // Show only earned trophies with counts
-    const earnedTrophies = useMemo(() => {
-        return (Object.entries(trophyDetails) as [keyof typeof trophyDetails, { image: StaticImageData; label: string }][])
-            .map(([key, details]) => ({ key, ...details, count: awardCount(key) }))
-            .filter(t => t.count > 0);
+    // Local fallback counting
+    const localCounts = useMemo(() => {
+        const map: Record<string, number> = {};
+        for (const a of allTrophyAwards) {
+            map[a.key] = (map[a.key] || 0) + 1;
+        }
+        return map;
     }, [allTrophyAwards]);
+
+    useEffect(() => {
+        if (!playerId) return;
+        let cancelled = false;
+        setTrophiesLoading(true);
+        // Accumulative: fetch all-time trophies (no league/year filters)
+        playerAPI.getPlayerTrophies(String(playerId))
+            .then(res => {
+                if (cancelled) return;
+                if (res.success && res.data?.counts) setTrophyCounts(res.data.counts);
+                else setTrophyCounts(localCounts);
+            })
+            .catch(() => { if (!cancelled) setTrophyCounts(localCounts); })
+            .finally(() => { if (!cancelled) setTrophiesLoading(false); });
+        return () => { cancelled = true; };
+    }, [playerId, localCounts]);
+
+    const earnedTrophies = useMemo(() => {
+        const entries = Object.entries(trophyDetails) as [keyof typeof trophyDetails, { image: StaticImageData; label: string }][];
+        return entries
+            .map(([key, details]) => ({ key, ...details, count: trophyCounts[key] || 0 }))
+            .filter(t => t.count > 0);
+    }, [trophyCounts]);
 
     // Icon-style item now uses football.png with value centered, label below
     const StatItem = ({ label, value }: { label: string; value: number }) => (
@@ -1090,7 +1115,11 @@ export default function PlayerStatsPage() {
                                     border: '1px solid rgba(255,255,255,0.12)',
                                 }}
                             >
-                                {earnedTrophies.length === 0 ? (
+                                {trophiesLoading ? (
+                                    <Typography sx={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>
+                                        Loading trophies…
+                                    </Typography>
+                                ) : earnedTrophies.length === 0 ? (
                                     <Typography sx={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>
                                         No trophies won yet.
                                     </Typography>
