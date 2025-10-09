@@ -223,7 +223,7 @@ const PlayerProfileCard = () => {
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fallbackImgSrc = (imgicon as StaticImageData).src
   const safeSrc = (v: unknown) => typeof v === "string" && v.trim().length ? v : fallbackImgSrc

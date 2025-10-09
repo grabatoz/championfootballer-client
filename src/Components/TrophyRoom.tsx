@@ -37,19 +37,19 @@ interface User {
 //     teamGoalsConceded: number;
 // }
 
-interface Match {
-    id: string;
-    homeTeamGoals: number;
-    awayTeamGoals: number;
-    homeTeamUsers: User[];
-    awayTeamUsers: User[];
-    manOfTheMatchVotes: Record<string, string>; // VoterId: VotedForId
-    playerStats: Record<string, {
-        goals: number;
-        assists: number;
-    }>;
-    status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
-}
+// interface Match {
+//     id: string;
+//     homeTeamGoals: number;
+//     awayTeamGoals: number;
+//     homeTeamUsers: User[];
+//     awayTeamUsers: User[];
+//     manOfTheMatchVotes: Record<string, string>; // VoterId: VotedForId
+//     playerStats: Record<string, {
+//         goals: number;
+//         assists: number;
+//     }>;
+//     status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
+// }
 
 // interface League {
 //     id: string;
