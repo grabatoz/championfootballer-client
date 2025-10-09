@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, Divider, IconButton, Stack } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
@@ -26,16 +26,16 @@ interface User {
   xp?: number;
 }
 
-interface PlayerStats {
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goals: number;
-    assists: number;
-    motmVotes: number;
-    teamGoalsConceded: number;
-}
+// interface PlayerStats {
+//     played: number;
+//     wins: number;
+//     draws: number;
+//     losses: number;
+//     goals: number;
+//     assists: number;
+//     motmVotes: number;
+//     teamGoalsConceded: number;
+// }
 
 interface Match {
     id: string;
@@ -51,13 +51,13 @@ interface Match {
     status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
 }
 
-interface League {
-    id: string;
-    name: string;
-    members: User[];
-    matches: Match[];
-    maxGames: number;
-}
+// interface League {
+//     id: string;
+//     name: string;
+//     members: User[];
+//     matches: Match[];
+//     maxGames: number;
+// }
 
 interface TrophyType {
   title: string;
@@ -291,6 +291,11 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
           setError(null);
         }
       } catch (e) {
+        if (process.env.NODE_ENV !== 'production') {
+          // Log the error in non-production to aid debugging and satisfy linter
+          // eslint-disable-next-line no-console
+          console.error(e);
+        }
         if (!aborted) {
           setError('An error occurred while fetching trophy room.');
           setTrophies([]);

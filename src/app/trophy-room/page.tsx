@@ -226,6 +226,14 @@ const extractLeagueMaxGames = (l: BackendLeague): number => {
   return 0;
 };
 
+// Narrow unknown values to BackendUser when coming from dynamic API payloads
+const isBackendUser = (v: unknown): v is BackendUser => {
+  if (v == null || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  // consider it a BackendUser if it has at least an id or leagues-like structure
+  return 'id' in o || 'leagues' in o || 'administeredLeagues' in o || 'adminLeagues' in o;
+};
+
 // --- Reusable Trophy Card Component ---
 const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
   <Paper
@@ -365,84 +373,84 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
 };
 
 // --- Helper function to calculate winners for a single league ---
-const calculateLeagueWinners = (league: League, playerStats: Record<string, PlayerStats>): TrophyType[] => {
-  if (!Object.keys(playerStats).length) return [];
+// const calculateLeagueWinners = (league: League, playerStats: Record<string, PlayerStats>): TrophyType[] => {
+//   if (!Object.keys(playerStats).length) return [];
 
-  const getPlayerName = (playerId: string) => {
-    const player = league.members.find(p => p.id === playerId);
-    return player ? `${player.firstName} ${player.lastName}` : 'Unknown';
-  }
+//   const getPlayerName = (playerId: string) => {
+//     const player = league.members.find(p => p.id === playerId);
+//     return player ? `${player.firstName} ${player.lastName}` : 'Unknown';
+//   }
 
-  if (!league || !league.members || !Array.isArray(league.members)) return [];
+//   if (!league || !league.members || !Array.isArray(league.members)) return [];
 
-  const allPlayerIds = Object.keys(playerStats);
-  if (allPlayerIds.length === 0) return [];
+//   const allPlayerIds = Object.keys(playerStats);
+//   if (allPlayerIds.length === 0) return [];
 
-  const sortedLeagueTable = [...allPlayerIds].sort((a, b) => (playerStats[b].wins * 3 + playerStats[b].draws) - (playerStats[a].wins * 3 + playerStats[a].draws));
+//   const sortedLeagueTable = [...allPlayerIds].sort((a, b) => (playerStats[b].wins * 3 + playerStats[b].draws) - (playerStats[a].wins * 3 + playerStats[a].draws));
 
-  // Compute Star Keeper (GKs only): most clean sheets, tie-breaker fewest goals conceded
-  const gkIds = league.members
-    .filter(p => (p.position ?? '').toLowerCase().includes('goalkeeper'))
-    .map(p => p.id);
+//   // Compute Star Keeper (GKs only): most clean sheets, tie-breaker fewest goals conceded
+//   const gkIds = league.members
+//     .filter(p => (p.position ?? '').toLowerCase().includes('goalkeeper'))
+//     .map(p => p.id);
 
-  const cleanSheetsByGk: Record<string, number> = {};
-  gkIds.forEach(id => (cleanSheetsByGk[id] = 0));
+//   const cleanSheetsByGk: Record<string, number> = {};
+//   gkIds.forEach(id => (cleanSheetsByGk[id] = 0));
 
-  (league.matches ?? []).forEach(m => {
-    if (m.status !== 'RESULT_PUBLISHED') return;
-    const homeGKs = m.homeTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
-    const awayGKs = m.awayTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
-    if (m.awayTeamGoals === 0) homeGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
-    if (m.homeTeamGoals === 0) awayGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
-  });
+//   (league.matches ?? []).forEach(m => {
+//     if (m.status !== 'RESULT_PUBLISHED') return;
+//     const homeGKs = m.homeTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
+//     const awayGKs = m.awayTeamUsers.filter(u => gkIds.includes(u.id)).map(u => u.id);
+//     if (m.awayTeamGoals === 0) homeGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
+//     if (m.homeTeamGoals === 0) awayGKs.forEach(id => (cleanSheetsByGk[id] = (cleanSheetsByGk[id] || 0) + 1));
+//   });
 
-  const starKeeperWinner =
-    gkIds
-      .slice()
-      .sort((a, b) => {
-        const csA = cleanSheetsByGk[a] || 0;
-        const csB = cleanSheetsByGk[b] || 0;
-        if (csB !== csA) return csB - csA; // more clean sheets first
-        const gaA = playerStats[a]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
-        const gaB = playerStats[b]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
-        return gaA - gaB; // fewer goals conceded wins tiebreak
-      })[0] || null;
+//   const starKeeperWinner =
+//     gkIds
+//       .slice()
+//       .sort((a, b) => {
+//         const csA = cleanSheetsByGk[a] || 0;
+//         const csB = cleanSheetsByGk[b] || 0;
+//         if (csB !== csA) return csB - csA; // more clean sheets first
+//         const gaA = playerStats[a]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
+//         const gaB = playerStats[b]?.teamGoalsConceded ?? Number.POSITIVE_INFINITY;
+//         return gaA - gaB; // fewer goals conceded wins tiebreak
+//       })[0] || null;
 
-  const awards: Record<string, string | null> = {
-    'League Champion': sortedLeagueTable[0] || null,
-    'Runner-Up': sortedLeagueTable[1] || null,
-    "Ballon D'or": [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
-    'GOAT': [...allPlayerIds].sort((a, b) => {
-      const ratioA = playerStats[a].played > 0 ? playerStats[a].wins / playerStats[a].played : 0;
-      const ratioB = playerStats[b].played > 0 ? playerStats[b].wins / playerStats[b].played : 0;
-      return ratioB - ratioA || playerStats[b].motmVotes - playerStats[a].motmVotes;
-    })[0] || null,
-    'Golden Boot': [...allPlayerIds].sort((a, b) => playerStats[b].goals - playerStats[a].goals)[0] || null,
-    'King Playmaker': [...allPlayerIds].sort((a, b) => playerStats[b].assists - playerStats[a].assists)[0] || null,
-    'Legendary Shield': league.members
-      .filter(p => ['defender', 'goalkeeper'].includes((p.position ?? '').toLowerCase()))
-      .map(p => p.id)
-      .sort((a, b) => {
-        const avgA = playerStats[a]?.played > 0 ? (playerStats[a].teamGoalsConceded / playerStats[a].played) : Infinity;
-        const avgB = playerStats[b]?.played > 0 ? (playerStats[b].teamGoalsConceded / playerStats[b].played) : Infinity;
-        return avgA - avgB;
-      })[0] || null,
-    'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
-    // NEW
-    'Star Keeper': starKeeperWinner,
-  };
+//   const awards: Record<string, string | null> = {
+//     'League Champion': sortedLeagueTable[0] || null,
+//     'Runner-Up': sortedLeagueTable[1] || null,
+//     "Ballon D'or": [...allPlayerIds].sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
+//     'GOAT': [...allPlayerIds].sort((a, b) => {
+//       const ratioA = playerStats[a].played > 0 ? playerStats[a].wins / playerStats[a].played : 0;
+//       const ratioB = playerStats[b].played > 0 ? playerStats[b].wins / playerStats[b].played : 0;
+//       return ratioB - ratioA || playerStats[b].motmVotes - playerStats[a].motmVotes;
+//     })[0] || null,
+//     'Golden Boot': [...allPlayerIds].sort((a, b) => playerStats[b].goals - playerStats[a].goals)[0] || null,
+//     'King Playmaker': [...allPlayerIds].sort((a, b) => playerStats[b].assists - playerStats[a].assists)[0] || null,
+//     'Legendary Shield': league.members
+//       .filter(p => ['defender', 'goalkeeper'].includes((p.position ?? '').toLowerCase()))
+//       .map(p => p.id)
+//       .sort((a, b) => {
+//         const avgA = playerStats[a]?.played > 0 ? (playerStats[a].teamGoalsConceded / playerStats[a].played) : Infinity;
+//         const avgB = playerStats[b]?.played > 0 ? (playerStats[b].teamGoalsConceded / playerStats[b].played) : Infinity;
+//         return avgA - avgB;
+//       })[0] || null,
+//     'The Dark Horse': sortedLeagueTable.slice(3).sort((a, b) => playerStats[b].motmVotes - playerStats[a].motmVotes)[0] || null,
+//     // NEW
+//     'Star Keeper': starKeeperWinner,
+//   };
 
-  return trophies.map(trophy => {
-    const winnerId = awards[trophy.title];
-    return {
-      ...trophy,
-      winnerId: winnerId || null,
-      winner: winnerId ? getPlayerName(winnerId) : 'No Winner',
-      leagueId: league.id,
-      leagueName: league.name,
-    };
-  });
-};
+//   return trophies.map(trophy => {
+//     const winnerId = awards[trophy.title];
+//     return {
+//       ...trophy,
+//       winnerId: winnerId || null,
+//       winner: winnerId ? getPlayerName(winnerId) : 'No Winner',
+//       leagueId: league.id,
+//       leagueName: league.name,
+//     };
+//   });
+// };
 
 // Helper: treat league as "completed" if
 // - maxGames is provided: completedCount >= Number(maxGames)
@@ -486,49 +494,49 @@ const countCompletedMatches = (league: League) =>
   (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
 
 // Audit helper: check missing player stats in completed matches
-const auditLeagueData = (league: League) => {
-  const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
-  const uniqueStatuses = Array.from(new Set((league.matches ?? []).map(m => m.status)));
-  let totalMissing = 0;
-  const perMatchMissing: Array<{ matchId: string; missingFor: string[] }> = [];
+// const auditLeagueData = (league: League) => {
+//   const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
+//   const uniqueStatuses = Array.from(new Set((league.matches ?? []).map(m => m.status)));
+//   let totalMissing = 0;
+//   const perMatchMissing: Array<{ matchId: string; missingFor: string[] }> = [];
 
-  completed.forEach(m => {
-    const players = [...(m.homeTeamUsers ?? []), ...(m.awayTeamUsers ?? [])];
-    const missingFor = players
-      .filter(p => {
-        const ps = m.playerStats?.[p.id];
-        const goalsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.goals));
-        const assistsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.assists));
-        return !(goalsOk && assistsOk);
-      })
-      .map(p => `${p.firstName} ${p.lastName} (${p.id})`);
-    if (missingFor.length) {
-      totalMissing += missingFor.length;
-      perMatchMissing.push({ matchId: m.id, missingFor });
-    }
-  });
+//   completed.forEach(m => {
+//     const players = [...(m.homeTeamUsers ?? []), ...(m.awayTeamUsers ?? [])];
+//     const missingFor = players
+//       .filter(p => {
+//         const ps = m.playerStats?.[p.id];
+//         const goalsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.goals));
+//         const assistsOk = ps !== undefined && ps !== null && Number.isFinite(Number(ps.assists));
+//         return !(goalsOk && assistsOk);
+//       })
+//       .map(p => `${p.firstName} ${p.lastName} (${p.id})`);
+//     if (missingFor.length) {
+//       totalMissing += missingFor.length;
+//       perMatchMissing.push({ matchId: m.id, missingFor });
+//     }
+//   });
 
-  console.groupCollapsed('[TrophyRoom][Audit] League data', league.name);
-  console.log({
-    leagueId: league.id,
-    name: league.name,
-    maxGames: league.maxGames,
-    totalMatches: league.matches?.length ?? 0,
-    completedCount: completed.length,
-    statuses: uniqueStatuses,
-    totalMissingPlayerStats: totalMissing,
-  });
-  if (perMatchMissing.length) {
-    console.table(
-      perMatchMissing.slice(0, 10).map(x => ({
-        matchId: x.matchId,
-        missingForCount: x.missingFor.length,
-        missingForSample: x.missingFor.slice(0, 5).join(' | ')
-      }))
-    );
-  }
-  console.groupEnd();
-};
+//   console.groupCollapsed('[TrophyRoom][Audit] League data', league.name);
+//   console.log({
+//     leagueId: league.id,
+//     name: league.name,
+//     maxGames: league.maxGames,
+//     totalMatches: league.matches?.length ?? 0,
+//     completedCount: completed.length,
+//     statuses: uniqueStatuses,
+//     totalMissingPlayerStats: totalMissing,
+//   });
+//   if (perMatchMissing.length) {
+//     console.table(
+//       perMatchMissing.slice(0, 10).map(x => ({
+//         matchId: x.matchId,
+//         missingForCount: x.missingFor.length,
+//         missingForSample: x.missingFor.slice(0, 5).join(' | ')
+//       }))
+//     );
+//   }
+//   console.groupEnd();
+// };
 
 // --- Aggregated per-match summary for the current user (across leagues) ---
 type UserMatchSummary = {
@@ -949,25 +957,25 @@ type Skills = {
 const clamp = (v: number, min = 0, max = 99) => Math.max(min, Math.min(max, Math.round(v)));
 const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
 
-const computeSkillsFromStats = (s?: PlayerStats, user?: User): Skills => {
-  const stats: PlayerStats = s ?? { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
-  const gpg = safeDiv(stats.goals, stats.played);
-  const apg = safeDiv(stats.assists, stats.played);
-  const winRate = safeDiv(stats.wins, stats.played);
-  const motmRate = safeDiv(stats.motmVotes, stats.played);
-  const conc = safeDiv(stats.teamGoalsConceded, stats.played);
-  const pos = (user?.position ?? '').toLowerCase();
+// const computeSkillsFromStats = (s?: PlayerStats, user?: User): Skills => {
+//   const stats: PlayerStats = s ?? { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
+//   const gpg = safeDiv(stats.goals, stats.played);
+//   const apg = safeDiv(stats.assists, stats.played);
+//   const winRate = safeDiv(stats.wins, stats.played);
+//   const motmRate = safeDiv(stats.motmVotes, stats.played);
+//   const conc = safeDiv(stats.teamGoalsConceded, stats.played);
+//   const pos = (user?.position ?? '').toLowerCase();
 
-  const shooting = clamp(45 + gpg * 40 + motmRate * 15, 30, 99);
-  const passing = clamp(45 + apg * 40 + motmRate * 10, 30, 99);
-  const dribbling = clamp(45 + (gpg + apg) * 20 + motmRate * 20, 30, 99);
-  const pace = clamp(50 + (gpg + apg) * 15 + winRate * 20, 30, 99);
-  let defending = clamp(60 - conc * 15 + winRate * 15, 25, 99);
-  if (['defender', 'goalkeeper'].includes(pos)) defending = clamp(50 - conc * 25 + winRate * 15, 25, 99);
-  const physical = clamp(45 + winRate * 30 + stats.played * 2, 30, 99);
+//   const shooting = clamp(45 + gpg * 40 + motmRate * 15, 30, 99);
+//   const passing = clamp(45 + apg * 40 + motmRate * 10, 30, 99);
+//   const dribbling = clamp(45 + (gpg + apg) * 20 + motmRate * 20, 30, 99);
+//   const pace = clamp(50 + (gpg + apg) * 15 + winRate * 20, 30, 99);
+//   let defending = clamp(60 - conc * 15 + winRate * 15, 25, 99);
+//   if (['defender', 'goalkeeper'].includes(pos)) defending = clamp(50 - conc * 25 + winRate * 15, 25, 99);
+//   const physical = clamp(45 + winRate * 30 + stats.played * 2, 30, 99);
 
-  return { dribbling, shooting, passing, pace, defending, physical };
-};
+//   return { dribbling, shooting, passing, pace, defending, physical };
+// };
 
 // Helpers to feed PlayerCard's required props
 type Foot = 'L' | 'R';
@@ -1056,13 +1064,16 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
     awayTeamUsers: (m?.awayTeamUsers ?? []).map(toUser),
     manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
     playerStats: Object.fromEntries(
-      Object.entries(m?.playerStats ?? {}).map(([playerId, stats]) => [
-        String(playerId),
-        {
-          goals: Number((stats as any)?.goals ?? 0),
-          assists: Number((stats as any)?.assists ?? 0),
-        },
-      ])
+      Object.entries(m?.playerStats ?? {}).map(([playerId, stats]) => {
+        const s = stats as { goals?: number | string; assists?: number | string } | undefined;
+        return [
+          String(playerId),
+          {
+            goals: Number(s?.goals ?? 0),
+            assists: Number(s?.assists ?? 0),
+          },
+        ];
+      })
     ),
     status: normalizeMatchStatus(m?.status),
   });
@@ -1077,69 +1088,69 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
 };
 
 // Helper to normalize simple user from API leagues
-const toUserBasic = (p: any): User => ({
-  id: String(p?.id ?? ''),
-  firstName: p?.firstName ?? '',
-  lastName: p?.lastName ?? '',
-  position: p?.positionType ?? p?.position ?? undefined,
-});
+// const toUserBasic = (p: any): User => ({
+//   id: String(p?.id ?? ''),
+//   firstName: p?.firstName ?? '',
+//   lastName: p?.lastName ?? '',
+//   position: p?.positionType ?? p?.position ?? undefined,
+// });
 
 // Keep this for /leagues/trophy-room response
-const normalizeLeagueFromApi = (l: any): League => ({
-  id: String(l?.id ?? ''),
-  name: l?.name ?? '',
-  members: Array.isArray(l?.members) ? l.members.map(toUserBasic) : [],
-  matches: Array.isArray(l?.matches)
-    ? l.matches.map((m: any): Match => ({
-        id: String(m?.id ?? ''),
-        homeTeamGoals: Number(m?.homeTeamGoals ?? 0),
-        awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
-        homeTeamUsers: Array.isArray(m?.homeTeamUsers) ? m.homeTeamUsers.map(toUserBasic) : [],
-        awayTeamUsers: Array.isArray(m?.awayTeamUsers) ? m.awayTeamUsers.map(toUserBasic) : [],
-        manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
-        playerStats: Object.fromEntries(
-          Object.entries(m?.playerStats ?? {}).map(([pid, s]: any) => [
-            String(pid),
-            { goals: Number(s?.goals ?? 0), assists: Number(s?.assists ?? 0) },
-          ])
-        ),
-        status: normalizeMatchStatus(m?.status),
-      }))
-    : [],
-  maxGames: Number(l?.maxGames ?? 0),
-});
+// const normalizeLeagueFromApi = (l: any): League => ({
+//   id: String(l?.id ?? ''),
+//   name: l?.name ?? '',
+//   members: Array.isArray(l?.members) ? l.members.map(toUserBasic) : [],
+//   matches: Array.isArray(l?.matches)
+//     ? l.matches.map((m: any): Match => ({
+//         id: String(m?.id ?? ''),
+//         homeTeamGoals: Number(m?.homeTeamGoals ?? 0),
+//         awayTeamGoals: Number(m?.awayTeamGoals ?? 0),
+//         homeTeamUsers: Array.isArray(m?.homeTeamUsers) ? m.homeTeamUsers.map(toUserBasic) : [],
+//         awayTeamUsers: Array.isArray(m?.awayTeamUsers) ? m.awayTeamUsers.map(toUserBasic) : [],
+//         manOfTheMatchVotes: m?.manOfTheMatchVotes ?? {},
+//         playerStats: Object.fromEntries(
+//           Object.entries(m?.playerStats ?? {}).map(([pid, s]: any) => [
+//             String(pid),
+//             { goals: Number(s?.goals ?? 0), assists: Number(s?.assists ?? 0) },
+//           ])
+//         ),
+//         status: normalizeMatchStatus(m?.status),
+//       }))
+//     : [],
+//   maxGames: Number(l?.maxGames ?? 0),
+// });
 
 // Freeze member positions for completed leagues (keep the position at league end)
-const freezeLeaguePositions = (league: League): League => {
-  if (!isLeagueCompleted(league)) return league;
+// const freezeLeaguePositions = (league: League): League => {
+//   if (!isLeagueCompleted(league)) return league;
 
-  const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
-  if (!completed.length) return league;
+//   const completed = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED');
+//   if (!completed.length) return league;
 
-  const lastPos: Record<string, string | undefined> = {};
-  completed.forEach(m => {
-    const take = (u: User) => {
-      const pos = (u.position ?? '').toString();
-      if (pos) lastPos[u.id] = pos;
-    };
-    (m.homeTeamUsers ?? []).forEach(take);
-    (m.awayTeamUsers ?? []).forEach(take);
-  });
+//   const lastPos: Record<string, string | undefined> = {};
+//   completed.forEach(m => {
+//     const take = (u: User) => {
+//       const pos = (u.position ?? '').toString();
+//       if (pos) lastPos[u.id] = pos;
+//     };
+//     (m.homeTeamUsers ?? []).forEach(take);
+//     (m.awayTeamUsers ?? []).forEach(take);
+//   });
 
-  const frozenMembers = (league.members ?? []).map(u => ({
-    ...u,
-    position: lastPos[u.id] ?? u.position,
-  }));
+//   const frozenMembers = (league.members ?? []).map(u => ({
+//     ...u,
+//     position: lastPos[u.id] ?? u.position,
+//   }));
 
-  console.debug('[TrophyRoom] freezeLeaguePositions()', {
-    leagueId: league.id,
-    name: league.name,
-    completedMatches: completed.length,
-    membersFrozen: frozenMembers.length,
-  });
+//   console.debug('[TrophyRoom] freezeLeaguePositions()', {
+//     leagueId: league.id,
+//     name: league.name,
+//     completedMatches: completed.length,
+//     membersFrozen: frozenMembers.length,
+//   });
 
-  return { ...league, members: frozenMembers };
-};
+//   return { ...league, members: frozenMembers };
+// };
 
 // --- Main Page Component ---
 export default function GlobalTrophyRoom() {
@@ -1237,10 +1248,12 @@ export default function GlobalTrophyRoom() {
           setLeagues(normalizeLeaguesFromAuthData(userPayload));
           // If server didn't send backendTotalXP via /leagues/trophy-room yet, derive from auth payload user
           try {
-            const maybeUser = (data?.user ?? {}) as any;
-            const derivedXP = extractTotalXP(maybeUser);
-            if (typeof derivedXP === 'number' && Number.isFinite(derivedXP)) {
-              setBackendTotalXP(derivedXP);
+            const maybeUser = data?.user ?? data;
+            if (isBackendUser(maybeUser)) {
+              const derivedXP = extractTotalXP(maybeUser);
+              if (typeof derivedXP === 'number' && Number.isFinite(derivedXP)) {
+                setBackendTotalXP(derivedXP);
+              }
             }
           } catch {}
         } else {
@@ -1355,16 +1368,16 @@ export default function GlobalTrophyRoom() {
   const myBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
 
   // Total XP from badges (exclude Rising XP level box from this sum)
-  const totalBadgeXP = useMemo(
-    () => myBadges.reduce((sum, b) => {
-      if (b.id === 'rising_xp') return sum; // exclude profile XP box
-      const xp = Number(b.xp);
-      const count = Number(b.count);
-      const add = (Number.isFinite(xp) ? xp : 0) * (Number.isFinite(count) ? count : 0);
-      return sum + add;
-    }, 0),
-    [myBadges]
-  );
+  // const totalBadgeXP = useMemo(
+  //   () => myBadges.reduce((sum, b) => {
+  //     if (b.id === 'rising_xp') return sum; // exclude profile XP box
+  //     const xp = Number(b.xp);
+  //     const count = Number(b.count);
+  //     const add = (Number.isFinite(xp) ? xp : 0) * (Number.isFinite(count) ? count : 0);
+  //     return sum + add;
+  //   }, 0),
+  //   [myBadges]
+  // );
 
   // Open modal for a trophy winner (uses the league of that trophy)
   const openPlayerQuickView = async (trophy: TrophyType) => {
@@ -1419,7 +1432,7 @@ export default function GlobalTrophyRoom() {
       const motmCount: number = Number(data.motmCount ?? 0);
 
       // NEW: prefer backend XP fields
-      const pickNumber = (...vals: any[]) => {
+      const pickNumber = (...vals: Array<number | string | null | undefined>): number => {
         for (const v of vals) {
           const n = Number(v);
           if (Number.isFinite(n)) return n;

@@ -17,9 +17,19 @@ import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
 
+// Backend-computed league status types (avoid `any`)
+type LeagueStatusTotals = Record<string, number>;
+type LeagueStatusMissing = Array<string | { field: string; reason?: string }>;
+type LeagueStatus = {
+  isComplete?: boolean;
+  locked?: boolean;
+  totals?: LeagueStatusTotals;
+  missing?: LeagueStatusMissing;
+};
+
 // Local UI type to carry backend-computed status
 type LeagueWithStatus = League & {
-  status?: { isComplete?: boolean; locked?: boolean; totals?: any; missing?: any[] };
+  computedStatus?: LeagueStatus;
   isLocked?: boolean;
 };
 
@@ -627,15 +637,15 @@ function AllLeagues() {
       if (authResponse.ok) {
         const authData = await authResponse.json();
         if (authData.success && authData.user) {
-          const userLeagues = [
+          const userLeagues: League[] = [
             ...(authData.user.leagues || []),
             ...(authData.user.administeredLeagues || [])
-          ].filter((league: any) => league && league.id);
+          ].filter((league: League) => league && league.id);
 
-          const uniqueLeagues = Array.from(new Map(userLeagues.map((league: any) => [league.id, league])).values());
+          const uniqueLeagues: League[] = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
           
-          const detailedLeagues = await Promise.all(
-            uniqueLeagues.map(async (league: any) => {
+          const detailedLeagues: LeagueWithStatus[] = await Promise.all(
+            uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus> => {
               try {
                 const [leagueResponse, statusResponse] = await Promise.all([
                   fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
@@ -646,7 +656,7 @@ function AllLeagues() {
                   })
                 ]);
 
-                let enriched: any = league;
+                let enriched: LeagueWithStatus = { ...league };
 
                 if (leagueResponse.ok) {
                   const leagueData = await leagueResponse.json();
@@ -666,7 +676,7 @@ function AllLeagues() {
                   if (statusData.success) {
                     enriched = {
                       ...enriched,
-                      status: statusData.status,            // { isComplete, totals, missing }
+                      computedStatus: statusData.status as LeagueStatus,            // { isComplete, totals, missing }
                       isLocked: enriched.isLocked ?? false, // backend may set this flag
                     };
                   }
@@ -675,12 +685,12 @@ function AllLeagues() {
                 return enriched;
               } catch (error) {
                 console.warn(`Failed to fetch details/status for league ${league.id}:`, error);
-                return league;
+                return { ...league } as LeagueWithStatus;
               }
             })
           );
           
-          setLeagues(detailedLeagues as LeagueWithStatus[]);
+          setLeagues(detailedLeagues);
           setLastFetchTime(now);
           console.log('Setting detailed leagues:', detailedLeagues);
         }
@@ -1059,7 +1069,7 @@ function AllLeagues() {
             </Box>
           ) : (
             leagues.map((league) => {
-              const isCompleted = Boolean(league.status?.isComplete || league.status?.locked || league.isLocked);
+              const isCompleted = Boolean(league.computedStatus?.isComplete || league.computedStatus?.locked || league.isLocked);
               return (
               <Box
                 key={league.id}
@@ -1213,7 +1223,7 @@ function AllLeagues() {
                             }} />
                           </Box>
                           <Typography sx={{
-                            color: league.status?.isComplete ? '#111827' : 'rgba(255,255,255,0.9)',
+                            color: league.computedStatus?.isComplete ? '#111827' : 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
                             fontSize: { xs: '10px', sm: '13px' }

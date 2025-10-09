@@ -72,7 +72,7 @@ const GreenDialogTextField = styled(TextField)(() => ({
   }
 }));
 
-const LeagueSelectionComponent = ({ user }: { user: User }) => {  
+const LeagueSelectionComponent = ({}: { user: User }) => {  
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
@@ -602,9 +602,9 @@ export default function PlayerDashboard() {
     if (user) {
       try {
         console.log('[PlayerDashboard] User details:', {
-          id: (user as any)?.id,
-          name: `${user?.firstName || ''} ${((user as any)?.lastName || '')}`.trim(),
-          email: (user as any)?.email,
+          id: user?.id,
+          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+          email: user?.email,
           position: user?.position,
           xp: user?.xp,
           shirtNumber: user?.shirtNumber,

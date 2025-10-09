@@ -479,6 +479,30 @@ export default function LeagueDetailPage() {
 
     const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
 
+    // Quick View: move hooks above any conditional returns to satisfy rules-of-hooks
+    type PlayerProfileLike = {
+        position?: string | null;
+        preferredFoot?: string | null;
+        shirtNumber?: string | number | null;
+        profilePicture?: string | null;
+        avatarUrl?: string | null;
+    };
+    const [openQuickView, setOpenQuickView] = useState(false);
+    const [quickView, setQuickView] = useState<{
+        player?: (User & PlayerProfileLike) | null;
+        league?: League | null;
+        stats?: { goals?: number; assists?: number };
+        skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number };
+        xp?: number;
+        cleanSheets?: number;
+        motmCount?: number;
+        lastFive?: Array<{ result: 'W' | 'D' | 'L' }>;
+        trophyTitle?: string;
+        xpLatest?: number;
+        xpRecentTotal?: number;
+        profileXP?: number;
+    }>({});
+
 
     useEffect(() => {
         if (!token || !leagueId) return;
@@ -2222,34 +2246,16 @@ export default function LeagueDetailPage() {
 
 
 
-    const [openQuickView, setOpenQuickView] = useState(false);
-    type PlayerProfileLike = {
-        position?: string | null;
-        preferredFoot?: string | null;
-        shirtNumber?: string | number | null;
-        profilePicture?: string | null;
-        avatarUrl?: string | null;
-    };
-    const [quickView, setQuickView] = useState<{
-        player?: (User & PlayerProfileLike) | null;
-        league?: League | null;
-        stats?: { goals?: number; assists?: number };
-        skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number };
-        xp?: number;
-        cleanSheets?: number;
-        motmCount?: number;
-        lastFive?: Array<{ result: 'W' | 'D' | 'L' }>;
-        trophyTitle?: string;
-        xpLatest?: number;
-        xpRecentTotal?: number;
-        profileXP?: number;
-    }>({});
+    
     const resultColor = (r?: string) => (r === 'W' ? '#16a34a' : r === 'L' ? '#dc2626' : '#64748b');
     
-    const getShirtNumber = (p: User & PlayerProfileLike) => {
-   const sn = p.shirtNumber ?? (league?.members.find(m => m.id === p.id)?.shirtNumber as any);
-   return typeof sn === 'number' || (typeof sn === 'string' && sn) ? String(sn) : '';
-};
+            const getShirtNumber = (p: User & PlayerProfileLike) => {
+        const member = league?.members.find((m: User) => m.id === p.id);
+        const sn = p.shirtNumber ?? member?.shirtNumber;
+        if (sn === null || sn === undefined) return '';
+        const s = typeof sn === 'string' ? sn : String(sn);
+        return s.length > 0 ? s : '';
+    };
  const getPreferredFoot = (u?: PlayerProfileLike): Foot => {
   const v = (u?.preferredFoot ?? '').toString().toLowerCase();
   if (v === 'left' || v === 'l') return 'L';
@@ -3875,8 +3881,8 @@ const posToShort = (pos?: string): ShortPosition => {
                                                     const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
 
                                                     // NEW: mark champion/runner-up from trophy room data
-                                                    const isChampion = leagueWinners.champion === player.id;
-                                                    const isRunnerUp = leagueWinners.runnerUp === player.id;
+                                                    // const isChampion = leagueWinners.champion === player.id;
+                                                    // const isRunnerUp = leagueWinners.runnerUp === player.id;
 
 
                                                     return (

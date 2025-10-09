@@ -414,48 +414,48 @@ const PlayerProfileCard = () => {
     canvas.toBlob((blob) => {
       if (!blob) return
       const file = new File([blob], 'camera.jpg', { type: 'image/jpeg' })
-      const blobUrl = URL.createObjectURL(blob)
+      // const blobUrl = URL.createObjectURL(blob)
       setAvatarOptionsOpen(false)
       handleCloseCamera()
       // Auto-upload captured photo
       void performUpload(file)
     }, 'image/jpeg', 0.92)
   }
-  const handleUploadImage = async () => {
-    if (!imageFile || !token) return
-    const formData = new FormData()
-    formData.append("profilePicture", imageFile)
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-      cache: "no-store", // avoid stale response
-    })
-    const data = await res.json()
-    if (data.success) {
-      const newUrl: string | undefined = data.user?.profilePicture
-      if (data.user) cacheManager.updatePlayersCache(data.user)
+  // const handleUploadImage = async () => {
+  //   if (!imageFile || !token) return
+  //   const formData = new FormData()
+  //   formData.append("profilePicture", imageFile)
+  //   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
+  //     method: "POST",
+  //     headers: { Authorization: `Bearer ${token}` },
+  //     body: formData,
+  //     cache: "no-store", // avoid stale response
+  //   })
+  //   const data = await res.json()
+  //   if (data.success) {
+  //     const newUrl: string | undefined = data.user?.profilePicture
+  //     if (data.user) cacheManager.updatePlayersCache(data.user)
 
-      if (newUrl) {
-        // Update UI immediately
-        setImgSrc(newUrl)
-        setImagePreview(null)
+  //     if (newUrl) {
+  //       // Update UI immediately
+  //       setImgSrc(newUrl)
+  //       setImagePreview(null)
 
-        // Hot-merge into Redux user
-        dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
-        dispatch(syncWithStorage())
+  //       // Hot-merge into Redux user
+  //       dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
+  //       dispatch(syncWithStorage())
 
-        // Update PlayerCard’s localStorage readers
-        localStorage.setItem("avatar_url", newUrl)
-        localStorage.setItem("avatar_v", String(Date.now()))
-      }
+  //       // Update PlayerCard’s localStorage readers
+  //       localStorage.setItem("avatar_url", newUrl)
+  //       localStorage.setItem("avatar_v", String(Date.now()))
+  //     }
 
-      toast.success("Profile picture updated!")
-      // No reload needed
-    } else {
-      toast.error("Upload failed")
-    }
-  }
+  //     toast.success("Profile picture updated!")
+  //     // No reload needed
+  //   } else {
+  //     toast.error("Upload failed")
+  //   }
+  // }
 
   // ---------- STEP 1 ----------
   if (step === 1) {
