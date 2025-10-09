@@ -460,6 +460,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                       profileImage={getProfileImage(p)}
                       shirtIcon={''}
                       position={posToShort(p.position)}
+                      disableImagePopup
                     />
                   );
                 })()}

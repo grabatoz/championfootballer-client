@@ -117,6 +117,8 @@ interface PlayerCardProps {
   height?: number | string;
   position: string;
   // hideEditIcon?: boolean; // NEW
+  /** When true, clicking the avatar should NOT open the image popup */
+  disableImagePopup?: boolean;
 }
 
 // Import all possible vector images
@@ -148,6 +150,7 @@ const PlayerCard = ({
   width,
   height,
   position,
+  disableImagePopup = false,
   // hideEditIcon = false,
 }: PlayerCardProps) => {
   // Find the level info based on points
@@ -486,9 +489,9 @@ const PlayerCard = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer', // NEW
+              cursor: disableImagePopup ? 'default' : 'pointer', // respect prop
             }}
-            onClick={handleAvatarClick} // NEW
+            onClick={disableImagePopup ? undefined : handleAvatarClick} // respect prop
           >
             <div style={{ position: 'relative', display: 'inline-block' }}>
               {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}

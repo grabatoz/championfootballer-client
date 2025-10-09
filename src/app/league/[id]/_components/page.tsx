@@ -3885,7 +3885,7 @@ const posToShort = (pos?: string): ShortPosition => {
                                                                 e.preventDefault();
                                                                 if (league?.id) openQuickViewFromTable(String(league.id), String(player.id));
                                                             }}
-                                                            key={player.id} className="block">
+                                                            key={player.id} className="block cursor-pointer">
                                                             {/* ${getRowStyles(index)} */}
                                                             <div style={{
                                                                 background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)'
@@ -4523,7 +4523,7 @@ const posToShort = (pos?: string): ShortPosition => {
                            shirtIcon: '',
                            position: posToShort(p.position),
                          } satisfies PlayerCardProps;
-                         return <PlayerCard {...playerCardProps} />;
+                         return <PlayerCard {...playerCardProps} disableImagePopup />;
                        })()}
                        {/* Icons row under the player card */}
                        <Box

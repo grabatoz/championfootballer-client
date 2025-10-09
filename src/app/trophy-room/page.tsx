@@ -1746,10 +1746,10 @@ export default function GlobalTrophyRoom() {
                     foot: getPreferredFoot(p),
                     profileImage: getProfileImage(p),
                     shirtIcon: '',
-                    position: posToShort(p.position),
+                    position: posToShort(p.position)
                   } satisfies PlayerCardProps;
 
-                  return <PlayerCard {...playerCardProps} />;
+                  return <PlayerCard {...playerCardProps} disableImagePopup />;
                 })()}
                 {/* Icons row under the player card */}
                 <Box
