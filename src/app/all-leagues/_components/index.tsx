@@ -1,6 +1,6 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -16,6 +16,12 @@ import { AppDispatch } from '@/lib/store';
 import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
+
+// Local UI type to carry backend-computed status
+type LeagueWithStatus = League & {
+  status?: { isComplete?: boolean; locked?: boolean; totals?: any; missing?: any[] };
+  isLocked?: boolean;
+};
 
 // Helper function to format league name
 const formatLeagueName = (name: string | undefined | null): string => {
@@ -438,7 +444,7 @@ function LeagueMembersDialog({
 function AllLeagues() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [leagues, setLeagues] = useState<League[]>([]);
+  const [leagues, setLeagues] = useState<LeagueWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const router = useRouter();
@@ -514,13 +520,94 @@ function AllLeagues() {
     setImagePreview(null);
   };
 
+  // const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
+  //   if (!token) return;
+
+  //   const now = Date.now();
+  //   const timeSinceLastFetch = now - lastFetchTime;
+
+  //   // Check if we need to fetch (either forced refresh or cache expired)
+  //   if (!forceRefresh && timeSinceLastFetch < CACHE_TIMEOUT && leagues.length > 0) {
+  //     console.log('Using cached leagues data');
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     console.log('Fetching all available leagues...');
+  //     setLoading(true);
+      
+  //     // First get the user's leagues from auth/status
+  //     const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     });
+
+  //     if (authResponse.ok) {
+  //       const authData = await authResponse.json();
+  //       if (authData.success && authData.user) {
+  //         // Combine joined and managed leagues
+  //         const userLeagues = [
+  //           ...(authData.user.leagues || []),
+  //           ...(authData.user.administeredLeagues || [])
+  //         ].filter(league => league && league.id); // Filter out undefined/null leagues
+          
+  //         // Remove duplicates
+  //         const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
+          
+  //         // Now fetch detailed information for each league
+  //         const detailedLeagues = await Promise.all(
+  //           uniqueLeagues.map(async (league) => {
+  //             try {
+  //               const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+  //                 headers: {
+  //                   'Authorization': `Bearer ${token}`
+  //                 }
+  //               });
+                
+  //               if (leagueResponse.ok) {
+  //                 const leagueData = await leagueResponse.json();
+  //                 if (leagueData.success) {
+  //                   return {
+  //                     ...league,
+  //                     members: leagueData.league.members || [],
+  //                     matches: leagueData.league.matches || [],
+  //                     administrators: leagueData.league.administrators || []
+  //                   };
+  //                 }
+  //               }
+  //               // If individual league fetch fails, return the basic league info
+  //               return league;
+  //             } catch (error) {
+  //               console.warn(`Failed to fetch details for league ${league.id}:`, error);
+  //               return league;
+  //             }
+  //           })
+  //         );
+          
+  //         setLeagues(detailedLeagues);
+  //         setLastFetchTime(now); // Update last fetch time
+  //         console.log('Setting detailed leagues:', detailedLeagues);
+  //       }
+  //     } else {
+  //       console.error('Failed to fetch leagues');
+  //       toast.error('Failed to fetch leagues');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching leagues:', error);
+  //     toast.error('An error occurred while fetching leagues');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]); // Only depend on token
+
   const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
     if (!token) return;
 
     const now = Date.now();
     const timeSinceLastFetch = now - lastFetchTime;
 
-    // Check if we need to fetch (either forced refresh or cache expired)
     if (!forceRefresh && timeSinceLastFetch < CACHE_TIMEOUT && leagues.length > 0) {
       console.log('Using cached leagues data');
       setLoading(false);
@@ -531,7 +618,6 @@ function AllLeagues() {
       console.log('Fetching all available leagues...');
       setLoading(true);
       
-      // First get the user's leagues from auth/status
       const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -541,47 +627,61 @@ function AllLeagues() {
       if (authResponse.ok) {
         const authData = await authResponse.json();
         if (authData.success && authData.user) {
-          // Combine joined and managed leagues
           const userLeagues = [
             ...(authData.user.leagues || []),
             ...(authData.user.administeredLeagues || [])
-          ].filter(league => league && league.id); // Filter out undefined/null leagues
+          ].filter((league: any) => league && league.id);
+
+          const uniqueLeagues = Array.from(new Map(userLeagues.map((league: any) => [league.id, league])).values());
           
-          // Remove duplicates
-          const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
-          
-          // Now fetch detailed information for each league
           const detailedLeagues = await Promise.all(
-            uniqueLeagues.map(async (league) => {
+            uniqueLeagues.map(async (league: any) => {
               try {
-                const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-                
+                const [leagueResponse, statusResponse] = await Promise.all([
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  }),
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  })
+                ]);
+
+                let enriched: any = league;
+
                 if (leagueResponse.ok) {
                   const leagueData = await leagueResponse.json();
                   if (leagueData.success) {
-                    return {
-                      ...league,
+                    enriched = {
+                      ...enriched,
+                      ...leagueData.league,
                       members: leagueData.league.members || [],
                       matches: leagueData.league.matches || [],
-                      administrators: leagueData.league.administrators || []
+                      administrators: leagueData.league.administrators || [],
                     };
                   }
                 }
-                // If individual league fetch fails, return the basic league info
-                return league;
+
+                if (statusResponse.ok) {
+                  const statusData = await statusResponse.json();
+                  if (statusData.success) {
+                    enriched = {
+                      ...enriched,
+                      status: statusData.status,            // { isComplete, totals, missing }
+                      isLocked: enriched.isLocked ?? false, // backend may set this flag
+                    };
+                  }
+                }
+
+                return enriched;
               } catch (error) {
-                console.warn(`Failed to fetch details for league ${league.id}:`, error);
+                console.warn(`Failed to fetch details/status for league ${league.id}:`, error);
                 return league;
               }
             })
           );
           
-          setLeagues(detailedLeagues);
-          setLastFetchTime(now); // Update last fetch time
+          setLeagues(detailedLeagues as LeagueWithStatus[]);
+          setLastFetchTime(now);
           console.log('Setting detailed leagues:', detailedLeagues);
         }
       } else {
@@ -594,8 +694,8 @@ function AllLeagues() {
     } finally {
       setLoading(false);
     }
-  }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]); // Only depend on token
-
+  }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]);
+  
   useEffect(() => {
     if (token) {
       fetchAllLeagues(false); // Don't force refresh on mount
@@ -958,7 +1058,9 @@ function AllLeagues() {
               </Typography>
             </Box>
           ) : (
-            leagues.map((league) => (
+            leagues.map((league) => {
+              const isCompleted = Boolean(league.status?.isComplete || league.status?.locked || league.isLocked);
+              return (
               <Box
                 key={league.id}
                 onClick={() => router.push(`/league/${league.id}`)}
@@ -967,41 +1069,58 @@ function AllLeagues() {
                   borderRadius: 3,
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  // border: '2px solid rgba(255,255,255,0.1)',
-                  // backgroundColor: '#02A880',
-                  // backdropFilter: 'blur(10px)',
-                  // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-                  background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                  // Default background
+                  background: isCompleted
+                    ? '#d4d4d4' // light grey for completed
+                    : 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                   position: 'relative',
                   '&:hover': {
-                    backgroundColor: 'rgba(30, 58, 138, 1)',
-                    transform: 'translateY(-3px)',
+                    backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
+                    transform: isCompleted ? 'none' : 'translateY(-3px)',
                     // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
                     // border: '2px solid rgba(255,255,255,0.2)'
                   }
                 }}
               >
                 {/* Settings Icon - Top Right */}
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: 12,
-                    right: 12,
-                    color: 'white',
-                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                    '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
-                    zIndex: 2
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Handle settings click
-                  }}
-                >
-                  <SettingsIcon
-                    onClick={() => handleOpenMembers(league)}
-                    aria-label={`Open settings for ${formatLeagueName(league.name)}`}
-                    size={20} />
-                </IconButton>
+                {isCompleted ? (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      zIndex: 2,
+                      color: '#16a34a',
+                    }}
+                  >
+                    <CheckCircle sx={{ color: '#16a34a' }} />
+                    <Chip label="Completed" size="small" sx={{ bgcolor: 'rgba(22,163,74,0.1)', color: '#14532d', borderColor: '#16a34a' }} variant="outlined" />
+                  </Box>
+                ) : (
+                  <IconButton
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      color: 'white',
+                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+                      '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
+                      zIndex: 2
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle settings click
+                    }}
+                  >
+                    <SettingsIcon
+                      onClick={() => handleOpenMembers(league)}
+                      aria-label={`Open settings for ${formatLeagueName(league.name)}`}
+                      size={20} />
+                  </IconButton>
+                )}
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
                   {/* League Logo - Green Shield */}
@@ -1041,11 +1160,11 @@ function AllLeagues() {
                     </Typography> */}
 
                     <Typography sx={{
-                      color: 'white',
+                      color: isCompleted ? '#111827' : 'white',
                       fontFamily: '"League Spartan", sans-serif',
                       fontSize: { xs: '18px', sm: '20px', md: '20px' },
                       mb: 2,
-                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                      background: isCompleted ? 'transparent' : 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                       display: 'inline-block', // Only background behind text
                       px: 2, // Horizontal padding for extra background
                       borderRadius: 0.8, // Rounded corners
@@ -1094,7 +1213,7 @@ function AllLeagues() {
                             }} />
                           </Box>
                           <Typography sx={{
-                            color: 'rgba(255,255,255,0.9)',
+                            color: league.status?.isComplete ? '#111827' : 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
                             fontSize: { xs: '10px', sm: '13px' }
@@ -1129,7 +1248,7 @@ function AllLeagues() {
                             }} />
                           </Box>
                           <Typography sx={{
-                            color: 'rgba(255,255,255,0.9)',
+                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
                             fontSize: { xs: '9px', sm: '12px' }
@@ -1146,6 +1265,60 @@ function AllLeagues() {
                         gap: { xs: 1, sm: 1.5 },
                         alignItems: 'flex-start'
                       }}>
+                        {!isCompleted && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+                            <Box sx={{
+                              width: { xs: 12, sm: 16 },
+                              height: { xs: 12, sm: 16 },
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              border: '1px solid rgba(255, 255, 255, 0.4)',
+                              flexShrink: 0,
+                              position: 'relative'
+                            }}>
+                              <Box sx={{
+                                width: { xs: 8, sm: 10 },
+                                height: { xs: 8, sm: 10 },
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                borderRadius: '50%',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)'
+                              }} />
+                            </Box>
+                            <Typography sx={{
+                              color: 'rgba(255,255,255,0.9)',
+                              fontFamily: '"League Spartan", sans-serif',
+                              fontWeight: 200,
+                              fontSize: { xs: '9px', sm: '12px' }
+                            }}>
+                              Code: {league.inviteCode}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: 'white',
+                                p: { xs: 0.2, sm: 0.5 },
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(league.inviteCode);
+                                toast.success('Invite code copied!');
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                              </svg>
+                            </IconButton>
+                          </Box>
+                        )}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                           <Box sx={{
                             width: { xs: 12, sm: 16 },
@@ -1173,59 +1346,7 @@ function AllLeagues() {
                             }} />
                           </Box>
                           <Typography sx={{
-                            color: 'rgba(255,255,255,0.9)',
-                            fontFamily: '"League Spartan", sans-serif',
-                            fontWeight: 200,
-                            fontSize: { xs: '9px', sm: '12px' }
-                          }}>
-                            Code: {league.inviteCode}
-                          </Typography>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: 'white',
-                              p: { xs: 0.2, sm: 0.5 },
-                              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(league.inviteCode);
-                              toast.success('Invite code copied!');
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-                            </svg>
-                          </IconButton>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                          <Box sx={{
-                            width: { xs: 12, sm: 16 },
-                            height: { xs: 12, sm: 16 },
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                            border: '1px solid rgba(255, 255, 255, 0.4)',
-                            flexShrink: 0,
-                            position: 'relative'
-                          }}>
-                            <Box sx={{
-                              width: { xs: 8, sm: 10 },
-                              height: { xs: 8, sm: 10 },
-                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                              borderRadius: '50%',
-                              border: '1px solid rgba(255, 255, 255, 0.3)',
-                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)'
-                            }} />
-                          </Box>
-                          <Typography sx={{
-                            color: 'rgba(255,255,255,0.9)',
+                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
                             fontSize: { xs: '10px', sm: '13px' }
@@ -1238,7 +1359,7 @@ function AllLeagues() {
                   </Box>
                 </Box>
               </Box>
-            ))
+            )})
           )}
         </Box>
 
