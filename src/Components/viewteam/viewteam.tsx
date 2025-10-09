@@ -195,6 +195,17 @@ function mapApiToPlayer(u: ApiPlayer, captainId?: string): Player {
 export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: string; matchId?: string }) {
   const { token, user }: UseAuthResult = useAuth();
 
+  const [matchNumber, setMatchNumber] = React.useState<number | null>(null);
+  const [insightsLoading, setInsightsLoading] = React.useState(false);
+  const [teamInsights, setTeamInsights] = React.useState<{
+    homeStrength: number;
+    awayStrength: number;
+    matchupPct: number;              // home team %
+    predicted: 'home' | 'away' | 'draw';
+    predictedScore: string;
+  } | null>(null);
+  const [predictionReason, setPredictionReason] = React.useState<string | null>(null);
+
   // Start with empty lists; fill with API data when loaded
   const [homeTeamName, setHomeTeamName] = React.useState<string>('Home');
   const [awayTeamName, setAwayTeamName] = React.useState<string>('Away');
@@ -442,6 +453,74 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       cancelled = true;
     };
   }, [leagueId, token, meId]);
+
+
+
+    // NEW: get exact match index from league data
+  React.useEffect(() => {
+    if (!leagueId || !matchId || !token) return;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        const matches: Array<{ id?: string | number }> =
+          data?.league?.matches ?? data?.matches ?? [];
+        if (Array.isArray(matches) && matches.length) {
+          const idx = matches.findIndex(m => String(m?.id ?? '') === String(matchId));
+          setMatchNumber(idx >= 0 ? idx + 1 : null);
+        } else {
+          setMatchNumber(null);
+        }
+      } catch {
+        setMatchNumber(null);
+      }
+    })();
+  }, [leagueId, matchId, token]);
+
+  // NEW: compute team matchup from players' past stats (quick-view per player)
+  React.useEffect(() => {
+    if (!matchId || !token) return;
+    let cancelled = false;
+    (async () => {
+      setInsightsLoading(true);
+      try {
+        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/prediction`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const j = await r.json();
+        if (cancelled) return;
+        if (r.ok && j?.success) {
+          if (typeof j.matchNumber === 'number') setMatchNumber(j.matchNumber);
+          if (j.available) {
+            setTeamInsights({
+              homeStrength: Number(j?.home?.average ?? 0),
+              awayStrength: Number(j?.away?.average ?? 0),
+              matchupPct: Number(j?.matchupPct ?? 0),
+              predicted: (j?.predicted as 'home'|'away'|'draw') || 'draw',
+              predictedScore: String(j?.predictedScore ?? '—'),
+            });
+            setPredictionReason(null);
+          } else {
+            setTeamInsights(null);
+            setPredictionReason(String(j?.reason || 'UNAVAILABLE'));
+          }
+        } else {
+          setTeamInsights(null);
+          setPredictionReason('ERROR');
+        }
+      } catch {
+        if (!cancelled) {
+          setTeamInsights(null);
+          setPredictionReason('ERROR');
+        }
+      } finally {
+        if (!cancelled) setInsightsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [matchId, token, leagueId, homePlayers, awayPlayers]);
 
   // Build removed sets from server state
   const removedHomeSet = useMemo(
@@ -1104,7 +1183,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         <Box sx={{ height: 12 }} />
 
         {/* Predictions (UI unchanged) */}
-        <Typography sx={{ fontSize: 16, fontWeight: 600, textAlign: 'center' }}>Match Predictions</Typography>
+        {/* <Typography sx={{ fontSize: 16, fontWeight: 600, textAlign: 'center' }}>Match Predictions</Typography>
         <Box sx={{ height: 12 }} />
         <Paper
           elevation={0}
@@ -1120,8 +1199,68 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>Team matchup is <span style={{ color: primaryColor }}>100%</span></Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 700 }}><span style={{ color: primaryColor }}>{homeTeamName}</span> <span style={{ color: textColor }}>is predicted to win.</span></Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>Predicted score is <span style={{ color: primaryColor }}>1-2</span></Typography>
-        </Paper>
+        </Paper> */}
 
+{/* // ...existing code... */}
+        {/* Predictions (dynamic) */}
+        <Typography sx={{ fontSize: 16, fontWeight: 600, textAlign: 'center' }}>Match Predictions</Typography>
+        <Box sx={{ height: 12 }} />
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            border: `1px solid ${primaryColor}33`,
+            borderRadius: 2,
+            bgcolor: '#fff',
+            textAlign: 'center'
+          }}
+        >
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: primaryColor }}>
+            Match {matchNumber ?? '-'}
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>
+            Team matchup is{' '}
+            <span style={{ color: primaryColor }}>
+              {insightsLoading || !teamInsights ? '…' : `${teamInsights.matchupPct}%`}
+            </span>
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+            <span style={{ color: primaryColor }}>
+              {teamInsights
+                ? teamInsights.predicted === 'home'
+                  ? homeTeamName
+                  : teamInsights.predicted === 'away'
+                  ? awayTeamName
+                  : 'Draw'
+                : homeTeamName}
+            </span>{' '}
+            <span style={{ color: textColor }}>
+              {teamInsights
+                ? teamInsights.predicted === 'draw'
+                  ? 'is predicted (draw).'
+                  : 'is predicted to win.'
+                : ''}
+            </span>
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>
+            Predicted score is{' '}
+            <span style={{ color: primaryColor }}>
+              {teamInsights ? teamInsights.predictedScore : '—'}
+            </span>
+          </Typography>
+         {!!predictionReason && !teamInsights && !insightsLoading && (
+           <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>
+             {predictionReason === 'FIRST_MATCH_NO_STATS'
+               ? 'Predictions are unavailable for the first match without prior stats.'
+               : predictionReason === 'NO_SELECTED_PLAYERS'
+               ? 'Select players to see predictions.'
+               : predictionReason === 'NO_SIGNAL'
+               ? 'Not enough data to estimate.'
+               : 'Prediction unavailable.'}
+           </Typography>
+         )}
+        </Paper>
+{/* // ...existing code... */}
         <Box sx={{ height: 40 }} />
       </Box>
     </Box>

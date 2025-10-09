@@ -67,8 +67,23 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   handleToggleAvailability,
 }) => {
   const [, setElapsed] = useState("00:00")
-  const isDraw = matchStatus === "completed" && homeGoals === awayGoals
   const { token, user } = useAuth()
+
+  // Normalize backend statuses
+  const isCompleted =
+    matchStatus === 'completed' ||
+    matchStatus === 'RESULT_PUBLISHED' ||
+    matchStatus === 'RESULT_UPLOADED' ||
+    matchStatus === 'COMPLETED' ||
+    matchStatus === 'FINISHED';
+  const isLive =
+    matchStatus === 'started' ||
+    matchStatus === 'LIVE' ||
+    matchStatus === 'IN_PROGRESS';
+  const displayStatus = isCompleted ? 'RESULT_PUBLISHED' : (isLive ? 'LIVE' : 'UPCOMING');
+  const [pctLeft, setPctLeft] = useState<number | null>(null);
+  const [pctRight, setPctRight] = useState<number | null>(null);
+  const [predLoading, setPredLoading] = useState(false);
 
   // Stats dialog state
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
@@ -192,21 +207,63 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
     return homeGoals + awayGoals
   }
 
+  // Fetch prediction percentages when match not completed
   useEffect(() => {
-    if (matchStatus === "started") {
+    if (!token || !matchId || isCompleted) {
+      setPctLeft(null);
+      setPctRight(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setPredLoading(true);
+      try {
+        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/prediction`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const j = await r.json();
+        if (cancelled) return;
+        if (r.ok && j?.success && j?.available) {
+          const homePct = Number(j?.matchupPct ?? 0);
+          const clamped = Math.max(0, Math.min(100, Math.round(homePct)));
+          setPctLeft(clamped);
+          setPctRight(100 - clamped);
+        } else {
+          setPctLeft(null);
+          setPctRight(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setPctLeft(null);
+          setPctRight(null);
+        }
+      } finally {
+        if (!cancelled) setPredLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, matchId, isCompleted]);
+  
+  // Fallback to props if API not available
+  const leftPct = pctLeft ?? winPercentLeft;
+  const rightPct = pctRight ?? winPercentRight;
+
+  useEffect(() => {
+    if (isLive) {
       setElapsed(getElapsedTime(matchStartTime))
       const interval = setInterval(() => {
         setElapsed(getElapsedTime(matchStartTime))
       }, 1000)
       return () => clearInterval(interval)
-    } else if (matchStatus === "completed" && matchEndTime) {
+    } else if (isCompleted && matchEndTime) {
       setElapsed(getElapsedTime(matchStartTime, matchEndTime))
     } else {
       setElapsed("00:00")
     }
-  }, [matchStatus, matchStartTime, matchEndTime])
+  }, [isLive, isCompleted, matchStartTime, matchEndTime])
 
-  const showPredictionBar = matchStatus !== "completed"
+  const showPredictionBar = !isCompleted
+  const isDraw = isCompleted && homeGoals === awayGoals
 
   return (
     <Box>
@@ -253,15 +310,14 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               sx={{ 
                 color: 'white',
                 fontWeight: 'bold',
-                //  bgcolor: '#2B2B2B',
-                backgroundColor: matchStatus === 'RESULT_PUBLISHED' ? '#2B2B2B' : '#2B2B2B',
+                backgroundColor: '#2B2B2B',
                 px: { xs: 1, sm: 1.5, md: 2 },
                 py: { xs: 0.3, sm: 0.5, md: 0.7 },
                 borderRadius: 1,
                 fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
               }}
             >
-              {matchStatus === 'RESULT_PUBLISHED' ? 'RESULT_PUBLISHED' : 'UPCOMING'}
+              {displayStatus}
             </Typography>
           </Box>
         </Box>
@@ -450,7 +506,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             }}
           >
           
-            {matchStatus !== "completed" ? (
+            {!isCompleted ? (
               <Button
                 variant="contained"
                 onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
@@ -464,10 +520,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     backgroundColor: "rgba(255,255,255,0.3)",
                     color: "rgba(255,255,255,0.5)",
                   },
-                  fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" }, // More responsive font sizes
-                  px: { xs: 1, sm: 1.5, md: 2 }, // More responsive padding
-                  py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 }, // More responsive padding
-                  minWidth: { xs: "auto", sm: 120, md: 140 }, // More responsive min width
+                  fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" },
+                  px: { xs: 1, sm: 1.5, md: 2 },
+                  py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                  minWidth: { xs: "auto", sm: 120, md: 140 },
                 }}
               >
                 {availabilityLoading[matchId] ? (
@@ -535,7 +591,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
               Start: {new Date(matchStartTime).toLocaleString()}
             </Typography>
-            {matchStatus === "completed" && matchEndTime && (
+            {isCompleted && matchEndTime && (
               <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
                 End: {new Date(matchEndTime).toLocaleString()}
               </Typography>
@@ -618,10 +674,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   textAlign: "right",
                   fontWeight: 700,
                   fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
-                  color: winPercentLeft > winPercentRight ? "#1976d2" : "#888",
+                  color: leftPct > rightPct ? "#1976d2" : "#888",
                 }}
               >
-                {winPercentLeft}%
+                {predLoading ? '…' : `${leftPct}%`}
               </Typography>
               <Box
                 sx={{
@@ -639,10 +695,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               >
                 <Box
                   sx={{
-                    width: `${winPercentLeft}%`,
+                    width: `${leftPct}%`,
                     height: "100%",
                     background:
-                      winPercentLeft > winPercentRight
+                      leftPct > rightPct
                         ? "linear-gradient(90deg, #1976d2 60%, #64b5f6 100%)"
                         : "#e3eafc",
                     transition: "width 0.5s",
@@ -652,10 +708,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 />
                 <Box
                   sx={{
-                    width: `${winPercentRight}%`,
+                    width: `${rightPct}%`,
                     height: "100%",
                     background:
-                      winPercentRight > winPercentLeft
+                      rightPct > leftPct
                         ? "linear-gradient(90deg, #d32f2f 60%, #ff7961 100%)"
                         : "#e3eafc",
                     transition: "width 0.5s",
@@ -670,10 +726,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   textAlign: "left",
                   fontWeight: 700,
                   fontSize: { xs: 10, sm: 12, md: 14, lg: 18, xl: 20 },
-                  color: winPercentRight > winPercentLeft ? "#d32f2f" : "#888",
+                  color: rightPct > leftPct ? "#d32f2f" : "#888",
                 }}
               >
-                {winPercentRight}%
+                {predLoading ? '…' : `${rightPct}%`}
               </Typography>
             </Box>
           )}
@@ -692,4 +748,4 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   )
 }
 
-export default MatchSummary 
+export default MatchSummary
