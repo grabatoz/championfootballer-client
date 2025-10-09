@@ -749,6 +749,26 @@ export const playerAPI = {
         return { success: false, message:'An unexpected error occurred' ,error: error instanceof Error ? error.message : 'An unexpected error occurred' };
     }
   },
+
+  // Fetch player XP with filters (league/year)
+  getPlayerXP: async (playerId: string, leagueId?: string, year?: string): Promise<ApiResponse<{ totalXP: number; avgXP: number; matches: number }>> => {
+    try {
+      const token = Cookies.get('token');
+      const params = new URLSearchParams();
+      if (leagueId) params.append('leagueId', leagueId);
+      if (year) params.append('year', year);
+      const url = `${API_BASE_URL}/players/${playerId}/xp?${params.toString()}`;
+      const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        return { success: false, message: 'Failed to fetch XP', error: json?.message || 'Failed to fetch XP' };
+      }
+      const { totalXP, avgXP, matches } = json.data || {};
+      return { success: true, message: 'OK', data: { totalXP: Number(totalXP)||0, avgXP: Number(avgXP)||0, matches: Number(matches)||0 } };
+    } catch (e) {
+      return { success: false, message: 'Failed to fetch XP', error: e instanceof Error ? e.message : 'Failed to fetch XP' };
+    }
+  }
 }
 
 // --- LocalStorage Cache Utility ---

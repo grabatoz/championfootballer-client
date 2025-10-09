@@ -26,6 +26,7 @@ import BaloonDImg from '@/Components/images/baloond.png';
 import Image, { StaticImageData } from 'next/image';
 import dayjs from 'dayjs';
 import { useAuth } from '@/lib/hooks';
+import { playerAPI } from '@/lib/api';
 import FootballImg from '@/Components/images/football.png';
 import GoatImg from '@/Components/images/goat.png';
 import GoldenBootImg from '@/Components/images/goldenboot.png';
@@ -434,14 +435,42 @@ export default function PlayerStatsPage() {
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
 
-    // Calculate XP based on current filtration
-    const currentXP = useMemo(() => {
-        if (leagueId === 'all') {
-            return calculateXP(accumulativeTotals);
-        } else {
-            return calculateXP(currentLeagueTotals);
-        }
+    // Backend-driven XP (totalXP) with safe fallback
+    const [xp, setXp] = useState<number>(0);
+    const [xpLoading, setXpLoading] = useState<boolean>(false);
+
+    const fallbackXP = useMemo(() => {
+        // old local calculation if API fails
+        return leagueId === 'all' ? calculateXP(accumulativeTotals) : calculateXP(currentLeagueTotals);
     }, [leagueId, accumulativeTotals, currentLeagueTotals]);
+
+    useEffect(() => {
+        if (!playerId) return;
+        let cancelled = false;
+        const lid = leagueId || 'all';
+        const y = year || 'all';
+        setXpLoading(true);
+        playerAPI
+            .getPlayerXP(String(playerId), String(lid), String(y))
+            .then((res) => {
+                if (cancelled) return;
+                if (res.success && res.data) {
+                    setXp(res.data.totalXP ?? 0);
+                } else {
+                    setXp(fallbackXP);
+                }
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setXp(fallbackXP);
+            })
+            .finally(() => {
+                if (!cancelled) setXpLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [playerId, leagueId, year, fallbackXP]);
 
     const yearsOptions = useMemo(() => {
         const nowYear = dayjs().year();
@@ -924,7 +953,7 @@ export default function PlayerStatsPage() {
                                     fontWeight: 700,
                                     textShadow: '0 1px 2px rgba(0,0,0,0.5)'
                                 }}>
-                                    XP: {currentXP.toLocaleString()}
+                                    XP: {xpLoading ? '…' : xp.toLocaleString()}
                                 </Typography>
                             </Box>
 
