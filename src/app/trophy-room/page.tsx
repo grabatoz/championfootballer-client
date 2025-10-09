@@ -954,8 +954,8 @@ type Skills = {
   physical: number;
 };
 
-const clamp = (v: number, min = 0, max = 99) => Math.max(min, Math.min(max, Math.round(v)));
-const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
+// const clamp = (v: number, min = 0, max = 99) => Math.max(min, Math.min(max, Math.round(v)));
+// const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
 
 // const computeSkillsFromStats = (s?: PlayerStats, user?: User): Skills => {
 //   const stats: PlayerStats = s ?? { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
