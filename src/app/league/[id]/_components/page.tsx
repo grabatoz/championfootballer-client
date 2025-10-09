@@ -66,14 +66,14 @@ type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
 type FIFAStats = { DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string };
 
 type PlayerCardProps = {
-  name: string;
-  number: string;
-  points: number;
-  stats: FIFAStats;
-  foot: Foot;
-  profileImage?: string;
-  shirtIcon?: string;
-  position: ShortPosition;
+    name: string;
+    number: string;
+    points: number;
+    stats: FIFAStats;
+    foot: Foot;
+    profileImage?: string;
+    shirtIcon?: string;
+    position: ShortPosition;
 };
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
@@ -438,7 +438,7 @@ export default function LeagueDetailPage() {
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [, setCheckedCommonLeague] = useState(false);
-    const [, setUserLeagueXP] = useState<Record<string, number>>({});
+    const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
     const [activeMatchId,] = React.useState<string | null>(null);
@@ -886,18 +886,27 @@ export default function LeagueDetailPage() {
         }
     }, [token]);
 
-    // Fetch XP for all users in this league
+    // Fetch XP for all users in this league (from API)
     useEffect(() => {
         async function fetchXP() {
-            if (!league) return;
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`);
-            if (res.ok) {
-                const data = await res.json();
-                setUserLeagueXP(data.xp || {});
+            if (!league?.id) return;
+            try {
+                const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, { headers });
+                const json = await res.json().catch(() => ({}));
+                if (res.ok && (json?.success === undefined || json?.success)) {
+                    // Support either { xp } or { data: { xp } }
+                    const xpMap = json.xp || json.data?.xp || {};
+                    setUserLeagueXP(xpMap as Record<string, number>);
+                } else {
+                    setUserLeagueXP({});
+                }
+            } catch {
+                setUserLeagueXP({});
             }
         }
         fetchXP();
-    }, [league]);
+    }, [league?.id, token]);
 
     // Fetch all leagues for dropdown
     useEffect(() => {
@@ -1071,7 +1080,8 @@ export default function LeagueDetailPage() {
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
-                xp: member?.xp || 0
+                // Prefer XP from league API map, fallback to member.xp if present
+                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member as any)?.xp || 0
             });
         });
         league.matches
@@ -1120,7 +1130,7 @@ export default function LeagueDetailPage() {
         });
 
         return list;
-    }, [league, leagueWinners]);
+    }, [league, leagueWinners, userLeagueXP]);
 
     const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
     // ...existing code...
@@ -2246,32 +2256,32 @@ export default function LeagueDetailPage() {
 
 
 
-    
+
     const resultColor = (r?: string) => (r === 'W' ? '#16a34a' : r === 'L' ? '#dc2626' : '#64748b');
-    
-            const getShirtNumber = (p: User & PlayerProfileLike) => {
+
+    const getShirtNumber = (p: User & PlayerProfileLike) => {
         const member = league?.members.find((m: User) => m.id === p.id);
         const sn = p.shirtNumber ?? member?.shirtNumber;
         if (sn === null || sn === undefined) return '';
         const s = typeof sn === 'string' ? sn : String(sn);
         return s.length > 0 ? s : '';
     };
- const getPreferredFoot = (u?: PlayerProfileLike): Foot => {
-  const v = (u?.preferredFoot ?? '').toString().toLowerCase();
-  if (v === 'left' || v === 'l') return 'L';
-  if (v === 'right' || v === 'r') return 'R';
-  return 'R';
-};
- const getProfileImage = (p: User & PlayerProfileLike) => p.profilePicture ?? '';
-const posToShort = (pos?: string): ShortPosition => {
-  const p = (pos ?? '').toLowerCase();
-  if (p.includes('keeper') || p === 'gk') return 'GK';
-  if (p.includes('def')) return 'DF';
-  if (p.includes('mid')) return 'MF';
-  if (p.includes('wing')) return 'WG';
-  if (p.includes('striker') || p.includes('forward') || p === 'st' || p === 'cf') return 'ST';
-  return 'ST';
-};
+    const getPreferredFoot = (u?: PlayerProfileLike): Foot => {
+        const v = (u?.preferredFoot ?? '').toString().toLowerCase();
+        if (v === 'left' || v === 'l') return 'L';
+        if (v === 'right' || v === 'r') return 'R';
+        return 'R';
+    };
+    const getProfileImage = (p: User & PlayerProfileLike) => p.profilePicture ?? '';
+    const posToShort = (pos?: string): ShortPosition => {
+        const p = (pos ?? '').toLowerCase();
+        if (p.includes('keeper') || p === 'gk') return 'GK';
+        if (p.includes('def')) return 'DF';
+        if (p.includes('mid')) return 'MF';
+        if (p.includes('wing')) return 'WG';
+        if (p.includes('striker') || p.includes('forward') || p === 'st' || p === 'cf') return 'ST';
+        return 'ST';
+    };
     // Helpers for PlayerCard (backend-only data
     const openQuickViewFromTable = async (leagueId: string, playerId: string) => {
         if (!leagueId || !playerId || !token) return;
@@ -4483,7 +4493,7 @@ const posToShort = (pos?: string): ShortPosition => {
 
 
 
-             <Dialog
+            <Dialog
                 open={openQuickView}
                 onClose={() => setOpenQuickView(false)}
                 fullWidth
@@ -4498,133 +4508,133 @@ const posToShort = (pos?: string): ShortPosition => {
                     </IconButton>
                 </DialogTitle>
                 <Divider />
-               <DialogContent sx={{ p: 2.5 }}>
-                 {quickView.player && (
-                   <Box
-                     sx={{
-                       display: 'grid',
-                       gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                       gap: 2,
-                       alignItems: 'stretch',
-                     }}
-                   >
-                     {/* Left: PlayerCard with exact props */}
-                     <Box sx={{ p: { xs: 0, sm: 1 } }}>
-                       {(() => {
-                         const p = quickView.player as User & PlayerProfileLike;
-                         const playerCardProps = {
-                           name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
-                           number: getShirtNumber(p),
-                           points: Number(quickView.xp ?? 0),
-                           stats: {
-                             DRI: String(quickView.skills?.dribbling ?? 0),
-                             SHO: String(quickView.skills?.shooting ?? 0),
-                             PAS: String(quickView.skills?.passing ?? 0),
-                             PAC: String(quickView.skills?.pace ?? 0),
-                             DEF: String(quickView.skills?.defending ?? 0),
-                             PHY: String(quickView.skills?.physical ?? 0),
-                           },
-                           foot: getPreferredFoot(p),
-                           profileImage: getProfileImage(p),
-                           shirtIcon: '',
-                           position: posToShort(p.position),
-                         } satisfies PlayerCardProps;
-                         return <PlayerCard {...playerCardProps} disableImagePopup />;
-                       })()}
-                       {/* Icons row under the player card */}
-                       <Box
-                         sx={{
-                           mt: 1.75,
-                           px: 1,
-                           display: 'grid',
-                           gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                           justifyItems: 'center',
-                           alignItems: 'center',
-                           gap: 1,
-                           textAlign: 'center',
-                           minWidth: 0,
-                         }}
-                       >
-                         {[
-                           { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
-                           { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
-                           { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                           { img: Momt, label: 'MOTM', value: quickView.motmCount ?? 0 },
-                         ].map((it, i) => (
-                           <Box
-                             key={i}
-                             sx={{
-                               display: 'grid',
-                               gridTemplateRows: '28px 16px',
-                               justifyItems: 'center',
-                               alignItems: 'center',
-                               rowGap: 0.5,
-                               width: '100%',
-                               minWidth: 0,
-                             }}
-                           >
-                             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, height: 28, lineHeight: 1 }}>
-                               <Image src={it.img} alt={it.label} width={35} height={35} style={{ objectFit: 'contain', display: 'block' }} />
-                               <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                                 {it.value}
-                               </Typography>
-                             </Box>
-                             <Typography
-                               variant="caption"
-                               sx={{
-                                 color: '#64748b',
-                                 lineHeight: 1,
-                                height: 16,
-                                 whiteSpace: 'nowrap',
-                                 overflow: 'hidden',
-                                 width: '100%',
-                               }}
-                             >
-                               {it.label}
-                             </Typography>
-                           </Box>
-                         ))}
-                       </Box>
-                     </Box>
-                     {/* Right: Last 5 Matches */}
-                     <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
-                       <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
-                       <Stack direction="column" spacing={1}>
-                         {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
-                           <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                             <Box
-                               sx={{
-                                 width: 32,
-                                 height: 28,
-                                 borderRadius: 1,
-                                 backgroundColor: resultColor(m.result),
-                                 color: '#fff',
-                                 fontWeight: 800,
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 fontSize: '0.85rem',
-                               }}
-                             >
-                               {m.result}
-                             </Box>
-                             {idx === 0 && (
-                               <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                                 Latest
-                               </Typography>
-                            )}
-                           </Box>
-                         ))}
-                         {(quickView.lastFive ?? []).length === 0 && (
-                           <Typography variant="body2" sx={{ color: '#64748b' }}>
-                             No recent matches.
-                           </Typography>
-                         )}
-                       </Stack>
-                     </Paper>
-                   </Box>
-                 )}
-               </DialogContent>
+                <DialogContent sx={{ p: 2.5 }}>
+                    {quickView.player && (
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                gap: 2,
+                                alignItems: 'stretch',
+                            }}
+                        >
+                            {/* Left: PlayerCard with exact props */}
+                            <Box sx={{ p: { xs: 0, sm: 1 } }}>
+                                {(() => {
+                                    const p = quickView.player as User & PlayerProfileLike;
+                                    const playerCardProps = {
+                                        name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+                                        number: getShirtNumber(p),
+                                        points: Number(quickView.xp ?? 0),
+                                        stats: {
+                                            DRI: String(quickView.skills?.dribbling ?? 0),
+                                            SHO: String(quickView.skills?.shooting ?? 0),
+                                            PAS: String(quickView.skills?.passing ?? 0),
+                                            PAC: String(quickView.skills?.pace ?? 0),
+                                            DEF: String(quickView.skills?.defending ?? 0),
+                                            PHY: String(quickView.skills?.physical ?? 0),
+                                        },
+                                        foot: getPreferredFoot(p),
+                                        profileImage: getProfileImage(p),
+                                        shirtIcon: '',
+                                        position: posToShort(p.position),
+                                    } satisfies PlayerCardProps;
+                                    return <PlayerCard {...playerCardProps} disableImagePopup />;
+                                })()}
+                                {/* Icons row under the player card */}
+                                <Box
+                                    sx={{
+                                        mt: 1.75,
+                                        px: 1,
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                                        justifyItems: 'center',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        textAlign: 'center',
+                                        minWidth: 0,
+                                    }}
+                                >
+                                    {[
+                                        { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
+                                        { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
+                                        { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
+                                        { img: Momt, label: 'MOTM', value: quickView.motmCount ?? 0 },
+                                    ].map((it, i) => (
+                                        <Box
+                                            key={i}
+                                            sx={{
+                                                display: 'grid',
+                                                gridTemplateRows: '28px 16px',
+                                                justifyItems: 'center',
+                                                alignItems: 'center',
+                                                rowGap: 0.5,
+                                                width: '100%',
+                                                minWidth: 0,
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, height: 28, lineHeight: 1 }}>
+                                                <Image src={it.img} alt={it.label} width={35} height={35} style={{ objectFit: 'contain', display: 'block' }} />
+                                                <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                                                    {it.value}
+                                                </Typography>
+                                            </Box>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: '#64748b',
+                                                    lineHeight: 1,
+                                                    height: 16,
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    width: '100%',
+                                                }}
+                                            >
+                                                {it.label}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                            {/* Right: Last 5 Matches */}
+                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
+                                <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
+                                <Stack direction="column" spacing={1}>
+                                    {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
+                                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 32,
+                                                    height: 28,
+                                                    borderRadius: 1,
+                                                    backgroundColor: resultColor(m.result),
+                                                    color: '#fff',
+                                                    fontWeight: 800,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '0.85rem',
+                                                }}
+                                            >
+                                                {m.result}
+                                            </Box>
+                                            {idx === 0 && (
+                                                <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                                    Latest
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    ))}
+                                    {(quickView.lastFive ?? []).length === 0 && (
+                                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                            No recent matches.
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            </Paper>
+                        </Box>
+                    )}
+                </DialogContent>
             </Dialog>
         </Box>
     );
