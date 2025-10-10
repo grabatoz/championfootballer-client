@@ -1069,7 +1069,7 @@ export default function LeagueDetailPage() {
         if (!league) return [];
         const playerStats = new Map<string, TableData>();
         const adminId = league.administrators?.[0]?.id;
-        league.members.forEach((member) => {
+        league.members.forEach((member: User & { xp?: number }) => {
             playerStats.set(member.id, {
                 id: member.id,
                 name: `${member.firstName} ${member.lastName}`,
@@ -1081,7 +1081,7 @@ export default function LeagueDetailPage() {
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
                 // Prefer XP from league API map, fallback to member.xp if present
-                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member as any)?.xp || 0
+                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member?.xp ?? 0)
             });
         });
         league.matches

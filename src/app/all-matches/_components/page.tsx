@@ -252,17 +252,17 @@ export default function AllMatches() {
         return props;
     };
 
-    const getAvailabilityCounts = (match: Match) => {
-        // Find the league for this match
-        const leagueForMatch = leagues.find(l => l.id === match.leagueId);
-        const leagueMembers = leagueForMatch?.members || [];
-        // Count how many league members are in availableUsers
-        const availableCount = leagueMembers.filter(member =>
-            match.availableUsers?.some((u: User) => u.id === member.id)
-        ).length;
-        const pendingCount = leagueMembers.length - availableCount;
-        return { availableCount, pendingCount };
-    };
+    // const getAvailabilityCounts = (match: Match) => {
+    //     // Find the league for this match
+    //     const leagueForMatch = leagues.find(l => l.id === match.leagueId);
+    //     const leagueMembers = leagueForMatch?.members || [];
+    //     // Count how many league members are in availableUsers
+    //     const availableCount = leagueMembers.filter(member =>
+    //         match.availableUsers?.some((u: User) => u.id === member.id)
+    //     ).length;
+    //     const pendingCount = leagueMembers.length - availableCount;
+    //     return { availableCount, pendingCount };
+    // };
     const [, setError] = useState<string | null>(null);
     const [league, setLeague] = useState<League | null>(null);
     const [, setToastMessage] = useState<string | null>(null);
@@ -415,7 +415,7 @@ export default function AllMatches() {
     };
 
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
-    const [activeMatchId, setActiveMatchId] = React.useState<string | null>(null);
+    const [activeMatchId,] = React.useState<string | null>(null);
     const [stats, setStats] = React.useState({
         goals: 0,
         assists: 0,
@@ -425,69 +425,69 @@ export default function AllMatches() {
         defence: 0,
         impact: 0,
     });
-    const fetchExistingStats = async (matchId: string) => {
-        if (!token || !user) return;
+    // const fetchExistingStats = async (matchId: string) => {
+    //     if (!token || !user) return;
 
-        try {
-            // Fetch existing stats for the current user
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    //     try {
+    //         // Fetch existing stats for the current user
+    //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+    //             headers: { 'Authorization': `Bearer ${token}` }
+    //         });
 
-            // Check if endpoint exists (not 404 or 405)
-            if (response.status === 404 || response.status === 405) {
-                // Endpoint doesn't exist, use default stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-                return;
-            }
+    //         // Check if endpoint exists (not 404 or 405)
+    //         if (response.status === 404 || response.status === 405) {
+    //             // Endpoint doesn't exist, use default stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //             return;
+    //         }
 
-            const data = await response.json();
+    //         const data = await response.json();
 
-            if (data.success && data.stats) {
-                // Use existing stats if available
-                setStats({
-                    goals: data.stats.goals || 0,
-                    assists: data.stats.assists || 0,
-                    cleanSheets: data.stats.cleanSheets || 0,
-                    penalties: data.stats.penalties || 0,
-                    freeKicks: data.stats.freeKicks || 0,
-                    defence: data.stats.defence || 0,
-                    impact: data.stats.impact || 0,
-                });
-            } else {
-                // Reset to 0 if no existing stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch existing stats:', error);
-            // Reset to 0 on error
-            setStats({
-                goals: 0,
-                assists: 0,
-                cleanSheets: 0,
-                penalties: 0,
-                freeKicks: 0,
-                defence: 0,
-                impact: 0
-            });
-        }
-    };
+    //         if (data.success && data.stats) {
+    //             // Use existing stats if available
+    //             setStats({
+    //                 goals: data.stats.goals || 0,
+    //                 assists: data.stats.assists || 0,
+    //                 cleanSheets: data.stats.cleanSheets || 0,
+    //                 penalties: data.stats.penalties || 0,
+    //                 freeKicks: data.stats.freeKicks || 0,
+    //                 defence: data.stats.defence || 0,
+    //                 impact: data.stats.impact || 0,
+    //             });
+    //         } else {
+    //             // Reset to 0 if no existing stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to fetch existing stats:', error);
+    //         // Reset to 0 on error
+    //         setStats({
+    //             goals: 0,
+    //             assists: 0,
+    //             cleanSheets: 0,
+    //             penalties: 0,
+    //             freeKicks: 0,
+    //             defence: 0,
+    //             impact: 0
+    //         });
+    //     }
+    // };
 
     const formatMatchDate = (dateString: string) => {
         const matchDate = new Date(dateString);
@@ -578,7 +578,7 @@ export default function AllMatches() {
 
     const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
     const [archivedActionOpen, setArchivedActionOpen] = useState(false);
-    const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
+    const [, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
 
     const [archivedActionChecking, setArchivedActionChecking] = useState(false);
     const [archivedActionDeleting, setArchivedActionDeleting] = useState(false);
@@ -587,8 +587,8 @@ export default function AllMatches() {
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
 
-    const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
-    const [selectedMatchDetail, setSelectedMatchDetail] = useState<Match | null>(null);
+    const [, setMatchDetailModalOpen] = useState(false);
+    const [, setSelectedMatchDetail] = useState<Match | null>(null);
 
     const handleRequestDeleteMatch = (match: Match) => {
         setMatchPendingDelete(match);
@@ -1115,9 +1115,9 @@ export default function AllMatches() {
                         </Paper>
                     ) : (
                         matches.map((match) => {
-                            const { availableCount, pendingCount } = getAvailabilityCounts(match);
+                            // const { availableCount, pendingCount } = getAvailabilityCounts(match);
                             // Use the latest availableUsers for this match to determine if the user is available
-                            const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
+                            // const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                             // const isCompleted = match.status === 'completed';
                             // const isScheduled = match.status === 'scheduled';
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
