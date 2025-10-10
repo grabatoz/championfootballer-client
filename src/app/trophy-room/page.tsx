@@ -142,6 +142,22 @@ interface BackendLeague {
   schedule?: { maxGames?: number | string };
 }
 
+// Server achievements response types
+interface ServerBadge {
+  id: string;
+  title?: string;
+  count?: number;
+  xp?: number;
+  unlocked?: boolean;
+  progressText?: string;
+}
+interface ServerAchievementsResponse {
+  success: boolean;
+  userId?: string | number;
+  totalXP?: number;
+  badges?: ServerBadge[];
+}
+
 // interface ApiResponse {
 //   success: boolean;
 //   user?: BackendUser;
@@ -785,6 +801,90 @@ const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): 
   return badges;
 };
 
+// Map server badges to UI badges (preserve our images/colors/descriptions)
+const BADGE_META: Record<string, { title: string; description: string; image: StaticImageData; color: string }> = {
+  rising_xp: {
+    title: 'Rising Star',
+    description: 'Your total XP across all matches and leagues.',
+    image: StarKeeperImg,
+    color: BLUE_HEX,
+  },
+  hat_trick_3_matches: {
+    title: 'Hat-Trick x3',
+    description: 'Scoring 3+ goals in 3 separate matches (Within a single league)',
+    image: HatTrickBadge,
+    color: medalGold,
+  },
+  captain_5_wins: {
+    title: "Captain's 5 Wins",
+    description: '5 wins as captain, leading the team to victory (Across all leagues)',
+    image: CaptainsTriumphsBadge,
+    color: medalGold,
+  },
+  assist_10_consecutive: {
+    title: 'Assist Streak x10',
+    description: 'Assist in 10 consecutive matches (Within a single league)',
+    image: AssistMaestroBadge,
+    color: medalGold,
+  },
+  scoring_10_consecutive: {
+    title: 'Scoring Streak x10',
+    description: 'Scoring in 10 consecutive matches (Within a single league)',
+    image: GoalMachineBadge,
+    color: medalGold,
+  },
+  captain_performance_3: {
+    title: "Captain's Picks x3",
+    description: "Gets 3 captain's performance pick (Within a single league)",
+    image: TripleImpactBadge,
+    color: medalGold,
+  },
+  motm_4_consecutive: {
+    title: 'MOTM Streak x4',
+    description: "4 consecutive 'Man of the Match' performance (Across all leagues)",
+    image: StarPerformerBadge,
+    color: medalGold,
+  },
+  clean_sheet_5_wins: {
+    title: 'Clean-Sheet Win Streak x5',
+    description: '5 consecutive wins with clean sheets (Across all leagues)',
+    image: IronWallBadge,
+    color: medalGold,
+  },
+  top_spot_10_matches: {
+    title: 'Top Spot x10 Matches',
+    description: 'Holding top spot in the league for more than 10 matches',
+    image: ChartTopperBadge,
+    color: medalGold,
+  },
+  consecutive_10_victories: {
+    title: '10 In A Row',
+    description: 'Securing 10 consecutive victories in a single league',
+    image: UnbeatenBadge,
+    color: medalGold,
+  },
+};
+
+const mapServerBadgeToUI = (b: ServerBadge): Badge => {
+  const meta = BADGE_META[b.id] ?? {
+    title: b.title ?? b.id,
+    description: b.title ?? b.id,
+    image: HatTrickBadge,
+    color: medalGold,
+  };
+  return {
+    id: b.id,
+    title: b.title ?? meta.title,
+    description: meta.description,
+    image: meta.image,
+    color: meta.color,
+    count: Number(b.count ?? 0),
+    xp: Number(b.xp ?? 0),
+    unlocked: Boolean(b.unlocked),
+    progressText: b.progressText,
+  };
+};
+
 // --- Badge Card (gold medal) ---
 const BadgeCard = ({ id, title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => (
   <Paper
@@ -1160,6 +1260,7 @@ export default function GlobalTrophyRoom() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
   const { user, token } = useAuth();
+  const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
   // Quick-view modal state
   const [openQuickView, setOpenQuickView] = useState(false);
   const [quickView, setQuickView] = useState<{
@@ -1300,6 +1401,30 @@ export default function GlobalTrophyRoom() {
     fetchWinners();
   }, [token, selectedLeagueId]);
 
+  // Fetch server-computed achievements for the current user
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data: ServerAchievementsResponse = await res.json();
+        if (res.ok && data?.success) {
+          if (typeof data.totalXP === 'number' && Number.isFinite(data.totalXP)) {
+            setBackendTotalXP(data.totalXP);
+          }
+          const mapped = Array.isArray(data.badges) ? data.badges.map(mapServerBadgeToUI) : [];
+          setServerBadges(mapped);
+        } else {
+          setServerBadges(null);
+        }
+      } catch {
+        setServerBadges(null);
+      }
+    })();
+  }, [token]);
+
   // Auto-select a default league (prefer a completed league, else first)
   useEffect(() => {
     if (!leagues?.length) return;
@@ -1365,7 +1490,9 @@ export default function GlobalTrophyRoom() {
       : trophiesToDisplayBase;
 
   // Build My Achievements (badges) for the current user (use backend XP if provided)
-  const myBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
+  const myBadges: Badge[] = user
+    ? (serverBadges ?? computeBadges(user, leagues, backendTotalXP))
+    : [];
 
   // Total XP from badges (exclude Rising XP level box from this sum)
   // const totalBadgeXP = useMemo(
