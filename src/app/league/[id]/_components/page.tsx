@@ -599,7 +599,7 @@ export default function LeagueDetailPage() {
 
             setLeague(prev => prev ? {
                 ...prev,
-                matches: prev.matches.filter(mm => mm.id !== match.id)
+                matches: (prev.matches ?? []).filter(mm => mm.id !== match.id)
             } : prev);
 
             toast.success('Match permanently deleted');
@@ -992,7 +992,7 @@ export default function LeagueDetailPage() {
             if (data.success && data.match) {
                 setLeague(prevLeague => {
                     if (!prevLeague) return prevLeague;
-                    const updatedMatches = prevLeague.matches.map(m =>
+                    const updatedMatches = (prevLeague.matches ?? []).map(m =>
                         m.id === matchId ? { ...m, availableUsers: data.match.availableUsers } : m
                     );
                     return { ...prevLeague, matches: updatedMatches };
@@ -1865,7 +1865,7 @@ export default function LeagueDetailPage() {
 
         const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
             (m.awayTeamGoals ?? 0) > 0 ||
-            m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_PUBLISHED';
+            ((m.status ?? '') === 'RESULT_PUBLISHED');
 
         try {
             if (hasScores) {
@@ -1891,7 +1891,7 @@ export default function LeagueDetailPage() {
                 // Update local state
                 setLeague(prev => prev ? {
                     ...prev,
-                    matches: prev.matches.map(mm =>
+                    matches: (prev.matches ?? []).map(mm =>
                         mm.id === m.id ? { ...mm, archived: true } : mm
                     )
                 } : prev);
@@ -1910,7 +1910,7 @@ export default function LeagueDetailPage() {
 
                 setLeague(prev => prev ? {
                     ...prev,
-                    matches: prev.matches.filter(mm => mm.id !== m.id)
+                    matches: (prev.matches ?? []).filter(mm => mm.id !== m.id)
                 } : prev);
 
                 setUndoInfo({ match: m, action: 'delete' });
@@ -2047,7 +2047,7 @@ export default function LeagueDetailPage() {
                 // Update local state
                 setLeague(prev => prev ? {
                     ...prev,
-                    matches: prev.matches.map(mm =>
+                    matches: (prev.matches ?? []).map(mm =>
                         mm.id === match.id ? { ...mm, archived: false } : mm
                     )
                 } : prev);
