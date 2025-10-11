@@ -1654,8 +1654,22 @@ export default function GlobalTrophyRoom() {
           {filter === 'all' && (
            
             <>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  color: 'black',
+                  letterSpacing: 1,
+                  fontWeight: 700,
+                  mb: 0.5,
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' , md: '1rem'},
+                }}
+              >
+                Select League
+              </Typography>
               <Button
                 onClick={handleLeaguesDropdownOpen}
+                // onMouseEnter={handleLeaguesDropdownOpen}
                 disabled={!leagues.length}
                 sx={{
                   textTransform: 'uppercase',
@@ -1682,8 +1696,9 @@ export default function GlobalTrophyRoom() {
                 anchorEl={leaguesDropdownAnchor}
                 open={leaguesDropdownOpen}
                 onClose={handleLeaguesDropdownClose}
+                // MenuListProps={{ onMouseLeave: handleLeaguesDropdownClose }}
               >
-                <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem>
+                {/* <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem> */}
                 {leagues.map(l => (
                   <MenuItem key={l.id} onClick={() => handleLeagueSelect(String(l.id))}>
                     {l.name}
