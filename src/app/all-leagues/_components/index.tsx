@@ -48,6 +48,82 @@ const formatLeagueName = (name: string | undefined | null): string => {
   return `${capitalizedName} (${initials})`;
 };
 
+// Safe type guards/utilities
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+
+// Normalize unknown payload from API/thunk into a League object
+const normalizeLeagueFromPayload = (payload: unknown): League | null => {
+  // Accept either direct League or wrapped { league: League }
+  let raw: Record<string, unknown> | null = null;
+  if (isRecord(payload) && 'league' in payload && isRecord((payload as Record<string, unknown>).league)) {
+    raw = (payload as Record<string, unknown>).league as Record<string, unknown>;
+  } else if (isRecord(payload)) {
+    raw = payload as Record<string, unknown>;
+  }
+
+  if (!raw) return null;
+
+  const idVal = raw.id;
+  if (!(typeof idVal === 'string' || typeof idVal === 'number')) return null;
+  const nowISO = new Date().toISOString();
+
+  const str = (k: string, fallback = ''): string => {
+    const v = raw![k];
+    return typeof v === 'string' ? v : fallback;
+  };
+  const num = (k: string, fallback: number | undefined = undefined): number | undefined => {
+    const v = raw![k];
+    return typeof v === 'number' ? v : fallback;
+  };
+  const bool = (k: string, fallback = false): boolean => {
+    const v = raw![k];
+    return typeof v === 'boolean' ? v : fallback;
+  };
+  const arr = (k: string): unknown[] => (Array.isArray(raw![k]) ? (raw![k] as unknown[]) : []);
+
+  const createdAt = str('createdAt', nowISO);
+  const updatedAtCandidate = str('updatedAt', createdAt || nowISO);
+
+  const normalized: League = {
+    id: String(idVal),
+    name: str('name', 'My League'),
+    inviteCode: str('inviteCode', ''),
+    image: str('image', ''),
+    createdAt,
+    updatedAt: updatedAtCandidate,
+    members: arr('members') as unknown as User[],
+    administrators: arr('administrators') as unknown as User[],
+    matches: arr('matches') as unknown as any[],
+    active: bool('active', true),
+    maxGames: num('maxGames', 0) as number,
+    showPoints: bool('showPoints', true),
+    adminId: str('adminId', undefined as unknown as string),
+    description: str('description', undefined as unknown as string),
+    location: str('location', undefined as unknown as string),
+    maxTeams: num('maxTeams'),
+    currentTeams: num('currentTeams'),
+    status: str('status', undefined as unknown as string) as any,
+  };
+
+  return normalized;
+};
+
+// Recency helpers: newest first by updatedAt or createdAt
+const timeOf = (l: Pick<League, 'updatedAt' | 'createdAt'> | undefined | null): number => {
+  if (!l) return 0;
+  const src = (l.updatedAt || l.createdAt || '').trim();
+  const t = Date.parse(src);
+  return Number.isFinite(t) ? t : 0;
+};
+
+const compareLeaguesByRecency = (a: Pick<League, 'updatedAt' | 'createdAt'>, b: Pick<League, 'updatedAt' | 'createdAt'>): number => {
+  return timeOf(b) - timeOf(a);
+};
+
+const sortLeaguesByRecency = <T extends Pick<League, 'updatedAt' | 'createdAt'>>(arr: T[]): T[] => {
+  return [...arr].sort(compareLeaguesByRecency);
+};
+
 
 interface LeagueMembersDialogProps {
   open: boolean
@@ -480,16 +556,24 @@ function AllLeagues() {
 
     setIsJoining(true);
     try {
-      const result = await dispatch(joinLeague(inviteCode.trim())).unwrap();
-      toast.success('Successfully joined the league!');
-      setInviteCode('');
+      const payload: unknown = await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      const joined = normalizeLeagueFromPayload(payload);
 
-      if (result) {
-        console.log('Joined league successfully:', result.name);
+      if (joined) {
+        // Update cache and put new league at the TOP without refetch
+        cacheManager.updateLeaguesCache(joined);
+        setLeagues(prev => {
+          const filtered = prev.filter(l => l.id !== joined.id);
+          const enriched: LeagueWithStatus = { ...joined };
+          return sortLeaguesByRecency([enriched, ...filtered]);
+        });
+        console.log('Joined league successfully:', joined.name);
+      } else {
+        console.log('Join succeeded but payload missing league; keeping current list until next background sync');
       }
 
-      // Fetch fresh leagues data
-      await fetchAllLeagues(true); // Force refresh after joining league
+      toast.success('Successfully joined the league!');
+      setInviteCode('');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
       toast.error(errorMessage);
@@ -690,7 +774,7 @@ function AllLeagues() {
             })
           );
           
-          setLeagues(detailedLeagues);
+          setLeagues(sortLeaguesByRecency(detailedLeagues));
           setLastFetchTime(now);
           console.log('Setting detailed leagues:', detailedLeagues);
         }
@@ -781,28 +865,41 @@ function AllLeagues() {
 
         // Update the leagues cache with the new league
         if (data.league) {
-          const newLeague = {
-            ...data.league,
-            image: data.league.image || null, // Ensure image field is included
+          // Normalize to match League shape strictly
+          const nowISO = new Date().toISOString();
+          const normalized: League = {
+            id: String(data.league.id),
+            name: data.league.name || 'My League',
+            inviteCode: data.league.inviteCode || '',
+            image: typeof data.league.image === 'string' ? data.league.image : '',
+            createdAt: data.league.createdAt || nowISO,
+            updatedAt: data.league.updatedAt || data.league.createdAt || nowISO,
             members: [],
-            administrators: user ? [user] : [],
+            administrators: user ? [user] as User[] : [],
             matches: [],
             active: true,
-            maxGames: null,
-            showPoints: true
+            maxGames: typeof data.league.maxGames === 'number' ? data.league.maxGames : 0,
+            showPoints: true,
+            adminId: data.league.adminId,
+            description: data.league.description,
+            location: data.league.location,
+            maxTeams: data.league.maxTeams,
+            currentTeams: data.league.currentTeams,
+            status: data.league.status,
           };
 
           // Update cache with new league
-          updateLeaguesCacheWithNewLeague(newLeague);
+          updateLeaguesCacheWithNewLeague(normalized);
 
-          // Update local state
-          setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
-          console.log('Updated cache and local state with new league:', newLeague);
+          // Optimistically put new league at TOP without forcing a refetch
+          setLeagues(prevLeagues => {
+            const filtered = prevLeagues.filter(l => l.id !== normalized.id);
+            const enriched: LeagueWithStatus = { ...normalized };
+            return sortLeaguesByRecency([enriched, ...filtered]);
+          });
+          console.log('Updated cache and local state with new league:', normalized);
         }
-
-        // Fetch fresh leagues list from server
-        await fetchAllLeagues(true); // Force refresh after creating league
-        console.log('Fetched fresh leagues after creating new league');
+        // No forced refetch; list already updated optimistically.
       } else {
         console.error('Failed to create league:', data.message);
         toast.error(data.message || 'Failed to create league');
@@ -1380,9 +1477,9 @@ function AllLeagues() {
           PaperProps={{
             sx: {
               borderRadius: 3,
-              background: '#1f673b',
-              border: '2px solid #43a047',
-              boxShadow: '0 8px 32px 0 rgba(67,160,71,0.18)',
+              background: '#2B2B2B',
+              border: '1px solid #3A3A3A',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
               p: 2,
               color: '#fff',
             },
@@ -1415,32 +1512,26 @@ function AllLeagues() {
                 mt: 1,
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
-                  background: '#1f673b',
+                  background: '#2B2B2B',
                   color: '#fff',
                   borderRadius: 2,
-                  border: '1.5px solid #43a047',
+                  border: '1.5px solid #3A3A3A',
                   '& fieldset': {
-                    borderColor: '#43a047',
+                    borderColor: '#E56A16',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#388e3c',
+                    borderColor: '#CF2326',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#43a047',
+                    borderColor: '#E56A16',
                   },
                   '& input': {
                     color: '#fff',
                   },
                 },
-                '& label': {
-                  color: '#fff',
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#fff',
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#fff',
-                },
+                '& label': { color: '#fff' },
+                '& .MuiInputLabel-root': { color: '#fff' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
               }}
               InputLabelProps={{ sx: { color: '#fff' } }}
             />
@@ -1458,9 +1549,9 @@ function AllLeagues() {
                 gap: 2,
                 mb: 2,
                 p: 2,
-                border: '2px dashed #43a047',
+                border: '2px dashed #E56A16',
                 borderRadius: 2,
-                background: 'rgba(67,160,71,0.1)',
+                background: 'rgba(229,106,22,0.08)',
                 minHeight: 80
               }}>
                 <Avatar
@@ -1469,16 +1560,16 @@ function AllLeagues() {
                   sx={{
                     width: 60,
                     height: 60,
-                    border: '2px solid #43a047',
-                    background: '#1f673b'
+                    border: '2px solid #E56A16',
+                    background: '#2B2B2B'
                   }}
                   variant="rounded"
                 />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#B2DFDB', mb: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: '#E0E0E0', mb: 0.5 }}>
                     {imagePreview ? 'Selected Image' : 'Default Flag Image'}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#B2DFDB' }}>
+                  <Typography variant="caption" sx={{ color: '#C7C7C7' }}>
                     {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
                   </Typography>
                 </Box>
@@ -1491,14 +1582,14 @@ function AllLeagues() {
                   variant="outlined"
                   startIcon={<CloudUpload />}
                   sx={{
-                    color: '#43a047',
-                    borderColor: '#43a047',
+                    color: '#E56A16',
+                    borderColor: '#E56A16',
                     borderRadius: 2,
                     px: 2,
                     fontWeight: 'bold',
                     '&:hover': {
-                      borderColor: '#388e3c',
-                      backgroundColor: 'rgba(67,160,71,0.1)'
+                      borderColor: '#CF2326',
+                      backgroundColor: 'rgba(229,106,22,0.08)'
                     },
                   }}
                 >
@@ -1539,13 +1630,13 @@ function AllLeagues() {
               variant="contained"
               disabled={isCreating || !leagueName.trim()}
               sx={{
-                bgcolor: '#43a047',
+                background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                 color: 'white',
                 fontWeight: 'bold',
                 borderRadius: 2,
                 px: 3,
-                boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
-                '&:hover': { bgcolor: '#388e3c' },
+                boxShadow: '0 4px 12px rgba(229,106,22,0.25)',
+                '&:hover': { background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' },
               }}
             >
               {isCreating ? 'Creating...' : 'Create League'}
@@ -1555,11 +1646,11 @@ function AllLeagues() {
               variant="outlined"
               sx={{
                 color: '#fff',
-                border: '1.5px solid #43a047',
+                border: '1.5px solid #444',
                 borderRadius: 2,
                 px: 3,
                 fontWeight: 'bold',
-                '&:hover': { bgcolor: 'rgba(67,160,71,0.08)' },
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
               }}
             >
               Cancel
