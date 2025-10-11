@@ -9,6 +9,12 @@ interface Filters { positionType?: string; mode: 'total'|'avg'; year?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
 interface SortState { key: SortKey; direction: 'asc' | 'desc'; }
 
+// Column typing and sortable key guard (avoid any casts)
+type ColumnKey = SortKey | 'position' | 'positionType';
+interface Column { label: string; key: ColumnKey }
+const SORTABLE_KEYS: readonly SortKey[] = ['rank','name','matches','avgXP','totalXP'] as const;
+const isSortableKey = (k: ColumnKey): k is SortKey => (SORTABLE_KEYS as readonly string[]).includes(k);
+
 // Helper to get a comparable value for sorting without using any
 function getSortValue(player: WorldRankingPlayer, key: SortKey): string | number {
   switch(key){
@@ -242,21 +248,21 @@ export default function WorldRankingTable(){
                 {(() => {
                   const showAvg = filters.mode === 'avg';
                   const showTotal = filters.mode === 'total';
-                  const cols = [
-                    { label:'Rank', key:'rank' as SortKey },
-                    { label:'Player', key:'name' as SortKey },
-                    { label:'Position', key:'position' as any },
-                    { label:'Pos Type', key:'positionType' as any },
-                    { label:'Matches', key:'matches' as SortKey },
-                    ...(showAvg ? [{ label:'Avg XP', key:'avgXP' as SortKey }] : []),
-                    ...(showTotal ? [{ label:'Total XP', key:'totalXP' as SortKey }] : []),
+                  const cols: Column[] = [
+                    { label:'Rank', key:'rank' },
+                    { label:'Player', key:'name' },
+                    { label:'Position', key:'position' },
+                    { label:'Pos Type', key:'positionType' },
+                    { label:'Matches', key:'matches' },
+                    ...(showAvg ? [{ label:'Avg XP', key:'avgXP' } as Column] : []),
+                    ...(showTotal ? [{ label:'Total XP', key:'totalXP' } as Column] : []),
                   ];
                   return cols.map(col => (
                   <TableCell
                     key={col.label}
-                    onClick={()=> ['rank','name','matches','avgXP','totalXP'].includes(col.key as any) && toggleSort(col.key as SortKey)}
+                    onClick={()=> isSortableKey(col.key) && toggleSort(col.key)}
                     sx={{
-                      cursor: ['rank','name','matches','avgXP','totalXP'].includes(col.key) ? 'pointer' : 'default',
+                      cursor: isSortableKey(col.key) ? 'pointer' : 'default',
                       userSelect:'none',
                       background:'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                       color:'#fff',
@@ -267,7 +273,7 @@ export default function WorldRankingTable(){
                     }}
                   >
                     {col.label}
-                    {sort.key === col.key && (
+                    {isSortableKey(col.key) && sort.key === col.key && (
                       <Box component="span" sx={{ ml:.6, fontSize:11, fontWeight:700 }}>
                         {sort.direction === 'asc' ? '▲' : '▼'}
                       </Box>

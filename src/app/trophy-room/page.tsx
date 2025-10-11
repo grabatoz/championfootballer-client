@@ -36,7 +36,7 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
-import { achievementsAPI } from '@/lib/api';
+// import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
 interface User {
