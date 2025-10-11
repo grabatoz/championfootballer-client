@@ -12,6 +12,12 @@ export default function Footer() {
   const router = useRouter();
   const { isAuthenticated, dispatch } = useAuth();
 
+  // Optional: configure your store URLs via env
+  const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL || '#';
+  const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL || '#';
+  const APP_LANDING_URL = process.env.NEXT_PUBLIC_APP_LANDING_URL || 'https://championfootballer.com/app';
+  const QR_IMAGE_SRC = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(APP_LANDING_URL)}`;
+
   const handleSignOut = async () => {
     try {
       await dispatch(logout());
@@ -34,8 +40,65 @@ export default function Footer() {
       // borderTopRightRadius: { xs: 24, md: 32 },
       boxShadow: '0 -2px 24px 0 rgba(30, 58, 138, 0.12)',
     }}>
-      <Container maxWidth="md">
+       <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={{ xs: 2, md: 3 }}
+            sx={{
+              width: '100%',
+              alignItems: { xs: 'left', md: 'left' },
+              justifyContent: 'space-between',
+              // bgcolor: 'rgba(255,255,255,0.06)',
+              // border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 2,
+              p: { xs: 2, md: 3 },
+              mt: '-60px'
+            }}
+          >
+            <Stack spacing={1} sx={{ textAlign: { xs: 'center', md: 'left' } , mt:'-15' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.2 }}>
+                Get the Champion Footballer app
+              </Typography>
+              {/* <Typography variant="body2" sx={{ opacity: 0.95 }}>
+                Scan the QR code or use the badges to download.
+              </Typography> */}
+
+              <Stack direction="row" spacing={1.5} flexWrap="wrap" justifyContent={{ xs: 'center', md: 'flex-start' }} mt={1.5}>
+                <Box
+                  component="a"
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <Box
+                    component="img"
+                    alt="Download on the App Store"
+                    src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
+                    sx={{ height: 40, width: 'auto', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))' }}
+                  />
+                </Box>
+                <Box
+                  component="a"
+                  href={PLAY_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <Box
+                    component="img"
+                    alt="Get it on Google Play"
+                    src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                    sx={{ height: 55, width: 'auto', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))' }}
+                  />
+                </Box>
+              </Stack>
+            </Stack>
+          </Stack>
+      <Container maxWidth="md" className='mt-[-50]'>
         <Stack spacing={4} alignItems="center" justifyContent="center">
+          {/* App download section */}
+         
+
           {/* Social Icons */}
           <Stack direction="row" spacing={2}>
             <IconButton
