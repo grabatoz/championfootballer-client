@@ -552,6 +552,46 @@ export default function AllMatches() {
         return `${capitalizedName} (${initials})`;
     };
 
+    // Sort helper: prefer numeric match index descending, fallback to latest date
+    const getNumericIndex = (m: Match): number | undefined => {
+        const keys = ['matchNumber', 'match_no', 'matchIndex', 'index', 'matchNo', 'no'] as const;
+        const rec = m as unknown as Record<string, unknown>;
+        for (const k of keys) {
+            const v = rec[k];
+            if (typeof v === 'number' && !Number.isNaN(v)) return v;
+            if (typeof v === 'string') {
+                const n = parseInt(v, 10);
+                if (!Number.isNaN(n)) return n;
+            }
+        }
+        return undefined;
+    };
+
+    const getBestDateMs = (m: Match): number => {
+        const candidates: Array<unknown> = [m.date, (m as any).end, (m as any).start, (m as any).updatedAt, (m as any).createdAt];
+        for (const c of candidates) {
+            if (typeof c === 'string' || c instanceof Date) {
+                const t = new Date(c as any).getTime();
+                if (!Number.isNaN(t)) return t;
+            }
+        }
+        return 0;
+    };
+
+    const compareMatchesDesc = (a: Match, b: Match): number => {
+        const ai = getNumericIndex(a);
+        const bi = getNumericIndex(b);
+        if (ai !== undefined && bi !== undefined) return bi - ai; // larger index first
+        if (ai !== undefined) return -1; // known index before unknown
+        if (bi !== undefined) return 1;
+        // fallback to date: latest first
+        return getBestDateMs(b) - getBestDateMs(a);
+    };
+
+    const sortedMatches = React.useMemo(() => {
+        return [...matches].sort(compareMatchesDesc);
+    }, [matches]);
+
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
@@ -1114,7 +1154,7 @@ export default function AllMatches() {
                             </Typography>
                         </Paper>
                     ) : (
-                        matches.map((match) => {
+                        sortedMatches.map((match) => {
                             // const { availableCount, pendingCount } = getAvailabilityCounts(match);
                             // Use the latest availableUsers for this match to determine if the user is available
                             // const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
@@ -2019,7 +2059,10 @@ export default function AllMatches() {
                                                 gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                                                 gap: 2
                                             }}>
-                                                {league.matches.filter(match => match.status === 'SCHEDULED').map((match) => {
+                                                {league.matches
+                                                    .filter(match => match.status === 'SCHEDULED')
+                                                    .sort(compareMatchesDesc)
+                                                    .map((match) => {
                                                     const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                                                     // const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                     return (
