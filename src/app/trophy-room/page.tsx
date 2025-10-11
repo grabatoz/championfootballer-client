@@ -36,6 +36,7 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
+import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
 interface User {
@@ -1401,11 +1402,24 @@ export default function GlobalTrophyRoom() {
     fetchWinners();
   }, [token, selectedLeagueId]);
 
-  // Fetch server-computed achievements for the current user
+  // Persist and fetch achievements for the current user (saves XP to DB, then loads badges)
   useEffect(() => {
     if (!token) return;
     (async () => {
       try {
+        // First, persist any newly unlocked achievements and ensure XP is saved to profile
+        try {
+          const awardRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements/award`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const awardJson = await awardRes.json().catch(() => ({}));
+          if (awardRes.ok && awardJson?.success && Number.isFinite(Number(awardJson.totalXP))) {
+            setBackendTotalXP(Number(awardJson.totalXP));
+          }
+        } catch {}
+
+        // Then, fetch server-computed achievements summary for display
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -1638,6 +1652,7 @@ export default function GlobalTrophyRoom() {
       >
         <Box sx={{ gridArea: 'left', justifySelf: 'start', ml: 2 }}>
           {filter === 'all' && (
+           
             <>
               <Button
                 onClick={handleLeaguesDropdownOpen}
@@ -1998,6 +2013,7 @@ export default function GlobalTrophyRoom() {
           )}
         </DialogContent>
       </Dialog>
+
     </Box>
   );
 }

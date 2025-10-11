@@ -790,6 +790,28 @@ export const playerAPI = {
   }
 }
 
+// Achievements API Functions
+export const achievementsAPI = {
+  // Persist achievements XP to the current user's profile
+  awardMine: async (): Promise<{ success: boolean; totalXP?: number; achievements?: string[]; message?: string } > => {
+    try {
+      const token = Cookies.get('token');
+      if (!token) return { success: false, message: 'Not authenticated' };
+      const res = await fetch(`${API_BASE_URL}/users/me/achievements/award`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        return { success: false, message: json?.message || 'Failed to award achievements' };
+      }
+      return { success: true, totalXP: Number(json.totalXP) || 0, achievements: json.achievements };
+    } catch (e) {
+      return { success: false, message: e instanceof Error ? e.message : 'Failed to award achievements' };
+    }
+  }
+}
+
 // --- LocalStorage Cache Utility ---
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 export function getCache<T>(key: string): T | null {
