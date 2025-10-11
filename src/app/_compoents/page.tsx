@@ -188,6 +188,7 @@ export default function LandingPage() {
                     '&:hover': { backgroundColor: '#000000' },
                     borderRadius: 2,
                     px: 2,
+                    mt:{sm:0, xs:0 , md:-5}
                   }}
                 >
                   {showLogin ? 'Join' : 'Login'}

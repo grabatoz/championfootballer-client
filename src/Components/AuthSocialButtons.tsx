@@ -37,7 +37,7 @@ export default function AuthSocialButtons() {
   // };
   
   return (
-    <div style={{ display: 'grid', gap: 12, width: '100%', maxWidth: '300px' }}>
+    <div style={{ display: 'grid', gap: 8, width: '100%', maxWidth: '300px' , marginTop: '-30px' }}>
       <button 
         onClick={() => go('google')} 
         style={{

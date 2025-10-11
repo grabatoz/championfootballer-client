@@ -369,7 +369,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          <Stack spacing={3}>
+          <Stack spacing={1}>
             <TextField
               fullWidth
               placeholder="Email address"
@@ -464,7 +464,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         <Box
           component="form"
           onSubmit={handleRegisterSubmit}
-          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 9.5 } }}
+          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 9.5 } , mb:7 }}
         >
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -472,7 +472,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          <Stack spacing={3}>
+          <Stack spacing={1}>
             <TextField
               fullWidth
               placeholder="Email address"
@@ -625,6 +625,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
                 color: "white",
                 py: 1.5,
+                // mb:2,
                 fontSize: "1.1rem",
                 fontWeight: "bold",
                 borderRadius: 2,
