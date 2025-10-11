@@ -15,8 +15,8 @@ export default function Footer() {
   // Optional: configure your store URLs via env
   const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL || '#';
   const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL || '#';
-  const APP_LANDING_URL = process.env.NEXT_PUBLIC_APP_LANDING_URL || 'https://championfootballer.com/app';
-  const QR_IMAGE_SRC = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(APP_LANDING_URL)}`;
+  // const APP_LANDING_URL = process.env.NEXT_PUBLIC_APP_LANDING_URL || 'https://championfootballer.com/app';
+  // const QR_IMAGE_SRC = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(APP_LANDING_URL)}`;
 
   const handleSignOut = async () => {
     try {
