@@ -44,6 +44,9 @@ interface Match {
     homeTeamGoals?: number;
     awayTeamGoals?: number;
     end?: string;
+    start?: string | Date;
+    updatedAt?: string | Date;
+    createdAt?: string | Date;
     homeTeamImage?: string;
     awayTeamImage?: string;
     archived?: boolean;
@@ -568,12 +571,11 @@ export default function AllMatches() {
     };
 
     const getBestDateMs = (m: Match): number => {
-        const candidates: Array<unknown> = [m.date, (m as any).end, (m as any).start, (m as any).updatedAt, (m as any).createdAt];
+        const candidates: Array<string | Date | undefined | null> = [m.date, m.end, m.start, m.updatedAt, m.createdAt];
         for (const c of candidates) {
-            if (typeof c === 'string' || c instanceof Date) {
-                const t = new Date(c as any).getTime();
-                if (!Number.isNaN(t)) return t;
-            }
+            if (!c) continue;
+            const t = new Date(c).getTime();
+            if (!Number.isNaN(t)) return t;
         }
         return 0;
     };
