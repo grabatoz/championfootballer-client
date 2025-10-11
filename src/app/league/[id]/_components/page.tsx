@@ -4542,7 +4542,7 @@ export default function LeagueDetailPage() {
                 maxWidth="sm"
                 PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
             >
-                <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0 }}>
                     {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
                     <Box sx={{ flexGrow: 1 }} />
                     <IconButton onClick={() => setOpenQuickView(false)} edge="end">
@@ -4550,7 +4550,7 @@ export default function LeagueDetailPage() {
                     </IconButton>
                 </DialogTitle>
                 <Divider />
-                <DialogContent sx={{ p: 2.5 }}>
+                <DialogContent sx={{ p: 0 }}>
                     {quickView.player && (
                         <Box
                             sx={{
@@ -4586,8 +4586,8 @@ export default function LeagueDetailPage() {
                                 {/* Icons row under the player card */}
                                 <Box
                                     sx={{
-                                        mt: 1.75,
-                                        px: 1,
+                                        mt: 0,
+                                        px: 0,
                                         display: 'grid',
                                         gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
                                         justifyItems: 'center',
@@ -4639,7 +4639,7 @@ export default function LeagueDetailPage() {
                                 </Box>
                             </Box>
                             {/* Right: Last 5 Matches */}
-                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
+                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', height: '230px', mt:1 , borderRadius: 2 }}>
                                 <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
                                 <Stack direction="column" spacing={1}>
                                     {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
