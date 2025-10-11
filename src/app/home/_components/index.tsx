@@ -243,15 +243,15 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
           borderRadius: 2,
           boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
           border: '2px solid #fff',
+          ...(showDropdown && {
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
+          })
         }}
-        // onClick={() => {
-        //   if (selectedLeague) {
-        //     window.location.href = `/league/${selectedLeague.id}`;
-        //   }
-        // }}
+        // Clicking the main button opens the list
           onClick={(e) => {
               e.stopPropagation();
-              setShowDropdown(!showDropdown);
+              setShowDropdown(true);
             }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
@@ -282,8 +282,24 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
               },
               transition: 'background-color 0.2s'
             }}
+            role="button"
+            tabIndex={0}
+            aria-haspopup="listbox"
+            aria-expanded={showDropdown}
+            aria-controls="league-dropdown-list"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDropdown(prev => !prev);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDropdown(prev => !prev);
+              }
+            }}
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={24} style={{ transform: showDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
           </Box>
         </Box>
       </Button>
@@ -293,20 +309,25 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
         <Box
           sx={{
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% - 2px)',
             width: '100%',
             maxWidth: { xs: '280px', sm: '320px' },
             maxHeight: 300,
             overflowY: 'auto',
             p: 0.5,
-            mt: 1,
+            mt: 0,
             zIndex: 9999,
             bgcolor: '#00A77F',
             color: '#FFFFFF',
             borderRadius: 2,
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
             border: '2px solid #FFFFFF',
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            // mb: 2
           }}
+          id="league-dropdown-list"
+          role="listbox"
         >
           {sortedUserLeagues.map((league) => {
             const isActive = league.id === selectedLeague?.id;
@@ -318,6 +339,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                     setSelectedLeague(league);
                     setShowDropdown(false);
                   }}
+                  role="option"
+                  aria-selected={isActive}
                   sx={{
                     borderRadius: 1.5,
                     mx: 0.5,
