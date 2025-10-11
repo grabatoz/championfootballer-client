@@ -59,6 +59,12 @@ export default function WorldRankingTable(){
 
   useEffect(()=>{ load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.mode, filters.positionType, filters.year]);
 
+  // When switching mode, default sort to the shown metric (desc)
+  useEffect(()=>{
+    setSort({ key: filters.mode === 'avg' ? 'avgXP' : 'totalXP', direction: 'desc' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.mode]);
+
   const filtered = useMemo(()=>{
     if(!data) return [] as WorldRankingPlayer[];
     const term = search.trim().toLowerCase();
@@ -154,9 +160,9 @@ export default function WorldRankingTable(){
             <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Position Type</Typography>
             <Select size="small" value={filters.positionType||''} onChange={e=> setFilters(f=>({...f, positionType: e.target.value||undefined}))} displayEmpty sx={{ minWidth:150, fontSize:13, color:'#f1f1f1', '.MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.35)' } }}>
               <MenuItem value=""><em>All</em></MenuItem>
-              <MenuItem value="Defensive">Defensive</MenuItem>
-              <MenuItem value="Midfield">Midfield</MenuItem>
-              <MenuItem value="Attacking">Attacking</MenuItem>
+              <MenuItem value="Defender">Defender</MenuItem>
+              <MenuItem value="Midfielder">Midfielder</MenuItem>
+              <MenuItem value="Forward">Forward</MenuItem>
               <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
             </Select>
           </Box>
@@ -233,18 +239,22 @@ export default function WorldRankingTable(){
           <Table stickyHeader size="small" sx={{ '& .MuiTableCell-root':{ borderBottom:'1px solid rgba(255,255,255,0.18)' } }}>
             <TableHead>
               <TableRow>
-                {[
-                  { label:'Rank', key:'rank' as SortKey },
-                  { label:'Player', key:'name' as SortKey },
-                  { label:'Position', key:'position' as SortKey },
-                  { label:'Pos Type', key:'positionType' as SortKey },
-                  { label:'Matches', key:'matches' as SortKey },
-                  { label:'Avg XP', key:'avgXP' as SortKey },
-                  { label:'Total XP', key:'totalXP' as SortKey }
-                ].map(col => (
+                {(() => {
+                  const showAvg = filters.mode === 'avg';
+                  const showTotal = filters.mode === 'total';
+                  const cols = [
+                    { label:'Rank', key:'rank' as SortKey },
+                    { label:'Player', key:'name' as SortKey },
+                    { label:'Position', key:'position' as any },
+                    { label:'Pos Type', key:'positionType' as any },
+                    { label:'Matches', key:'matches' as SortKey },
+                    ...(showAvg ? [{ label:'Avg XP', key:'avgXP' as SortKey }] : []),
+                    ...(showTotal ? [{ label:'Total XP', key:'totalXP' as SortKey }] : []),
+                  ];
+                  return cols.map(col => (
                   <TableCell
                     key={col.label}
-                    onClick={()=> ['rank','name','matches','avgXP','totalXP'].includes(col.key) && toggleSort(col.key as SortKey)}
+                    onClick={()=> ['rank','name','matches','avgXP','totalXP'].includes(col.key as any) && toggleSort(col.key as SortKey)}
                     sx={{
                       cursor: ['rank','name','matches','avgXP','totalXP'].includes(col.key) ? 'pointer' : 'default',
                       userSelect:'none',
@@ -263,7 +273,8 @@ export default function WorldRankingTable(){
                       </Box>
                     )}
                   </TableCell>
-                ))}
+                  ));
+                })()}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -304,8 +315,12 @@ export default function WorldRankingTable(){
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.position || '-'}</TableCell>
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.positionType || '-'}</TableCell>
                     <TableCell sx={{ fontSize:12.5, color:'#fff' }}>{formatNum(p.matches)}</TableCell>
-                    <TableCell sx={{ fontSize:12.5, fontWeight:600, color:'#fff' }}>{formatNum(p.avgXP, { decimals:2 })}</TableCell>
-                    <TableCell sx={{ fontSize:12.5, fontWeight:800, color:'#fff' }}>{formatNum(p.totalXP)}</TableCell>
+                    {filters.mode === 'avg' && (
+                      <TableCell sx={{ fontSize:12.5, fontWeight:700, color:'#fff' }}>{formatNum(p.avgXP, { decimals:2 })}</TableCell>
+                    )}
+                    {filters.mode === 'total' && (
+                      <TableCell sx={{ fontSize:12.5, fontWeight:800, color:'#fff' }}>{formatNum(p.totalXP)}</TableCell>
+                    )}
                   </TableRow>
                 );
               })}
