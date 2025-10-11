@@ -671,32 +671,40 @@ export default function PlayerDashboard() {
 
     try {
       // Dispatch join and get the joined league payload
-      const result = await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      const payload: unknown = await dispatch(joinLeague(inviteCode.trim())).unwrap();
 
-      // Normalize possible API shapes: either { league: {...} } or the league object itself
-      const joined = (result && ((result as any).league || result)) as Partial<League> | undefined;
+      // Accept either a direct League object or a wrapped { league: League }
+      let joined: League | undefined;
+      if (typeof payload === 'object' && payload !== null && 'league' in payload) {
+        const maybeLeague = (payload as { league?: unknown }).league;
+        if (typeof maybeLeague === 'object' && maybeLeague !== null && 'id' in maybeLeague) {
+          joined = maybeLeague as League;
+        }
+      } else if (typeof payload === 'object' && payload !== null && 'id' in payload) {
+        joined = payload as League;
+      }
 
       if (joined && joined.id) {
         const nowISO = new Date().toISOString();
         const normalized: League = {
           id: String(joined.id),
-          name: (joined as any).name || 'My League',
-          inviteCode: (joined as any).inviteCode || '',
-          image: (joined as any).image ?? '',
-          createdAt: (joined as any).createdAt || nowISO,
-          updatedAt: (joined as any).updatedAt || (joined as any).createdAt || nowISO,
-          members: (joined as any).members || [],
-          administrators: (joined as any).administrators || [],
-          matches: (joined as any).matches || [],
-          active: (joined as any).active ?? true,
-          maxGames: (joined as any).maxGames ?? 0,
-          showPoints: (joined as any).showPoints ?? true,
-          adminId: (joined as any).adminId,
-          description: (joined as any).description,
-          location: (joined as any).location,
-          maxTeams: (joined as any).maxTeams,
-          currentTeams: (joined as any).currentTeams,
-          status: (joined as any).status,
+          name: joined.name ?? 'My League',
+          inviteCode: joined.inviteCode ?? '',
+          image: joined.image ?? '',
+          createdAt: joined.createdAt ?? nowISO,
+          updatedAt: joined.updatedAt ?? joined.createdAt ?? nowISO,
+          members: joined.members ?? [],
+          administrators: joined.administrators ?? [],
+          matches: joined.matches ?? [],
+          active: joined.active ?? true,
+          maxGames: joined.maxGames ?? 0,
+          showPoints: joined.showPoints ?? true,
+          adminId: joined.adminId,
+          description: joined.description,
+          location: joined.location,
+          maxTeams: joined.maxTeams,
+          currentTeams: joined.currentTeams,
+          status: joined.status,
         };
 
         // Update local caches and UI immediately
