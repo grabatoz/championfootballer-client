@@ -48,37 +48,44 @@ import Link from 'next/link';
 
 const GreenDialogTextField = styled(TextField)(() => ({
   '& .MuiOutlinedInput-root': {
-    background: 'rgba(18,74,46,0.85)',
+    background: 'rgba(43,43,43,0.85)',
     backdropFilter: 'blur(6px)',
     color: '#fff',
     borderRadius: 10,
-    border: '1.5px solid rgba(88,220,140,0.55)',
+    border: '1.5px solid rgba(229,106,22,0.55)',
     transition: 'border-color .25s, box-shadow .25s',
     '& fieldset': { borderColor: 'transparent' },
-    '&:hover fieldset': { borderColor: 'rgba(120,255,180,0.7)' },
-    '&.Mui-focused fieldset': { borderColor: '#53d276', boxShadow: '0 0 0 3px rgba(83,210,118,0.25)' },
+    '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.70)' },
+    '&.Mui-focused fieldset': { borderColor: '#E56A16', boxShadow: '0 0 0 3px rgba(229,106,22,0.25)' },
     '& input': { color: '#fff', fontWeight: 500, letterSpacing: .4 }
   },
   '& .MuiInputLabel-root': {
-    color: '#cfeedd',
+    color: '#ffe6d5',
     fontWeight: 600,
     letterSpacing: .5,
     '&.Mui-focused': { color: '#ffffff' }
   },
   '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
-    WebkitBoxShadow: '0 0 0 1000px rgba(18,74,46,0.85) inset',
+    WebkitBoxShadow: '0 0 0 1000px rgba(43,43,43,0.85) inset',
     WebkitTextFillColor: '#fff',
     transition: 'background-color 9999s ease-out 0s'
   }
 }));
 
-const LeagueSelectionComponent = ({}: { user: User }) => {  
+const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: number; createdLeague?: League | null }) => {  
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
+
+  // Helper to compare leagues by most recent change
+  const timeOf = (l?: League | null) => {
+    if (!l) return 0;
+    const ts = Date.parse(l.updatedAt || l.createdAt || '');
+    return Number.isNaN(ts) ? 0 : ts;
+  };
 
   // Click outside handler
   useEffect(() => {
@@ -129,7 +136,9 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
             setUserLeagues(uniqueLeagues);
 
             if (uniqueLeagues.length > 0) {
-              setSelectedLeague(uniqueLeagues[0]);
+              // Pick the latest by updatedAt or createdAt
+              const latest = [...uniqueLeagues].sort((a, b) => timeOf(b) - timeOf(a))[0];
+              setSelectedLeague(latest);
             }
           }
         }
@@ -141,12 +150,25 @@ const LeagueSelectionComponent = ({}: { user: User }) => {
     };
 
     fetchUserLeagues();
-  }, [token]);
+  }, [token, refreshKey]);
+
+  // When a new league is created in the parent, immediately add/select it without waiting for a refetch
+  useEffect(() => {
+    if (!createdLeague || !createdLeague.id) return;
+    setUserLeagues(prev => {
+      const map = new Map(prev.map(l => [l.id, l]));
+      map.set(createdLeague.id, createdLeague);
+      return Array.from(map.values());
+    });
+    setSelectedLeague(createdLeague);
+  }, [createdLeague]);
 
   // Keep selected league at top
   const sortedUserLeagues = React.useMemo(() => {
     if (!userLeagues?.length) return [];
-    const arr = [...userLeagues];
+    // Sort by recency first
+    const arr = [...userLeagues].sort((a, b) => timeOf(b) - timeOf(a));
+    // Keep currently selected pinned to top
     const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague.id) : -1;
     if (idx > 0) {
       const [sel] = arr.splice(idx, 1);
@@ -581,6 +603,10 @@ export default function PlayerDashboard() {
   const { token } = useAuth();
   const [, setLeagues] = useState<League[]>([]);
   const [, setLoading] = useState(true);
+  // Trigger to force LeagueSelectionComponent to refetch
+  const [leaguesRefreshKey, setLeaguesRefreshKey] = useState(0);
+  // Pass the newly created league down so it appears instantly
+  const [createdLeague, setCreatedLeague] = useState<League | null>(null);
 
   const [, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
@@ -644,7 +670,44 @@ export default function PlayerDashboard() {
     if (!inviteCode.trim()) return;
 
     try {
-      await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      // Dispatch join and get the joined league payload
+      const result = await dispatch(joinLeague(inviteCode.trim())).unwrap();
+
+      // Normalize possible API shapes: either { league: {...} } or the league object itself
+      const joined = (result && ((result as any).league || result)) as Partial<League> | undefined;
+
+      if (joined && joined.id) {
+        const nowISO = new Date().toISOString();
+        const normalized: League = {
+          id: String(joined.id),
+          name: (joined as any).name || 'My League',
+          inviteCode: (joined as any).inviteCode || '',
+          image: (joined as any).image ?? '',
+          createdAt: (joined as any).createdAt || nowISO,
+          updatedAt: (joined as any).updatedAt || (joined as any).createdAt || nowISO,
+          members: (joined as any).members || [],
+          administrators: (joined as any).administrators || [],
+          matches: (joined as any).matches || [],
+          active: (joined as any).active ?? true,
+          maxGames: (joined as any).maxGames ?? 0,
+          showPoints: (joined as any).showPoints ?? true,
+          adminId: (joined as any).adminId,
+          description: (joined as any).description,
+          location: (joined as any).location,
+          maxTeams: (joined as any).maxTeams,
+          currentTeams: (joined as any).currentTeams,
+          status: (joined as any).status,
+        };
+
+        // Update local caches and UI immediately
+        updateLeaguesCacheWithNewLeague(normalized);
+        setCreatedLeague(normalized); // instantly visible in selector
+        setLeaguesRefreshKey((k) => k + 1); // background refetch to stay in sync
+      } else {
+        // If API didn't include league payload, still trigger a background refresh to get latest
+        setLeaguesRefreshKey((k) => k + 1);
+      }
+
       setInviteCode('');
       toast.success('Successfully joined league!');
     } catch (error: unknown) {
@@ -708,6 +771,10 @@ export default function PlayerDashboard() {
           // Update local state
           setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
           console.log('Updated cache and local state with new league:', newLeague);
+
+          // Make it show up immediately and trigger a refetch to stay in sync
+          setCreatedLeague(newLeague);
+          setLeaguesRefreshKey(k => k + 1);
         }
       } else {
         console.error('Failed to create league:', data.message);
@@ -798,7 +865,7 @@ export default function PlayerDashboard() {
             mb: { xs: 2, md: 0 }, // Add margin bottom on mobile
             mt: { xs: 1 }
           }}>
-            <PlayerCard
+            <PlayerCard 
               name={user?.firstName || ''}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
@@ -863,7 +930,7 @@ export default function PlayerDashboard() {
                 </Typography>
 
                 {/* League Selection Component */}
-                <LeagueSelectionComponent user={user} />
+                <LeagueSelectionComponent refreshKey={leaguesRefreshKey} createdLeague={createdLeague} />
 
                 {/* Add New League Button */}
                 <Button
@@ -1347,13 +1414,13 @@ export default function PlayerDashboard() {
             overflow: 'hidden',
             position: 'relative',
             p: 0,
-            // New background matching site palette (deep green + accent glow)
+            // Background switched to orange/red gradient and dark base
             background: `
-              radial-gradient(circle at 18% 10%, rgba(0,167,127,0.20) 0%, rgba(0,167,127,0) 55%),
-              linear-gradient(150deg,#052d1c 0%,#064228 35%,#086138 68%,#0a7c46 100%)
+              radial-gradient(circle at 18% 10%, rgba(229,106,22,0.18) 0%, rgba(229,106,22,0) 55%),
+              linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)
             `,
-            boxShadow: '0 24px 60px -18px rgba(0,0,0,0.65), 0 0 0 1px rgba(120,255,200,0.15)',
-            border: '1.5px solid rgba(120,255,180,0.40)',
+            boxShadow: '0 24px 60px -18px rgba(0,0,0,0.65), 0 0 0 1px rgba(229,106,22,0.20)',
+            border: '1.5px solid rgba(229,106,22,0.45)',
             backdropFilter: 'blur(6px)'
           }
         }}
@@ -1365,7 +1432,7 @@ export default function PlayerDashboard() {
           pointerEvents: 'none',
           background: `
             linear-gradient(95deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0) 38%),
-            radial-gradient(circle at 82% 22%, rgba(255,255,255,0.18), transparent 60%)
+            radial-gradient(circle at 82% 22%, rgba(229,106,22,0.25), transparent 60%)
           `
         }} />
 
@@ -1377,7 +1444,7 @@ export default function PlayerDashboard() {
             px: 3.2,
             pt: 2.8,
             pb: 1.6,
-            background: 'linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0))',
+            background: 'linear-gradient(180deg,rgba(43,43,43,0.35),rgba(43,43,43,0))',
           }}
         >
           <DialogTitle
@@ -1386,7 +1453,7 @@ export default function PlayerDashboard() {
               fontWeight: 900,
               fontSize: 25,
               letterSpacing: .85,
-              color: '#f2fff9',
+              color: '#ffffff',
               textShadow: '0 3px 10px rgba(0,0,0,0.45)'
             }}
           >
@@ -1397,9 +1464,9 @@ export default function PlayerDashboard() {
             sx={{
               color: '#eafff4',
               bgcolor: 'rgba(255,255,255,0.10)',
-              border: '1px solid rgba(120,255,190,0.25)',
+              border: '1px solid rgba(229,106,22,0.30)',
               backdropFilter: 'blur(4px)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.20)' }
+              '&:hover': { bgcolor: 'rgba(229,106,22,0.25)' }
             }}
           >
             <X size={20} />
@@ -1411,7 +1478,7 @@ export default function PlayerDashboard() {
             px: 3.2,
             pt: 1,
             pb: 0.5,
-            color: '#d8ffe9'
+            color: '#ffe6d5'
           }}
         >
           {/* Input field already styled (GreenDialogTextField) */}
@@ -1447,7 +1514,7 @@ export default function PlayerDashboard() {
               gap: 2,
               mb: 2.2,
               p: 2,
-              border: '1.5px dashed rgba(140,255,195,0.55)',
+              border: '1.5px dashed rgba(229,106,22,0.55)',
               borderRadius: 4,
               background: 'linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03))',
               backdropFilter: 'blur(5px)'
@@ -1459,8 +1526,8 @@ export default function PlayerDashboard() {
                 sx={{
                   width: 74,
                   height: 74,
-                  border: '2px solid #62f5ab',
-                  background: '#0c3d27',
+                  border: '2px solid #E56A16',
+                  background: '#2B2B2B',
                   boxShadow: '0 6px 18px -6px rgba(0,0,0,0.65)'
                 }}
               />
@@ -1479,14 +1546,14 @@ export default function PlayerDashboard() {
                 component="label"
                 variant="contained"
                 sx={{
-                  background: 'linear-gradient(135deg,#11a964,#18c178)',
+                  background: '#E56A16',
                   color: '#fff',
                   fontWeight: 700,
                   borderRadius: 2.4,
                   px: 2.6,
                   letterSpacing: .55,
-                  boxShadow: '0 8px 26px -8px rgba(20,185,110,0.55)',
-                  '&:hover': { background: 'linear-gradient(135deg,#17bb71,#23d886)' }
+                  boxShadow: '0 8px 26px -8px rgba(229,106,22,0.45)',
+                  '&:hover': { background: '#f07823' }
                 }}
                 startIcon={<CloudUpload size={18} />}
               >
@@ -1498,8 +1565,8 @@ export default function PlayerDashboard() {
                   variant="outlined"
                   onClick={handleRemoveImage}
                   sx={{
-                    color: '#ff8f8f',
-                    borderColor: '#ff8f8f',
+                    color: '#ffb1a1',
+                    borderColor: '#ffb1a1',
                     fontWeight: 600,
                     borderRadius: 2.2,
                     px: 2.2,
@@ -1526,14 +1593,14 @@ export default function PlayerDashboard() {
             onClick={() => setIsDialogOpen(false)}
             variant="outlined"
             sx={{
-              color: '#e6fff3',
-              borderColor: 'rgba(125,255,195,0.50)',
+              color: '#ffe6d5',
+              borderColor: 'rgba(229,106,22,0.50)',
               fontWeight: 600,
               borderRadius: 2.4,
               px: 3,
               letterSpacing: .55,
               backdropFilter: 'blur(3px)',
-              '&:hover': { borderColor: '#93ffcf', background: 'rgba(140,255,210,0.12)' }
+              '&:hover': { borderColor: '#E56A16', background: 'rgba(229,106,22,0.12)' }
             }}
           >
             Cancel
@@ -1543,17 +1610,17 @@ export default function PlayerDashboard() {
             disabled={isCreating || !leagueName.trim()}
             variant="contained"
             sx={{
-              background: 'linear-gradient(135deg,#12b46a,#24d07e)',
+              background: '#E56A16',
               color: '#fff',
               fontWeight: 800,
               borderRadius: 2.6,
               px: 3.4,
               letterSpacing: .75,
-              boxShadow: '0 12px 32px -10px rgba(30,205,125,0.55)',
-              '&:hover': { background: 'linear-gradient(135deg,#17c575,#33e38b)' },
+              boxShadow: '0 12px 32px -10px rgba(229,106,22,0.45)',
+              '&:hover': { background: '#f07823' },
               '&:disabled': {
-                background: 'linear-gradient(135deg,#1d5f39,#1d5f39)',
-                color: '#7ca790'
+                background: '#2B2B2B',
+                color: '#c9a893'
               }
             }}
           >
