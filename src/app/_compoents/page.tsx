@@ -174,7 +174,7 @@ export default function LandingPage() {
           >
 
             {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
-            <Box sx={{ width: '100%', overflow: 'visible', mb: 4 }}>
+            <Box sx={{ width: '100%', overflow: 'visible', mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
                 <Button
                   variant="contained"
@@ -187,7 +187,7 @@ export default function LandingPage() {
                     backgroundColor: '#000000',
                     '&:hover': { backgroundColor: '#000000' },
                     borderRadius: 2,
-                    px: 2,
+                    px: 1,
                     mt:{sm:0, xs:0 , md:-5}
                   }}
                 >
@@ -196,7 +196,7 @@ export default function LandingPage() {
               </Box>
               <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
             </Box>
-            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } , mb:3 }}>
+            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } }}>
               <AuthSocialButtons />
             </Box>
 

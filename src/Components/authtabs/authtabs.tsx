@@ -446,6 +446,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   gap: 1,
                   textAlign: "center",
                   textDecoration: "underline",
+                  mt: -1,
+                  mb: 1,
                 }}
               >
                 Forgot your password?
