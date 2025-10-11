@@ -46,31 +46,31 @@ import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
 import Link from 'next/link';
 
-const GreenDialogTextField = styled(TextField)(() => ({
-  '& .MuiOutlinedInput-root': {
-    background: 'rgba(43,43,43,0.85)',
-    backdropFilter: 'blur(6px)',
-    color: '#fff',
-    borderRadius: 10,
-    border: '1.5px solid rgba(229,106,22,0.55)',
-    transition: 'border-color .25s, box-shadow .25s',
-    '& fieldset': { borderColor: 'transparent' },
-    '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.70)' },
-    '&.Mui-focused fieldset': { borderColor: '#E56A16', boxShadow: '0 0 0 3px rgba(229,106,22,0.25)' },
-    '& input': { color: '#fff', fontWeight: 500, letterSpacing: .4 }
-  },
-  '& .MuiInputLabel-root': {
-    color: '#ffe6d5',
-    fontWeight: 600,
-    letterSpacing: .5,
-    '&.Mui-focused': { color: '#ffffff' }
-  },
-  '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
-    WebkitBoxShadow: '0 0 0 1000px rgba(43,43,43,0.85) inset',
-    WebkitTextFillColor: '#fff',
-    transition: 'background-color 9999s ease-out 0s'
-  }
-}));
+// const GreenDialogTextField = styled(TextField)(() => ({
+//   '& .MuiOutlinedInput-root': {
+//     background: 'rgba(43,43,43,0.85)',
+//     backdropFilter: 'blur(6px)',
+//     color: '#fff',
+//     borderRadius: 10,
+//     border: '1.5px solid rgba(229,106,22,0.55)',
+//     transition: 'border-color .25s, box-shadow .25s',
+//     '& fieldset': { borderColor: 'transparent' },
+//     '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.70)' },
+//     '&.Mui-focused fieldset': { borderColor: '#E56A16', boxShadow: '0 0 0 3px rgba(229,106,22,0.25)' },
+//     '& input': { color: '#fff', fontWeight: 500, letterSpacing: .4 }
+//   },
+//   '& .MuiInputLabel-root': {
+//     color: '#ffe6d5',
+//     fontWeight: 600,
+//     letterSpacing: .5,
+//     '&.Mui-focused': { color: '#ffffff' }
+//   },
+//   '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
+//     WebkitBoxShadow: '0 0 0 1000px rgba(43,43,43,0.85) inset',
+//     WebkitTextFillColor: '#fff',
+//     transition: 'background-color 9999s ease-out 0s'
+//   }
+// }));
 
 const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: number; createdLeague?: League | null }) => {  
   const [userLeagues, setUserLeagues] = useState<League[]>([]);

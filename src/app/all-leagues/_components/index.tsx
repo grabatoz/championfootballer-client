@@ -9,7 +9,7 @@ import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
-import { User, League } from '@/types/user';
+import { User, League, Match } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
@@ -50,6 +50,41 @@ const formatLeagueName = (name: string | undefined | null): string => {
 
 // Safe type guards/utilities
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+
+// Normalize league.status into the union type from League
+const normalizeLeagueStatus = (v: unknown): League['status'] => {
+  if (typeof v !== 'string') return undefined;
+  const s = v.toLowerCase();
+  return s === 'active' || s === 'inactive' || s === 'completed' ? (s as League['status']) : undefined;
+};
+
+// Normalize matches array into typed Match[] (lenient defaults)
+const normalizeMatches = (v: unknown): Match[] => {
+  if (!Array.isArray(v)) return [];
+  return v.map((item): Match => {
+    const r = isRecord(item) ? item : {};
+    const str = (k: string, fb = ''): string => (typeof r[k] === 'string' ? (r[k] as string) : fb);
+    const num = (k: string): number | undefined => (typeof r[k] === 'number' ? (r[k] as number) : undefined);
+    const bool = (k: string, fb = false): boolean => (typeof r[k] === 'boolean' ? (r[k] as boolean) : fb);
+    return {
+      id: str('id'),
+      date: str('date'),
+      location: str('location'),
+      status: str('status'),
+      homeTeamName: str('homeTeamName'),
+      awayTeamName: str('awayTeamName'),
+      homeTeamGoals: num('homeTeamGoals'),
+      awayTeamGoals: num('awayTeamGoals'),
+      availableUsers: [],
+      homeTeamUsers: [],
+      awayTeamUsers: [],
+      end: str('end'),
+      active: bool('active', true),
+      awayTeamImage: str('awayTeamImage'),
+      homeTeamImage: str('homeTeamImage'),
+    };
+  });
+};
 
 // Normalize unknown payload from API/thunk into a League object
 const normalizeLeagueFromPayload = (payload: unknown): League | null => {
@@ -93,7 +128,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     updatedAt: updatedAtCandidate,
     members: arr('members') as unknown as User[],
     administrators: arr('administrators') as unknown as User[],
-    matches: arr('matches') as unknown as any[],
+    matches: normalizeMatches(raw['matches']),
     active: bool('active', true),
     maxGames: num('maxGames', 0) as number,
     showPoints: bool('showPoints', true),
@@ -102,7 +137,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     location: str('location', undefined as unknown as string),
     maxTeams: num('maxTeams'),
     currentTeams: num('currentTeams'),
-    status: str('status', undefined as unknown as string) as any,
+    status: normalizeLeagueStatus(raw['status']),
   };
 
   return normalized;
