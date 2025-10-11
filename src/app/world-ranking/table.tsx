@@ -124,7 +124,7 @@ export default function WorldRankingTable(){
       {/* <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography> */}
   <Typography variant="h3" sx={{
             // mb: { xs: 3, md: 4 },
-            color: '#404040',
+            color: 'black',
             // fontFamily: 'Arial Black, Arial, sans-serif',
             fontFamily: '"Anton", sans-serif',
             fontWeight: 'semibold',
