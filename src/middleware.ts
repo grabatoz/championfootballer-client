@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value || request.cookies.get('auth_token')?.value;
   
   // Public routes
-  const publicPaths = ['/', '/login', '/register', '/about'];
+  const publicPaths = ['/', '/login', '/register', '/about' , '/terms', '/privacy', '/contact'];
   
   // If user has token and tries to access public page, redirect to home
   if (publicPaths.includes(pathname) && token) {

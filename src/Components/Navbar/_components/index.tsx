@@ -2875,7 +2875,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       {/* YOUR EXISTING DIALOGS - keeping them as they were */}
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{
-          bgcolor: '#1f673b',
+          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
           color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
           fontWeight: 600,
@@ -2896,7 +2896,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
             fontWeight: 600,
             fontSize: { xs: '24px', md: '32px' },
-            mb: 2
+            mb: 2,
+            color: '#E56A16'
           }}>
             1. Set Up Your Player Card
           </Typography>
@@ -2917,7 +2918,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
             fontWeight: 600,
             fontSize: { xs: '24px', md: '32px' },
-            mb: 2
+            mb: 2,
+            color: '#E56A16'
           }}>
             2. Join or Create a League
           </Typography>
@@ -2945,7 +2947,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             In the league setting as the league admin, it is good practice to enter the total number of matches to be played in the league. Once you have reached the maximum number of games in the league, virtual awards will be finalised on the home page.
           </Typography>
           {/* Step  3: Play Matches & Track Progress */}
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#E56A16' }}>
             3. Play Matches & Track Progress
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -2957,7 +2959,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Box>
 
           {/* Step 4: Earn XP & Win Awards */}
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#E56A16' }}>
             4. Earn XP & Win Awards
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -2975,7 +2977,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {`At the end of each league, top performers win special awards`}:<br />
             <b>Champion Footballer</b> {`(1st place),`} <b>{`Runner-Up`}</b> {`(2nd place),`} <b>{`Ballon d'Or`}</b>{` (most MOTM),`} <b>GOAT</b> {`(highest win ratio),`} <b>Golden Boot</b> {`(most goals),`} <b>King Playmaker</b> {`(most assists),`} <b>Legendary Shield</b> {`(best defender/goalkeeper), and `}<b>The Dark Horse</b> {`(outside top 3, most MOTM votes)`}.
           </Typography>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#E56A16' }}>
             5. Creating Matches and Selecting Teams
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -2992,7 +2994,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {/* Replace progressimg with your actual image import */}
             <Image src={matchdetails.src} alt='Progress Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#E56A16' }}>
             6. League Table
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -3005,7 +3007,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {/* Replace progressimg with your actual image import */}
             <Image src={palyerstats.src} alt='Progress Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#E56A16' }}>
             7. League Admin
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -3021,7 +3023,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       </Dialog>
       <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{
-          bgcolor: '#1f673b',
+          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
           color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
           fontWeight: 600,
@@ -3036,15 +3038,15 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#f8fafc', color: '#222', py: 3 }}>
-          <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Rules</Typography>
+        <DialogContent sx={{ bgcolor: '#ffffff', color: '#222', py: 3 }}>
+          <Typography variant="h6" sx={{ mb: 1, color: '#E56A16', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
             <li style={{ listStyleType: 'disc' }}>Play fair</li>
             <li style={{ listStyleType: 'disc' }}>Pick balance teams</li>
             <li style={{ listStyleType: 'disc' }}>Rise to the challenge</li>
             <li style={{ listStyleType: 'disc' }}>Have fun!</li>
           </ul>
-          <Typography variant="h6" sx={{ mb: 1, color: '#1f673b', fontWeight: 700 }}>Characteristics of a champion</Typography>
+          <Typography variant="h6" sx={{ mb: 1, color: '#E56A16', fontWeight: 700 }}>Characteristics of a champion</Typography>
           <ul style={{ marginLeft: 20, color: '#222', fontSize: '1.1rem' }}>
             <li><span style={{ fontWeight: 900 }}>C</span>ourageous</li>
             <li><span style={{ fontWeight: 900 }}>H</span>opeful</li>

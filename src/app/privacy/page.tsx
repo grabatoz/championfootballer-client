@@ -13,7 +13,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 function PrivacyPolicies() {
-  useEffect(() => {
+    useEffect(() => {
         window.scrollTo({ top: 0 });
     }, []);
 
@@ -264,9 +264,18 @@ function PrivacyPolicies() {
         });
     };
 
-  return (
-        <Box sx={{ p: 6, bgcolor: '#d6ffd1', minHeight: '100vh' }}>
-            <Typography variant="h3" sx={{ mb: 5, fontWeight: 600, color: '#1f673b' }}>
+    return (
+        <Box sx={{ p: 6, minHeight: '100vh', background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)' }}>
+            <Typography
+                variant="h3"
+                sx={{
+                    mb: 5,
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent'
+                }}
+            >
                 Privacy Policy
             </Typography>
             <Typography variant="body1" sx={{ mb: 3, fontWeight: 600 }}>
@@ -286,13 +295,13 @@ function PrivacyPolicies() {
                         }}
                     >
                         <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
+                            expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
                             sx={{
-                                bgcolor: '#1f673b',
+                                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                                 color: 'white',
                                 borderRadius: 2,
                                 '&:hover': {
-                                    bgcolor: '#388e3c',
+                                    opacity: 0.95,
                                 },
                                 '&.Mui-expanded': {
                                     borderBottomLeftRadius: 0,

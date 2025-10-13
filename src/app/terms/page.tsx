@@ -281,8 +281,17 @@ function TermConditions() {
     };
 
     return (
-        <Box sx={{ p: 3, bgcolor: '#d6ffd1', minHeight: '100vh' }}>
-            <Typography variant="h3" sx={{ fontWeight: 600, mb: 2, color: '#1f673b' }}>
+        <Box sx={{ p: 3, minHeight: '100vh', background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)' }}>
+            <Typography
+                variant="h3"
+                sx={{
+                    fontWeight: 800,
+                    mb: 2,
+                    background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent'
+                }}
+            >
                 Terms & Conditions
             </Typography>
             <Typography variant="h6" sx={{ mb: 4, color: '#666' }}>
@@ -308,13 +317,13 @@ function TermConditions() {
                         }}
                     >
                         <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
+                            expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
                             sx={{
-                                bgcolor: '#1f673b',
+                                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                                 color: 'white',
                                 borderRadius: 2,
                                 '&:hover': {
-                                    bgcolor: '#388e3c',
+                                    opacity: 0.95,
                                 },
                                 '&.Mui-expanded': {
                                     borderBottomLeftRadius: 0,
@@ -322,7 +331,7 @@ function TermConditions() {
                                 },
                             }}
                         >
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                 {section.title}
                             </Typography>
                         </AccordionSummary>

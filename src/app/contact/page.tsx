@@ -66,32 +66,39 @@ export default function ContactForm() {
         alignItems: 'center',
         justifyContent: 'center',
         py: 6,
-        p:2
+        p: 2,
+        background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)'
       }}
     >
       <Box
         sx={{
           width: { xs: '100%', sm: 420 },
-          background: '#1f673b',
+          background: 'linear-gradient(150deg,#1d1f23 0%,#25272b 55%)',
           borderRadius: 4,
-          boxShadow: '0 8px 32px 0 rgba(31,38,135,0.37)',
-          border: '2px solid #43a047',
+          boxShadow: '0 10px 34px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.08)',
           p: { xs: 2, sm: 4 },
-          color: 'white',
+          color: '#fff',
         }}
       >
         <Typography
           variant="h4"
           fontWeight="bold"
           align="center"
-          sx={{ mb: 2, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
+          sx={{
+            mb: 2,
+            background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+            textShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}
         >
           Contact Us
         </Typography>
         <Typography
           variant="subtitle1"
           align="center"
-          sx={{ mb: 3, color: 'rgba(255,255,255,0.85)' }}
+          sx={{ mb: 3, color: 'rgba(255,255,255,0.72)' }}
         >
           {`Have a question or feedback? Fill out the form below and we'll get back to you!`}
         </Typography>
@@ -118,25 +125,24 @@ export default function ContactForm() {
                   helperText={errors.name?.message}
                   inputProps={{ maxLength: 41 }}
                   sx={{
-                    background: 'white',
+                    background: '#202225',
                     borderRadius: 2,
-                    bgcolor:'#0a3e1e',
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                      '& fieldset': { borderColor: '#1f673b' },
-                      '&:hover fieldset': { borderColor: '#1f673b' },
-                      '&.Mui-focused fieldset': { borderColor: '#1f673b' },
-                      '& input': { color: '#fff' },
+                      '& fieldset': { borderColor: 'transparent' },
+                      '&:hover fieldset': { borderColor: '#E56A16' },
+                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                      '& input': { color: '#fff', background: 'transparent' },
                       '& input:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
                         WebkitTextFillColor: '#fff',
                         color: '#fff',
                         transition: 'background-color 5000s ease-in-out 0s',
                       },
                     },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
                   }}
-                  InputLabelProps={{ sx: { color: '#fff' } }}
+                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
                 />
               )}
             />
@@ -167,25 +173,24 @@ export default function ContactForm() {
                   helperText={errors.email?.message}
                   inputProps={{ maxLength: 30 }}
                   sx={{
-                    background: 'white',
+                    background: '#202225',
                     borderRadius: 2,
-                    bgcolor:'#0a3e1e',
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                      '& fieldset': { borderColor: '#1f673b' },
-                      '&:hover fieldset': { borderColor: '#1f673b' },
-                      '&.Mui-focused fieldset': { borderColor: '#1f673b' },
-                      '& input': { color: '#fff' },
+                      '& fieldset': { borderColor: 'transparent' },
+                      '&:hover fieldset': { borderColor: '#E56A16' },
+                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                      '& input': { color: '#fff', background: 'transparent' },
                       '& input:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
                         WebkitTextFillColor: '#fff',
                         color: '#fff',
                         transition: 'background-color 5000s ease-in-out 0s',
                       },
                     },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
                   }}
-                  InputLabelProps={{ sx: { color: '#fff' } }}
+                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
                 />
               )}
             />
@@ -213,25 +218,24 @@ export default function ContactForm() {
                   helperText={errors.message?.message}
                   inputProps={{ maxLength: 500 }}
                   sx={{
-                    background: 'white',
+                    background: '#202225',
                     borderRadius: 2,
-                    bgcolor:'#0a3e1e',
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                      '& fieldset': { borderColor: '#1f673b' },
-                      '&:hover fieldset': { borderColor: '#1f673b' },
-                      '&.Mui-focused fieldset': { borderColor: '#1f673b' },
-                      '& textarea': { color: '#fff' },
+                      '& fieldset': { borderColor: 'transparent' },
+                      '&:hover fieldset': { borderColor: '#E56A16' },
+                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                      '& textarea': { color: '#fff', background: 'transparent' },
                       '& textarea:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #0a3e1e inset',
+                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
                         WebkitTextFillColor: '#fff',
                         color: '#fff',
                         transition: 'background-color 5000s ease-in-out 0s',
                       },
                     },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
                   }}
-                  InputLabelProps={{ sx: { color: '#fff' } }}
+                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
                 />
               )}
             />
@@ -244,18 +248,18 @@ export default function ContactForm() {
               disabled={!isValid || isSubmitting}
               startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
               sx={{
-                bgcolor: "#43a047",
+                background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
                 color: "white",
                 fontWeight: 600,
                 py: 1.5,
                 borderRadius: 2,
                 textTransform: "none",
                 fontSize: 16,
-                boxShadow: '0 2px 8px rgba(67,160,71,0.18)',
+                boxShadow: '0 6px 16px -4px rgba(0,0,0,0.4)',
                 '&:hover': {
-                  bgcolor: "#2e7d32",
+                  opacity: 0.92,
                   transform: "translateY(-1px)",
-                  boxShadow: "0 4px 12px rgba(67, 160, 71, 0.3)",
+                  boxShadow: "0 10px 22px -8px rgba(0,0,0,0.55)",
                 },
                 '&:disabled': {
                   bgcolor: "#ccc",
