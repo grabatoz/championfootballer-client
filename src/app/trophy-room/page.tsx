@@ -886,6 +886,24 @@ const mapServerBadgeToUI = (b: ServerBadge): Badge => {
   };
 };
 
+// Merge server-provided badges over client-computed defaults so all cards show
+const mergeBadges = (client: Badge[], server: Badge[] | null | undefined): Badge[] => {
+  if (!Array.isArray(server) || server.length === 0) return client;
+  const serverById = new Map(server.map(b => [b.id, b] as const));
+  return client.map(cb => {
+    const sb = serverById.get(cb.id);
+    if (!sb) return cb;
+    return {
+      ...cb,
+      // Prefer server values when present; keep our visuals/meta
+      count: Number.isFinite(Number(sb.count)) ? Number(sb.count) : cb.count,
+      xp: Number.isFinite(Number(sb.xp)) ? Number(sb.xp) : cb.xp,
+      unlocked: typeof sb.unlocked === 'boolean' ? sb.unlocked : cb.unlocked,
+      progressText: sb.progressText ?? cb.progressText,
+    };
+  });
+};
+
 // --- Badge Card (gold medal) ---
 const BadgeCard = ({ id, title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => (
   <Paper
@@ -1504,9 +1522,8 @@ export default function GlobalTrophyRoom() {
       : trophiesToDisplayBase;
 
   // Build My Achievements (badges) for the current user (use backend XP if provided)
-  const myBadges: Badge[] = user
-    ? (serverBadges ?? computeBadges(user, leagues, backendTotalXP))
-    : [];
+  const clientBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
+  const myBadges: Badge[] = user ? mergeBadges(clientBadges, serverBadges) : [];
 
   // Total XP from badges (exclude Rising XP level box from this sum)
   // const totalBadgeXP = useMemo(
@@ -1690,7 +1707,7 @@ export default function GlobalTrophyRoom() {
               >
                 {selectedLeague
                   ? formatLeagueName(selectedLeague.name)
-                  : (leagues.length ? 'All Leagues' : 'No leagues found')}
+                  : (leagues.length ? 'All Leagues' : 'League has not found')}
               </Button>
               <Menu
                 anchorEl={leaguesDropdownAnchor}
@@ -1699,11 +1716,15 @@ export default function GlobalTrophyRoom() {
                 // MenuListProps={{ onMouseLeave: handleLeaguesDropdownClose }}
               >
                 {/* <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem> */}
-                {leagues.map(l => (
-                  <MenuItem key={l.id} onClick={() => handleLeagueSelect(String(l.id))}>
-                    {l.name}
-                  </MenuItem>
-                ))}
+                {leagues.length === 0 ? (
+                  <MenuItem disabled>League has not found</MenuItem>
+                ) : (
+                  leagues.map(l => (
+                    <MenuItem key={l.id} onClick={() => handleLeagueSelect(String(l.id))}>
+                      {l.name}
+                    </MenuItem>
+                  ))
+                )}
               </Menu>
             </>
           )}
