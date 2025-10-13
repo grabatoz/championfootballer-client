@@ -1509,7 +1509,7 @@ export default function GlobalTrophyRoom() {
   const buildPlaceholders = (league: League): TrophyType[] =>
     trophies.map(t => ({
       ...t,
-      winner: null,
+      winner: 'TBC',
       winnerId: null,
       leagueId: league.id,
       leagueName: league.name,
@@ -1862,18 +1862,24 @@ export default function GlobalTrophyRoom() {
       ) : (
         <>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
-            {trophiesToDisplay.length > 0 ? trophiesToDisplay.map((trophy, index) => (
+            {(
+              trophiesToDisplay.length > 0
+                ? trophiesToDisplay
+                : trophies.map(t => ({
+                    ...t,
+                    winner: 'TBC',
+                    winnerId: null,
+                    leagueId: selectedLeague ? selectedLeague.id : undefined,
+                    leagueName: selectedLeague ? selectedLeague.name : undefined,
+                  }))
+            ).map((trophy, index) => (
               <Box key={`${trophy.title}-${trophy.leagueId || 'global'}-${index}`} sx={{ height: '100%' }}>
                 <TrophyCard
                   {...trophy}
                   onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
                 />
               </Box>
-            )) : (
-              <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
-                No trophies to display (no completed leagues found).
-              </Typography>
-            )}
+            ))}
           </Box>
 
 
