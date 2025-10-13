@@ -2310,7 +2310,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,0.02))',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
                         color: '#FFFFFF',
                       },
                     }}

@@ -325,12 +325,38 @@ const PlayerProfileCard = () => {
 
   const handleDeleteProfile = async () => {
     if (!token) return
-    if (!window.confirm("Delete account permanently?")) return
-    const ok = await deleteProfile(token)
-    if (ok) {
-      localStorage.clear()
-      window.location.href = "/"
-    } else toast.error("Failed to delete account.")
+    if (!window.confirm("Delete account permanently? This cannot be undone.")) return
+    try {
+      setIsUpdating(true)
+      const ok = await deleteProfile(token)
+      if (ok) {
+        // Clear application caches managed by CacheManager
+        try { cacheManager.clearAllCaches() } catch {}
+
+        // Clear any remaining local/session storage
+        try {
+          localStorage.clear()
+          sessionStorage.clear()
+        } catch {}
+
+        // Proactively clear auth cookies
+        try {
+          document.cookie = "token=; Max-Age=0; path=/; SameSite=Lax"
+          document.cookie = "auth_token=; Max-Age=0; path=/; SameSite=Lax"
+        } catch {}
+
+        toast.success("Account deleted successfully")
+        // Hard redirect to main page to ensure a fully clean state
+        window.location.href = "/"
+      } else {
+        toast.error("Failed to delete account.")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error("Failed to delete account.")
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   const performUpload = async (file: File) => {
