@@ -51,7 +51,8 @@ export default function Footer() {
               // border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 2,
               p: { xs: 2, md: 3 },
-              mt: '-60px'
+              mt: { sm: 0, xs: 0, md: '-60px' },
+              mb: { sm: '70px', xs: 10, md: 0 }
             }}
           >
             <Stack spacing={1} sx={{ textAlign: { xs: 'center', md: 'left' } , mt:'-15' }}>
