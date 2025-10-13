@@ -16,15 +16,17 @@ export function middleware(request: NextRequest) {
   }
   
   const token = request.cookies.get('token')?.value || request.cookies.get('auth_token')?.value;
-  
+
   // Public routes
-  const publicPaths = ['/', '/login', '/register', '/about' , '/terms', '/privacy', '/contact'];
-  
-  // If user has token and tries to access public page, redirect to home
-  if (publicPaths.includes(pathname) && token) {
+  const publicAlwaysPaths = ['/about', '/terms', '/privacy', '/contact']; // always accessible (no redirect even if logged-in)
+  const publicRedirectPaths = ['/', '/login', '/register']; // redirect to /home if logged-in
+  const publicPaths = [...publicAlwaysPaths, ...publicRedirectPaths];
+
+  // If user has token and tries to access auth landing pages, redirect to home
+  if (publicRedirectPaths.includes(pathname) && token) {
     return NextResponse.redirect(new URL('/home', request.url));
   }
-  
+
   // If user tries to access protected page without token, redirect to login
   if (!publicPaths.includes(pathname) && !token) {
     return NextResponse.redirect(new URL('/', request.url));
