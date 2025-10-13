@@ -55,8 +55,10 @@ const DreamTeamPage = () => {
   const [loading, setLoading] = useState(true);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
   const leaguesDropdownOpen = Boolean(leaguesDropdownAnchor);
+  const noLeagues = leagues.length === 0;
 
   const handleLeaguesDropdownOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (noLeagues) return; // don't open when there are no leagues
     setLeaguesDropdownAnchor(e.currentTarget);
   };
   const handleLeaguesDropdownClose = () => setLeaguesDropdownAnchor(null);
@@ -136,14 +138,19 @@ const DreamTeamPage = () => {
         setLeagues(data.leagues || []);
         if (data.leagues && data.leagues.length > 0) {
           setSelectedLeague(data.leagues[0].id);
+        } else {
+          setSelectedLeague('');
+          setLoading(false); // no leagues -> stop loading
         }
       } else {
         console.error('Response not ok:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('Error response:', errorText);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching leagues:', error);
+      setLoading(false);
     }
   }, [token]);
 
@@ -241,7 +248,9 @@ const DreamTeamPage = () => {
               '&:hover': { backgroundColor: '#2B2B2B' },
             }}
           >
-            {formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+            {noLeagues
+              ? 'No leagues found'
+              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
           </Button>
         </Box>
 
@@ -319,7 +328,9 @@ const DreamTeamPage = () => {
               gap: 1,
             }}
           >
-            {formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+            {noLeagues
+              ? 'No leagues found'
+              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
           </Button>
         </Box>
       </Box>
@@ -344,7 +355,11 @@ const DreamTeamPage = () => {
           }
         }}
       >
-        {sortedLeagues.map((leagueItem) => {
+        {noLeagues ? (
+          <MenuItem disabled sx={{ opacity: 0.7 }}>
+            No leagues found
+          </MenuItem>
+        ) : sortedLeagues.map((leagueItem) => {
           const isActive = leagueItem.id === selectedLeague;
           return (
             <MenuItem
@@ -515,7 +530,7 @@ const DreamTeamPage = () => {
             })}
           </Box>
 
-          {/* Player stats panel (always below the image) */}
+          {/* Player stats panel (below the image) */}
           <Box
             sx={{
               p: 2,
@@ -532,9 +547,13 @@ const DreamTeamPage = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, color: '#E5E7EB' }}>
-              Player stats
+              {noLeagues ? 'No leagues found' : 'Player stats'}
             </Typography>
-            {dreamTeamPlayers.length ? (
+            {noLeagues ? (
+              <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                You are not a member of any league yet. Join or create a league to view your Dream Team.
+              </Typography>
+            ) : dreamTeamPlayers.length ? (
               <Box
                 component="ul"
                 sx={{
