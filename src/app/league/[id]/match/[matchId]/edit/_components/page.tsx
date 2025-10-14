@@ -220,8 +220,8 @@ export default function EditMatchPage() {
   // Prediction from API
   const [homeWinChance, setHomeWinChance] = useState<number | null>(null);
   const [awayWinChance, setAwayWinChance] = useState<number | null>(null);
-  const [homeStrength, setHomeStrength] = useState<number | null>(null);
-  const [awayStrength, setAwayStrength] = useState<number | null>(null);
+  const [, setHomeStrength] = useState<number | null>(null);
+  const [, setAwayStrength] = useState<number | null>(null);
 
   const fetchPrediction = useCallback(async () => {
     if (!matchId || !token) return;
