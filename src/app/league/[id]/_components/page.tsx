@@ -3789,7 +3789,7 @@ export default function LeagueDetailPage() {
                                                                                             '&:active': { transform: 'translateY(0)' },
                                                                                         }}
                                                                                     >
-                                                                                        {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                                                        {isAdmin ? 'MOMT' : 'MOMT'}
                                                                                     </Button>
                                                                                 </span>
                                                                             </Tooltip>
@@ -3811,7 +3811,7 @@ export default function LeagueDetailPage() {
                                                                                     }}
                                                                                     disabled={!league?.active}
                                                                                 >
-                                                                                    {isAdmin ? 'Update Score Card' : 'MOMT'}
+                                                                                    {isAdmin ? 'MOMT' : 'MOMT'}
                                                                                 </Button>
                                                                             </Link>
                                                                         )
