@@ -217,16 +217,48 @@ export default function EditMatchPage() {
 
   const guestToPlayer = (g: StagedGuest): PlayerOption => ({ id: `guest-${g.tempId}`, firstName: g.firstName, lastName: g.lastName, email: '', isGuest: true, guestTempId: g.tempId, team: g.team, existingGuestId: g.existingId });
 
-  // Skill calculations
-  const calcSkill = (p: PlayerOption) => {
+  // Prediction from API
+  const [homeWinChance, setHomeWinChance] = useState<number | null>(null);
+  const [awayWinChance, setAwayWinChance] = useState<number | null>(null);
+  const [homeStrength, setHomeStrength] = useState<number | null>(null);
+  const [awayStrength, setAwayStrength] = useState<number | null>(null);
+
+  const fetchPrediction = useCallback(async () => {
+    if (!matchId || !token) return;
+    try {
+      // Only send registered user IDs; include total counts to capture guests
+      const homeIds = homeTeamUsers.filter(u => !u.isGuest).map(u => u.id);
+      const awayIds = awayTeamUsers.filter(u => !u.isGuest).map(u => u.id);
+      const payload = {
+        homeIds,
+        awayIds,
+        homeTotal: homeTeamUsers.length,
+        awayTotal: awayTeamUsers.length,
+      };
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/prediction`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (!j?.success) return;
+      setHomeWinChance(typeof j.home?.winPct === 'number' ? j.home.winPct : null);
+      setAwayWinChance(typeof j.away?.winPct === 'number' ? j.away.winPct : null);
+      setHomeStrength(typeof j.home?.average === 'number' ? Math.round(j.home.average) : null);
+      setAwayStrength(typeof j.away?.average === 'number' ? Math.round(j.away.average) : null);
+    } catch {}
+  }, [matchId, token, homeTeamUsers, awayTeamUsers]);
+
+  // Minimal skill display helper for UI only
+  const calcSkill = (p?: PlayerOption | null) => {
+    if (!p) return 0;
     if (p.isGuest) return 50;
     const s = p.skills;
-    const skillKeys: (keyof NonNullable<User['skills']>)[] = ['dribbling', 'shooting', 'passing', 'pace', 'defending', 'physical'];
-    const total = skillKeys.reduce((sum, k) => sum + (s?.[k] ?? 0), 0);
-    return Math.round(total / skillKeys.length);
+    const keys: (keyof NonNullable<User['skills']>)[] = ['dribbling','shooting','passing','pace','defending','physical'];
+    const total = keys.reduce((sum, k) => sum + (s?.[k] ?? 0), 0);
+    return Math.round(total / keys.length);
   };
-  const teamStrength = (arr: PlayerOption[]) => arr.length ? Math.round(arr.reduce((s, p) => s + calcSkill(p), 0) / arr.length) : 0;
-  const winPct = (a: number, b: number) => { if (!a && !b) return 50; if (!b) return 85; if (!a) return 15; const diff = a - b; return Math.max(15, Math.min(85, Math.round(50 + (diff / 100) * 30))); };
 
   // Shuffle
   const shuffleTeams = () => {
@@ -282,10 +314,11 @@ export default function EditMatchPage() {
     ...awayGuests.map(guestToPlayer)
   ];
 
-  const homeStrength = teamStrength(homeTeamUsers);
-  const awayStrength = teamStrength(awayTeamUsers);
-  const homeWinChance = winPct(homeStrength, awayStrength);
-  const awayWinChance = winPct(awayStrength, homeStrength);
+  // When teams change, re-fetch prediction
+  useEffect(() => {
+    fetchPrediction();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeTeamUsers.length, awayTeamUsers.length]);
 
   // Minimum players required
   // const totalSelectedPlayers = homeTeamUsers.length + awayTeamUsers.length;
@@ -1029,33 +1062,35 @@ export default function EditMatchPage() {
                       <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Win Probability</Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{homeWinChance}%</Typography>
+                          <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof homeWinChance === 'number' ? `${homeWinChance}%` : '—'}</Typography>
                           <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
                         </Box>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{awayWinChance}%</Typography>
+                          <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof awayWinChance === 'number' ? `${awayWinChance}%` : '—'}</Typography>
                           <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
                         </Box>
                       </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={homeWinChance}
-                        sx={{
-                          height: { xs: 6, sm: 8 },
-                          borderRadius: { xs: 3, sm: 4 },
-                          bgcolor: 'rgba(239, 83, 80, 0.3)',
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: '#43a047',
-                            borderRadius: { xs: 3, sm: 4 }
-                          }
-                        }}
-                      />
+                      {typeof homeWinChance === 'number' && (
+                        <LinearProgress
+                          variant="determinate"
+                          value={homeWinChance}
+                          sx={{
+                            height: { xs: 6, sm: 8 },
+                            borderRadius: { xs: 3, sm: 4 },
+                            bgcolor: 'rgba(239, 83, 80, 0.3)',
+                            '& .MuiLinearProgress-bar': {
+                              bgcolor: '#43a047',
+                              borderRadius: { xs: 3, sm: 4 }
+                            }
+                          }}
+                        />
+                      )}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
                       </Box>
 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
-                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength}</Typography>
-                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength}</Typography>
+                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength ?? '—'}</Typography>
+                        <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength ?? '—'}</Typography>
                       </Box>
                     </Box>
                   )}
