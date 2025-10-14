@@ -451,6 +451,7 @@ export default function PlayMatchPage() {
     // Compute safe team goals context for the current user
     const playerOnHomeTeamSafe = !!(match && user && (match.homeTeamUsers ?? []).some(p => p.id === user.id));
     const playerOnAwayTeamSafe = !!(match && user && (match.awayTeamUsers ?? []).some(p => p.id === user.id));
+    const isUserAssignedToTeam = playerOnHomeTeamSafe || playerOnAwayTeamSafe;
     const teamGoalsSafe = (match && user)
         ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
         : 0;
@@ -502,8 +503,12 @@ export default function PlayMatchPage() {
     );
 
     // Prevent self-vote in UI too
-    const handleVote = async (playerId: string) => {
-        if (!user) return;
+        const handleVote = async (playerId: string) => {
+                if (!user) return;
+                if (!isUserAssignedToTeam) {
+                    toast.error('You must be assigned to a team to vote for Man of the Match.');
+                    return;
+                }
         if (playerId === user.id) {
           toast.error('You cannot vote for yourself as Man of the Match.');
           return;
@@ -616,6 +621,10 @@ export default function PlayMatchPage() {
     };
 
     const handleSaveStats = async () => {
+        if (!isUserAssignedToTeam) {
+            toast.error('You must be assigned to a team to save your stats.');
+            return;
+        }
         setIsSubmittingStats(true);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
@@ -952,6 +961,10 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
     // Replace old openStats with window-aware version
     const openStats = () => {
+        if (!isUserAssignedToTeam) {
+            toast.error('You must be assigned to a team to add your stats.');
+            return;
+        }
         if (!baseCanSubmit) {
             toast.error('Stats are available after result upload.');
             return;
@@ -1121,12 +1134,12 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {baseCanSubmit && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                        {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
-                                                                    disabled={loadingVote || player.id === user?.id}
+                                                                    disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
                                                                     color="#43a047"
                                                                     sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
@@ -1359,12 +1372,12 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                                                         }
                                                     }}>
                                                         {/* MOTM Coin - Top Right Corner */}
-                                                        {baseCanSubmit && league.active && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
+                                                        {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user.id !== player.id && (
                                                             <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
                                                                 <MotmCoin
                                                                     voted={votedForId === player.id}
                                                                     onClick={() => handleVote(player.id)}
-                                                                    disabled={loadingVote || player.id === user?.id}
+                                                                    disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
                                                                     color="#43a047"
                                                                     sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                                 />
