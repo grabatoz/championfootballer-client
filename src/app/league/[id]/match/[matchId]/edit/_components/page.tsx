@@ -529,21 +529,24 @@ export default function EditMatchPage() {
                               endAdornment: (
                                 <InputAdornment position="end">
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <label htmlFor="home-team-image-upload">
-                                      <Button
-                                        component="span"
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{
-                                          color: '#43a047',
-                                          borderColor: '#43a047',
-                                          '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' },
-                                          display: { xs: 'none', sm: 'inline-flex' }
-                                        }}
-                                      >
-                                        Browse
-                                      </Button>
-                                    </label>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      sx={{
+                                        color: '#43a047',
+                                        borderColor: '#43a047',
+                                        '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' },
+                                        display: { xs: 'none', sm: 'inline-flex' }
+                                      }}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const input = document.getElementById('home-team-image-upload') as HTMLInputElement | null;
+                                        input?.click();
+                                      }}
+                                    >
+                                      Browse
+                                    </Button>
                                     {homeTeamImage && (
                                       <IconButton onClick={(e) => { e.stopPropagation(); handleRemoveHomeTeamImage(); }} size="small" sx={{ color: '#f44336' }}>
                                         <X size={16} />
@@ -599,21 +602,24 @@ export default function EditMatchPage() {
                               endAdornment: (
                                 <InputAdornment position="end">
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <label htmlFor="away-team-image-upload">
-                                      <Button
-                                        component="span"
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{
-                                          color: '#ef5350',
-                                          borderColor: '#ef5350',
-                                          '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' },
-                                          display: { xs: 'none', sm: 'inline-flex' }
-                                        }}
-                                      >
-                                        Browse
-                                      </Button>
-                                    </label>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      sx={{
+                                        color: '#ef5350',
+                                        borderColor: '#ef5350',
+                                        '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' },
+                                        display: { xs: 'none', sm: 'inline-flex' }
+                                      }}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const input = document.getElementById('away-team-image-upload') as HTMLInputElement | null;
+                                        input?.click();
+                                      }}
+                                    >
+                                      Browse
+                                    </Button>
                                     {awayTeamImage && (
                                       <IconButton onClick={(e) => { e.stopPropagation(); handleRemoveAwayTeamImage(); }} size="small" sx={{ color: '#f44336' }}>
                                         <X size={16} />
@@ -1087,11 +1093,11 @@ export default function EditMatchPage() {
                       )}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
                       </Box>
-
+{/* 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
                         <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength ?? '—'}</Typography>
                         <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength ?? '—'}</Typography>
-                      </Box>
+                      </Box> */}
                     </Box>
                   )}
 
