@@ -5,7 +5,7 @@ import { Box, Typography, Select, MenuItem, ToggleButtonGroup, ToggleButton, Tab
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks';
 
-interface Filters { positionType?: string; mode: 'total'|'avg'; year?: string; }
+interface Filters { mode: 'total'|'avg'; year?: string; positionType?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
 interface SortState { key: SortKey; direction: 'asc' | 'desc'; }
 
@@ -34,6 +34,35 @@ function getSortValue(player: WorldRankingPlayer, key: SortKey): string | number
   }
 }
 
+// XP Status mapping aligned with PlayerCard LEVELS (based on total XP)
+const LEVELS = [
+  { level: 1, min: 0, max: 100, title: 'Rookie', color: 'Green' },
+  { level: 2, min: 100, max: 250, title: 'The Prospect', color: 'Green' },
+  { level: 3, min: 250, max: 500, title: 'Rising Star', color: 'Green' },
+  { level: 4, min: 500, max: 1000, title: 'The Skilled Player', color: 'Blue' },
+  { level: 5, min: 1000, max: 2000, title: 'The Talented Player', color: 'Blue' },
+  { level: 6, min: 2000, max: 3000, title: 'The Chosen One', color: 'Blue' },
+  { level: 7, min: 3000, max: 4000, title: 'Serial Winner', color: 'Blue' },
+  { level: 8, min: 4000, max: 5000, title: 'Supreme Player', color: 'Bronze' },
+  { level: 9, min: 5000, max: 6000, title: 'The Invincible', color: 'Bronze' },
+  { level: 10, min: 6000, max: 7000, title: 'The Maestro', color: 'Bronze' },
+  { level: 11, min: 7000, max: 8000, title: 'Crème de la Crème', color: 'Bronze' },
+  { level: 12, min: 8000, max: 9000, title: 'Elite', color: 'Silver' },
+  { level: 13, min: 9000, max: 10000, title: 'World-Class', color: 'Silver' },
+  { level: 14, min: 10000, max: 12000, title: 'The Undisputed', color: 'Silver' },
+  { level: 15, min: 12000, max: 15000, title: 'Icon', color: 'Silver' },
+  { level: 16, min: 15000, max: 18000, title: 'Generational Talent', color: 'Gold' },
+  { level: 17, min: 18000, max: 22000, title: 'Legend of the Game', color: 'Gold' },
+  { level: 18, min: 22000, max: 25000, title: 'Football Royalty', color: 'Gold' },
+  { level: 19, min: 25000, max: 30000, title: 'Hall of Famer', color: 'Gold' },
+  { level: 20, min: 30000, max: Infinity, title: 'Champion Footballer', color: 'Black' },
+];
+
+const getLevelTitle = (points: number): string => {
+  const lvl = LEVELS.find(l => points >= l.min && points < l.max) || LEVELS[LEVELS.length - 1];
+  return lvl.title;
+};
+
 export default function WorldRankingTable(){
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({ mode: 'total' });
@@ -53,7 +82,8 @@ export default function WorldRankingTable(){
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, playerId: user?.id });
+      // Request a high limit to show all players; omit positionType filter
+      const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, playerId: user?.id, limit: 100000 });
       setData(res);
       setLastUpdated(new Date());
     } catch(e: unknown) {
@@ -252,7 +282,9 @@ export default function WorldRankingTable(){
                     { label:'Rank', key:'rank' },
                     { label:'Player', key:'name' },
                     { label:'Position', key:'position' },
-                    { label:'Pos Type', key:'positionType' },
+                    // { label:'Pos Type', key:'positionType' },
+                     { label:'Country', key:'position' },
+                    { label:'XP Status', key:'position' },
                     { label:'Matches', key:'matches' },
                     ...(showAvg ? [{ label:'Avg XP', key:'avgXP' } as Column] : []),
                     ...(showTotal ? [{ label:'Total XP', key:'totalXP' } as Column] : []),
@@ -319,7 +351,12 @@ export default function WorldRankingTable(){
                       <Link href={`/player/${p.id}`} style={{ textDecoration:'none', color:'#fff' }}>{p.name}</Link>
                     </TableCell>
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.position || '-'}</TableCell>
-                    <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.positionType || '-'}</TableCell>
+                    {/* Country column: backend may provide p.country; fallback '-' */}
+                    <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{(p as any).country || '-'}</TableCell>
+                    {/* XP Status column: title from LEVELS based on total XP */}
+                    <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:700 }}>
+                      {getLevelTitle(p.totalXP ?? 0)}
+                    </TableCell>
                     <TableCell sx={{ fontSize:12.5, color:'#fff' }}>{formatNum(p.matches)}</TableCell>
                     {filters.mode === 'avg' && (
                       <TableCell sx={{ fontSize:12.5, fontWeight:700, color:'#fff' }}>{formatNum(p.avgXP, { decimals:2 })}</TableCell>
