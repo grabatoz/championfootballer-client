@@ -80,6 +80,35 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
 
+  // Persist selection across navigation
+  const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  // Helper: determine if a league is completed (exclude from dropdown)
+  const leagueIsCompleted = (l: League | any): boolean => {
+    // Primary: explicit completion flags coming from backend
+    if (l?.computedStatus?.isComplete === true) return true;
+    if (l?.computedStatus?.locked === true) return true;
+    if (l?.isComplete === true) return true;
+    if (l?.isCompleted === true) return true;
+    if (l?.isLocked === true) return true;
+
+    // Backward-compat: infer completion from status/active when flags are absent
+    const sRaw = (l?.status ?? '').toString();
+    const s = sRaw.trim().toUpperCase();
+    const completionStatuses = new Set([
+      'RESULT_PUBLISHED',
+      'RESULT_UPLOADED',
+      'RESULT_COMPLETE',
+      'RESULT_FINISHED',
+      'RESULT_ENDED',
+      'RESULT_DONE',
+      'COMPLETED'
+    ]);
+    if (completionStatuses.has(s)) return true;
+    if (typeof l?.active === 'boolean' && l.active === false) return true;
+    return false;
+  };
+
   // Helper to compare leagues by most recent change
   const timeOf = (l?: League | null) => {
     if (!l) return 0;
@@ -133,12 +162,73 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
             ].filter(league => league && league.id); // Filter out undefined/null leagues
 
             const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
-            setUserLeagues(uniqueLeagues);
+
+            // Enrich with computed status like on All Leagues page
+            const enrichedLeagues = await Promise.all(
+              uniqueLeagues.map(async (l: any) => {
+                try {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  if (res.ok) {
+                    const statusData = await res.json();
+                    const computed = statusData?.status || {};
+                    return { ...l, computedStatus: computed, isLocked: computed?.locked === true };
+                  }
+                } catch {}
+                return l;
+              })
+            );
+
+            // Normalize minimal fields so we don't carry undefineds around
+            const normalizedLeagues = enrichedLeagues.map((l: any) => ({
+              ...l,
+              status: typeof l?.status === 'string' && l.status.trim() !== '' ? l.status : 'active',
+              active: typeof l?.active === 'boolean' ? l.active : true,
+            }));
+            setUserLeagues(normalizedLeagues as League[]);
+
+            // Debug: log league completion flags for verification
+            try {
+              if (typeof window !== 'undefined' && normalizedLeagues.length) {
+                const rows = normalizedLeagues.map((l: any) => ({
+                  id: l?.id,
+                  name: l?.name,
+                  isComplete: Boolean(l?.isComplete),
+                  isCompleted: Boolean(l?.isCompleted),
+                  computedIsComplete: Boolean(l?.computedStatus?.isComplete),
+                  locked: Boolean(l?.computedStatus?.locked || l?.isLocked),
+                  status: String(l?.status ?? 'active'),
+                  active: typeof l?.active === 'boolean' ? l.active : true,
+                }));
+                console.group('[Home] League completion check');
+                console.table(rows);
+                console.groupEnd();
+              }
+            } catch {}
 
             if (uniqueLeagues.length > 0) {
-              // Pick the latest by updatedAt or createdAt
-              const latest = [...uniqueLeagues].sort((a, b) => timeOf(b) - timeOf(a))[0];
-              setSelectedLeague(latest);
+              // 1) If user has a persisted preference, respect it only if it's NOT completed
+              const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+              const preferred = storedId ? normalizedLeagues.find(l => String(l.id) === String(storedId)) || null : null;
+
+              if (preferred && !leagueIsCompleted(preferred)) {
+                setSelectedLeague(preferred);
+              } else {
+                // 2) Otherwise prefer the most recent INCOMPLETE league
+                const incomplete = normalizedLeagues.filter(l => !leagueIsCompleted(l));
+                const latestIncomplete = incomplete.length
+                  ? [...incomplete].sort((a, b) => timeOf(b) - timeOf(a))[0]
+                  : null;
+
+                if (latestIncomplete) {
+                  setSelectedLeague(latestIncomplete);
+                } else {
+                  // 3) Fallback: most recent overall
+                  const latest = [...normalizedLeagues].sort((a, b) => timeOf(b) - timeOf(a))[0];
+                  setSelectedLeague(latest);
+                }
+              }
             }
           }
         }
@@ -163,12 +253,23 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
     setSelectedLeague(createdLeague);
   }, [createdLeague]);
 
+  // Debug: whenever leagues change, log visible (not-completed) counts
+  useEffect(() => {
+    try {
+      if (!userLeagues?.length) return;
+      const visible = userLeagues.filter(l => !leagueIsCompleted(l));
+      console.log('[Home] leagues total:', userLeagues.length, 'visible (not completed):', visible.length);
+    } catch {}
+  }, [userLeagues]);
+
   // Keep selected league at top
   const sortedUserLeagues = React.useMemo(() => {
     if (!userLeagues?.length) return [];
+    // Only show INCOMPLETE leagues in the dropdown
+    const visible = userLeagues.filter(l => !leagueIsCompleted(l));
     // Sort by recency first
-    const arr = [...userLeagues].sort((a, b) => timeOf(b) - timeOf(a));
-    // Keep currently selected pinned to top
+    const arr = [...visible].sort((a, b) => timeOf(b) - timeOf(a));
+    // Keep currently selected pinned to top (if it's also visible)
     const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague.id) : -1;
     if (idx > 0) {
       const [sel] = arr.splice(idx, 1);
@@ -336,6 +437,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                 <MenuItem
                   key={league.id}
                   onClick={() => {
+                    try {
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem(PREFERRED_LEAGUE_KEY, String(league.id));
+                      }
+                    } catch {}
                     setSelectedLeague(league);
                     setShowDropdown(false);
                   }}
