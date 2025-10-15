@@ -1573,8 +1573,17 @@ export default function PlayerDashboard() {
               fullWidth
               variant="outlined"
               value={leagueName}
-              onChange={(e) => setLeagueName(e.target.value)}
+              onChange={(e) => {
+                const sanitized = e.target.value.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
+                setLeagueName(sanitized);
+              }}
               onKeyPress={(e) => {
+                // Block special characters and allow Enter to submit
+                const ch = e.key;
+                if (ch.length === 1 && /[^A-Za-z0-9 ]/.test(ch)) {
+                  e.preventDefault();
+                  return;
+                }
                 if (e.key === 'Enter') {
                   handleCreateLeague();
                 }
@@ -1604,6 +1613,7 @@ export default function PlayerDashboard() {
                 '& .MuiInputLabel-root': { color: '#fff' },
                 '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
               }}
+              inputProps={{ maxLength: 20 }}
               InputLabelProps={{ sx: { color: '#fff' } }}
             />
 
