@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -167,6 +167,8 @@ interface LeagueMembersDialogProps {
   currentUserId: string
   onRemoveMember: (memberId: string) => void
   onLeaveLeague: () => void
+  onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
+  onDeleteLeague: () => Promise<void> | void
 }
 
 const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
@@ -180,9 +182,12 @@ function LeagueMembersDialog({
   currentUserId,
   onRemoveMember,
   onLeaveLeague,
+  onUpdateLeague,
+  onDeleteLeague,
 }: LeagueMembersDialogProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const [openSettings, setOpenSettings] = useState(false)
 
   if (!league) return null
 
@@ -479,6 +484,27 @@ function LeagueMembersDialog({
         )}
 
         <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+          {isAdmin && (
+            <Button
+              onClick={() => setOpenSettings(true)}
+              sx={{
+                fontWeight: 600,
+                color: "#fff",
+                borderColor: "#e56a16",
+                borderRadius: 2,
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' },
+                transition: "all 0.2s ease",
+              }}
+              startIcon={<SettingsIcon size={18} />}
+            >
+              Settings
+            </Button>
+          )}
           <Button
             onClick={onClose}
             sx={{
@@ -504,6 +530,223 @@ function LeagueMembersDialog({
             Close
           </Button>
         </Box>
+      </DialogActions>
+      {isAdmin && league && (
+        <LeagueSettingsDialog
+          open={openSettings}
+          onClose={() => setOpenSettings(false)}
+          league={league}
+          onUpdate={async (data) => {
+            await onUpdateLeague(data)
+            setOpenSettings(false)
+          }}
+          onDelete={async () => {
+            await onDeleteLeague()
+            setOpenSettings(false)
+          }}
+        />
+      )}
+    </Dialog>
+  )
+}
+
+// Payload type for updating league settings
+type LeagueUpdatePayload = {
+  name: string
+  active: boolean
+  maxGames: number
+  showPoints: boolean
+  admins: string[]
+}
+
+interface LeagueSettingsDialogProps {
+  open: boolean
+  onClose: () => void
+  league: League
+  onUpdate: (data: LeagueUpdatePayload) => void | Promise<void>
+  onDelete: () => void | Promise<void>
+}
+
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
+  const [name, setName] = useState('')
+  const [adminId, setAdminId] = useState('')
+  const [isActive, setIsActive] = useState(true)
+  const [maxGames, setMaxGames] = useState(20)
+  const [showPoints, setShowPoints] = useState(true)
+
+  useEffect(() => {
+    if (league) {
+      setName(league.name || '')
+      setIsActive(league.active !== false)
+      setMaxGames(league.maxGames || 20)
+      setShowPoints(league.showPoints !== false)
+      setAdminId(league.administrators?.[0]?.id || '')
+    }
+  }, [league])
+
+  const handleUpdate = () => {
+    const updatedData: LeagueUpdatePayload = {
+      name,
+      active: isActive,
+      maxGames,
+      showPoints,
+      admins: adminId ? [adminId] : [],
+    }
+    onUpdate(updatedData)
+  }
+
+  if (!league) return null
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{
+        sx: {
+          bgcolor: 'rgba(15,15,15,0.92)',
+          color: '#E5E7EB',
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+          overflow: 'hidden',
+        },
+      }}
+    >
+      <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
+        Manage League Settings
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent>
+        <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <FormControl fullWidth>
+            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+              Select league admin
+            </Typography>
+            <Select
+              value={adminId}
+              onChange={(e) => setAdminId(e.target.value as string)}
+              sx={{
+                color: '#E5E7EB',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+                '& .MuiSelect-icon': { color: '#E5E7EB' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                },
+              }}
+            >
+              {(league.members || []).map((member: User) => (
+                <MenuItem key={member.id} value={member.id}>
+                  {member.firstName} {member.lastName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+              League name
+            </Typography>
+            <TextField
+              fullWidth
+              value={name}
+              onChange={(e) => {
+                const raw = e.target.value || ''
+                const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+                setName(cleaned)
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: '#E5E7EB',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                  '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                },
+                '& .MuiInputBase-input': { color: '#E5E7EB' },
+              }}
+              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+              inputProps={{ maxLength: 20 }}
+              helperText="Max 20 characters, letters/numbers only"
+            />
+          </FormControl>
+
+          <FormControl component="fieldset">
+            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+              Change league active status
+            </Typography>
+            <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
+              <FormControlLabel
+                value="active"
+                control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                label="Active"
+              />
+              <FormControlLabel
+                value="inactive"
+                control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                label="Inactive"
+              />
+            </RadioGroup>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+              Maximum number of matches
+            </Typography>
+            <TextField
+              fullWidth
+              type="number"
+              value={maxGames}
+              onChange={(e) => setMaxGames(Number(e.target.value))}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: '#E5E7EB',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                  '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                },
+                '& .MuiInputBase-input': { color: '#E5E7EB' },
+              }}
+            />
+          </FormControl>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showPoints}
+                onChange={(e) => setShowPoints(e.target.checked)}
+                sx={{
+                  '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+                  '& .Mui-checked': { color: '#27ab83' },
+                  '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+                }}
+              />
+            }
+            label="CF Advance Point Scoring"
+            sx={{ color: '#E5E7EB' }}
+          />
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+        <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+          Update League
+        </Button>
+        <Button variant="contained" color="error" onClick={onDelete}>
+          Delete League
+        </Button>
       </DialogActions>
     </Dialog>
   )
@@ -1054,6 +1297,81 @@ function AllLeagues() {
       toast.error('Failed to leave league');
     }
   };
+  
+  // Admin: settings update/delete handlers for LeagueMembersDialog
+  const handleUpdateLeagueFromSettings = useCallback(async (data: LeagueUpdatePayload) => {
+    if (!selectedLeague) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          active: data.active,
+          maxGames: data.maxGames,
+          showPoints: data.showPoints,
+          admins: data.admins,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.success === false) {
+        throw new Error(json.message || 'Failed to update league');
+      }
+
+      toast.success('League updated');
+      // Update local list optimistically
+      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
+        ...l,
+        name: data.name ?? l.name,
+        active: data.active ?? l.active,
+        maxGames: data.maxGames ?? l.maxGames,
+        showPoints: data.showPoints ?? l.showPoints,
+        administrators: data.admins && data.admins.length > 0
+          ? (l.members || []).filter(m => data.admins!.includes(m.id))
+          : l.administrators,
+        updatedAt: new Date().toISOString(),
+      } : l));
+
+      // Also refresh the selectedLeague details to reflect new admin etc.
+      setSelectedLeague(prev => prev ? {
+        ...prev,
+        name: data.name ?? prev.name,
+        active: data.active ?? prev.active,
+        maxGames: data.maxGames ?? prev.maxGames,
+        showPoints: data.showPoints ?? prev.showPoints,
+        administrators: data.admins && data.admins.length > 0
+          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
+          : prev.administrators,
+        updatedAt: new Date().toISOString(),
+      } : prev);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to update league');
+    }
+  }, [selectedLeague, token]);
+
+  const handleDeleteLeagueFromSettings = useCallback(async () => {
+    if (!selectedLeague) return;
+    if (!window.confirm('Are you sure you want to delete this league? This action cannot be undone.')) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete league');
+      toast.success('League deleted');
+      // Remove from local state
+      setLeagues(prev => prev.filter(l => l.id !== selectedLeague.id));
+      setOpenMembers(false);
+      setSelectedLeague(null);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to delete league');
+    }
+  }, [selectedLeague, token]);
   // const handleBackToAllLeagues = () => {
   //   router.push('/home');
   // };
@@ -1838,6 +2156,8 @@ function AllLeagues() {
         currentUserId={user?.id || ''}
         onRemoveMember={handleRemoveMember}
         onLeaveLeague={handleLeaveLeague}
+        onUpdateLeague={handleUpdateLeagueFromSettings}
+        onDeleteLeague={handleDeleteLeagueFromSettings}
       />
     </Box>
   )
