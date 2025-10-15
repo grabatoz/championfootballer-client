@@ -1,9 +1,9 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem } from '@mui/material'
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -579,9 +579,40 @@ function AllLeagues() {
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Cache timeout - 5 minutes
   const CACHE_TIMEOUT = 5 * 60 * 1000;
+
+  // Fixed continuous list of years from 2000 up to current year + a few future years (calendar-like)
+  const yearOptions = useMemo(() => {
+    const START_YEAR = 2000;
+    const YEARS_AHEAD = 5; // include next 5 years
+    const currentYear = new Date().getFullYear();
+    const maxYear = currentYear + YEARS_AHEAD;
+    const range: string[] = [];
+    for (let y = maxYear; y >= START_YEAR; y--) {
+      range.push(String(y));
+    }
+    return range;
+  }, []);
+
+  // Apply filters: by year (createdAt) and by league name
+  const filteredLeagues = useMemo(() => {
+    const byYear = selectedYear === 'all'
+      ? leagues
+      : leagues.filter(l => {
+          const t = Date.parse(l.createdAt || '');
+          if (!Number.isFinite(t)) return false;
+          const y = new Date(t).getFullYear();
+          return String(y) === selectedYear;
+        });
+
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return byYear;
+    return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
+  }, [leagues, selectedYear, searchTerm]);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -1181,6 +1212,66 @@ function AllLeagues() {
               >
                 {isJoining ? <CircularProgress size={20} /> : 'Join League'}
               </Button>
+
+              {/* Year Selector (to the right of Join) */}
+              <TextField
+                select
+                label="Year"
+                value={selectedYear}
+                size="medium"
+                onChange={(e) => setSelectedYear(e.target.value)}
+                sx={{
+                  minWidth: { xs: '100%', sm: 140 },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'black',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderRadius: 2,
+                    padding: 0,
+                    '& input': { padding: '13px 12px' },
+                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                  },
+                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
+                }}
+              >
+                <MenuItem value="all">All Years</MenuItem>
+                {yearOptions.map((y) => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </TextField>
+
+              {/* Search League Name (filters within selected year) */}
+              <TextField
+                label="Search league name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="medium"
+                autoComplete="off"
+                sx={{
+                  flex: 1,
+                  width: { xs: '100%', sm: 'auto' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'black',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderRadius: 2,
+                    padding: 0,
+                    '& input': { padding: '13px 12px' },
+                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+                      WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
+                      boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
+                      WebkitTextFillColor: 'black',
+                      caretColor: 'black',
+                      transition: 'background-color 9999s ease-out 0s',
+                      backgroundClip: 'content-box !important',
+                    },
+                  },
+                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
+                }}
+              />
             </Box>
           </Box>
         </Box>
@@ -1199,8 +1290,17 @@ function AllLeagues() {
                 Create a new league or join an existing one to get started.
               </Typography>
             </Box>
+          ) : filteredLeagues.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>
+                No leagues found for selected filters
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
+                Try changing the year or search name.
+              </Typography>
+            </Box>
           ) : (
-            leagues.map((league) => {
+            filteredLeagues.map((league) => {
               const isCompleted = Boolean(league.computedStatus?.isComplete || league.computedStatus?.locked || league.isLocked);
               return (
               <Box
