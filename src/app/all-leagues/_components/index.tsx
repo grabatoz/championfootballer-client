@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem } from '@mui/material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -1213,65 +1213,93 @@ function AllLeagues() {
                 {isJoining ? <CircularProgress size={20} /> : 'Join League'}
               </Button>
 
-              {/* Year Selector (to the right of Join) */}
-              <TextField
-                select
-                label="Year"
-                value={selectedYear}
-                size="medium"
-                onChange={(e) => setSelectedYear(e.target.value)}
-                sx={{
-                  minWidth: { xs: '100%', sm: 140 },
-                  '& .MuiOutlinedInput-root': {
-                    color: 'black',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    padding: 0,
-                    '& input': { padding: '13px 12px' },
-                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                  },
-                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
-                }}
-              >
-                <MenuItem value="all">All Years</MenuItem>
-                {yearOptions.map((y) => (
-                  <MenuItem key={y} value={y}>{y}</MenuItem>
-                ))}
-              </TextField>
-
-              {/* Search League Name (filters within selected year) */}
-              <TextField
-                label="Search league name"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                size="medium"
-                autoComplete="off"
-                sx={{
-                  flex: 1,
-                  width: { xs: '100%', sm: 'auto' },
-                  '& .MuiOutlinedInput-root': {
-                    color: 'black',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    padding: 0,
-                    '& input': { padding: '13px 12px' },
-                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-                      WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
-                      boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
-                      WebkitTextFillColor: 'black',
-                      caretColor: 'black',
-                      transition: 'background-color 9999s ease-out 0s',
-                      backgroundClip: 'content-box !important',
+              {/* Filters Group: Year + Search + Clear */}
+              <Box sx={{
+                display: 'flex',
+                gap: { xs: 1, sm: 1.5 },
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                width: { xs: '100%', sm: 'auto' },
+              }}>
+                {/* Year Selector (to the right of Join) */}
+                <TextField
+                  select
+                  label="Year"
+                  value={selectedYear}
+                  size="medium"
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  sx={{
+                    minWidth: { xs: '100%', sm: 140 },
+                    '& .MuiOutlinedInput-root': {
+                      color: 'black',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      borderRadius: 2,
+                      height: 48,
+                      '& .MuiSelect-select': { color: 'black' },
+                      '& fieldset': { borderColor: 'black' },
+                      '&:hover fieldset': { borderColor: 'black' },
+                      '&.Mui-focused fieldset': { borderColor: 'black' },
                     },
-                  },
-                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
-                }}
-              />
+                    '& .MuiInputLabel-root': { color: 'black' },
+                    '& .MuiSvgIcon-root': { color: 'black' },
+                  }}
+                >
+                  <MenuItem value="all">All Years</MenuItem>
+                  {yearOptions.map((y) => (
+                    <MenuItem key={y} value={y}>{y}</MenuItem>
+                  ))}
+                </TextField>
+
+                {/* Search League Name (filters within selected year) */}
+                <TextField
+                  label="Search league name"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  size="medium"
+                  autoComplete="off"
+                  sx={{
+                    flex: 1,
+                    minWidth: { xs: '100%', sm: 220 },
+                    '& .MuiOutlinedInput-root': {
+                      color: 'black',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      borderRadius: 2,
+                      height: 48,
+                      '& input': { color: 'black' },
+                      '& fieldset': { borderColor: 'black' },
+                      '&:hover fieldset': { borderColor: 'black' },
+                      '&.Mui-focused fieldset': { borderColor: 'black' },
+                    },
+                    '& .MuiInputLabel-root': { color: 'black' },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search sx={{ color: 'black' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                />
+
+                {/* Clear Filters */}
+                <Button
+                  variant="outlined"
+                  onClick={() => { setSelectedYear('all'); setSearchTerm(''); }}
+                  sx={{
+                    color: '#fff',
+                    // border: '1.5px solid #444',
+                    borderRadius: 2,
+                    bgcolor: '#0388E3',
+                    px: 2,
+                    height: 48,
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    '&:hover': {bgcolor: '#0388E3' },
+                  }}
+                >
+                  Clear
+                </Button>
+              </Box>
             </Box>
           </Box>
         </Box>
