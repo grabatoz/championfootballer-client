@@ -1347,8 +1347,9 @@ function AllLeagues() {
           : prev.administrators,
         updatedAt: new Date().toISOString(),
       } : prev);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update league');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to update league';
+      toast.error(msg);
     }
   }, [selectedLeague, token]);
 
@@ -1368,8 +1369,9 @@ function AllLeagues() {
       setLeagues(prev => prev.filter(l => l.id !== selectedLeague.id));
       setOpenMembers(false);
       setSelectedLeague(null);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to delete league');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete league';
+      toast.error(msg);
     }
   }, [selectedLeague, token]);
   // const handleBackToAllLeagues = () => {

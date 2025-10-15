@@ -113,6 +113,7 @@ const DreamTeamPage = () => {
   };
 
   // Jersey number helper (uses player.jerseyNumber/shirtNumber/number if present; otherwise sensible defaults)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getJerseyNumber = (p: (Player & WithJerseyFields) | undefined, type: string): string => {
     const num: JerseyValue | undefined = p?.jerseyNumber ?? p?.shirtNumber ?? p?.number;
     if (typeof num === 'number' || typeof num === 'string') return String(num);
@@ -463,7 +464,7 @@ const DreamTeamPage = () => {
                     zIndex: 2,
                   }}
                 >
-                  {/* Shirt with centered jersey number */}
+                  {/* Shirt image; player name shown below (no jersey number) */}
                   <Box
                     sx={{
                       position: 'relative',
@@ -481,50 +482,28 @@ const DreamTeamPage = () => {
                       style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                     </Link>
-
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: '#ffffff',
-                          fontWeight: 800,
-                          fontSize: { xs: 14, sm: 16, md: 18 },
-                          lineHeight: 1,
-                          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                        }}
-                      >
-                        {getJerseyNumber(player, pos.type)}
-                      </Typography>
-                      <Typography
-                        component="span"
-                        sx={{
-                          mt: 0.25,
-                          px: 0.5,
-                          maxWidth: { xs: 48, sm: 52, md: 56 },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: '#ffffff',
-                          fontWeight: 700,
-                          fontSize: { xs: 9, sm: 10, md: 10 },
-                          lineHeight: 1.1,
-                          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                        }}
-                      >
-                        {player.firstName} {player.lastName}
-                      </Typography>
-                    </Box>
                   </Box>
+
+                  {/* Player name below the shirt */}
+                  <Typography
+                    component="div"
+                    sx={{
+                      mt: 0.5,
+                      px: 0.5,
+                      maxWidth: { xs: 80, sm: 100, md: 120 },
+                      overflow: 'hidden',
+                      // textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: { xs: 11, sm: 12, md: 12 },
+                      lineHeight: 1.2,
+                      textAlign: 'center',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {player.firstName} {player.lastName}
+                  </Typography>
                 </Box>
               );
             })}
