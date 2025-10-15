@@ -285,7 +285,6 @@ export default function WorldRankingTable(){
                     // { label:'Pos Type', key:'positionType' },
                      { label:'Country', key:'position' },
                     { label:'XP Status', key:'position' },
-                    { label:'Matches', key:'matches' },
                     ...(showAvg ? [{ label:'Avg XP', key:'avgXP' } as Column] : []),
                     ...(showTotal ? [{ label:'Total XP', key:'totalXP' } as Column] : []),
                   ];
@@ -357,7 +356,7 @@ export default function WorldRankingTable(){
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:700 }}>
                       {getLevelTitle(p.totalXP ?? 0)}
                     </TableCell>
-                    <TableCell sx={{ fontSize:12.5, color:'#fff' }}>{formatNum(p.matches)}</TableCell>
+                    {/* Matches column removed */}
                     {filters.mode === 'avg' && (
                       <TableCell sx={{ fontSize:12.5, fontWeight:700, color:'#fff' }}>{formatNum(p.avgXP, { decimals:2 })}</TableCell>
                     )}
@@ -369,7 +368,7 @@ export default function WorldRankingTable(){
               })}
               {!loading && filtered.length===0 && (
                 <TableRow>
-                  <TableCell colSpan={7} sx={{ background:'transparent' }}>
+                  <TableCell colSpan={6} sx={{ background:'transparent' }}>
                     <Typography sx={{ textAlign:'center', py:5, fontSize:13, color:'#fff' }}>No players found.</Typography>
                   </TableCell>
                 </TableRow>
@@ -377,7 +376,7 @@ export default function WorldRankingTable(){
               {loading && (
                 Array.from({ length: 8 }).map((_,i)=>(
                   <TableRow key={`skeleton-${i}`} sx={{ opacity:.55 }}>
-                    {Array.from({ length:7 }).map((__,c)=>(
+                    {Array.from({ length:6 }).map((__,c)=>(
                       <TableCell key={c} sx={{ background:'rgba(255,255,255,0.04)' }}>
                         <Box sx={{ height:14, width: c===1? '60%':'40%', background:'linear-gradient(90deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05))', borderRadius:1 }} />
                       </TableCell>
