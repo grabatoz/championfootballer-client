@@ -40,6 +40,33 @@ interface Player {
   shirtNumber?: string; // Optional shirt number
 }
 
+// League option used by the UI select
+interface LeagueOption { id: string; name: string }
+
+// Minimal shape we expect from API for user leagues
+type ApiUser = {
+  leagues?: unknown;
+  administeredLeagues?: unknown;
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object';
+
+// Convert an unknown array into a list of {id, name} with string ids; filters invalid entries
+function parseLeagueOptions(value: unknown): LeagueOption[] {
+  if (!Array.isArray(value)) return [];
+  const out: LeagueOption[] = [];
+  for (const item of value) {
+    if (isRecord(item)) {
+      const id = item.id as string | number | undefined;
+      const name = item.name as string | undefined;
+      if ((typeof id === 'string' || typeof id === 'number') && typeof name === 'string' && name.length > 0) {
+        out.push({ id: String(id), name });
+      }
+    }
+  }
+  return out;
+}
+
 const AllPlayersPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { playedWithPlayers, loading, error } = useSelector((state: RootState) => state.user);
@@ -62,12 +89,13 @@ const AllPlayersPage = () => {
       });
       const data = await resp.json();
       if (data?.success && data?.user) {
-        const userLeagues = [
-          ...(data.user.leagues || []),
-          ...(data.user.administeredLeagues || [])
+        const userData: ApiUser = data.user as ApiUser;
+        const userLeagues: LeagueOption[] = [
+          ...parseLeagueOptions(userData.leagues),
+          ...parseLeagueOptions(userData.administeredLeagues),
         ];
-        const uniqueLeagues = Array.from(new Map(userLeagues.map((l: any) => [l.id, l])).values());
-        setLeagues(uniqueLeagues.map((l: any) => ({ id: String(l.id), name: l.name })));
+        const uniqueLeagues = Array.from(new Map(userLeagues.map((l) => [l.id, l])).values());
+        setLeagues(uniqueLeagues);
       }
     } catch (e) {
       console.error('Failed to load leagues', e);

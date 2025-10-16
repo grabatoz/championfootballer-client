@@ -84,7 +84,7 @@ export default function EditMatchPage() {
   const MIN_PLAYERS = 6;
   // Target balance for XP split
   const TARGET_XP_RATIO = 50; // aim for 50-50
-  const RATIO_TOLERANCE = 3;  // acceptable +/- range around target
+  // const RATIO_TOLERANCE = 3;  // acceptable +/- range around target
 
   // Counts for UI banner (include guests now)
   const registeredHomeCount = React.useMemo(
@@ -347,7 +347,7 @@ export default function EditMatchPage() {
     const xpValues = ratingsArr.map(r => r.xp);
     const totalXp = xpValues.reduce((a, b) => a + b, 0);
     const hasAnyXP = xpValues.some(v => v > 0);
-    let basis: 'xp' | 'skill' = hasAnyXP && totalXp > 0 ? 'xp' : 'skill';
+    const basis: 'xp' | 'skill' = hasAnyXP && totalXp > 0 ? 'xp' : 'skill';
 
     const idToRating = new Map<string, number>();
     if (basis === 'xp') {
@@ -555,8 +555,8 @@ export default function EditMatchPage() {
     // Deterministic directed 1-for-1 swap loop: always take the best improving swap until no gain
     const directedSwapImprove = (maxSteps = 120) => {
       const ratingOf = (id: string) => idToRating.get(id) ?? 0;
-      let homeIds = [...chosen.newHomeIds];
-      let awayIds = [...chosen.newAwayIds];
+      const homeIds = [...chosen.newHomeIds];
+      const awayIds = [...chosen.newAwayIds];
       let homeSum = chosen.homeSum;
       let awaySum = chosen.awaySum;
       let bestClose = chosen.closeness;
@@ -666,13 +666,13 @@ export default function EditMatchPage() {
     setHomeCaptain(null); setAwayCaptain(null);
 
     // Report final ratio with basis label
-    const tot = chosen.homeSum + chosen.awaySum;
-    const homePct = tot > 0 ? Math.round((chosen.homeSum / tot) * 100) : 50;
-    const awayPct = 100 - homePct;
+    // const tot = chosen.homeSum + chosen.awaySum;
+    // const homePct = tot > 0 ? Math.round((chosen.homeSum / tot) * 100) : 50;
+    // const awayPct = 100 - homePct;
     toast.success(`Teams balanced by League XP`);
     fetchPrediction();
     return;
-    } catch (e) {
+    } catch {
       // Optional: Log or show a fallback error
       toast.error('Balancing failed. Please try again.');
     } finally {
@@ -752,12 +752,12 @@ export default function EditMatchPage() {
       return a.every(x => B.has(x));
     };
 
-    const homeOrig = originalHomeIdsRef.current;
-    const awayOrig = originalAwayIdsRef.current;
-    const teamsChanged =
-      homeOrig !== null &&
-      awayOrig !== null &&
-      (!sameSet(newHomeIds, homeOrig) || !sameSet(newAwayIds, awayOrig));
+    // const homeOrig = originalHomeIdsRef.current;
+    // const awayOrig = originalAwayIdsRef.current;
+    // const teamsChanged =
+    //   homeOrig !== null &&
+    //   awayOrig !== null &&
+    //   (!sameSet(newHomeIds, homeOrig) || !sameSet(newAwayIds, awayOrig));
 
     // NEW: include guests in PATCH so server can count and sync them in one step
     const homeGuestsPayload = homeGuests.map(g => ({

@@ -32,7 +32,7 @@ import toast, { Toaster } from 'react-hot-toast';
 // import trophy from '@/Components/images/trophy.png'
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
+import { initializeFromStorage } from '@/lib/features/authSlice';
 import { League, User } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { ChevronRight, CloudUpload, X } from 'lucide-react';
@@ -72,9 +72,39 @@ import Link from 'next/link';
 //   }
 // }));
 
+type LeagueComputedStatus = { isComplete?: boolean; locked?: boolean; [key: string]: unknown };
+// Minimal shape used by this component only
+type BasicLeague = {
+  id: string | number;
+  name?: string;
+  status?: string;
+  active?: boolean;
+  updatedAt?: string;
+  createdAt?: string;
+  image?: string;
+  isComplete?: boolean;
+  isCompleted?: boolean;
+};
+type LeagueWithComputed = BasicLeague & {
+  computedStatus?: LeagueComputedStatus;
+  isLocked?: boolean;
+};
+
+type ApiLeague = {
+  id: string | number;
+  name?: string;
+  status?: string;
+  active?: boolean;
+  updatedAt?: string;
+  createdAt?: string;
+  image?: string;
+  isComplete?: boolean;
+  isCompleted?: boolean;
+};
+
 const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: number; createdLeague?: League | null }) => {  
-  const [userLeagues, setUserLeagues] = useState<League[]>([]);
-  const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
+  const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -84,7 +114,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
   // Helper: determine if a league is completed (exclude from dropdown)
-  const leagueIsCompleted = (l: League | any): boolean => {
+  const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
     // Primary: explicit completion flags coming from backend
     if (l?.computedStatus?.isComplete === true) return true;
     if (l?.computedStatus?.locked === true) return true;
@@ -110,7 +140,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
   };
 
   // Helper to compare leagues by most recent change
-  const timeOf = (l?: League | null) => {
+  const timeOf = (l?: LeagueWithComputed | null) => {
     if (!l) return 0;
     const ts = Date.parse(l.updatedAt || l.createdAt || '');
     return Number.isNaN(ts) ? 0 : ts;
@@ -156,42 +186,66 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
-            const leagues = [
+            const leaguesRaw = ([
               ...(data.user.leagues || []),
               ...(data.user.administeredLeagues || [])
-            ].filter(league => league && league.id); // Filter out undefined/null leagues
+            ] as unknown[]) as ApiLeague[];
 
-            const uniqueLeagues = Array.from(new Map(leagues.map(league => [league.id, league])).values());
+            const leagues = leaguesRaw.filter((league): league is ApiLeague => Boolean(league && (typeof league.id === 'string' || typeof league.id === 'number')));
+
+            const uniqueLeagues: ApiLeague[] = Array.from(new Map<string, ApiLeague>(leagues.map(league => [String(league.id), league])).values());
 
             // Enrich with computed status like on All Leagues page
-            const enrichedLeagues = await Promise.all(
-              uniqueLeagues.map(async (l: any) => {
+            const enrichedLeagues: LeagueWithComputed[] = await Promise.all(
+              uniqueLeagues.map(async (l: ApiLeague): Promise<LeagueWithComputed> => {
                 try {
                   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                   });
                   if (res.ok) {
                     const statusData = await res.json();
-                    const computed = statusData?.status || {};
-                    return { ...l, computedStatus: computed, isLocked: computed?.locked === true };
+                    const computed = (statusData?.status || {}) as LeagueComputedStatus;
+                    return {
+                      id: l.id,
+                      name: l.name,
+                      status: l.status,
+                      active: l.active,
+                      updatedAt: l.updatedAt,
+                      createdAt: l.createdAt,
+                      image: l.image,
+                      isComplete: l.isComplete,
+                      isCompleted: l.isCompleted,
+                      computedStatus: computed,
+                      isLocked: computed?.locked === true,
+                    };
                   }
                 } catch {}
-                return l;
+                return {
+                  id: l.id,
+                  name: l.name,
+                  status: l.status,
+                  active: l.active,
+                  updatedAt: l.updatedAt,
+                  createdAt: l.createdAt,
+                  image: l.image,
+                  isComplete: l.isComplete,
+                  isCompleted: l.isCompleted,
+                };
               })
             );
 
             // Normalize minimal fields so we don't carry undefineds around
-            const normalizedLeagues = enrichedLeagues.map((l: any) => ({
+            const normalizedLeagues: LeagueWithComputed[] = enrichedLeagues.map((l) => ({
               ...l,
               status: typeof l?.status === 'string' && l.status.trim() !== '' ? l.status : 'active',
               active: typeof l?.active === 'boolean' ? l.active : true,
             }));
-            setUserLeagues(normalizedLeagues as League[]);
+            setUserLeagues(normalizedLeagues);
 
             // Debug: log league completion flags for verification
             try {
               if (typeof window !== 'undefined' && normalizedLeagues.length) {
-                const rows = normalizedLeagues.map((l: any) => ({
+                const rows = normalizedLeagues.map((l) => ({
                   id: l?.id,
                   name: l?.name,
                   isComplete: Boolean(l?.isComplete),
@@ -246,11 +300,28 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
   useEffect(() => {
     if (!createdLeague || !createdLeague.id) return;
     setUserLeagues(prev => {
-      const map = new Map(prev.map(l => [l.id, l]));
-      map.set(createdLeague.id, createdLeague);
+      const map = new Map(prev.map(l => [String(l.id), l]));
+      const entry: LeagueWithComputed = {
+        id: String(createdLeague.id),
+        name: (createdLeague as any).name,
+        image: (createdLeague as any).image,
+        updatedAt: (createdLeague as any).updatedAt,
+        createdAt: (createdLeague as any).createdAt,
+        status: (createdLeague as any).status,
+        active: (createdLeague as any).active,
+      };
+      map.set(String(entry.id), entry);
       return Array.from(map.values());
     });
-    setSelectedLeague(createdLeague);
+    setSelectedLeague({
+      id: String(createdLeague.id),
+      name: (createdLeague as any).name,
+      image: (createdLeague as any).image,
+      updatedAt: (createdLeague as any).updatedAt,
+      createdAt: (createdLeague as any).createdAt,
+      status: (createdLeague as any).status,
+      active: (createdLeague as any).active,
+    });
   }, [createdLeague]);
 
   // Debug: whenever leagues change, log visible (not-completed) counts
