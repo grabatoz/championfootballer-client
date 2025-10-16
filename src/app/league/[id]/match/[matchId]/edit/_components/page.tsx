@@ -746,11 +746,11 @@ export default function EditMatchPage() {
     const newHomeIds = registered(homeTeamUsers);
     const newAwayIds = registered(awayTeamUsers);
 
-    const sameSet = (a: string[], b: string[]) => {
-      if (a.length !== b.length) return false;
-      const B = new Set(b);
-      return a.every(x => B.has(x));
-    };
+    // const sameSet = (a: string[], b: string[]) => {
+    //   if (a.length !== b.length) return false;
+    //   const B = new Set(b);
+    //   return a.every(x => B.has(x));
+    // };
 
     // const homeOrig = originalHomeIdsRef.current;
     // const awayOrig = originalAwayIdsRef.current;

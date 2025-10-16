@@ -222,7 +222,7 @@ const PlayerProfileCard = () => {
   const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)")
   const [style, setStyle] = useState(user?.style || "")
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
-  const [shirtNumber, ] = useState(user?.shirtNumber || "00")
+  // const [shirtNumber, ] = useState(user?.shirtNumber || "00")
   // setShirtNumber
   // Location fields
   const [country, setCountry] = useState(user?.country || "")

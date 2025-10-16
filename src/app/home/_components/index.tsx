@@ -102,6 +102,15 @@ type ApiLeague = {
   isCompleted?: boolean;
 };
 
+// Runtime type guard for ApiLeague
+const isApiLeague = (val: unknown): val is ApiLeague => {
+  if (!val || typeof val !== 'object') return false;
+  const maybe = val as Record<string, unknown>;
+  const id = maybe.id;
+  const idOk = typeof id === 'string' || typeof id === 'number';
+  return idOk;
+};
+
 const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: number; createdLeague?: League | null }) => {  
   const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
@@ -186,12 +195,12 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
-            const leaguesRaw = ([
+            const leaguesUnknown = ([
               ...(data.user.leagues || []),
               ...(data.user.administeredLeagues || [])
-            ] as unknown[]) as ApiLeague[];
+            ]) as unknown[];
 
-            const leagues = leaguesRaw.filter((league): league is ApiLeague => Boolean(league && (typeof league.id === 'string' || typeof league.id === 'number')));
+            const leagues: ApiLeague[] = leaguesUnknown.filter(isApiLeague);
 
             const uniqueLeagues: ApiLeague[] = Array.from(new Map<string, ApiLeague>(leagues.map(league => [String(league.id), league])).values());
 
@@ -303,24 +312,24 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
       const map = new Map(prev.map(l => [String(l.id), l]));
       const entry: LeagueWithComputed = {
         id: String(createdLeague.id),
-        name: (createdLeague as any).name,
-        image: (createdLeague as any).image,
-        updatedAt: (createdLeague as any).updatedAt,
-        createdAt: (createdLeague as any).createdAt,
-        status: (createdLeague as any).status,
-        active: (createdLeague as any).active,
+        name: createdLeague .name,
+        image: createdLeague.image,
+        updatedAt: createdLeague.updatedAt,
+        createdAt: createdLeague.createdAt,
+        status: createdLeague.status,
+        active: createdLeague.active,
       };
       map.set(String(entry.id), entry);
       return Array.from(map.values());
     });
     setSelectedLeague({
       id: String(createdLeague.id),
-      name: (createdLeague as any).name,
-      image: (createdLeague as any).image,
-      updatedAt: (createdLeague as any).updatedAt,
-      createdAt: (createdLeague as any).createdAt,
-      status: (createdLeague as any).status,
-      active: (createdLeague as any).active,
+      name: createdLeague.name,
+      image: createdLeague.image,
+      updatedAt: createdLeague.updatedAt,
+      createdAt: createdLeague.createdAt,
+      status: createdLeague.status,
+      active: createdLeague.active,
     });
   }, [createdLeague]);
 
@@ -904,7 +913,7 @@ export default function PlayerDashboard() {
           location: joined.location,
           maxTeams: joined.maxTeams,
           currentTeams: joined.currentTeams,
-          status: joined.status,
+          status: (joined.status === 'active' || joined.status === 'inactive' || joined.status === 'completed') ? joined.status : 'active',
         };
 
         // Update local caches and UI immediately
@@ -962,15 +971,33 @@ export default function PlayerDashboard() {
 
         // Update the leagues cache with the new league
         if (data.league) {
-          const newLeague = {
-            ...data.league,
-            image: data.league.image || null, // Ensure image field is included
+          const nowISO = new Date().toISOString();
+          const status: 'active' | 'inactive' | 'completed' =
+            (data.league.status === 'active' || data.league.status === 'inactive' || data.league.status === 'completed')
+              ? data.league.status
+              : 'active';
+
+          const newLeague: League = {
+            id: String(data.league.id),
+            name: data.league.name ?? 'My League',
+            inviteCode: data.league.inviteCode ?? '',
+            image: data.league?.image ?? '',
+            createdAt: typeof data.league.createdAt === 'string' ? data.league.createdAt : nowISO,
+            updatedAt: typeof data.league.updatedAt === 'string'
+              ? data.league.updatedAt
+              : (typeof data.league.createdAt === 'string' ? data.league.createdAt : nowISO),
             members: [],
             administrators: user ? [user] : [],
             matches: [],
-            active: true,
-            maxGames: null,
-            showPoints: true
+            active: typeof data.league.active === 'boolean' ? data.league.active : true,
+            maxGames: typeof data.league.maxGames === 'number' ? data.league.maxGames : 0,
+            showPoints: typeof data.league.showPoints === 'boolean' ? data.league.showPoints : true,
+            adminId: data.league.adminId,
+            description: data.league.description,
+            location: data.league.location,
+            maxTeams: data.league.maxTeams,
+            currentTeams: data.league.currentTeams,
+            status,
           };
 
           // Update cache with new league
