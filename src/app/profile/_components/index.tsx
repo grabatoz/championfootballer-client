@@ -247,6 +247,21 @@ const PlayerProfileCard = () => {
   const router = useRouter()
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
 
+  // Playing styles per position type (3 options each; you can edit/rename later)
+  const playingStylesMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
+    Goalkeeper: ["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Spider" ,"Sweeper Keeper"],
+    Defender: ["Hacker", "No-Bull", "Shield" , "Terminator" , "Wall" , "Warrior"],
+    Midfielder: ["Gladiator", "Maestro", "Magician" , "Powerhouse" , "Roadrunner" , "Scientist"],
+    Forward: ["Finisher", "Poacher", "Predator" , "Rocket" ,"Ruthless" , "Sniper"],
+  }
+
+  const resolvedPositionType: "Goalkeeper" | "Defender" | "Midfielder" | "Forward" =
+    (positionType === "Goalkeeper" || positionType === "Defender" || positionType === "Midfielder" || positionType === "Forward")
+      ? positionType
+      : "Goalkeeper"
+
+  const currentStyleOptions = playingStylesMap[resolvedPositionType]
+
   // Compute location lists
   const countries: ICountry[] = Country.getAllCountries() || []
   const states: IState[] = selectedCountryCode ? (State.getStatesOfCountry(selectedCountryCode) || []) : []
@@ -313,6 +328,10 @@ const PlayerProfileCard = () => {
       setPosition("Goalkeeper (GK)")
     }
   }, [user?.position])
+
+  // Note: Do not auto-change playing style on position type change.
+  // We keep whatever is in DB/user selection; RadioGroup will show none selected
+  // if the current style isn't in the options for the chosen position type.
 
   const handleNext = () => setStep(s => s + 1)
   const handlePrevious = () => setStep(s => s > 1 ? s - 1 : s)
@@ -1007,7 +1026,7 @@ const PlayerProfileCard = () => {
                     <FormControl component="fieldset">
                       <StyledFormLabel sx={{ mb: 1 }}>Playing Style</StyledFormLabel>
                       <RadioGroup value={style} onChange={e => setStyle(e.target.value)}>
-                        {["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Sweeper Keeper"].map(s => (
+                        {currentStyleOptions.map(s => (
                           <FormControlLabel key={s} value={s} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{s}</span>} />
                         ))}
                       </RadioGroup>
