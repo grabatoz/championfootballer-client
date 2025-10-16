@@ -3,9 +3,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWorldRanking, WorldRankingPlayer, WorldRankingResponse } from '@/lib/api';
 import { Box, Typography, Select, MenuItem, ToggleButtonGroup, ToggleButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, TextField, CircularProgress, Chip, Button } from '@mui/material';
 import Link from 'next/link';
+import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
 
-interface Filters { mode: 'total'|'avg'; year?: string; positionType?: string; }
+interface Filters { mode: 'total'|'avg'; year?: string; positionType?: string; country?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
 interface SortState { key: SortKey; direction: 'asc' | 'desc'; }
 
@@ -78,12 +79,23 @@ export default function WorldRankingTable(){
     const current = new Date().getFullYear();
     return Array.from({ length: 10 }, (_,i)=> (current - i).toString());
   },[]);
+  // Use the same full country dataset as the register form
+  const countries = useMemo(()=>{
+    try {
+      return Country.getAllCountries().map(c=> c.name).sort((a,b)=> a.localeCompare(b));
+    } catch {
+      // Fallback to any countries present in data if library fails for some reason
+      const set = new Set<string>();
+      (data?.players || []).forEach(p=>{ if (p.country) set.add(p.country); });
+      return Array.from(set).sort((a,b)=> a.localeCompare(b));
+    }
+  },[data]);
 
   const load = async () => {
     setLoading(true); setError(null);
     try {
       // Request a high limit to show all players; omit positionType filter
-      const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, playerId: user?.id, limit: 100000 });
+  const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, country: filters.country, playerId: user?.id, limit: 100000 });
       setData(res);
       setLastUpdated(new Date());
     } catch(e: unknown) {
@@ -93,7 +105,9 @@ export default function WorldRankingTable(){
     finally { setLoading(false); }
   };
 
-  useEffect(()=>{ load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.mode, filters.positionType, filters.year]);
+  useEffect(()=>{ load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.mode, filters.positionType, filters.year, filters.country]);
+
+  // Note: Do not auto-set country from the user's profile; keep it manual per request
 
   // When switching mode, default sort to the shown metric (desc)
   useEffect(()=>{
@@ -105,6 +119,9 @@ export default function WorldRankingTable(){
     if(!data) return [] as WorldRankingPlayer[];
     const term = search.trim().toLowerCase();
     let base = !term ? data.players : data.players.filter(p=> p.name.toLowerCase().includes(term));
+    if (filters.country) {
+      base = base.filter(p => (p.country||'').toLowerCase() === filters.country!.toLowerCase());
+    }
     // Client-side sorting (stable by using slice)
     const { key, direction } = sort;
     const dirMul = direction === 'asc' ? 1 : -1;
@@ -215,6 +232,15 @@ export default function WorldRankingTable(){
               {years.map(y=> <MenuItem key={y} value={y}>{y}</MenuItem>)}
             </Select>
           </Box>
+          <Box sx={{ display:'flex', flexDirection:'column', gap:.7, minWidth:170 }}>
+            <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Country</Typography>
+            <Select size="small" value={filters.country || ''} onChange={e=> setFilters(f=> ({ ...f, country: e.target.value || undefined }))} displayEmpty sx={{ minWidth:150, fontSize:13, color:'#f1f1f1', '.MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline':{ borderColor:'rgba(255,255,255,0.35)' } }}>
+              <MenuItem value=""><em>All</em></MenuItem>
+              {countries.map(c => (
+                <MenuItem key={c} value={c}>{c}</MenuItem>
+              ))}
+            </Select>
+          </Box>
             <Box sx={{ display:'flex', flexDirection:'column', gap:.7, flexGrow:1, minWidth:200 }}>
               <Typography sx={{ fontSize:11, fontWeight:600, letterSpacing:.5, color:'#ff9d55', textTransform:'uppercase' }}>Search</Typography>
               <TextField size="small" placeholder="Search Player" value={search} onChange={e=> setSearch(e.target.value)} sx={{ minWidth:200, '& .MuiOutlinedInput-root':{ color:'#fff', '& fieldset':{ borderColor:'rgba(255,255,255,0.18)' }, '&:hover fieldset':{ borderColor:'rgba(255,255,255,0.34)' } } }} />
@@ -238,6 +264,7 @@ export default function WorldRankingTable(){
           <Box sx={{ display:'flex', gap:1, flexWrap:'wrap', position:'relative', zIndex:1 }}>
             {filters.positionType && <Chip size="small" label={`Pos: ${filters.positionType}`} onDelete={()=> setFilters(f=> ({...f, positionType: undefined}))} sx={{ background:'linear-gradient(90deg,#ff8a2b,#ff3030)', color:'#fff', '& .MuiChip-deleteIcon':{ color:'#fff' } }} />}
             {filters.year && <Chip size="small" label={`Year: ${filters.year}`} onDelete={()=> setFilters(f=> ({...f, year: undefined}))} sx={{ background:'linear-gradient(90deg,#ff8a2b,#ff3030)', color:'#fff', '& .MuiChip-deleteIcon':{ color:'#fff' } }} />}
+            {filters.country && <Chip size="small" label={`Country: ${filters.country}`} onDelete={()=> setFilters(f=> ({...f, country: undefined}))} sx={{ background:'linear-gradient(90deg,#ff8a2b,#ff3030)', color:'#fff', '& .MuiChip-deleteIcon':{ color:'#fff' } }} />}
             {search && <Chip size="small" label={`Search: ${search}`} onDelete={()=> setSearch('')} sx={{ background:'linear-gradient(90deg,#333,#111)', color:'#fff', '& .MuiChip-deleteIcon':{ color:'#fff' } }} />}
           </Box>
           <Box sx={{ flexBasis:'100%' }} />
@@ -350,8 +377,8 @@ export default function WorldRankingTable(){
                       <Link href={`/player/${p.id}`} style={{ textDecoration:'none', color:'#fff' }}>{p.name}</Link>
                     </TableCell>
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.position || '-'}</TableCell>
-                    {/* Country column: backend may provide p.country; fallback '-' */}
-                    <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{(p as any).country || '-'}</TableCell>
+                    {/* Country column */}
+                    <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:500 }}>{p.country || '-'}</TableCell>
                     {/* XP Status column: title from LEVELS based on total XP */}
                     <TableCell sx={{ fontSize:12.5, color:'#fff', fontWeight:700 }}>
                       {getLevelTitle(p.totalXP ?? 0)}

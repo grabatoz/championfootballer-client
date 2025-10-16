@@ -1013,12 +1013,21 @@ export function updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: 
 
 // World Ranking -------------------------------------------------------------
 export interface WorldRankingPlayer {
-  id: string; name: string; position: string; positionType: string; profilePicture: string; totalXP: number; avgXP: number; matches: number; rank: number;
+  id: string;
+  name: string;
+  position: string;
+  positionType: string;
+  profilePicture: string;
+  totalXP: number;
+  avgXP: number;
+  matches: number;
+  rank: number;
+  country?: string; // Optional country for display/filtering
 }
 export interface WorldRankingResponse {
   players: WorldRankingPlayer[]; mode: 'avg'|'total'; limit: number; playerOutsideTop?: boolean; playerRank?: number;
 }
-export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId?: string; positionType?: string; year?: number; limit?: number; token?: string }) {
+export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId?: string; positionType?: string; year?: number; country?: string; limit?: number; token?: string }) {
   const { token, ...rest } = params || {};
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k,v])=>{ if(v!==undefined && v!==null) search.append(k, String(v)); });

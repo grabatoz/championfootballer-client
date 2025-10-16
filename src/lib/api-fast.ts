@@ -582,6 +582,7 @@ export interface WorldRankingPlayer {
   avgXP: number;
   matches: number;
   rank: number;
+  country?: string; // Optional country for display/filtering
 }
 
 export interface WorldRankingResponse {
@@ -598,7 +599,7 @@ export async function fetchWorldRanking(params: {
   positionType?: string;
   year?: number;
   limit?: number;
-//   token?: string;
+  country?: string; // Added country parameter
 }): Promise<WorldRankingResponse> {
   const {...rest } = params || {};
   // Note: token is extracted but not used in this implementation
