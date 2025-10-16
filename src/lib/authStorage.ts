@@ -39,6 +39,9 @@ export interface UserProfile {
   email?: string;
   age?: number;
   gender?: string;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
   position?: string;
   positionType?: string;
   style?: string;

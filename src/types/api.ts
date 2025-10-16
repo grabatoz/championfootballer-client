@@ -21,6 +21,9 @@ export interface RegisterCredentials {
   lastName: string;
   age: string;
   gender: string;
+  country?: string;
+  state?: string;
+  city?: string;
   position?: string;
   positionType?: string;
   confirmPassword?: string;

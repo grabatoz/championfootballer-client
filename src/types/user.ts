@@ -15,6 +15,9 @@ export interface User {
   age?: number | string;
   password?: string;
   gender?: string;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
   level?: string;
   joinedLeagues?: League[];
   managedLeagues?: League[];

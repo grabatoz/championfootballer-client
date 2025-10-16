@@ -20,6 +20,10 @@ import {
   Stack,
   IconButton,
   Typography,
+  Select,
+  MenuItem,
+  InputLabel,
+  OutlinedInput,
 } from "@mui/material"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
@@ -28,6 +32,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import type { User } from "@/types/user"
+import { Country, State, City } from 'country-state-city'
 
 interface AuthTabsProps {
   showLogin?: boolean
@@ -84,6 +89,9 @@ const normalizeUserForStorage = (user: User): UserProfile => {
     email: user.email,
     age: typeof user.age === "string" ? Number(user.age) || undefined : user.age,
     gender: user.gender,
+    country: user.country ?? null,
+    state: user.state ?? null,
+    city: user.city ?? null,
     position: user.position,
     positionType: user.positionType,
     style: user.style,
@@ -154,6 +162,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     lastName: "",
     age: "",
     gender: "",
+    country: "",
+    state: "",
+    city: "",
   })
   const [registerError, setRegisterError] = useState("")
   const [registerLoading, setRegisterLoading] = useState(false)
@@ -165,6 +176,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegisterPassword, setShowRegisterPassword] = useState(false)
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
+
+  // Location selectors state (codes used to derive dependent lists)
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
+  const [selectedStateCode, setSelectedStateCode] = useState<string>("")
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
@@ -216,6 +231,29 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRegisterData({ ...registerData, [e.target.name]: e.target.value })
+  }
+
+  // Derived lists from country-state-city library
+  const countries = Country.getAllCountries()
+  const states = selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []
+  const cities = selectedCountryCode && selectedStateCode ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : []
+
+  // Handlers for Select components; store name in registerData, code in local state
+  const handleCountrySelect = (code: string) => {
+    setSelectedCountryCode(code)
+    const c = countries.find(c => c.isoCode === code)
+    setRegisterData(prev => ({ ...prev, country: c?.name || "", state: "", city: "" }))
+    setSelectedStateCode("")
+  }
+
+  const handleStateSelect = (code: string) => {
+    setSelectedStateCode(code)
+    const s = states.find(s => s.isoCode === code)
+    setRegisterData(prev => ({ ...prev, state: s?.name || "", city: "" }))
+  }
+
+  const handleCitySelect = (name: string) => {
+    setRegisterData(prev => ({ ...prev, city: name }))
   }
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -282,7 +320,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       !registerData.firstName ||
       !registerData.lastName ||
       !registerData.gender ||
-      !registerData.age
+      !registerData.age ||
+      !registerData.country ||
+      !registerData.state ||
+      !registerData.city
     )
       msg = "Please fill in all fields"
     else if (registerData.password !== registerData.confirmPassword) msg = "Passwords do not match"
@@ -561,6 +602,63 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               required
               sx={inputSx}
             />
+
+            <FormControl fullWidth>
+              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
+              <Select
+                id="country-select"
+                value={selectedCountryCode}
+                onChange={(e) => handleCountrySelect(e.target.value as string)}
+                input={<OutlinedInput notched={false} />}
+                sx={{
+                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
+                }}
+                required
+              >
+                {countries.map(c => (
+                  <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth disabled={!selectedCountryCode}>
+              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
+              <Select
+                id="state-select"
+                value={selectedStateCode}
+                onChange={(e) => handleStateSelect(e.target.value as string)}
+                input={<OutlinedInput notched={false} />}
+                sx={{
+                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
+                }}
+                required
+              >
+                {states.map(s => (
+                  <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth disabled={!selectedCountryCode || !selectedStateCode}>
+              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
+              <Select
+                id="city-select"
+                value={registerData.city || ''}
+                onChange={(e) => handleCitySelect(e.target.value as string)}
+                input={<OutlinedInput notched={false} />}
+                sx={{
+                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
+                }}
+                required
+              >
+                {cities.map(ci => (
+                  <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             {/* Active (checked) color set to orange (#E56A16) */}
             <FormControl>
