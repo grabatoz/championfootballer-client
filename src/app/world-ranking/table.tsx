@@ -65,7 +65,7 @@ const getLevelTitle = (points: number): string => {
 };
 
 export default function WorldRankingTable(){
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [filters, setFilters] = useState<Filters>({ mode: 'total' });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<WorldRankingResponse | null>(null);
@@ -94,13 +94,52 @@ export default function WorldRankingTable(){
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      // Request a high limit to show all players; omit positionType filter
-  const res = await fetchWorldRanking({ mode: filters.mode, positionType: filters.positionType, year: filters.year? Number(filters.year): undefined, country: filters.country, playerId: user?.id, limit: 100000 });
-      setData(res);
+      // Request a high limit to show all players; pass auth token for production
+      const resPrimary = await fetchWorldRanking({
+        mode: filters.mode,
+        positionType: filters.positionType,
+        year: filters.year ? Number(filters.year) : undefined,
+        country: filters.country,
+        playerId: user?.id,
+        limit: 100000,
+        token: token || undefined,
+      });
+      setData(resPrimary);
       setLastUpdated(new Date());
     } catch(e: unknown) {
-      const message = e instanceof Error ? (e.message || 'Failed') : 'Failed';
-      setError(message);
+      // Retry with smaller limits in case the server caps or times out on large requests
+      try {
+        const resFallback = await fetchWorldRanking({
+          mode: filters.mode,
+          positionType: filters.positionType,
+          year: filters.year ? Number(filters.year) : undefined,
+          country: filters.country,
+          playerId: user?.id,
+          limit: 5000,
+          token: token || undefined,
+        });
+        setData(resFallback);
+        setLastUpdated(new Date());
+        setError(null);
+      } catch (e2: unknown) {
+        try {
+          const resMin = await fetchWorldRanking({
+            mode: filters.mode,
+            positionType: filters.positionType,
+            year: filters.year ? Number(filters.year) : undefined,
+            country: filters.country,
+            playerId: user?.id,
+            limit: 1000,
+            token: token || undefined,
+          });
+          setData(resMin);
+          setLastUpdated(new Date());
+          setError('Showing top 1,000 players due to server limits');
+        } catch (e3: unknown) {
+          const message = e3 instanceof Error ? (e3.message || 'Failed to load world ranking') : 'Failed to load world ranking';
+          setError(message);
+        }
+      }
     }
     finally { setLoading(false); }
   };
