@@ -772,28 +772,28 @@ export default function PlayerDashboard() {
   }, [user]);
 
   // Fallback: if xp is missing after auth init, fetch it from /auth/data and merge
-  useEffect(() => {
-    const maybeFetchXP = async () => {
-      try {
-        if (!token) return;
-        // Only fetch if no xp present
-        if (!user || typeof user.xp === 'number') return;
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        const xp = data?.user?.xp;
-        if (typeof xp === 'number') {
-          // Merge xp into store user
-          (dispatch as AppDispatch)(mergeUser({ xp }));
-        }
-      } catch (e) {
-        console.warn('XP fallback fetch failed', e);
-      }
-    };
-    maybeFetchXP();
-  }, [dispatch, token, user]);
+  // useEffect(() => {
+  //   const maybeFetchXP = async () => {
+  //     try {
+  //       if (!token) return;
+  //       // Only fetch if no xp present
+  //       if (!user || typeof user.xp === 'number') return;
+  //       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+  //         headers: { 'Authorization': `Bearer ${token}` },
+  //       });
+  //       if (!resp.ok) return;
+  //       const data = await resp.json();
+  //       const xp = data?.user?.xp;
+  //       if (typeof xp === 'number') {
+  //         // Merge xp into store user
+  //         (dispatch as AppDispatch)(mergeUser({ xp }));
+  //       }
+  //     } catch (e) {
+  //       console.warn('XP fallback fetch failed', e);
+  //     }
+  //   };
+  //   maybeFetchXP();
+  // }, [dispatch, token, user]);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) return;

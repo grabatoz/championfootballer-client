@@ -32,6 +32,7 @@ import {
   Fade,
   Modal,
 } from "@mui/material"
+import { MenuItem } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
@@ -48,6 +49,8 @@ import type { StaticImageData } from "next/image"
 import imgicon from "@/Components/images/imgicon.png"
 import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
+import { Country, State, City } from "country-state-city"
+import type { ICountry, IState, ICity } from "country-state-city"
 
 
 // ===== THEME (brand palette reused) =====
@@ -136,7 +139,7 @@ const StyledTextField = styled(TextField)(() => ({
       background: "transparent"
     },
     // Reduced overall control height
-    minHeight: 48
+    minHeight: 44
   },
   // Compact input padding + font size
   '& .MuiOutlinedInput-input': {
@@ -220,6 +223,13 @@ const PlayerProfileCard = () => {
   const [style, setStyle] = useState(user?.style || "")
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
   const [shirtNumber, setShirtNumber] = useState(user?.shirtNumber || "00")
+  // Location fields
+  const [country, setCountry] = useState(user?.country || "")
+  const [stateProvince, setStateProvince] = useState(user?.state || "")
+  const [city, setCity] = useState(user?.city || "")
+  // Selection codes for cascading lists
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
+  const [selectedStateCode, setSelectedStateCode] = useState<string>("")
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
@@ -236,6 +246,57 @@ const PlayerProfileCard = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const router = useRouter()
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
+
+  // Compute location lists
+  const countries: ICountry[] = Country.getAllCountries() || []
+  const states: IState[] = selectedCountryCode ? (State.getStatesOfCountry(selectedCountryCode) || []) : []
+  const cities: ICity[] = selectedCountryCode
+    ? ((selectedStateCode && (State.getStatesOfCountry(selectedCountryCode)?.length ?? 0) > 0)
+        ? (City.getCitiesOfState(selectedCountryCode, selectedStateCode) || [])
+        : (City.getCitiesOfCountry(selectedCountryCode) || []))
+    : []
+
+  // Initialize selection from existing user data
+  useEffect(() => {
+    if (user?.country && !selectedCountryCode) {
+      const foundCountry = countries.find(c => c.name.toLowerCase() === String(user.country).toLowerCase())
+      if (foundCountry) {
+        setSelectedCountryCode(foundCountry.isoCode)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.country])
+
+  useEffect(() => {
+    if (user?.state && selectedCountryCode && !selectedStateCode) {
+      const ss = State.getStatesOfCountry(selectedCountryCode)
+      const foundState = ss.find(s => s.name.toLowerCase() === String(user.state).toLowerCase())
+      if (foundState) {
+        setSelectedStateCode(foundState.isoCode)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.state, selectedCountryCode])
+
+  // Handlers for cascading selection
+  const handleCountryChange = (code: string) => {
+    setSelectedCountryCode(code)
+    const c = countries.find(c => c.isoCode === code)
+    setCountry(c?.name || "")
+    // reset dependent fields
+    setSelectedStateCode("")
+    setStateProvince("")
+    setCity("")
+  }
+  const handleStateChange = (code: string) => {
+    setSelectedStateCode(code)
+    const s = states.find(s => s.isoCode === code)
+    setStateProvince(s?.name || "")
+    setCity("")
+  }
+  const handleCityChange = (name: string) => {
+    setCity(name)
+  }
 
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
 
@@ -274,6 +335,9 @@ const PlayerProfileCard = () => {
         style,
         preferredFoot,
         shirtNumber: String(shirtNumber),
+        country: country || undefined,
+        state: stateProvince || undefined,
+        city: city || undefined,
         skills: {
           dribbling: dribbling ?? 50,
           shooting: shooting ?? 50,
@@ -301,6 +365,9 @@ const PlayerProfileCard = () => {
           style: data.user.style,
           preferredFoot: data.user.preferredFoot,
           shirtNumber: typeof data.user.shirtNumber === "string" ? Number(data.user.shirtNumber) || undefined : data.user.shirtNumber,
+          country: data.user.country,
+          state: data.user.state,
+          city: data.user.city,
           profilePicture: data.user.profilePicture || null,
           image: data.user.profilePicture || null,
           skills: data.user.skills,
@@ -543,7 +610,7 @@ const PlayerProfileCard = () => {
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim, display: 'flex', gap: .5 }}>
                     Email: <span style={{ color: themeColors.text }}>{user?.email || "email@example.com"}</span>
                   </Typography>
-                  <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Shirt: <b style={{ color: themeColors.text }}>{user?.shirtNumber || "00"}</b></Typography>
+                  {/* Shirt number hidden per request */}
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Foot: <b style={{ color: themeColors.text }}>{user?.preferredFoot || "Right"}</b></Typography>
                   <Chip
                     label={positionType || "Position"}
@@ -717,8 +784,8 @@ const PlayerProfileCard = () => {
                   {/* Removed bottom Upload button per request */}
                 </Box>
 
-                <Box sx={{ flex: 1 }}>
-                  <Grid container spacing={1}>
+                <Box sx={{ flex: 1, pr: 0.5 }}>
+                  <Grid container spacing={0.5}>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField size="small" label="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth />
                     </Grid>
@@ -730,7 +797,7 @@ const PlayerProfileCard = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StyledTextField
-                        size="medium"
+                        size="small"
                         label="Change Password"
                         type={showPassword ? "text" : "password"}
                         value={password}
@@ -747,24 +814,76 @@ const PlayerProfileCard = () => {
                       />
                     </Grid>
 
-                    <Grid container spacing={2} mt={1} ml={0.2}>
-                      <Grid item xs={6} sm={2}>
-                        <StyledTextField size="medium" label="Shirt #" type="number" value={shirtNumber} onChange={e => setShirtNumber(e.target.value)} fullWidth />
+                    <Grid container spacing={1} mt={0.5} ml={0.2}>
+                      {/* Country / State / City selectors */}
+                      <Grid item xs={12} sm={4}>
+                        <FormControl fullWidth size="small">
+                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>Country</StyledFormLabel> */}
+                          <StyledTextField
+                            size="small"
+                            select
+                            value={selectedCountryCode}
+                            onChange={(e) => handleCountryChange(e.target.value)}
+                            placeholder="Select Country"
+                            SelectProps={{ displayEmpty: true }}
+                          >
+                            <MenuItem value="" disabled>Select Country</MenuItem>
+                            {countries.map(c => (
+                              <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
+                            ))}
+                          </StyledTextField>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <FormControl fullWidth size="small" disabled={!selectedCountryCode || states.length === 0}>
+                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>State/Province</StyledFormLabel> */}
+                          <StyledTextField
+                            size="small"
+                            select
+                            value={selectedStateCode}
+                            onChange={(e) => handleStateChange(e.target.value)}
+                            placeholder="Select State"
+                            SelectProps={{ displayEmpty: true }}
+                          >
+                            <MenuItem value="" disabled>{states.length ? 'Select State' : 'No states available'}</MenuItem>
+                            {states.map(s => (
+                              <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
+                            ))}
+                          </StyledTextField>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <FormControl fullWidth size="small" disabled={!selectedCountryCode || (!selectedStateCode && (cities?.length ?? 0) === 0)}>
+                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>City</StyledFormLabel> */}
+                          <StyledTextField
+                            size="small"
+                            select
+                            value={city}
+                            onChange={(e) => handleCityChange(e.target.value)}
+                            placeholder="Select City"
+                            SelectProps={{ displayEmpty: true }}
+                          >
+                            <MenuItem value="" disabled>Select City</MenuItem>
+                            {(cities ?? []).map(ci => (
+                              <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
+                            ))}
+                          </StyledTextField>
+                        </FormControl>
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <StyledTextField size="medium" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
+                        <StyledTextField size="small" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
                       </Grid>
 
                       <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
                         <Card
                           sx={{
-                            p: 1.1,
+                            p: 0.8,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
                             borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
-                            minHeight: 68
+                            minHeight: 56
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
@@ -805,13 +924,13 @@ const PlayerProfileCard = () => {
                       <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
                         <Card
                           sx={{
-                            p: 1.1,
+                            p: 0.8,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
                             borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
-                            minHeight: 68
+                            minHeight: 56
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
@@ -834,16 +953,8 @@ const PlayerProfileCard = () => {
                                 }
                               }}
                             >
-                              <FormControlLabel
-                                value="Left"
-                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
-                                label="Left"
-                              />
-                              <FormControlLabel
-                                value="Right"
-                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
-                                label="Right"
-                              />
+                              <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
+                              <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Right" />
                             </RadioGroup>
                           </FormControl>
                         </Card>

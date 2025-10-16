@@ -650,6 +650,9 @@ interface UpdateProfileData {
   password?: string;
   shirtNumber: string;
   skills: SkillSet;
+  country?: string;
+  state?: string;
+  city?: string;
 }
 
 export const updateProfile = async ( token: string , updateData: UpdateProfileData) => {
