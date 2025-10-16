@@ -1033,6 +1033,9 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
   const { token, ...rest } = params || {};
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k,v])=>{ if(v!==undefined && v!==null) search.append(k, String(v)); });
+  // Always request fresh on non-local to avoid stale caches after new players are saved
+  const isLocal = typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  if (!isLocal) search.set('fresh', '1');
   const url = `${process.env.NEXT_PUBLIC_API_URL}/world-ranking?${search.toString()}`;
   const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if(!res.ok) throw new Error('Failed world ranking');
