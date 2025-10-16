@@ -47,13 +47,13 @@ export const fetchUserData = createAsyncThunk(
 
 export const fetchPlayedWithPlayers = createAsyncThunk(
   'user/fetchPlayedWithPlayers',
-  async (_, { getState, rejectWithValue }) => {
+  async (leagueId: string | undefined, { getState, rejectWithValue }) => {
     try {
       const { auth } = getState() as { auth: { token: string | null } };
       if (!auth.token) {
         return rejectWithValue('No authentication token');
       }
-      const response = await playerAPI.getPlayedWith(auth.token);
+      const response = await playerAPI.getPlayedWith(auth.token, leagueId);
       if (!response.success) {
         return rejectWithValue(response.error);
       }

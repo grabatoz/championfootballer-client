@@ -708,9 +708,11 @@ interface PlayerDetails {
   profilePicture: string | null;
 }
 export const playerAPI = {
-  getPlayedWith: async (token: string): Promise<ApiResponse<Player[]>> => {
+  getPlayedWith: async (token: string, leagueId?: string): Promise<ApiResponse<Player[]>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/players/played-with`, {
+      const url = new URL(`${API_BASE_URL}/players/played-with`);
+      if (leagueId && leagueId !== 'all') url.searchParams.set('leagueId', leagueId);
+      const response = await fetch(url.toString(), {
         headers: {
           'Authorization': `Bearer ${token}`
         }

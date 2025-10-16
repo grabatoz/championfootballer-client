@@ -1,9 +1,13 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
   TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  OutlinedInput,
   List,
   ListItem,
   ListItemAvatar,
@@ -42,17 +46,45 @@ const AllPlayersPage = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([]);
+  const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const router = useRouter();
 
   useEffect(() => {
     dispatch(initializeFromStorage());
   }, [dispatch]);
 
+  const fetchLeagues = useCallback(async () => {
+    if (!token) return;
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      if (data?.success && data?.user) {
+        const userLeagues = [
+          ...(data.user.leagues || []),
+          ...(data.user.administeredLeagues || [])
+        ];
+        const uniqueLeagues = Array.from(new Map(userLeagues.map((l: any) => [l.id, l])).values());
+        setLeagues(uniqueLeagues.map((l: any) => ({ id: String(l.id), name: l.name })));
+      }
+    } catch (e) {
+      console.error('Failed to load leagues', e);
+    }
+  }, [token, selectedLeague]);
+
   useEffect(() => {
     if (token) {
-      dispatch(fetchPlayedWithPlayers());
+      fetchLeagues();
     }
-  }, [dispatch, token]);
+  }, [token, fetchLeagues]);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchPlayedWithPlayers(selectedLeague === 'all' ? undefined : selectedLeague));
+    }
+  }, [dispatch, token, selectedLeague]);
 
   useEffect(() => {
     if (error) {
@@ -114,46 +146,56 @@ const AllPlayersPage = () => {
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff', fontSize: { xs: 20, sm: 32 } }}>
           All Players
         </Typography>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search for a player..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{
-            mb: 1,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '25px',
-              background: 'rgba(255,255,255,0.1)',
-              color: 'white',
-              '& fieldset': {
-                borderColor: '#e56a16',
+        <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            {/* InputLabel removed intentionally; provide OutlinedInput with notched={false} to avoid notch gap */}
+            <Select
+              id="league-select"
+              value={selectedLeague}
+              onChange={(e) => setSelectedLeague(e.target.value)}
+              input={<OutlinedInput notched={false} />}
+              sx={{
+                color: '#fff',
+                '.MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+              }}
+            >
+              <MenuItem value="all">All Leagues</MenuItem>
+              {leagues.map((l) => (
+                <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search for a player..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                // borderRadius: '25px',
+                // background: 'rgba(255,255,255,0.1)',
+                height: 40,
+                color: 'white',
+                '& fieldset': { borderColor: '#e56a16' },
+                '&:hover fieldset': { borderColor: '#e56a16' },
+                '&.Mui-focused fieldset': { borderColor: '#e56a16' },
+                '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
+                  boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
+                  WebkitTextFillColor: 'white',
+                  caretColor: 'white',
+                  backgroundClip: 'content-box !important',
+                  transition: 'background-color 9999s ease-out 0s',
+                },
               },
-              '&:hover fieldset': {
-                borderColor: '#e56a16',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#e56a16',
-              },
-              /* Unified autofill fix: keep same background (no yellow/green flash) */
-              '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-                WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
-                boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
-                WebkitTextFillColor: 'white',
-                caretColor: 'white',
-                backgroundClip: 'content-box !important',
-                transition: 'background-color 9999s ease-out 0s',
-              },
-            },
-            '& .MuiInputBase-input': {
-              color: 'white',
-              fontSize: { xs: 14, sm: 16 },
-            },
-            '& .MuiInputLabel-root': {
-              color: 'white',
-            },
-          }}
-        />
+              '& .MuiInputBase-input': { color: 'white', fontSize: { xs: 14, sm: 16 } },
+              '& .MuiInputLabel-root': { color: 'white' },
+            }}
+          />
+        </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
           <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
