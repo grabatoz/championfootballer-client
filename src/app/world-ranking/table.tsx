@@ -106,7 +106,7 @@ export default function WorldRankingTable(){
       });
       setData(resPrimary);
       setLastUpdated(new Date());
-    } catch(e: unknown) {
+    } catch {
       // Retry with smaller limits in case the server caps or times out on large requests
       try {
         const resFallback = await fetchWorldRanking({
@@ -121,7 +121,7 @@ export default function WorldRankingTable(){
         setData(resFallback);
         setLastUpdated(new Date());
         setError(null);
-      } catch (e2: unknown) {
+      } catch {
         try {
           const resMin = await fetchWorldRanking({
             mode: filters.mode,
