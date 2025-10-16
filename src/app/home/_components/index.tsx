@@ -808,6 +808,7 @@ export default function PlayerDashboard() {
   const [leagueName, setLeagueName] = useState('');
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [leagueNameError, setLeagueNameError] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const { token } = useAuth();
   const [, setLeagues] = useState<League[]>([]);
@@ -816,6 +817,8 @@ export default function PlayerDashboard() {
   const [leaguesRefreshKey, setLeaguesRefreshKey] = useState(0);
   // Pass the newly created league down so it appears instantly
   const [createdLeague, setCreatedLeague] = useState<League | null>(null);
+  // File input ref to allow re-selecting the same image
+  const createLeagueFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
@@ -1053,6 +1056,12 @@ export default function PlayerDashboard() {
   const handleRemoveImage = () => {
     setLeagueImage(null);
     setImagePreview(null);
+    // Also clear the file input so the same file can be selected again
+    try {
+      if (createLeagueFileInputRef.current) {
+        createLeagueFileInputRef.current.value = '';
+      }
+    } catch {}
   };
 
   // const items = [
@@ -1672,18 +1681,31 @@ export default function PlayerDashboard() {
               variant="outlined"
               value={leagueName}
               onChange={(e) => {
-                const sanitized = e.target.value.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
+                const raw = e.target.value;
+                const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
+                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
                 setLeagueName(sanitized);
+                setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
               }}
               onKeyPress={(e) => {
                 // Block special characters and allow Enter to submit
                 const ch = e.key;
                 if (ch.length === 1 && /[^A-Za-z0-9 ]/.test(ch)) {
                   e.preventDefault();
+                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
                   return;
                 }
                 if (e.key === 'Enter') {
-                  handleCreateLeague();
+                  if (!leagueNameError && leagueName.trim().length > 0) {
+                    handleCreateLeague();
+                  }
+                }
+              }}
+              onPaste={(e) => {
+                const text = (e.clipboardData || (window as any).clipboardData).getData('text');
+                if (/[^A-Za-z0-9 ]/.test(text)) {
+                  e.preventDefault();
+                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
                 }
               }}
               sx={{
@@ -1711,8 +1733,11 @@ export default function PlayerDashboard() {
                 '& .MuiInputLabel-root': { color: '#fff' },
                 '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
               }}
-              inputProps={{ maxLength: 20 }}
+              inputProps={{ maxLength: 20, 'aria-invalid': Boolean(leagueNameError) }}
               InputLabelProps={{ sx: { color: '#fff' } }}
+              FormHelperTextProps={{ sx: { color: '#fff', '&.Mui-error': { color: '#f44336' } } }}
+              error={Boolean(leagueNameError)}
+              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 20).'}
             />
 
             {/* League Image Upload Section */}
@@ -1778,6 +1803,8 @@ export default function PlayerDashboard() {
                     hidden
                     accept="image/*"
                     onChange={handleImageUpload}
+                    ref={createLeagueFileInputRef}
+                    onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch {} }}
                   />
                 </Button>
 

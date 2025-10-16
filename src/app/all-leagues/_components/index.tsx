@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel } from '@mui/material'
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -823,6 +823,7 @@ function AllLeagues() {
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -922,6 +923,9 @@ function AllLeagues() {
   const handleRemoveImage = () => {
     setLeagueImage(null);
     setImagePreview(null);
+    try {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch {}
   };
 
   // const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
@@ -2042,6 +2046,7 @@ function AllLeagues() {
               }}
               inputProps={{ maxLength: 20, 'aria-invalid': Boolean(leagueNameError) }}
               InputLabelProps={{ sx: { color: '#fff' } }}
+              FormHelperTextProps={{ sx: { color: '#fff', '&.Mui-error': { color: '#f44336' } } }}
               error={Boolean(leagueNameError)}
               helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 20).'}
             />
@@ -2109,6 +2114,8 @@ function AllLeagues() {
                     hidden
                     accept="image/*"
                     onChange={handleImageUpload}
+                    ref={fileInputRef}
+                    onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch {} }}
                   />
                 </Button>
 
