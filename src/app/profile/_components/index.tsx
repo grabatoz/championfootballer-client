@@ -870,92 +870,78 @@ const PlayerProfileCard = () => {
                           </StyledTextField>
                         </FormControl>
                       </Grid>
-                      <Grid item xs={6} sm={2}>
+                      <Grid item xs={12} sm={3} md={2}>
                         <StyledTextField size="small" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
                       </Grid>
 
-                      <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <Grid item xs={12} sm={4} md={5} sx={{ mt: { xs: 2, sm: 0 } }}>
                         <Card
                           sx={{
-                            p: 0.8,
+                            p: 0.5,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
                             borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
-                            minHeight: 56
+                            minHeight: 44,
+                            overflow: 'visible'
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <StyledFormLabel sx={{ mt: -0.5, fontSize: 12 }}>Gender</StyledFormLabel>
-                            <RadioGroup
-                              row
-                              value={gender}
-                              onChange={e => setGender(e.target.value)}
-                              sx={{
-                                justifyContent: 'flex-start',
-                                flexWrap: 'nowrap',
-                                gap: 1.5,
-                                '& .MuiFormControlLabel-root': {
-                                  margin: 0
-                                },
-                                '& .MuiFormControlLabel-label': {
-                                  fontSize: 12,
-                                  color: themeColors.textDim,
-                                  letterSpacing: .3
-                                }
-                              }}
-                            >
-                              <FormControlLabel
-                                value="male"
-                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
-                                label="Male"
-                              />
-                              <FormControlLabel
-                                value="female"
-                                control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />}
-                                label="Female"
-                              />
-                            </RadioGroup>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <StyledFormLabel sx={{ mb: 0, fontSize: 12, whiteSpace: 'nowrap', color: themeColors.text }}>Gender</StyledFormLabel>
+                              <RadioGroup
+                                row
+                                value={gender}
+                                onChange={e => setGender(e.target.value)}
+                                sx={{
+                                  justifyContent: 'flex-start',
+                                  flexWrap: 'nowrap',
+                                  gap: 1.2,
+                                  '& .MuiFormControlLabel-root': { m: 0 },
+                                  '& .MuiFormControlLabel-label': { fontSize: 12, color: themeColors.textDim, letterSpacing: .2 }
+                                }}
+                              >
+                                <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Male" />
+                                <FormControlLabel value="female" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Female" />
+                              </RadioGroup>
+                            </Box>
                           </FormControl>
                         </Card>
                       </Grid>
 
-                      <Grid item xs={12} sm={4} sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <Grid item xs={12} sm={5} md={5} sx={{ mt: { xs: 2, sm: 0 } }}>
                         <Card
                           sx={{
-                            p: 0.8,
+                            p: 0.5,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
                             borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
-                            minHeight: 56
+                            minHeight: 44,
+                            overflow: 'visible'
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <StyledFormLabel sx={{ mt: -0.5, fontSize: 12 }}>Preferred Foot</StyledFormLabel>
-                            <RadioGroup
-                              row
-                              value={preferredFoot}
-                              onChange={e => setPreferredFoot(e.target.value)}
-                              sx={{
-                                justifyContent: 'flex-start',
-                                flexWrap: 'nowrap',
-                                gap: 1.5,
-                                '& .MuiFormControlLabel-root': {
-                                  margin: 0
-                                },
-                                '& .MuiFormControlLabel-label': {
-                                  fontSize: 12,
-                                  color: themeColors.textDim,
-                                  letterSpacing: .3
-                                }
-                              }}
-                            >
-                              <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
-                              <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Right" />
-                            </RadioGroup>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <StyledFormLabel sx={{ mb: 0, fontSize: 12, whiteSpace: 'nowrap', color: themeColors.text }}>Preferred Foot</StyledFormLabel>
+                              <RadioGroup
+                                row
+                                value={preferredFoot}
+                                onChange={e => setPreferredFoot(e.target.value)}
+                                sx={{
+                                  justifyContent: 'flex-start',
+                                  flexWrap: 'nowrap',
+                                  gap: 1.2,
+                                  '& .MuiFormControlLabel-root': { m: 0 },
+                                  '& .MuiFormControlLabel-label': { fontSize: 12, color: themeColors.textDim, letterSpacing: .2 }
+                                }}
+                              >
+                                <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Left" />
+                                <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Right" />
+                              </RadioGroup>
+                            </Box>
                           </FormControl>
                         </Card>
                       </Grid>
