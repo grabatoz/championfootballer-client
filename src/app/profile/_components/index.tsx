@@ -344,30 +344,49 @@ const PlayerProfileCard = () => {
       setError("")
       if (!isAuthenticated || !token) throw new Error("Not authenticated. Please login again.")
 
-      const updateData = {
-        firstName,
-        lastName,
-        email,
-        age: age ? Number(age) : undefined,
-        gender,
-        position,
-        positionType,
-        style,
-        preferredFoot,
-        shirtNumber: String(shirtNumber),
-        country: country || undefined,
-        state: stateProvince || undefined,
-        city: city || undefined,
-        skills: {
-          dribbling: dribbling ?? 50,
-          shooting: shooting ?? 50,
-          passing: passing ?? 50,
-          pace: pace ?? 50,
-          defending: defending ?? 50,
-          physical: physical ?? 50
-        },
-        ...(password && { password })
+      // Helper to treat undefined/null/empty-string as blank
+      const isBlank = (v: unknown) => v == null || (typeof v === 'string' && v.trim() === '')
+
+      // Build payload by including only non-blank fields
+      const updateData: Record<string, unknown> = {}
+
+      if (!isBlank(firstName)) updateData.firstName = firstName.trim()
+      if (!isBlank(lastName)) updateData.lastName = lastName.trim()
+      if (!isBlank(email)) updateData.email = email.trim()
+
+      if (!isBlank(age)) {
+        const parsedAge = Number(String(age).trim())
+        if (!Number.isNaN(parsedAge)) updateData.age = parsedAge
       }
+
+      if (!isBlank(gender)) updateData.gender = gender
+
+      // Core football fields (radio groups are never blank in UI, but keep guard anyway)
+      if (!isBlank(position)) updateData.position = position
+      if (!isBlank(positionType)) updateData.positionType = positionType
+      if (!isBlank(style)) updateData.style = style
+      if (!isBlank(preferredFoot)) updateData.preferredFoot = preferredFoot
+
+      // Shirt number is hidden in UI; do not update it to avoid accidental overwrites
+      // if (!isBlank(shirtNumber)) updateData.shirtNumber = String(shirtNumber).trim()
+
+      // Location: only include if selected (avoid writing empty to DB)
+      if (!isBlank(country)) updateData.country = country
+      if (!isBlank(stateProvince)) updateData.state = stateProvince
+      if (!isBlank(city)) updateData.city = city
+
+      // Skills: include only the ones that have numeric values; skip otherwise
+      const skillsUpdate: Record<string, number> = {}
+      if (typeof dribbling === 'number') skillsUpdate.dribbling = dribbling
+      if (typeof shooting === 'number') skillsUpdate.shooting = shooting
+      if (typeof passing === 'number') skillsUpdate.passing = passing
+      if (typeof pace === 'number') skillsUpdate.pace = pace
+      if (typeof defending === 'number') skillsUpdate.defending = defending
+      if (typeof physical === 'number') skillsUpdate.physical = physical
+      if (Object.keys(skillsUpdate).length > 0) updateData.skills = skillsUpdate
+
+      // Password: only if user actually entered something non-blank
+      if (!isBlank(password)) updateData.password = password
 
       const { ok, data } = await updateProfile(token, updateData)
       if (!ok) throw new Error(data.message || "Failed to update profile")

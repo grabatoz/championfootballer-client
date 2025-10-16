@@ -637,19 +637,21 @@ interface SkillSet {
   physical: number;
 }
 
+type PartialSkillSet = Partial<SkillSet>;
+
 interface UpdateProfileData {
-  firstName: string;
-  lastName: string;
-  email: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   age?: number;
-  gender: string;
-  position: string;
-  positionType: string;
-  style: string;
-  preferredFoot: string;
+  gender?: string;
+  position?: string;
+  positionType?: string;
+  style?: string;
+  preferredFoot?: string;
   password?: string;
-  shirtNumber: string;
-  skills: SkillSet;
+  shirtNumber?: string;
+  skills?: PartialSkillSet;
   country?: string;
   state?: string;
   city?: string;
