@@ -813,6 +813,7 @@ function AllLeagues() {
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const router = useRouter();
   const [leagueName, setLeagueName] = useState('');
+  const [leagueNameError, setLeagueNameError] = useState<string>('');
   const [inviteCode, setInviteCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const { token, user } = useAuth();
@@ -1986,18 +1987,33 @@ function AllLeagues() {
               variant="outlined"
               value={leagueName}
               onChange={(e) => {
-                const sanitized = e.target.value.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
+                const raw = e.target.value;
+                const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
+                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
                 setLeagueName(sanitized);
+                setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
               }}
               onKeyPress={(e) => {
                 const ch = e.key;
                 if (ch.length === 1 && /[^A-Za-z0-9 ]/.test(ch)) {
                   e.preventDefault();
+                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
                   return;
                 }
                 if (e.key === 'Enter') {
-                  handleCreateLeague();
+                  if (!leagueNameError && leagueName.trim().length > 0) handleCreateLeague();
                 }
+              }}
+              onPaste={(e) => {
+                const text = (e.clipboardData || (window as any).clipboardData).getData('text');
+                if (/[^A-Za-z0-9 ]/.test(text)) {
+                  e.preventDefault();
+                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
+                }
+              }}
+              onContextMenu={(e) => {
+                // Optionally prevent right-click paste of invalid characters in this field
+                // e.preventDefault(); // uncomment to disable context menu
               }}
               sx={{
                 mt: 1,
@@ -2024,8 +2040,10 @@ function AllLeagues() {
                 '& .MuiInputLabel-root': { color: '#fff' },
                 '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
               }}
-              inputProps={{ maxLength: 20 }}
+              inputProps={{ maxLength: 20, 'aria-invalid': Boolean(leagueNameError) }}
               InputLabelProps={{ sx: { color: '#fff' } }}
+              error={Boolean(leagueNameError)}
+              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 20).'}
             />
 
             {/* League Image Upload Section */}
