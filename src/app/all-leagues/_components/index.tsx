@@ -993,8 +993,21 @@ function AllLeagues() {
     return range;
   }, []);
 
+  // A league is considered completed ONLY if completed matches >= maxGames (when maxGames > 0)
   const isLeagueCompleted = (l: LeagueWithStatus): boolean => {
-    return Boolean(l.computedStatus?.isComplete || l.computedStatus?.locked || l.isLocked || l.status === 'completed');
+    const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
+    if (max <= 0) return false; // without a target, don't show as completed
+
+    const matches: Match[] = Array.isArray(l.matches) ? l.matches : [];
+    const completedCount = matches.reduce((acc, m) => {
+      const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+      const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+      const endedByFlag = m.active === false;
+      const endedByEnd = Boolean(m.end);
+      return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
+    }, 0);
+
+    return completedCount >= max;
   };
 
   // Apply filters: by completion tab, by year (createdAt) and by league name
@@ -1830,7 +1843,7 @@ function AllLeagues() {
             </Box>
           ) : (
             filteredLeagues.map((league) => {
-              const isCompleted = Boolean(league.computedStatus?.isComplete || league.computedStatus?.locked || league.isLocked);
+              const isCompleted = isLeagueCompleted(league);
               return (
               <Box
                 key={league.id}
@@ -1990,7 +2003,7 @@ function AllLeagues() {
                             }} />
                           </Box>
                           <Typography sx={{
-                            color: league.computedStatus?.isComplete ? '#111827' : 'rgba(255,255,255,0.9)',
+                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                             fontFamily: '"League Spartan", sans-serif',
                             fontWeight: 200,
                             fontSize: { xs: '10px', sm: '13px' }
