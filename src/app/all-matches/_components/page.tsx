@@ -1311,7 +1311,7 @@ export default function AllMatches() {
                                                         </Box>
 
                                                         {/* Date and Status - Right Side */}
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 32, right: 8 }}>
+                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 42, right: 8 }}>
                                                             <Typography variant="body2" sx={{
                                                                 color: 'white',
                                                                 fontWeight: 'bold',
@@ -1691,18 +1691,18 @@ export default function AllMatches() {
                                                     }}>
                                                         <Typography variant="body2" sx={{
                                                             color: 'white',
-                                                            fontWeight: 'bold',
-                                                            fontSize: '0.9rem'
+                                                               fontWeight: 'bold',
+                                                                fontSize: '0.75rem'
                                                         }}>
                                                             {formatMatchDate(match.date)}
                                                         </Typography>
                                                         <Typography variant="body2" sx={{
                                                             color: 'white',
-                                                            fontSize: '0.8rem'
+                                                            fontSize: '0.65rem'
                                                         }}>
                                                             {formatMatchTime(match.date)}
                                                         </Typography>
-                                                        <Divider sx={{ height: '75px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -8 }} />
+                                                        <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 10.5, mt: -7 }}  />
                                                     </Box>
                                                 </Box>
                                             </Link>
