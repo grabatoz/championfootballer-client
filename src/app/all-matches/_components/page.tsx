@@ -1325,7 +1325,7 @@ export default function AllMatches() {
                                                             }}>
                                                                 Full time
                                                             </Typography>
-                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -7 }} />
                                                         </Box>
                                                     </Box>
                                                 </Link>
