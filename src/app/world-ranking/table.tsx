@@ -71,7 +71,7 @@ export default function WorldRankingTable(){
   const [data, setData] = useState<WorldRankingResponse | null>(null);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [, setLastUpdated] = useState<Date | null>(null);
   const [sort, setSort] = useState<SortState>({ key: 'rank', direction: 'asc' });
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const userRowRef = useRef<HTMLTableRowElement | null>(null);
@@ -311,7 +311,7 @@ export default function WorldRankingTable(){
             <SummaryPill label="Mode" value={filters.mode==='total'? 'Total XP' : 'Average XP / Match'} />
             <SummaryPill label="Players Shown" value={`${filtered.length.toLocaleString()}`} />
             {data?.playerRank && <SummaryPill label="Your Rank" value={`#${data.playerRank}`} highlight />}
-            {lastUpdated && <SummaryPill label="Updated" value={lastUpdated.toLocaleTimeString()} />}
+            {/* {lastUpdated && <SummaryPill label="Updated" value={lastUpdated.toLocaleTimeString()} />} */}
           </Box>
         </Box>
         <Typography sx={{ position:'relative', mt:2, fontSize:11.7, lineHeight:1.5, color:'#c3c3c3', maxWidth:880 }}>

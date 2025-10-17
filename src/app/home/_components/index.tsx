@@ -88,6 +88,7 @@ type BasicLeague = {
 type LeagueWithComputed = BasicLeague & {
   computedStatus?: LeagueComputedStatus;
   isLocked?: boolean;
+  userRole?: 'ADMIN' | 'MEMBER';
 };
 
 type ApiLeague = {
@@ -111,13 +112,31 @@ const isApiLeague = (val: unknown): val is ApiLeague => {
   return idOk;
 };
 
-const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: number; createdLeague?: League | null }) => {  
+const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number }) => {  
   const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
+
+  // Helper: compute user's role for a newly created/joined league without using any-casts
+  const computeUserRoleForCreatedLeague = (l: League, uid?: string | number): 'ADMIN' | 'MEMBER' | undefined => {
+    if (uid == null) return undefined;
+    const currentId = String(uid);
+    // Prefer adminId if provided by API
+    const withAdmin: League & { adminId?: string | number } = l as League & { adminId?: string | number };
+    const maybeAdminId = withAdmin.adminId;
+    if (typeof maybeAdminId === 'string' || typeof maybeAdminId === 'number') {
+      return String(maybeAdminId) === currentId ? 'ADMIN' : 'MEMBER';
+    }
+    // Fallback: check administrators array
+    if (Array.isArray(l.administrators)) {
+      const isAdmin = l.administrators.some((u) => u && String(u.id) === currentId);
+      return isAdmin ? 'ADMIN' : 'MEMBER';
+    }
+    return undefined;
+  };
 
   // Persist selection across navigation
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -195,10 +214,24 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
+            // Prefer modern key adminLeagues; fall back to administeredLeagues for backward compatibility
+            const adminLeaguesArr = ((data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>);
             const leaguesUnknown = ([
               ...(data.user.leagues || []),
-              ...(data.user.administeredLeagues || [])
+              ...adminLeaguesArr
             ]) as unknown[];
+
+            // Build quick lookup sets for roles
+            const adminSet = new Set<string>(
+              adminLeaguesArr
+                .map((l) => String(l?.id))
+                .filter((id) => id !== 'undefined')
+            );
+            const memberSet = new Set<string>(
+              ((data.user.leagues || []) as Array<{ id?: string | number }>)
+                .map((l) => String(l?.id))
+                .filter((id) => id !== 'undefined')
+            );
 
             const leagues: ApiLeague[] = leaguesUnknown.filter(isApiLeague);
 
@@ -214,6 +247,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                   if (res.ok) {
                     const statusData = await res.json();
                     const computed = (statusData?.status || {}) as LeagueComputedStatus;
+                    const idStr = String(l.id);
+                    const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr)
+                      ? 'ADMIN'
+                      : (memberSet.has(idStr) ? 'MEMBER' : undefined);
                     return {
                       id: l.id,
                       name: l.name,
@@ -226,9 +263,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                       isCompleted: l.isCompleted,
                       computedStatus: computed,
                       isLocked: computed?.locked === true,
+                      userRole: role,
                     };
                   }
                 } catch {}
+                const idStr = String(l.id);
+                const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr)
+                  ? 'ADMIN'
+                  : (memberSet.has(idStr) ? 'MEMBER' : undefined);
                 return {
                   id: l.id,
                   name: l.name,
@@ -239,6 +281,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                   image: l.image,
                   isComplete: l.isComplete,
                   isCompleted: l.isCompleted,
+                  userRole: role,
                 };
               })
             );
@@ -318,6 +361,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
         createdAt: createdLeague.createdAt,
         status: createdLeague.status,
         active: createdLeague.active,
+        userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
       };
       map.set(String(entry.id), entry);
       return Array.from(map.values());
@@ -330,6 +374,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
       createdAt: createdLeague.createdAt,
       status: createdLeague.status,
       active: createdLeague.active,
+      userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
     });
   }, [createdLeague]);
 
@@ -347,14 +392,15 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
     if (!userLeagues?.length) return [];
     // Only show INCOMPLETE leagues in the dropdown
     const visible = userLeagues.filter(l => !leagueIsCompleted(l));
-    // Sort by recency first
-    const arr = [...visible].sort((a, b) => timeOf(b) - timeOf(a));
-    // Keep currently selected pinned to top (if it's also visible)
-    const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague.id) : -1;
-    if (idx > 0) {
-      const [sel] = arr.splice(idx, 1);
-      arr.unshift(sel);
-    }
+    // Sort alphabetically by name (A -> Z)
+    const arr = [...visible].sort((a, b) => {
+      const an = (a?.name ?? '').toString().trim().toLowerCase();
+      const bn = (b?.name ?? '').toString().trim().toLowerCase();
+      if (an < bn) return -1;
+      if (an > bn) return 1;
+      // Tiebreaker by id for stability
+      return String(a.id).localeCompare(String(b.id));
+    });
     return arr;
   }, [userLeagues, selectedLeague]);
 
@@ -447,6 +493,28 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
               {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
             </Typography>
           </Box>
+
+          {/* Role pill for the currently selected league */}
+          {/* {selectedLeague?.userRole && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  px: 1,
+                  py: 0.25,
+                  borderRadius: '9999px',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: 0.4,
+                  textTransform: 'uppercase',
+                  bgcolor: selectedLeague.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
+                  color: selectedLeague.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
+                  border: selectedLeague.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
+                }}
+              >
+                {selectedLeague.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+              </Box>
+            </Box>
+          )} */}
 
           <Box 
             sx={{
@@ -562,26 +630,27 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague }: { refreshKey?: 
                       {formatLeagueName(league.name)}
                     </Typography>
                   </Box>
-
-                  {/* {isActive && (
-                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Box
-                      sx={{
-                        px: 1,
-                        py: 0.25,
-                        bgcolor: '#FFFFFF',
-                        color: '#00A77F',
-                        borderRadius: '9999px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: 0.3,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      Current
+                  {/* Role pill on the right */}
+                  {league.userRole && (
+                    <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: '9999px',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          letterSpacing: 0.4,
+                          textTransform: 'uppercase',
+                          bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
+                          color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
+                          border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
+                        }}
+                      >
+                        {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                      </Box>
                     </Box>
-                  </Box>
-                )} */}
+                  )}
                 </MenuItem>
               </Link>
 
@@ -1174,7 +1243,11 @@ export default function PlayerDashboard() {
                 </Typography>
 
                 {/* League Selection Component */}
-                <LeagueSelectionComponent refreshKey={leaguesRefreshKey} createdLeague={createdLeague} />
+                <LeagueSelectionComponent
+                  refreshKey={leaguesRefreshKey}
+                  createdLeague={createdLeague}
+                  currentUserId={user?.id}
+                />
 
                 {/* Add New League Button */}
                 <Button
@@ -1702,7 +1775,7 @@ export default function PlayerDashboard() {
                 }
               }}
               onPaste={(e) => {
-                const text = (e.clipboardData || (window as any).clipboardData).getData('text');
+                const text = e.clipboardData?.getData('text') ?? '';
                 if (/[^A-Za-z0-9 ]/.test(text)) {
                   e.preventDefault();
                   setLeagueNameError('Only letters, numbers, and spaces are allowed.');
