@@ -10,10 +10,10 @@ import { Add, Remove } from '@mui/icons-material';
 import Goals from '@/Components/images/goal.png'
 import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
-import Defence from '@/Components/images/defence.png'
+// import Defence from '@/Components/images/defence.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
-import FreeKick from '@/Components/images/freekick.png'
-import penalty from '@/Components/images/penalty.png'
+// import FreeKick from '@/Components/images/freekick.png'
+// import penalty from '@/Components/images/penalty.png'
 
 // You may need to import your StatCounter and stat icons here
 // import StatCounter from './StatCounter';

@@ -28,10 +28,10 @@ import toast from 'react-hot-toast';
 import Goals from '@/Components/images/goal.png'
 import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
-import Defence from '@/Components/images/defence.png'
+// import Defence from '@/Components/images/defence.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
-import FreeKick from '@/Components/images/freekick.png'
-import penalty from '@/Components/images/penalty.png'
+// import FreeKick from '@/Components/images/freekick.png'
+// import penalty from '@/Components/images/penalty.png'
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
 import { LeaderboardPlayer } from '@/types/api';
