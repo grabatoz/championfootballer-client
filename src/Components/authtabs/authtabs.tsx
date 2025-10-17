@@ -609,6 +609,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 id="country-select"
                 value={selectedCountryCode}
                 onChange={(e) => handleCountrySelect(e.target.value as string)}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) return <span style={{ color: '#757575' }}>Country / Region</span>;
+                  const code = selected as string;
+                  const c = countries.find(c => c.isoCode === code);
+                  return c?.name || '';
+                }}
                 input={<OutlinedInput notched={false} />}
                 sx={{
                   '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
@@ -616,6 +623,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 }}
                 required
               >
+                <MenuItem value="" disabled>
+                  <em>Country / Region</em>
+                </MenuItem>
                 {countries.map(c => (
                   <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
                 ))}
@@ -628,6 +638,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 id="state-select"
                 value={selectedStateCode}
                 onChange={(e) => handleStateSelect(e.target.value as string)}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) return <span style={{ color: '#757575' }}>State</span>;
+                  const code = selected as string;
+                  const s = states.find(s => s.isoCode === code);
+                  return s?.name || '';
+                }}
                 input={<OutlinedInput notched={false} />}
                 sx={{
                   '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
@@ -635,6 +652,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 }}
                 required
               >
+                <MenuItem value="" disabled>
+                  <em>State</em>
+                </MenuItem>
                 {states.map(s => (
                   <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
                 ))}
@@ -647,6 +667,11 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 id="city-select"
                 value={registerData.city || ''}
                 onChange={(e) => handleCitySelect(e.target.value as string)}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) return <span style={{ color: '#757575' }}>City</span>;
+                  return selected as string;
+                }}
                 input={<OutlinedInput notched={false} />}
                 sx={{
                   '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
@@ -654,6 +679,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 }}
                 required
               >
+                <MenuItem value="" disabled>
+                  <em>City</em>
+                </MenuItem>
                 {cities.map(ci => (
                   <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
                 ))}
