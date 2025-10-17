@@ -161,18 +161,36 @@ export default function WorldRankingTable(){
     if (filters.country) {
       base = base.filter(p => (p.country||'').toLowerCase() === filters.country!.toLowerCase());
     }
+
+    // Compute tie-aware ranks based on current mode metric (competition ranking: 1,2,2,4)
+    const metricKey: 'avgXP' | 'totalXP' = filters.mode === 'avg' ? 'avgXP' : 'totalXP';
+    const metricVal = (p: WorldRankingPlayer) => (metricKey === 'avgXP' ? (p.avgXP ?? 0) : (p.totalXP ?? 0));
+    const byMetricDesc = [...base].sort((a,b)=> metricVal(b) - metricVal(a));
+    const rankMap = new Map<string, number>();
+    let lastVal: number | null = null;
+    let denseRank = 0;
+    for (const p of byMetricDesc){
+      const v = metricVal(p);
+      if (lastVal === null || v !== lastVal){
+        denseRank += 1; // dense ranking: increment only when value changes
+        lastVal = v;
+      }
+      rankMap.set(p.id, denseRank);
+    }
+
     // Client-side sorting (stable by using slice)
     const { key, direction } = sort;
     const dirMul = direction === 'asc' ? 1 : -1;
     base = [...base].sort((a,b)=>{
-      const va = getSortValue(a, key);
-      const vb = getSortValue(b, key);
+      const va = key === 'rank' ? (rankMap.get(a.id) ?? a.rank) : getSortValue(a, key);
+      const vb = key === 'rank' ? (rankMap.get(b.id) ?? b.rank) : getSortValue(b, key);
       if (va < vb) return -1 * dirMul;
       if (va > vb) return 1 * dirMul;
       return 0;
     });
-    return base;
-  },[data,search,sort]);
+    // Attach the computed rank for later use (render)
+    return base.map(p => ({ ...p, rank: rankMap.get(p.id) ?? p.rank } as WorldRankingPlayer));
+  },[data,search,sort,filters.mode,filters.country]);
 
   const toggleSort = (key: SortKey) => {
     setSort(prev => {
