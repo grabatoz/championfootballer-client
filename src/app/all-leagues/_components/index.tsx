@@ -826,6 +826,7 @@ function AllLeagues() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
 
   // Cache timeout - 5 minutes
   const CACHE_TIMEOUT = 5 * 60 * 1000;
@@ -843,11 +844,16 @@ function AllLeagues() {
     return range;
   }, []);
 
-  // Apply filters: by year (createdAt) and by league name
+  const isLeagueCompleted = (l: LeagueWithStatus): boolean => {
+    return Boolean(l.computedStatus?.isComplete || l.computedStatus?.locked || l.isLocked || l.status === 'completed');
+  };
+
+  // Apply filters: by completion tab, by year (createdAt) and by league name
   const filteredLeagues = useMemo(() => {
+    const base = leagues.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
     const byYear = selectedYear === 'all'
-      ? leagues
-      : leagues.filter(l => {
+      ? base
+      : base.filter(l => {
           const t = Date.parse(l.createdAt || '');
           if (!Number.isFinite(t)) return false;
           const y = new Date(t).getFullYear();
@@ -857,7 +863,7 @@ function AllLeagues() {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return byYear;
     return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
-  }, [leagues, selectedYear, searchTerm]);
+  }, [leagues, selectedYear, searchTerm, completionTab]);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -1452,7 +1458,7 @@ function AllLeagues() {
                   width: { xs: '100%', sm: 'fit-content' },
                   borderRadius: 2,
                   py: { xs: 1.5, md: 1 },
-                  px: { xs: 3, md: 3 },
+                  px: { xs: 1, md: 1 },
                   boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   textTransform: 'none'
@@ -1623,6 +1629,27 @@ function AllLeagues() {
                   }}
                 >
                   Clear
+                </Button>
+              </Box>
+              
+              {/* Single toggle button: switches between Completed and Uncompleted views */}
+              <Box sx={{ display:'flex', alignItems:'center' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCompletionTab(prev => prev === 'uncompleted' ? 'completed' : 'uncompleted')}
+                  sx={{
+                    ml: 0,
+                    color: '#fff',
+                    borderRadius: 2,
+                    bgcolor: '#0388E3',
+                    px: 2,
+                    height: 48,
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: '#0388E3' },
+                  }}
+                >
+                  {completionTab === 'uncompleted' ? 'Completed' : 'Uncompleted'}
                 </Button>
               </Box>
             </Box>
