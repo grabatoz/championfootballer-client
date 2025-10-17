@@ -736,6 +736,24 @@ export const playerAPI = {
     }
   },
 
+  // Fetch members of a league even if they haven't played any match
+  getLeagueMembers: async (token: string, leagueId: string): Promise<ApiResponse<Player[]>> => {
+    try {
+      const url = new URL(`${API_BASE_URL}/players/by-league`);
+      url.searchParams.set('leagueId', leagueId);
+      const response = await fetch(url.toString(), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        return { success: false, message: data?.message || 'Failed to fetch league members', error: data?.message || 'Failed to fetch league members' };
+      }
+      return { success: true, data: data.players, message: data.message };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred', error: error instanceof Error ? error.message : 'An unexpected error occurred' };
+    }
+  },
+
   getPlayerStats: async (playerId: string, leagueId: string, year: string): Promise<ApiResponse<PlayerStatsData>> => {
     try {
         const token = Cookies.get('token');

@@ -12,6 +12,7 @@ interface Player {
 interface UserState {
   data: Partial<User> | null;
   playedWithPlayers: Player[];
+  leaguePlayers: Player[];
   loading: boolean;
   error: string | null;
 }
@@ -19,6 +20,7 @@ interface UserState {
 const initialState: UserState = {
   data: null,
   playedWithPlayers: [],
+  leaguePlayers: [],
   loading: false,
   error: null,
 };
@@ -67,6 +69,28 @@ export const fetchPlayedWithPlayers = createAsyncThunk(
   }
 );
 
+export const fetchLeaguePlayers = createAsyncThunk(
+  'user/fetchLeaguePlayers',
+  async (leagueId: string, { getState, rejectWithValue }) => {
+    try {
+      const { auth } = getState() as { auth: { token: string | null } };
+      if (!auth.token) {
+        return rejectWithValue('No authentication token');
+      }
+      const response = await playerAPI.getLeagueMembers(auth.token, leagueId);
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch league members');
+      }
+      return response.data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue('An unexpected error occurred');
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -101,6 +125,18 @@ const userSlice = createSlice({
         state.playedWithPlayers = action.payload || [];
       })
       .addCase(fetchPlayedWithPlayers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchLeaguePlayers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchLeaguePlayers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.leaguePlayers = action.payload || [];
+      })
+      .addCase(fetchLeaguePlayers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

@@ -21,7 +21,7 @@ import {
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { fetchPlayedWithPlayers } from '@/lib/features/userSlice';
+import { fetchPlayedWithPlayers, fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
 // import FirstBadge from '@/Components/images/1st.png';
@@ -69,7 +69,7 @@ function parseLeagueOptions(value: unknown): LeagueOption[] {
 
 const AllPlayersPage = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { playedWithPlayers, loading, error } = useSelector((state: RootState) => state.user);
+  const { playedWithPlayers, leaguePlayers, loading, error } = useSelector((state: RootState) => state.user);
   const { token } = useSelector((state: RootState) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -109,8 +109,11 @@ const AllPlayersPage = () => {
   }, [token, fetchLeagues]);
 
   useEffect(() => {
-    if (token) {
-      dispatch(fetchPlayedWithPlayers(selectedLeague === 'all' ? undefined : selectedLeague));
+    if (!token) return;
+    if (selectedLeague === 'all') {
+      dispatch(fetchPlayedWithPlayers(undefined));
+    } else {
+      dispatch(fetchLeaguePlayers(selectedLeague));
     }
   }, [dispatch, token, selectedLeague]);
 
@@ -120,7 +123,8 @@ const AllPlayersPage = () => {
     }
   }, [error]);
 
-  const filteredPlayers = playedWithPlayers.filter((player: Player) =>
+  const sourcePlayers = selectedLeague === 'all' ? playedWithPlayers : leaguePlayers;
+  const filteredPlayers = sourcePlayers.filter((player: Player) =>
     player.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   console.log('Filtered Players:', filteredPlayers);
@@ -313,7 +317,7 @@ const AllPlayersPage = () => {
                         {/* Replaced Avatar with jersey + number */}
                         <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
                           <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                          <Box
+                          {/* <Box
                             sx={{
                               position: 'absolute',
                               inset: 0,
@@ -327,7 +331,7 @@ const AllPlayersPage = () => {
                             }}
                           >
                             {player.shirtNumber || '0'}
-                          </Box>
+                          </Box> */}
                         </Box>
                       </ListItemAvatar>
                       <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium', fontSize: { xs: 13, sm: 16 } }} />
