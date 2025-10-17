@@ -852,16 +852,16 @@ export default function AllMatches() {
         }
     };
 
-    const handleMatchCardClick = (match: Match, event: React.MouseEvent) => {
-        // Prevent opening modal if clicking on buttons
-        const target = event.target as HTMLElement;
-        const isButton = target.closest('button') || target.closest('a');
+    // const handleMatchCardClick = (match: Match, event: React.MouseEvent) => {
+    //     // Prevent opening modal if clicking on buttons
+    //     const target = event.target as HTMLElement;
+    //     const isButton = target.closest('button') || target.closest('a');
 
-        if (!isButton) {
-            setSelectedMatchDetail(match);
-            setMatchDetailModalOpen(true);
-        }
-    };
+    //     if (!isButton) {
+    //         setSelectedMatchDetail(match);
+    //         setMatchDetailModalOpen(true);
+    //     }
+    // };
 
 
     return (
