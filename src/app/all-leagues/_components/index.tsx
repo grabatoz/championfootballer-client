@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -169,6 +169,7 @@ interface LeagueMembersDialogProps {
   onLeaveLeague: () => void
   onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
   onDeleteLeague: () => Promise<void> | void
+  openSettingsOnOpen?: boolean
 }
 
 const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
@@ -184,10 +185,16 @@ function LeagueMembersDialog({
   onLeaveLeague,
   onUpdateLeague,
   onDeleteLeague,
+  openSettingsOnOpen,
 }: LeagueMembersDialogProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const [openSettings, setOpenSettings] = useState(false)
+  useEffect(() => {
+    if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
+      setOpenSettings(true)
+    }
+  }, [open, openSettingsOnOpen, league, currentUserId])
 
   if (!league) return null
 
@@ -544,6 +551,9 @@ function LeagueMembersDialog({
             await onDeleteLeague()
             setOpenSettings(false)
           }}
+          currentUserId={currentUserId}
+          onRemoveMember={onRemoveMember}
+          onLeaveLeague={onLeaveLeague}
         />
       )}
     </Dialog>
@@ -565,192 +575,328 @@ interface LeagueSettingsDialogProps {
   league: League
   onUpdate: (data: LeagueUpdatePayload) => void | Promise<void>
   onDelete: () => void | Promise<void>
+  currentUserId: string
+  onRemoveMember: (memberId: string) => void | Promise<void>
+  onLeaveLeague?: () => void | Promise<void>
 }
 
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
-  const [name, setName] = useState('')
-  const [adminId, setAdminId] = useState('')
-  const [isActive, setIsActive] = useState(true)
-  const [maxGames, setMaxGames] = useState(20)
-  const [showPoints, setShowPoints] = useState(true)
+  function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+    const [name, setName] = useState('')
+    const [adminId, setAdminId] = useState('')
+    const [isActive, setIsActive] = useState(true)
+    const [maxGames, setMaxGames] = useState(20)
+    const [showPoints, setShowPoints] = useState(true)
 
-  useEffect(() => {
-    if (league) {
-      setName(league.name || '')
-      setIsActive(league.active !== false)
-      setMaxGames(league.maxGames || 20)
-      setShowPoints(league.showPoints !== false)
-      setAdminId(league.administrators?.[0]?.id || '')
+    useEffect(() => {
+      if (league) {
+        setName(league.name || '')
+        setIsActive(league.active !== false)
+        setMaxGames(league.maxGames || 20)
+        setShowPoints(league.showPoints !== false)
+        setAdminId(league.administrators?.[0]?.id || '')
+      }
+    }, [league])
+
+    const handleUpdate = () => {
+      const updatedData: LeagueUpdatePayload = {
+        name,
+        active: isActive,
+        maxGames,
+        showPoints,
+        admins: adminId ? [adminId] : [],
+      }
+      onUpdate(updatedData)
     }
-  }, [league])
 
-  const handleUpdate = () => {
-    const updatedData: LeagueUpdatePayload = {
-      name,
-      active: isActive,
-      maxGames,
-      showPoints,
-      admins: adminId ? [adminId] : [],
-    }
-    onUpdate(updatedData)
-  }
+    if (!league) return null
 
-  if (!league) return null
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(15,15,15,0.92)',
+            color: '#E5E7EB',
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
+          Manage League Settings
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="md"
-      PaperProps={{
-        sx: {
-          bgcolor: 'rgba(15,15,15,0.92)',
-          color: '#E5E7EB',
-          borderRadius: 3,
-          border: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-          overflow: 'hidden',
-        },
-      }}
-    >
-      <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
-        Manage League Settings
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
-        >
-          <Close />
-        </IconButton>
-      </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 0 }}>
+            <Grid item xs={12} md={6}>
+              <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                    Select league admin
+                  </Typography>
+                  <Select
+                    value={adminId}
+                    onChange={(e) => setAdminId(e.target.value as string)}
+                    sx={{
+                      color: '#E5E7EB',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+                      '& .MuiSelect-icon': { color: '#E5E7EB' },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                      },
+                    }}
+                  >
+                    {(league.members || []).map((member: User) => (
+                      <MenuItem key={member.id} value={member.id}>
+                        {member.firstName} {member.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-      <DialogContent>
-        <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <FormControl fullWidth>
-            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-              Select league admin
-            </Typography>
-            <Select
-              value={adminId}
-              onChange={(e) => setAdminId(e.target.value as string)}
-              sx={{
-                color: '#E5E7EB',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
-                '& .MuiSelect-icon': { color: '#E5E7EB' },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
-                },
-              }}
-            >
-              {(league.members || []).map((member: User) => (
-                <MenuItem key={member.id} value={member.id}>
-                  {member.firstName} {member.lastName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                <FormControl fullWidth>
+                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                    League name
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={name}
+                    onChange={(e) => {
+                      const raw = e.target.value || ''
+                      const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+                      setName(cleaned)
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: '#E5E7EB',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                        '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                      },
+                      '& .MuiInputBase-input': { color: '#E5E7EB' },
+                    }}
+                    InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+                    inputProps={{ maxLength: 20 }}
+                    helperText="Max 20 characters, letters/numbers only"
+                  />
+                </FormControl>
 
-          <FormControl fullWidth>
-            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-              League name
-            </Typography>
-            <TextField
-              fullWidth
-              value={name}
-              onChange={(e) => {
-                const raw = e.target.value || ''
-                const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
-                setName(cleaned)
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: '#E5E7EB',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                  '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                },
-                '& .MuiInputBase-input': { color: '#E5E7EB' },
-              }}
-              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-              inputProps={{ maxLength: 20 }}
-              helperText="Max 20 characters, letters/numbers only"
-            />
-          </FormControl>
+                <FormControl component="fieldset">
+                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                    Change league active status
+                  </Typography>
+                  <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
+                    <FormControlLabel
+                      value="active"
+                      control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                      label="Active"
+                    />
+                    <FormControlLabel
+                      value="inactive"
+                      control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                      label="Inactive"
+                    />
+                  </RadioGroup>
+                </FormControl>
 
-          <FormControl component="fieldset">
-            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-              Change league active status
-            </Typography>
-            <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
-              <FormControlLabel
-                value="active"
-                control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-                label="Active"
-              />
-              <FormControlLabel
-                value="inactive"
-                control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-                label="Inactive"
-              />
-            </RadioGroup>
-          </FormControl>
+                <FormControl fullWidth>
+                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                    Maximum number of matches
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    value={maxGames}
+                    onChange={(e) => setMaxGames(Number(e.target.value))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: '#E5E7EB',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                        '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                      },
+                      '& .MuiInputBase-input': { color: '#E5E7EB' },
+                    }}
+                  />
+                </FormControl>
 
-          <FormControl fullWidth>
-            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-              Maximum number of matches
-            </Typography>
-            <TextField
-              fullWidth
-              type="number"
-              value={maxGames}
-              onChange={(e) => setMaxGames(Number(e.target.value))}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: '#E5E7EB',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                  '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                },
-                '& .MuiInputBase-input': { color: '#E5E7EB' },
-              }}
-            />
-          </FormControl>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showPoints}
+                      onChange={(e) => setShowPoints(e.target.checked)}
+                      sx={{
+                        '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+                        '& .Mui-checked': { color: '#27ab83' },
+                        '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+                      }}
+                    />
+                  }
+                  label="CF Advance Point Scoring"
+                  sx={{ color: '#E5E7EB' }}
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {/* Members management (right side) */}
+              <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  Manage members
+                </Typography>
+                <List sx={{ py: 0 }}>
+                  {(league.members || []).map((member: User, index: number) => {
+                    const memberName = `${member.firstName} ${member.lastName}`.trim()
+                    const isLeagueAdmin = member.id === league.adminId
+                    const isCurrentUser = member.id === currentUserId
+                    return (
+                      <Box key={member.id}>
+                        <ListItem
+                          sx={{
+                            py: { xs: 1.5, sm: 2 },
+                            px: { xs: 1.5, sm: 2 },
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
+                            borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar sx={{ bgcolor: '#374151' }}>
+                              {(member.firstName?.[0] || '?').toUpperCase()}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
+                                  {memberName || 'Unnamed'}
+                                </Typography>
+                                <Chip
+                                  label={isLeagueAdmin ? 'League Admin' : 'Member'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: 'transparent',
+                                    color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
+                                    border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
+                                    fontWeight: 600,
+                                    fontSize: 11,
+                                    height: 20,
+                                    borderRadius: '9999px',
+                                  }}
+                                />
+                              </Box>
+                            }
+                          />
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showPoints}
-                onChange={(e) => setShowPoints(e.target.checked)}
-                sx={{
-                  '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-                  '& .Mui-checked': { color: '#27ab83' },
-                  '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+                          {/* Right-side remove button only for admin and not for self or the league admin */}
+                          {league.adminId === currentUserId && !isLeagueAdmin && member.id !== currentUserId && (
+                            <Tooltip title={`Remove ${memberName}`} arrow>
+                              <IconButton
+                                onClick={() => {
+                                  if (window.confirm(`Remove ${memberName} from the league?`)) {
+                                    onRemoveMember(member.id)
+                                  }
+                                }}
+                                sx={{
+                                  color: '#ff6b6b',
+                                  bgcolor: 'rgba(255, 107, 107, 0.12)',
+                                  '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
+                                }}
+                              >
+                                <Delete sx={{ fontSize: 20 }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </ListItem>
+                        {index < (league.members?.length || 0) - 1 && (
+                          <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
+                        )}
+                      </Box>
+                    )
+                  })}
+                </List>
+              </Box>
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {currentUserId && (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() => {
+                  const isAdmin = league.adminId === currentUserId
+                  const confirmMsg = isAdmin
+                    ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+                    : 'Are you sure you want to leave this league?'
+                  if (!window.confirm(confirmMsg)) return
+
+                  if (isAdmin) {
+                    // Prefer selected admin if different, otherwise first other member
+                    let replacementId = adminId && adminId !== currentUserId ? adminId : ''
+                    if (!replacementId) {
+                      const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+                      if (firstOther) replacementId = firstOther.id
+                    }
+                    if (!replacementId) {
+                      window.alert('Cannot leave as admin because no other members are available to assign as admin.')
+                      return
+                    }
+                    try {
+                      onUpdate({
+                        name,
+                        active: isActive,
+                        maxGames,
+                        showPoints,
+                        admins: [replacementId],
+                      })
+                    } catch {}
+                  }
+
+                  // Trigger leave action if provided
+                  if (typeof onLeaveLeague === 'function') {
+                    try { onLeaveLeague() } catch {}
+                  }
+                  try { onClose() } catch {}
                 }}
-              />
-            }
-            label="CF Advance Point Scoring"
-            sx={{ color: '#E5E7EB' }}
-          />
-        </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-        <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
-          Update League
-        </Button>
-        <Button variant="contained" color="error" onClick={onDelete}>
-          Delete League
-        </Button>
-      </DialogActions>
-    </Dialog>
-  )
-}
+                sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
+              >
+                Leave League
+              </Button>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+              Update League
+            </Button>
+            <Button variant="contained" color="error" onClick={onDelete}>
+              Delete League
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+    )
+  }
 
 // const cardStyles = {
 //   borderRadius: 3,
@@ -819,6 +965,9 @@ function AllLeagues() {
   const { token, user } = useAuth();
   const [openMembers, setOpenMembers] = useState(false);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  // Standalone admin settings dialog control
+  const [openAdminSettings, setOpenAdminSettings] = useState(false);
+  const [adminSettingsLeague, setAdminSettingsLeague] = useState<League | null>(null);
   const [, setLoadingMembers] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
@@ -1734,11 +1883,17 @@ function AllLeagues() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Handle settings click
+                      const isAdmin = (league.adminId || league.administrators?.[0]?.id) === (user?.id || '')
+                      if (isAdmin) {
+                        // Open standalone settings dialog for admins
+                        setAdminSettingsLeague(league)
+                        setOpenAdminSettings(true)
+                      } else {
+                        handleOpenMembers(league)
+                      }
                     }}
                   >
                     <SettingsIcon
-                      onClick={() => handleOpenMembers(league)}
                       aria-label={`Open settings for ${formatLeagueName(league.name)}`}
                       size={20} />
                   </IconButton>
@@ -2203,6 +2358,24 @@ function AllLeagues() {
         </Dialog>
       </Container>
       <Toaster position="top-center" reverseOrder={false} />
+      {openAdminSettings && adminSettingsLeague && (
+        <LeagueSettingsDialog
+          open={openAdminSettings}
+          onClose={() => setOpenAdminSettings(false)}
+          league={adminSettingsLeague}
+          onUpdate={async (data) => {
+            await handleUpdateLeagueFromSettings(data)
+            setOpenAdminSettings(false)
+          }}
+          onDelete={async () => {
+            await handleDeleteLeagueFromSettings()
+            setOpenAdminSettings(false)
+          }}
+          currentUserId={user?.id || ''}
+          onRemoveMember={handleRemoveMember}
+          onLeaveLeague={handleLeaveLeague}
+        />
+      )}
       <LeagueMembersDialog
         open={openMembers}
         onClose={() => setOpenMembers(false)}
@@ -2212,6 +2385,7 @@ function AllLeagues() {
         onLeaveLeague={handleLeaveLeague}
         onUpdateLeague={handleUpdateLeagueFromSettings}
         onDeleteLeague={handleDeleteLeagueFromSettings}
+        openSettingsOnOpen={Boolean(selectedLeague && (selectedLeague.adminId || selectedLeague.administrators?.[0]?.id) === (user?.id || ''))}
       />
     </Box>
   )

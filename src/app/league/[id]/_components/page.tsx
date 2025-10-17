@@ -36,6 +36,7 @@ import {
     ListItemAvatar,
     LinearProgress,
     Stack,
+    Avatar,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -59,6 +60,7 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import PlayerCard from '@/Components/playercard/playercard';
+import { Close, Delete } from '@mui/icons-material';
 // ...existing code...
 
 type Foot = 'L' | 'R';
@@ -89,6 +91,7 @@ interface League {
     active: boolean;
     maxGames: number;
     showPoints: boolean;
+    adminId?: string;
 }
 
 interface User {
@@ -131,6 +134,19 @@ interface LeagueSettingsDialogProps {
     league: League | null;
     onUpdate: (data: Partial<League & { admins: string[] }>) => void;
     onDelete: () => void;
+    currentUserId?: string;
+    onRemoveMember?: (memberId: string) => void;
+    onLeaveLeague?: () => void;
+    onUpdateLeague?: (data: LeagueUpdatePayload) => Promise<void> | void;
+    onDeleteLeague?: () => Promise<void> | void;
+}
+
+type LeagueUpdatePayload = {
+  name: string
+  active: boolean
+  maxGames: number
+  showPoints: boolean
+  admins: string[]
 }
 
 
@@ -180,35 +196,311 @@ type LeagueStatistics = {
 // }
 
 
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
-    const [name, setName] = useState('');
-    const [adminId, setAdminId] = useState('');
-    const [isActive, setIsActive] = useState(true);
-    const [maxGames, setMaxGames] = useState(20);
-    const [showPoints, setShowPoints] = useState(true);
+// function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
+//     const [name, setName] = useState('');
+//     const [adminId, setAdminId] = useState('');
+//     const [isActive, setIsActive] = useState(true);
+//     const [maxGames, setMaxGames] = useState(20);
+//     const [showPoints, setShowPoints] = useState(true);
+
+//     useEffect(() => {
+//         if (league) {
+//             setName(league.name || '');
+//             setIsActive(league.active !== false);
+//             setMaxGames(league.maxGames || 20);
+//             setShowPoints(league.showPoints !== false);
+//             setAdminId(league.administrators?.[0]?.id || '');
+//         }
+//     }, [league]);
+
+//     const handleUpdate = () => {
+//         const updatedData = {
+//             name,
+//             active: isActive,
+//             maxGames,
+//             showPoints,
+//             admins: [adminId],
+//         };
+//         onUpdate(updatedData);
+//     };
+
+//     if (!league) return null;
+
+//     return (
+//         <Dialog
+//             open={open}
+//             onClose={onClose}
+//             fullWidth
+//             maxWidth="md"
+//             PaperProps={{
+//                 sx: {
+//                     bgcolor: 'rgba(15,15,15,0.92)',
+//                     color: '#E5E7EB',
+//                     borderRadius: 3,
+//                     border: '1px solid rgba(255,255,255,0.08)',
+//                     backdropFilter: 'blur(10px)',
+//                     boxShadow:
+//                         '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+//                     overflow: 'hidden',
+//                 },
+//             }}
+//         >
+//             <DialogTitle
+//                 sx={{
+//                     fontWeight: 'bold',
+//                     position: 'relative',
+//                     color: '#E5E7EB',
+//                 }}
+//             >
+//                 Manage League Settings
+//                 <IconButton
+//                     aria-label="close"
+//                     onClick={onClose}
+//                     sx={{
+//                         position: 'absolute',
+//                         right: 8,
+//                         top: 8,
+//                         color: '#9CA3AF',
+//                         '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+//                     }}
+//                 >
+//                     <CloseIcon />
+//                 </IconButton>
+//             </DialogTitle>
+
+//             <DialogContent>
+//                 <Box
+//                     component="form"
+//                     noValidate
+//                     autoComplete="off"
+//                     sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}
+//                 >
+//                     <FormControl fullWidth>
+//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                             Select league admin
+//                         </Typography>
+//                         <Select
+//                             value={adminId}
+//                             onChange={(e) => setAdminId(e.target.value)}
+//                             sx={{
+//                                 color: '#E5E7EB',
+//                                 '& .MuiOutlinedInput-notchedOutline': {
+//                                     borderColor: 'rgba(255,255,255,0.2)',
+//                                 },
+//                                 '&:hover .MuiOutlinedInput-notchedOutline': {
+//                                     borderColor: 'rgba(255,255,255,0.35)',
+//                                 },
+//                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+//                                     borderColor: '#0388E3',
+//                                 },
+//                                 '& .MuiSelect-icon': { color: '#E5E7EB' },
+//                             }}
+//                             MenuProps={{
+//                                 PaperProps: {
+//                                     sx: {
+//                                         bgcolor: 'rgba(15,15,15,0.98)',
+//                                         color: '#E5E7EB',
+//                                         border: '1px solid rgba(255,255,255,0.08)',
+//                                     },
+//                                 },
+//                             }}
+//                         >
+//                             {league.members.map((member: User) => (
+//                                 <MenuItem key={member.id} value={member.id}>
+//                                     {member.firstName} {member.lastName}
+//                                 </MenuItem>
+//                             ))}
+//                         </Select>
+//                     </FormControl>
+
+//                     <FormControl fullWidth>
+//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                             League name
+//                         </Typography>
+//                         <TextField
+//                             fullWidth
+//                             value={name}
+//                             onChange={(e) => setName(e.target.value)}
+//                             sx={{
+//                                 '& .MuiOutlinedInput-root': {
+//                                     color: '#E5E7EB',
+//                                     '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+//                                     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+//                                     '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+//                                 },
+//                                 '& .MuiInputBase-input': { color: '#E5E7EB' },
+//                             }}
+//                             InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+//                         />
+//                     </FormControl>
+
+//                     <FormControl component="fieldset">
+//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                             Change league active status
+//                         </Typography>
+//                         <RadioGroup
+//                             row
+//                             value={isActive ? 'active' : 'inactive'}
+//                             onChange={(e) => setIsActive(e.target.value === 'active')}
+//                         >
+//                             <FormControlLabel
+//                                 value="active"
+//                                 control={
+//                                     <Radio
+//                                         sx={{
+//                                             color: 'rgba(255,255,255,0.6)',
+//                                             '&.Mui-checked': { color: '#27ab83' },
+//                                         }}
+//                                     />
+//                                 }
+//                                 label="Active"
+//                             />
+//                             <FormControlLabel
+//                                 value="inactive"
+//                                 control={
+//                                     <Radio
+//                                         sx={{
+//                                             color: 'rgba(255,255,255,0.6)',
+//                                             '&.Mui-checked': { color: '#27ab83' },
+//                                         }}
+//                                     />
+//                                 }
+//                                 label="Inactive"
+//                             />
+//                         </RadioGroup>
+//                     </FormControl>
+
+//                     <FormControl fullWidth>
+//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                             Maximum number of matches
+//                         </Typography>
+//                         <TextField
+//                             fullWidth
+//                             type="number"
+//                             value={maxGames}
+//                             onChange={(e) => setMaxGames(Number(e.target.value))}
+//                             sx={{
+//                                 '& .MuiOutlinedInput-root': {
+//                                     color: '#E5E7EB',
+//                                     '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+//                                     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+//                                     '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+//                                 },
+//                                 '& .MuiInputBase-input': { color: '#E5E7EB' },
+//                             }}
+//                         />
+//                     </FormControl>
+
+//                     <FormControlLabel
+//                         control={
+//                             <Switch
+//                                 checked={showPoints}
+//                                 onChange={(e) => setShowPoints(e.target.checked)}
+//                                 sx={{
+//                                     '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+//                                     '& .Mui-checked': { color: '#27ab83' },
+//                                     '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+//                                 }}
+//                             />
+//                         }
+//                         label="CF Advance Point Scoring"
+//                         sx={{ color: '#E5E7EB' }}
+//                     />
+//                 </Box>
+//             </DialogContent>
+
+//             <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+//                 <Button
+//                     onClick={handleUpdate}
+//                     variant="contained"
+//                     sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}
+//                 >
+//                     Update League
+//                 </Button>
+//                 <Button variant="contained" color="error" onClick={onDelete}>
+//                     Delete League
+//                 </Button>
+//             </DialogActions>
+//         </Dialog>
+//     );
+// }
+
+
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+    const [name, setName] = useState('')
+    const [adminId, setAdminId] = useState('')
+    const [isActive, setIsActive] = useState(true)
+    const [maxGames, setMaxGames] = useState(20)
+    const [showPoints, setShowPoints] = useState(true)
 
     useEffect(() => {
         if (league) {
-            setName(league.name || '');
-            setIsActive(league.active !== false);
-            setMaxGames(league.maxGames || 20);
-            setShowPoints(league.showPoints !== false);
-            setAdminId(league.administrators?.[0]?.id || '');
+            setName(league.name || '')
+            setIsActive(league.active !== false)
+            setMaxGames(league.maxGames || 20)
+            setShowPoints(league.showPoints !== false)
+            setAdminId(league.administrators?.[0]?.id || '')
         }
-    }, [league]);
+    }, [league])
 
     const handleUpdate = () => {
-        const updatedData = {
+        const updatedData: LeagueUpdatePayload = {
             name,
             active: isActive,
             maxGames,
             showPoints,
-            admins: [adminId],
-        };
-        onUpdate(updatedData);
-    };
+            admins: adminId ? [adminId] : [],
+        }
+        onUpdate(updatedData)
+    }
 
-    if (!league) return null;
+    const handleLeaveLeague = () => {
+        if (!league || !currentUserId) return
+        const leagueAdminId = league.administrators?.[0]?.id || ''
+        const isCurrentUserAdmin = currentUserId === leagueAdminId
+
+        const confirmMsg = isCurrentUserAdmin
+            ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+            : 'Are you sure you want to leave this league?'
+
+        if (!window.confirm(confirmMsg)) return
+
+        if (isCurrentUserAdmin) {
+            // Determine replacement admin: prefer selected adminId if it's another member; otherwise pick first other member
+            let replacementId = adminId && adminId !== currentUserId ? adminId : ''
+            if (!replacementId) {
+                const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+                if (firstOther) replacementId = firstOther.id
+            }
+
+            if (!replacementId) {
+                // No other member to assign
+                window.alert('Cannot leave as admin because no other members are available to assign as admin.')
+                return
+            }
+
+            // First, update league admin, then remove current user
+            try {
+                onUpdate({
+                    name,
+                    active: isActive,
+                    maxGames,
+                    showPoints,
+                    admins: [replacementId],
+                })
+            } catch { /* noop */ }
+        }
+
+        if (typeof onLeaveLeague === 'function') {
+            try { onLeaveLeague() } catch { /* noop */ }
+        } else if (typeof onRemoveMember === 'function' && currentUserId) {
+            onRemoveMember(currentUserId)
+        }
+
+        try { onClose() } catch { /* noop */ }
+    }
+
+    if (!league) return null
 
     return (
         <Dialog
@@ -223,192 +515,247 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: Lea
                     borderRadius: 3,
                     border: '1px solid rgba(255,255,255,0.08)',
                     backdropFilter: 'blur(10px)',
-                    boxShadow:
-                        '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
                     overflow: 'hidden',
                 },
             }}
         >
-            <DialogTitle
-                sx={{
-                    fontWeight: 'bold',
-                    position: 'relative',
-                    color: '#E5E7EB',
-                }}
-            >
+            <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
                 Manage League Settings
                 <IconButton
                     aria-label="close"
                     onClick={onClose}
-                    sx={{
-                        position: 'absolute',
-                        right: 8,
-                        top: 8,
-                        color: '#9CA3AF',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                    }}
+                    sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
                 >
-                    <CloseIcon />
+                    <Close />
                 </IconButton>
             </DialogTitle>
 
             <DialogContent>
-                <Box
-                    component="form"
-                    noValidate
-                    autoComplete="off"
-                    sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}
-                >
-                    <FormControl fullWidth>
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                            Select league admin
-                        </Typography>
-                        <Select
-                            value={adminId}
-                            onChange={(e) => setAdminId(e.target.value)}
-                            sx={{
-                                color: '#E5E7EB',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(255,255,255,0.2)',
-                                },
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(255,255,255,0.35)',
-                                },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#0388E3',
-                                },
-                                '& .MuiSelect-icon': { color: '#E5E7EB' },
-                            }}
-                            MenuProps={{
-                                PaperProps: {
-                                    sx: {
-                                        bgcolor: 'rgba(15,15,15,0.98)',
+                <Grid container spacing={3} sx={{ mt: 0 }}>
+                    <Grid item xs={12} md={6}>
+                        <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <FormControl fullWidth>
+                                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                                    Select league admin
+                                </Typography>
+                                <Select
+                                    value={adminId}
+                                    onChange={(e) => setAdminId(e.target.value as string)}
+                                    sx={{
                                         color: '#E5E7EB',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                    },
-                                },
-                            }}
-                        >
-                            {league.members.map((member: User) => (
-                                <MenuItem key={member.id} value={member.id}>
-                                    {member.firstName} {member.lastName}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+                                        '& .MuiSelect-icon': { color: '#E5E7EB' },
+                                    }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                                        },
+                                    }}
+                                >
+                                    {(league.members || []).map((member: User) => (
+                                        <MenuItem key={member.id} value={member.id}>
+                                            {member.firstName} {member.lastName}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
-                    <FormControl fullWidth>
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                            League name
-                        </Typography>
-                        <TextField
-                            fullWidth
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: '#E5E7EB',
-                                    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                                    '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                                },
-                                '& .MuiInputBase-input': { color: '#E5E7EB' },
-                            }}
-                            InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-                        />
-                    </FormControl>
+                            <FormControl fullWidth>
+                                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                                    League name
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    value={name}
+                                    onChange={(e) => {
+                                        const raw = e.target.value || ''
+                                        const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+                                        setName(cleaned)
+                                    }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            color: '#E5E7EB',
+                                            '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                                            '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                                            '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                                        },
+                                        '& .MuiInputBase-input': { color: '#E5E7EB' },
+                                    }}
+                                    InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+                                    inputProps={{ maxLength: 20 }}
+                                    helperText="Max 20 characters, letters/numbers only"
+                                />
+                            </FormControl>
 
-                    <FormControl component="fieldset">
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                            Change league active status
-                        </Typography>
-                        <RadioGroup
-                            row
-                            value={isActive ? 'active' : 'inactive'}
-                            onChange={(e) => setIsActive(e.target.value === 'active')}
-                        >
+                            <FormControl component="fieldset">
+                                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                                    Change league active status
+                                </Typography>
+                                <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
+                                    <FormControlLabel
+                                        value="active"
+                                        control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                                        label="Active"
+                                    />
+                                    <FormControlLabel
+                                        value="inactive"
+                                        control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                                        label="Inactive"
+                                    />
+                                </RadioGroup>
+                            </FormControl>
+
+                            <FormControl fullWidth>
+                                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                                    Maximum number of matches
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    value={maxGames}
+                                    onChange={(e) => setMaxGames(Number(e.target.value))}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            color: '#E5E7EB',
+                                            '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                                            '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                                            '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                                        },
+                                        '& .MuiInputBase-input': { color: '#E5E7EB' },
+                                    }}
+                                />
+                            </FormControl>
+
                             <FormControlLabel
-                                value="active"
                                 control={
-                                    <Radio
+                                    <Switch
+                                        checked={showPoints}
+                                        onChange={(e) => setShowPoints(e.target.checked)}
                                         sx={{
-                                            color: 'rgba(255,255,255,0.6)',
-                                            '&.Mui-checked': { color: '#27ab83' },
+                                            '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+                                            '& .Mui-checked': { color: '#27ab83' },
+                                            '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
                                         }}
                                     />
                                 }
-                                label="Active"
+                                label="CF Advance Point Scoring"
+                                sx={{ color: '#E5E7EB' }}
                             />
-                            <FormControlLabel
-                                value="inactive"
-                                control={
-                                    <Radio
-                                        sx={{
-                                            color: 'rgba(255,255,255,0.6)',
-                                            '&.Mui-checked': { color: '#27ab83' },
-                                        }}
-                                    />
-                                }
-                                label="Inactive"
-                            />
-                        </RadioGroup>
-                    </FormControl>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        {/* Members management (now on right side, no inner scroll) */}
+                        <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                                Manage members
+                            </Typography>
+                            <List sx={{ py: 0 }}>
+                                {(league.members || []).map((member: User, index: number) => {
+                                    const memberName = `${member.firstName} ${member.lastName}`.trim()
+                                    const leagueAdminId = league.administrators?.[0]?.id || ''
+                                    const isLeagueAdmin = member.id === leagueAdminId
+                                    const isCurrentUser = currentUserId ? member.id === currentUserId : false
+                                    return (
+                                        <Box key={member.id}>
+                                            <ListItem
+                                                sx={{
+                                                    py: { xs: 1.5, sm: 2 },
+                                                    px: { xs: 1.5, sm: 2 },
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 2,
+                                                    bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
+                                                    borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
+                                                }}
+                                            >
+                                                <ListItemAvatar>
+                                                    <Avatar sx={{ bgcolor: '#374151' }}>
+                                                        {(member.firstName?.[0] || '?').toUpperCase()}
+                                                    </Avatar>
+                                                </ListItemAvatar>
+                                                <ListItemText
+                                                    primary={
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                            <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
+                                                                {memberName || 'Unnamed'}
+                                                            </Typography>
+                                                            <Chip
+                                                                label={isLeagueAdmin ? 'League Admin' : 'Member'}
+                                                                size="small"
+                                                                sx={{
+                                                                    bgcolor: 'transparent',
+                                                                    color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
+                                                                    border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
+                                                                    fontWeight: 600,
+                                                                    fontSize: 11,
+                                                                    height: 20,
+                                                                    borderRadius: '9999px',
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    }
+                                                />
 
-                    <FormControl fullWidth>
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                            Maximum number of matches
-                        </Typography>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            value={maxGames}
-                            onChange={(e) => setMaxGames(Number(e.target.value))}
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    color: '#E5E7EB',
-                                    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                                    '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                                },
-                                '& .MuiInputBase-input': { color: '#E5E7EB' },
-                            }}
-                        />
-                    </FormControl>
-
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={showPoints}
-                                onChange={(e) => setShowPoints(e.target.checked)}
-                                sx={{
-                                    '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-                                    '& .Mui-checked': { color: '#27ab83' },
-                                    '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
-                                }}
-                            />
-                        }
-                        label="CF Advance Point Scoring"
-                        sx={{ color: '#E5E7EB' }}
-                    />
-                </Box>
+                                                {/* Right-side remove button only for admin and not for self or the league admin */}
+                                                {currentUserId && onRemoveMember && (league.administrators?.[0]?.id === currentUserId) && !isLeagueAdmin && member.id !== currentUserId && (
+                                                    <Tooltip title={`Remove ${memberName}`} arrow>
+                                                        <IconButton
+                                                            onClick={() => {
+                                                                if (window.confirm(`Remove ${memberName} from the league?`)) {
+                                                                    onRemoveMember(member.id)
+                                                                }
+                                                            }}
+                                                            sx={{
+                                                                color: '#ff6b6b',
+                                                                bgcolor: 'rgba(255, 107, 107, 0.12)',
+                                                                '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
+                                                            }}
+                                                        >
+                                                            <Delete sx={{ fontSize: 20 }} />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
+                                            </ListItem>
+                                            {index < (league.members?.length || 0) - 1 && (
+                                                <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
+                                            )}
+                                        </Box>
+                                    )
+                                })}
+                            </List>
+                        </Box>
+                    </Grid>
+                </Grid>
             </DialogContent>
 
             <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-                <Button
-                    onClick={handleUpdate}
-                    variant="contained"
-                    sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}
-                >
-                    Update League
-                </Button>
-                <Button variant="contained" color="error" onClick={onDelete}>
-                    Delete League
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    {currentUserId && (
+                        <Button
+                            variant="outlined"
+                            color="warning"
+                            onClick={handleLeaveLeague}
+                            sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
+                        >
+                            Leave League
+                        </Button>
+                    )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+                        Update League
+                    </Button>
+                    <Button variant="contained" color="error" onClick={onDelete}>
+                        Delete League
+                    </Button>
+                </Box>
             </DialogActions>
         </Dialog>
-    );
+    )
 }
-
 // Add TableData type
 interface TableData {
     xp: number;
@@ -3008,57 +3355,57 @@ export default function LeagueDetailPage() {
                                                 .filter(match => match.status === 'SCHEDULED')
                                                 .sort(compareMatchesDesc)
                                                 .map((match) => {
-                                                const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                                                // const { availableCount, pendingCount } = getAvailabilityCounts(match);
-                                                return (
-                                                    <Card
-                                                        key={match.id}
-                                                        onClick={(event) => handleMatchCardClick(match, event)}
-                                                        sx={{
-                                                            position: 'relative',
-                                                            borderRadius: 3,
-                                                            backdropFilter: 'blur(10px)',
-                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                            cursor: 'pointer',
-                                                            '&:hover': {
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <CardContent sx={{ p: 2 }}>
-                                                            {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    <Tooltip title="Edit">
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                router.push(`/league/${league?.id}/match/${match.id}/edit`);
-                                                                            }}
-                                                                            sx={{ color: 'white' }}
-                                                                            disabled={!league?.active}
-                                                                        >
-                                                                            <Edit size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                    <Tooltip title="Delete / Archive">
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleRequestDeleteMatch(match);
-                                                                            }}
-                                                                            sx={{ color: '#ffb4b4' }}
-                                                                        >
-                                                                            <Trash2 size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                </Box>
-                                                            )}
+                                                    const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
+                                                    // const { availableCount, pendingCount } = getAvailabilityCounts(match);
+                                                    return (
+                                                        <Card
+                                                            key={match.id}
+                                                            onClick={(event) => handleMatchCardClick(match, event)}
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 3,
+                                                                backdropFilter: 'blur(10px)',
+                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                                cursor: 'pointer',
+                                                                '&:hover': {
+                                                                    transform: 'translateY(-2px)',
+                                                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <CardContent sx={{ p: 2 }}>
+                                                                {isAdmin && (
+                                                                    <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                        <Tooltip title="Edit">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                }}
+                                                                                sx={{ color: 'white' }}
+                                                                                disabled={!league?.active}
+                                                                            >
+                                                                                <Edit size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                        <Tooltip title="Delete / Archive">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRequestDeleteMatch(match);
+                                                                                }}
+                                                                                sx={{ color: '#ffb4b4' }}
+                                                                            >
+                                                                                <Trash2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    </Box>
+                                                                )}
 
-                                                            {/* // Update your admin buttons in the match cards */}
-                                                            {/* {isAdmin && (
+                                                                {/* // Update your admin buttons in the match cards */}
+                                                                {/* {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     <Tooltip title="Edit">
                                                                         <IconButton
@@ -3108,9 +3455,9 @@ export default function LeagueDetailPage() {
                                                                 </Box>
                                                             )} */}
 
-                                                            {/* // ...existing code... */}
-                                                            {/* // ...existing code... */}
-                                                            {/* {isAdmin && (
+                                                                {/* // ...existing code... */}
+                                                                {/* // ...existing code... */}
+                                                                {/* {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     {match.archived ? (
                                                                         <Tooltip title="Restore Match">
@@ -3145,7 +3492,7 @@ export default function LeagueDetailPage() {
                                                                 </Box>
                                                             )} */}
 
-                                                            {/* {isAdmin && (
+                                                                {/* {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                     {match.archived ? (
                                                                         <Tooltip title="Restore Match">
@@ -3179,11 +3526,11 @@ export default function LeagueDetailPage() {
                                                             )} */}
 
 
-                                                            {/* // ...existing code... */}
-                                                            {/* // ...existing code... */}
+                                                                {/* // ...existing code... */}
+                                                                {/* // ...existing code... */}
 
-                                                            {/* Add archived label */}
-                                                            {/* {match.archived && (
+                                                                {/* Add archived label */}
+                                                                {/* {match.archived && (
                                                                 <Chip
                                                                     label="Canceled by Admin"
                                                                     size="small"
@@ -3198,147 +3545,147 @@ export default function LeagueDetailPage() {
                                                                 />
                                                             )} */}
 
-                                                            <Box sx={{
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: 1,
-                                                                minHeight: 80,
-                                                                mb: 3
-                                                            }}>
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    width: '100%'
-                                                                }}>
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 1,
-                                                                        flex: 1,
-                                                                    }}>
-                                                                        <Image
-                                                                            src={match.homeTeamImage || homeImg}
-                                                                            alt={match.homeTeamName}
-                                                                            width={24}
-                                                                            height={24}
-                                                                            style={{ borderRadius: '2px' }}
-                                                                        />
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            sx={{
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.85rem',
-                                                                                ml: 2
-                                                                            }}
-                                                                            title={match.homeTeamName}
-                                                                        >
-                                                                            {formatMatchName(match.homeTeamName)}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                </Box>
-
-                                                                {/* Bottom Row - Away Team */}
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'space-between',
-                                                                    width: '100%'
-                                                                }}>
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 1,
-                                                                        flex: 1,
-                                                                        mt: 2,
-                                                                    }}>
-                                                                        <Image
-                                                                            src={match.awayTeamImage || awayImg}
-                                                                            alt={match.awayTeamName}
-                                                                            width={24}
-                                                                            height={24}
-                                                                            style={{ borderRadius: '2px' }}
-                                                                        />
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            sx={{
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.85rem',
-                                                                                ml: 2
-                                                                            }}
-                                                                            title={match.awayTeamName}
-                                                                        >
-                                                                            {formatMatchName(match.awayTeamName)}
-                                                                        </Typography>
-
-                                                                    </Box>
-                                                                </Box>
-
-
-                                                                {/* Date and Status - Right Side */}
                                                                 <Box sx={{
                                                                     display: 'flex',
                                                                     flexDirection: 'column',
-                                                                    alignItems: 'flex-end',
-                                                                    position: 'absolute',
-                                                                    top: 42,
-                                                                    right: 8
+                                                                    gap: 1,
+                                                                    minHeight: 80,
+                                                                    mb: 3
                                                                 }}>
-                                                                    <Typography variant="body2" sx={{
-                                                                        color: 'white',
-                                                                        fontWeight: 'bold',
-                                                                        fontSize: '0.75rem'
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        width: '100%'
                                                                     }}>
-                                                                        {formatMatchDate(match.date)}
-                                                                    </Typography>
-                                                                    <Typography variant="body2" sx={{
-                                                                        color: 'white',
-                                                                        fontSize: '0.65rem'
-                                                                    }}>
-                                                                        {formatMatchTime(match.date)}
-                                                                    </Typography>
-                                                                    <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
-                                                                </Box>
-                                                            </Box>
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 1,
+                                                                            flex: 1,
+                                                                        }}>
+                                                                            <Image
+                                                                                src={match.homeTeamImage || homeImg}
+                                                                                alt={match.homeTeamName}
+                                                                                width={24}
+                                                                                height={24}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{
+                                                                                    color: 'white',
+                                                                                    fontWeight: 'bold',
+                                                                                    fontSize: '0.85rem',
+                                                                                    ml: 2
+                                                                                }}
+                                                                                title={match.homeTeamName}
+                                                                            >
+                                                                                {formatMatchName(match.homeTeamName)}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </Box>
 
-                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                                    {/* Availability button */}
-                                                                    {isMember && (
-                                                                        <Button
-                                                                            variant="contained"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation(); // Prevent card click
-                                                                                handleToggleAvailability(match.id, isUserAvailable);
-                                                                            }}
-                                                                            disabled={availabilityLoading[match.id] || !league?.active}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : '#0388E3',
-                                                                                '&:hover': {
-                                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : '#0388E3',
-                                                                                    transform: 'translateY(-1px)',
-                                                                                },
-                                                                                '&.Mui-disabled': {
-                                                                                    backgroundColor: 'rgba(255,255,255,0.3)',
-                                                                                    color: 'rgba(255,255,255,0.5)'
-                                                                                },
-                                                                                fontSize: '0.75rem',
-                                                                                py: 0.5,
-                                                                                transition: 'all 0.2s ease-in-out',
-                                                                                '&:active': {
-                                                                                    transform: 'translateY(0)', // Reset when clicked
-                                                                                },
-                                                                            }}
-                                                                        >
-                                                                            {availabilityLoading[match.id]
-                                                                                ? <CircularProgress size={16} color="inherit" />
-                                                                                : (isUserAvailable ? 'Unavailable' : 'Available')}
-                                                                        </Button>
-                                                                    )}
+                                                                    {/* Bottom Row - Away Team */}
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'space-between',
+                                                                        width: '100%'
+                                                                    }}>
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 1,
+                                                                            flex: 1,
+                                                                            mt: 2,
+                                                                        }}>
+                                                                            <Image
+                                                                                src={match.awayTeamImage || awayImg}
+                                                                                alt={match.awayTeamName}
+                                                                                width={24}
+                                                                                height={24}
+                                                                                style={{ borderRadius: '2px' }}
+                                                                            />
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{
+                                                                                    color: 'white',
+                                                                                    fontWeight: 'bold',
+                                                                                    fontSize: '0.85rem',
+                                                                                    ml: 2
+                                                                                }}
+                                                                                title={match.awayTeamName}
+                                                                            >
+                                                                                {formatMatchName(match.awayTeamName)}
+                                                                            </Typography>
+
+                                                                        </Box>
+                                                                    </Box>
+
+
+                                                                    {/* Date and Status - Right Side */}
+                                                                    <Box sx={{
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        alignItems: 'flex-end',
+                                                                        position: 'absolute',
+                                                                        top: 42,
+                                                                        right: 8
+                                                                    }}>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '0.75rem'
+                                                                        }}>
+                                                                            {formatMatchDate(match.date)}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" sx={{
+                                                                            color: 'white',
+                                                                            fontSize: '0.65rem'
+                                                                        }}>
+                                                                            {formatMatchTime(match.date)}
+                                                                        </Typography>
+                                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
+                                                                    </Box>
                                                                 </Box>
-                                                                {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                                        {/* Availability button */}
+                                                                        {isMember && (
+                                                                            <Button
+                                                                                variant="contained"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation(); // Prevent card click
+                                                                                    handleToggleAvailability(match.id, isUserAvailable);
+                                                                                }}
+                                                                                disabled={availabilityLoading[match.id] || !league?.active}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : '#0388E3',
+                                                                                    '&:hover': {
+                                                                                        backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : '#0388E3',
+                                                                                        transform: 'translateY(-1px)',
+                                                                                    },
+                                                                                    '&.Mui-disabled': {
+                                                                                        backgroundColor: 'rgba(255,255,255,0.3)',
+                                                                                        color: 'rgba(255,255,255,0.5)'
+                                                                                    },
+                                                                                    fontSize: '0.75rem',
+                                                                                    py: 0.5,
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:active': {
+                                                                                        transform: 'translateY(0)', // Reset when clicked
+                                                                                    },
+                                                                                }}
+                                                                            >
+                                                                                {availabilityLoading[match.id]
+                                                                                    ? <CircularProgress size={16} color="inherit" />
+                                                                                    : (isUserAvailable ? 'Unavailable' : 'Available')}
+                                                                            </Button>
+                                                                        )}
+                                                                    </Box>
+                                                                    {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                     <Button
                                                                         size="small"
                                                                         onClick={(e) => e.stopPropagation()} // Prevent card click
@@ -3364,35 +3711,35 @@ export default function LeagueDetailPage() {
                                                                         Available: {availableCount} | Pending: {pendingCount}
                                                                     </Button>
                                                                 </Box> */}
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
-                                                                        <span>
-                                                                            <Button
-                                                                                size="small"
-                                                                                onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId, matchId: match.id }); setViewTeamOpen(true); }}
-                                                                                sx={{
-                                                                                    backgroundColor: '#FA5836',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.75rem',
-                                                                                    py: 0.5,
-                                                                                    px: 1,
-                                                                                    borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                    transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
-                                                                                    '&:active': { transform: 'translateY(0)' },
-                                                                                }}
-                                                                            >
-                                                                                view team
-                                                                            </Button>
-                                                                        </span>
-                                                                    </Tooltip>
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                        <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                            <span>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId, matchId: match.id }); setViewTeamOpen(true); }}
+                                                                                    sx={{
+                                                                                        backgroundColor: '#FA5836',
+                                                                                        color: 'white',
+                                                                                        fontSize: '0.75rem',
+                                                                                        py: 0.5,
+                                                                                        px: 1,
+                                                                                        borderRadius: 1,
+                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                        transition: 'all 0.2s ease-in-out',
+                                                                                        '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                        '&:active': { transform: 'translateY(0)' },
+                                                                                    }}
+                                                                                >
+                                                                                    view team
+                                                                                </Button>
+                                                                            </span>
+                                                                        </Tooltip>
+                                                                    </Box>
                                                                 </Box>
-                                                            </Box>
-                                                        </CardContent>
-                                                    </Card>
-                                                );
-                                            })}
+                                                            </CardContent>
+                                                        </Card>
+                                                    );
+                                                })}
                                         </Box>
                                     ) : (
                                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -4236,6 +4583,11 @@ export default function LeagueDetailPage() {
                             league={league}
                             onUpdate={handleUpdateLeague}
                             onDelete={handleDeleteLeague}
+                            currentUserId={user?.id}
+                            onRemoveMember={undefined}
+                            onLeaveLeague={undefined}
+                            onUpdateLeague={undefined}
+                            onDeleteLeague={undefined}
                         />
                         <Snackbar
                             open={!!toastMessage}
@@ -4639,7 +4991,7 @@ export default function LeagueDetailPage() {
                                 </Box>
                             </Box>
                             {/* Right: Last 5 Matches */}
-                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', height: '230px', mt:1 , borderRadius: 2 }}>
+                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', height: '230px', mt: 1, borderRadius: 2 }}>
                                 <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
                                 <Stack direction="column" spacing={1}>
                                     {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
