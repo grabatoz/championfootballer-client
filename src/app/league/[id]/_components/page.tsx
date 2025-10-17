@@ -4309,8 +4309,9 @@ export default function LeagueDetailPage() {
                                         <div className="p-3 px-2 pb-2">
                                             {/* bg-[rgba(59,130,246,0.8)] */}
                                             <div className=" rounded-lg px-2 py-1 mb-4 flex items-center">
-                                                <div className="flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Player</div>
+                                                <div className="flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Name</div>
                                                 <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
+                                                    <div className="min-w-12 text-center text-xs sm:text-sm md:text-base">MOTM</div>
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">P</div>
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">W</div>
                                                     <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">D</div>
@@ -4384,19 +4385,23 @@ export default function LeagueDetailPage() {
                                                                                 {formatMatchName(firstName)}   {formatMatchName(lastName)}
                                                                             </div>
                                                                             {player.isAdmin && <Shield className="text-blue-400 w-4 h-4" />}
-
-                                                                              {/* MOTM votes: show star and count when > 0, to the right of name */}
-                                                                            {typeof player.motmCount === 'number' && player.motmCount > 0 && (
-                                                                                <div className="flex items-center gap-0.5 ml-10">
-                                                                                    <Star sx={{ fontSize: 24, color: '#F59E0B' }} />
-                                                                                    <span className="text-[10px] sm:text-xs md:text-sm text-white/90">{player.motmCount}</span>
-                                                                                </div>
-                                                                            )}
+                                                                            {/* MOTM moved to its dedicated column */}
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="flex gap-0.5 sm:gap-1 md:gap-4 ml-auto items-center max-[500px]:mt-4">
+                                                                    {/* MOTM column value */}
+                                                                    <div className="min-w-12 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                        {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
+                                                                            <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap">
+                                                                                <span style={{fontSize:'18px' , fontWeight:'bold'}}>{player.motmCount}</span>
+                                                                                <Star sx={{ fontSize: 26, color: '#F59E0B' }} />
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="opacity-50"></span>
+                                                                        )}
+                                                                    </div>
                                                                     <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
                                                                         {player.played}
                                                                     </div>
