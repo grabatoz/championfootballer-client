@@ -61,6 +61,7 @@ import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import PlayerCard from '@/Components/playercard/playercard';
 import { Close, Delete } from '@mui/icons-material';
+import Star from '@mui/icons-material/Star';
 // ...existing code...
 
 type Foot = 'L' | 'R';
@@ -768,6 +769,7 @@ interface TableData {
     winPercentage: string;
     isAdmin?: boolean;
     profilePicture?: string | null;
+    motmCount?: number;
 }
 
 export default function LeagueDetailPage() {
@@ -828,6 +830,7 @@ export default function LeagueDetailPage() {
     const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
 
     const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
+    const [motmCounts, setMotmCounts] = useState<Record<string, number>>({});
 
     // Quick View: move hooks above any conditional returns to satisfy rules-of-hooks
     type PlayerProfileLike = {
@@ -1431,7 +1434,8 @@ export default function LeagueDetailPage() {
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
                 // Prefer XP from league API map, fallback to member.xp if present
-                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member?.xp ?? 0)
+                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member?.xp ?? 0),
+                motmCount: typeof motmCounts[member.id] === 'number' ? motmCounts[member.id] : 0,
             });
         });
         league.matches
@@ -1480,7 +1484,58 @@ export default function LeagueDetailPage() {
         });
 
         return list;
-    }, [league, leagueWinners, userLeagueXP]);
+    }, [league, leagueWinners, userLeagueXP, motmCounts]);
+
+    // Aggregate MOTM votes locally from league.matches so every player's votes show
+    useEffect(() => {
+        if (!league?.members?.length) return;
+        const counts: Record<string, number> = {};
+        // Initialize all members with 0 to ensure everyone shows up
+        league.members.forEach(m => { counts[m.id] = 0; });
+        (league.matches || []).forEach((match) => {
+            const votes = (match as any)?.manOfTheMatchVotes ?? {};
+            // votes is record voterId -> votedForId; we count by votedForId
+            Object.values(votes).forEach((votedForId) => {
+                const pid = String(votedForId);
+                if (pid in counts) counts[pid] += 1;
+            });
+        });
+        setMotmCounts(prev => ({ ...prev, ...counts }));
+    }, [league?.members, league?.matches]);
+
+    // Fetch MOTM votes per player via quick-view endpoint when league or members change
+    useEffect(() => {
+        if (!league?.id || !token || !league.members?.length) return;
+        let ignore = false;
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const entries = await Promise.all(
+                    league.members.map(async (m) => {
+                        try {
+                            const res = await fetch(
+                                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(league.id)}/player/${encodeURIComponent(m.id)}/quick-view`,
+                                { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+                            );
+                            if (!res.ok) return [m.id, 0] as const;
+                            const data = await res.json();
+                            const cnt = Number((data?.motmCount ?? data?.data?.motmCount ?? 0));
+                            return [m.id, Number.isFinite(cnt) ? cnt : 0] as const;
+                        } catch {
+                            return [m.id, 0] as const;
+                        }
+                    })
+                );
+                if (!ignore) setMotmCounts(Object.fromEntries(entries));
+            } catch {
+                // ignore errors
+            }
+        })();
+        return () => {
+            ignore = true;
+            controller.abort();
+        };
+    }, [league?.id, league?.members, token]);
 
     const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
     // ...existing code...
@@ -3187,7 +3242,7 @@ export default function LeagueDetailPage() {
                             {section === 'members' && (
                                 // Members Section
                                 <Box sx={{
-                                    mt: 3, p: 0, maxHeight: 350, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
+                                    mt: 3, p: 0, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
                                     // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
                                     background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                     backdropFilter: 'blur(10px)',
@@ -3252,7 +3307,7 @@ export default function LeagueDetailPage() {
                                                                     <ListItemAvatar>
                                                                         <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
                                                                             <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                                                                            <Box
+                                                                            {/* <Box
                                                                                 sx={{
                                                                                     position: 'absolute',
                                                                                     top: 0, left: 0, right: 0, bottom: 0,
@@ -3262,7 +3317,7 @@ export default function LeagueDetailPage() {
                                                                                 }}
                                                                             >
                                                                                 {member?.shirtNumber ?? '00'}
-                                                                            </Box>
+                                                                            </Box> */}
                                                                         </Box>
                                                                     </ListItemAvatar>
                                                                     <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
@@ -4317,18 +4372,26 @@ export default function LeagueDetailPage() {
                                                                                     }}
                                                                                 />
                                                                                 {/* Number overlay */}
-                                                                                <span className="absolute inset-0 flex items-center justify-center text-black font-bold text-xs sm:text-sm">
+                                                                                {/* <span className="absolute inset-0 flex items-center justify-center text-black font-bold text-xs sm:text-sm">
                                                                                     {((league?.members || []).find(m => m.id === player.id)?.shirtNumber ?? '')}
-                                                                                </span>
+                                                                                </span> */}
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-0.5 mt-3 max-[500px]:-ml-8 min-[500px]:ml-2">
-                                                                        <div className="flex items-center ">
+                                                                        <div className="flex items-center gap-1">
                                                                             <div className="text-white font-normal text-xs sm:text-sm md:text-base max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
                                                                                 {formatMatchName(firstName)}   {formatMatchName(lastName)}
                                                                             </div>
                                                                             {player.isAdmin && <Shield className="text-blue-400 w-4 h-4" />}
+
+                                                                              {/* MOTM votes: show star and count when > 0, to the right of name */}
+                                                                            {typeof player.motmCount === 'number' && player.motmCount > 0 && (
+                                                                                <div className="flex items-center gap-0.5 ml-10">
+                                                                                    <Star sx={{ fontSize: 24, color: '#F59E0B' }} />
+                                                                                    <span className="text-[10px] sm:text-xs md:text-sm text-white/90">{player.motmCount}</span>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -4360,6 +4423,7 @@ export default function LeagueDetailPage() {
                                                                             {player.xp}
                                                                         </div>
                                                                     )}
+                                                                    {/* {player.isAdmin && <Shield className="text-blue-400 w-4 h-4 ml-1 sm:ml-2" />} */}
                                                                 </div>
                                                             </div>
                                                             <div className="h-[1px] bg-white"></div>
@@ -4953,7 +5017,7 @@ export default function LeagueDetailPage() {
                                         { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
                                         { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
                                         { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                                        { img: Momt, label: 'MOTM', value: quickView.motmCount ?? 0 },
+                                        { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
                                     ].map((it, i) => (
                                         <Box
                                             key={i}
