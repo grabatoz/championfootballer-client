@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/hooks';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel } from '@mui/material'
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -2008,16 +2008,16 @@ function AllLeagues() {
                   if (!leagueNameError && leagueName.trim().length > 0) handleCreateLeague();
                 }
               }}
-              onPaste={(e) => {
-                const text = (e.clipboardData || (window as any).clipboardData).getData('text');
+              onPaste={(e: React.ClipboardEvent<HTMLInputElement>) => {
+                const text = e.clipboardData.getData('text');
                 if (/[^A-Za-z0-9 ]/.test(text)) {
                   e.preventDefault();
                   setLeagueNameError('Only letters, numbers, and spaces are allowed.');
                 }
               }}
-              onContextMenu={(e) => {
+              onContextMenu={() => {
                 // Optionally prevent right-click paste of invalid characters in this field
-                // e.preventDefault(); // uncomment to disable context menu
+                // To disable context menu, handle event here and call preventDefault()
               }}
               sx={{
                 mt: 1,
