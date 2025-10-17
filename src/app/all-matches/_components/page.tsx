@@ -153,7 +153,7 @@ export default function AllMatches() {
         }
     }, [token]);
 
-    
+
 
     const fetchMatchesByLeague = useCallback(async (leagueId: string) => {
         setLoading(true);
@@ -418,7 +418,7 @@ export default function AllMatches() {
     };
 
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
-    const [activeMatchId,] = React.useState<string | null>(null);
+    const [activeMatchId, setActiveMatchId] = React.useState<string | null>(null);
     const [stats, setStats] = React.useState({
         goals: 0,
         assists: 0,
@@ -428,69 +428,69 @@ export default function AllMatches() {
         defence: 0,
         impact: 0,
     });
-    // const fetchExistingStats = async (matchId: string) => {
-    //     if (!token || !user) return;
+    const fetchExistingStats = async (matchId: string) => {
+        if (!token || !user) return;
 
-    //     try {
-    //         // Fetch existing stats for the current user
-    //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-    //             headers: { 'Authorization': `Bearer ${token}` }
-    //         });
+        try {
+            // Fetch existing stats for the current user
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
 
-    //         // Check if endpoint exists (not 404 or 405)
-    //         if (response.status === 404 || response.status === 405) {
-    //             // Endpoint doesn't exist, use default stats
-    //             setStats({
-    //                 goals: 0,
-    //                 assists: 0,
-    //                 cleanSheets: 0,
-    //                 penalties: 0,
-    //                 freeKicks: 0,
-    //                 defence: 0,
-    //                 impact: 0
-    //             });
-    //             return;
-    //         }
+            // Check if endpoint exists (not 404 or 405)
+            if (response.status === 404 || response.status === 405) {
+                // Endpoint doesn't exist, use default stats
+                setStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0
+                });
+                return;
+            }
 
-    //         const data = await response.json();
+            const data = await response.json();
 
-    //         if (data.success && data.stats) {
-    //             // Use existing stats if available
-    //             setStats({
-    //                 goals: data.stats.goals || 0,
-    //                 assists: data.stats.assists || 0,
-    //                 cleanSheets: data.stats.cleanSheets || 0,
-    //                 penalties: data.stats.penalties || 0,
-    //                 freeKicks: data.stats.freeKicks || 0,
-    //                 defence: data.stats.defence || 0,
-    //                 impact: data.stats.impact || 0,
-    //             });
-    //         } else {
-    //             // Reset to 0 if no existing stats
-    //             setStats({
-    //                 goals: 0,
-    //                 assists: 0,
-    //                 cleanSheets: 0,
-    //                 penalties: 0,
-    //                 freeKicks: 0,
-    //                 defence: 0,
-    //                 impact: 0
-    //             });
-    //         }
-    //     } catch (error) {
-    //         console.error('Failed to fetch existing stats:', error);
-    //         // Reset to 0 on error
-    //         setStats({
-    //             goals: 0,
-    //             assists: 0,
-    //             cleanSheets: 0,
-    //             penalties: 0,
-    //             freeKicks: 0,
-    //             defence: 0,
-    //             impact: 0
-    //         });
-    //     }
-    // };
+            if (data.success && data.stats) {
+                // Use existing stats if available
+                setStats({
+                    goals: data.stats.goals || 0,
+                    assists: data.stats.assists || 0,
+                    cleanSheets: data.stats.cleanSheets || 0,
+                    penalties: data.stats.penalties || 0,
+                    freeKicks: data.stats.freeKicks || 0,
+                    defence: data.stats.defence || 0,
+                    impact: data.stats.impact || 0,
+                });
+            } else {
+                // Reset to 0 if no existing stats
+                setStats({
+                    goals: 0,
+                    assists: 0,
+                    cleanSheets: 0,
+                    penalties: 0,
+                    freeKicks: 0,
+                    defence: 0,
+                    impact: 0
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch existing stats:', error);
+            // Reset to 0 on error
+            setStats({
+                goals: 0,
+                assists: 0,
+                cleanSheets: 0,
+                penalties: 0,
+                freeKicks: 0,
+                defence: 0,
+                impact: 0
+            });
+        }
+    };
 
     const formatMatchDate = (dateString: string) => {
         const matchDate = new Date(dateString);
@@ -1589,7 +1589,7 @@ export default function AllMatches() {
                                                         </span>
                                                     </Tooltip>
                                                 </Box>
-                                                {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                                                         <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                                                                             <span>
                                                                                                                 <Button
@@ -1617,7 +1617,7 @@ export default function AllMatches() {
                                                                                                                 </Button>
                                                                                                             </span>
                                                                                                         </Tooltip>
-                                                                                                    </Box> */}
+                                                                                                    </Box>
                                             </Box>
                                             {/* // ...existing code... */}
 
@@ -2065,57 +2065,57 @@ export default function AllMatches() {
                                                     .filter(match => match.status === 'SCHEDULED')
                                                     .sort(compareMatchesDesc)
                                                     .map((match) => {
-                                                    const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                                                    // const { availableCount, pendingCount } = getAvailabilityCounts(match);
-                                                    return (
-                                                        <Card
-                                                            key={match.id}
-                                                            onClick={(event) => handleMatchCardClick(match, event)}
-                                                            sx={{
-                                                                position: 'relative',
-                                                                borderRadius: 3,
-                                                                backdropFilter: 'blur(10px)',
-                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                                cursor: 'pointer',
-                                                                '&:hover': {
-                                                                    transform: 'translateY(-2px)',
-                                                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
-                                                                }
-                                                            }}
-                                                        >
-                                                            <CardContent sx={{ p: 2 }}>
-                                                                {isAdmin && (
-                                                                    <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                        <Tooltip title="Edit">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    router.push(`/league/${league?.id}/match/${match.id}/edit`);
-                                                                                }}
-                                                                                sx={{ color: 'white' }}
-                                                                                disabled={!league?.active}
-                                                                            >
-                                                                                <Edit size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                        <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    </Box>
-                                                                )}
+                                                        const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
+                                                        // const { availableCount, pendingCount } = getAvailabilityCounts(match);
+                                                        return (
+                                                            <Card
+                                                                key={match.id}
+                                                                onClick={(event) => handleMatchCardClick(match, event)}
+                                                                sx={{
+                                                                    position: 'relative',
+                                                                    borderRadius: 3,
+                                                                    backdropFilter: 'blur(10px)',
+                                                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                                    cursor: 'pointer',
+                                                                    '&:hover': {
+                                                                        transform: 'translateY(-2px)',
+                                                                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <CardContent sx={{ p: 2 }}>
+                                                                    {isAdmin && (
+                                                                        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                            <Tooltip title="Edit">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                    }}
+                                                                                    sx={{ color: 'white' }}
+                                                                                    disabled={!league?.active}
+                                                                                >
+                                                                                    <Edit size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                            <Tooltip title="Delete / Archive">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleRequestDeleteMatch(match);
+                                                                                    }}
+                                                                                    sx={{ color: '#ffb4b4' }}
+                                                                                >
+                                                                                    <Trash2 size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                        </Box>
+                                                                    )}
 
-                                                                {/* // Update your admin buttons in the match cards */}
-                                                                {/* {isAdmin && (
+                                                                    {/* // Update your admin buttons in the match cards */}
+                                                                    {/* {isAdmin && (
                                                                                                     <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                                                         <Tooltip title="Edit">
                                                                                                             <IconButton
@@ -2165,9 +2165,9 @@ export default function AllMatches() {
                                                                                                     </Box>
                                                                                                 )} */}
 
-                                                                {/* // ...existing code... */}
-                                                                {/* // ...existing code... */}
-                                                                {/* {isAdmin && (
+                                                                    {/* // ...existing code... */}
+                                                                    {/* // ...existing code... */}
+                                                                    {/* {isAdmin && (
                                                                                                     <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                                                         {match.archived ? (
                                                                                                             <Tooltip title="Restore Match">
@@ -2202,7 +2202,7 @@ export default function AllMatches() {
                                                                                                     </Box>
                                                                                                 )} */}
 
-                                                                {/* {isAdmin && (
+                                                                    {/* {isAdmin && (
                                                                                                     <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                                                                         {match.archived ? (
                                                                                                             <Tooltip title="Restore Match">
@@ -2236,11 +2236,11 @@ export default function AllMatches() {
                                                                                                 )} */}
 
 
-                                                                {/* // ...existing code... */}
-                                                                {/* // ...existing code... */}
+                                                                    {/* // ...existing code... */}
+                                                                    {/* // ...existing code... */}
 
-                                                                {/* Add archived label */}
-                                                                {/* {match.archived && (
+                                                                    {/* Add archived label */}
+                                                                    {/* {match.archived && (
                                                                                                     <Chip
                                                                                                         label="Canceled by Admin"
                                                                                                         size="small"
@@ -2255,147 +2255,147 @@ export default function AllMatches() {
                                                                                                     />
                                                                                                 )} */}
 
-                                                                <Box sx={{
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: 1,
-                                                                    minHeight: 80,
-                                                                    mb: 3
-                                                                }}>
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        width: '100%'
-                                                                    }}>
-                                                                        <Box sx={{
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: 1,
-                                                                            flex: 1,
-                                                                        }}>
-                                                                            <Image
-                                                                                src={match.homeTeamImage || homeTeamIcon}
-                                                                                alt={match.homeTeamName || match?.homeTeam}
-                                                                                width={24}
-                                                                                height={24}
-                                                                                style={{ borderRadius: '2px' }}
-                                                                            />
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                sx={{
-                                                                                    color: 'white',
-                                                                                    fontWeight: 'bold',
-                                                                                    fontSize: '0.85rem',
-                                                                                    ml: 2
-                                                                                }}
-                                                                                title={match.homeTeamName}
-                                                                            >
-                                                                                {formatMatchName(match.homeTeamName || match?.homeTeam)}
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    </Box>
-
-                                                                    {/* Bottom Row - Away Team */}
-                                                                    <Box sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'space-between',
-                                                                        width: '100%'
-                                                                    }}>
-                                                                        <Box sx={{
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: 1,
-                                                                            flex: 1,
-                                                                            mt: 2,
-                                                                        }}>
-                                                                            <Image
-                                                                                src={match.awayTeamImage || awayTeamIcon}
-                                                                                alt={match.awayTeamName || match?.awayTeam }
-                                                                                width={24}
-                                                                                height={24}
-                                                                                style={{ borderRadius: '2px' }}
-                                                                            />
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                sx={{
-                                                                                    color: 'white',
-                                                                                    fontWeight: 'bold',
-                                                                                    fontSize: '0.85rem',
-                                                                                    ml: 2
-                                                                                }}
-                                                                                title={match.awayTeamName}
-                                                                            >
-                                                                                {formatMatchName(match.awayTeamName || match?.awayTeam)}
-                                                                            </Typography>
-
-                                                                        </Box>
-                                                                    </Box>
-
-
-                                                                    {/* Date and Status - Right Side */}
                                                                     <Box sx={{
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
-                                                                        alignItems: 'flex-end',
-                                                                        position: 'absolute',
-                                                                        top: 42,
-                                                                        right: 8
+                                                                        gap: 1,
+                                                                        minHeight: 80,
+                                                                        mb: 3
                                                                     }}>
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: '0.75rem'
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            width: '100%'
                                                                         }}>
-                                                                            {formatMatchDate(match.date)}
-                                                                        </Typography>
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: 'white',
-                                                                            fontSize: '0.65rem'
-                                                                        }}>
-                                                                            {formatMatchTime(match.date)}
-                                                                        </Typography>
-                                                                        <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
-                                                                    </Box>
-                                                                </Box>
+                                                                            <Box sx={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 1,
+                                                                                flex: 1,
+                                                                            }}>
+                                                                                <Image
+                                                                                    src={match.homeTeamImage || homeTeamIcon}
+                                                                                    alt={match.homeTeamName || match?.homeTeam}
+                                                                                    width={24}
+                                                                                    height={24}
+                                                                                    style={{ borderRadius: '2px' }}
+                                                                                />
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    sx={{
+                                                                                        color: 'white',
+                                                                                        fontWeight: 'bold',
+                                                                                        fontSize: '0.85rem',
+                                                                                        ml: 2
+                                                                                    }}
+                                                                                    title={match.homeTeamName}
+                                                                                >
+                                                                                    {formatMatchName(match.homeTeamName || match?.homeTeam)}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        </Box>
 
-                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                                        {/* Availability button */}
-                                                                        {isMember && (
-                                                                            <Button
-                                                                                variant="contained"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation(); // Prevent card click
-                                                                                    handleToggleAvailability(match.id, isUserAvailable);
-                                                                                }}
-                                                                                disabled={availabilityLoading[match.id] || !league?.active}
-                                                                                size="small"
-                                                                                sx={{
-                                                                                    backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : '#0388E3',
-                                                                                    '&:hover': {
-                                                                                        backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : '#0388E3',
-                                                                                        transform: 'translateY(-1px)',
-                                                                                    },
-                                                                                    '&.Mui-disabled': {
-                                                                                        backgroundColor: 'rgba(255,255,255,0.3)',
-                                                                                        color: 'rgba(255,255,255,0.5)'
-                                                                                    },
-                                                                                    fontSize: '0.75rem',
-                                                                                    py: 0.5,
-                                                                                    transition: 'all 0.2s ease-in-out',
-                                                                                    '&:active': {
-                                                                                        transform: 'translateY(0)', // Reset when clicked
-                                                                                    },
-                                                                                }}
-                                                                            >
-                                                                                {availabilityLoading[match.id]
-                                                                                    ? <CircularProgress size={16} color="inherit" />
-                                                                                    : (isUserAvailable ? 'Unavailable' : 'Available')}
-                                                                            </Button>
-                                                                        )}
+                                                                        {/* Bottom Row - Away Team */}
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'space-between',
+                                                                            width: '100%'
+                                                                        }}>
+                                                                            <Box sx={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 1,
+                                                                                flex: 1,
+                                                                                mt: 2,
+                                                                            }}>
+                                                                                <Image
+                                                                                    src={match.awayTeamImage || awayTeamIcon}
+                                                                                    alt={match.awayTeamName || match?.awayTeam}
+                                                                                    width={24}
+                                                                                    height={24}
+                                                                                    style={{ borderRadius: '2px' }}
+                                                                                />
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    sx={{
+                                                                                        color: 'white',
+                                                                                        fontWeight: 'bold',
+                                                                                        fontSize: '0.85rem',
+                                                                                        ml: 2
+                                                                                    }}
+                                                                                    title={match.awayTeamName}
+                                                                                >
+                                                                                    {formatMatchName(match.awayTeamName || match?.awayTeam)}
+                                                                                </Typography>
+
+                                                                            </Box>
+                                                                        </Box>
+
+
+                                                                        {/* Date and Status - Right Side */}
+                                                                        <Box sx={{
+                                                                            display: 'flex',
+                                                                            flexDirection: 'column',
+                                                                            alignItems: 'flex-end',
+                                                                            position: 'absolute',
+                                                                            top: 42,
+                                                                            right: 8
+                                                                        }}>
+                                                                            <Typography variant="body2" sx={{
+                                                                                color: 'white',
+                                                                                fontWeight: 'bold',
+                                                                                fontSize: '0.75rem'
+                                                                            }}>
+                                                                                {formatMatchDate(match.date)}
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem'
+                                                                            }}>
+                                                                                {formatMatchTime(match.date)}
+                                                                            </Typography>
+                                                                            <Divider sx={{ height: '85px', width: '0.5px', color: 'white', bgcolor: 'white', mr: 10.5, mt: -7 }} />
+                                                                        </Box>
                                                                     </Box>
-                                                                    {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+
+                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                                            {/* Availability button */}
+                                                                            {isMember && (
+                                                                                <Button
+                                                                                    variant="contained"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation(); // Prevent card click
+                                                                                        handleToggleAvailability(match.id, isUserAvailable);
+                                                                                    }}
+                                                                                    disabled={availabilityLoading[match.id] || !league?.active}
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 0.8)' : '#0388E3',
+                                                                                        '&:hover': {
+                                                                                            backgroundColor: isUserAvailable ? 'rgba(76, 175, 80, 1)' : '#0388E3',
+                                                                                            transform: 'translateY(-1px)',
+                                                                                        },
+                                                                                        '&.Mui-disabled': {
+                                                                                            backgroundColor: 'rgba(255,255,255,0.3)',
+                                                                                            color: 'rgba(255,255,255,0.5)'
+                                                                                        },
+                                                                                        fontSize: '0.75rem',
+                                                                                        py: 0.5,
+                                                                                        transition: 'all 0.2s ease-in-out',
+                                                                                        '&:active': {
+                                                                                            transform: 'translateY(0)', // Reset when clicked
+                                                                                        },
+                                                                                    }}
+                                                                                >
+                                                                                    {availabilityLoading[match.id]
+                                                                                        ? <CircularProgress size={16} color="inherit" />
+                                                                                        : (isUserAvailable ? 'Unavailable' : 'Available')}
+                                                                                </Button>
+                                                                            )}
+                                                                        </Box>
+                                                                        {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                                                         <Button
                                                                                                             size="small"
                                                                                                             onClick={(e) => e.stopPropagation()} // Prevent card click
@@ -2421,35 +2421,35 @@ export default function AllMatches() {
                                                                                                             Available: {availableCount} | Pending: {pendingCount}
                                                                                                         </Button>
                                                                                                     </Box> */}
-                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                        <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
-                                                                            <span>
-                                                                                <Button
-                                                                                    size="small"
-                                                                                    onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: league?.id ?? selectedLeague, matchId: match.id }); setViewTeamOpen(true); }}
-                                                                                    sx={{
-                                                                                        backgroundColor: '#FA5836',
-                                                                                        color: 'white',
-                                                                                        fontSize: '0.75rem',
-                                                                                        py: 0.5,
-                                                                                        px: 1,
-                                                                                        borderRadius: 1,
-                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                        transition: 'all 0.2s ease-in-out',
-                                                                                        '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
-                                                                                        '&:active': { transform: 'translateY(0)' },
-                                                                                    }}
-                                                                                >
-                                                                                    view team
-                                                                                </Button>
-                                                                            </span>
-                                                                        </Tooltip>
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+                                                                            <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                                <span>
+                                                                                    <Button
+                                                                                        size="small"
+                                                                                        onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: league?.id ?? selectedLeague, matchId: match.id }); setViewTeamOpen(true); }}
+                                                                                        sx={{
+                                                                                            backgroundColor: '#FA5836',
+                                                                                            color: 'white',
+                                                                                            fontSize: '0.75rem',
+                                                                                            py: 0.5,
+                                                                                            px: 1,
+                                                                                            borderRadius: 1,
+                                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                            transition: 'all 0.2s ease-in-out',
+                                                                                            '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                            '&:active': { transform: 'translateY(0)' },
+                                                                                        }}
+                                                                                    >
+                                                                                        view team
+                                                                                    </Button>
+                                                                                </span>
+                                                                            </Tooltip>
+                                                                        </Box>
                                                                     </Box>
-                                                                </Box>
-                                                            </CardContent>
-                                                        </Card>
-                                                    );
-                                                })}
+                                                                </CardContent>
+                                                            </Card>
+                                                        );
+                                                    })}
                                             </Box>
                                         ) : (
                                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -2657,15 +2657,15 @@ export default function AllMatches() {
             </Dialog>
 
 
-             <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
-                            <DialogTitle sx={{ fontWeight: 'bold' }}>Team Preview</DialogTitle>
-                            <DialogContent dividers sx={{ p: 0 }}>
-                                <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
-                            </DialogContent>
-                            <DialogActions>
-                                <Button onClick={() => setViewTeamOpen(false)}>Close</Button>
-                            </DialogActions>
-                        </Dialog>
+            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Team Preview</DialogTitle>
+                <DialogContent dividers sx={{ p: 0 }}>
+                    <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setViewTeamOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
 
         </Box>
     );

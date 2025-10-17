@@ -1857,9 +1857,9 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                     <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
-                    <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('penalties', -1, teamGoalsSafe)} />
+                    {/* <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('penalties', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoalsSafe)} />
-                    <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} />
+                    <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} /> */}
                     {/* Read-only computed Impact display */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
@@ -1924,7 +1924,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)}
                         onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)}
                     />
-                    <StatCounter
+                    {/* <StatCounter
                         icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />}
                         label="Penalties"
                         value={adminStats.penalties}
@@ -1944,7 +1944,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         value={adminStats.defence}
                         onIncrement={() => handleAdminStatChange('defence', 1, 1)}
                         onDecrement={() => handleAdminStatChange('defence', -1, 1)}
-                    />
+                    /> */}
                     {/* Read-only computed Impact display for Admin */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>

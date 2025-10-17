@@ -1501,7 +1501,7 @@ export default function EditMatchPage() {
                   {/* Win Probability */}
                   {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
                     <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Win Probability</Typography>
+                      <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Team Balance</Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                         <Box sx={{ textAlign: 'center' }}>
                           <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof homeWinChance === 'number' ? `${homeWinChance}%` : '—'}</Typography>
