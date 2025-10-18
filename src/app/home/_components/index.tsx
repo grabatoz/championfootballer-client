@@ -33,7 +33,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
-import { League, User } from '@/types/user';
+import { League, User, Match } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { ChevronRight, CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
@@ -72,7 +72,18 @@ import Link from 'next/link';
 //   }
 // }));
 
-type LeagueComputedStatus = { isComplete?: boolean; locked?: boolean; [key: string]: unknown };
+type LeagueComputedStatus = {
+  isComplete?: boolean;
+  locked?: boolean;
+  // Normalized counters (best-effort from API response)
+  matchesPlayed?: number;
+  gamesPlayed?: number;
+  maxGames?: number;
+  totalMatches?: number;
+  // Any remaining requirements to complete the league (must be empty to complete)
+  missing?: Array<unknown>;
+  [key: string]: unknown;
+};
 // Minimal shape used by this component only
 type BasicLeague = {
   id: string | number;
@@ -84,6 +95,8 @@ type BasicLeague = {
   image?: string;
   isComplete?: boolean;
   isCompleted?: boolean;
+  maxGames?: number;
+  matches?: Match[];
 };
 type LeagueWithComputed = BasicLeague & {
   computedStatus?: LeagueComputedStatus;
@@ -101,6 +114,7 @@ type ApiLeague = {
   image?: string;
   isComplete?: boolean;
   isCompleted?: boolean;
+  maxGames?: number;
 };
 
 // Runtime type guard for ApiLeague
@@ -143,6 +157,47 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
 
   // Helper: determine if a league is completed (exclude from dropdown)
   const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
+    // If there are any missing items (e.g., pending stats), do NOT treat as completed
+    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
+    if (missingArr.length > 0) return false;
+
+    // If we have counters, prefer them to decide completion:
+    // require matchesPlayed >= maxGames when maxGames is provided (> 0)
+    const toNum = (v: unknown): number | undefined => {
+      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
+    const playedFromList = undefined; // not available reliably here
+    const played = playedFromComputed ?? playedFromList;
+    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
+
+    // Ported logic from All Leagues: derive completion from matches list when available
+    if (Array.isArray(l.matches)) {
+      const matches = l.matches ?? [];
+      const completedCount = matches.reduce((acc, m) => {
+        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+        const endedByFlag = m.active === false;
+        const endedByEnd = Boolean(m.end);
+        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
+      }, 0);
+      if (typeof maxG === 'number' && maxG > 0) {
+        if (completedCount < maxG) return false; // not complete yet
+        // completed by matches threshold -> consider complete (missing already checked above)
+        return true;
+      }
+    }
+
+    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
+      if (played < maxG) {
+        // Even if backend flags it completed/locked, do NOT treat as completed until maxGames reached
+        return false;
+      }
+      // Counters meet threshold and missing is empty -> complete
+      return true;
+    }
+
     // Primary: explicit completion flags coming from backend
     if (l?.computedStatus?.isComplete === true) return true;
     if (l?.computedStatus?.locked === true) return true;
@@ -241,12 +296,56 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             const enrichedLeagues: LeagueWithComputed[] = await Promise.all(
               uniqueLeagues.map(async (l: ApiLeague): Promise<LeagueWithComputed> => {
                 try {
-                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (res.ok) {
-                    const statusData = await res.json();
-                    const computed = (statusData?.status || {}) as LeagueComputedStatus;
+                  const [statusRes, detailsRes] = await Promise.all([
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                  ]);
+
+                  let matchesFromDetails: Match[] | undefined = undefined;
+                  let maxGamesFromDetails: number | undefined = undefined;
+                  if (detailsRes.ok) {
+                    const leagueData = await detailsRes.json();
+                    const rawMatches = leagueData?.league?.matches as unknown;
+                    if (Array.isArray(rawMatches)) {
+                      matchesFromDetails = rawMatches as Match[];
+                    }
+                    // also capture maxGames if present in details
+                    if (typeof leagueData?.league?.maxGames === 'number') {
+                      maxGamesFromDetails = leagueData.league.maxGames as number;
+                    }
+                  }
+
+                  if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    const raw = (statusData?.status || {}) as Record<string, unknown>;
+                    const toNum = (v: unknown): number | undefined => {
+                      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+                      return Number.isFinite(n) ? n : undefined;
+                    };
+                    const matchesPlayed = toNum(
+                      raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed
+                    );
+                    const maxGames = toNum(
+                      raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? l?.maxGames
+                    );
+                    const locked = raw?.locked === true;
+                    // Normalize isComplete: respect backend flag, but we may override later in leagueIsCompleted
+                    const isComplete = raw?.isComplete === true;
+                    const missingRaw = (raw as Record<string, unknown>)?.missing as unknown;
+                    const missing = Array.isArray(missingRaw) ? missingRaw : [];
+                    const computed: LeagueComputedStatus = {
+                      ...(raw as LeagueComputedStatus),
+                      matchesPlayed,
+                      gamesPlayed: matchesPlayed,
+                      maxGames,
+                      locked,
+                      isComplete,
+                      missing,
+                    };
                     const idStr = String(l.id);
                     const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr)
                       ? 'ADMIN'
@@ -264,6 +363,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
                       computedStatus: computed,
                       isLocked: computed?.locked === true,
                       userRole: role,
+                      maxGames: maxGames ?? maxGamesFromDetails ?? l.maxGames,
+                      matches: matchesFromDetails,
                     };
                   }
                 } catch {}
@@ -282,6 +383,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
                   isComplete: l.isComplete,
                   isCompleted: l.isCompleted,
                   userRole: role,
+                  maxGames: l.maxGames,
+                  matches: undefined,
                 };
               })
             );
@@ -297,16 +400,31 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             // Debug: log league completion flags for verification
             try {
               if (typeof window !== 'undefined' && normalizedLeagues.length) {
-                const rows = normalizedLeagues.map((l) => ({
+                const rows = normalizedLeagues.map((l) => {
+                  const matches = Array.isArray(l.matches) ? l.matches : [];
+                  const completedCount = matches.reduce((acc, m) => {
+                    const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+                    const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+                    const endedByFlag = m.active === false;
+                    const endedByEnd = Boolean(m.end);
+                    return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
+                  }, 0);
+                  return ({
                   id: l?.id,
                   name: l?.name,
                   isComplete: Boolean(l?.isComplete),
                   isCompleted: Boolean(l?.isCompleted),
                   computedIsComplete: Boolean(l?.computedStatus?.isComplete),
                   locked: Boolean(l?.computedStatus?.locked || l?.isLocked),
+                  matchesPlayed: (l?.computedStatus?.matchesPlayed ?? l?.computedStatus?.gamesPlayed) ?? null,
+                  maxGames: l?.computedStatus?.maxGames ?? l?.maxGames ?? null,
+                  missingCount: Array.isArray(l?.computedStatus?.missing) ? (l?.computedStatus?.missing as unknown[]).length : 0,
+                  matchesCompleted: completedCount,
+                  matchesTotal: matches.length,
                   status: String(l?.status ?? 'active'),
                   active: typeof l?.active === 'boolean' ? l.active : true,
-                }));
+                  });
+                });
                 console.group('[Home] League completion check');
                 console.table(rows);
                 console.groupEnd();

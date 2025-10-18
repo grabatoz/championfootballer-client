@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
-import { ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
+import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
@@ -16,6 +16,7 @@ import { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import TeamPreviewScreen from '@/Components/viewteam/viewteam';
+import CloseIcon from '@mui/icons-material/Close';
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
@@ -28,6 +29,7 @@ interface Match {
     awayScore: number;
     matchTime: string;
     date: string;
+    location?: string;
     availablePlayers: number;
     pendingPlayers: number;
     status: 'SCHEDULED' | 'RESULT_PUBLISHED' | 'RESULT_UPLOADED';
@@ -255,17 +257,17 @@ export default function AllMatches() {
         return props;
     };
 
-    // const getAvailabilityCounts = (match: Match) => {
-    //     // Find the league for this match
-    //     const leagueForMatch = leagues.find(l => l.id === match.leagueId);
-    //     const leagueMembers = leagueForMatch?.members || [];
-    //     // Count how many league members are in availableUsers
-    //     const availableCount = leagueMembers.filter(member =>
-    //         match.availableUsers?.some((u: User) => u.id === member.id)
-    //     ).length;
-    //     const pendingCount = leagueMembers.length - availableCount;
-    //     return { availableCount, pendingCount };
-    // };
+    const getAvailabilityCounts = (match: Match) => {
+        // Find the league for this match
+        const leagueForMatch = leagues.find(l => l.id === match.leagueId);
+        const leagueMembers = leagueForMatch?.members || [];
+        // Count how many league members are in availableUsers
+        const availableCount = leagueMembers.filter(member =>
+            match.availableUsers?.some((u: User) => u.id === member.id)
+        ).length;
+        const pendingCount = leagueMembers.length - availableCount;
+        return { availableCount, pendingCount };
+    };
     const [, setError] = useState<string | null>(null);
     const [league, setLeague] = useState<League | null>(null);
     const [, setToastMessage] = useState<string | null>(null);
@@ -629,8 +631,8 @@ export default function AllMatches() {
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
 
-    const [, setMatchDetailModalOpen] = useState(false);
-    const [, setSelectedMatchDetail] = useState<Match | null>(null);
+    const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
+    const [selectedMatchDetail, setSelectedMatchDetail] = useState<Match | null>(null);
 
     const handleRequestDeleteMatch = (match: Match) => {
         setMatchPendingDelete(match);
@@ -852,16 +854,325 @@ export default function AllMatches() {
         }
     };
 
-    // const handleMatchCardClick = (match: Match, event: React.MouseEvent) => {
-    //     // Prevent opening modal if clicking on buttons
-    //     const target = event.target as HTMLElement;
-    //     const isButton = target.closest('button') || target.closest('a');
 
-    //     if (!isButton) {
-    //         setSelectedMatchDetail(match);
-    //         setMatchDetailModalOpen(true);
-    //     }
-    // };
+
+     const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
+            if (!match) return null;
+    
+            return (
+                <Dialog
+                    open={open}
+                    onClose={onClose}
+                    fullWidth
+                    maxWidth="md" // Changed to md for more width
+                    PaperProps={{
+                        sx: {
+                            bgcolor: 'rgba(15,15,15,0.95)',
+                            color: '#E5E7EB',
+                            borderRadius: 3,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(20px)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                            overflow: 'hidden',
+                        },
+                    }}
+                >
+                    <DialogTitle
+                        sx={{
+                            fontWeight: 'bold',
+                            position: 'relative',
+                            color: '#E5E7EB',
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)',
+                            py: 2.5
+                        }}
+                    >
+                        Match Details
+                        <IconButton
+                            aria-label="close"
+                            onClick={onClose}
+                            sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 8,
+                                color: '#9CA3AF',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                            }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+    
+                    <DialogContent sx={{ p: 0 }}>
+                        {/* Match Header - Teams Side by Side */}
+                        <Box sx={{
+                            p: 3,
+                            background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                            color: 'white'
+                        }}>
+                            {/* Teams in a row layout */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                {/* Home Team */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    flex: 1,
+                                    minWidth: 0 // Prevent overflow
+                                }}>
+                                    <Image
+                                        src={match.homeTeamImage || homeTeamIcon}
+                                        alt={match.homeTeamName || ''}
+                                        width={40}
+                                        height={40}
+                                        style={{ borderRadius: '6px', flexShrink: 0 }}
+                                    />
+                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                        <Typography
+                                            variant="h6"
+                                            sx={{
+                                                fontWeight: 'bold',
+                                                fontSize: { xs: '1rem', sm: '1.25rem' },
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            {formatMatchName(match.homeTeamName || '')}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                opacity: 0.8,
+                                                fontSize: '0.8rem'
+                                            }}
+                                        >
+                                            Home
+                                        </Typography>
+                                    </Box>
+                                </Box>
+    
+                                {/* Score Section */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    flexShrink: 0
+                                }}>
+                                    {match.status === 'RESULT_PUBLISHED' && (
+                                        <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            backgroundColor: 'rgba(255,255,255,0.15)',
+                                            px: 2,
+                                            py: 1,
+                                            borderRadius: 2
+                                        }}>
+                                            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                                                {match.homeTeamGoals || 0}
+                                            </Typography>
+                                            <Typography variant="h6" sx={{ opacity: 0.7 }}>
+                                                -
+                                            </Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                                                {match.awayTeamGoals || 0}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {match.status === 'SCHEDULED' && (
+                                        <Box sx={{
+                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                            px: 2,
+                                            py: 1,
+                                            borderRadius: 2
+                                        }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                VS
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+    
+                                {/* Away Team */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    flex: 1,
+                                    flexDirection: 'row-reverse', // Reverse order for visual balance
+                                    minWidth: 0
+                                }}>
+                                    <Image
+                                        src={match.awayTeamImage || awayTeamIcon}
+                                        alt={match.awayTeamName || ''}
+                                        width={40}
+                                        height={40}
+                                        style={{ borderRadius: '6px', flexShrink: 0 }}
+                                    />
+                                    <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
+                                        <Typography
+                                            variant="h6"
+                                            sx={{
+                                                fontWeight: 'bold',
+                                                fontSize: { xs: '1rem', sm: '1.25rem' },
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            {formatMatchName(match.awayTeamName || '')}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                opacity: 0.8,
+                                                fontSize: '0.8rem'
+                                            }}
+                                        >
+                                            Away
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
+    
+                        {/* Match Info */}
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                            {/* Date & Time */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Calendar size={20} color="#E5E7EB" />
+                                <Box>
+                                    <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                        Date & Time
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                        {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
+                                    </Typography>
+                                </Box>
+                            </Box>
+    
+                            {/* Location */}
+                            {match?.location && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{
+                                        width: 20,
+                                        height: 20,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        📍
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                            Location
+                                        </Typography>
+                                        <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
+                                            {match?.location}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+    
+                            {/* Status */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box sx={{
+                                    width: 20,
+                                    height: 20,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {match.status === 'RESULT_PUBLISHED' ? '✅' : match.status === 'RESULT_UPLOADED' ? '⌛' : '⏰'}
+                                </Box>
+                                <Box>
+                                    <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                        Status
+                                    </Typography>
+                                    <Chip
+                                        label={match.status === 'RESULT_PUBLISHED' ? 'RESULT_PUBLISHED' : match.status === 'RESULT_UPLOADED' ? 'Awaiting Confirmation' : 'SCHEDULED'}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: match.status === 'RESULT_PUBLISHED' ? '#16a34a' : match.status === 'RESULT_UPLOADED' ? '#ea580c' : '#0388E3',
+                                            color: 'white',
+                                            fontWeight: 'bold',
+                                            fontSize: '0.75rem'
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+    
+                            {/* Availability Info for Scheduled Matches */}
+                            {match.status === 'SCHEDULED' && (
+                                <Box sx={{
+                                    mt: 2,
+                                    p: 2,
+                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                    borderRadius: 2,
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                }}>
+                                    <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
+                                        Player Availability
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                        <Chip
+                                            label={`Available: ${getAvailabilityCounts(match).availableCount}`}
+                                            size="small"
+                                            sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
+                                        />
+                                        <Chip
+                                            label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
+                                            size="small"
+                                            sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                    </DialogContent>
+    
+                    <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <Button
+                            onClick={onClose}
+                            variant="outlined"
+                            sx={{
+                                color: '#E5E7EB',
+                                borderColor: 'rgba(255,255,255,0.2)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                    borderColor: 'rgba(255,255,255,0.3)'
+                                }
+                            }}
+                        >
+                            Close
+                        </Button>
+                        <Link href={`/match/${match.id}`} passHref>
+                            <Button
+                                variant="contained"
+                                sx={{
+                                    backgroundColor: '#0388E3',
+                                    '&:hover': { backgroundColor: '#0369a1' }
+                                }}
+                            >
+                                View Full Details
+                            </Button>
+                        </Link>
+                    </DialogActions>
+                </Dialog>
+            );
+        };
+
+    const handleMatchCardClick = (match: Match, event: React.MouseEvent) => {
+        // Prevent opening modal if clicking on buttons
+        const target = event.target as HTMLElement;
+        const isButton = target.closest('button') || target.closest('a');
+
+        if (!isButton) {
+            setSelectedMatchDetail(match);
+            setMatchDetailModalOpen(true);
+        }
+    };
 
 
     return (
@@ -1169,16 +1480,21 @@ export default function AllMatches() {
                                 isCompleted ? (
 
 
-                                    <Card key={match.id} sx={{
+                                    <Card
+                                        key={match.id}
+                                        onClick={(e) => { if (match.status === 'SCHEDULED') handleMatchCardClick(match, e); }}
+                                        sx={{
                                         position: 'relative',
                                         borderRadius: 3,
                                         backdropFilter: 'blur(10px)',
                                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                            cursor: match.status === 'SCHEDULED' ? 'pointer' : 'default',
                                         '&:hover': {
                                             transform: 'translateY(-2px)',
                                             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                         }
-                                    }}>
+                                        }}
+                                    >
                                         <CardContent sx={{ p: 2 }}>
                                             {isAdmin && (
                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
@@ -1516,7 +1832,11 @@ export default function AllMatches() {
                                         </CardContent>
                                     </Card>
                                 ) : (
-                                    <Card key={match.id} sx={{
+                                    <Card
+                                        key={match.id}
+                                        onClick={(e) => { if (match.status === 'SCHEDULED') handleMatchCardClick(match, e); }}
+                                   
+                                    sx={{
                                         // background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
                                         // background: 'rgba(255,255,255,0.1)',
                                         position: 'relative',
@@ -1526,12 +1846,14 @@ export default function AllMatches() {
                                         // background: '#01c697',
                                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                         // border: '2px solid #02a880',
+                                            cursor: match.status === 'SCHEDULED' ? 'pointer' : 'default',
                                         '&:hover': {
                                             // border: '3px solid #02a880',
                                             transform: 'translateY(-2px)',
                                             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
                                         }
-                                    }}>
+                                        }}
+                                    >
                                         <CardContent sx={{ p: 2 }}>
                                             {isAdmin && (
                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
@@ -1563,7 +1885,7 @@ export default function AllMatches() {
                                                 </Box>
                                             )}
 
-                                            <Link href={`/match/${match?.id}`}>
+                                            <Box   onClick={(e) => { if (match.status === 'SCHEDULED') handleMatchCardClick(match, e); }}>
                                                 <Box sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -1705,7 +2027,7 @@ export default function AllMatches() {
                                                         <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 10.5, mt: -7 }}  />
                                                     </Box>
                                                 </Box>
-                                            </Link>
+                                            </Box>
 
 
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 , mb: -3}}>
@@ -1776,7 +2098,13 @@ export default function AllMatches() {
                             )
                         })
                     )}
+                      
                 </Box>
+                 <MatchDetailModal
+                            open={matchDetailModalOpen}
+                            onClose={() => setMatchDetailModalOpen(false)}
+                            match={selectedMatchDetail}
+                        />
 
                 {/* Team Modal */}
                 <Dialog open={teamModalOpen} onClose={handleCloseTeamModal} fullWidth maxWidth="sm">

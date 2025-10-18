@@ -1486,6 +1486,11 @@ export default function LeagueDetailPage() {
         return list;
     }, [league, leagueWinners, userLeagueXP, motmCounts]);
 
+    // Type for MOTM votes map: voterId -> votedForId
+    type ManOfTheMatchVotes = Record<string, string | number>;
+    const hasMotmVotes = (m: unknown): m is { manOfTheMatchVotes?: ManOfTheMatchVotes } =>
+        typeof m === 'object' && m !== null && 'manOfTheMatchVotes' in m;
+
     // Aggregate MOTM votes locally from league.matches so every player's votes show
     useEffect(() => {
         if (!league?.members?.length) return;
@@ -1493,7 +1498,9 @@ export default function LeagueDetailPage() {
         // Initialize all members with 0 to ensure everyone shows up
         league.members.forEach(m => { counts[m.id] = 0; });
         (league.matches || []).forEach((match) => {
-            const votes = (match as any)?.manOfTheMatchVotes ?? {};
+            const votes: ManOfTheMatchVotes = hasMotmVotes(match) && match.manOfTheMatchVotes
+                ? match.manOfTheMatchVotes
+                : {};
             // votes is record voterId -> votedForId; we count by votedForId
             Object.values(votes).forEach((votedForId) => {
                 const pid = String(votedForId);
