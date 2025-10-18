@@ -105,6 +105,18 @@ interface League {
 
 type PlayerWithTeam = User & { __team: 'home' | 'away' };
 
+// Lightweight per-match stats shape for table display (includes XP)
+type MatchStatLite = {
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  penalties: number;
+  freeKicks: number;
+  defence: number;
+  impact: number;
+  xpAwarded: number;
+};
+
 
 export default function MatchDetailsPage() {
   const params = useParams();
@@ -119,6 +131,9 @@ export default function MatchDetailsPage() {
   const [, setVotedForId] = useState<string | null>(null);
   // track if we already attempted detailed fetch to avoid loops
   const detailedFetchDone = useRef(false);
+  // cache of per-player stats fetched via ultra-fast endpoint (used for guests)
+  const [perPlayerStats, setPerPlayerStats] = useState<Record<string, MatchStatLite>>({});
+  const fetchedStatsKeysRef = useRef(new Set<string>());
 
   useEffect(() => {
     if (!matchId || !token) return;
@@ -169,6 +184,46 @@ export default function MatchDetailsPage() {
       } catch { /* ignore */ }
     })();
   }, [match, token]);
+
+  // Fetch per-match stats for guests (and only once per guest id)
+  useEffect(() => {
+    if (!token || !matchId || !match?.guests?.length) return;
+    const guestIds = (match.guests || []).map(g => String(g.id));
+    const toFetchKeys = guestIds
+      .map(id => `guest-${id}`)
+      .filter(key => !fetchedStatsKeysRef.current.has(key));
+    if (!toFetchKeys.length) return;
+
+    (async () => {
+      await Promise.allSettled(toFetchKeys.map(async key => {
+        const rawGuestId = key.replace(/^guest-/, '');
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${encodeURIComponent(rawGuestId)}` , {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!res.ok) return;
+          const data = await res.json().catch(() => null);
+          if (data?.success && data.stats) {
+            setPerPlayerStats(prev => ({
+              ...prev,
+              [key]: {
+                goals: Number(data.stats.goals) || 0,
+                assists: Number(data.stats.assists) || 0,
+                cleanSheets: Number(data.stats.cleanSheets) || 0,
+                penalties: Number(data.stats.penalties) || 0,
+                freeKicks: Number(data.stats.freeKicks) || 0,
+                defence: Number(data.stats.defence) || 0,
+                impact: Number(data.stats.impact) || 0,
+                xpAwarded: Number(data.stats.xpAwarded) || 0,
+              }
+            }));
+          }
+        } finally {
+          fetchedStatsKeysRef.current.add(key);
+        }
+      }));
+    })();
+  }, [token, matchId, match?.guests]);
 
   // Automatically select home team on load if match is loaded
   useEffect(() => {
@@ -375,6 +430,8 @@ export default function MatchDetailsPage() {
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
+                // Shared grid template: Player | Goals | Assists | Clean Sheets | Impact | XP
+                const GRID_COLS = 'minmax(220px, 1fr) repeat(5, 64px)';
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
                   firstName: g.firstName,
@@ -431,7 +488,7 @@ export default function MatchDetailsPage() {
                             fontWeight="bold"
                             sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}
                           >
-                            All Players
+                            Match Result
                           </Typography>
                           <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
 
@@ -443,29 +500,26 @@ export default function MatchDetailsPage() {
                               px: 2,
                               py: 1,
                               mb: 2,
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'grid',
+                              gridTemplateColumns: GRID_COLS,
+                              alignItems: 'center',
+                              columnGap: 0,
                             }}
                           >
-                            <Box sx={{ ml: 4, flex: 1, color: "white", fontWeight: "bold", fontSize: 14 }}>
-                              Player
-                            </Box>
-                           
-                            <Box sx={{ display: "flex", gap: 2, color: "white", fontWeight: "bold", fontSize: 14, ml: 2 }}>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Gs</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>As</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>CS</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Plt</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>FK</Box>
-                              <Box sx={{ minWidth: 30, textAlign: "center" }}>Df</Box>
-                              <Box sx={{ minWidth: 35, textAlign: "center" }}>Imp</Box>
-                            </Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, pl: 2 }}>Player</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Goals</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Assists</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Clean Sheets</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Imp</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>XP</Box>
                           </Box>
 
                           {/* Rows */}
                           <Box>
                             {allPlayers.map((player, idx) => {
-                              const stats = player.statistics?.[0] || {};
+                              const embedded = (player.statistics?.[0] as Partial<MatchStatLite>) || {};
+                              // Prefer API-fetched per-match stats for guests; fall back to embedded for users
+                              const stats: Partial<MatchStatLite> = perPlayerStats[player.id] || embedded;
                               const isHome = player.__team === 'home';
                               const isCaptain = player.id === (isHome ? match.homeCaptainId : match.awayCaptainId);
                               const textColor = '#fff';
@@ -476,46 +530,31 @@ export default function MatchDetailsPage() {
                                   <Link href={`/player/${player.id}`} passHref>
                                     <Box
                                       sx={{
-                                        display: "flex",
-                                        alignItems: "center",
+                                        display: 'grid',
+                                        gridTemplateColumns: GRID_COLS,
+                                        alignItems: 'center',
+                                        columnGap: 0,
                                         p: 2,
                                         background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                                         color: textColor,
                                         fontWeight,
                                         boxShadow: 3,
                                         minHeight: 70,
-                                        gap: 2,
                                       }}
                                     >
-                                      {/* Shirt + Number */}
-                                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
-                                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                                          <Box
-                                            sx={{
-                                              position: 'absolute',
-                                              inset: 0,
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              color: '#fff',
-                                              fontWeight: 800,
-                                              fontSize: 14,
-                                              lineHeight: 1,
-                                            }}
-                                          >
-                                            {player.shirtNumber || "0"}
+                                      {/* Player cell */}
+                                      <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
+                                          <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+                                            <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           </Box>
                                         </Box>
-                                      </Box>
 
-                                      {/* Name */}
-                                      <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
                                         <Typography
                                           variant="body2"
                                           sx={{
-                                            fontWeight: "medium",
-                                            color: "white",
+                                            fontWeight: 'medium',
+                                            color: 'white',
                                             fontSize: 14,
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
@@ -539,51 +578,30 @@ export default function MatchDetailsPage() {
                                             />
                                           )}
                                         </Typography>
-                                          <Box
-                                    sx={{
-                                      minWidth: 8,
-                                      textAlign: "center",
-                                      fontSize: 12,
-                                      fontWeight: 800,
-                                      color: '#fff',
-                                      bgcolor: isHome ? '#16a34a' : '#2563eb',
-                                      px: 1,
-                                      py: 0.8,
-                                      borderRadius: 1,
-                                      ml: 2
-                                    }}
-                                  >
-                                    {/* {isHome ? 'H' : 'A'} */}
-                                  </Box>
+
+                                        <Box
+                                          sx={{
+                                            minWidth: 8,
+                                            textAlign: 'center',
+                                            fontSize: 12,
+                                            fontWeight: 800,
+                                            color: '#fff',
+                                            bgcolor: isHome ? '#16a34a' : '#2563eb',
+                                            px: 1,
+                                            py: 0.8,
+                                            borderRadius: 1,
+                                            ml: 2,
+                                            flexShrink: 0,
+                                          }}
+                                        />
                                       </Box>
 
-                                      {/* Team tag */}
-                                      {/* <Box
-                                        sx={{
-                                          minWidth: 38,
-                                          textAlign: "center",
-                                          fontSize: 12,
-                                          fontWeight: 800,
-                                          color: '#fff',
-                                          bgcolor: isHome ? '#16a34a' : '#2563eb',
-                                          px: 1,
-                                          py: 0.25,
-                                          borderRadius: 1,
-                                        }}
-                                      >
-                                        {isHome ? 'H' : 'A'}
-                                      </Box> */}
-
-                                      {/* Stats */}
-                                      <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.goals ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.assists ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.penalties ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.freeKicks ?? 0}</Box>
-                                        <Box sx={{ minWidth: 30, textAlign: "center", fontSize: 14 }}>{stats.defence ?? 0}</Box>
-                                        <Box sx={{ minWidth: 35, textAlign: "center", fontSize: 14 }}>{stats.impact ?? 0}</Box>
-                                      </Box>
+                                      {/* Stats cells */}
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.goals ?? 0}</Box>
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.assists ?? 0}</Box>
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.xpAwarded ?? 0}</Box>
                                     </Box>
                                     <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
                                   </Link>

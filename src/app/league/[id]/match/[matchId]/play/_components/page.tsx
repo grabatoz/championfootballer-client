@@ -1247,7 +1247,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && !player.hasOwnProperty('isGuest') && (
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
@@ -1435,7 +1435,6 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                                                                 </>
                                                             ) : (
                                                                 <Link href={`/player/${player.id}`}>
-
                                                                     <Typography variant="h6" sx={{
                                                                         color: 'white',
                                                                         fontWeight: 'bold',
@@ -1485,7 +1484,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                                                                 </Button> */}
 
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && !player.hasOwnProperty('isGuest') && (
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
