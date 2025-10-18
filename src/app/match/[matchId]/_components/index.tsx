@@ -171,7 +171,7 @@ export default function MatchDetailsPage() {
   useEffect(() => {
     if (!match || !token || !match.leagueId) return;
     // If guests already present or already fetched, skip
-  if (match.guests?.length || detailedFetchDone.current) return;
+    if (match.guests?.length || detailedFetchDone.current) return;
     detailedFetchDone.current = true;
     (async () => {
       try {
@@ -198,7 +198,7 @@ export default function MatchDetailsPage() {
       await Promise.allSettled(toFetchKeys.map(async key => {
         const rawGuestId = key.replace(/^guest-/, '');
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${encodeURIComponent(rawGuestId)}` , {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${encodeURIComponent(rawGuestId)}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (!res.ok) return;
@@ -331,49 +331,49 @@ export default function MatchDetailsPage() {
   const JerseyAvatar = ({
     number,
     sx = {},
-}: {
+  }: {
     number?: string | number;
     sx?: SxProps<Theme>;
-}) => (
+  }) => (
     <Box
-        sx={{
-            position: 'relative',
-            width: 60,
-            height: 60,
-            overflow: 'hidden',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...sx,
-        }}
+      sx={{
+        position: 'relative',
+        width: 60,
+        height: 60,
+        overflow: 'hidden',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...sx,
+      }}
     >
-        <Image
-            src={ShirtImg}
-            alt="Shirt"
-            fill
-            sizes="(max-width: 600px) 48px, 60px"
-            quality={100}
-            style={{ objectFit: 'contain' }}
-            priority
-        />
-        <Typography
-            component="span"
-            sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                color: '#fff',
-                fontWeight: 800,
-                textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-                fontSize: { xs: 10, sm: 12, md: 18 },
-                lineHeight: 1,
-            }}
-        >
-            {number ?? '0'}
-        </Typography>
+      <Image
+        src={ShirtImg}
+        alt="Shirt"
+        fill
+        sizes="(max-width: 600px) 48px, 60px"
+        quality={100}
+        style={{ objectFit: 'contain' }}
+        priority
+      />
+      <Typography
+        component="span"
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#fff',
+          fontWeight: 800,
+          textShadow: '0 2px 4px rgba(0,0,0,0.6)',
+          fontSize: { xs: 10, sm: 12, md: 18 },
+          lineHeight: 1,
+        }}
+      >
+        {number ?? '0'}
+      </Typography>
     </Box>
-);
+  );
 
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
@@ -618,65 +618,65 @@ export default function MatchDetailsPage() {
             </Box>
           </Box>
 
-       <div className="p-6 mt-8 text-white rounded-lg" style={{ background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
-                      <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
-                      <div className="w-full h-px bg-white mb-6"></div>
-      
-                      {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
-                      <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                          {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                              .filter(player => playerVotes[player.id] > 0)
-                              .map((player) => (
-                                  <Link key={player.id} href={`/player/${player.id}`}>
-                                      <div className="group">
-                                          {/* Mobile layout: Image on top center */}
-                                          <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
-                                              {/* Profile Image */}
-                                              {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
-                                              {/* -                                           <img */}
-                                              {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
-                                              {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
-                                              {/* -                                               className="w-full h-full object-cover" */}
-                                              {/* -                                           /> */}
-                                              {/* -                                       </div> */}
-                                              <JerseyAvatar
-                                                  number={player.shirtNumber || '0'}
-                                                  sx={{
-                                                      width: { xs: 25, sm: 35, md: 74 },
-                                                      height: { xs: 25, sm: 35, md: 74 },
-                                                      mr: { xs: 1, sm: 1.5 },
-                                                  }}
-                                              />
-                                              {/* Player Info */}
-                                              <div className="flex-1 min-w-0 text-center sm:text-left">
-                                                  <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
-                                                      {player.firstName} {player.lastName}
-                                                      {player.id === match.homeCaptainId ? " (C)" : ""}
-                                                  </h3>
-      
-                                                  <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
-                                                      {player.positionType || "Player"}
-                                                  </p>
-      
-                                                  {/* Buttons */}
-                                                  <div className="flex justify-center sm:justify-start gap-2 items-center">
-                                                      <Button
-                                                          variant="contained"
-                                                          size="small"
-                                                          className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                                                      >
-                                                          {typeof playerVotes[player.id] === "number" &&
-                                                              playerVotes[player.id] > 0 &&
-                                                              `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
-                                                      </Button>
-                                                  </div>
-                                              </div>
-                                          </div>
-                                      </div>
-                                  </Link>
-                              ))}
+          <div className="p-6 mt-8 text-white rounded-lg" style={{ background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
+            <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
+            <div className="w-full h-px bg-white mb-6"></div>
+
+            {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
+            <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
+              {[...match.homeTeamUsers, ...match.awayTeamUsers]
+                .filter(player => playerVotes[player.id] > 0)
+                .map((player) => (
+                  <Link key={player.id} href={`/player/${player.id}`}>
+                    <div className="group">
+                      {/* Mobile layout: Image on top center */}
+                      <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
+                        {/* Profile Image */}
+                        {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
+                        {/* -                                           <img */}
+                        {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
+                        {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
+                        {/* -                                               className="w-full h-full object-cover" */}
+                        {/* -                                           /> */}
+                        {/* -                                       </div> */}
+                        <JerseyAvatar
+                          number={player.shirtNumber || '0'}
+                          sx={{
+                            width: { xs: 25, sm: 35, md: 74 },
+                            height: { xs: 25, sm: 35, md: 74 },
+                            mr: { xs: 1, sm: 1.5 },
+                          }}
+                        />
+                        {/* Player Info */}
+                        <div className="flex-1 min-w-0 text-center sm:text-left">
+                          <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
+                            {player.firstName} {player.lastName}
+                            {player.id === match.homeCaptainId ? " (C)" : ""}
+                          </h3>
+
+                          <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
+                            {player.positionType || "Player"}
+                          </p>
+
+                          {/* Buttons */}
+                          <div className="flex justify-center sm:justify-start gap-2 items-center">
+                            <Button
+                              variant="contained"
+                              size="small"
+                              className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                            >
+                              {typeof playerVotes[player.id] === "number" &&
+                                playerVotes[player.id] > 0 &&
+                                `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                  </div>
+                    </div>
+                  </Link>
+                ))}
+            </div>
+          </div>
         </>
       )}
     </Box>

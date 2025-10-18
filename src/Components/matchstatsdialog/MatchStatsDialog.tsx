@@ -20,6 +20,7 @@ import {
     SxProps,
     Theme,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -39,6 +40,20 @@ import Check from '@/Components/images/check.png'
 import Coin from '@/Components/images/icon.png'
 import Shirt from '@/Components/images/shirtimg.png'
 import Image from 'next/image'
+
+// Optional external control props to allow rendering this whole page inside a Dialog
+// When "open" is provided, the component will render its entire UI wrapped in a MUI Dialog
+// and call onClose when the dialog's close button/backdrop is triggered.
+// Other props are accepted for compatibility with current callers but not used here.
+interface EmbeddedControlProps {
+    open?: boolean;
+    onClose?: () => void;
+    onSave?: (stats?: unknown) => void;
+    isSubmitting?: boolean;
+    stats?: unknown;
+    handleStatChange?: (...args: any[]) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+    teamGoals?: number;
+}
 
 type MatchApiResponse = {
     success?: boolean;
@@ -277,7 +292,8 @@ type CaptainPicks = { defence?: string; influence?: string };
 // }
 // --- end helpers ---
 
-export default function PlayMatchPage() {
+const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
+    const { open, onClose } = props;
     const [league, setLeague] = useState<League | null>(null);
     const [match, setMatch] = useState<MatchWithGuests | null>(null);
     const [loading, setLoading] = useState(true);
@@ -326,6 +342,7 @@ export default function PlayMatchPage() {
     const [matchesLoading, setMatchesLoading] = useState(false);
     const [matchesError, setMatchesError] = useState<string | null>(null);
     const [selectedLeagueMatches, setSelectedLeagueMatches] = useState<Partial<Match>[]>([]);
+    const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
 
     // --- NEW: Captain Picks state ---
     const [captainPicks, setCaptainPicks] = useState<CaptainPicks>({});
@@ -341,6 +358,11 @@ export default function PlayMatchPage() {
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
     const matchId = params?.matchId ? String(params.matchId) : '';
+    // Embedded-mode resolved ids (auto-picked latest)
+    const [currentLeagueId, setCurrentLeagueId] = useState<string>('');
+    const [currentMatchId, setCurrentMatchId] = useState<string>('');
+    const resolvedLeagueId = currentLeagueId || leagueId;
+    const resolvedMatchId = currentMatchId || matchId;
 
     // --- NEW: handlers to fetch leagues and matches ---
     const openLeagueSelector = useCallback(async () => {
@@ -417,7 +439,8 @@ export default function PlayMatchPage() {
     }, []);
 
     const fetchSelectedLeagueMatches = useCallback(async () => {
-        if (!selectedLeagueIdForList) {
+        const leagueIdForList = (selectedLeagueIdForList || resolvedLeagueId || '').trim();
+        if (!leagueIdForList) {
             toast.error('Please select a league first.');
             return;
         }
@@ -426,7 +449,7 @@ export default function PlayMatchPage() {
         setMatchesError(null);
         try {
             // Try query param endpoint first
-            let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(selectedLeagueIdForList)}`, {
+            let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(leagueIdForList)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.status === 404 || res.status === 405) {
@@ -442,7 +465,7 @@ export default function PlayMatchPage() {
             let matchesArr: any[] = data?.matches || data?.data || data?.leagueMatches || [];
             if (!Array.isArray(matchesArr)) matchesArr = [];
             // Always filter by selected league id to be consistent across endpoints
-            const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(selectedLeagueIdForList));
+            const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(leagueIdForList));
             setSelectedLeagueMatches(filtered);
             if (filtered.length === 0) {
               toast('No matches found for this league yet.');
@@ -452,7 +475,20 @@ export default function PlayMatchPage() {
         } finally {
             setMatchesLoading(false);
         }
-    }, [selectedLeagueIdForList, token]);
+    }, [selectedLeagueIdForList, resolvedLeagueId, token]);
+
+    // Open Matches Dialog and fetch
+    const openMatchesDialog = useCallback(async () => {
+        // default selected league id to current if none selected explicitly
+        if (!selectedLeagueIdForList && resolvedLeagueId) {
+            setSelectedLeagueIdForList(resolvedLeagueId);
+            setSelectedLeagueNameForList(league?.name || selectedLeagueNameForList);
+        }
+        setMatchesDialogOpen(true);
+        setSelectedLeagueMatches([]);
+        setMatchesError(null);
+        await fetchSelectedLeagueMatches();
+    }, [resolvedLeagueId, selectedLeagueIdForList, fetchSelectedLeagueMatches, league?.name, selectedLeagueNameForList]);
 
     // Navigate to a selected match's play page
     const goToMatch = useCallback((mid?: string, lid?: string | null) => {
@@ -466,34 +502,65 @@ export default function PlayMatchPage() {
     }, [router, selectedLeagueIdForList]);
 
     // CHANGED: add "silent" flag to avoid flipping global loading during save
-    const fetchLeagueAndMatchDetails = useCallback(async (silent: boolean = false) => {
+    const fetchLeagueAndMatchDetails = useCallback(async (silent: boolean = false, attempt: number = 0) => {
         try {
             if (!silent) setLoading(true);
+            if (!resolvedLeagueId || !resolvedMatchId) {
+                console.warn('MatchStatsDialog: missing ids, skipping details fetch', { resolvedLeagueId, resolvedMatchId });
+                if (!silent) setLoading(false);
+                return;
+            }
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
-            let matchData: MatchApiResponse | null = null;
-            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
+            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/matches/${resolvedMatchId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (matchResp.status === 404) {
-                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
-            try {
-                matchData = await matchResp.json();
-            } catch {
-                matchData = null;
+            const raw = await matchResp.json().catch(() => ({} as any));
+            // Tolerant response handling across shapes
+            // Accept: { success, match }, { match }, direct match object, or { data: match }
+            let matchObj: any = null;
+            if (raw && typeof raw === 'object') {
+                if (raw.match) matchObj = raw.match;
+                else if (raw.data && (raw.data.id || raw.data.match)) matchObj = raw.data.match || raw.data;
+                else if (raw.id) matchObj = raw;
             }
-            if (!matchResp.ok || !matchData?.success || !matchData.match) {
-                throw new Error(matchData?.message || 'Failed to fetch match details');
+            if (!matchResp.ok || !matchObj) {
+                console.warn('MatchStatsDialog: match fetch failed, attempting league matches fallback', { status: matchResp.status, raw, attempt });
+                if (attempt < 1) {
+                    // Fallback: fetch matches list for league and pick latest
+                    let mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(resolvedLeagueId)}`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (mres.status === 404 || mres.status === 405) {
+                        mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
+                    }
+                    const mdata = await mres.json().catch(() => ({}));
+                    let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                    if (!Array.isArray(matchesArr)) matchesArr = [];
+                    const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(resolvedLeagueId));
+                    const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
+                    mWithDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                    const chosen = mWithDates[0]?.m || null;
+                    if (chosen && String(chosen.id) !== resolvedMatchId) {
+                        console.log('MatchStatsDialog: fallback picked match', { chosenId: String(chosen.id) });
+                        setCurrentMatchId(String(chosen.id));
+                        await fetchLeagueAndMatchDetails(true, attempt + 1);
+                        return;
+                    }
+                }
+                const msg = (raw && typeof raw === 'object' && (raw.message || raw.error)) || matchResp.statusText || 'Failed to fetch match details';
+                console.error('MatchStatsDialog: match fetch failed (giving up)', { status: matchResp.status, msg, raw });
+                throw new Error(String(msg));
             }
-            const m = normalizeMatch(matchData.match);
+            const m = normalizeMatch(matchObj);
             setMatch(m);
             setHomeGoals(typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0);
             setAwayGoals(typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0);
 
             // 2) Fetch league using a reliable id (prefer id from match if present)
-            const effectiveLeagueId = m.leagueId || leagueId;
+            const effectiveLeagueId = m.leagueId || resolvedLeagueId;
             const leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -520,20 +587,101 @@ export default function PlayMatchPage() {
         } finally {
             if (!silent) setLoading(false);
         }
-    }, [leagueId, matchId, token]);
+    }, [resolvedLeagueId, resolvedMatchId, token]);
 
     useEffect(() => {
-        if (leagueId && matchId && token) {
+        if (resolvedLeagueId && resolvedMatchId && token) {
+            console.log('MatchStatsDialog: fetching details for', { resolvedLeagueId, resolvedMatchId });
             fetchLeagueAndMatchDetails();
         }
-    }, [leagueId, matchId, token, fetchLeagueAndMatchDetails]);
+    }, [resolvedLeagueId, resolvedMatchId, token, fetchLeagueAndMatchDetails]);
+
+    // Embedded mode: when opened from Navbar (no route ids), auto-select latest league and latest match
+    useEffect(() => {
+        const run = async () => {
+            // Only in embedded mode
+            if (typeof open !== 'boolean') return;
+            if (!open) return;
+            // If route provided ids or we already resolved, nothing to do
+            if ((leagueId && matchId) || (resolvedLeagueId && resolvedMatchId)) {
+                console.log('MatchStatsDialog: ids already present', { leagueId, matchId, resolvedLeagueId, resolvedMatchId });
+                return;
+            }
+            if (!token) {
+                console.log('MatchStatsDialog: no token in embedded mode; stopping loading');
+                setLoading(false);
+                return;
+            }
+            try {
+                console.log('MatchStatsDialog: auto-select latest league/match - start');
+                setLoading(true);
+                // Load leagues
+                let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, { headers: { Authorization: `Bearer ${token}` } });
+                if (res.status === 404 || res.status === 405) {
+                    res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/all`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (res.status === 404 || res.status === 405) {
+                        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/leagues`, { headers: { Authorization: `Bearer ${token}` } });
+                    }
+                }
+                const data = await res.json().catch(() => ({}));
+                let leaguesArr: any = [];
+                if (Array.isArray(data?.leagues)) leaguesArr = data.leagues;
+                else if (data?.leagues && typeof data.leagues === 'object') {
+                    const joined = Array.isArray(data.leagues.joined) ? data.leagues.joined : [];
+                    const managed = Array.isArray(data.leagues.managed) ? data.leagues.managed : [];
+                    leaguesArr = [...joined, ...managed];
+                } else if (Array.isArray(data?.data)) leaguesArr = data.data;
+                const byId = new Map<string, any>();
+                (Array.isArray(leaguesArr) ? leaguesArr : []).forEach((l: any) => { const id = String(l?.id ?? ''); if (id && !byId.has(id)) byId.set(id, l); });
+                const allLeagues = Array.from(byId.values());
+                console.log('MatchStatsDialog: fetched leagues', { count: allLeagues.length });
+                if (!allLeagues.length) { setLoading(false); return; }
+                const withDates = allLeagues.map(l => ({ l, ts: Date.parse(l.updatedAt || l.createdAt || l.date || l.start || '') || 0, idNum: Number(l.id) || 0 }));
+                withDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                const chosenLeague = withDates[0]?.l || allLeagues[0];
+                const chosenLeagueId = String(chosenLeague.id);
+                console.log('MatchStatsDialog: chosen league', { chosenLeagueId });
+
+                // Load matches for chosen league
+                let mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(chosenLeagueId)}`, { headers: { Authorization: `Bearer ${token}` } });
+                if (mres.status === 404 || mres.status === 405) {
+                    mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
+                }
+                const mdata = await mres.json().catch(() => ({}));
+                let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                if (!Array.isArray(matchesArr)) matchesArr = [];
+                const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === chosenLeagueId);
+                console.log('MatchStatsDialog: matches for league', { leagueId: chosenLeagueId, count: filtered.length });
+                const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
+                mWithDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                const chosenMatch = mWithDates[0]?.m || null;
+                if (!chosenMatch) {
+                    console.log('MatchStatsDialog: no matches for chosen league');
+                    setCurrentLeagueId(chosenLeagueId);
+                    setCurrentMatchId('');
+                    setLoading(false);
+                    return;
+                }
+                const chosenMatchId = String(chosenMatch.id);
+                console.log('MatchStatsDialog: chosen match', { chosenMatchId });
+                setCurrentLeagueId(chosenLeagueId);
+                setCurrentMatchId(chosenMatchId);
+                await fetchLeagueAndMatchDetails(true);
+                setLoading(false);
+            } catch (e) {
+                console.error('MatchStatsDialog: auto-select error', e);
+                setLoading(false);
+            }
+        };
+        run();
+    }, [open, token, leagueId, matchId, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails]);
 
     // CHANGED: do not toggle global loading; refetch silently and show local spinner on button
     const handleSaveDetails = async () => {
         if (!token || !matchId) return;
         try {
             setSavingMatchDetails(true);
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/upload-result`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/upload-result`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
@@ -652,7 +800,7 @@ export default function PlayMatchPage() {
             // If user already voted for this player, unvote them
             const voteData = votedForId === playerId ? { votedForId: null } : { votedForId: playerId };
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/votes`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(voteData),
@@ -664,7 +812,7 @@ export default function PlayMatchPage() {
                 if (data.updatedStats) {
                     Object.entries(data.updatedStats).forEach(([metric, value]) => {
                         if (typeof value === 'number') {
-                            cacheManager.updateLeaderboardCache(playerId, value, metric as keyof LeaderboardPlayer, `leaderboard_motm_${matchId}`);
+                            cacheManager.updateLeaderboardCache(playerId, value, metric as keyof LeaderboardPlayer, `leaderboard_motm_${resolvedMatchId}`);
                         }
                     });
                 }
@@ -761,7 +909,7 @@ export default function PlayMatchPage() {
         }
         setIsSubmittingStats(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -927,7 +1075,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
             // 2) Probe API; if 404/405, mark unavailable and stop
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/captain-picks`, {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -1001,7 +1149,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
         setSavingPick(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/captain-picks`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1034,7 +1182,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
     const fetchEditWindow = useCallback(async () => {
         if (!token || !matchId) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats-window`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats-window`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('Failed to fetch stats window');
@@ -1056,7 +1204,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
         setIsSubmittingAdminStats(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1125,10 +1273,63 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
     };
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+        const inner = (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+        if (typeof open === 'boolean') {
+            return (
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        Match Stats
+                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers>
+                        {inner}
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+        return inner;
     }
 
     if (error || !league || !match) {
+        // Embedded: show a simple starter UI that lets the user select a league instead of a hard error
+        if (typeof open === 'boolean') {
+            return (
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted>
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        Match Stats
+                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers>
+                        <Box sx={{ display: 'grid', gap: 2 }}>
+                            {!!error && (
+                                <Alert severity="error">{error}</Alert>
+                            )}
+                            <Typography variant="body1">Select a league to view and add stats.</Typography>
+                            <Box>
+                                <Button
+                                    onClick={openLeagueSelector}
+                                    variant="contained"
+                                    sx={{
+                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                    }}
+                                >
+                                    Select League
+                                </Button>
+                            </Box>
+                        </Box>
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+
+        // Page mode: keep the original error with back nav
         return (
             <Box sx={{ p: 4, minHeight: '100vh', color: 'white' }}>
                 <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'white' }}>
@@ -1139,7 +1340,27 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
         );
     }
 
-    if (!user) return null;
+    if (!user) {
+        const inner = (
+            <Box sx={{ p: 3 }}>
+                <Typography variant="body1">Please sign in to add or view match stats.</Typography>
+            </Box>
+        );
+        if (typeof open === 'boolean') {
+            return (
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted>
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        Match Stats
+                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers>
+                        {inner}
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+        return null;
+    }
 
     // const isAdmin = league.administrators?.some(admin => admin.id === user.id);
 
@@ -1169,7 +1390,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
-    return (
+    const content = (
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
             {/* --- NEW: League selector and show matches toolbar --- */}
             <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
@@ -1185,13 +1406,13 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                     }}
                 >
-                    Select League
+                    {league?.name ? `League: ${league.name}` : 'Select League'}
                 </Button>
                 <Button
-                    onClick={fetchSelectedLeagueMatches}
+                    onClick={openMatchesDialog}
                     variant="contained"
                     size="small"
-                    disabled={!selectedLeagueIdForList}
+                    disabled={!selectedLeagueIdForList && !resolvedLeagueId}
                     sx={{
                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                         color: 'white',
@@ -1199,58 +1420,15 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                     }}
                 >
-                    Show Selected League Matches
+                    {match?.homeTeamName && match?.awayTeamName
+                        ? `Match: ${match.homeTeamName} vs ${match.awayTeamName}`
+                        : 'Show Selected League Matches'}
                 </Button>
-                {selectedLeagueIdForList && (
+                {/* {selectedLeagueIdForList && (
                     <Typography sx={{ ml: 1, opacity: 0.95 }}>Selected: {selectedLeagueNameForList}</Typography>
-                )}
+                )} */}
             </Paper>
-
-            {/* Matches list for selected league */}
-            {(matchesLoading || matchesError || selectedLeagueMatches.length > 0) && (
-                <Paper sx={{ p: { xs: 1, sm: 2 }, mb: 2, background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white', borderRadius: 2, border: '1px solid #3a3a3a' }}>
-                    <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Selected League Matches</Typography>
-                    <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
-                    {matchesLoading && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={18} sx={{ color: '#fff' }} />
-                            <Typography>Loading matches…</Typography>
-                        </Box>
-                    )}
-                    {matchesError && (
-                        <Alert severity="error" sx={{ mb: 1 }}>{matchesError}</Alert>
-                    )}
-                    {!matchesLoading && !matchesError && selectedLeagueMatches.length === 0 && (
-                        <Typography sx={{ opacity: 0.9 }}>No matches found.</Typography>
-                    )}
-                    {!matchesLoading && !matchesError && selectedLeagueMatches.length > 0 && (
-                        <Box sx={{ display: 'grid', gap: 1 }}>
-                            {selectedLeagueMatches.map((m) => (
-                                <Box
-                                    key={m.id}
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => goToMatch(m.id as string, (m as any).leagueId as string | undefined)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            goToMatch(m.id as string, (m as any).leagueId as string | undefined);
-                                        }
-                                    }}
-                                    sx={{ p: 1, borderRadius: 1.5, background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', border: '1px solid #4b4b4b', cursor: 'pointer', '&:hover': { filter: 'brightness(1.05)' } }}
-                                >
-                                    <Typography sx={{ fontWeight: 600 }}>
-                                        {m.homeTeamName} vs {m.awayTeamName}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                                        {m.date ? new Date(m.date).toLocaleString() : 'Date: N/A'}{m.location ? ` • ${m.location}` : ''}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
-                </Paper>
-            )}
+            
             {!league.active && <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>}
             {/* <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
                 color: 'white',
@@ -2165,6 +2343,87 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                 </DialogActions>
             </Dialog>
 
+            {/* Matches selection dialog */}
+            <Dialog open={matchesDialogOpen} onClose={() => setMatchesDialogOpen(false)} fullWidth maxWidth="sm">
+                <DialogTitle>Select a Match</DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography sx={{ fontWeight: 600 }}>League</Typography>
+                        <Button
+                            onClick={openLeagueSelector}
+                            variant="contained"
+                            size="small"
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                            }}
+                        >
+                            {selectedLeagueNameForList || league?.name || 'Select League'}
+                        </Button>
+                    </Box>
+                    {matchesLoading && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={18} />
+                            <Typography>Loading matches…</Typography>
+                        </Box>
+                    )}
+                    {matchesError && (
+                        <Alert severity="error" sx={{ mb: 1 }}>{matchesError}</Alert>
+                    )}
+                    {!matchesLoading && !matchesError && selectedLeagueMatches.length === 0 && (
+                        <Typography sx={{ opacity: 0.9 }}>No matches found.</Typography>
+                    )}
+                    {!matchesLoading && !matchesError && selectedLeagueMatches.length > 0 && (
+                        <Box sx={{ display: 'grid', gap: 1 }}>
+                            {selectedLeagueMatches.map((m) => (
+                                <Button
+                                    key={m.id}
+                                    onClick={async () => {
+                                        const lid = String((m as any).leagueId || selectedLeagueIdForList || resolvedLeagueId || '');
+                                        const mid = String(m.id || '');
+                                        if (!lid || !mid) return;
+                                        setCurrentLeagueId(lid);
+                                        setCurrentMatchId(mid);
+                                        setMatchesDialogOpen(false);
+                                        await fetchLeagueAndMatchDetails(true);
+                                    }}
+                                    variant="outlined"
+                                    sx={{
+                                        justifyContent: 'space-between',
+                                        borderColor: '#bdbdbd',
+                                        color: '#111',
+                                        '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                    }}
+                                >
+                                    <Box sx={{ textAlign: 'left' }}>
+                                        <Typography sx={{ fontWeight: 600 }}>
+                                            {m.homeTeamName} vs {m.awayTeamName}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                            {m.date ? new Date(m.date).toLocaleString() : 'Date: N/A'}{m.location ? ` • ${m.location}` : ''}
+                                        </Typography>
+                                    </Box>
+                                </Button>
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setMatchesDialogOpen(false)}
+                        variant="outlined"
+                        sx={{
+                            color: '#111',
+                            borderColor: '#bdbdbd',
+                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                        }}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Admin Stats Modal */}
             <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
                 <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
@@ -2251,7 +2510,25 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
             </Dialog>
         </Box>
     );
+
+    if (typeof open === 'boolean') {
+        return (
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    Match Stats
+                    <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                </DialogTitle>
+                <DialogContent dividers sx={{ p: 0 }}>
+                    {content}
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    return content;
 }
+
+export default PlayMatchPagee;
 
 const StatCounter = ({ label, value, onIncrement, onDecrement, icon }: { label: string, value: number, onIncrement: () => void, onDecrement: () => void, icon: React.ReactNode }) => (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>

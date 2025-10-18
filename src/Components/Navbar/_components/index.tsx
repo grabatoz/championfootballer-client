@@ -48,6 +48,8 @@ import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
 import React from 'react';
 import TextField from '@mui/material/TextField';
+import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
+// import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 type NotificationKind =
   | 'MATCH_CREATED'
   | 'MATCH_UPDATED'
@@ -1995,6 +1997,29 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     { label: 'Leaderboard', href: '/leader-board' },
   ];
 
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [statsSubmitting, setStatsSubmitting] = useState(false);
+  const [myStats, setMyStats] = useState({ goals: 0, assists: 0, cleanSheets: 0, penalties: 0, freeKicks: 0, defence: 0, impact: 0 });
+
+  const handleStatChange = (stat: 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact', increment: number, max: number) => {
+    setMyStats(prev => {
+      const next = Math.max(0, Math.min(max, prev[stat] + increment));
+      return { ...prev, [stat]: next } as typeof prev;
+    });
+  };
+
+  const handleStatsSave = async () => {
+    // In this Navbar-driven popup we only demonstrate open/close. Persisting is handled inside the page dialog normally.
+    setStatsSubmitting(true);
+    try {
+      // no-op save simulation
+      await new Promise(r => setTimeout(r, 300));
+      setStatsOpen(false);
+    } finally {
+      setStatsSubmitting(false);
+    }
+  };
+
   const renderNavLinks = () => (
     <Box sx={{
       display: 'flex',
@@ -2004,6 +2029,37 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       overflow: 'hidden',
       justifyContent: 'flex-end'      // ✅ push links to the right inside this box
     }}>
+      {/* Add Stats button opens popup via useState, no navigation */}
+      <Button
+        onClick={() => {
+          // Always open the embedded dialog; inside it, we show a sign-in hint if needed
+          setStatsOpen(true);
+        }}
+        disableRipple
+        sx={{
+          textTransform: 'none',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontWeight: 700,
+          color: '#fff',
+          fontSize: { xs: '12px', sm: '9px', md: '13px', lg: '13px' },
+          px: { xs: 0.5, sm: 0.50, md: 1, lg: 1 },
+          py: { xs: 1, md: 1.25 },
+          minWidth: 'auto',
+          position: 'relative',
+          transition: 'all 0.3s ease',
+          whiteSpace: 'nowrap',
+          borderRadius: 1,
+          '&:hover': {
+            color: '#fff',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        Add Stats
+      </Button>
+
       {navItems.map(({ label, href }) => {
         const active = pathname?.startsWith(href);
         return (
@@ -2349,6 +2405,17 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Local popup driven by useState. It hosts a simplified stats dialog UI. */}
+      <PlayMatchPagee
+        open={statsOpen}
+        onClose={() => setStatsOpen(false)}
+        onSave={handleStatsSave}
+        isSubmitting={statsSubmitting}
+        stats={myStats}
+        handleStatChange={handleStatChange}
+        teamGoals={10}
+      />
 
       {/* NOTIFICATION POPOVER - ENHANCED */}
       <Popover
