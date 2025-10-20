@@ -57,6 +57,8 @@ interface EmbeddedControlProps {
     stats?: unknown;
     handleStatChange?: HandleStatChange;
     teamGoals?: number;
+    initialLeagueId?: string;
+    initialMatchId?: string;
 }
 
 // type MatchApiResponse = {
@@ -297,7 +299,7 @@ type CaptainPicks = { defence?: string; influence?: string };
 // --- end helpers ---
 
 const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
-    const { open, onClose } = props;
+    const { open, onClose, initialLeagueId, initialMatchId } = props;
     const [league, setLeague] = useState<League | null>(null);
     const [match, setMatch] = useState<MatchWithGuests | null>(null);
     const [loading, setLoading] = useState(true);
@@ -640,14 +642,23 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
             if (leagueResp.ok && leagueData?.success && leagueData.league) {
                 setLeague(leagueData.league);
+                // Keep header/toolbar league in sync with the match's league
+                setCurrentLeagueId(String(effectiveLeagueId));
+                setSelectedLeagueIdForList(String(effectiveLeagueId));
+                setSelectedLeagueNameForList(String(leagueData.league.name || 'League'));
             } else {
                 console.warn('League not found, using fallback league object');
-                setLeague({
-                    id: effectiveLeagueId || 'unknown',
-                    name: m.leagueName || 'League',
-                    administrators: [],
+                const fallbackLeague = {
+                    id: String(effectiveLeagueId || 'unknown'),
+                    name: String(m.leagueName || 'League'),
+                    administrators: [] as any[],
                     active: true,
-                });
+                } as League;
+                setLeague(fallbackLeague);
+                // Still sync ids/label so UI reflects the match's league
+                setCurrentLeagueId(String(effectiveLeagueId));
+                setSelectedLeagueIdForList(String(effectiveLeagueId));
+                setSelectedLeagueNameForList(String(fallbackLeague.name));
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -664,7 +675,23 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         }
     }, [resolvedLeagueId, resolvedMatchId, token, fetchLeagueAndMatchDetails]);
 
-    // Keep the toolbar match label in sync with the currently loaded match
+    // When opened as a dialog with explicit ids, use them and skip preferred auto-select
+    useEffect(() => {
+        const run = async () => {
+            if (typeof open !== 'boolean' || !open) return;
+            if (!initialLeagueId && !initialMatchId) return;
+            preferredAppliedRef.current = true; // prevent preferred flow overriding this selection
+            if (initialLeagueId) setCurrentLeagueId(String(initialLeagueId));
+            if (initialMatchId) setCurrentMatchId(String(initialMatchId));
+            if (token && (initialLeagueId || initialMatchId)) {
+                await fetchLeagueAndMatchDetails(true);
+            }
+        };
+        run();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, initialLeagueId, initialMatchId, token]);
+
+    // Keep the toolbar match label and league label in sync with the currently loaded match/league
     useEffect(() => {
         if (match && match.id) {
             // minimal shape for the button label
@@ -679,12 +706,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 } as any;
             });
             setSelectedLeagueHasNoMatches(false);
-            // also reflect league name if missing
-            if (league?.name && !selectedLeagueNameForList) {
-                setSelectedLeagueNameForList(league.name);
+            // also reflect league id/name in the toolbar/header for consistency
+            if (league?.id) {
+                setSelectedLeagueIdForList(String(league.id));
+            }
+            if (league?.name) {
+                setSelectedLeagueNameForList(String(league.name));
+            } else if ((match as any)?.leagueName) {
+                setSelectedLeagueNameForList(String((match as any).leagueName));
             }
         }
-    }, [match, league?.name]);
+    }, [match, league?.name, league?.id]);
 
     // Auto-select from preferredLeagueId stored in localStorage: pick latest match in that league
     useEffect(() => {
@@ -776,9 +808,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setLoading(false);
             }
         };
+        // If dialog was opened with explicit ids, skip preferred flow
+        if (typeof open === 'boolean' && open && (initialLeagueId || initialMatchId)) return;
         applyPreferredLeague();
         // We intentionally run when token changes; internal ref prevents repeats
-    }, [token, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails]);
+    }, [token, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails, open, initialLeagueId, initialMatchId]);
 
     // Define after fetchLeagueAndMatchDetails so we can safely call it
     const handleSelectLeague = useCallback((l: League) => {
@@ -2459,7 +2493,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         const lid = String((m as any).leagueId || selectedLeagueIdForList || resolvedLeagueId || '');
                                         const mid = String(m.id || '');
                                         if (!lid || !mid) return;
+                                        // Sync league state + toolbar selections to the match's league
                                         setCurrentLeagueId(lid);
+                                        setSelectedLeagueIdForList(lid);
+                                        if ((m as any)?.leagueName) {
+                                            setSelectedLeagueNameForList(String((m as any).leagueName));
+                                        }
                                         setCurrentMatchId(mid);
                                         setMatchesDialogOpen(false);
                                         await fetchLeagueAndMatchDetails(true);

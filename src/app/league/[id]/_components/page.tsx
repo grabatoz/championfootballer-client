@@ -43,6 +43,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame } from 'lucide-react';
 import { Tooltip } from '@mui/material';
 import Link from 'next/link';
+import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import TrophyRoom from '@/Components/TrophyRoom';
@@ -773,6 +774,8 @@ interface TableData {
 }
 
 export default function LeagueDetailPage() {
+    const [matchStatsOpen, setMatchStatsOpen] = React.useState(false);
+    const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [league, setLeague] = useState<League | null>(null);
     console.log('leagues matches', league?.matches)
     const [error, setError] = useState<string | null>(null);
@@ -4206,29 +4209,31 @@ export default function LeagueDetailPage() {
                                                                                 </span>
                                                                             </Tooltip>
                                                                         ) : (
-                                                                            <Link href={`/league/${league?.id}/match/${match.id}/play`} passHref>
-                                                                                <Button
-                                                                                    size="small"
-                                                                                    sx={{
-                                                                                        backgroundColor: '#0388E3',
-                                                                                        color: 'white',
-                                                                                        fontSize: '0.78rem',
-                                                                                        textTransform: 'none',
-                                                                                        py: 0.4,
-                                                                                        px: 1,
-                                                                                        minHeight: 32,
-                                                                                        minWidth: 0,
-                                                                                        borderRadius: 1,
-                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                        transition: 'all 0.2s ease-in-out',
-                                                                                        '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
-                                                                                        '&:active': { transform: 'translateY(0)' },
-                                                                                    }}
-                                                                                    disabled={!league?.active}
-                                                                                >
-                                                                                    {isAdmin ? 'ADD Score' : 'Add Your Stats'}
-                                                                                </Button>
-                                                                            </Link>
+                                                                            <Button
+                                                                                size="small"
+                                                                                onClick={() => {
+                                                                                    setSelectedMatchIdForDialog(match.id);
+                                                                                    setMatchStatsOpen(true);
+                                                                                }}
+                                                                                sx={{
+                                                                                    backgroundColor: '#0388E3',
+                                                                                    color: 'white',
+                                                                                    fontSize: '0.78rem',
+                                                                                    textTransform: 'none',
+                                                                                    py: 0.4,
+                                                                                    px: 1,
+                                                                                    minHeight: 32,
+                                                                                    minWidth: 0,
+                                                                                    borderRadius: 1,
+                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                    '&:active': { transform: 'translateY(0)' },
+                                                                                }}
+                                                                                disabled={!league?.active}
+                                                                            >
+                                                                                {isAdmin ? 'ADD Score' : 'Add Your Stats'}
+                                                                            </Button>
                                                                         )
                                                                     )}
                                                                 </Box>
@@ -4756,6 +4761,15 @@ export default function LeagueDetailPage() {
                             teamGoals={getMatchGoals()}
                         /> */}
 
+            {/* Match Stats Dialog (embedded) */}
+            <PlayMatchPagee
+                open={matchStatsOpen}
+                onClose={() => setMatchStatsOpen(false)}
+                initialLeagueId={league?.id}
+                initialMatchId={selectedMatchIdForDialog || undefined}
+            />
+
+            {/* Line 4844 omitted */}
                         <PlayerStatsDialog
                             open={statsDialogOpen}
                             onClose={() => setStatsDialogOpen(false)}
