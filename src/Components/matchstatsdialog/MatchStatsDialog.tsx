@@ -258,13 +258,13 @@ const JerseyAvatar = ({
 );
 
 type EditWindow = {
-  resultsUploaded: boolean;
-  isWithinLastTwo: boolean;
-  isOlderThanTwo: boolean;
-  canPlayerSubmit: boolean;
-  adminCanSubmit: boolean;
-  isAdmin: boolean;
-  indexFromEnd: number | null; // 0=current, 1=previous, >1 older
+    resultsUploaded: boolean;
+    isWithinLastTwo: boolean;
+    isOlderThanTwo: boolean;
+    canPlayerSubmit: boolean;
+    adminCanSubmit: boolean;
+    isAdmin: boolean;
+    indexFromEnd: number | null; // 0=current, 1=previous, >1 older
 };
 
 // --- NEW: captain picks types ---
@@ -390,9 +390,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.status === 404 || res.status === 405) {
-                  res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/leagues`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
+                    res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/leagues`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
                 }
             }
             const data = await res.json().catch(() => ({}));
@@ -429,7 +429,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }));
             setAvailableLeagues(normalized);
             if (normalized.length === 0) {
-              toast.error('No leagues found for your account.');
+                toast.error('No leagues found for your account.');
             }
         } catch (e: unknown) {
             setLeaguesError(e instanceof Error ? e.message : 'Failed to load leagues');
@@ -528,7 +528,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(leagueIdForList));
             setSelectedLeagueMatches(filtered);
             if (filtered.length === 0) {
-              toast('No matches found for this league yet.');
+                toast('No matches found for this league yet.');
             }
         } catch (e: unknown) {
             setMatchesError(e instanceof Error ? e.message : 'Failed to load matches');
@@ -601,7 +601,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     if (!Array.isArray(matchesArr)) matchesArr = [];
                     const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(resolvedLeagueId));
                     const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
-                    mWithDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                    mWithDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                     const chosen = mWithDates[0]?.m || null;
                     if (chosen && String(chosen.id) !== resolvedMatchId) {
                         console.log('MatchStatsDialog: fallback picked match', { chosenId: String(chosen.id) });
@@ -766,7 +766,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 console.log('MatchStatsDialog: fetched leagues', { count: allLeagues.length });
                 if (!allLeagues.length) { setLoading(false); return; }
                 const withDates = allLeagues.map(l => ({ l, ts: Date.parse(l.updatedAt || l.createdAt || l.date || l.start || '') || 0, idNum: Number(l.id) || 0 }));
-                withDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                withDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                 const chosenLeague = withDates[0]?.l || allLeagues[0];
                 const chosenLeagueId = String(chosenLeague.id);
                 console.log('MatchStatsDialog: chosen league', { chosenLeagueId });
@@ -782,7 +782,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === chosenLeagueId);
                 console.log('MatchStatsDialog: matches for league', { leagueId: chosenLeagueId, count: filtered.length });
                 const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
-                mWithDates.sort((a,b) => b.ts - a.ts || b.idNum - a.idNum);
+                mWithDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                 const chosenMatch = mWithDates[0]?.m || null;
                 if (!chosenMatch) {
                     console.log('MatchStatsDialog: no matches for chosen league');
@@ -872,10 +872,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         (s: { goals: number; assists: number; cleanSheets: number; defence: number }, tGoals: number) => {
             const safeMax = (n: number) => Math.max(1, n || 0);
             const metrics = [
-                { value: s.goals,       max: safeMax(tGoals), weight: 0.3 },
-                { value: s.assists,     max: safeMax(tGoals), weight: 0.2 },
-                { value: s.cleanSheets, max: 1,               weight: 0.1 },
-                { value: s.defence,     max: 1,               weight: 0.2 },
+                { value: s.goals, max: safeMax(tGoals), weight: 0.3 },
+                { value: s.assists, max: safeMax(tGoals), weight: 0.2 },
+                { value: s.cleanSheets, max: 1, weight: 0.1 },
+                { value: s.defence, max: 1, weight: 0.2 },
                 // MOTM votes weight (0.2) intentionally omitted
             ];
             const active = metrics.filter(m => m.max > 0);
@@ -914,15 +914,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     );
 
     // Prevent self-vote in UI too
-        const handleVote = async (playerId: string) => {
-                if (!user) return;
-                if (!isUserAssignedToTeam) {
-                    toast.error('You must be assigned to a team to vote for Man of the Match.');
-                    return;
-                }
+    const handleVote = async (playerId: string) => {
+        if (!user) return;
+        if (!isUserAssignedToTeam) {
+            toast.error('You must be assigned to a team to vote for Man of the Match.');
+            return;
+        }
         if (playerId === user.id) {
-          toast.error('You cannot vote for yourself as Man of the Match.');
-          return;
+            toast.error('You cannot vote for yourself as Man of the Match.');
+            return;
         }
         setLoadingVote(true);
         try {
@@ -1165,18 +1165,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const isAdmin = league?.administrators?.some(a => a.id === user?.id) ?? false;
 
     // NEW: captain role flags
-const isHomeCaptain = !!(user && match && user.id === match.homeCaptainId);
-const isAwayCaptain = !!(user && match && user.id === match.awayCaptainId);
-const isCaptainUser = isHomeCaptain || isAwayCaptain;
+    const isHomeCaptain = !!(user && match && user.id === match.homeCaptainId);
+    const isAwayCaptain = !!(user && match && user.id === match.awayCaptainId);
+    const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
- const myTeamPlayers: User[] = useMemo(() => {
+    const myTeamPlayers: User[] = useMemo(() => {
         if (!match) return [];
         const team = isHomeCaptain ? match.homeTeamUsers : isAwayCaptain ? match.awayTeamUsers : [];
         // Only real users, no guests
         return (team ?? []) as User[];
     }, [match, isHomeCaptain, isAwayCaptain]);
 
-     const playerNameById = useCallback((id?: string | null) => {
+    const playerNameById = useCallback((id?: string | null) => {
         if (!id) return '';
         const p = myTeamPlayers.find(u => u.id === id);
         return p ? `${p.firstName} ${p.lastName}` : '';
@@ -1198,7 +1198,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                             defence: ls.defence || undefined,
                             influence: ls.influence || undefined,
                         });
-                    } catch {}
+                    } catch { }
                 }
             }
 
@@ -1234,7 +1234,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
         loadPicks();
     }, [token, matchId, isHomeCaptain, isAwayCaptain]);
 
-     // --- NEW: open pick dialog handler ---
+    // --- NEW: open pick dialog handler ---
     const openPickDialog = (category: CaptainPickCategory) => {
         if (!isCaptainUser) {
             toast.error('Only the team captain can make this selection.');
@@ -1291,11 +1291,11 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
             applyLocal();
             toast.success('Captain pick saved.');
-        }  catch (err: unknown) {
+        } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message :
-                typeof err === 'string' ? err :
-                'Failed to save pick';
+                    typeof err === 'string' ? err :
+                        'Failed to save pick';
             toast.error(message);
         } finally {
             setSavingPick(false);
@@ -1515,8 +1515,8 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
             isGuest: true
         } as User & { isGuest: true }));
 
-    const homePlayersAll: (User & { isGuest?: boolean })[] = [ ...(match?.homeTeamUsers ?? []), ...guestUsersHome ];
-    const awayPlayersAll: (User & { isGuest?: boolean })[] = [ ...(match?.awayTeamUsers ?? []), ...guestUsersAway ];
+    const homePlayersAll: (User & { isGuest?: boolean })[] = [...(match?.homeTeamUsers ?? []), ...guestUsersHome];
+    const awayPlayersAll: (User & { isGuest?: boolean })[] = [...(match?.awayTeamUsers ?? []), ...guestUsersAway];
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
@@ -1524,9 +1524,9 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
             {/* --- NEW: League selector and show matches toolbar --- */}
             <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
-                <Typography sx={{ fontWeight: 700, mr: 1 }}>Explore Matches by League</Typography>
+                {/* <Typography sx={{ fontWeight: 700, mr: 1 }}>Explore Matches by League</Typography> */}
                 {/* Label + League selector */}
-                <Typography variant="body2" sx={{ opacity: 0.95 }}>League</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem' }}>Select League :</Typography>
                 <Button
                     onClick={openLeagueSelector}
                     variant="contained"
@@ -1543,7 +1543,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         : 'Select League'}
                 </Button>
                 {/* Label + Match selector */}
-                <Typography variant="body2" sx={{ opacity: 0.95, ml: 1 }}>Match</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem', ml: 1 }}>Match:</Typography>
                 <Button
                     onClick={openMatchesDialog}
                     variant="contained"
@@ -1559,16 +1559,16 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                     {autoSelectMatchLoading
                         ? 'Loading Matches…'
                         : selectedLeagueHasNoMatches
-                        ? 'No Match Found.'
-                        : selectedMatchForList && (selectedMatchForList as any)?.homeTeamName && (selectedMatchForList as any)?.awayTeamName
-                            ? `Match: ${(selectedMatchForList as any).homeTeamName} vs ${(selectedMatchForList as any).awayTeamName}`
-                            : 'Select a Match'}
+                            ? 'No Match Found.'
+                            : selectedMatchForList && (selectedMatchForList as any)?.homeTeamName && (selectedMatchForList as any)?.awayTeamName
+                                ? `Match: ${(selectedMatchForList as any).homeTeamName} vs ${(selectedMatchForList as any).awayTeamName}`
+                                : 'Select a Match'}
                 </Button>
                 {/* {selectedLeagueIdForList && (
                     <Typography sx={{ ml: 1, opacity: 0.95 }}>Selected: {selectedLeagueNameForList}</Typography>
                 )} */}
             </Paper>
-            
+
             {!selectedLeagueHasNoMatches && !league.active && (
                 <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>
             )}
@@ -1596,29 +1596,29 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         </Typography>
                     </Box>
 
-                                                            {user && league.active && canPlayerSubmitStats && isUserAssignedToTeam && (
-                            <Button
-                                onClick={openStats}
-                                startIcon={<Add />}
-                                variant="contained"
-                                size="small"
-                                sx={{
-                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    borderRadius: 1.5,
-                                    px: { xs: 0.5, sm: 1, md: 2 },
-                                    py: { xs: 0.25, sm: 0.5, md: 1 },
-                                    fontSize: { xs: 7, sm: 10, md: 12 },
-                                    minWidth: { xs: 'auto', sm: 'auto' },
-                                    height: { xs: 19, sm: 32, md: 36 },
-                                    whiteSpace: 'nowrap',
-                                    '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
-                                }}
-                            >
-                                Add Stats
-                            </Button>
-                        )}
+                    {user && league.active && canPlayerSubmitStats && isUserAssignedToTeam && (
+                        <Button
+                            onClick={openStats}
+                            startIcon={<Add />}
+                            variant="contained"
+                            size="small"
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                borderRadius: 1.5,
+                                px: { xs: 0.5, sm: 1, md: 2 },
+                                py: { xs: 0.25, sm: 0.5, md: 1 },
+                                fontSize: { xs: 7, sm: 10, md: 12 },
+                                minWidth: { xs: 'auto', sm: 'auto' },
+                                height: { xs: 19, sm: 32, md: 36 },
+                                whiteSpace: 'nowrap',
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
+                            }}
+                        >
+                            Add Stats
+                        </Button>
+                    )}
                 </Box>
 
                 <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
@@ -1838,74 +1838,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                 </Box>
             </Paper>
 
-            <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
-                <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
-                <div className="w-full h-px bg-white mb-6"></div>
-
-                {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
-                <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                    {[...(match.homeTeamUsers ?? []), ...(match.awayTeamUsers ?? [])]
-                         .filter(player => playerVotes[player.id] > 0)
-                         .map((player) => (
-                            <Link key={player.id} href={`/player/${player.id}`}>
-                                <div className="group">
-                                    {/* Mobile layout: Image on top center */}
-                                    <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
-                                        {/* Profile Image */}
-                                        {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
-                                        {/* -                                           <img */}
-                                        {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
-                                        {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
-                                        {/* -                                               className="w-full h-full object-cover" */}
-                                        {/* -                                           /> */}
-                                        {/* -                                       </div> */}
-                                        <JerseyAvatar
-                                            number={player.shirtNumber || '0'}
-                                            sx={{
-                                                width: { xs: 25, sm: 35, md: 74 },
-                                                height: { xs: 25, sm: 35, md: 74 },
-                                                mr: { xs: 1, sm: 1.5 },
-                                            }}
-                                        />
-                                        {/* Player Info */}
-                                        <div className="flex-1 min-w-0 text-center sm:text-left">
-                                            <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
-                                                {player.firstName} {player.lastName}
-                                                {player.id === match.homeCaptainId ? " (C)" : ""}
-                                            </h3>
-
-                                            <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
-                                                {player.positionType || "Player"}
-                                            </p>
-
-                                            {/* Buttons */}
-                                            <div className="flex justify-center sm:justify-start gap-2 items-center">
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                                                >
-                                                    {typeof playerVotes[player.id] === "number" &&
-                                                        playerVotes[player.id] > 0 &&
-                                                        `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                </div>
-            </div>
-          
-
-
-
-
-
-
-
-  <Paper
+    <Paper
                 sx={{
                     p: { xs: 1.5, sm: 2 },
                     my: 2,
@@ -1976,7 +1909,67 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                 </Box>
             </Paper>
 
-    {isAdmin && !selectedLeagueHasNoMatches && (
+
+
+            {/* <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
+                <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
+                <div className="w-full h-px bg-white mb-6"></div>
+
+                <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
+                    {[...(match.homeTeamUsers ?? []), ...(match.awayTeamUsers ?? [])]
+                         .filter(player => playerVotes[player.id] > 0)
+                         .map((player) => (
+                            <Link key={player.id} href={`/player/${player.id}`}>
+                                <div className="group">
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
+                                      
+                                        <JerseyAvatar
+                                            number={player.shirtNumber || '0'}
+                                            sx={{
+                                                width: { xs: 25, sm: 35, md: 74 },
+                                                height: { xs: 25, sm: 35, md: 74 },
+                                                mr: { xs: 1, sm: 1.5 },
+                                            }}
+                                        />
+                                        <div className="flex-1 min-w-0 text-center sm:text-left">
+                                            <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
+                                                {player.firstName} {player.lastName}
+                                                {player.id === match.homeCaptainId ? " (C)" : ""}
+                                            </h3>
+
+                                            <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
+                                                {player.positionType || "Player"}
+                                            </p>
+
+                                            <div className="flex justify-center sm:justify-start gap-2 items-center">
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
+                                                >
+                                                    {typeof playerVotes[player.id] === "number" &&
+                                                        playerVotes[player.id] > 0 &&
+                                                        `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                </div>
+            </div> */}
+
+
+
+
+
+
+
+
+        
+
+            {isAdmin && !selectedLeagueHasNoMatches && (
                 <Box sx={{
                     mt: 4,
                     mb: 4,
@@ -2187,17 +2180,17 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
 
             {!selectedLeagueHasNoMatches && (
-            <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
-                <DialogTitle>Your Stats for the Match</DialogTitle>
-                <DialogContent>
-                    <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)} />
-                    <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)} />
-                    <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
-                    {/* <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('penalties', -1, teamGoalsSafe)} />
+                <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
+                    <DialogTitle>Your Stats for the Match</DialogTitle>
+                    <DialogContent>
+                        <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)} />
+                        <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)} />
+                        <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
+                        {/* <StatCounter icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />} label="Penalties" value={stats.penalties} onIncrement={() => handleStatChange('penalties', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('penalties', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} /> */}
-                    {/* Read-only computed Impact display */}
-                    {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                        {/* Read-only computed Impact display */}
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                             <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
                             <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
@@ -2206,34 +2199,34 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                             {computedImpact}%
                         </Typography>
                     </Box> */}
-                </DialogContent>
-                {/* FreeKick */}
-                <DialogActions>
-                    <Button
-                        onClick={handleCloseStatsModal}
-                        variant="outlined"
-                        sx={{
-                            color: '#111',
-                            borderColor: '#bdbdbd',
-                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleSaveStats}
-                        variant="contained"
-                        disabled={isSubmittingStats}
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                    >
-                        {isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                    </DialogContent>
+                    {/* FreeKick */}
+                    <DialogActions>
+                        <Button
+                            onClick={handleCloseStatsModal}
+                            variant="outlined"
+                            sx={{
+                                color: '#111',
+                                borderColor: '#bdbdbd',
+                                '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveStats}
+                            variant="contained"
+                            disabled={isSubmittingStats}
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                            }}
+                        >
+                            {isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             )}
 
             {/* Matches selection dialog */}
@@ -2319,31 +2312,31 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
             {/* Admin Stats Modal */}
             {!selectedLeagueHasNoMatches && (
-            <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
-                <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
-                <DialogContent>
-                    <StatCounter
-                        icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />}
-                        label="Goals Scored"
-                        value={adminStats.goals}
-                        onIncrement={() => handleAdminStatChange('goals', 1, 10)}
-                        onDecrement={() => handleAdminStatChange('goals', -1, 10)}
-                    />
-                    <StatCounter
-                        icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />}
-                        label="Assists"
-                        value={adminStats.assists}
-                        onIncrement={() => handleAdminStatChange('assists', 1, 10)}
-                        onDecrement={() => handleAdminStatChange('assists', -1, 10)}
-                    />
-                    <StatCounter
-                        icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />}
-                        label="Clean Sheets"
-                        value={adminStats.cleanSheets}
-                        onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)}
-                        onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)}
-                    />
-                    {/* <StatCounter
+                <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
+                    <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
+                    <DialogContent>
+                        <StatCounter
+                            icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />}
+                            label="Goals Scored"
+                            value={adminStats.goals}
+                            onIncrement={() => handleAdminStatChange('goals', 1, 10)}
+                            onDecrement={() => handleAdminStatChange('goals', -1, 10)}
+                        />
+                        <StatCounter
+                            icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />}
+                            label="Assists"
+                            value={adminStats.assists}
+                            onIncrement={() => handleAdminStatChange('assists', 1, 10)}
+                            onDecrement={() => handleAdminStatChange('assists', -1, 10)}
+                        />
+                        <StatCounter
+                            icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />}
+                            label="Clean Sheets"
+                            value={adminStats.cleanSheets}
+                            onIncrement={() => handleAdminStatChange('cleanSheets', 1, 1)}
+                            onDecrement={() => handleAdminStatChange('cleanSheets', -1, 1)}
+                        />
+                        {/* <StatCounter
                         icon={<img src={penalty.src} alt='penalty' style={{ width: 24, height: 24 }} />}
                         label="Penalties"
                         value={adminStats.penalties}
@@ -2364,8 +2357,8 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         onIncrement={() => handleAdminStatChange('defence', 1, 1)}
                         onDecrement={() => handleAdminStatChange('defence', -1, 1)}
                     /> */}
-                    {/* Read-only computed Impact display for Admin */}
-                    {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                        {/* Read-only computed Impact display for Admin */}
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                             <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
                             <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
@@ -2374,34 +2367,34 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                             {computedAdminImpact}%
                         </Typography>
                     </Box> */}
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={handleCloseAdminStatsModal}
-                       
-                        variant="outlined"
-                        sx={{
-                            color: '#111',
-                            borderColor: '#bdbdbd',
-                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleSaveAdminStats}
-                        variant="contained"
-                        disabled={isSubmittingAdminStats}
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                    >
-                        {isSubmittingAdminStats ? <CircularProgress size={24} /> : 'Upload'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={handleCloseAdminStatsModal}
+
+                            variant="outlined"
+                            sx={{
+                                color: '#111',
+                                borderColor: '#bdbdbd',
+                                '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveAdminStats}
+                            variant="contained"
+                            disabled={isSubmittingAdminStats}
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                            }}
+                        >
+                            {isSubmittingAdminStats ? <CircularProgress size={24} /> : 'Upload'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             )}
         </Box>
     );
