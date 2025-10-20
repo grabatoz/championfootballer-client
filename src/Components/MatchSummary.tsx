@@ -106,12 +106,29 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           if (!cancelled) setIsAdmin(false);
           return;
         }
-        const data = await res.json().catch(() => ({} as any));
+        interface Administrator {
+          id: string;
+        }
+        
+        interface LeagueData {
+          league?: {
+            administrators?: Administrator[];
+            admins?: Administrator[];
+          };
+          data?: {
+            administrators?: Administrator[];
+            admins?: Administrator[];
+          };
+          administrators?: Administrator[];
+          admins?: Administrator[];
+        }
+        
+        const data = await res.json().catch(() => ({} as LeagueData));
         const league = data?.league ?? data?.data ?? data ?? {};
         const admins = Array.isArray(league?.administrators)
           ? league.administrators
           : (Array.isArray(league?.admins) ? league.admins : []);
-        const adminIds = Array.isArray(admins) ? admins.map((a: any) => a?.id) : [];
+        const adminIds = Array.isArray(admins) ? admins.map((a: Administrator) => a?.id) : [];
         if (!cancelled) setIsAdmin(adminIds.includes(user.id));
       } catch {
         if (!cancelled) setIsAdmin(false);

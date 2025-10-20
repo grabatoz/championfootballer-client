@@ -900,7 +900,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     setCurrentMatchId(String(latest.id));
                     await fetchLeagueAndMatchDetails(true);
                 }
-            } catch (e) {
+            } catch {
                 // On error, keep UI safe and indicate no match
                 setSelectedLeagueHasNoMatches(true);
                 setSelectedMatchForList(null);
@@ -1557,7 +1557,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         }
     };
 
-    const canSubmitStats = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
+    // const canSubmitStats = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
 
     // Replace old openStats with window-aware version
     const openStats = () => {
