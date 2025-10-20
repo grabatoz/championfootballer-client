@@ -304,6 +304,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const [error, setError] = useState<string | null>(null);
     const [homeGoals, setHomeGoals] = useState<number>(0);
     const [awayGoals, setAwayGoals] = useState<number>(0);
+    // String inputs to allow clearing and prevent negative typing
+    const [homeGoalsInput, setHomeGoalsInput] = useState<string>('0');
+    const [awayGoalsInput, setAwayGoalsInput] = useState<string>('0');
     const [note, setNote] = useState<string>('');
     const [votedForId, setVotedForId] = useState<string | null>(null);
     const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
@@ -616,8 +619,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
             const m = normalizeMatch(matchObj);
             setMatch(m);
-            setHomeGoals(typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0);
-            setAwayGoals(typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0);
+            const hg = typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0;
+            const ag = typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0;
+            setHomeGoals(hg);
+            setAwayGoals(ag);
+            setHomeGoalsInput(String(hg));
+            setAwayGoalsInput(String(ag));
 
             // 2) Fetch league using a reliable id (prefer id from match if present)
             const effectiveLeagueId = m.leagueId || resolvedLeagueId;
@@ -1616,7 +1623,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
                             }}
                         >
-                            Add Stats
+                            Add Your Stats
                         </Button>
                     )}
                 </Box>
@@ -1793,7 +1800,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                             mt: { xs: 0.25, sm: 0.5, md: 0.5 }
                                                         }}
                                                     >
-                                                        Admin Stats
+                                                        Edit Stats
                                                     </Button>
                                                 )}
                                             </Box>
@@ -1810,6 +1817,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 </Card>
             </Paper>
 
+            {/* Side-by-side layout for Match Note (left) and Captains Bonus Pick (right) */}
+            <Box
+                sx={{
+                    display: selectedLeagueHasNoMatches ? 'none' : 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 2,
+                    alignItems: 'stretch',
+                }}
+            >
             <Paper
                 sx={{
                     p: { xs: 1, sm: 2 },
@@ -1908,6 +1924,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     )}
                 </Box>
             </Paper>
+            </Box>
 
 
 
@@ -1986,12 +2003,31 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
                     <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => setHomeGoals(p => Math.max(0, p - 1))} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
+                            <IconButton onClick={() => {
+                                setHomeGoals(prev => {
+                                    const next = Math.max(0, prev - 1);
+                                    setHomeGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
                             <TextField
                                 label={`${match.homeTeamName} Goals`}
                                 type="number"
-                                value={homeGoals}
-                                onChange={e => setHomeGoals(Number(e.target.value))}
+                                value={homeGoalsInput}
+                                onChange={e => {
+                                    const raw = e.target.value;
+                                    // allow empty to let user clear
+                                    if (raw === '') {
+                                        setHomeGoalsInput('');
+                                        setHomeGoals(0);
+                                        return;
+                                    }
+                                    // clamp negatives
+                                    const n = Math.max(0, Number(raw));
+                                    const str = String(Number.isFinite(n) ? n : 0);
+                                    setHomeGoalsInput(str);
+                                    setHomeGoals(Number(str));
+                                }}
                                 variant="outlined"
                                 sx={{
                                     width: '150px',
@@ -2009,15 +2045,38 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 InputLabelProps={{ style: { color: 'white' } }}
                                 disabled={!league.active}
                             />
-                            <IconButton onClick={() => setHomeGoals(p => p + 1)} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
+                            <IconButton onClick={() => {
+                                setHomeGoals(prev => {
+                                    const next = prev + 1;
+                                    setHomeGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => setAwayGoals(p => Math.max(0, p - 1))} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
+                            <IconButton onClick={() => {
+                                setAwayGoals(prev => {
+                                    const next = Math.max(0, prev - 1);
+                                    setAwayGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
                             <TextField
                                 label={`${match.awayTeamName} Goals`}
                                 type="number"
-                                value={awayGoals}
-                                onChange={e => setAwayGoals(Number(e.target.value))}
+                                value={awayGoalsInput}
+                                onChange={e => {
+                                    const raw = e.target.value;
+                                    if (raw === '') {
+                                        setAwayGoalsInput('');
+        								setAwayGoals(0);
+                                        return;
+                                    }
+                                    const n = Math.max(0, Number(raw));
+                                    const str = String(Number.isFinite(n) ? n : 0);
+                                    setAwayGoalsInput(str);
+                                    setAwayGoals(Number(str));
+                                }}
                                 variant="outlined"
                                 sx={{
                                     width: '150px',
@@ -2035,7 +2094,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 InputLabelProps={{ style: { color: 'white' } }}
                                 disabled={!league.active}
                             />
-                            <IconButton onClick={() => setAwayGoals(p => p + 1)} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
+                            <IconButton onClick={() => {
+                                setAwayGoals(prev => {
+                                    const next = prev + 1;
+                                    setAwayGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
                         </Box>
                     </Box>
                     <Box sx={{ mb: 2 }}>
