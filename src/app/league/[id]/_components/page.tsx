@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef } from 'react';
 import {
     Box,
     Typography,
@@ -37,11 +37,14 @@ import {
     LinearProgress,
     Stack,
     Avatar,
+    useTheme,
+    useMediaQuery,
+    Fade,
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame } from 'lucide-react';
-import { Tooltip } from '@mui/material';
+import { Tooltip, Slide } from '@mui/material';
 import Link from 'next/link';
 import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import Image from 'next/image';
@@ -62,6 +65,10 @@ import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import PlayerCard from '@/Components/playercard/playercard';
 import { Close, Delete } from '@mui/icons-material';
+import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import ExitToApp from '@mui/icons-material/ExitToApp';
+import People from '@mui/icons-material/People';
+import SettingsIcon from '@mui/icons-material/Settings';
 import Star from '@mui/icons-material/Star';
 // ...existing code...
 
@@ -172,6 +179,401 @@ type LeagueStatistics = {
         matchesConsidered: number;
     };
 };
+
+// Slide Transition for mobile dialogs
+const Transition = forwardRef(function Transition(props: any, ref: any) {
+        return <Slide direction="up" ref={ref} {...props} />;
+});
+
+// Local helper to format names safely
+const formatLeagueName = (name?: string): string => (name ?? '').trim();
+
+interface LeagueMembersDialogProps {
+    open: boolean
+    onClose: () => void
+    league: League | null
+    currentUserId: string
+    onRemoveMember: (memberId: string) => void
+    onLeaveLeague: () => void
+    onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
+    onDeleteLeague: () => Promise<void> | void
+    openSettingsOnOpen?: boolean
+}
+
+function LeagueMembersDialog({
+  open,
+  onClose,
+  league,
+  currentUserId,
+  onRemoveMember,
+  onLeaveLeague,
+  onUpdateLeague,
+  onDeleteLeague,
+  openSettingsOnOpen,
+}: LeagueMembersDialogProps) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const [openSettings, setOpenSettings] = useState(false)
+  useEffect(() => {
+    if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
+      setOpenSettings(true)
+    }
+  }, [open, openSettingsOnOpen, league, currentUserId])
+
+  if (!league) return null
+
+  const isAdmin = league.adminId === currentUserId
+  const memberCount = league.members?.length || 0
+
+  const handleRemoveMember = (memberId: string, memberName: string) => {
+    if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
+      // Guard in case a parent passes undefined
+      if (typeof onRemoveMember === 'function') onRemoveMember(memberId)
+    }
+  }
+
+  const handleLeaveLeague = () => {
+    if (window.confirm("Are you sure you want to leave this league?")) {
+      onLeaveLeague()
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+      TransitionComponent={Transition}
+      PaperProps={{
+        sx: {
+          bgcolor: 'rgba(15,15,15,0.92)',
+          color: '#E5E7EB',
+          borderRadius: isMobile ? 0 : 3,
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+          overflow: 'hidden',
+          maxHeight: isMobile ? '100vh' : '80vh',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          background: 'transparent',
+          color: '#E5E7EB',
+          fontWeight: 700,
+          fontSize: { xs: 18, sm: 22 },
+          borderRadius: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          py: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 3 },
+          position: "relative",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: "linear-gradient(90deg, rgba(229,106,22,0.7), rgba(207,35,38,0.7))",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: 2,
+              bgcolor: "rgba(255,255,255,0.06)",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#e56a16" }} />
+          </Box>
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: "#E5E7EB",
+                fontSize: { xs: 16, sm: 20 },
+                lineHeight: 1.2,
+              }}
+            >
+              {formatLeagueName(league.name)}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#9CA3AF",
+                fontSize: { xs: 12, sm: 14 },
+                fontWeight: 500,
+              }}
+            >
+              {memberCount} {memberCount === 1 ? "Member" : "Members"}
+            </Typography>
+          </Box>
+        </Box>
+
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "#E5E7EB",
+            bgcolor: "rgba(255,255,255,0.08)",
+            "&:hover": {
+              bgcolor: "rgba(255,255,255,0.12)",
+              color: "#fff",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      {/* Content */}
+      <DialogContent
+        sx={{
+          bgcolor: "transparent",
+          px: 0,
+          py: 0,
+          overflow: "auto",
+          "&::-webkit-scrollbar": { width: "6px" },
+          "&::-webkit-scrollbar-track": { background: "rgba(255,255,255,0.06)" },
+          "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
+        }}
+      >
+        <List sx={{ py: 0 }}>
+          {(league.members || []).map((member, index) => {
+            const memberName = `${member.firstName} ${member.lastName}`
+            const isLeagueAdmin = member.id === league.adminId
+            const isCurrentUser = member.id === currentUserId
+
+            return (
+              <Fade in={true} timeout={300 + index * 100} key={member.id}>
+                <Box>
+                  <ListItem
+                    sx={{
+                      py: { xs: 2, sm: 2.5 },
+                      px: { xs: 2, sm: 3 },
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
+                      borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(255,255,255,0.06)",
+                      },
+                    }}
+                  >
+                    <ListItemAvatar sx={{ minWidth: 56 }}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: { xs: 44, sm: 52 },
+                          height: { xs: 44, sm: 52 },
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          background: 'transparent',
+                          // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
+                          // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        }}
+                      >
+                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#000',
+                            fontWeight: 800,
+                            fontSize: { xs: 14, sm: 16 },
+                            lineHeight: 1,
+                            textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                          }}
+                        >
+                          {member.shirtNumber || '0'}
+                        </Box>
+                      </Box>
+                    </ListItemAvatar>
+
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "#E5E7EB",
+                              fontSize: { xs: 16, sm: 18 },
+                            }}
+                          >
+                            {memberName}
+                          </Typography>
+                          {isCurrentUser && (
+                            <Chip
+                              label="You"
+                              size="small"
+                              sx={{
+                                bgcolor: "transparent",
+                                color: "#e56a16",
+                                border: '1px solid rgba(229,106,22,0.6)',
+                                fontWeight: 600,
+                                fontSize: 11,
+                                height: 20,
+                                borderRadius: '9999px',
+                              }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
+                          <Typography
+                            sx={{
+                              color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
+                              fontWeight: 500,
+                              fontSize: { xs: 13, sm: 14 },
+                            }}
+                          >
+                            {isLeagueAdmin ? "League Admin" : "Member"}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+
+                    {isAdmin && member.id !== currentUserId && (
+                      <Tooltip title={`Remove ${memberName}`} arrow>
+                        <IconButton
+                          onClick={() => handleRemoveMember(member.id, memberName)}
+                          sx={{
+                            color: "#ff6b6b",
+                            bgcolor: "rgba(255, 107, 107, 0.12)",
+                            "&:hover": {
+                              bgcolor: "rgba(255, 107, 107, 0.2)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <Delete sx={{ fontSize: 20 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </ListItem>
+                  {index < (league.members?.length || 0) - 1 && (
+                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
+                  )}
+                </Box>
+              </Fade>
+            )
+          })}
+        </List>
+      </DialogContent>
+
+      {/* Footer */}
+      <DialogActions
+        sx={{
+          background: "transparent",
+          p: { xs: 2, sm: 3 },
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 2,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        {!isAdmin && (
+          <Button
+            startIcon={<ExitToApp />}
+            onClick={handleLeaveLeague}
+            sx={{
+              fontWeight: 600,
+              bgcolor: "#fff",
+              color: "#d32f2f",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "#ffebee",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            Leave League
+          </Button>
+        )}
+
+        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+         
+          <Button
+            onClick={onClose}
+            sx={{
+              fontWeight: 600,
+              color: "#e56a16",
+              borderColor: "#e56a16",
+              borderRadius: 2,
+              border: "2px solid",
+              bgcolor: "transparent",
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "rgba(229,106,22,0.12)",
+                borderColor: "#e56a16",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            Close
+          </Button>
+        </Box>
+      </DialogActions>
+      {isAdmin && league && (
+        <LeagueSettingsDialog
+          open={openSettings}
+          onClose={() => setOpenSettings(false)}
+          league={league}
+                    onUpdate={async (data) => {
+                        // Coerce Partial<League & {admins: string[]}> into LeagueUpdatePayload
+                        const payload: LeagueUpdatePayload = {
+                            name: (data.name ?? league.name ?? '').toString(),
+                            active: data.active ?? league.active ?? true,
+                            maxGames: Number(data.maxGames ?? league.maxGames ?? 20),
+                            showPoints: data.showPoints ?? league.showPoints ?? true,
+                            admins: Array.isArray((data as any).admins)
+                                ? ((data as any).admins as string[])
+                                : (league.adminId ? [league.adminId] : (league.administrators || []).map(a => a.id)),
+                        }
+                        await onUpdateLeague(payload)
+            setOpenSettings(false)
+          }}
+          onDelete={async () => {
+            await onDeleteLeague()
+            setOpenSettings(false)
+          }}
+          currentUserId={currentUserId}
+          onRemoveMember={onRemoveMember}
+          onLeaveLeague={onLeaveLeague}
+        />
+      )}
+    </Dialog>
+  )
+}
 
 // const getBadgeForPosition = (position: number) => {
 //     switch (position) {
@@ -2307,6 +2709,64 @@ export default function LeagueDetailPage() {
 
     // Replace your MatchDetailModal component with this updated version
 
+
+      const [openMembers, setOpenMembers] = useState(false);
+        const [, setLoadingMembers] = useState(false);
+    const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+      const handleOpenMembers = async (league: League) => {
+        setLoadingMembers(true);
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.league.administrators?.[0];
+            setSelectedLeague({
+              ...league,
+              adminId: admin?.id,
+              members: (data.league.members || []).map((m: User) => ({
+                id: m.id,
+                firstName: m.firstName,
+                lastName: m.lastName,
+                profilePicture: m.profilePicture,
+                email: m.email,
+                shirtNumber: m.shirtNumber,
+              })),
+            });
+            setOpenMembers(true);
+          } else {
+            toast.error(data.message || 'Failed to fetch league members');
+          }
+        } catch {
+          toast.error('Failed to fetch league members');
+        } finally {
+          setLoadingMembers(false);
+        }
+      };
+
+            // Allow a non-admin to leave the league from the members dialog
+            const handleLeaveLeague = async () => {
+                if (!selectedLeague) return;
+                try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        setOpenMembers(false);
+                        toast.success('Successfully left the league');
+                        // Navigate away since the user is no longer in this league
+                        router.push('/all-leagues');
+                    } else {
+                        toast.error('Failed to leave league');
+                    }
+                } catch {
+                    toast.error('Failed to leave league');
+                }
+            };
+
+
     const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
         if (!match) return null;
 
@@ -3418,7 +3878,15 @@ export default function LeagueDetailPage() {
                                             </IconButton>
                                         )} */}
                                          <IconButton
-                                                onClick={() => setIsSettingsOpen(true)}
+                                                onClick={() => {
+                                                    const isAdmin = (league?.adminId || league?.administrators?.[0]?.id) === (user?.id || '')
+                                                    if (isAdmin) {
+                                                        setIsSettingsOpen(true)
+                                                    } else {
+                                                        // Non-admins: open the Players view (similar to members dialog)
+                                                        if (league) handleOpenMembers(league!)
+                                                    }
+                                                }}
                                                 sx={{
                                                     ml: 0.5,
                                                     color: 'white',
@@ -5061,6 +5529,17 @@ export default function LeagueDetailPage() {
                             onLeaveLeague={undefined}
                             onUpdateLeague={undefined}
                             onDeleteLeague={undefined}
+                        />
+                        {/* Members dialog (full-featured) */}
+                        <LeagueMembersDialog
+                            open={openMembers}
+                            onClose={() => setOpenMembers(false)}
+                            league={selectedLeague}
+                            currentUserId={user?.id || ''}
+                            onRemoveMember={() => { /* optional: non-admins cannot remove here */ }}
+                            onLeaveLeague={handleLeaveLeague}
+                            onUpdateLeague={async () => { /* no-op on this page for now */ }}
+                            onDeleteLeague={async () => { /* no-op on this page for now */ }}
                         />
                         <Snackbar
                             open={!!toastMessage}
