@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
+import { useParams, useRouter } from "next/navigation";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip, IconButton, Tooltip } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 // import useMediaQuery from '@mui/material/useMediaQuery';
@@ -12,6 +12,7 @@ import MatchSummary from '@/Components/MatchSummary';
 // import ThirdBadge from '@/Components/images/3rd.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import React from "react";
+import CloseIcon from '@mui/icons-material/Close';
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
@@ -121,6 +122,7 @@ type MatchStatLite = {
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = params?.matchId as string;
+  const router = useRouter();
   const { token, user } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
@@ -326,6 +328,28 @@ export default function MatchDetailsPage() {
   };
 
   // const router = useRouter();
+  const handleCloseAndGoBack = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      // If there is browser history, just go back
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+      // Try referrer when history stack isn't available (e.g., direct open)
+      const ref = document.referrer;
+      if (ref && ref.startsWith(window.location.origin)) {
+        const path = ref.replace(window.location.origin, '') || '/';
+        router.push(path);
+        return;
+      }
+    }
+    // Fallbacks
+    if (match?.leagueId) {
+      router.push(`/league/${match.leagueId}`);
+    } else {
+      router.push('/all-matches');
+    }
+  }, [router, match]);
 
 
   const JerseyAvatar = ({
@@ -377,6 +401,14 @@ export default function MatchDetailsPage() {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
+      {/* Top-right close button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Tooltip title="Close and go back">
+          <IconButton onClick={handleCloseAndGoBack} sx={{ color: '#fff' }} aria-label="Close and go back">
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       {/* <Button
         startIcon={<ArrowLeft />}
         onClick={() => router.push(`/league/${match?.leagueId}`)}

@@ -5135,7 +5135,7 @@ export default function LeagueDetailPage() {
                                                                                 // }}
 
                                                                                 onClick={() => {
-                                                                                    router.push(`match/${match.id}`)
+                                                                                    router.push(`/match/${match.id}`)
                                                                                 }}
 
                                                                             >
