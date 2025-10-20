@@ -555,8 +555,8 @@ function LeagueMembersDialog({
                             active: data.active ?? league.active ?? true,
                             maxGames: Number(data.maxGames ?? league.maxGames ?? 20),
                             showPoints: data.showPoints ?? league.showPoints ?? true,
-                            admins: Array.isArray((data as any).admins)
-                                ? ((data as any).admins as string[])
+                            admins: Array.isArray((data as { admins?: string[] }).admins)
+                                ? ((data as { admins?: string[] }).admins as string[])
                                 : (league.adminId ? [league.adminId] : (league.administrators || []).map(a => a.id)),
                         }
                         await onUpdateLeague(payload)
@@ -1224,7 +1224,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     showPoints,
                     admins: [adminId],
                 }))
-            } catch (e) {
+            } catch {
                 // If updating admin fails, abort removal
                 return
             }
@@ -1623,6 +1623,11 @@ export default function LeagueDetailPage() {
         xpRecentTotal?: number;
         profileXP?: number;
     }>({});
+    
+    // State for members dialog
+    const [openMembers, setOpenMembers] = useState(false);
+    const [, setLoadingMembers] = useState(false);
+    const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
 
 
     useEffect(() => {
@@ -1691,7 +1696,7 @@ export default function LeagueDetailPage() {
         }
     }, [token]);
 
-    const handlePermanentDelete = async (match: Match) => {
+    const handlePermanentDelete = useCallback(async (match: Match) => {
         // if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
         //     return;
         // }
@@ -1730,7 +1735,8 @@ export default function LeagueDetailPage() {
             console.error('Permanent delete failed:', error);
             toast.error('Failed to permanently delete match');
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
 
     const tryHardDeleteFromDialog = useCallback(async () => {
         if (!archivedActionMatch) return;
@@ -1775,7 +1781,7 @@ export default function LeagueDetailPage() {
     };
 
     // Fetch existing stats for the player in this match
-    const fetchExistingStats = async (matchId: string) => {
+    const fetchExistingStats = useCallback(async (matchId: string) => {
         if (!token || !user) return;
 
         try {
@@ -1837,7 +1843,7 @@ export default function LeagueDetailPage() {
                 impact: 0
             });
         }
-    };
+    }, [token, user]);
 
     // Save stats to backend
     const handleSaveStats = async () => {
@@ -2276,7 +2282,7 @@ export default function LeagueDetailPage() {
             });
         });
         setMotmCounts(prev => ({ ...prev, ...counts }));
-    }, [league?.members, league?.matches]);
+    }, [league?.members, league?.matches, hasMotmVotes]);
 
     // Fetch MOTM votes per player via quick-view endpoint when league or members change
     useEffect(() => {
@@ -2709,11 +2715,7 @@ export default function LeagueDetailPage() {
 
     // Replace your MatchDetailModal component with this updated version
 
-
-      const [openMembers, setOpenMembers] = useState(false);
-        const [, setLoadingMembers] = useState(false);
-    const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
-      const handleOpenMembers = async (league: League) => {
+    const handleOpenMembers = useCallback(async (league: League) => {
         setLoadingMembers(true);
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
@@ -2743,10 +2745,10 @@ export default function LeagueDetailPage() {
         } finally {
           setLoadingMembers(false);
         }
-      };
+    }, [token]);
 
-            // Allow a non-admin to leave the league from the members dialog
-            const handleLeaveLeague = async () => {
+    // Allow a non-admin to leave the league from the members dialog
+    const handleLeaveLeague = useCallback(async () => {
                 if (!selectedLeague) return;
                 try {
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
@@ -2764,8 +2766,7 @@ export default function LeagueDetailPage() {
                 } catch {
                     toast.error('Failed to leave league');
                 }
-            };
-
+    }, [selectedLeague, token, router]);
 
     const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
         if (!match) return null;
