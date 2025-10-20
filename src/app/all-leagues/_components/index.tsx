@@ -644,7 +644,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           showPoints,
           admins: [adminId],
         }))
-      } catch (e) {
+      } catch {
         // If updating admin fails, abort removal
         return
       }

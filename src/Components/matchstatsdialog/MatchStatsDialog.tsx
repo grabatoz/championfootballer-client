@@ -72,6 +72,21 @@ type LeagueApiResponse = {
     message?: string;
 };
 
+type LeagueResponse = {
+    leagues?: League[] | { joined?: League[]; managed?: League[] };
+    data?: League[];
+    success?: boolean;
+    message?: string;
+};
+
+type MatchesResponse = {
+    matches?: Partial<Match>[];
+    data?: Partial<Match>[];
+    leagueMatches?: Partial<Match>[];
+    success?: boolean;
+    message?: string;
+};
+
 // Helper to always return safe arrays on the match object
 const normalizeMatch = (m: Partial<MatchWithGuests> | null | undefined): MatchWithGuests => {
     const safe = (m ?? {}) as MatchWithGuests;
@@ -87,7 +102,7 @@ interface User {
     id: string;
     firstName: string;
     lastName: string;
-    shirtNumber?: string;
+    // shirtNumber?: string;
     level?: string;
     skills?: {
         dribbling?: number;
@@ -126,6 +141,8 @@ interface Match {
     // Optional fields that may come from API to help recover league
     leagueId?: string;
     leagueName?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 // Guest player representation coming from backend (via /leagues/:leagueId/matches/:matchId)
@@ -134,7 +151,7 @@ interface GuestPlayer {
     team: 'home' | 'away';
     firstName: string;
     lastName: string;
-    shirtNumber?: string;
+    // shirtNumber?: string;
 }
 
 // Extend Match type locally to optionally include guests array
@@ -147,6 +164,8 @@ interface League {
     name: string;
     administrators: User[];
     active: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 interface MotmButtonProps {
@@ -401,7 +420,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     });
                 }
             }
-            const data = await res.json().catch(() => ({}));
+            const data = await res.json().catch(() => ({} as LeagueResponse));
             if (!res.ok || (data && data.success === false)) {
                 throw new Error(data?.message || 'Failed to load leagues');
             }
@@ -409,7 +428,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             // - { leagues: League[] }
             // - { leagues: { joined: League[], managed: League[] } }
             // - { data: League[] }
-            let leaguesArr: any = [];
+            let leaguesArr: League[] = [];
             if (Array.isArray(data?.leagues)) {
                 leaguesArr = data.leagues;
             } else if (data?.leagues && typeof data.leagues === 'object') {
@@ -420,15 +439,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 leaguesArr = data.data;
             }
             // De-duplicate by id
-            const byId = new Map<string, any>();
-            (Array.isArray(leaguesArr) ? leaguesArr : []).forEach((l: any) => {
+            const byId = new Map<string, League>();
+            (Array.isArray(leaguesArr) ? leaguesArr : []).forEach((l: League) => {
                 const id = String(l?.id ?? '');
                 if (id && !byId.has(id)) byId.set(id, l);
             });
-            const normalized: League[] = Array.from(byId.values()).map((l: any) => ({
+            const normalized: League[] = Array.from(byId.values()).map((l: League) => ({
                 id: String(l.id),
                 name: l.name,
-                administrators: (l.administrators || l.administeredLeagues || []).map((u: any) => ({
+                administrators: (l.administrators || []).map((u: User) => ({
                     id: String(u.id), firstName: u.firstName, lastName: u.lastName
                 })),
                 active: typeof l.active === 'boolean' ? l.active : true,
@@ -524,14 +543,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
-            const data = await res.json().catch(() => ({}));
+            const data = await res.json().catch(() => ({} as MatchesResponse));
             if (!res.ok || (data && data.success === false)) {
                 throw new Error(data?.message || 'Failed to load matches');
             }
-            let matchesArr: any[] = data?.matches || data?.data || data?.leagueMatches || [];
+            let matchesArr: Partial<Match>[] = data?.matches || data?.data || data?.leagueMatches || [];
             if (!Array.isArray(matchesArr)) matchesArr = [];
             // Always filter by selected league id to be consistent across endpoints
-            const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(leagueIdForList));
+            const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === String(leagueIdForList));
             setSelectedLeagueMatches(filtered);
             if (filtered.length === 0) {
                 toast('No matches found for this league yet.');
@@ -585,14 +604,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
-            const raw = await matchResp.json().catch(() => ({} as any));
+            const raw = await matchResp.json().catch(() => ({} as { match?: Partial<MatchWithGuests>; data?: Partial<MatchWithGuests> | { match?: Partial<MatchWithGuests> }; id?: string; success?: boolean; message?: string }));
             // Tolerant response handling across shapes
             // Accept: { success, match }, { match }, direct match object, or { data: match }
-            let matchObj: any = null;
+            let matchObj: Partial<MatchWithGuests> | null = null;
             if (raw && typeof raw === 'object') {
                 if (raw.match) matchObj = raw.match;
-                else if (raw.data && (raw.data.id || raw.data.match)) matchObj = raw.data.match || raw.data;
-                else if (raw.id) matchObj = raw;
+                else if (raw.data && typeof raw.data === 'object') {
+                    if ('id' in raw.data || 'match' in raw.data) {
+                        matchObj = 'match' in raw.data ? raw.data.match : raw.data as Partial<MatchWithGuests>;
+                    }
+                }
+                else if (raw.id) matchObj = raw as Partial<MatchWithGuests>;
             }
             if (!matchResp.ok || !matchObj) {
                 console.warn('MatchStatsDialog: match fetch failed, attempting league matches fallback', { status: matchResp.status, raw, attempt });
@@ -602,11 +625,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     if (mres.status === 404 || mres.status === 405) {
                         mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
                     }
-                    const mdata = await mres.json().catch(() => ({}));
-                    let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                    const mdata = await mres.json().catch(() => ({} as MatchesResponse));
+                    let matchesArr: Partial<Match>[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
                     if (!Array.isArray(matchesArr)) matchesArr = [];
-                    const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(resolvedLeagueId));
-                    const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
+                    const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === String(resolvedLeagueId));
+                    const mWithDates = filtered.map(m => ({ m, ts: Date.parse((m.start || m.date || m.updatedAt || m.createdAt) as string || '') || 0, idNum: Number(m.id) || 0 }));
                     mWithDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                     const chosen = mWithDates[0]?.m || null;
                     if (chosen && String(chosen.id) !== resolvedMatchId) {
@@ -648,12 +671,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setSelectedLeagueNameForList(String(leagueData.league.name || 'League'));
             } else {
                 console.warn('League not found, using fallback league object');
-                const fallbackLeague = {
+                const fallbackLeague: League = {
                     id: String(effectiveLeagueId || 'unknown'),
                     name: String(m.leagueName || 'League'),
-                    administrators: [] as any[],
+                    administrators: [] as User[],
                     active: true,
-                } as League;
+                };
                 setLeague(fallbackLeague);
                 // Still sync ids/label so UI reflects the match's league
                 setCurrentLeagueId(String(effectiveLeagueId));
@@ -696,14 +719,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         if (match && match.id) {
             // minimal shape for the button label
             setSelectedMatchForList(prev => {
-                const prevId = prev && (prev as any).id ? String((prev as any).id) : null;
+                const prevId = prev?.id ? String(prev.id) : null;
                 if (prevId === String(match.id)) return prev;
                 return {
                     id: match.id,
-                    homeTeamName: (match as any).homeTeamName,
-                    awayTeamName: (match as any).awayTeamName,
-                    leagueId: (match as any).leagueId,
-                } as any;
+                    homeTeamName: match.homeTeamName,
+                    awayTeamName: match.awayTeamName,
+                    leagueId: match.leagueId,
+                } as Partial<Match>;
             });
             setSelectedLeagueHasNoMatches(false);
             // also reflect league id/name in the toolbar/header for consistency
@@ -712,8 +735,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
             if (league?.name) {
                 setSelectedLeagueNameForList(String(league.name));
-            } else if ((match as any)?.leagueName) {
-                setSelectedLeagueNameForList(String((match as any).leagueName));
+            } else if (match?.leagueName) {
+                setSelectedLeagueNameForList(String(match.leagueName));
             }
         }
     }, [match, league?.name, league?.id]);
@@ -742,12 +765,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (mres.status === 404 || mres.status === 405) {
                     mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
                 }
-                const mdata = await mres.json().catch(() => ({}));
-                let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                const mdata = await mres.json().catch(() => ({} as MatchesResponse));
+                let matchesArr: Partial<Match>[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
                 if (!Array.isArray(matchesArr)) matchesArr = [];
-                const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === preferredId);
-                const toTime = (m: any): number => {
-                    const s = m?.start || m?.date || m?.updatedAt || m?.createdAt;
+                const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === preferredId);
+                const toTime = (m: Partial<Match>): number => {
+                    const s = (m?.start || m?.date || m?.updatedAt || m?.createdAt) as string | undefined;
                     const t = s ? new Date(s).getTime() : NaN;
                     if (!Number.isNaN(t)) return t;
                     const n = Number(m?.id);
@@ -761,17 +784,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 try {
                     const lres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${preferredId}`, { headers: { Authorization: `Bearer ${token}` } });
                     if (lres.ok) {
-                        const ldata: any = await lres.json().catch(() => ({}));
-                        const leagueObj = ldata?.league || ldata || null;
-                        const lname = leagueObj?.name || ldata?.name;
+                        const ldata = await lres.json().catch(() => ({} as LeagueApiResponse));
+                        const leagueObj = ldata?.league || ldata;
+                        const lname = leagueObj && typeof leagueObj === 'object' && 'name' in leagueObj ? leagueObj.name : undefined;
                         if (lname) setSelectedLeagueNameForList(String(lname));
                         // Force update to the preferred league so UI reflects it even if a different league was previously set
-                        if (leagueObj && leagueObj.id) {
+                        if (leagueObj && typeof leagueObj === 'object' && 'id' in leagueObj && leagueObj.id) {
                             setLeague({
                                 id: String(leagueObj.id),
                                 name: String(leagueObj.name || 'League'),
                                 administrators: Array.isArray(leagueObj.administrators)
-                                    ? leagueObj.administrators.map((u: any) => ({ id: String(u.id), firstName: u.firstName, lastName: u.lastName }))
+                                    ? leagueObj.administrators.map((u: User) => ({ id: String(u.id), firstName: u.firstName, lastName: u.lastName }))
                                     : [],
                                 active: typeof leagueObj.active === 'boolean' ? leagueObj.active : true,
                             });
@@ -842,13 +865,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                 }
-                const data = await res.json().catch(() => ({}));
+                const data = await res.json().catch(() => ({} as MatchesResponse));
                 if (!res.ok || (data && data.success === false)) {
                     throw new Error(data?.message || 'Failed to load matches');
                 }
-                let matchesArr: any[] = data?.matches || data?.data || data?.leagueMatches || [];
+                let matchesArr: Partial<Match>[] = data?.matches || data?.data || data?.leagueMatches || [];
                 if (!Array.isArray(matchesArr)) matchesArr = [];
-                const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === String(l.id));
+                const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === String(l.id));
                 setSelectedLeagueMatches(filtered);
 
                 if (!filtered.length) {
@@ -859,8 +882,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
 
                 // Pick latest by start date (fallback to createdAt/updatedAt/id)
-                const toTime = (m: any): number => {
-                    const s = m?.start || m?.matchStart || m?.createdAt || m?.updatedAt;
+                const toTime = (m: Partial<Match>): number => {
+                    const s = (m?.start || m?.createdAt || m?.updatedAt) as string | undefined;
                     const t = s ? new Date(s).getTime() : NaN;
                     if (!Number.isNaN(t)) return t;
                     // very last fallback: parse id if numeric
@@ -914,20 +937,20 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/leagues`, { headers: { Authorization: `Bearer ${token}` } });
                     }
                 }
-                const data = await res.json().catch(() => ({}));
-                let leaguesArr: any = [];
+                const data = await res.json().catch(() => ({} as LeagueResponse));
+                let leaguesArr: League[] = [];
                 if (Array.isArray(data?.leagues)) leaguesArr = data.leagues;
                 else if (data?.leagues && typeof data.leagues === 'object') {
                     const joined = Array.isArray(data.leagues.joined) ? data.leagues.joined : [];
                     const managed = Array.isArray(data.leagues.managed) ? data.leagues.managed : [];
                     leaguesArr = [...joined, ...managed];
                 } else if (Array.isArray(data?.data)) leaguesArr = data.data;
-                const byId = new Map<string, any>();
-                (Array.isArray(leaguesArr) ? leaguesArr : []).forEach((l: any) => { const id = String(l?.id ?? ''); if (id && !byId.has(id)) byId.set(id, l); });
+                const byId = new Map<string, League>();
+                (Array.isArray(leaguesArr) ? leaguesArr : []).forEach((l: League) => { const id = String(l?.id ?? ''); if (id && !byId.has(id)) byId.set(id, l); });
                 const allLeagues = Array.from(byId.values());
                 console.log('MatchStatsDialog: fetched leagues', { count: allLeagues.length });
                 if (!allLeagues.length) { setLoading(false); return; }
-                const withDates = allLeagues.map(l => ({ l, ts: Date.parse(l.updatedAt || l.createdAt || l.date || l.start || '') || 0, idNum: Number(l.id) || 0 }));
+                const withDates = allLeagues.map(l => ({ l, ts: Date.parse((l.updatedAt || l.createdAt) as string || '') || 0, idNum: Number(l.id) || 0 }));
                 withDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                 const chosenLeague = withDates[0]?.l || allLeagues[0];
                 const chosenLeagueId = String(chosenLeague.id);
@@ -938,12 +961,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (mres.status === 404 || mres.status === 405) {
                     mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
                 }
-                const mdata = await mres.json().catch(() => ({}));
-                let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                const mdata = await mres.json().catch(() => ({} as MatchesResponse));
+                let matchesArr: Partial<Match>[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
                 if (!Array.isArray(matchesArr)) matchesArr = [];
-                const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === chosenLeagueId);
+                const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === chosenLeagueId);
                 console.log('MatchStatsDialog: matches for league', { leagueId: chosenLeagueId, count: filtered.length });
-                const mWithDates = filtered.map(m => ({ m, ts: Date.parse(m.start || m.date || m.updatedAt || m.createdAt || '') || 0, idNum: Number(m.id) || 0 }));
+                const mWithDates = filtered.map(m => ({ m, ts: Date.parse((m.start || m.date || m.updatedAt || m.createdAt) as string || '') || 0, idNum: Number(m.id) || 0 }));
                 mWithDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
                 const chosenMatch = mWithDates[0]?.m || null;
                 if (!chosenMatch) {
@@ -1667,7 +1690,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             id: g.id, // keep id (used only as key) – not linking to player profile
             firstName: g.firstName,
             lastName: g.lastName,
-            shirtNumber: g.shirtNumber,
+            // shirtNumber: g.shirtNumber,
             isGuest: true
         } as User & { isGuest: true }));
 
@@ -1677,7 +1700,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             id: g.id,
             firstName: g.firstName,
             lastName: g.lastName,
-            shirtNumber: g.shirtNumber,
+            // shirtNumber: g.shirtNumber,
             isGuest: true
         } as User & { isGuest: true }));
 
@@ -1726,8 +1749,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         ? 'Loading Matches…'
                         : selectedLeagueHasNoMatches
                             ? 'No Match Found.'
-                            : selectedMatchForList && (selectedMatchForList as any)?.homeTeamName && (selectedMatchForList as any)?.awayTeamName
-                                ? `${(selectedMatchForList as any).homeTeamName} vs ${(selectedMatchForList as any).awayTeamName}`
+                            : selectedMatchForList && selectedMatchForList.homeTeamName && selectedMatchForList.awayTeamName
+                                ? `${selectedMatchForList.homeTeamName} vs ${selectedMatchForList.awayTeamName}`
                                 : 'Select a Match'}
                 </Button>
                 {/* {selectedLeagueIdForList && (
@@ -1835,7 +1858,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
                                             {player.hasOwnProperty('isGuest') ? (
                                                 <JerseyAvatar
-                                                    number={player.shirtNumber || 'G'}
+                                                    // number={player.shirtNumber || 'G'}
                                                     sx={{
                                                         width: { xs: 25, sm: 35, md: 74 },
                                                         height: { xs: 25, sm: 35, md: 74 },
@@ -1847,7 +1870,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             ) : (
                                                 <Link href={`/player/${player.id}`}>
                                                     <JerseyAvatar
-                                                        number={player.shirtNumber || '0'}
+                                                        // number={player.shirtNumber || '0'}
                                                         sx={{
                                                             width: { xs: 25, sm: 35, md: 74 },
                                                             height: { xs: 25, sm: 35, md: 74 },
@@ -2323,7 +2346,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
                                 }}
                             >
-                                {p.firstName} {p.lastName} {p.shirtNumber ? `#${p.shirtNumber}` : ''}
+                                {p.firstName} {p.lastName}
                             </Button>
                         ))}
                         {myTeamPlayers.length === 0 && (
@@ -2490,14 +2513,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 <Button
                                     key={m.id}
                                     onClick={async () => {
-                                        const lid = String((m as any).leagueId || selectedLeagueIdForList || resolvedLeagueId || '');
+                                        const lid = String(m.leagueId || selectedLeagueIdForList || resolvedLeagueId || '');
                                         const mid = String(m.id || '');
                                         if (!lid || !mid) return;
                                         // Sync league state + toolbar selections to the match's league
                                         setCurrentLeagueId(lid);
                                         setSelectedLeagueIdForList(lid);
-                                        if ((m as any)?.leagueName) {
-                                            setSelectedLeagueNameForList(String((m as any).leagueName));
+                                        if (m?.leagueName) {
+                                            setSelectedLeagueNameForList(String(m.leagueName));
                                         }
                                         setCurrentMatchId(mid);
                                         setMatchesDialogOpen(false);

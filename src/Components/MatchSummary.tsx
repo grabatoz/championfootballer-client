@@ -450,11 +450,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             ) : (
               <>
                 {isAdmin ? (
-                  <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
+                  // <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
                     <Button
                       variant="contained"
                       color="secondary"
                       startIcon={<Add />}
+                       onClick={() => setStatsDialogOpen(true)}
                       sx={{
                         bgcolor: "#2B2B2B",
                         color: "white",
@@ -468,7 +469,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     >
                       Update Score Card
                     </Button>
-                  </Link>
+                  // </Link>
                 ) : (
                   <Button
                     variant="contained"
