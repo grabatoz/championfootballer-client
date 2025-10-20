@@ -27,7 +27,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Add, Remove } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import Goals from '@/Components/images/goal.png'
-import Imapct from '@/Components/images/imapct.png'
+// import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
 // import Defence from '@/Components/images/defence.png'
 import CleanSheet from '@/Components/images/cleansheet.png'

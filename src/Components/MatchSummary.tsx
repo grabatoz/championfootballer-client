@@ -8,7 +8,7 @@ import Link from "next/link"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import { Add } from "@mui/icons-material"
-import PlayerStatsDialog from './PlayerStatsDialog'
+import MatchStatsDialog from './matchstatsdialog/MatchStatsDialog'
 import { useAuth } from '@/lib/hooks'
 
 interface MatchSummaryProps {
@@ -87,125 +87,38 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
 
   // Stats dialog state
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
-  const [stats, setStats] = useState({
-    goals: 0,
-    assists: 0,
-    cleanSheets: 0,
-    penalties: 0,
-    freeKicks: 0,
-    defence: 0,
-    impact: 0,
-  })
-  const [isSubmittingStats, setIsSubmittingStats] = useState(false)
+  // Admin gate state
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  // Stat change handler
-  const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
-    setStats(prev => {
-      const newValue = Math.max(0, (prev[stat] || 0) + increment)
-      return { ...prev, [stat]: Math.min(newValue, max) }
-    })
-  }
-
-  // Fetch existing stats for the player in this match
-  const fetchExistingStats = async (matchId: string) => {
-    if (!token || !user) return
-    
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      
-      if (response.status === 404 || response.status === 405) {
-        setStats({ 
-          goals: 0, 
-          assists: 0, 
-          cleanSheets: 0, 
-          penalties: 0, 
-          freeKicks: 0, 
-          defence: 0, 
-          impact: 0 
-        })
-        return
+  // Determine if current user is a league admin
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!token || !user || !leagueId) {
+        if (!cancelled) setIsAdmin(false);
+        return;
       }
-      
-      const data = await response.json()
-      
-      if (data.success && data.stats) {
-        setStats({
-          goals: data.stats.goals || 0,
-          assists: data.stats.assists || 0,
-          cleanSheets: data.stats.cleanSheets || 0,
-          penalties: data.stats.penalties || 0,
-          freeKicks: data.stats.freeKicks || 0,
-          defence: data.stats.defence || 0,
-          impact: data.stats.impact || 0,
-        })
-      } else {
-        setStats({ 
-          goals: 0, 
-          assists: 0, 
-          cleanSheets: 0, 
-          penalties: 0, 
-          freeKicks: 0, 
-          defence: 0, 
-          impact: 0 
-        })
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          if (!cancelled) setIsAdmin(false);
+          return;
+        }
+        const data = await res.json().catch(() => ({} as any));
+        const league = data?.league ?? data?.data ?? data ?? {};
+        const admins = Array.isArray(league?.administrators)
+          ? league.administrators
+          : (Array.isArray(league?.admins) ? league.admins : []);
+        const adminIds = Array.isArray(admins) ? admins.map((a: any) => a?.id) : [];
+        if (!cancelled) setIsAdmin(adminIds.includes(user.id));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch existing stats:', error)
-      setStats({ 
-        goals: 0, 
-        assists: 0, 
-        cleanSheets: 0, 
-        penalties: 0, 
-        freeKicks: 0, 
-        defence: 0, 
-        impact: 0 
-      })
-    }
-  }
-
-  // Save stats to backend
-  const handleSaveStats = async () => {
-    if (!matchId || !token) return
-    
-    setIsSubmittingStats(true)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          goals: stats.goals,
-          assists: stats.assists,
-          cleanSheets: stats.cleanSheets,
-          penalties: stats.penalties,
-          freeKicks: stats.freeKicks,
-          defence: stats.defence,
-          impact: stats.impact,
-        }),
-      })
-      
-      if (response.status === 404 || response.status === 405) {
-        console.error('Stats saving is not available yet. Please contact the administrator.')
-        setStatsDialogOpen(false)
-        return
-      }
-      
-      const data = await response.json()
-      if (data.success) {
-        setStatsDialogOpen(false)
-      }
-    } catch (err: unknown) {
-      console.error(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsSubmittingStats(false)
-    }
-  }
-
-  // Get match goals for the active match
-  const getMatchGoals = () => {
-    return homeGoals + awayGoals
-  }
+    })();
+    return () => { cancelled = true; };
+  }, [token, user, leagueId]);
 
   // Fetch prediction percentages when match not completed
   useEffect(() => {
@@ -536,11 +449,32 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               </Button>
             ) : (
               <>
-                <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
+                {isAdmin ? (
+                  <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<Add />}
+                      sx={{
+                        bgcolor: "#2B2B2B",
+                        color: "white",
+                        fontWeight: "bold",
+                        "&:hover": { bgcolor: "#2B2B2B" },
+                        fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
+                        px: { xs: 1, sm: 1.5, md: 2 },
+                        py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                        minWidth: { xs: "auto", sm: 120, md: 140 },
+                      }}
+                    >
+                      Update Score Card
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     variant="contained"
-                    color="secondary"
+                    color="primary"
                     startIcon={<Add />}
+                    onClick={() => setStatsDialogOpen(true)}
                     sx={{
                       bgcolor: "#2B2B2B",
                       color: "white",
@@ -552,30 +486,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       minWidth: { xs: "auto", sm: 120, md: 140 },
                     }}
                   >
-                    Update Score Card
+                    Add Your Stats
                   </Button>
-                </Link>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Add />}
-                  onClick={() => {
-                    setStatsDialogOpen(true)
-                    fetchExistingStats(matchId)
-                  }}
-                  sx={{
-                    bgcolor: "#2B2B2B",
-                    color: "white",
-                    fontWeight: "bold",
-                    "&:hover": { bgcolor: "#2B2B2B" },
-                    fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
-                    px: { xs: 1, sm: 1.5, md: 2 },
-                    py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
-                    minWidth: { xs: "auto", sm: 120, md: 140 },
-                  }}
-                >
-                  Add Your Stats
-                </Button>
+                )}
               </>
             )}
           </Box>
@@ -735,14 +648,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           )}
         </Box>
       )}
-      <PlayerStatsDialog
+      <MatchStatsDialog
         open={statsDialogOpen}
         onClose={() => setStatsDialogOpen(false)}
-        onSave={handleSaveStats}
-        isSubmitting={isSubmittingStats}
-        stats={stats}
-        handleStatChange={handleStatChange}
-        teamGoals={getMatchGoals()}
+        initialLeagueId={leagueId}
+        initialMatchId={matchId}
       />
     </Box>
   )
