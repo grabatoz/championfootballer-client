@@ -203,7 +203,8 @@ function LeagueMembersDialog({
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
     if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
-      onRemoveMember(memberId)
+      // Guard in case a parent passes undefined
+      if (typeof onRemoveMember === 'function') onRemoveMember(memberId)
     }
   }
 
@@ -593,7 +594,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       setIsActive(league.active !== false)
       setMaxGames(league.maxGames || 20)
       setShowPoints(league.showPoints !== false)
-      setAdminId(league.administrators?.[0]?.id || '')
+      // Prefer explicit adminId, fall back to first administrator if present
+      setAdminId(league.adminId || league.administrators?.[0]?.id || '')
     }
   }, [league])
 
@@ -609,6 +611,53 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }
 
   if (!league) return null
+
+  // Helper to determine if a given user is an admin of this league
+  const isUserLeagueAdmin = (userId?: string | null): boolean => {
+    if (!userId) return false
+    if (league.adminId && league.adminId === userId) return true
+    if (Array.isArray(league.administrators)) {
+      return league.administrators.some(a => a?.id === userId)
+    }
+    return false
+  }
+
+  const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+
+  // Remove member with admin safety: if removing current admin, require selecting replacement admin first
+  const handleAdminRemoveMember = async (member: User) => {
+    const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'this member'
+
+    // If removing an admin, enforce replacement selection
+    if (isUserLeagueAdmin(member.id)) {
+      if (!adminId || adminId === member.id) {
+        window.alert('Please select a replacement admin from the "Select league admin" dropdown before removing this admin.')
+        return
+      }
+      const confirmAdmin = window.confirm(`You are removing an admin (\"${memberName}\"). The admin role will be transferred to the selected replacement before removal. Continue?`)
+      if (!confirmAdmin) return
+      try {
+        await Promise.resolve(onUpdate({
+          name,
+          active: isActive,
+          maxGames,
+          showPoints,
+          admins: [adminId],
+        }))
+      } catch (e) {
+        // If updating admin fails, abort removal
+        return
+      }
+    }
+
+    const confirmRemove = window.confirm(`Remove ${memberName} from the league?`)
+    if (!confirmRemove) return
+    try {
+      if (typeof onRemoveMember === 'function') {
+        await Promise.resolve(onRemoveMember(member.id))
+      }
+    } catch {}
+  }
 
   return (
     <Dialog
@@ -693,6 +742,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     '& .MuiInputBase-input': { color: '#E5E7EB' },
                   }}
                   InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+                  FormHelperTextProps={{ sx: { color: '#E5E7EB' } }}
                   inputProps={{ maxLength: 20 }}
                   helperText="Max 20 characters, letters/numbers only"
                 />
@@ -763,7 +813,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               <List sx={{ py: 0 }}>
                 {(league.members || []).map((member: User, index: number) => {
                   const memberName = `${member.firstName} ${member.lastName}`.trim()
-                  const isLeagueAdmin = member.id === league.adminId
+                  const isLeagueAdmin = isUserLeagueAdmin(member.id)
                   const isCurrentUser = member.id === currentUserId
                   return (
                     <Box key={member.id}>
@@ -790,7 +840,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                 {memberName || 'Unnamed'}
                               </Typography>
                               <Chip
-                                label={isLeagueAdmin ? 'League Admin' : 'Member'}
+                                    label={isLeagueAdmin ? 'League Admin' : 'Member'}
                                 size="small"
                                 sx={{
                                   bgcolor: 'transparent',
@@ -806,15 +856,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           }
                         />
 
-                        {/* Right-side remove button only for admin and not for self or the league admin */}
-                        {league.adminId === currentUserId && !isLeagueAdmin && member.id !== currentUserId && (
+                            {/* Right-side remove button: visible to any league admin for any member except themself */}
+                            {currentUserIsAdmin && member.id !== currentUserId && (
                           <Tooltip title={`Remove ${memberName}`} arrow>
                             <IconButton
-                              onClick={() => {
-                                if (window.confirm(`Remove ${memberName} from the league?`)) {
-                                  onRemoveMember(member.id)
-                                }
-                              }}
+                                  onClick={() => handleAdminRemoveMember(member)}
                               sx={{
                                 color: '#ff6b6b',
                                 bgcolor: 'rgba(255, 107, 107, 0.12)',
