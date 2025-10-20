@@ -431,7 +431,7 @@ export default function MatchDetailsPage() {
             <Box sx={{ width: "100%" }}>
               {(() => {
                 // Shared grid template: Player | Goals | Assists | Clean Sheets | Impact | XP
-                const GRID_COLS = 'minmax(220px, 1fr) repeat(5, 64px)';
+                const GRID_COLS = 'minmax(200px, 1fr) 56px 56px 110px 56px 56px';
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
                   firstName: g.firstName,
@@ -503,13 +503,24 @@ export default function MatchDetailsPage() {
                               display: 'grid',
                               gridTemplateColumns: GRID_COLS,
                               alignItems: 'center',
-                              columnGap: 0,
+                              columnGap: 1,
                             }}
                           >
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, pl: 2 }}>Player</Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Goals</Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Assists</Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Clean Sheets</Box>
+                            <Box
+                              sx={{
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: 14,
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap',
+                              }}
+                              title="Clean Sheets"
+                            >
+                              Clean Sheets
+                            </Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Imp</Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>XP</Box>
                           </Box>
@@ -533,13 +544,13 @@ export default function MatchDetailsPage() {
                                         display: 'grid',
                                         gridTemplateColumns: GRID_COLS,
                                         alignItems: 'center',
-                                        columnGap: 0,
-                                        p: 2,
+                                        columnGap: 1,
+                                        p: 1.5,
                                         background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                                         color: textColor,
                                         fontWeight,
                                         boxShadow: 3,
-                                        minHeight: 70,
+                                        minHeight: 60,
                                       }}
                                     >
                                       {/* Player cell */}
@@ -603,7 +614,7 @@ export default function MatchDetailsPage() {
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.impact ?? 0}</Box>
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.xpAwarded ?? 0}</Box>
                                     </Box>
-                                    <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
+                                    <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                   </Link>
                                 </React.Fragment>
                               );

@@ -4284,12 +4284,17 @@ export default function LeagueDetailPage() {
                                                                                     '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                                     '&:active': { transform: 'translateY(0)' },
                                                                                 }}
-                                                                                // disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                                                disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
                                                                                 // onClick={() => {
                                                                                 //     setActiveMatchId(match.id);
                                                                                 //     setStatsDialogOpen(true);
                                                                                 //     fetchExistingStats(match.id);
                                                                                 // }}
+
+                                                                                onClick={()=> {
+                                                                                    router.push(`match/${match.id}`)
+                                                                                }}
+
                                                                             >
                                                                                 Match Results
                                                                             </Button>
