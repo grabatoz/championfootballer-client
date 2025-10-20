@@ -68,7 +68,7 @@ import { Close, Delete } from '@mui/icons-material';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import ExitToApp from '@mui/icons-material/ExitToApp';
 import People from '@mui/icons-material/People';
-import SettingsIcon from '@mui/icons-material/Settings';
+// import SettingsIcon from '@mui/icons-material/Settings';
 import Star from '@mui/icons-material/Star';
 // ...existing code...
 
@@ -181,9 +181,11 @@ type LeagueStatistics = {
 };
 
 // Slide Transition for mobile dialogs
-const Transition = forwardRef(function Transition(props: any, ref: any) {
+const Transition = forwardRef<HTMLDivElement, { children: React.ReactElement }>(
+    function Transition(props, ref) {
         return <Slide direction="up" ref={ref} {...props} />;
-});
+    }
+);
 
 // Local helper to format names safely
 const formatLeagueName = (name?: string): string => (name ?? '').trim();
@@ -1561,7 +1563,7 @@ export default function LeagueDetailPage() {
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
-    const [activeMatchId, setActiveMatchId] = React.useState<string | null>(null);
+    const [activeMatchId,] = React.useState<string | null>(null);
     // 
     const [stats, setStats] = React.useState({
         goals: 0,
@@ -1781,69 +1783,69 @@ export default function LeagueDetailPage() {
     };
 
     // Fetch existing stats for the player in this match
-    const fetchExistingStats = useCallback(async (matchId: string) => {
-        if (!token || !user) return;
+    // const fetchExistingStats = useCallback(async (matchId: string) => {
+    //     if (!token || !user) return;
 
-        try {
-            // Fetch existing stats for the current user
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    //     try {
+    //         // Fetch existing stats for the current user
+    //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
+    //             headers: { 'Authorization': `Bearer ${token}` }
+    //         });
 
-            // Check if endpoint exists (not 404 or 405)
-            if (response.status === 404 || response.status === 405) {
-                // Endpoint doesn't exist, use default stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-                return;
-            }
+    //         // Check if endpoint exists (not 404 or 405)
+    //         if (response.status === 404 || response.status === 405) {
+    //             // Endpoint doesn't exist, use default stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //             return;
+    //         }
 
-            const data = await response.json();
+    //         const data = await response.json();
 
-            if (data.success && data.stats) {
-                // Use existing stats if available
-                setStats({
-                    goals: data.stats.goals || 0,
-                    assists: data.stats.assists || 0,
-                    cleanSheets: data.stats.cleanSheets || 0,
-                    penalties: data.stats.penalties || 0,
-                    freeKicks: data.stats.freeKicks || 0,
-                    defence: data.stats.defence || 0,
-                    impact: data.stats.impact || 0,
-                });
-            } else {
-                // Reset to 0 if no existing stats
-                setStats({
-                    goals: 0,
-                    assists: 0,
-                    cleanSheets: 0,
-                    penalties: 0,
-                    freeKicks: 0,
-                    defence: 0,
-                    impact: 0
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch existing stats:', error);
-            // Reset to 0 on error
-            setStats({
-                goals: 0,
-                assists: 0,
-                cleanSheets: 0,
-                penalties: 0,
-                freeKicks: 0,
-                defence: 0,
-                impact: 0
-            });
-        }
-    }, [token, user]);
+    //         if (data.success && data.stats) {
+    //             // Use existing stats if available
+    //             setStats({
+    //                 goals: data.stats.goals || 0,
+    //                 assists: data.stats.assists || 0,
+    //                 cleanSheets: data.stats.cleanSheets || 0,
+    //                 penalties: data.stats.penalties || 0,
+    //                 freeKicks: data.stats.freeKicks || 0,
+    //                 defence: data.stats.defence || 0,
+    //                 impact: data.stats.impact || 0,
+    //             });
+    //         } else {
+    //             // Reset to 0 if no existing stats
+    //             setStats({
+    //                 goals: 0,
+    //                 assists: 0,
+    //                 cleanSheets: 0,
+    //                 penalties: 0,
+    //                 freeKicks: 0,
+    //                 defence: 0,
+    //                 impact: 0
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to fetch existing stats:', error);
+    //         // Reset to 0 on error
+    //         setStats({
+    //             goals: 0,
+    //             assists: 0,
+    //             cleanSheets: 0,
+    //             penalties: 0,
+    //             freeKicks: 0,
+    //             defence: 0,
+    //             impact: 0
+    //         });
+    //     }
+    // }, [token, user]);
 
     // Save stats to backend
     const handleSaveStats = async () => {
