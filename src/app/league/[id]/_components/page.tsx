@@ -1631,6 +1631,59 @@ export default function LeagueDetailPage() {
     const [, setLoadingMembers] = useState(false);
     const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
 
+    // Callback hooks for members dialog
+    const handleOpenMembers = useCallback(async (league: League) => {
+        setLoadingMembers(true);
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.league.administrators?.[0];
+            setSelectedLeague({
+              ...league,
+              adminId: admin?.id,
+              members: (data.league.members || []).map((m: User) => ({
+                id: m.id,
+                firstName: m.firstName,
+                lastName: m.lastName,
+                profilePicture: m.profilePicture,
+                email: m.email,
+                shirtNumber: m.shirtNumber,
+              })),
+            });
+            setOpenMembers(true);
+          } else {
+            toast.error(data.message || 'Failed to fetch league members');
+          }
+        } catch {
+          toast.error('Failed to fetch league members');
+        } finally {
+          setLoadingMembers(false);
+        }
+    }, [token]);
+
+    // Allow a non-admin to leave the league from the members dialog
+    const handleLeaveLeague = useCallback(async () => {
+        if (!selectedLeague) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setOpenMembers(false);
+                toast.success('Successfully left the league');
+                // Navigate away since the user is no longer in this league
+                router.push('/all-leagues');
+            } else {
+                toast.error('Failed to leave league');
+            }
+        } catch {
+            toast.error('Failed to leave league');
+        }
+    }, [selectedLeague, token, router]);
 
     useEffect(() => {
         if (!token || !leagueId) return;
@@ -2716,59 +2769,6 @@ export default function LeagueDetailPage() {
     // };
 
     // Replace your MatchDetailModal component with this updated version
-
-    const handleOpenMembers = useCallback(async (league: League) => {
-        setLoadingMembers(true);
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          if (data.success) {
-            const admin = data.league.administrators?.[0];
-            setSelectedLeague({
-              ...league,
-              adminId: admin?.id,
-              members: (data.league.members || []).map((m: User) => ({
-                id: m.id,
-                firstName: m.firstName,
-                lastName: m.lastName,
-                profilePicture: m.profilePicture,
-                email: m.email,
-                shirtNumber: m.shirtNumber,
-              })),
-            });
-            setOpenMembers(true);
-          } else {
-            toast.error(data.message || 'Failed to fetch league members');
-          }
-        } catch {
-          toast.error('Failed to fetch league members');
-        } finally {
-          setLoadingMembers(false);
-        }
-    }, [token]);
-
-    // Allow a non-admin to leave the league from the members dialog
-    const handleLeaveLeague = useCallback(async () => {
-                if (!selectedLeague) return;
-                try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (res.ok) {
-                        setOpenMembers(false);
-                        toast.success('Successfully left the league');
-                        // Navigate away since the user is no longer in this league
-                        router.push('/all-leagues');
-                    } else {
-                        toast.error('Failed to leave league');
-                    }
-                } catch {
-                    toast.error('Failed to leave league');
-                }
-    }, [selectedLeague, token, router]);
 
     const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
         if (!match) return null;
