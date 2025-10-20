@@ -355,7 +355,7 @@ function LeagueMembersDialog({
                           height: { xs: 44, sm: 52 },
                           borderRadius: 1,
                           overflow: 'hidden',
-                          background:'transparent',
+                          background: 'transparent',
                           // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
                           // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                         }}
@@ -400,9 +400,9 @@ function LeagueMembersDialog({
                                 bgcolor: "transparent",
                                 color: "#e56a16",
                                 border: '1px solid rgba(229,106,22,0.6)',
-                                 fontWeight: 600,
-                                 fontSize: 11,
-                                 height: 20,
+                                fontWeight: 600,
+                                fontSize: 11,
+                                height: 20,
                                 borderRadius: '9999px',
                               }}
                             />
@@ -434,7 +434,7 @@ function LeagueMembersDialog({
                             bgcolor: "rgba(255, 107, 107, 0.12)",
                             "&:hover": {
                               bgcolor: "rgba(255, 107, 107, 0.2)",
-                               transform: "scale(1.05)",
+                              transform: "scale(1.05)",
                             },
                             transition: "all 0.2s ease",
                           }}
@@ -457,12 +457,12 @@ function LeagueMembersDialog({
       {/* Footer */}
       <DialogActions
         sx={{
-         background: "transparent",
+          background: "transparent",
           p: { xs: 2, sm: 3 },
           display: "flex",
           justifyContent: "space-between",
           gap: 2,
-         borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         {!isAdmin && (
@@ -518,20 +518,20 @@ function LeagueMembersDialog({
               fontWeight: 600,
               color: "#e56a16",
               borderColor: "#e56a16",
-               borderRadius: 2,
-               border: "2px solid",
+              borderRadius: 2,
+              border: "2px solid",
               bgcolor: "transparent",
-               px: 3,
-               py: 1,
-               textTransform: "none",
-               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-               "&:hover": {
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
                 bgcolor: "rgba(229,106,22,0.12)",
                 borderColor: "#e56a16",
-                 transform: "translateY(-1px)",
-                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-               },
-               transition: "all 0.2s ease",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
             }}
           >
             Close
@@ -580,323 +580,323 @@ interface LeagueSettingsDialogProps {
   onLeaveLeague?: () => void | Promise<void>
 }
 
-  function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
-    const [name, setName] = useState('')
-    const [adminId, setAdminId] = useState('')
-    const [isActive, setIsActive] = useState(true)
-    const [maxGames, setMaxGames] = useState(20)
-    const [showPoints, setShowPoints] = useState(true)
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+  const [name, setName] = useState('')
+  const [adminId, setAdminId] = useState('')
+  const [isActive, setIsActive] = useState(true)
+  const [maxGames, setMaxGames] = useState(20)
+  const [showPoints, setShowPoints] = useState(true)
 
-    useEffect(() => {
-      if (league) {
-        setName(league.name || '')
-        setIsActive(league.active !== false)
-        setMaxGames(league.maxGames || 20)
-        setShowPoints(league.showPoints !== false)
-        setAdminId(league.administrators?.[0]?.id || '')
-      }
-    }, [league])
-
-    const handleUpdate = () => {
-      const updatedData: LeagueUpdatePayload = {
-        name,
-        active: isActive,
-        maxGames,
-        showPoints,
-        admins: adminId ? [adminId] : [],
-      }
-      onUpdate(updatedData)
+  useEffect(() => {
+    if (league) {
+      setName(league.name || '')
+      setIsActive(league.active !== false)
+      setMaxGames(league.maxGames || 20)
+      setShowPoints(league.showPoints !== false)
+      setAdminId(league.administrators?.[0]?.id || '')
     }
+  }, [league])
 
-    if (!league) return null
-
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        fullWidth
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            bgcolor: 'rgba(15,15,15,0.92)',
-            color: '#E5E7EB',
-            borderRadius: 3,
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-            overflow: 'hidden',
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
-          Manage League Settings
-          <IconButton
-            aria-label="close"
-            onClick={onClose}
-            sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent>
-          <Grid container spacing={3} sx={{ mt: 0 }}>
-            <Grid item xs={12} md={6}>
-              <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <FormControl fullWidth>
-                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                    Select league admin
-                  </Typography>
-                  <Select
-                    value={adminId}
-                    onChange={(e) => setAdminId(e.target.value as string)}
-                    sx={{
-                      color: '#E5E7EB',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
-                      '& .MuiSelect-icon': { color: '#E5E7EB' },
-                    }}
-                    MenuProps={{
-                      PaperProps: {
-                        sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
-                      },
-                    }}
-                  >
-                    {(league.members || []).map((member: User) => (
-                      <MenuItem key={member.id} value={member.id}>
-                        {member.firstName} {member.lastName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                    League name
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    value={name}
-                    onChange={(e) => {
-                      const raw = e.target.value || ''
-                      const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
-                      setName(cleaned)
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: '#E5E7EB',
-                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                        '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                      },
-                      '& .MuiInputBase-input': { color: '#E5E7EB' },
-                    }}
-                    InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-                    inputProps={{ maxLength: 20 }}
-                    helperText="Max 20 characters, letters/numbers only"
-                  />
-                </FormControl>
-
-                <FormControl component="fieldset">
-                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                    Change league active status
-                  </Typography>
-                  <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
-                    <FormControlLabel
-                      value="active"
-                      control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-                      label="Active"
-                    />
-                    <FormControlLabel
-                      value="inactive"
-                      control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-                      label="Inactive"
-                    />
-                  </RadioGroup>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                    Maximum number of matches
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    value={maxGames}
-                    onChange={(e) => setMaxGames(Number(e.target.value))}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: '#E5E7EB',
-                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-                        '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-                      },
-                      '& .MuiInputBase-input': { color: '#E5E7EB' },
-                    }}
-                  />
-                </FormControl>
-
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showPoints}
-                      onChange={(e) => setShowPoints(e.target.checked)}
-                      sx={{
-                        '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-                        '& .Mui-checked': { color: '#27ab83' },
-                        '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
-                      }}
-                    />
-                  }
-                  label="CF Advance Point Scoring"
-                  sx={{ color: '#E5E7EB' }}
-                />
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              {/* Members management (right side) */}
-              <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
-                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                  Manage members
-                </Typography>
-                <List sx={{ py: 0 }}>
-                  {(league.members || []).map((member: User, index: number) => {
-                    const memberName = `${member.firstName} ${member.lastName}`.trim()
-                    const isLeagueAdmin = member.id === league.adminId
-                    const isCurrentUser = member.id === currentUserId
-                    return (
-                      <Box key={member.id}>
-                        <ListItem
-                          sx={{
-                            py: { xs: 1.5, sm: 2 },
-                            px: { xs: 1.5, sm: 2 },
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
-                            borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
-                          }}
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: '#374151' }}>
-                              {(member.firstName?.[0] || '?').toUpperCase()}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
-                                  {memberName || 'Unnamed'}
-                                </Typography>
-                                <Chip
-                                  label={isLeagueAdmin ? 'League Admin' : 'Member'}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: 'transparent',
-                                    color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
-                                    border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
-                                    fontWeight: 600,
-                                    fontSize: 11,
-                                    height: 20,
-                                    borderRadius: '9999px',
-                                  }}
-                                />
-                              </Box>
-                            }
-                          />
-
-                          {/* Right-side remove button only for admin and not for self or the league admin */}
-                          {league.adminId === currentUserId && !isLeagueAdmin && member.id !== currentUserId && (
-                            <Tooltip title={`Remove ${memberName}`} arrow>
-                              <IconButton
-                                onClick={() => {
-                                  if (window.confirm(`Remove ${memberName} from the league?`)) {
-                                    onRemoveMember(member.id)
-                                  }
-                                }}
-                                sx={{
-                                  color: '#ff6b6b',
-                                  bgcolor: 'rgba(255, 107, 107, 0.12)',
-                                  '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
-                                }}
-                              >
-                                <Delete sx={{ fontSize: 20 }} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </ListItem>
-                        {index < (league.members?.length || 0) - 1 && (
-                          <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
-                        )}
-                      </Box>
-                    )
-                  })}
-                </List>
-              </Box>
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {currentUserId && (
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() => {
-                  const isAdmin = league.adminId === currentUserId
-                  const confirmMsg = isAdmin
-                    ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
-                    : 'Are you sure you want to leave this league?'
-                  if (!window.confirm(confirmMsg)) return
-
-                  if (isAdmin) {
-                    // Prefer selected admin if different, otherwise first other member
-                    let replacementId = adminId && adminId !== currentUserId ? adminId : ''
-                    if (!replacementId) {
-                      const firstOther = (league.members || []).find(m => m.id !== currentUserId)
-                      if (firstOther) replacementId = firstOther.id
-                    }
-                    if (!replacementId) {
-                      window.alert('Cannot leave as admin because no other members are available to assign as admin.')
-                      return
-                    }
-                    try {
-                      onUpdate({
-                        name,
-                        active: isActive,
-                        maxGames,
-                        showPoints,
-                        admins: [replacementId],
-                      })
-                    } catch {}
-                  }
-
-                  // Trigger leave action if provided
-                  if (typeof onLeaveLeague === 'function') {
-                    try { onLeaveLeague() } catch {}
-                  }
-                  try { onClose() } catch {}
-                }}
-                sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
-              >
-                Leave League
-              </Button>
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
-              Update League
-            </Button>
-            <Button variant="contained" color="error" onClick={onDelete}>
-              Delete League
-            </Button>
-          </Box>
-        </DialogActions>
-      </Dialog>
-    )
+  const handleUpdate = () => {
+    const updatedData: LeagueUpdatePayload = {
+      name,
+      active: isActive,
+      maxGames,
+      showPoints,
+      admins: adminId ? [adminId] : [],
+    }
+    onUpdate(updatedData)
   }
+
+  if (!league) return null
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{
+        sx: {
+          bgcolor: 'rgba(15,15,15,0.92)',
+          color: '#E5E7EB',
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+          overflow: 'hidden',
+        },
+      }}
+    >
+      <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
+        Manage League Settings
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent>
+        <Grid container spacing={3} sx={{ mt: 0 }}>
+          <Grid item xs={12} md={6}>
+            <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <FormControl fullWidth>
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  Select league admin
+                </Typography>
+                <Select
+                  value={adminId}
+                  onChange={(e) => setAdminId(e.target.value as string)}
+                  sx={{
+                    color: '#E5E7EB',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+                    '& .MuiSelect-icon': { color: '#E5E7EB' },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                    },
+                  }}
+                >
+                  {(league.members || []).map((member: User) => (
+                    <MenuItem key={member.id} value={member.id}>
+                      {member.firstName} {member.lastName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  League name
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={name}
+                  onChange={(e) => {
+                    const raw = e.target.value || ''
+                    const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+                    setName(cleaned)
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: '#E5E7EB',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                      '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                    },
+                    '& .MuiInputBase-input': { color: '#E5E7EB' },
+                  }}
+                  InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+                  inputProps={{ maxLength: 20 }}
+                  helperText="Max 20 characters, letters/numbers only"
+                />
+              </FormControl>
+
+              <FormControl component="fieldset">
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  Change league active status
+                </Typography>
+                <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
+                  <FormControlLabel
+                    value="active"
+                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                    label="Active"
+                  />
+                  <FormControlLabel
+                    value="inactive"
+                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                    label="Inactive"
+                  />
+                </RadioGroup>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  Maximum number of matches
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  value={maxGames}
+                  onChange={(e) => setMaxGames(Number(e.target.value))}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: '#E5E7EB',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+                      '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+                    },
+                    '& .MuiInputBase-input': { color: '#E5E7EB' },
+                  }}
+                />
+              </FormControl>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showPoints}
+                    onChange={(e) => setShowPoints(e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+                      '& .Mui-checked': { color: '#27ab83' },
+                      '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+                    }}
+                  />
+                }
+                label="CF Advance Point Scoring"
+                sx={{ color: '#E5E7EB' }}
+              />
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            {/* Members management (right side) */}
+            <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
+              <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                Manage members
+              </Typography>
+              <List sx={{ py: 0 }}>
+                {(league.members || []).map((member: User, index: number) => {
+                  const memberName = `${member.firstName} ${member.lastName}`.trim()
+                  const isLeagueAdmin = member.id === league.adminId
+                  const isCurrentUser = member.id === currentUserId
+                  return (
+                    <Box key={member.id}>
+                      <ListItem
+                        sx={{
+                          py: { xs: 1.5, sm: 2 },
+                          px: { xs: 1.5, sm: 2 },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
+                          borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: '#374151' }}>
+                            {(member.firstName?.[0] || '?').toUpperCase()}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
+                                {memberName || 'Unnamed'}
+                              </Typography>
+                              <Chip
+                                label={isLeagueAdmin ? 'League Admin' : 'Member'}
+                                size="small"
+                                sx={{
+                                  bgcolor: 'transparent',
+                                  color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
+                                  border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
+                                  fontWeight: 600,
+                                  fontSize: 11,
+                                  height: 20,
+                                  borderRadius: '9999px',
+                                }}
+                              />
+                            </Box>
+                          }
+                        />
+
+                        {/* Right-side remove button only for admin and not for self or the league admin */}
+                        {league.adminId === currentUserId && !isLeagueAdmin && member.id !== currentUserId && (
+                          <Tooltip title={`Remove ${memberName}`} arrow>
+                            <IconButton
+                              onClick={() => {
+                                if (window.confirm(`Remove ${memberName} from the league?`)) {
+                                  onRemoveMember(member.id)
+                                }
+                              }}
+                              sx={{
+                                color: '#ff6b6b',
+                                bgcolor: 'rgba(255, 107, 107, 0.12)',
+                                '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
+                              }}
+                            >
+                              <Delete sx={{ fontSize: 20 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </ListItem>
+                      {index < (league.members?.length || 0) - 1 && (
+                        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
+                      )}
+                    </Box>
+                  )
+                })}
+              </List>
+            </Box>
+          </Grid>
+        </Grid>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {currentUserId && (
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => {
+                const isAdmin = league.adminId === currentUserId
+                const confirmMsg = isAdmin
+                  ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+                  : 'Are you sure you want to leave this league?'
+                if (!window.confirm(confirmMsg)) return
+
+                if (isAdmin) {
+                  // Prefer selected admin if different, otherwise first other member
+                  let replacementId = adminId && adminId !== currentUserId ? adminId : ''
+                  if (!replacementId) {
+                    const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+                    if (firstOther) replacementId = firstOther.id
+                  }
+                  if (!replacementId) {
+                    window.alert('Cannot leave as admin because no other members are available to assign as admin.')
+                    return
+                  }
+                  try {
+                    onUpdate({
+                      name,
+                      active: isActive,
+                      maxGames,
+                      showPoints,
+                      admins: [replacementId],
+                    })
+                  } catch { }
+                }
+
+                // Trigger leave action if provided
+                if (typeof onLeaveLeague === 'function') {
+                  try { onLeaveLeague() } catch { }
+                }
+                try { onClose() } catch { }
+              }}
+              sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
+            >
+              Leave League
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+            Update League
+          </Button>
+          <Button variant="contained" color="error" onClick={onDelete}>
+            Delete League
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
+  )
+}
 
 // const cardStyles = {
 //   borderRadius: 3,
@@ -1016,11 +1016,11 @@ function AllLeagues() {
     const byYear = selectedYear === 'all'
       ? base
       : base.filter(l => {
-          const t = Date.parse(l.createdAt || '');
-          if (!Number.isFinite(t)) return false;
-          const y = new Date(t).getFullYear();
-          return String(y) === selectedYear;
-        });
+        const t = Date.parse(l.createdAt || '');
+        if (!Number.isFinite(t)) return false;
+        const y = new Date(t).getFullYear();
+        return String(y) === selectedYear;
+      });
 
     const term = searchTerm.trim().toLowerCase();
     if (!term) return byYear;
@@ -1093,7 +1093,7 @@ function AllLeagues() {
     setImagePreview(null);
     try {
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch {}
+    } catch { }
   };
 
   // const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
@@ -1112,7 +1112,7 @@ function AllLeagues() {
   //   try {
   //     console.log('Fetching all available leagues...');
   //     setLoading(true);
-      
+
   //     // First get the user's leagues from auth/status
   //     const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
   //       headers: {
@@ -1128,10 +1128,10 @@ function AllLeagues() {
   //           ...(authData.user.leagues || []),
   //           ...(authData.user.administeredLeagues || [])
   //         ].filter(league => league && league.id); // Filter out undefined/null leagues
-          
+
   //         // Remove duplicates
   //         const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
-          
+
   //         // Now fetch detailed information for each league
   //         const detailedLeagues = await Promise.all(
   //           uniqueLeagues.map(async (league) => {
@@ -1141,7 +1141,7 @@ function AllLeagues() {
   //                   'Authorization': `Bearer ${token}`
   //                 }
   //               });
-                
+
   //               if (leagueResponse.ok) {
   //                 const leagueData = await leagueResponse.json();
   //                 if (leagueData.success) {
@@ -1161,7 +1161,7 @@ function AllLeagues() {
   //             }
   //           })
   //         );
-          
+
   //         setLeagues(detailedLeagues);
   //         setLastFetchTime(now); // Update last fetch time
   //         console.log('Setting detailed leagues:', detailedLeagues);
@@ -1193,7 +1193,7 @@ function AllLeagues() {
     try {
       console.log('Fetching all available leagues...');
       setLoading(true);
-      
+
       const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1209,7 +1209,7 @@ function AllLeagues() {
           ].filter((league: League) => league && league.id);
 
           const uniqueLeagues: League[] = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
-          
+
           const detailedLeagues: LeagueWithStatus[] = await Promise.all(
             uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus> => {
               try {
@@ -1255,7 +1255,7 @@ function AllLeagues() {
               }
             })
           );
-          
+
           setLeagues(sortLeaguesByRecency(detailedLeagues));
           setLastFetchTime(now);
           console.log('Setting detailed leagues:', detailedLeagues);
@@ -1271,7 +1271,7 @@ function AllLeagues() {
       setLoading(false);
     }
   }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]);
-  
+
   useEffect(() => {
     if (token) {
       fetchAllLeagues(false); // Don't force refresh on mount
@@ -1284,7 +1284,7 @@ function AllLeagues() {
       if (!document.hidden && token) {
         const now = Date.now();
         const timeSinceLastFetch = now - lastFetchTime;
-        
+
         // Only fetch if cache is older than 2 minutes when page becomes visible
         if (timeSinceLastFetch > 2 * 60 * 1000) {
           fetchAllLeagues(false);
@@ -1327,7 +1327,7 @@ function AllLeagues() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
         method: 'POST',
         headers:
-         {
+        {
           'Authorization': `Bearer ${token}`
           // 'Content-Type' mat lagayen, FormData khud set karega
         },
@@ -1433,7 +1433,7 @@ function AllLeagues() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         // If current user was removed, refresh the entire leagues list
         if (memberId === user?.id) {
@@ -1458,7 +1458,7 @@ function AllLeagues() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         setOpenMembers(false);
         await fetchAllLeagues(true); // Force refresh after leaving league
@@ -1470,7 +1470,7 @@ function AllLeagues() {
       toast.error('Failed to leave league');
     }
   };
-  
+
   // Admin: settings update/delete handlers for LeagueMembersDialog
   const handleUpdateLeagueFromSettings = useCallback(async (data: LeagueUpdatePayload) => {
     if (!selectedLeague) return;
@@ -1559,7 +1559,7 @@ function AllLeagues() {
         py: 4,
       }}
     >
-      <Container maxWidth="lg"> 
+      <Container maxWidth="lg">
         {/* <Button
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
@@ -1787,15 +1787,15 @@ function AllLeagues() {
                     height: 48,
                     fontWeight: 'bold',
                     textTransform: 'none',
-                    '&:hover': {bgcolor: '#0388E3' },
+                    '&:hover': { bgcolor: '#0388E3' },
                   }}
                 >
                   Clear
                 </Button>
               </Box>
-              
+
               {/* Single toggle button: switches between Completed and Uncompleted views */}
-              <Box sx={{ display:'flex', alignItems:'center' }}>
+              {/* <Box sx={{ display:'flex', alignItems:'center' }}>
                 <Button
                   variant="outlined"
                   onClick={() => setCompletionTab(prev => prev === 'uncompleted' ? 'completed' : 'uncompleted')}
@@ -1813,9 +1813,45 @@ function AllLeagues() {
                 >
                   {completionTab === 'uncompleted' ? 'Completed' : 'Uncompleted'}
                 </Button>
-              </Box>
+              </Box> */}
             </Box>
           </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1.5, width: '100%', mt: { xs: 1, sm: 1.5, md: -2 }, mb: 3, flexWrap: 'wrap' }}>
+          <Button
+            variant={completionTab === 'completed' ? 'contained' : 'outlined'}
+            onClick={() => setCompletionTab('completed')}
+            sx={{
+              borderRadius: 2,
+              bgcolor: completionTab === 'completed' ? '#0388E3' : 'transparent',
+              borderColor: '#0388E3',
+              px: 2.5,
+              height: 44,
+              fontWeight: 'bold',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#0388E3' , color: 'white'},
+              color: completionTab === 'completed' ? 'white' : 'black',
+            }}
+          >
+            Completed Leagues
+          </Button>
+          <Button
+            variant={completionTab === 'uncompleted' ? 'contained' : 'outlined'}
+            onClick={() => setCompletionTab('uncompleted')}
+            sx={{
+              color: completionTab === 'uncompleted' ? 'white' : 'black',
+              borderRadius: 2,
+              bgcolor: completionTab === 'uncompleted' ? '#0388E3' : 'transparent',
+              borderColor: '#0388E3',
+              px: 2.5,
+              height: 44,
+              fontWeight: 'bold',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#0388E3' , color: 'white'},
+            }}
+          >
+            Incomplete Leagues
+          </Button>
         </Box>
 
         {/* Leagues List - Card Format */}
@@ -1845,96 +1881,96 @@ function AllLeagues() {
             filteredLeagues.map((league) => {
               const isCompleted = isLeagueCompleted(league);
               return (
-              <Box
-                key={league.id}
-                onClick={() => router.push(`/league/${league.id}`)}
-                sx={{
-                  p: { xs: 3, md: 2 },
-                  borderRadius: 3,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  // Default background
-                  background: isCompleted
-                    ? '#d4d4d4' // light grey for completed
-                    : 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                  position: 'relative',
-                  '&:hover': {
-                    backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
-                    transform: isCompleted ? 'none' : 'translateY(-3px)',
-                    // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
-                    // border: '2px solid rgba(255,255,255,0.2)'
-                  }
-                }}
-              >
-                {/* Settings Icon - Top Right */}
-                {isCompleted ? (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
+                <Box
+                  key={league.id}
+                  onClick={() => router.push(`/league/${league.id}`)}
+                  sx={{
+                    p: { xs: 3, md: 2 },
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    // Default background
+                    background: isCompleted
+                      ? '#d4d4d4' // light grey for completed
+                      : 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                    position: 'relative',
+                    '&:hover': {
+                      backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
+                      transform: isCompleted ? 'none' : 'translateY(-3px)',
+                      // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
+                      // border: '2px solid rgba(255,255,255,0.2)'
+                    }
+                  }}
+                >
+                  {/* Settings Icon - Top Right */}
+                  {isCompleted ? (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        zIndex: 2,
+                        color: '#16a34a',
+                      }}
+                    >
+                      <CheckCircle sx={{ color: '#16a34a' }} />
+                      <Chip label="Completed" size="small" sx={{ bgcolor: 'rgba(22,163,74,0.1)', color: '#14532d', borderColor: '#16a34a' }} variant="outlined" />
+                    </Box>
+                  ) : (
+                    <IconButton
+                      sx={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        color: 'white',
+                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+                        '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
+                        zIndex: 2
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const isAdmin = (league.adminId || league.administrators?.[0]?.id) === (user?.id || '')
+                        if (isAdmin) {
+                          // Open standalone settings dialog for admins
+                          setAdminSettingsLeague(league)
+                          setOpenAdminSettings(true)
+                        } else {
+                          handleOpenMembers(league)
+                        }
+                      }}
+                    >
+                      <SettingsIcon
+                        aria-label={`Open settings for ${formatLeagueName(league.name)}`}
+                        size={20} />
+                    </IconButton>
+                  )}
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
+                    {/* League Logo - Green Shield */}
+                    <Box sx={{
+                      width: { xs: 60, sm: 80, md: 80 },
+                      height: { xs: 60, sm: 80, md: 80 },
+                      // borderRadius: 2,
+                      // overflow: 'hidden',
+                      // backgroundColor: '#43a047',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 1,
-                      zIndex: 2,
-                      color: '#16a34a',
-                    }}
-                  >
-                    <CheckCircle sx={{ color: '#16a34a' }} />
-                    <Chip label="Completed" size="small" sx={{ bgcolor: 'rgba(22,163,74,0.1)', color: '#14532d', borderColor: '#16a34a' }} variant="outlined" />
-                  </Box>
-                ) : (
-                  <IconButton
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      color: 'white',
-                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                      '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
-                      zIndex: 2
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const isAdmin = (league.adminId || league.administrators?.[0]?.id) === (user?.id || '')
-                      if (isAdmin) {
-                        // Open standalone settings dialog for admins
-                        setAdminSettingsLeague(league)
-                        setOpenAdminSettings(true)
-                      } else {
-                        handleOpenMembers(league)
-                      }
-                    }}
-                  >
-                    <SettingsIcon
-                      aria-label={`Open settings for ${formatLeagueName(league.name)}`}
-                      size={20} />
-                  </IconButton>
-                )}
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      // border: '2px solid rgba(255,255,255,0.2)',
+                      // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                      position: 'relative'
+                    }}>
+                      <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={80} height={80} priority />
+                    </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
-                  {/* League Logo - Green Shield */}
-                  <Box sx={{
-                    width: { xs: 60, sm: 80, md: 80 },
-                    height: { xs: 60, sm: 80, md: 80 },
-                    // borderRadius: 2,
-                    // overflow: 'hidden',
-                    // backgroundColor: '#43a047',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    // border: '2px solid rgba(255,255,255,0.2)',
-                    // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                    position: 'relative'
-                  }}>
-                    <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={80} height={80} priority />
-                  </Box>
-
-                  {/* League Info */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    {/* League Title */}
-                    {/* <Typography sx={{
+                    {/* League Info */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {/* League Title */}
+                      {/* <Typography sx={{
                       color: 'white',
                       fontFamily: '"League Spartan", sans-serif',
                       // fontWeight: 'bold',
@@ -1949,113 +1985,33 @@ function AllLeagues() {
                       {formatLeagueName(league.name)}
                     </Typography> */}
 
-                    <Typography sx={{
-                      color: isCompleted ? '#111827' : 'white',
-                      fontFamily: '"League Spartan", sans-serif',
-                      fontSize: { xs: '18px', sm: '20px', md: '20px' },
-                      mb: 2,
-                      background: isCompleted ? 'transparent' : 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                      display: 'inline-block', // Only background behind text
-                      px: 2, // Horizontal padding for extra background
-                      borderRadius: 0.8, // Rounded corners
-                      textOverflow: 'ellipsis',
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      fontWeight: 'bold'
-                    }}>
-                      {formatLeagueName(league.name)}
-                    </Typography>
+                      <Typography sx={{
+                        color: isCompleted ? '#111827' : 'white',
+                        fontFamily: '"League Spartan", sans-serif',
+                        fontSize: { xs: '18px', sm: '20px', md: '20px' },
+                        mb: 2,
+                        background: isCompleted ? 'transparent' : 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                        display: 'inline-block', // Only background behind text
+                        px: 2, // Horizontal padding for extra background
+                        borderRadius: 0.8, // Rounded corners
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        fontWeight: 'bold'
+                      }}>
+                        {formatLeagueName(league.name)}
+                      </Typography>
 
-                    {/* League Details - Two Column Layout */}
-                    <Box sx={{
-                      display: 'flex',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start',
-                      flexDirection: 'row',
-                      gap: { xs: 4, sm: 15 }
-                    }}>
-                      {/* Left Column */}
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 }, justifyContent: 'space-between' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                          <Box sx={{
-                            width: { xs: 12, sm: 16 },
-                            height: { xs: 12, sm: 16 },
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                            border: '1px solid rgba(255, 255, 255, 0.4)',
-                            flexShrink: 0,
-                            position: 'relative'
-                          }}>
-                            <Box sx={{
-                              width: { xs: 8, sm: 10 },
-                              height: { xs: 8, sm: 10 },
-                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                              borderRadius: '50%',
-                              border: '1px solid rgba(255, 255, 255, 0.3)',
-                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)'
-                            }} />
-                          </Box>
-                          <Typography sx={{
-                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                            fontFamily: '"League Spartan", sans-serif',
-                            fontWeight: 200,
-                            fontSize: { xs: '10px', sm: '13px' }
-                          }}>
-                            Players {league.members?.length || 0}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                          <Box sx={{
-                            width: { xs: 12, sm: 16 },
-                            height: { xs: 12, sm: 16 },
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                            border: '1px solid rgba(255, 255, 255, 0.4)',
-                            flexShrink: 0,
-                            position: 'relative'
-                          }}>
-                            <Box sx={{
-                              width: { xs: 8, sm: 10 },
-                              height: { xs: 8, sm: 10 },
-                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                              borderRadius: '50%',
-                              border: '1px solid rgba(255, 255, 255, 0.3)',
-                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)'
-                            }} />
-                          </Box>
-                          <Typography sx={{
-                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                            fontFamily: '"League Spartan", sans-serif',
-                            fontWeight: 200,
-                            fontSize: { xs: '9px', sm: '12px' }
-                          }}>
-                            Created {new Date(league.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Right Column */}
+                      {/* League Details - Two Column Layout */}
                       <Box sx={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: { xs: 1, sm: 1.5 },
-                        alignItems: 'flex-start'
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start',
+                        flexDirection: 'row',
+                        gap: { xs: 4, sm: 15 }
                       }}>
-                        {!isCompleted && (
+                        {/* Left Column */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 }, justifyContent: 'space-between' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                             <Box sx={{
                               width: { xs: 12, sm: 16 },
@@ -2083,73 +2039,154 @@ function AllLeagues() {
                               }} />
                             </Box>
                             <Typography sx={{
-                              color: 'rgba(255,255,255,0.9)',
+                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                              fontFamily: '"League Spartan", sans-serif',
+                              fontWeight: 200,
+                              fontSize: { xs: '10px', sm: '13px' }
+                            }}>
+                              Players {league.members?.length || 0}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+                            <Box sx={{
+                              width: { xs: 12, sm: 16 },
+                              height: { xs: 12, sm: 16 },
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              border: '1px solid rgba(255, 255, 255, 0.4)',
+                              flexShrink: 0,
+                              position: 'relative'
+                            }}>
+                              <Box sx={{
+                                width: { xs: 8, sm: 10 },
+                                height: { xs: 8, sm: 10 },
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                borderRadius: '50%',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)'
+                              }} />
+                            </Box>
+                            <Typography sx={{
+                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                               fontFamily: '"League Spartan", sans-serif',
                               fontWeight: 200,
                               fontSize: { xs: '9px', sm: '12px' }
                             }}>
-                              Code: {league.inviteCode}
+                              Created {new Date(league.createdAt).toLocaleDateString()}
                             </Typography>
-                            <IconButton
-                              size="small"
-                              sx={{
-                                color: 'white',
-                                p: { xs: 0.2, sm: 0.5 },
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(league.inviteCode);
-                                toast.success('Invite code copied!');
-                              }}
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-                              </svg>
-                            </IconButton>
                           </Box>
-                        )}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                          <Box sx={{
-                            width: { xs: 12, sm: 16 },
-                            height: { xs: 12, sm: 16 },
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                            border: '1px solid rgba(255, 255, 255, 0.4)',
-                            flexShrink: 0,
-                            position: 'relative'
-                          }}>
+                        </Box>
+
+                        {/* Right Column */}
+                        <Box sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: { xs: 1, sm: 1.5 },
+                          alignItems: 'flex-start'
+                        }}>
+                          {!isCompleted && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+                              <Box sx={{
+                                width: { xs: 12, sm: 16 },
+                                height: { xs: 12, sm: 16 },
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                border: '1px solid rgba(255, 255, 255, 0.4)',
+                                flexShrink: 0,
+                                position: 'relative'
+                              }}>
+                                <Box sx={{
+                                  width: { xs: 8, sm: 10 },
+                                  height: { xs: 8, sm: 10 },
+                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                  borderRadius: '50%',
+                                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                                  position: 'absolute',
+                                  top: '50%',
+                                  left: '50%',
+                                  transform: 'translate(-50%, -50%)'
+                                }} />
+                              </Box>
+                              <Typography sx={{
+                                color: 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 200,
+                                fontSize: { xs: '9px', sm: '12px' }
+                              }}>
+                                Code: {league.inviteCode}
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: 'white',
+                                  p: { xs: 0.2, sm: 0.5 },
+                                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(league.inviteCode);
+                                  toast.success('Invite code copied!');
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                                </svg>
+                              </IconButton>
+                            </Box>
+                          )}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                             <Box sx={{
-                              width: { xs: 8, sm: 10 },
-                              height: { xs: 8, sm: 10 },
-                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              width: { xs: 12, sm: 16 },
+                              height: { xs: 12, sm: 16 },
                               borderRadius: '50%',
-                              border: '1px solid rgba(255, 255, 255, 0.3)',
-                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)'
-                            }} />
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              border: '1px solid rgba(255, 255, 255, 0.4)',
+                              flexShrink: 0,
+                              position: 'relative'
+                            }}>
+                              <Box sx={{
+                                width: { xs: 8, sm: 10 },
+                                height: { xs: 8, sm: 10 },
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                borderRadius: '50%',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)'
+                              }} />
+                            </Box>
+                            <Typography sx={{
+                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                              fontFamily: '"League Spartan", sans-serif',
+                              fontWeight: 200,
+                              fontSize: { xs: '10px', sm: '13px' }
+                            }}>
+                              Matches: {league.matches?.length || 0}
+                            </Typography>
                           </Box>
-                          <Typography sx={{
-                            color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                            fontFamily: '"League Spartan", sans-serif',
-                            fontWeight: 200,
-                            fontSize: { xs: '10px', sm: '13px' }
-                          }}>
-                            Matches: {league.matches?.length || 0}
-                          </Typography>
                         </Box>
                       </Box>
                     </Box>
                   </Box>
                 </Box>
-              </Box>
-            )})
+              )
+            })
           )}
         </Box>
 
@@ -2310,7 +2347,7 @@ function AllLeagues() {
                     accept="image/*"
                     onChange={handleImageUpload}
                     ref={fileInputRef}
-                    onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch {} }}
+                    onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch { } }}
                   />
                 </Button>
 
