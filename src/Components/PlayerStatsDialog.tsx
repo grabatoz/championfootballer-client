@@ -86,7 +86,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({
                     <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoals)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoals)} />
                     <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} /> */}
                     {/* Read-only computed Impact display */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                    {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                         <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
                         <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
@@ -94,7 +94,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({
                       <Typography sx={{ mx: 2, fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
                         {computedImpact}%
                       </Typography>
-                    </Box>
+                    </Box> */}
                 </DialogContent>
        <DialogActions>
          <Button onClick={onClose}>Cancel</Button>

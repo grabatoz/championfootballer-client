@@ -2127,7 +2127,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                     <StatCounter icon={<img src={FreeKick.src} alt='freekick' style={{ width: 24, height: 24 }} />} label="Free Kicks" value={stats.freeKicks} onIncrement={() => handleStatChange('freeKicks', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('freeKicks', -1, teamGoalsSafe)} />
                     <StatCounter icon={<img src={Defence.src} alt="Defence" style={{ width: 24, height: 24 }} />} label="Defence" value={stats.defence} onIncrement={() => handleStatChange('defence', 1, 1)} onDecrement={() => handleStatChange('defence', -1, 1)} /> */}
                     {/* Read-only computed Impact display */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                    {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                             <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
                             <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
@@ -2135,7 +2135,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         <Typography sx={{ mx: 2, fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
                             {computedImpact}%
                         </Typography>
-                    </Box>
+                    </Box> */}
                 </DialogContent>
                 {/* FreeKick */}
                 <DialogActions>
@@ -2212,7 +2212,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         onDecrement={() => handleAdminStatChange('defence', -1, 1)}
                     /> */}
                     {/* Read-only computed Impact display for Admin */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
+                    {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, p: 1.5, borderRadius: 2, background: 'rgba(0,0,0,0.05)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                             <img src={Imapct.src} alt="Impact" style={{ width: 24, height: 24 }} />
                             <Typography sx={{ ml: 2, fontWeight: 500 }}>Impact</Typography>
@@ -2220,7 +2220,7 @@ const isCaptainUser = isHomeCaptain || isAwayCaptain;
                         <Typography sx={{ mx: 2, fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
                             {computedAdminImpact}%
                         </Typography>
-                    </Box>
+                    </Box> */}
                 </DialogContent>
                 <DialogActions>
                     <Button
