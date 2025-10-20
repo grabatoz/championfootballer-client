@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Box,
     Typography,
@@ -374,6 +374,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const [currentMatchId, setCurrentMatchId] = useState<string>('');
     const resolvedLeagueId = currentLeagueId || leagueId;
     const resolvedMatchId = currentMatchId || matchId;
+    const preferredAppliedRef = useRef(false);
 
     // --- NEW: handlers to fetch leagues and matches ---
     const openLeagueSelector = useCallback(async () => {
@@ -663,11 +664,131 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         }
     }, [resolvedLeagueId, resolvedMatchId, token, fetchLeagueAndMatchDetails]);
 
+    // Keep the toolbar match label in sync with the currently loaded match
+    useEffect(() => {
+        if (match && match.id) {
+            // minimal shape for the button label
+            setSelectedMatchForList(prev => {
+                const prevId = prev && (prev as any).id ? String((prev as any).id) : null;
+                if (prevId === String(match.id)) return prev;
+                return {
+                    id: match.id,
+                    homeTeamName: (match as any).homeTeamName,
+                    awayTeamName: (match as any).awayTeamName,
+                    leagueId: (match as any).leagueId,
+                } as any;
+            });
+            setSelectedLeagueHasNoMatches(false);
+            // also reflect league name if missing
+            if (league?.name && !selectedLeagueNameForList) {
+                setSelectedLeagueNameForList(league.name);
+            }
+        }
+    }, [match, league?.name]);
+
+    // Auto-select from preferredLeagueId stored in localStorage: pick latest match in that league
+    useEffect(() => {
+        const applyPreferredLeague = async () => {
+            try {
+                if (preferredAppliedRef.current) return;
+                if (!token) return;
+                if (typeof window === 'undefined') return;
+                const stored = localStorage.getItem('preferredLeagueId');
+                if (!stored) return;
+                const preferredId = String(stored);
+
+                // If route already provides both ids for same league, no need to override
+                if (resolvedLeagueId === preferredId && resolvedMatchId) return;
+
+                preferredAppliedRef.current = true;
+                setLoading(true);
+
+                // Fetch matches for the preferred league and select the latest
+                let mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(preferredId)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (mres.status === 404 || mres.status === 405) {
+                    mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
+                }
+                const mdata = await mres.json().catch(() => ({}));
+                let matchesArr: any[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
+                if (!Array.isArray(matchesArr)) matchesArr = [];
+                const filtered = matchesArr.filter((m: any) => String(m?.leagueId ?? '') === preferredId);
+                const toTime = (m: any): number => {
+                    const s = m?.start || m?.date || m?.updatedAt || m?.createdAt;
+                    const t = s ? new Date(s).getTime() : NaN;
+                    if (!Number.isNaN(t)) return t;
+                    const n = Number(m?.id);
+                    return Number.isFinite(n) ? n : 0;
+                };
+                const latest = [...filtered].sort((a, b) => toTime(b) - toTime(a))[0] || null;
+
+                // Update top toolbar league selection for consistency
+                setSelectedLeagueIdForList(preferredId);
+                // Try to fetch league name and update displayed league as preferred
+                try {
+                    const lres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${preferredId}`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (lres.ok) {
+                        const ldata: any = await lres.json().catch(() => ({}));
+                        const leagueObj = ldata?.league || ldata || null;
+                        const lname = leagueObj?.name || ldata?.name;
+                        if (lname) setSelectedLeagueNameForList(String(lname));
+                        // Force update to the preferred league so UI reflects it even if a different league was previously set
+                        if (leagueObj && leagueObj.id) {
+                            setLeague({
+                                id: String(leagueObj.id),
+                                name: String(leagueObj.name || 'League'),
+                                administrators: Array.isArray(leagueObj.administrators)
+                                    ? leagueObj.administrators.map((u: any) => ({ id: String(u.id), firstName: u.firstName, lastName: u.lastName }))
+                                    : [],
+                                active: typeof leagueObj.active === 'boolean' ? leagueObj.active : true,
+                            });
+                        } else {
+                            setLeague({ id: preferredId, name: String(lname || 'League'), administrators: [], active: true });
+                        }
+                    } else {
+                        // Fallback minimal league object if fetch fails
+                        setLeague({ id: preferredId, name: 'League', administrators: [], active: true });
+                    }
+                } catch {
+                    // Fallback minimal league object on error
+                    setLeague({ id: preferredId, name: 'League', administrators: [], active: true });
+                }
+
+                setCurrentLeagueId(preferredId);
+                if (latest && latest.id) {
+                    // Update toolbar label state
+                    setSelectedMatchForList(latest || null);
+                    setSelectedLeagueHasNoMatches(false);
+                    setCurrentMatchId(String(latest.id));
+                    await fetchLeagueAndMatchDetails(true);
+                    setLoading(false);
+                    return;
+                }
+
+                // No matches yet for preferred league
+                setSelectedMatchForList(null);
+                setSelectedLeagueHasNoMatches(true);
+                setCurrentMatchId('');
+                setLoading(false);
+            } catch (e) {
+                console.warn('Preferred league auto-select failed', e);
+                setLoading(false);
+            }
+        };
+        applyPreferredLeague();
+        // We intentionally run when token changes; internal ref prevents repeats
+    }, [token, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails]);
+
     // Define after fetchLeagueAndMatchDetails so we can safely call it
     const handleSelectLeague = useCallback((l: League) => {
         setSelectedLeagueIdForList(l.id);
         setSelectedLeagueNameForList(l.name);
         setLeagueSelectOpen(false);
+        // Persist as preferred league for future auto-selection
+        if (typeof window !== 'undefined') {
+            try { localStorage.setItem('preferredLeagueId', l.id); } catch { /* ignore quota errors */ }
+        }
         // reset UI state
         setSelectedLeagueMatches([]);
         setMatchesError(null);
@@ -793,6 +914,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const chosenMatch = mWithDates[0]?.m || null;
                 if (!chosenMatch) {
                     console.log('MatchStatsDialog: no matches for chosen league');
+                    setSelectedMatchForList(null);
+                    setSelectedLeagueHasNoMatches(true);
                     setCurrentLeagueId(chosenLeagueId);
                     setCurrentMatchId('');
                     setLoading(false);
@@ -800,6 +923,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
                 const chosenMatchId = String(chosenMatch.id);
                 console.log('MatchStatsDialog: chosen match', { chosenMatchId });
+                setSelectedMatchForList(chosenMatch || null);
+                setSelectedLeagueHasNoMatches(false);
                 setCurrentLeagueId(chosenLeagueId);
                 setCurrentMatchId(chosenMatchId);
                 await fetchLeagueAndMatchDetails(true);
@@ -1533,7 +1658,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
                 {/* <Typography sx={{ fontWeight: 700, mr: 1 }}>Explore Matches by League</Typography> */}
                 {/* Label + League selector */}
-                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem' }}>Select League :</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem' }}>Select a League :</Typography>
                 <Button
                     onClick={openLeagueSelector}
                     variant="contained"
@@ -1546,11 +1671,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     }}
                 >
                     {(selectedLeagueNameForList || league?.name)
-                        ? `League: ${selectedLeagueNameForList || league?.name}`
+                        ? `${selectedLeagueNameForList || league?.name}`
                         : 'Select League'}
                 </Button>
                 {/* Label + Match selector */}
-                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem', ml: 1 }}>Match:</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem', ml: 1 }}>Select a Match:</Typography>
                 <Button
                     onClick={openMatchesDialog}
                     variant="contained"
@@ -1568,7 +1693,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         : selectedLeagueHasNoMatches
                             ? 'No Match Found.'
                             : selectedMatchForList && (selectedMatchForList as any)?.homeTeamName && (selectedMatchForList as any)?.awayTeamName
-                                ? `Match: ${(selectedMatchForList as any).homeTeamName} vs ${(selectedMatchForList as any).awayTeamName}`
+                                ? `${(selectedMatchForList as any).homeTeamName} vs ${(selectedMatchForList as any).awayTeamName}`
                                 : 'Select a Match'}
                 </Button>
                 {/* {selectedLeagueIdForList && (
