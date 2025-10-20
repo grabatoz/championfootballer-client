@@ -4176,7 +4176,7 @@ export default function LeagueDetailPage() {
                                                     </Box> */}
 
                                                             {/* // ...existing code... */}
-                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap', gap: 1, mt: 2 }}>
                                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                                     {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
                                                                         match.status === 'RESULT_UPLOADED' ? (
@@ -4188,9 +4188,12 @@ export default function LeagueDetailPage() {
                                                                                         sx={{
                                                                                             backgroundColor: '#0388E3',
                                                                                             color: 'white',
-                                                                                            fontSize: '0.75rem',
-                                                                                            py: 0.5,
+                                                                                            fontSize: '0.78rem',
+                                                                                            textTransform: 'none',
+                                                                                            py: 0.4,
                                                                                             px: 1,
+                                                                                            minHeight: 32,
+                                                                                            minWidth: 0,
                                                                                             borderRadius: 1,
                                                                                             boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
                                                                                             transition: 'all 0.2s ease-in-out',
@@ -4198,7 +4201,7 @@ export default function LeagueDetailPage() {
                                                                                             '&:active': { transform: 'translateY(0)' },
                                                                                         }}
                                                                                     >
-                                                                                        {isAdmin ? 'MOMT' : 'MOMT'}
+                                                                                        {isAdmin ? 'ADD Score' : 'Add Your Stats'}
                                                                                     </Button>
                                                                                 </span>
                                                                             </Tooltip>
@@ -4209,9 +4212,12 @@ export default function LeagueDetailPage() {
                                                                                     sx={{
                                                                                         backgroundColor: '#0388E3',
                                                                                         color: 'white',
-                                                                                        fontSize: '0.75rem',
-                                                                                        py: 0.5,
+                                                                                        fontSize: '0.78rem',
+                                                                                        textTransform: 'none',
+                                                                                        py: 0.4,
                                                                                         px: 1,
+                                                                                        minHeight: 32,
+                                                                                        minWidth: 0,
                                                                                         borderRadius: 1,
                                                                                         boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
                                                                                         transition: 'all 0.2s ease-in-out',
@@ -4220,7 +4226,7 @@ export default function LeagueDetailPage() {
                                                                                     }}
                                                                                     disabled={!league?.active}
                                                                                 >
-                                                                                    {isAdmin ? 'MOMT' : 'MOMT'}
+                                                                                    {isAdmin ? 'ADD Score' : 'Add Your Stats'}
                                                                                 </Button>
                                                                             </Link>
                                                                         )
@@ -4235,13 +4241,16 @@ export default function LeagueDetailPage() {
                                                                                 sx={{
                                                                                     backgroundColor: '#FA5836',
                                                                                     color: 'white',
-                                                                                    fontSize: '0.75rem',
-                                                                                    py: 0.5,
+                                                                                    fontSize: '0.78rem',
+                                                                                    textTransform: 'none',
+                                                                                    py: 0.4,
                                                                                     px: 1,
+                                                                                    minHeight: 32,
+                                                                                    minWidth: 0,
                                                                                     borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
                                                                                     transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                                     '&:active': { transform: 'translateY(0)' },
                                                                                 }}
                                                                             >
@@ -4258,23 +4267,26 @@ export default function LeagueDetailPage() {
                                                                                 sx={{
                                                                                     backgroundColor: '#FA5836',
                                                                                     color: 'white',
-                                                                                    fontSize: '0.75rem',
-                                                                                    py: 0.5,
+                                                                                    fontSize: '0.78rem',
+                                                                                    textTransform: 'none',
+                                                                                    py: 0.4,
                                                                                     px: 1,
+                                                                                    minHeight: 32,
+                                                                                    minWidth: 0,
                                                                                     borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
                                                                                     transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px #FA5836', transform: 'translateY(-1px)' },
+                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                                     '&:active': { transform: 'translateY(0)' },
                                                                                 }}
-                                                                                disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
-                                                                                onClick={() => {
-                                                                                    setActiveMatchId(match.id);
-                                                                                    setStatsDialogOpen(true);
-                                                                                    fetchExistingStats(match.id);
-                                                                                }}
+                                                                                // disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                                                // onClick={() => {
+                                                                                //     setActiveMatchId(match.id);
+                                                                                //     setStatsDialogOpen(true);
+                                                                                //     fetchExistingStats(match.id);
+                                                                                // }}
                                                                             >
-                                                                                Add Your Stats
+                                                                                Match Results
                                                                             </Button>
                                                                         </span>
                                                                     </Tooltip>
