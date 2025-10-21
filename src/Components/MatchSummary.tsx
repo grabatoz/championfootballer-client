@@ -89,6 +89,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   const [statsDialogOpen, setStatsDialogOpen] = useState(false)
   // Admin gate state
   const [isAdmin, setIsAdmin] = useState(false)
+  // Admin goals section visibility state
+  const [shouldShowAdminGoals, setShouldShowAdminGoals] = useState(false)
 
   // Determine if current user is a league admin
   useEffect(() => {
@@ -466,33 +468,16 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               </Button>
             ) : (
               <>
-                {isAdmin ? (
-                  // <Link href={`/league/${leagueId}/match/${matchId}/play`} passHref>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      startIcon={<Add />}
-                       onClick={() => setStatsDialogOpen(true)}
-                      sx={{
-                        bgcolor: "#2B2B2B",
-                        color: "white",
-                        fontWeight: "bold",
-                        "&:hover": { bgcolor: "#2B2B2B" },
-                        fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
-                        px: { xs: 1, sm: 1.5, md: 2 },
-                        py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
-                        minWidth: { xs: "auto", sm: 120, md: 140 },
-                      }}
-                    >
-                      Update Score Card
-                    </Button>
-                  // </Link>
-                ) : (
+                {/* Admin-only: ADD Score button */}
+                {isAdmin && (
                   <Button
                     variant="contained"
-                    color="primary"
+                    color="secondary"
                     startIcon={<Add />}
-                    onClick={() => setStatsDialogOpen(true)}
+                    onClick={() => {
+                      setShouldShowAdminGoals(true);
+                      setStatsDialogOpen(true);
+                    }}
                     sx={{
                       bgcolor: "#2B2B2B",
                       color: "white",
@@ -504,9 +489,32 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       minWidth: { xs: "auto", sm: 120, md: 140 },
                     }}
                   >
-                    Add Your Stats
+                    ADD Score
                   </Button>
                 )}
+                
+                {/* All Members: Add Your Stats button */}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Add />}
+                  onClick={() => {
+                    setShouldShowAdminGoals(false);
+                    setStatsDialogOpen(true);
+                  }}
+                  sx={{
+                    bgcolor: "#2B2B2B",
+                    color: "white",
+                    fontWeight: "bold",
+                    "&:hover": { bgcolor: "#2B2B2B" },
+                    fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
+                    px: { xs: 1, sm: 1.5, md: 2 },
+                    py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                    minWidth: { xs: "auto", sm: 120, md: 140 },
+                  }}
+                >
+                  Add Your Stats
+                </Button>
               </>
             )}
           </Box>
@@ -671,6 +679,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         onClose={() => setStatsDialogOpen(false)}
         initialLeagueId={leagueId}
         initialMatchId={matchId}
+        showAdminGoalsSection={shouldShowAdminGoals}
       />
     </Box>
   )
