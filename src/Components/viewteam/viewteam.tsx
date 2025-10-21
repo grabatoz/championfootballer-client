@@ -909,7 +909,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const pos = positions[pid];
     if (!pos) return null;
     const isRemovedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
-    const shirtLabel = player.position === 'FW' ? 'CF' : player.position;
+    // const shirtLabel = player.position === 'FW' ? 'CF' : player.position;
     const onClick = (e: React.MouseEvent) => {
       if (switchMode) {
         tryCompleteSwitch(teamSide, pid);
