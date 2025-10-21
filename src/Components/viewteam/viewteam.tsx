@@ -936,11 +936,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       >
         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
           <img src={Shirt.src} alt="shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'opacity(0.85)' }} />
-          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
               {shirtLabel}
             </Typography>
-          </Box>
+          </Box> */}
         </Box>
         <Box sx={{ height: 6 }} />
         <Typography sx={{ fontSize: 10, fontWeight: 600, color: textColor, textAlign: 'center' }}>
