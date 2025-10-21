@@ -5173,44 +5173,46 @@ export default function LeagueDetailPage() {
                             {section === 'table' && (
                                 <div className="w-full mx-auto">
                                     <Card sx={{
-                                        // backgroundColor: 'transparent',
-                                        // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-                                        // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
                                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                         backdropFilter: 'blur(10px)',
                                         border: '1px solid rgba(59, 130, 246, 0.3)',
-                                        // border: '2px solid rgba(59, 130, 246, 0.5)',
-                                        borderRadius: 3,
+                                        borderRadius: { xs: 2, sm: 3 },
                                         boxShadow: 'none',
                                         mt: 1.2,
-                                        // backdropFilter: 'blur(10px)'
-                                    }} className="text-white overflow-hidden">
+                                        overflow: 'auto',
+                                        '&::-webkit-scrollbar': {
+                                            height: '6px',
+                                        },
+                                        '&::-webkit-scrollbar-track': {
+                                            background: 'rgba(255,255,255,0.1)',
+                                        },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            background: 'rgba(255,255,255,0.3)',
+                                            borderRadius: '3px',
+                                        },
+                                    }} className="text-white">
                                         {/* <div className="p-3">
                                             <h2 className="text-lg font-bold text-white">League Table</h2>
                                         </div> */}
 
-                                        <div className="p-3 px-2 pb-2">
-                                            {/* bg-[rgba(59,130,246,0.8)] */}
-                                            <div className=" rounded-lg px-2 py-1 mb-4 flex items-center">
-                                                <div className="flex-1 text-white font-bold text-xs sm:text-sm md:text-base ml-8">Name</div>
-                                                <div className="flex gap-0.5 sm:gap-1 md:gap-4 text-white font-bold">
-                                                    <div className="min-w-12 text-center text-xs sm:text-sm md:text-base">MOTM</div>
-                                                    <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">P</div>
-                                                    <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">W</div>
-                                                    <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">D</div>
-                                                    <div className="min-w-7 text-center text-xs sm:text-sm md:text-base">L</div>
-                                                    <div className="min-w-10 text-center text-xs sm:text-sm md:text-base">W%</div>
-                                                    {/* <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
-                                                    <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP </div> */}
-                                                    {league?.showPoints === false ? (
-                                                        <div className="min-w-9 text-center text-xs sm:text-sm md:text-base">Pts</div>
-                                                    ) : (
-                                                        <div className="min-w-[50px] text-center text-xs sm:text-sm md:text-base">XP</div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-[1px]">
+                        <div className="p-2 sm:p-3 px-1 sm:px-2 pb-2">
+                            {/* bg-[rgba(59,130,246,0.8)] */}
+                            <div className="rounded-lg px-1 sm:px-2 py-1 mb-2 sm:mb-4 flex items-center">
+                                <div className="flex-1 text-white font-bold text-[10px] sm:text-xs md:text-sm ml-2 sm:ml-8">Name</div>
+                                <div className="flex gap-1 sm:gap-2 md:gap-4 text-white font-bold">
+                                    <div className="min-w-8 sm:min-w-12 text-center text-[9px] sm:text-xs md:text-sm">MOTM</div>
+                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">P</div>
+                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">W</div>
+                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">D</div>
+                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">L</div>
+                                    <div className="min-w-7 sm:min-w-10 text-center text-[9px] sm:text-xs md:text-sm">W%</div>
+                                    {league?.showPoints === false ? (
+                                        <div className="min-w-7 sm:min-w-9 text-center text-[9px] sm:text-xs md:text-sm">Pts</div>
+                                    ) : (
+                                        <div className="min-w-8 sm:min-w-[50px] text-center text-[9px] sm:text-xs md:text-sm">XP</div>
+                                    )}
+                                </div>
+                            </div>                                            <div className="space-y-[1px]">
                                                 {tableData.map((player) => {
                                                     // const position = index + 1;
                                                     // const badge = getBadgeForPosition(position);
@@ -5233,11 +5235,11 @@ export default function LeagueDetailPage() {
                                                             {/* ${getRowStyles(index)} */}
                                                             <div style={{
                                                                 background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)'
-                                                            }} className={`px-2 py-1.5 min-h-[70px] flex items-center`}>
+                                                            }} className={`px-1 sm:px-2 py-1.5 min-h-[50px] sm:min-h-[70px] flex items-center`}>
 
-                                                                <div className="flex flex-col max-[500px]:flex-col min-[500px]:flex-row items-start min-w-0">
-                                                                    <div className="max-[500px]:mb-2">
-                                                                        <div className="w-11 h-11 max-[500px]:w-8 max-[500px]:h-8 rounded-full overflow-hidden flex-shrink-0">
+                                                                <div className="flex items-center min-w-0 flex-1">
+                                                                    <div className="hidden sm:block mr-2">
+                                                                        <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
                                                                             <div className="relative w-full h-full">
                                                                                 {/* Colored shirt using mask */}
                                                                                 <div
@@ -5255,63 +5257,51 @@ export default function LeagueDetailPage() {
                                                                                         maskSize: 'contain',
                                                                                     }}
                                                                                 />
-                                                                                {/* Number overlay */}
-                                                                                {/* <span className="absolute inset-0 flex items-center justify-center text-black font-bold text-xs sm:text-sm">
-                                                                                    {((league?.members || []).find(m => m.id === player.id)?.shirtNumber ?? '')}
-                                                                                </span> */}
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex flex-col gap-0.5 mt-3 max-[500px]:-ml-8 min-[500px]:ml-2">
-                                                                        <div className="flex items-center gap-1">
-                                                                            <div className="text-white font-normal text-xs sm:text-sm md:text-base max-[500px]:text-[10px] min-[500px]:block whitespace-nowrap overflow-hidden text-ellipsis">
-                                                                                {formatMatchName(firstName)}   {formatMatchName(lastName)}
-                                                                            </div>
-                                                                            {player.isAdmin && <Shield className="text-blue-400 w-4 h-4" />}
-                                                                            {/* MOTM moved to its dedicated column */}
+                                                                    <div className="flex items-center gap-1 min-w-0">
+                                                                        <div className="text-white font-normal text-[10px] sm:text-xs md:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-none">
+                                                                            {formatMatchName(firstName)} {formatMatchName(lastName)}
                                                                         </div>
+                                                                        {player.isAdmin && <Shield className="text-blue-400 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />}
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="flex gap-0.5 sm:gap-1 md:gap-4 ml-auto items-center max-[500px]:mt-4">
+                                                                <div className="flex gap-1 sm:gap-2 md:gap-4 items-center">
                                                                     {/* MOTM column value */}
-                                                                    <div className="min-w-12 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-8 sm:min-w-12 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
-                                                                            <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap">
-                                                                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{player.motmCount}</span>
-                                                                                <Star sx={{ fontSize: 26, color: '#F59E0B' }} />
+                                                                            <span className="inline-flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap">
+                                                                                <span className="text-[10px] sm:text-sm font-bold">{player.motmCount}</span>
+                                                                                <Star sx={{ fontSize: { xs: 16, sm: 20, md: 26 }, color: '#F59E0B' }} />
                                                                             </span>
                                                                         ) : (
-                                                                            <span className="opacity-50"></span>
+                                                                            <span className="opacity-50">-</span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {player.played}
                                                                     </div>
-                                                                    <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {player.wins}
                                                                     </div>
-                                                                    <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {player.draws}
                                                                     </div>
-                                                                    <div className="min-w-7 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {player.losses}
                                                                     </div>
-                                                                    <div className="min-w-10 text-center text-white text-xs sm:text-sm md:text-base">
+                                                                    <div className="min-w-7 sm:min-w-10 text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                         {player.winPercentage}
                                                                     </div>
-                                                                    {/* <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
-                                                                    <div className="min-w-[50px] text-center text-white text-xs sm:text-sm md:text-base">
-                                                                        {player.xp}
-                                                                    </div> */}
                                                                     {league?.showPoints === false ? (
-                                                                        <div className="min-w-9 text-center text-white text-xs sm:text-sm md:text-base">{points}</div>
+                                                                        <div className="min-w-7 sm:min-w-9 text-center text-white text-[9px] sm:text-xs md:text-sm">{points}</div>
                                                                     ) : (
-                                                                        <div className="min-w-[50px] text-center text-white text-xs sm:text-sm md:text-base">
+                                                                        <div className="min-w-8 sm:min-w-[50px] text-center text-white text-[9px] sm:text-xs md:text-sm">
                                                                             {player.xp}
                                                                         </div>
                                                                     )}
-                                                                    {/* {player.isAdmin && <Shield className="text-blue-400 w-4 h-4 ml-1 sm:ml-2" />} */}
                                                                 </div>
                                                             </div>
                                                             <div className="h-[1px] bg-white"></div>
@@ -5327,24 +5317,21 @@ export default function LeagueDetailPage() {
                                             <Paper
                                                 elevation={0}
                                                 sx={{
-                                                    p: 2,
+                                                    p: { xs: 1.5, sm: 2 },
                                                     borderRadius: 2,
                                                     background: 'linear-gradient(177deg,rgba(229, 106, 22, 0.92) 26%, rgba(207, 35, 38, 0.92) 100%)',
                                                     border: '1px solid rgba(255,255,255,0.15)',
                                                     boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
                                                 }}
                                             >
-                                                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                                                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                                     Statistics
                                                 </Typography>
 
                                                 <Box
                                                     sx={{
-                                                        p: 2,
+                                                        p: { xs: 1, sm: 2 },
                                                         borderRadius: 2,
-                                                        // border: '1px solid rgba(255,255,255,0.2)',
-                                                        // background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.18) 100%)',
-                                                        // boxShadow: 'inset 0 0 30px rgba(0,0,0,0.25)',
                                                     }}
                                                 >
                                                     {!leagueStats ? (
@@ -5373,24 +5360,24 @@ export default function LeagueDetailPage() {
                                                                 : 'Created On -';
 
                                                             return (
-                                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1, sm: 1.5 } }}>
                                                                     {/* Season progress */}
                                                                     <Box
                                                                         sx={{
-                                                                            p: 1.5,
+                                                                            p: { xs: 1, sm: 1.5 },
                                                                             borderRadius: 1.5,
                                                                             border: '1px solid rgba(52,211,153,0.35)',
                                                                             background: 'linear-gradient(180deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.07) 100%)',
                                                                         }}
                                                                     >
-                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
+                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                                                             Season Progress
                                                                         </Typography>
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 0.75, mb: 1 }}>
-                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700 }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 0.75, mb: 1, gap: 1 }}>
+                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                                                                                 {played} Played
                                                                             </Typography>
-                                                                            <Typography variant="body2" sx={{ color: '#34d399', fontWeight: 700 }}>
+                                                                            <Typography variant="body2" sx={{ color: '#34d399', fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                                                                                 {remaining} Remaining
                                                                             </Typography>
                                                                         </Box>
@@ -5398,13 +5385,13 @@ export default function LeagueDetailPage() {
                                                                             variant="determinate"
                                                                             value={pct}
                                                                             sx={{
-                                                                                height: 8,
+                                                                                height: { xs: 6, sm: 8 },
                                                                                 borderRadius: 999,
                                                                                 backgroundColor: 'rgba(255,255,255,0.15)',
                                                                                 '& .MuiLinearProgress-bar': { backgroundColor: '#34d399' },
                                                                             }}
                                                                         />
-                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.75, display: 'block' }}>
+                                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.75, display: 'block', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                                                             {pct}% complete
                                                                         </Typography>
                                                                     </Box>
@@ -5412,22 +5399,22 @@ export default function LeagueDetailPage() {
                                                                     {/* Players + Created */}
                                                                     <Box
                                                                         sx={{
-                                                                            p: 1.5,
+                                                                            p: { xs: 1, sm: 1.5 },
                                                                             borderRadius: 1.5,
                                                                             border: '1px solid rgba(245,158,11,0.35)',
                                                                             background: 'linear-gradient(180deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.07) 100%)',
                                                                         }}
                                                                     >
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                            <Users size={18} color="#F59E0B" />
-                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700 }}>
+                                                                            <Users size={16} color="#F59E0B" />
+                                                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                                                                                 {(leagueStats.players ?? league?.members?.length ?? 0)} Players
                                                                             </Typography>
                                                                         </Box>
 
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                                                                            <Calendar size={18} color="#F59E0B" />
-                                                                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.95)' }}>
+                                                                            <Calendar size={16} color="#F59E0B" />
+                                                                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.95)', fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.3 }}>
                                                                                 {createdStr}
                                                                             </Typography>
                                                                         </Box>
@@ -5438,8 +5425,9 @@ export default function LeagueDetailPage() {
                                                                         sx={{
                                                                             gridColumn: { xs: '1 / -1', sm: '1 / -1' },
                                                                             display: 'flex',
+                                                                            flexDirection: { xs: 'column', sm: 'row' },
                                                                             flexWrap: 'wrap',
-                                                                            gap: 1,
+                                                                            gap: { xs: 0.75, sm: 1 },
                                                                             mt: 0.5,
                                                                         }}
                                                                     >
@@ -5456,10 +5444,18 @@ export default function LeagueDetailPage() {
                                                                                     ? 'linear-gradient(180deg, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.10) 100%)'
                                                                                     : 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%)',
                                                                                 fontWeight: 600,
+                                                                                fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+                                                                                height: { xs: 'auto', sm: 32 },
+                                                                                py: { xs: 0.5, sm: 0 },
+                                                                                '& .MuiChip-label': {
+                                                                                    px: { xs: 1, sm: 1.5 },
+                                                                                    whiteSpace: 'normal',
+                                                                                    lineHeight: 1.3,
+                                                                                }
                                                                             }}
                                                                         />
                                                                         <Chip
-                                                                            icon={<Flame size={16} color="#F97316" />}
+                                                                            icon={<Flame size={14} color="#F97316" />}
                                                                             label={
                                                                                 leagueStats.hottestPlayer
                                                                                     ? `${leagueStats.hottestPlayer.name} is the hottest player right now!`
@@ -5472,6 +5468,17 @@ export default function LeagueDetailPage() {
                                                                                     ? 'linear-gradient(180deg, rgba(249,115,22,0.25) 0%, rgba(249,115,22,0.10) 100%)'
                                                                                     : 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%)',
                                                                                 fontWeight: 600,
+                                                                                fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+                                                                                height: { xs: 'auto', sm: 32 },
+                                                                                py: { xs: 0.5, sm: 0 },
+                                                                                '& .MuiChip-label': {
+                                                                                    px: { xs: 1, sm: 1.5 },
+                                                                                    whiteSpace: 'normal',
+                                                                                    lineHeight: 1.3,
+                                                                                },
+                                                                                '& .MuiChip-icon': {
+                                                                                    ml: { xs: 0.5, sm: 1 },
+                                                                                }
                                                                             }}
                                                                         />
                                                                     </Box>
