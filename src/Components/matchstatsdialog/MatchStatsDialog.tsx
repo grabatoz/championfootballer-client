@@ -36,8 +36,8 @@ import CleanSheet from '@/Components/images/cleansheet.png'
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
 import { LeaderboardPlayer } from '@/types/api';
-import Check from '@/Components/images/check.png'
-import Coin from '@/Components/images/icon.png'
+// import Check from '@/Components/images/check.png'
+// import Coin from '@/Components/images/icon.png'
 import Shirt from '@/Components/images/shirtimg.png'
 import Image from 'next/image'
 
@@ -172,62 +172,39 @@ interface MotmButtonProps {
     voted: boolean;
     onClick: () => void;
     disabled: boolean;
-    color: string;
     sx?: SxProps<Theme>;
 }
 
 const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
-    <Box
+    <Button
         onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        variant={voted ? "contained" : "outlined"}
+        size="small"
         sx={{
-            position: 'relative',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
+            minWidth: 'auto',
+            px: 2,
+            py: 0.5,
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            backgroundColor: voted ? 'red' : 'transparent',
+            color: voted ? 'white' : '#E5E7EB',
+            borderColor: voted ? 'red' : 'rgba(255,255,255,0.3)',
             '&:hover': {
-                transform: disabled ? 'none' : 'scale(1.1)',
-                filter: disabled ? 'none' : 'brightness(1.2)'
+                backgroundColor: voted ? 'red' : 'rgba(255,255,255,0.1)',
+                borderColor: voted ? 'red' : 'rgba(255,255,255,0.5)',
+            },
+            '&.Mui-disabled': {
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.3)',
+                borderColor: 'rgba(255,255,255,0.2)',
             },
             ...sx
         }}
     >
-        {/* Coin Image */}
-        <img
-            src={Coin.src}
-            alt="MOTM Vote"
-            style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                opacity: disabled ? 0.5 : 1
-            }}
-        />
-
-        {/* Check Mark Overlay - Only show if voted */}
-        {voted && (
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 2
-                }}
-            >
-                <img
-                    src={Check.src}
-                    alt="Voted"
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain'
-                    }}
-                />
-            </Box>
-        )}
-    </Box>
+        {voted ? 'Voted' : 'Vote'}
+    </Button>
 );
 
 // Jersey avatar (shirt image with centered number)
@@ -1844,7 +1821,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             }
                                         }}>
                                             {/* MOTM Coin - Top Right Corner */}
-                                            {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
+                                            {/* {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
                                                 <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
                                                     <MotmCoin
                                                         voted={votedForId === player.id}
@@ -1854,7 +1831,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                         sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
                                                     />
                                                 </Box>
-                                            )}
+                                            )} */}
 
                                             {player.hasOwnProperty('isGuest') ? (
                                                 <JerseyAvatar
@@ -1960,31 +1937,47 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     </Button>
                                                 )} */}
 
-                                                {/* Admin Stats Button */}
-                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
-                                                    <Button
-                                                        onClick={() => handleOpenAdminStatsModal(player)}
-                                                        startIcon={<Add />}
-                                                        variant="contained"
-                                                        size="small"
-                                                        sx={{
-                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            borderRadius: 1.5,
-                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                            fontSize: { xs: 5, sm: 7, md: 10 },
-                                                            minWidth: { xs: 'auto', sm: 'auto' },
-                                                            height: { xs: 16, sm: 20, md: 28 },
-                                                            whiteSpace: 'nowrap',
-                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 }
-                                                        }}
-                                                    >
-                                                        Edit Stats
-                                                    </Button>
-                                                )}
+                                                {/* Admin Stats Button and MOTM Vote Button */}
+                                                <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, alignItems: 'center', mt: { xs: 0.25, sm: 0.5, md: 0.5 } }}>
+                                                    {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
+                                                        <Button
+                                                            onClick={() => handleOpenAdminStatsModal(player)}
+                                                            startIcon={<Add />}
+                                                            variant="contained"
+                                                            size="small"
+                                                            sx={{
+                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                                color: 'white',
+                                                                fontWeight: 'bold',
+                                                                borderRadius: 1.5,
+                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                fontSize: { xs: 5, sm: 7, md: 10 },
+                                                                minWidth: { xs: 'auto', sm: 'auto' },
+                                                                height: { xs: 16, sm: 20, md: 28 },
+                                                                whiteSpace: 'nowrap',
+                                                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
+                                                            }}
+                                                        >
+                                                            Edit Stats
+                                                        </Button>
+                                                    )}
+                                                    
+                                                    {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
+                                                        <MotmCoin
+                                                            voted={votedForId === player.id}
+                                                            onClick={() => handleVote(player.id)}
+                                                            disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
+                                                            sx={{ 
+                                                                minWidth: { xs: 'auto', sm: 'auto' },
+                                                                height: { xs: 16, sm: 20, md: 28 },
+                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                fontSize: { xs: 5, sm: 7, md: 10 }
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
                                             </Box>
                                         </Box>
                                     ))}
