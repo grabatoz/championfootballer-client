@@ -108,14 +108,49 @@ const AllPlayersPage = () => {
     }
   }, [token, fetchLeagues]);
 
+  const fetchAllLeaguesPlayers = useCallback(async () => {
+    if (!token || leagues.length === 0) return;
+    
+    try {
+      const allPlayersMap = new Map<string, Player>();
+      
+      // Fetch players from each league
+      for (const league of leagues) {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }
+        );
+        const data = await response.json();
+        
+        if (data?.success && data?.players) {
+          // Add players to map to avoid duplicates
+          data.players.forEach((player: Player) => {
+            if (!allPlayersMap.has(player.id)) {
+              allPlayersMap.set(player.id, player);
+            }
+          });
+        }
+      }
+      
+      // Dispatch to update the state with all unique players
+      const allPlayers = Array.from(allPlayersMap.values());
+      dispatch({ type: 'user/fetchPlayedWithPlayers/fulfilled', payload: allPlayers });
+    } catch (error) {
+      console.error('Error fetching all leagues players:', error);
+    }
+  }, [token, leagues, dispatch]);
+
   useEffect(() => {
     if (!token) return;
     if (selectedLeague === 'all') {
-      dispatch(fetchPlayedWithPlayers(undefined));
+      // Fetch all players from all leagues the user is part of
+      fetchAllLeaguesPlayers();
     } else {
       dispatch(fetchLeaguePlayers(selectedLeague));
     }
-  }, [dispatch, token, selectedLeague]);
+  }, [dispatch, token, selectedLeague, fetchAllLeaguesPlayers]);
 
   useEffect(() => {
     if (error) {
