@@ -673,7 +673,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             console.log('MatchStatsDialog: fetching details for', { resolvedLeagueId, resolvedMatchId });
             fetchLeagueAndMatchDetails();
         }
-    }, [resolvedLeagueId, resolvedMatchId, token, fetchLeagueAndMatchDetails]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [resolvedLeagueId, resolvedMatchId, token]);
 
     // When opened as a dialog with explicit ids, use them and skip preferred auto-select
     useEffect(() => {
@@ -812,7 +813,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         if (typeof open === 'boolean' && open && (initialLeagueId || initialMatchId)) return;
         applyPreferredLeague();
         // We intentionally run when token changes; internal ref prevents repeats
-    }, [token, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails, open, initialLeagueId, initialMatchId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token, resolvedLeagueId, resolvedMatchId, open, initialLeagueId, initialMatchId]);
 
     // Define after fetchLeagueAndMatchDetails so we can safely call it
     const handleSelectLeague = useCallback((l: League) => {

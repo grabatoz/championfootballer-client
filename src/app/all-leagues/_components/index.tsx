@@ -376,7 +376,7 @@ function LeagueMembersDialog({
                             textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                           }}
                         >
-                          {member.shirtNumber || '0'}
+                          {/* {member.shirtNumber || '0'} */}
                         </Box>
                       </Box>
                     </ListItemAvatar>
@@ -1458,7 +1458,7 @@ function AllLeagues() {
             lastName: m.lastName,
             profilePicture: m.profilePicture,
             email: m.email,
-            shirtNumber: m.shirtNumber,
+            // shirtNumber: m.shirtNumber,
           })),
         });
         setOpenMembers(true);

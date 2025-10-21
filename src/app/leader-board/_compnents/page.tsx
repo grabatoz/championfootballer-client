@@ -24,7 +24,7 @@ interface Player {
   positionType: string;
   profilePicture?: string;
   value: number;
-  shirtNumber?: string; // added
+  // shirtNumber?: string; // added
 }
 
 interface League {
@@ -302,7 +302,7 @@ export default function LeaderBoardPage() {
                       lineHeight: 1,
                     }}
                   >
-                    {player.shirtNumber || '0'}
+                    {/* {player.shirtNumber || '0'} */}
                   </Box>
                 </Box>
                 <Box>

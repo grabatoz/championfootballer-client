@@ -220,7 +220,7 @@ function LeagueMembersDialog({
     if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
       setOpenSettings(true)
     }
-  }, [open, openSettingsOnOpen, league, currentUserId])
+  }, [open, openSettingsOnOpen, league?.adminId, currentUserId])
 
   if (!league) return null
 
@@ -402,7 +402,7 @@ function LeagueMembersDialog({
                             textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                           }}
                         >
-                          {member.shirtNumber || '0'}
+                          {/* {member.shirtNumber || '0'} */}
                         </Box>
                       </Box>
                     </ListItemAvatar>
@@ -2006,12 +2006,14 @@ export default function LeagueDetailPage() {
             setError('Failed to fetch league details');
         }
     }, [leagueId, token]);
+    
     useEffect(() => {
         // Wait for auth to finish loading, user to be authenticated, and token to be available
         if (authLoading) return;
-        if (!isAuthenticated || !token) return;
+        if (!isAuthenticated || !token || !leagueId) return;
         fetchLeagueDetails();
-    }, [token, authLoading, isAuthenticated, fetchLeagueDetails]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token, authLoading, isAuthenticated, leagueId]);
 
     // Professional access logic: allow if user and profile player have ever shared ANY league
     useEffect(() => {
@@ -2040,7 +2042,8 @@ export default function LeagueDetailPage() {
             setHasCommonLeague(false);
             setCheckedCommonLeague(true);
         });
-    }, [user, profilePlayerId, token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, profilePlayerId, token]);
 
     // Fetch all user leagues for dropdown
     const fetchAllLeagues = useCallback(async () => {
@@ -2092,8 +2095,10 @@ export default function LeagueDetailPage() {
 
     // Fetch all leagues for dropdown
     useEffect(() => {
+        if (!token) return;
         fetchAllLeagues();
-    }, [fetchAllLeagues]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
 
 
     const handleBackToAllLeagues = () => {
@@ -2313,7 +2318,8 @@ export default function LeagueDetailPage() {
         });
 
         return list;
-    }, [league, leagueWinners, userLeagueXP, motmCounts]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [league?.id, leagueWinners, userLeagueXP, motmCounts]);
 
     // Type for MOTM votes map: voterId -> votedForId
     type ManOfTheMatchVotes = Record<string, string | number>;
@@ -2322,7 +2328,7 @@ export default function LeagueDetailPage() {
 
     // Aggregate MOTM votes locally from league.matches so every player's votes show
     useEffect(() => {
-        if (!league?.members?.length) return;
+        if (!league?.members?.length || !league?.id) return;
         const counts: Record<string, number> = {};
         // Initialize all members with 0 to ensure everyone shows up
         league.members.forEach(m => { counts[m.id] = 0; });
@@ -2336,10 +2342,11 @@ export default function LeagueDetailPage() {
                 if (pid in counts) counts[pid] += 1;
             });
         });
-        setMotmCounts(prev => ({ ...prev, ...counts }));
-    }, [league?.members, league?.matches, hasMotmVotes]);
+        setMotmCounts(counts);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [league?.id]);
 
-    // Fetch MOTM votes per player via quick-view endpoint when league or members change
+    // Fetch MOTM votes per player via quick-view endpoint when league changes
     useEffect(() => {
         if (!league?.id || !token || !league.members?.length) return;
         let ignore = false;
@@ -2371,7 +2378,8 @@ export default function LeagueDetailPage() {
             ignore = true;
             controller.abort();
         };
-    }, [league?.id, league?.members, token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [league?.id, token]);
 
     const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
     // ...existing code...
