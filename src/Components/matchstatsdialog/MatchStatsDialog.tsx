@@ -209,10 +209,10 @@ const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
 
 // Jersey avatar (shirt image with centered number)
 const JerseyAvatar = ({
-    number,
+    // number,
     sx = {},
 }: {
-    number?: string | number;
+    // number?: string | number;
     sx?: SxProps<Theme>;
 }) => (
     <Box
