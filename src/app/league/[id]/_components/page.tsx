@@ -5099,128 +5099,180 @@ export default function LeagueDetailPage() {
                                                     </Box> */}
 
                                                             {/* // ...existing code... */}
-                                                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap', gap: 1, mt: 2 }}>
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                                    {((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
-                                                                        match.status === 'RESULT_UPLOADED' ? (
-                                                                            <Tooltip title="Awaiting captain confirmation">
-                                                                                <span>
-                                                                                    <Button
-                                                                                        size="small"
-                                                                                        disabled
-                                                                                        sx={{
-                                                                                            backgroundColor: '#0388E3',
-                                                                                            color: 'white',
-                                                                                            fontSize: '0.78rem',
-                                                                                            textTransform: 'none',
-                                                                                            py: 0.4,
-                                                                                            px: 1,
-                                                                                            minHeight: 32,
-                                                                                            minWidth: 0,
-                                                                                            borderRadius: 1,
-                                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                            transition: 'all 0.2s ease-in-out',
-                                                                                            '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
-                                                                                            '&:active': { transform: 'translateY(0)' },
-                                                                                        }}
-                                                                                    >
-                                                                                        {isAdmin ? 'ADD Score' : 'Add Your Stats'}
-                                                                                    </Button>
-                                                                                </span>
-                                                                            </Tooltip>
-                                                                        ) : (
-                                                                            <Button
-                                                                                size="small"
-                                                                                onClick={() => {
-                                                                                    setSelectedMatchIdForDialog(match.id);
-                                                                                    setMatchStatsOpen(true);
-                                                                                }}
-                                                                                sx={{
-                                                                                    backgroundColor: '#0388E3',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.78rem',
-                                                                                    textTransform: 'none',
-                                                                                    py: 0.4,
-                                                                                    px: 1,
-                                                                                    minHeight: 32,
-                                                                                    minWidth: 0,
-                                                                                    borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                    transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
-                                                                                    '&:active': { transform: 'translateY(0)' },
-                                                                                }}
-                                                                                disabled={!league?.active}
-                                                                            >
-                                                                                {isAdmin ? 'ADD Score' : 'Add Your Stats'}
-                                                                            </Button>
-                                                                        )
-                                                                    )}
-                                                                </Box>
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
-                                                                        <span>
-                                                                            <Button
-                                                                                size="small"
-                                                                                onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId, matchId: match.id }); setViewTeamOpen(true); }}
-                                                                                sx={{
-                                                                                    backgroundColor: '#FA5836',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.78rem',
-                                                                                    textTransform: 'none',
-                                                                                    py: 0.4,
-                                                                                    px: 1,
-                                                                                    minHeight: 32,
-                                                                                    minWidth: 0,
-                                                                                    borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
-                                                                                    transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
-                                                                                    '&:active': { transform: 'translateY(0)' },
-                                                                                }}
-                                                                            >
-                                                                                view team
-                                                                            </Button>
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                </Box>
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                    <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
-                                                                        <span>
-                                                                            <Button
-                                                                                size="small"
-                                                                                sx={{
-                                                                                    backgroundColor: '#FA5836',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.78rem',
-                                                                                    textTransform: 'none',
-                                                                                    py: 0.4,
-                                                                                    px: 1,
-                                                                                    minHeight: 32,
-                                                                                    minWidth: 0,
-                                                                                    borderRadius: 1,
-                                                                                    boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
-                                                                                    transition: 'all 0.2s ease-in-out',
-                                                                                    '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
-                                                                                    '&:active': { transform: 'translateY(0)' },
-                                                                                }}
-                                                                                disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
-                                                                                // onClick={() => {
-                                                                                //     setActiveMatchId(match.id);
-                                                                                //     setStatsDialogOpen(true);
-                                                                                //     fetchExistingStats(match.id);
-                                                                                // }}
-
-                                                                                onClick={() => {
-                                                                                    router.push(`/match/${match.id}`)
-                                                                                }}
-
-                                                                            >
-                                                                                Match Results
-                                                                            </Button>
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                </Box>
+                                                            <Box sx={{ 
+                                                                display: 'flex', 
+                                                                justifyContent: 'center', 
+                                                                alignItems: 'center', 
+                                                                flexWrap: 'wrap',
+                                                                gap: 0.75, 
+                                                                mt: 2 
+                                                            }}>
+                                                                {/* Admin-only: ADD Score button */}
+                                                                {isAdmin && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                                    match.status === 'RESULT_UPLOADED' ? (
+                                                                        <Tooltip title="Awaiting captain confirmation">
+                                                                            <span>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    disabled
+                                                                                    sx={{
+                                                                                        backgroundColor: '#0388E3',
+                                                                                        color: 'white',
+                                                                                        fontSize: '0.65rem',
+                                                                                        textTransform: 'none',
+                                                                                        py: 0.3,
+                                                                                        px: 0.8,
+                                                                                        minHeight: 28,
+                                                                                        minWidth: 'fit-content',
+                                                                                        borderRadius: 1,
+                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                        transition: 'all 0.2s ease-in-out',
+                                                                                        '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                    }}
+                                                                                >
+                                                                                    ADD Score
+                                                                                </Button>
+                                                                            </span>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Button
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setSelectedMatchIdForDialog(match.id);
+                                                                                setMatchStatsOpen(true);
+                                                                            }}
+                                                                            sx={{
+                                                                                backgroundColor: '#0388E3',
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem',
+                                                                                textTransform: 'none',
+                                                                                py: 0.3,
+                                                                                px: 0.8,
+                                                                                minHeight: 28,
+                                                                                minWidth: 'fit-content',
+                                                                                borderRadius: 1,
+                                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                transition: 'all 0.2s ease-in-out',
+                                                                                '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                            }}
+                                                                            disabled={!league?.active}
+                                                                        >
+                                                                            ADD Score
+                                                                        </Button>
+                                                                    )
+                                                                )}
+                                                                
+                                                                {/* All Members: Add Your Stats button */}
+                                                                {isMember && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                                    match.status === 'RESULT_UPLOADED' ? (
+                                                                        <Tooltip title="Awaiting captain confirmation">
+                                                                            <span>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    disabled
+                                                                                    sx={{
+                                                                                        backgroundColor: '#0388E3',
+                                                                                        color: 'white',
+                                                                                        fontSize: '0.65rem',
+                                                                                        textTransform: 'none',
+                                                                                        py: 0.3,
+                                                                                        px: 0.8,
+                                                                                        minHeight: 28,
+                                                                                        minWidth: 'fit-content',
+                                                                                        borderRadius: 1,
+                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                        transition: 'all 0.2s ease-in-out',
+                                                                                        '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                    }}
+                                                                                >
+                                                                                    Add Your Stats
+                                                                                </Button>
+                                                                            </span>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Button
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setSelectedMatchIdForDialog(match.id);
+                                                                                setMatchStatsOpen(true);
+                                                                            }}
+                                                                            sx={{
+                                                                                backgroundColor: '#0388E3',
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem',
+                                                                                textTransform: 'none',
+                                                                                py: 0.3,
+                                                                                px: 0.8,
+                                                                                minHeight: 28,
+                                                                                minWidth: 'fit-content',
+                                                                                borderRadius: 1,
+                                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                transition: 'all 0.2s ease-in-out',
+                                                                                '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                            }}
+                                                                            disabled={!league?.active}
+                                                                        >
+                                                                            Add Your Stats
+                                                                        </Button>
+                                                                    )
+                                                                )}
+                                                                
+                                                                {/* View Team button */}
+                                                                <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                    <span>
+                                                                        <Button
+                                                                            size="small"
+                                                                            onClick={(e) => { 
+                                                                                e.stopPropagation(); 
+                                                                                setViewTeamMatch({ leagueId, matchId: match.id }); 
+                                                                                setViewTeamOpen(true); 
+                                                                            }}
+                                                                            sx={{
+                                                                                backgroundColor: '#FA5836',
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem',
+                                                                                textTransform: 'none',
+                                                                                py: 0.3,
+                                                                                px: 0.8,
+                                                                                minHeight: 28,
+                                                                                minWidth: 'fit-content',
+                                                                                borderRadius: 1,
+                                                                                boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
+                                                                                transition: 'all 0.2s ease-in-out',
+                                                                                '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
+                                                                            }}
+                                                                        >
+                                                                            View Team
+                                                                        </Button>
+                                                                    </span>
+                                                                </Tooltip>
+                                                                
+                                                                {/* Match Results button */}
+                                                                <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
+                                                                    <span>
+                                                                        <Button
+                                                                            size="small"
+                                                                            onClick={() => router.push(`/match/${match.id}`)}
+                                                                            sx={{
+                                                                                backgroundColor: '#FA5836',
+                                                                                color: 'white',
+                                                                                fontSize: '0.65rem',
+                                                                                textTransform: 'none',
+                                                                                py: 0.3,
+                                                                                px: 0.8,
+                                                                                minHeight: 28,
+                                                                                minWidth: 'fit-content',
+                                                                                borderRadius: 1,
+                                                                                boxShadow: '0 2px 4px rgba(250, 88, 54, 0.3)',
+                                                                                transition: 'all 0.2s ease-in-out',
+                                                                                '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
+                                                                            }}
+                                                                            disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                                        >
+                                                                           Match Results
+                                                                        </Button>
+                                                                    </span>
+                                                                </Tooltip>
                                                             </Box>
                                                             {/* // ...existing code... */}
 

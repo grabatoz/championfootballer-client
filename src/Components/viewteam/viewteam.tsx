@@ -976,11 +976,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       >
         <Box sx={{ position: 'relative', width: 40, height: 40 }}>
           <img src={Shirt.src} alt="guest-shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'opacity(0.85)' }} />
-          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
               CF
             </Typography>
-          </Box>
+          </Box> */}
         </Box>
         <Box sx={{ height: 6 }} />
         <Typography sx={{ fontSize: 10, fontWeight: 600, color: textColor, textAlign: 'center' }}>
@@ -1027,7 +1027,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             bgcolor: '#fff'
           }}
         >
-          <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>{teamTitle} Team Formation</Typography>
+          {/* <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>{teamTitle} Team Formation</Typography> */}
           <Divider sx={{ mb: 1 }} />
           <Box
             ref={pitchRef}
