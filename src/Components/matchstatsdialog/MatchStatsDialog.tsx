@@ -59,6 +59,7 @@ interface EmbeddedControlProps {
     teamGoals?: number;
     initialLeagueId?: string;
     initialMatchId?: string;
+    showAdminGoalsSection?: boolean;
 }
 
 // type MatchApiResponse = {
@@ -295,7 +296,7 @@ type CaptainPicks = { defence?: string; influence?: string };
 // --- end helpers ---
 
 const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
-    const { open, onClose, initialLeagueId, initialMatchId } = props;
+    const { open, onClose, initialLeagueId, initialMatchId, showAdminGoalsSection = false } = props;
     const [league, setLeague] = useState<League | null>(null);
     const [match, setMatch] = useState<MatchWithGuests | null>(null);
     const [loading, setLoading] = useState(true);
@@ -1691,6 +1692,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const content = (
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
             {/* --- NEW: League selector and show matches toolbar --- */}
+            {!showAdminGoalsSection && (
             <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
                 {/* <Typography sx={{ fontWeight: 700, mr: 1 }}>Explore Matches by League</Typography> */}
                 {/* Label + League selector */}
@@ -1736,8 +1738,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     <Typography sx={{ ml: 1, opacity: 0.95 }}>Selected: {selectedLeagueNameForList}</Typography>
                 )} */}
             </Paper>
+            )}
 
-            {!selectedLeagueHasNoMatches && !league.active && (
+            {!showAdminGoalsSection && !selectedLeagueHasNoMatches && !league.active && (
                 <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>
             )}
             {/* <Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{
@@ -1751,6 +1754,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
             }}>Back to League</Button> */}
 
+            {!showAdminGoalsSection && (
             <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3, display: selectedLeagueHasNoMatches ? 'none' : 'block' }}>
                 {/* Scoreboard + Add Stats */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.5, sm: 1.5 }, gap: 1, flexWrap: 'wrap' }}>
@@ -1993,8 +1997,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     </CardContent>
                 </Card>
             </Paper>
+            )}
 
             {/* Side-by-side layout for Match Note (left) and Captains Bonus Pick (right) */}
+            {!showAdminGoalsSection && (
             <Box
                 sx={{
                     display: selectedLeagueHasNoMatches ? 'none' : 'grid',
@@ -2102,10 +2108,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 </Box>
             </Paper>
             </Box>
+            )}
 
 
 
-            {/* <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
+            {!showAdminGoalsSection && (
+            <></>
+            /* <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
                 <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
                 <div className="w-full h-px bg-white mb-6"></div>
 
@@ -2151,7 +2160,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Link>
                         ))}
                 </div>
-            </div> */}
+            </div> */
+            )}
 
 
 
@@ -2162,7 +2172,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
         
 
-            {isAdmin && !selectedLeagueHasNoMatches && (
+            {isAdmin && !selectedLeagueHasNoMatches && showAdminGoalsSection && (
                 <Box sx={{
                     mt: 4,
                     mb: 4,

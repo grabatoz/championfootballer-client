@@ -1544,6 +1544,7 @@ interface TableData {
 export default function LeagueDetailPage() {
     const [matchStatsOpen, setMatchStatsOpen] = React.useState(false);
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
+    const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
     const [league, setLeague] = useState<League | null>(null);
     console.log('leagues matches', league?.matches)
     const [error, setError] = useState<string | null>(null);
@@ -5139,6 +5140,7 @@ export default function LeagueDetailPage() {
                                                                             size="small"
                                                                             onClick={() => {
                                                                                 setSelectedMatchIdForDialog(match.id);
+                                                                                setShouldShowAdminGoals(true);
                                                                                 setMatchStatsOpen(true);
                                                                             }}
                                                                             sx={{
@@ -5194,6 +5196,7 @@ export default function LeagueDetailPage() {
                                                                             size="small"
                                                                             onClick={() => {
                                                                                 setSelectedMatchIdForDialog(match.id);
+                                                                                setShouldShowAdminGoals(false);
                                                                                 setMatchStatsOpen(true);
                                                                             }}
                                                                             sx={{
@@ -5762,6 +5765,7 @@ export default function LeagueDetailPage() {
                             onClose={() => setMatchStatsOpen(false)}
                             initialLeagueId={league?.id}
                             initialMatchId={selectedMatchIdForDialog || undefined}
+                            showAdminGoalsSection={shouldShowAdminGoals}
                         />
 
                         {/* Line 4844 omitted */}
