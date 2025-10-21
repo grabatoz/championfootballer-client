@@ -2175,7 +2175,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     maxWidth: 700,
                     mx: 'auto',
                 }}>
-                    <Typography variant="h6" gutterBottom>Admin Controls</Typography>
+                    <Typography variant="h6" gutterBottom>Admin Can Add Goals Both Teams</Typography>
                     <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
                     <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
