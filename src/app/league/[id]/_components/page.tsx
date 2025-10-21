@@ -2056,40 +2056,62 @@ export default function LeagueDetailPage() {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const data = await response.json();
+            
+            interface LeagueData {
+                id: string | number;
+                name: string;
+                [key: string]: unknown;
+            }
+            
+            interface AuthStatusResponse {
+                success: boolean;
+                user?: {
+                    adminLeagues?: LeagueData[];
+                    administeredLeagues?: LeagueData[];
+                    leagues?: LeagueData[];
+                };
+            }
+            
+            const data: AuthStatusResponse = await response.json();
+            
             if (data.success && data.user) {
                 // Get admin league IDs (prefer adminLeagues, fallback to administeredLeagues)
-                const adminLeaguesArr = data.user.adminLeagues || data.user.administeredLeagues || [];
-                const adminLeagueIds = new Set(
+                const adminLeaguesArr: LeagueData[] = data.user.adminLeagues || data.user.administeredLeagues || [];
+                const adminLeagueIds = new Set<string>(
                     adminLeaguesArr
-                        .map((l: any) => String(l?.id))
+                        .map((l: LeagueData) => String(l?.id))
                         .filter((id: string) => id !== 'undefined')
                 );
                 
                 // Get member league IDs
-                const memberLeagueIds = new Set(
+                const memberLeagueIds = new Set<string>(
                     (data.user.leagues || [])
-                        .map((l: any) => String(l?.id))
+                        .map((l: LeagueData) => String(l?.id))
                         .filter((id: string) => id !== 'undefined')
                 );
                 
                 // Combine joined and managed leagues
-                const userLeagues = [
+                const userLeagues: LeagueData[] = [
                     ...(data.user.leagues || []),
                     ...adminLeaguesArr
                 ];
                 
                 // Remove duplicates and add userRole
-                const uniqueLeagues = Array.from(new Map(userLeagues.map((league: any) => {
-                    const leagueId = String(league.id);
-                    const role = adminLeagueIds.has(leagueId) 
-                        ? 'ADMIN' 
-                        : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
-                    return [leagueId, {
-                        ...league,
-                        userRole: role
-                    }];
-                })).values());
+                const uniqueLeagues = Array.from(
+                    new Map<string, League>(
+                        userLeagues.map((league: LeagueData) => {
+                            const leagueId = String(league.id);
+                            const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId) 
+                                ? 'ADMIN' 
+                                : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
+                            return [leagueId, {
+                                ...league,
+                                id: leagueId,
+                                userRole: role
+                            } as League];
+                        })
+                    ).values()
+                );
                 
                 setAllLeagues(uniqueLeagues);
             }
