@@ -236,7 +236,7 @@ const JerseyAvatar = ({
             style={{ objectFit: 'contain' }}
             priority
         />
-        <Typography
+        {/* <Typography
             component="span"
             sx={{
                 position: 'absolute',
@@ -251,7 +251,7 @@ const JerseyAvatar = ({
             }}
         >
             {number ?? '0'}
-        </Typography>
+        </Typography> */}
     </Box>
 );
 
@@ -2116,7 +2116,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
                                       
                                         <JerseyAvatar
-                                            number={player.shirtNumber || '0'}
                                             sx={{
                                                 width: { xs: 25, sm: 35, md: 74 },
                                                 height: { xs: 25, sm: 35, md: 74 },
