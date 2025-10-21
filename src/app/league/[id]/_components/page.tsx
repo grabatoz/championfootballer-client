@@ -101,6 +101,7 @@ interface League {
     maxGames: number;
     showPoints: boolean;
     adminId?: string;
+    userRole?: 'ADMIN' | 'MEMBER';
 }
 
 interface User {
@@ -2057,13 +2058,39 @@ export default function LeagueDetailPage() {
             });
             const data = await response.json();
             if (data.success && data.user) {
+                // Get admin league IDs (prefer adminLeagues, fallback to administeredLeagues)
+                const adminLeaguesArr = data.user.adminLeagues || data.user.administeredLeagues || [];
+                const adminLeagueIds = new Set(
+                    adminLeaguesArr
+                        .map((l: any) => String(l?.id))
+                        .filter((id: string) => id !== 'undefined')
+                );
+                
+                // Get member league IDs
+                const memberLeagueIds = new Set(
+                    (data.user.leagues || [])
+                        .map((l: any) => String(l?.id))
+                        .filter((id: string) => id !== 'undefined')
+                );
+                
                 // Combine joined and managed leagues
                 const userLeagues = [
                     ...(data.user.leagues || []),
-                    ...(data.user.administeredLeagues || [])
+                    ...adminLeaguesArr
                 ];
-                // Remove duplicates
-                const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
+                
+                // Remove duplicates and add userRole
+                const uniqueLeagues = Array.from(new Map(userLeagues.map((league: any) => {
+                    const leagueId = String(league.id);
+                    const role = adminLeagueIds.has(leagueId) 
+                        ? 'ADMIN' 
+                        : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
+                    return [leagueId, {
+                        ...league,
+                        userRole: role
+                    }];
+                })).values());
+                
                 setAllLeagues(uniqueLeagues);
             }
         } catch (error) {
@@ -3796,8 +3823,8 @@ export default function LeagueDetailPage() {
                                                             }
                                                         }}
                                                     />
-                                                    {leagueItem.id === leagueId && (
-                                                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        {/* {leagueItem.id === leagueId && (
                                                             <Box
                                                                 sx={{
                                                                     px: 1,
@@ -3813,8 +3840,25 @@ export default function LeagueDetailPage() {
                                                             >
                                                                 Current
                                                             </Box>
-                                                        </Box>
-                                                    )}
+                                                        )} */}
+                                                        {leagueItem.userRole && (
+                                                            <Box
+                                                                sx={{
+                                                                    px: 1,
+                                                                    py: 0.25,
+                                                                    bgcolor: leagueItem.userRole === 'ADMIN' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                                                                    color: leagueItem.userRole === 'ADMIN' ? '#1F2937' : '#FFFFFF',
+                                                                    borderRadius: '9999px',
+                                                                    fontSize: 10,
+                                                                    fontWeight: 700,
+                                                                    letterSpacing: 0.3,
+                                                                    textTransform: 'uppercase',
+                                                                }}
+                                                            >
+                                                                {leagueItem.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                                                            </Box>
+                                                        )}
+                                                    </Box>
                                                 </MenuItem>
                                             ))}
                                         </Menu>
