@@ -20,6 +20,7 @@ import { useParams, useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloseButton from '@/Components/CloseButton';
 
 /* ================== CUSTOM CALENDAR ================== */
 interface CustomCalendarProps {
@@ -344,7 +345,7 @@ export default function ScheduleMatchPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load league');
-       setLeague({ id: json.league.id, name: json.league.name, active: json.league.active });
+      setLeague({ id: json.league.id, name: json.league.name, active: json.league.active });
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
@@ -519,6 +520,8 @@ export default function ScheduleMatchPage() {
           //   'radial-gradient(circle at 18% 14%, rgba(229,106,22,0.12) 0%, #050505 58%)'
         }}
       >
+        {/* Close Button */}
+        <CloseButton fallbackRoute="/dashboard" />
         <GradientCard
           title="Create Match"
           subtitle="Simple quick match creation. You can assign teams later."

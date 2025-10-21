@@ -16,6 +16,7 @@ import { AppDispatch } from '@/lib/store';
 import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
+import CloseButton from '@/Components/CloseButton';
 
 // Backend-computed league status types (avoid `any`)
 type LeagueStatusTotals = Record<string, number>;
@@ -1606,6 +1607,7 @@ function AllLeagues() {
       }}
     >
       <Container maxWidth="lg">
+        
         {/* <Button
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
@@ -1619,23 +1621,24 @@ function AllLeagues() {
           Back to Dashboard
         </Button> */}
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
-          <Typography variant="h3" sx={{
-            mb: { xs: 3, md: 4 },
-            color: 'black',
-            // fontFamily: 'Arial Black, Arial, sans-serif',
-            fontFamily: '"Anton", sans-serif',
-            fontWeight: 'semibold',
-            fontSize: { xs: '32px', sm: '42px', md: '56px' },
-            textAlign: { xs: 'center', md: 'left' },
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}
-            className='all-leagues-heading'
-          >
-            ALL LEAGUES
-          </Typography>
-
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}>
+            <Typography variant="h3" sx={{
+              color: 'black',
+              fontFamily: '"Anton", sans-serif',
+              fontWeight: 'semibold',
+              fontSize: { xs: '32px', sm: '42px', md: '56px' },
+              textAlign: { xs: 'center', md: 'left' },
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}
+              className='all-leagues-heading'
+            >
+              ALL LEAGUES
+            </Typography>
+            {/* Close Button */}
+            <CloseButton fallbackRoute="/dashboard" />
+          </Box>
           {/* Create/Join League Section */}
           <Box sx={{
             display: 'flex',

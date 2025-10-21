@@ -35,6 +35,7 @@ import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
 import { BarChart } from '@mui/icons-material'; // Chart icon
 import StarKeeperImg from '@/Components/images/brown.svg';
+import CloseButton from '@/Components/CloseButton';
 
 // Gradients
 const ORANGE_GRAD = 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)';
@@ -662,6 +663,11 @@ export default function PlayerStatsPage() {
     const loading = !data;
 
     return (
+        <>
+         {/* Close Button */}
+         <Box sx={{mr:4 , mt:2}}>
+            <CloseButton fallbackRoute="/dashboard" />
+         </Box>
         <Container
             maxWidth="lg"
             sx={{
@@ -1158,5 +1164,6 @@ export default function PlayerStatsPage() {
                 </Box>
             )}
         </Container>
+        </>
     );
 }

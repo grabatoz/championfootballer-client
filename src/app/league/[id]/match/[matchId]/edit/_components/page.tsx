@@ -10,6 +10,7 @@ import { ArrowLeft, X, Shuffle, UserPlus, Scale } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from '@/lib/cacheManager';
 import ShirtImg from '@/Components/images/shirtimg.png';
+import CloseButton from '@/Components/CloseButton';
 
 interface User { id: string; firstName: string; lastName: string; email: string; profilePicture?: string; shirtNumber?: string; skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number; }; preferredFoot?: 'right' | 'left'; }
 interface League { id: string; name: string; members: User[]; active: boolean; }
@@ -42,7 +43,7 @@ export default function EditMatchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Form
   const [homeTeamName, setHomeTeamName] = useState('');
   const [awayTeamName, setAwayTeamName] = useState('');
@@ -135,7 +136,7 @@ export default function EditMatchPage() {
 
   // Helper: already picked in either team
   // const isAlreadyPicked = (id: string) =>
-    // homeTeamUsers.some(p => p.id === id) || awayTeamUsers.some(p => p.id === id);
+  // homeTeamUsers.some(p => p.id === id) || awayTeamUsers.some(p => p.id === id);
 
   // const canAddPlayer = (id: string, isGuest?: boolean) => {
   //   if (isGuest) return true;
@@ -280,7 +281,7 @@ export default function EditMatchPage() {
       setAwayWinChance(typeof j.away?.winPct === 'number' ? j.away.winPct : null);
       setHomeStrength(typeof j.home?.average === 'number' ? Math.round(j.home.average) : null);
       setAwayStrength(typeof j.away?.average === 'number' ? Math.round(j.away.average) : null);
-    } catch {}
+    } catch { }
   }, [matchId, token, homeTeamUsers, awayTeamUsers]);
 
   // Minimal skill display helper for UI only
@@ -288,7 +289,7 @@ export default function EditMatchPage() {
     if (!p) return 0;
     if (p.isGuest) return 50;
     const s = p.skills;
-    const keys: (keyof NonNullable<User['skills']>)[] = ['dribbling','shooting','passing','pace','defending','physical'];
+    const keys: (keyof NonNullable<User['skills']>)[] = ['dribbling', 'shooting', 'passing', 'pace', 'defending', 'physical'];
     const total = keys.reduce((sum, k) => sum + (s?.[k] ?? 0), 0);
     return Math.round(total / keys.length);
   };
@@ -328,350 +329,350 @@ export default function EditMatchPage() {
 
       const xpMap = await ensureXPMap();
 
-    // Keep guests on current teams; include their contribution as league-average
-    const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest);
-    const awayGuestsOnly = awayTeamUsers.filter(p => p.isGuest);
+      // Keep guests on current teams; include their contribution as league-average
+      const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest);
+      const awayGuestsOnly = awayTeamUsers.filter(p => p.isGuest);
 
-    const totalPlayers = combinedReg.length + homeGuestsOnly.length + awayGuestsOnly.length;
-    const targetHomeTotal = Math.ceil(totalPlayers / 2);
-    const targetAwayTotal = totalPlayers - targetHomeTotal;
-    const targetHomeReg = Math.max(0, targetHomeTotal - homeGuestsOnly.length);
-    const targetAwayReg = Math.max(0, targetAwayTotal - awayGuestsOnly.length);
+      const totalPlayers = combinedReg.length + homeGuestsOnly.length + awayGuestsOnly.length;
+      const targetHomeTotal = Math.ceil(totalPlayers / 2);
+      const targetAwayTotal = totalPlayers - targetHomeTotal;
+      const targetHomeReg = Math.max(0, targetHomeTotal - homeGuestsOnly.length);
+      const targetAwayReg = Math.max(0, targetAwayTotal - awayGuestsOnly.length);
 
-    // Build lookup for player objects
-    const byId = new Map<string, PlayerOption>();
-    combinedReg.forEach(p => byId.set(p.id, p));
+      // Build lookup for player objects
+      const byId = new Map<string, PlayerOption>();
+      combinedReg.forEach(p => byId.set(p.id, p));
 
-    // Compute rating basis: XP preferred, fallback to skill if all zeros
-    const ratingsArr = combinedReg.map(p => ({ id: p.id, xp: Number(xpMap[p.id] ?? 0), skill: calcSkill(p) }));
-    const xpValues = ratingsArr.map(r => r.xp);
-    const totalXp = xpValues.reduce((a, b) => a + b, 0);
-    const hasAnyXP = xpValues.some(v => v > 0);
-    const basis: 'xp' | 'skill' = hasAnyXP && totalXp > 0 ? 'xp' : 'skill';
+      // Compute rating basis: XP preferred, fallback to skill if all zeros
+      const ratingsArr = combinedReg.map(p => ({ id: p.id, xp: Number(xpMap[p.id] ?? 0), skill: calcSkill(p) }));
+      const xpValues = ratingsArr.map(r => r.xp);
+      const totalXp = xpValues.reduce((a, b) => a + b, 0);
+      const hasAnyXP = xpValues.some(v => v > 0);
+      const basis: 'xp' | 'skill' = hasAnyXP && totalXp > 0 ? 'xp' : 'skill';
 
-    const idToRating = new Map<string, number>();
-    if (basis === 'xp') {
-      ratingsArr.forEach(r => idToRating.set(r.id, r.xp));
-    } else {
-      ratingsArr.forEach(r => idToRating.set(r.id, r.skill));
-    }
+      const idToRating = new Map<string, number>();
+      if (basis === 'xp') {
+        ratingsArr.forEach(r => idToRating.set(r.id, r.xp));
+      } else {
+        ratingsArr.forEach(r => idToRating.set(r.id, r.skill));
+      }
 
-    // Guest contribution: use median of non-zero ratings to avoid skew; fallback to average if needed
-    const values = Array.from(idToRating.values());
-    const nonZero = values.filter(v => v > 0).sort((a, b) => a - b);
-    const avgVal = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
-    const medianVal = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const mid = Math.floor(arr.length / 2);
-      return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
-    };
-    const guestValue = nonZero.length > 0 ? medianVal(nonZero) : avgVal(values);
+      // Guest contribution: use median of non-zero ratings to avoid skew; fallback to average if needed
+      const values = Array.from(idToRating.values());
+      const nonZero = values.filter(v => v > 0).sort((a, b) => a - b);
+      const avgVal = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+      const medianVal = (arr: number[]) => {
+        if (arr.length === 0) return 0;
+        const mid = Math.floor(arr.length / 2);
+        return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+      };
+      const guestValue = nonZero.length > 0 ? medianVal(nonZero) : avgVal(values);
 
-    // Start sums with guest contributions (kept fixed)
-    const homeGuestSum = guestValue * homeGuestsOnly.length;
-    const awayGuestSum = guestValue * awayGuestsOnly.length;
+      // Start sums with guest contributions (kept fixed)
+      const homeGuestSum = guestValue * homeGuestsOnly.length;
+      const awayGuestSum = guestValue * awayGuestsOnly.length;
 
-    // Helper to run one greedy + swap pass for a given order
-    const runOne = (order: Array<{ id: string; rating: number }>) => {
-      const newHomeIds: string[] = [];
-      const newAwayIds: string[] = [];
-      let homeSum = homeGuestSum; // include guests
-      let awaySum = awayGuestSum;
-      for (const item of order) {
-        const canHome = newHomeIds.length < targetHomeReg;
-        const canAway = newAwayIds.length < targetAwayReg;
-        if (canHome && canAway) {
-          const homeAfter = homeSum + item.rating;
-          const awayAfter = awaySum;
-          const totalAfterHome = homeAfter + awayAfter;
-          const homePctIfHome = totalAfterHome > 0 ? (homeAfter / totalAfterHome) * 100 : 50;
+      // Helper to run one greedy + swap pass for a given order
+      const runOne = (order: Array<{ id: string; rating: number }>) => {
+        const newHomeIds: string[] = [];
+        const newAwayIds: string[] = [];
+        let homeSum = homeGuestSum; // include guests
+        let awaySum = awayGuestSum;
+        for (const item of order) {
+          const canHome = newHomeIds.length < targetHomeReg;
+          const canAway = newAwayIds.length < targetAwayReg;
+          if (canHome && canAway) {
+            const homeAfter = homeSum + item.rating;
+            const awayAfter = awaySum;
+            const totalAfterHome = homeAfter + awayAfter;
+            const homePctIfHome = totalAfterHome > 0 ? (homeAfter / totalAfterHome) * 100 : 50;
 
-          const homeAfter2 = homeSum;
-          const awayAfter2 = awaySum + item.rating;
-          const totalAfterAway = homeAfter2 + awayAfter2;
-          const homePctIfAway = totalAfterAway > 0 ? (homeAfter2 / totalAfterAway) * 100 : 50;
+            const homeAfter2 = homeSum;
+            const awayAfter2 = awaySum + item.rating;
+            const totalAfterAway = homeAfter2 + awayAfter2;
+            const homePctIfAway = totalAfterAway > 0 ? (homeAfter2 / totalAfterAway) * 100 : 50;
 
-          const deltaHome = Math.abs(homePctIfHome - TARGET_XP_RATIO);
-          const deltaAway = Math.abs(homePctIfAway - TARGET_XP_RATIO);
-          if (deltaHome < deltaAway || (deltaHome === deltaAway && homeSum <= awaySum)) {
+            const deltaHome = Math.abs(homePctIfHome - TARGET_XP_RATIO);
+            const deltaAway = Math.abs(homePctIfAway - TARGET_XP_RATIO);
+            if (deltaHome < deltaAway || (deltaHome === deltaAway && homeSum <= awaySum)) {
+              newHomeIds.push(item.id); homeSum += item.rating;
+            } else {
+              newAwayIds.push(item.id); awaySum += item.rating;
+            }
+          } else if (canHome) {
             newHomeIds.push(item.id); homeSum += item.rating;
           } else {
             newAwayIds.push(item.id); awaySum += item.rating;
           }
-        } else if (canHome) {
-          newHomeIds.push(item.id); homeSum += item.rating;
-        } else {
-          newAwayIds.push(item.id); awaySum += item.rating;
         }
+
+        // Pair-swap optimization
+        const ratingOf = (id: string) => idToRating.get(id) ?? 0;
+        const pct = () => {
+          const tot = homeSum + awaySum;
+          return tot > 0 ? (homeSum / tot) * 100 : 50;
+        };
+        let iterations = 0;
+        const maxIterations = 120;
+        while (iterations < maxIterations) {
+          iterations++;
+          let bestImprovement = 0;
+          let bestSwap: { hIdx: number; aIdx: number } | null = null;
+          const currPctDelta = Math.abs(pct() - TARGET_XP_RATIO);
+          for (let hIdx = 0; hIdx < newHomeIds.length; hIdx++) {
+            const hId = newHomeIds[hIdx];
+            const hR = ratingOf(hId);
+            for (let aIdx = 0; aIdx < newAwayIds.length; aIdx++) {
+              const aId = newAwayIds[aIdx];
+              const aR = ratingOf(aId);
+              const homeAfter = homeSum - hR + aR;
+              const awayAfter = awaySum - aR + hR;
+              const totAfter = homeAfter + awayAfter;
+              const homePctAfter = totAfter > 0 ? (homeAfter / totAfter) * 100 : 50;
+              const delta = Math.abs(homePctAfter - TARGET_XP_RATIO);
+              const improvement = currPctDelta - delta;
+              if (improvement > bestImprovement) {
+                bestImprovement = improvement;
+                bestSwap = { hIdx, aIdx };
+              }
+            }
+          }
+          if (bestSwap && bestImprovement > 0) {
+            const hId = newHomeIds[bestSwap.hIdx];
+            const aId = newAwayIds[bestSwap.aIdx];
+            const hR = ratingOf(hId);
+            const aR = ratingOf(aId);
+            newHomeIds[bestSwap.hIdx] = aId;
+            newAwayIds[bestSwap.aIdx] = hId;
+            homeSum = homeSum - hR + aR;
+            awaySum = awaySum - aR + hR;
+            continue;
+          }
+          break;
+        }
+
+        const closeness = Math.abs(((homeSum) / (homeSum + awaySum || 1)) * 100 - TARGET_XP_RATIO);
+        return { newHomeIds, newAwayIds, homeSum, awaySum, closeness };
+      };
+
+      // Prepare orders
+      const withRating = combinedReg.map(p => ({ id: p.id, rating: idToRating.get(p.id) ?? 0 }));
+      const desc = [...withRating].sort((a, b) => b.rating - a.rating);
+      const asc = [...withRating].sort((a, b) => a.rating - b.rating);
+      const randomize = (arr: typeof withRating) => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; }
+        return a;
+      };
+
+      const candidates = [desc, asc];
+      for (let i = 0; i < 24; i++) candidates.push(randomize(withRating)); // more random starts improves robustness
+
+      let best = null as null | ReturnType<typeof runOne>;
+      for (const ord of candidates) {
+        const result = runOne(ord);
+        if (!best || result.closeness < best.closeness) best = result;
+        if (best.closeness <= 0.5) break; // good enough
       }
 
-      // Pair-swap optimization
+      let chosen = best!;
+
+      // Stochastic local search: random pair and 2-for-2 swaps to further refine
       const ratingOf = (id: string) => idToRating.get(id) ?? 0;
-      const pct = () => {
-        const tot = homeSum + awaySum;
-        return tot > 0 ? (homeSum / tot) * 100 : 50;
+      const closenessOf = (homeIds: string[], awayIds: string[]) => {
+        const h = homeIds.reduce((s, id) => s + ratingOf(id), homeGuestSum);
+        const a = awayIds.reduce((s, id) => s + ratingOf(id), awayGuestSum);
+        const tot = h + a;
+        return Math.abs(((h / (tot || 1)) * 100) - TARGET_XP_RATIO);
       };
-      let iterations = 0;
-      const maxIterations = 120;
-      while (iterations < maxIterations) {
-        iterations++;
-        let bestImprovement = 0;
-        let bestSwap: { hIdx: number; aIdx: number } | null = null;
-        const currPctDelta = Math.abs(pct() - TARGET_XP_RATIO);
-        for (let hIdx = 0; hIdx < newHomeIds.length; hIdx++) {
-          const hId = newHomeIds[hIdx];
-          const hR = ratingOf(hId);
-          for (let aIdx = 0; aIdx < newAwayIds.length; aIdx++) {
-            const aId = newAwayIds[aIdx];
-            const aR = ratingOf(aId);
-            const homeAfter = homeSum - hR + aR;
-            const awayAfter = awaySum - aR + hR;
-            const totAfter = homeAfter + awayAfter;
-            const homePctAfter = totAfter > 0 ? (homeAfter / totAfter) * 100 : 50;
-            const delta = Math.abs(homePctAfter - TARGET_XP_RATIO);
-            const improvement = currPctDelta - delta;
-            if (improvement > bestImprovement) {
-              bestImprovement = improvement;
-              bestSwap = { hIdx, aIdx };
+      const tryImprove = (maxIters = 350) => {
+        let homeIds = [...chosen.newHomeIds];
+        let awayIds = [...chosen.newAwayIds];
+        let bestClose = chosen.closeness;
+
+        const applyIfBetter = (newHome: string[], newAway: string[]) => {
+          const c = closenessOf(newHome, newAway);
+          if (c + 1e-6 < bestClose) { // small epsilon to avoid float noise
+            homeIds = newHome;
+            awayIds = newAway;
+            bestClose = c;
+            return true;
+          }
+          return false;
+        };
+
+        const randInt = (n: number) => Math.floor(Math.random() * n);
+
+        for (let it = 0; it < maxIters; it++) {
+          // Alternate between 1-for-1 and 2-for-2 attempts
+          if (Math.random() < 0.7) {
+            // 1-for-1 random pair swap
+            if (homeIds.length > 0 && awayIds.length > 0) {
+              const hi = randInt(homeIds.length);
+              const ai = randInt(awayIds.length);
+              const newHome = [...homeIds];
+              const newAway = [...awayIds];
+              const tmp = newHome[hi];
+              newHome[hi] = newAway[ai];
+              newAway[ai] = tmp;
+              applyIfBetter(newHome, newAway);
+            }
+          } else {
+            // 2-for-2 swap (sampled)
+            if (homeIds.length > 1 && awayIds.length > 1) {
+              const hi1 = randInt(homeIds.length);
+              let hi2 = randInt(homeIds.length);
+              if (hi2 === hi1) hi2 = (hi2 + 1) % homeIds.length;
+              const ai1 = randInt(awayIds.length);
+              let ai2 = randInt(awayIds.length);
+              if (ai2 === ai1) ai2 = (ai2 + 1) % awayIds.length;
+
+              const newHome = [...homeIds];
+              const newAway = [...awayIds];
+              // swap pairs
+              const hA = newHome[Math.max(hi1, hi2)];
+              const hB = newHome[Math.min(hi1, hi2)];
+              const aA = newAway[Math.max(ai1, ai2)];
+              const aB = newAway[Math.min(ai1, ai2)];
+              newHome[Math.max(hi1, hi2)] = aA;
+              newHome[Math.min(hi1, hi2)] = aB;
+              newAway[Math.max(ai1, ai2)] = hA;
+              newAway[Math.min(ai1, ai2)] = hB;
+              applyIfBetter(newHome, newAway);
             }
           }
         }
-        if (bestSwap && bestImprovement > 0) {
-          const hId = newHomeIds[bestSwap.hIdx];
-          const aId = newAwayIds[bestSwap.aIdx];
-          const hR = ratingOf(hId);
-          const aR = ratingOf(aId);
-          newHomeIds[bestSwap.hIdx] = aId;
-          newAwayIds[bestSwap.aIdx] = hId;
-          homeSum = homeSum - hR + aR;
-          awaySum = awaySum - aR + hR;
+
+        // Update chosen if improved
+        if (bestClose + 1e-6 < chosen.closeness) {
+          const hSum = homeIds.reduce((s, id) => s + ratingOf(id), homeGuestSum);
+          const aSum = awayIds.reduce((s, id) => s + ratingOf(id), awayGuestSum);
+          chosen = { newHomeIds: homeIds, newAwayIds: awayIds, homeSum: hSum, awaySum: aSum, closeness: bestClose };
+        }
+      };
+
+      tryImprove(250);
+
+      // Deterministic directed 1-for-1 swap loop: always take the best improving swap until no gain
+      const directedSwapImprove = (maxSteps = 120) => {
+        const ratingOf = (id: string) => idToRating.get(id) ?? 0;
+        const homeIds = [...chosen.newHomeIds];
+        const awayIds = [...chosen.newAwayIds];
+        let homeSum = chosen.homeSum;
+        let awaySum = chosen.awaySum;
+        let bestClose = chosen.closeness;
+
+        for (let step = 0; step < maxSteps; step++) {
+          const diff = homeSum - awaySum; // positive => home stronger
+          const stronger = diff >= 0 ? 'home' : 'away';
+          const fromIds = stronger === 'home' ? homeIds : awayIds;
+          const toIds = stronger === 'home' ? awayIds : homeIds;
+
+          let bestGain = 0;
+          let bestPair: { fromIdx: number; toIdx: number } | null = null;
+          const currClose = Math.abs(((homeSum) / ((homeSum + awaySum) || 1)) * 100 - TARGET_XP_RATIO);
+
+          // Scan pairs but bias by rating order to be efficient
+          const fromSorted = fromIds
+            .map((id, idx) => ({ id, idx, r: ratingOf(id) }))
+            .sort((a, b) => Math.abs(diff) >= 0 ? b.r - a.r : a.r - b.r); // prioritize impactful
+          const toSorted = toIds
+            .map((id, idx) => ({ id, idx, r: ratingOf(id) }))
+            .sort((a, b) => a.r - b.r); // prefer smaller to send back when stronger side gives a big one
+
+          const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+          const limitFrom = clamp(Math.ceil(fromSorted.length * 0.75), 1, fromSorted.length); // scan top 75%
+          const limitTo = clamp(Math.ceil(toSorted.length * 0.75), 1, toSorted.length);
+
+          for (let i = 0; i < limitFrom; i++) {
+            const f = fromSorted[i];
+            // Best counterpart in 'to' is the one that brings sums closer: target a ~ f.r - diff/2
+            const ideal = f.r - diff / 2;
+            let bestJ = -1;
+            let bestJDist = Infinity;
+            for (let j = 0; j < limitTo; j++) {
+              const cand = toSorted[j];
+              const d = Math.abs(cand.r - ideal);
+              if (d < bestJDist) { bestJDist = d; bestJ = j; }
+            }
+            if (bestJ >= 0) {
+              const t = toSorted[bestJ];
+              const newHome = stronger === 'home'
+                ? homeSum - f.r + t.r
+                : homeSum + f.r - t.r;
+              const newAway = stronger === 'home'
+                ? awaySum - t.r + f.r
+                : awaySum + t.r - f.r;
+              const tot = newHome + newAway;
+              const newClose = Math.abs(((newHome / (tot || 1)) * 100) - TARGET_XP_RATIO);
+              const gain = currClose - newClose;
+              if (gain > bestGain + 1e-9) {
+                bestGain = gain;
+                bestPair = { fromIdx: f.idx, toIdx: t.idx };
+              }
+            }
+          }
+
+          if (bestPair && bestGain > 0) {
+            if (stronger === 'home') {
+              const fId = homeIds[bestPair.fromIdx];
+              const tId = awayIds[bestPair.toIdx];
+              const fR = ratingOf(fId);
+              const tR = ratingOf(tId);
+              homeIds[bestPair.fromIdx] = tId;
+              awayIds[bestPair.toIdx] = fId;
+              homeSum = homeSum - fR + tR;
+              awaySum = awaySum - tR + fR;
+            } else {
+              const fId = awayIds[bestPair.fromIdx];
+              const tId = homeIds[bestPair.toIdx];
+              const fR = ratingOf(fId);
+              const tR = ratingOf(tId);
+              awayIds[bestPair.fromIdx] = tId;
+              homeIds[bestPair.toIdx] = fId;
+              awaySum = awaySum - fR + tR;
+              homeSum = homeSum - tR + fR;
+            }
+
+            const tot2 = homeSum + awaySum;
+            bestClose = Math.abs(((homeSum / (tot2 || 1)) * 100) - TARGET_XP_RATIO);
+          } else {
+            break; // no improving directed swap
+          }
+        }
+
+        if (bestClose + 1e-6 < chosen.closeness) {
+          chosen = { newHomeIds: homeIds, newAwayIds: awayIds, homeSum, awaySum, closeness: bestClose };
+        }
+      };
+
+      // Keep trying until no further improvement within a few rounds
+      let rounds = 0;
+      while (rounds < 5) {
+        const before = chosen.closeness;
+        tryImprove(400);
+        directedSwapImprove(140);
+        if (chosen.closeness < before - 1e-6) {
+          rounds++;
           continue;
         }
         break;
       }
+      // Build final teams (keep guests on their sides)
+      const newHome = [...chosen.newHomeIds.map(id => byId.get(id)!).filter(Boolean), ...homeGuestsOnly];
+      const newAway = [...chosen.newAwayIds.map(id => byId.get(id)!).filter(Boolean), ...awayGuestsOnly];
 
-      const closeness = Math.abs(((homeSum) / (homeSum + awaySum || 1)) * 100 - TARGET_XP_RATIO);
-      return { newHomeIds, newAwayIds, homeSum, awaySum, closeness };
-    };
+      setHomeTeamUsers(newHome);
+      setAwayTeamUsers(newAway);
+      setHomeCaptain(null); setAwayCaptain(null);
 
-    // Prepare orders
-    const withRating = combinedReg.map(p => ({ id: p.id, rating: idToRating.get(p.id) ?? 0 }));
-    const desc = [...withRating].sort((a, b) => b.rating - a.rating);
-    const asc = [...withRating].sort((a, b) => a.rating - b.rating);
-    const randomize = (arr: typeof withRating) => {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-      return a;
-    };
-
-  const candidates = [desc, asc];
-  for (let i = 0; i < 24; i++) candidates.push(randomize(withRating)); // more random starts improves robustness
-
-    let best = null as null | ReturnType<typeof runOne>;
-    for (const ord of candidates) {
-      const result = runOne(ord);
-      if (!best || result.closeness < best.closeness) best = result;
-      if (best.closeness <= 0.5) break; // good enough
-    }
-
-    let chosen = best!;
-
-    // Stochastic local search: random pair and 2-for-2 swaps to further refine
-    const ratingOf = (id: string) => idToRating.get(id) ?? 0;
-    const closenessOf = (homeIds: string[], awayIds: string[]) => {
-      const h = homeIds.reduce((s, id) => s + ratingOf(id), homeGuestSum);
-      const a = awayIds.reduce((s, id) => s + ratingOf(id), awayGuestSum);
-      const tot = h + a;
-      return Math.abs(((h / (tot || 1)) * 100) - TARGET_XP_RATIO);
-    };
-    const tryImprove = (maxIters = 350) => {
-      let homeIds = [...chosen.newHomeIds];
-      let awayIds = [...chosen.newAwayIds];
-      let bestClose = chosen.closeness;
-
-      const applyIfBetter = (newHome: string[], newAway: string[]) => {
-        const c = closenessOf(newHome, newAway);
-        if (c + 1e-6 < bestClose) { // small epsilon to avoid float noise
-          homeIds = newHome;
-          awayIds = newAway;
-          bestClose = c;
-          return true;
-        }
-        return false;
-      };
-
-      const randInt = (n: number) => Math.floor(Math.random() * n);
-
-      for (let it = 0; it < maxIters; it++) {
-        // Alternate between 1-for-1 and 2-for-2 attempts
-        if (Math.random() < 0.7) {
-          // 1-for-1 random pair swap
-          if (homeIds.length > 0 && awayIds.length > 0) {
-            const hi = randInt(homeIds.length);
-            const ai = randInt(awayIds.length);
-            const newHome = [...homeIds];
-            const newAway = [...awayIds];
-            const tmp = newHome[hi];
-            newHome[hi] = newAway[ai];
-            newAway[ai] = tmp;
-            applyIfBetter(newHome, newAway);
-          }
-        } else {
-          // 2-for-2 swap (sampled)
-          if (homeIds.length > 1 && awayIds.length > 1) {
-            const hi1 = randInt(homeIds.length);
-            let hi2 = randInt(homeIds.length);
-            if (hi2 === hi1) hi2 = (hi2 + 1) % homeIds.length;
-            const ai1 = randInt(awayIds.length);
-            let ai2 = randInt(awayIds.length);
-            if (ai2 === ai1) ai2 = (ai2 + 1) % awayIds.length;
-
-            const newHome = [...homeIds];
-            const newAway = [...awayIds];
-            // swap pairs
-            const hA = newHome[Math.max(hi1, hi2)];
-            const hB = newHome[Math.min(hi1, hi2)];
-            const aA = newAway[Math.max(ai1, ai2)];
-            const aB = newAway[Math.min(ai1, ai2)];
-            newHome[Math.max(hi1, hi2)] = aA;
-            newHome[Math.min(hi1, hi2)] = aB;
-            newAway[Math.max(ai1, ai2)] = hA;
-            newAway[Math.min(ai1, ai2)] = hB;
-            applyIfBetter(newHome, newAway);
-          }
-        }
-      }
-
-      // Update chosen if improved
-      if (bestClose + 1e-6 < chosen.closeness) {
-        const hSum = homeIds.reduce((s, id) => s + ratingOf(id), homeGuestSum);
-        const aSum = awayIds.reduce((s, id) => s + ratingOf(id), awayGuestSum);
-        chosen = { newHomeIds: homeIds, newAwayIds: awayIds, homeSum: hSum, awaySum: aSum, closeness: bestClose };
-      }
-    };
-
-    tryImprove(250);
-
-    // Deterministic directed 1-for-1 swap loop: always take the best improving swap until no gain
-    const directedSwapImprove = (maxSteps = 120) => {
-      const ratingOf = (id: string) => idToRating.get(id) ?? 0;
-      const homeIds = [...chosen.newHomeIds];
-      const awayIds = [...chosen.newAwayIds];
-      let homeSum = chosen.homeSum;
-      let awaySum = chosen.awaySum;
-      let bestClose = chosen.closeness;
-
-      for (let step = 0; step < maxSteps; step++) {
-        const diff = homeSum - awaySum; // positive => home stronger
-        const stronger = diff >= 0 ? 'home' : 'away';
-        const fromIds = stronger === 'home' ? homeIds : awayIds;
-        const toIds = stronger === 'home' ? awayIds : homeIds;
-
-        let bestGain = 0;
-        let bestPair: { fromIdx: number; toIdx: number } | null = null;
-        const currClose = Math.abs(((homeSum) / ((homeSum + awaySum) || 1)) * 100 - TARGET_XP_RATIO);
-
-        // Scan pairs but bias by rating order to be efficient
-        const fromSorted = fromIds
-          .map((id, idx) => ({ id, idx, r: ratingOf(id) }))
-          .sort((a, b) => Math.abs(diff) >= 0 ? b.r - a.r : a.r - b.r); // prioritize impactful
-        const toSorted = toIds
-          .map((id, idx) => ({ id, idx, r: ratingOf(id) }))
-          .sort((a, b) => a.r - b.r); // prefer smaller to send back when stronger side gives a big one
-
-        const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-        const limitFrom = clamp(Math.ceil(fromSorted.length * 0.75), 1, fromSorted.length); // scan top 75%
-        const limitTo = clamp(Math.ceil(toSorted.length * 0.75), 1, toSorted.length);
-
-        for (let i = 0; i < limitFrom; i++) {
-          const f = fromSorted[i];
-          // Best counterpart in 'to' is the one that brings sums closer: target a ~ f.r - diff/2
-          const ideal = f.r - diff / 2;
-          let bestJ = -1;
-          let bestJDist = Infinity;
-          for (let j = 0; j < limitTo; j++) {
-            const cand = toSorted[j];
-            const d = Math.abs(cand.r - ideal);
-            if (d < bestJDist) { bestJDist = d; bestJ = j; }
-          }
-          if (bestJ >= 0) {
-            const t = toSorted[bestJ];
-            const newHome = stronger === 'home'
-              ? homeSum - f.r + t.r
-              : homeSum + f.r - t.r;
-            const newAway = stronger === 'home'
-              ? awaySum - t.r + f.r
-              : awaySum + t.r - f.r;
-            const tot = newHome + newAway;
-            const newClose = Math.abs(((newHome / (tot || 1)) * 100) - TARGET_XP_RATIO);
-            const gain = currClose - newClose;
-            if (gain > bestGain + 1e-9) {
-              bestGain = gain;
-              bestPair = { fromIdx: f.idx, toIdx: t.idx };
-            }
-          }
-        }
-
-        if (bestPair && bestGain > 0) {
-          if (stronger === 'home') {
-            const fId = homeIds[bestPair.fromIdx];
-            const tId = awayIds[bestPair.toIdx];
-            const fR = ratingOf(fId);
-            const tR = ratingOf(tId);
-            homeIds[bestPair.fromIdx] = tId;
-            awayIds[bestPair.toIdx] = fId;
-            homeSum = homeSum - fR + tR;
-            awaySum = awaySum - tR + fR;
-          } else {
-            const fId = awayIds[bestPair.fromIdx];
-            const tId = homeIds[bestPair.toIdx];
-            const fR = ratingOf(fId);
-            const tR = ratingOf(tId);
-            awayIds[bestPair.fromIdx] = tId;
-            homeIds[bestPair.toIdx] = fId;
-            awaySum = awaySum - fR + tR;
-            homeSum = homeSum - tR + fR;
-          }
-
-          const tot2 = homeSum + awaySum;
-          bestClose = Math.abs(((homeSum / (tot2 || 1)) * 100) - TARGET_XP_RATIO);
-        } else {
-          break; // no improving directed swap
-        }
-      }
-
-      if (bestClose + 1e-6 < chosen.closeness) {
-        chosen = { newHomeIds: homeIds, newAwayIds: awayIds, homeSum, awaySum, closeness: bestClose };
-      }
-    };
-
-    // Keep trying until no further improvement within a few rounds
-    let rounds = 0;
-    while (rounds < 5) {
-      const before = chosen.closeness;
-      tryImprove(400);
-      directedSwapImprove(140);
-      if (chosen.closeness < before - 1e-6) {
-        rounds++;
-        continue;
-      }
-      break;
-    }
-    // Build final teams (keep guests on their sides)
-    const newHome = [...chosen.newHomeIds.map(id => byId.get(id)!).filter(Boolean), ...homeGuestsOnly];
-    const newAway = [...chosen.newAwayIds.map(id => byId.get(id)!).filter(Boolean), ...awayGuestsOnly];
-
-    setHomeTeamUsers(newHome);
-    setAwayTeamUsers(newAway);
-    setHomeCaptain(null); setAwayCaptain(null);
-
-    // Report final ratio with basis label
-    // const tot = chosen.homeSum + chosen.awaySum;
-    // const homePct = tot > 0 ? Math.round((chosen.homeSum / tot) * 100) : 50;
-    // const awayPct = 100 - homePct;
-    toast.success(`Teams balanced by League XP`);
-    fetchPrediction();
-    return;
+      // Report final ratio with basis label
+      // const tot = chosen.homeSum + chosen.awaySum;
+      // const homePct = tot > 0 ? Math.round((chosen.homeSum / tot) * 100) : 50;
+      // const awayPct = 100 - homePct;
+      toast.success(`Teams balanced by League XP`);
+      fetchPrediction();
+      return;
     } catch {
       // Optional: Log or show a fallback error
       toast.error('Balancing failed. Please try again.');
@@ -775,11 +776,11 @@ export default function EditMatchPage() {
       shirtNumber: g.shirtNumber
     }));
 
-  // NEW: include guests in the min-players check (total selected on both teams)
-  const selectedTotal = homeTeamUsers.length + awayTeamUsers.length;
+    // NEW: include guests in the min-players check (total selected on both teams)
+    const selectedTotal = homeTeamUsers.length + awayTeamUsers.length;
 
-  // Notify whenever < 6 players total
-  const needsMore = selectedTotal > 0 && selectedTotal < MIN_PLAYERS;
+    // Notify whenever < 6 players total
+    const needsMore = selectedTotal > 0 && selectedTotal < MIN_PLAYERS;
 
     if (needsMore) {
       toast('Fewer than 6 players. Not saving teams, notifying selected players.', { icon: '🔔' });
@@ -830,7 +831,7 @@ export default function EditMatchPage() {
 
       // Guests already synced via PATCH; no extra POST/DELETE calls needed
       // Clear matches cache and navigate
-      try { cacheManager.clearCache('matches_cache'); } catch {}
+      try { cacheManager.clearCache('matches_cache'); } catch { }
       toast.success('Match updated');
       if (needsMore) toast.success('Players notified (server), teams not saved');
       router.push(`/league/${leagueId}`);
@@ -862,6 +863,8 @@ export default function EditMatchPage() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 4, minHeight: '100vh', color: '#E5E7EB' }}>
+      {/* Close Button */}
+      <CloseButton fallbackRoute="/dashboard" />
         <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
           <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
             <form ref={formRef} onSubmit={handleUpdateMatch} style={{ width: '100%' }}>
@@ -1498,478 +1501,478 @@ export default function EditMatchPage() {
                 Match Preview
               </Typography>
 
-                  {/* Win Probability */}
-                  {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                    <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Team Balance</Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof homeWinChance === 'number' ? `${homeWinChance}%` : '—'}</Typography>
-                          <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof awayWinChance === 'number' ? `${awayWinChance}%` : '—'}</Typography>
-                          <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
-                        </Box>
-                      </Box>
-                      {typeof homeWinChance === 'number' && (
-                        <LinearProgress
-                          variant="determinate"
-                          value={homeWinChance}
-                          sx={{
-                            height: { xs: 6, sm: 8 },
-                            borderRadius: { xs: 3, sm: 4 },
-                            bgcolor: 'rgba(239, 83, 80, 0.3)',
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: '#43a047',
-                              borderRadius: { xs: 3, sm: 4 }
-                            }
-                          }}
-                        />
-                      )}
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
-                      </Box>
-{/* 
+              {/* Win Probability */}
+              {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
+                <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Team Balance</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof homeWinChance === 'number' ? `${homeWinChance}%` : '—'}</Typography>
+                      <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof awayWinChance === 'number' ? `${awayWinChance}%` : '—'}</Typography>
+                      <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
+                    </Box>
+                  </Box>
+                  {typeof homeWinChance === 'number' && (
+                    <LinearProgress
+                      variant="determinate"
+                      value={homeWinChance}
+                      sx={{
+                        height: { xs: 6, sm: 8 },
+                        borderRadius: { xs: 3, sm: 4 },
+                        bgcolor: 'rgba(239, 83, 80, 0.3)',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: '#43a047',
+                          borderRadius: { xs: 3, sm: 4 }
+                        }
+                      }}
+                    />
+                  )}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
+                  </Box>
+                  {/* 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
                         <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {homeStrength ?? '—'}</Typography>
                         <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>Strength: {awayStrength ?? '—'}</Typography>
                       </Box> */}
+                </Box>
+              )}
+
+              {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
+
+              { /* Team names row (no logos) + VS in center */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  px: { xs: 1, sm: 2, md: 3 },
+                  gap: { xs: 1, sm: 2, md: 3 },
+                  mb: { xs: 1, sm: 1.5, md: 2 }
+                }}
+              >
+                {/* Home */}
+                <Box sx={{ flex: 1, textAlign: 'left' }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: '#43a047',
+                      fontWeight: 700,
+                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
+                      lineHeight: 1.2
+                    }}
+                  >
+                    {homeTeamName || 'Home'}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#9CA3AF',
+                      fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
+                    }}
+                  >
+                    {homeTeamUsers.length} players
+                  </Typography>
+                </Box>
+
+                {/* VS Center */}
+                <Box
+                  sx={{
+                    px: { xs: 1.5, sm: 2 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderLeft: '1px solid rgba(255,255,255,0.25)',
+                    borderRight: '1px solid rgba(255,255,255,0.25)'
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 800,
+                      letterSpacing: 1,
+                      fontSize: { xs: '0.7rem', sm: '0.85rem', md: '1rem' },
+                      background: 'linear-gradient(135deg,#43a047,#ef5350)',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent'
+                    }}
+                  >
+                    VS
+                  </Typography>
+                </Box>
+
+                {/* Away */}
+                <Box sx={{ flex: 1, textAlign: 'right' }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: '#ef5350',
+                      fontWeight: 700,
+                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
+                      lineHeight: 1.2
+                    }}
+                  >
+                    {awayTeamName || 'Away'}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#9CA3AF',
+                      fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
+                    }}
+                  >
+                    {awayTeamUsers.length} players
+                  </Typography>
+                </Box>
+              </Box>
+
+              { /* Player lists (headers WITHOUT avatars now) */}
+              <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
+                {/* Home Team list (header removed) */}
+                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  {homeCaptain && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: { xs: 0.5, sm: 1, md: 1.5 },
+                        p: { xs: 0.5, sm: 0.8, md: 1.5 },
+                        bgcolor: 'rgba(255, 215, 0, 0.1)',
+                        borderRadius: { xs: 1, sm: 2, md: 3 },
+                        border: '1px solid rgba(255, 215, 0, 0.3)',
+                        cursor: 'pointer',
+                        minHeight: { xs: 28, sm: 35, md: 50 },
+                        '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                        overflow: 'hidden'
+                      }}
+                      draggable
+                      onDragEnd={() => movePlayer(homeCaptain, 'away')}
+                    >
+                      <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                      <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
+                        <Typography
+                          fontWeight="bold"
+                          sx={{
+                            fontSize: { xs: 6.5, sm: 8, md: 12 },
+                            color: 'white',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {homeCaptain.firstName} {homeCaptain.lastName}
+                          {homeCaptain.isGuest && (
+                            <Chip
+                              label="G"
+                              size="small"
+                              sx={{
+                                ml: { xs: 0.3, sm: 0.5, md: 0.8 },
+                                height: { xs: 10, sm: 12, md: 16 },
+                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                bgcolor: '#e67e22',
+                                color: 'white',
+                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                              }}
+                            />
+                          )}
+                        </Typography>
+                        <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                          Skill: {calcSkill(homeCaptain)}
+                        </Typography>
+                      </Box>
+                      {homeCaptain.isGuest && (
+                        <IconButton
+                          size="small"
+                          sx={{
+                            color: '#f44336',
+                            ml: { xs: 0.2, sm: 0.3 },
+                            p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                            minWidth: { xs: 14, sm: 18, md: 22 },
+                            width: { xs: 14, sm: 18, md: 22 },
+                            height: { xs: 14, sm: 18, md: 22 }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHomeCaptain(null);
+                            const g = homeGuests.find(g => g.tempId === homeCaptain.guestTempId);
+                            if (g) removeStagedGuest('home', g.tempId);
+                          }}
+                        >
+                          <X size={8} />
+                        </IconButton>
+                      )}
                     </Box>
                   )}
 
-                  {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
-
-                  { /* Team names row (no logos) + VS in center */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'stretch',
-                      px: { xs: 1, sm: 2, md: 3 },
-                      gap: { xs: 1, sm: 2, md: 3 },
-                      mb: { xs: 1, sm: 1.5, md: 2 }
-                    }}
-                  >
-                    {/* Home */}
-                    <Box sx={{ flex: 1, textAlign: 'left' }}>
-                      <Typography
-                        variant="h6"
+                  {homeTeamUsers
+                    .filter(u => u.id !== homeCaptain?.id)
+                    .map(user => (
+                      <Box
+                        key={user.id}
                         sx={{
-                          color: '#43a047',
-                          fontWeight: 700,
-                          fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                          lineHeight: 1.2
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: { xs: 0.3, sm: 0.5, md: 1 },
+                          p: { xs: 0.3, sm: 0.5, md: 1 },
+                          bgcolor: 'rgba(255,255,255,0.03)',
+                          borderRadius: { xs: 1, sm: 2, md: 3 },
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          cursor: 'pointer',
+                          minHeight: { xs: 24, sm: 30, md: 40 },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+                          overflow: 'hidden'
                         }}
+                        draggable
+                        onDragEnd={() => movePlayer(user, 'away')}
                       >
-                        {homeTeamName || 'Home'}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#9CA3AF',
-                          fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                        }}
-                      >
-                        {homeTeamUsers.length} players
-                      </Typography>
-                    </Box>
+                        <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
+                        <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                          <Typography
+                            fontWeight={500}
+                            sx={{
+                              fontSize: { xs: 6, sm: 7.5, md: 10 },
+                              color: 'white',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {user.firstName} {user.lastName}
+                            {user.isGuest && (
+                              <Chip
+                                label="G"
+                                size="small"
+                                sx={{
+                                  ml: { xs: 0.2, sm: 0.4, md: 0.6 },
+                                  height: { xs: 8, sm: 10, md: 14 },
+                                  fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                  bgcolor: '#e67e22',
+                                  color: 'white',
+                                  '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                }}
+                              />
+                            )}
+                          </Typography>
+                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                            Skill: {calcSkill(user)}
+                          </Typography>
+                        </Box>
+                        {user.isGuest && (
+                          <IconButton
+                            size="small"
+                            sx={{
+                              color: '#f44336',
+                              ml: { xs: 0.1, sm: 0.2, md: 0.3 },
+                              p: { xs: 0.1, sm: 0.15, md: 0.2 },
+                              minWidth: { xs: 12, sm: 16, md: 20 },
+                              width: { xs: 12, sm: 16, md: 20 },
+                              height: { xs: 12, sm: 16, md: 20 }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const g = homeGuests.find(g => g.tempId === user.guestTempId);
+                              if (g) removeStagedGuest('home', g.tempId);
+                            }}
+                          >
+                            <X size={7} />
+                          </IconButton>
+                        )}
+                      </Box>
+                    ))}
+                </Box>
 
-                    {/* VS Center */}
+                {/* Middle divider */}
+                <Box
+                  sx={{
+                    width: { xs: '1px', sm: '2px', md: '3px' },
+                    bgcolor: 'rgba(255,255,255,0.4)',
+                    minHeight: { xs: 60, sm: 80, md: 120 },
+                    borderRadius: 0.5,
+                    alignSelf: 'stretch',
+                    flexShrink: 0
+                  }}
+                />
+
+                {/* Away Team list (header removed) */}
+                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  {awayCaptain && (
                     <Box
                       sx={{
-                        px: { xs: 1.5, sm: 2 },
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        borderLeft: '1px solid rgba(255,255,255,0.25)',
-                        borderRight: '1px solid rgba(255,255,255,0.25)'
+                        mb: { xs: 0.5, sm: 1, md: 1.5 },
+                        p: { xs: 0.5, sm: 0.8, md: 1.5 },
+                        bgcolor: 'rgba(255, 215, 0, 0.1)',
+                        borderRadius: { xs: 1, sm: 2, md: 3 },
+                        border: '1px solid rgba(255, 215, 0, 0.3)',
+                        cursor: 'pointer',
+                        minHeight: { xs: 28, sm: 35, md: 50 },
+                        '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                        overflow: 'hidden'
                       }}
+                      draggable
+                      onDragEnd={() => movePlayer(awayCaptain, 'home')}
                     >
-                      <Typography
-                        sx={{
-                          fontWeight: 800,
-                          letterSpacing: 1,
-                          fontSize: { xs: '0.7rem', sm: '0.85rem', md: '1rem' },
-                          background: 'linear-gradient(135deg,#43a047,#ef5350)',
-                          WebkitBackgroundClip: 'text',
-                          color: 'transparent'
-                        }}
-                      >
-                        VS
-                      </Typography>
-                    </Box>
-
-                    {/* Away */}
-                    <Box sx={{ flex: 1, textAlign: 'right' }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: '#ef5350',
-                          fontWeight: 700,
-                          fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                          lineHeight: 1.2
-                        }}
-                      >
-                        {awayTeamName || 'Away'}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#9CA3AF',
-                          fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                        }}
-                      >
-                        {awayTeamUsers.length} players
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  { /* Player lists (headers WITHOUT avatars now) */}
-                  <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
-                    {/* Home Team list (header removed) */}
-                    <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                      {homeCaptain && (
-                        <Box
+                      <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                      <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
+                        <Typography
+                          fontWeight="bold"
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            mb: { xs: 0.5, sm: 1, md: 1.5 },
-                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                            bgcolor: 'rgba(255, 215, 0, 0.1)',
-                            borderRadius: { xs: 1, sm: 2, md: 3 },
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            cursor: 'pointer',
-                            minHeight: { xs: 28, sm: 35, md: 50 },
-                            '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
-                            overflow: 'hidden'
+                            fontSize: { xs: 6.5, sm: 8, md: 12 },
+                            color: 'white',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                           }}
-                          draggable
-                          onDragEnd={() => movePlayer(homeCaptain, 'away')}
                         >
-                          <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
-                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                            <Typography
-                              fontWeight="bold"
-                              sx={{
-                                fontSize: { xs: 6.5, sm: 8, md: 12 },
-                                color: 'white',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {homeCaptain.firstName} {homeCaptain.lastName}
-                              {homeCaptain.isGuest && (
-                                <Chip
-                                  label="G"
-                                  size="small"
-                                  sx={{
-                                    ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                    height: { xs: 10, sm: 12, md: 16 },
-                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                    bgcolor: '#e67e22',
-                                    color: 'white',
-                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
-                                  }}
-                                />
-                              )}
-                            </Typography>
-                            <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                              Skill: {calcSkill(homeCaptain)}
-                            </Typography>
-                          </Box>
-                          {homeCaptain.isGuest && (
-                            <IconButton
-                              size="small"
-                              sx={{
-                                color: '#f44336',
-                                ml: { xs: 0.2, sm: 0.3 },
-                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                minWidth: { xs: 14, sm: 18, md: 22 },
-                                width: { xs: 14, sm: 18, md: 22 },
-                                height: { xs: 14, sm: 18, md: 22 }
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setHomeCaptain(null);
-                                const g = homeGuests.find(g => g.tempId === homeCaptain.guestTempId);
-                                if (g) removeStagedGuest('home', g.tempId);
-                              }}
-                            >
-                              <X size={8} />
-                            </IconButton>
-                          )}
-                        </Box>
-                      )}
-
-                      {homeTeamUsers
-                        .filter(u => u.id !== homeCaptain?.id)
-                        .map(user => (
-                          <Box
-                            key={user.id}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: { xs: 0.3, sm: 0.5, md: 1 },
-                              p: { xs: 0.3, sm: 0.5, md: 1 },
-                              bgcolor: 'rgba(255,255,255,0.03)',
-                              borderRadius: { xs: 1, sm: 2, md: 3 },
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              cursor: 'pointer',
-                              minHeight: { xs: 24, sm: 30, md: 40 },
-                              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                              overflow: 'hidden'
-                            }}
-                            draggable
-                            onDragEnd={() => movePlayer(user, 'away')}
-                          >
-                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                            <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
-                              <Typography
-                                fontWeight={500}
-                                sx={{
-                                  fontSize: { xs: 6, sm: 7.5, md: 10 },
-                                  color: 'white',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {user.firstName} {user.lastName}
-                                {user.isGuest && (
-                                  <Chip
-                                    label="G"
-                                    size="small"
-                                    sx={{
-                                      ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                      height: { xs: 8, sm: 10, md: 14 },
-                                      fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
-                                      bgcolor: '#e67e22',
-                                      color: 'white',
-                                      '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
-                                    }}
-                                  />
-                                )}
-                              </Typography>
-                              <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                                Skill: {calcSkill(user)}
-                              </Typography>
-                            </Box>
-                            {user.isGuest && (
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: '#f44336',
-                                  ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                  p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                                  minWidth: { xs: 12, sm: 16, md: 20 },
-                                  width: { xs: 12, sm: 16, md: 20 },
-                                  height: { xs: 12, sm: 16, md: 20 }
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const g = homeGuests.find(g => g.tempId === user.guestTempId);
-                                  if (g) removeStagedGuest('home', g.tempId);
-                                }}
-                              >
-                                <X size={7} />
-                              </IconButton>
-                            )}
-                          </Box>
-                        ))}
-                    </Box>
-
-                    {/* Middle divider */}
-                    <Box
-                      sx={{
-                        width: { xs: '1px', sm: '2px', md: '3px' },
-                        bgcolor: 'rgba(255,255,255,0.4)',
-                        minHeight: { xs: 60, sm: 80, md: 120 },
-                        borderRadius: 0.5,
-                        alignSelf: 'stretch',
-                        flexShrink: 0
-                      }}
-                    />
-
-                    {/* Away Team list (header removed) */}
-                    <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                      {awayCaptain && (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            mb: { xs: 0.5, sm: 1, md: 1.5 },
-                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                            bgcolor: 'rgba(255, 215, 0, 0.1)',
-                            borderRadius: { xs: 1, sm: 2, md: 3 },
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            cursor: 'pointer',
-                            minHeight: { xs: 28, sm: 35, md: 50 },
-                            '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
-                            overflow: 'hidden'
-                          }}
-                          draggable
-                          onDragEnd={() => movePlayer(awayCaptain, 'home')}
-                        >
-                          <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
-                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                            <Typography
-                              fontWeight="bold"
-                              sx={{
-                                fontSize: { xs: 6.5, sm: 8, md: 12 },
-                                color: 'white',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {awayCaptain.firstName} {awayCaptain.lastName}
-                              {awayCaptain.isGuest && (
-                                <Chip
-                                  label="G"
-                                  size="small"
-                                  sx={{
-                                    ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                    height: { xs: 10, sm: 12, md: 16 },
-                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                    bgcolor: '#e67e22',
-                                    color: 'white',
-                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
-                                  }}
-                                />
-                              )}
-                            </Typography>
-                            <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
-                              Skill: {calcSkill(awayCaptain)}
-                            </Typography>
-                          </Box>
+                          {awayCaptain.firstName} {awayCaptain.lastName}
                           {awayCaptain.isGuest && (
-                            <IconButton
+                            <Chip
+                              label="G"
                               size="small"
                               sx={{
-                                color: '#f44336',
-                                ml: { xs: 0.2, sm: 0.3 },
-                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                minWidth: { xs: 14, sm: 18, md: 22 },
-                                width: { xs: 14, sm: 18, md: 22 },
-                                height: { xs: 14, sm: 18, md: 22 }
+                                ml: { xs: 0.3, sm: 0.5, md: 0.8 },
+                                height: { xs: 10, sm: 12, md: 16 },
+                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                bgcolor: '#e67e22',
+                                color: 'white',
+                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
                               }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAwayCaptain(null);
-                                const g = awayGuests.find(g => g.tempId === awayCaptain.guestTempId);
-                                if (g) removeStagedGuest('away', g.tempId);
-                              }}
-                            >
-                              <X size={8} />
-                            </IconButton>
+                            />
                           )}
-                        </Box>
+                        </Typography>
+                        <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
+                          Skill: {calcSkill(awayCaptain)}
+                        </Typography>
+                      </Box>
+                      {awayCaptain.isGuest && (
+                        <IconButton
+                          size="small"
+                          sx={{
+                            color: '#f44336',
+                            ml: { xs: 0.2, sm: 0.3 },
+                            p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                            minWidth: { xs: 14, sm: 18, md: 22 },
+                            width: { xs: 14, sm: 18, md: 22 },
+                            height: { xs: 14, sm: 18, md: 22 }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAwayCaptain(null);
+                            const g = awayGuests.find(g => g.tempId === awayCaptain.guestTempId);
+                            if (g) removeStagedGuest('away', g.tempId);
+                          }}
+                        >
+                          <X size={8} />
+                        </IconButton>
                       )}
+                    </Box>
+                  )}
 
-                      {awayTeamUsers
-                        .filter(u => u.id !== awayCaptain?.id)
-                        .map(user => (
-                          <Box
-                            key={user.id}
+                  {awayTeamUsers
+                    .filter(u => u.id !== awayCaptain?.id)
+                    .map(user => (
+                      <Box
+                        key={user.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: { xs: 0.3, sm: 0.5, md: 1 },
+                          p: { xs: 0.3, sm: 0.5, md: 1 },
+                          bgcolor: 'rgba(255,255,255,0.03)',
+                          borderRadius: { xs: 1, sm: 2, md: 3 },
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          cursor: 'pointer',
+                          minHeight: { xs: 24, sm: 30, md: 40 },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+                          overflow: 'hidden'
+                        }}
+                        draggable
+                        onDragEnd={() => movePlayer(user, 'home')}
+                      >
+                        <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
+                        <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                          <Typography
+                            fontWeight={500}
                             sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: { xs: 0.3, sm: 0.5, md: 1 },
-                              p: { xs: 0.3, sm: 0.5, md: 1 },
-                              bgcolor: 'rgba(255,255,255,0.03)',
-                              borderRadius: { xs: 1, sm: 2, md: 3 },
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              cursor: 'pointer',
-                              minHeight: { xs: 24, sm: 30, md: 40 },
-                              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                              overflow: 'hidden'
+                              fontSize: { xs: 6, sm: 7.5, md: 10 },
+                              color: 'white',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
                             }}
-                            draggable
-                            onDragEnd={() => movePlayer(user, 'home')}
                           >
-                            <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                            <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
-                              <Typography
-                                fontWeight={500}
-                                sx={{
-                                  fontSize: { xs: 6, sm: 7.5, md: 10 },
-                                  color: 'white',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {user.firstName} {user.lastName}
-                                {user.isGuest && (
-                                  <Chip
-                                    label="G"
-                                    size="small"
-                                    sx={{
-                                      ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                      height: { xs: 8, sm: 10, md: 14 },
-                                      fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
-                                      bgcolor: '#e67e22',
-                                      color: 'white',
-                                      '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
-                                    }}
-                                  />
-                                )}
-                              </Typography>
-                              <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                                Skill: {calcSkill(user)}
-                              </Typography>
-                            </Box>
+                            {user.firstName} {user.lastName}
                             {user.isGuest && (
-                              <IconButton
+                              <Chip
+                                label="G"
                                 size="small"
                                 sx={{
-                                  color: '#f44336',
-                                  ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                  p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                                  minWidth: { xs: 12, sm: 16, md: 20 },
-                                  width: { xs: 12, sm: 16, md: 20 },
-                                  height: { xs: 12, sm: 16, md: 20 }
+                                  ml: { xs: 0.2, sm: 0.4, md: 0.6 },
+                                  height: { xs: 8, sm: 10, md: 14 },
+                                  fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                  bgcolor: '#e67e22',
+                                  color: 'white',
+                                  '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
                                 }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const g = awayGuests.find(g => g.tempId === user.guestTempId);
-                                  if (g) removeStagedGuest('away', g.tempId);
-                                }}
-                              >
-                                <X size={7} />
-                              </IconButton>
+                              />
                             )}
-                          </Box>
-                        ))}
-                    </Box>
-                  </Box>
-                </Paper>
+                          </Typography>
+                          <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                            Skill: {calcSkill(user)}
+                          </Typography>
+                        </Box>
+                        {user.isGuest && (
+                          <IconButton
+                            size="small"
+                            sx={{
+                              color: '#f44336',
+                              ml: { xs: 0.1, sm: 0.2, md: 0.3 },
+                              p: { xs: 0.1, sm: 0.15, md: 0.2 },
+                              minWidth: { xs: 12, sm: 16, md: 20 },
+                              width: { xs: 12, sm: 16, md: 20 },
+                              height: { xs: 12, sm: 16, md: 20 }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const g = awayGuests.find(g => g.tempId === user.guestTempId);
+                              if (g) removeStagedGuest('away', g.tempId);
+                            }}
+                          >
+                            <X size={7} />
+                          </IconButton>
+                        )}
+                      </Box>
+                    ))}
+                </Box>
               </Box>
-            </Box>
+            </Paper>
           </Box>
-          <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
-            <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
-            <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
-              <RadioGroup
-                row
-                value={guestTeam}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestTeam(e.target.value as 'home' | 'away')}
-                sx={{ mb: 3, justifyContent: 'center' }}
-              >
-                <FormControlLabel value='home' control={<Radio sx={{ color: '#43a047' }} />} label='Home Team' />
-                <FormControlLabel value='away' control={<Radio sx={{ color: '#ef5350' }} />} label='Away Team' />
-              </RadioGroup>
-              <TextField autoFocus label='Guest Full Name' value={guestName} onChange={e => setGuestName(e.target.value)} fullWidth placeholder='e.g. John Doe' sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9CA3AF' } }} />
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3, bgcolor: 'rgba(15,15,15,0.95)' }}>
-              <Button onClick={() => setGuestDialogOpen(false)} sx={{ color: '#9CA3AF' }}>Cancel</Button>
-              <Button onClick={handleAddGuest} variant='contained' sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' } }}>Add Guest</Button>
-            </DialogActions>
-          </Dialog>
-          <Toaster position='top-center' reverseOrder={false} />
-        </LocalizationProvider>
-      );
-    }
+        </Box>
+      </Box>
+      <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
+        <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
+        <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
+          <RadioGroup
+            row
+            value={guestTeam}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestTeam(e.target.value as 'home' | 'away')}
+            sx={{ mb: 3, justifyContent: 'center' }}
+          >
+            <FormControlLabel value='home' control={<Radio sx={{ color: '#43a047' }} />} label='Home Team' />
+            <FormControlLabel value='away' control={<Radio sx={{ color: '#ef5350' }} />} label='Away Team' />
+          </RadioGroup>
+          <TextField autoFocus label='Guest Full Name' value={guestName} onChange={e => setGuestName(e.target.value)} fullWidth placeholder='e.g. John Doe' sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9CA3AF' } }} />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, bgcolor: 'rgba(15,15,15,0.95)' }}>
+          <Button onClick={() => setGuestDialogOpen(false)} sx={{ color: '#9CA3AF' }}>Cancel</Button>
+          <Button onClick={handleAddGuest} variant='contained' sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' } }}>Add Guest</Button>
+        </DialogActions>
+      </Dialog>
+      <Toaster position='top-center' reverseOrder={false} />
+    </LocalizationProvider>
+  );
+}

@@ -5,6 +5,7 @@ import { Box, Typography, Select, MenuItem, ToggleButtonGroup, ToggleButton, Tab
 import Link from 'next/link';
 import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
+import CloseButton from '@/Components/CloseButton';
 
 interface Filters { mode: 'total'|'avg'; year?: string; positionType?: string; country?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
@@ -225,7 +226,9 @@ export default function WorldRankingTable(){
 
   return (
     <Box sx={{ maxWidth: 1400, mx:'auto', p:{ xs:2, md:4 },minHeight:'100vh', display:'flex', flexDirection:'column', gap:2 }}>
+       
       {/* <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography> */}
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}>
   <Typography variant="h3" sx={{
             // mb: { xs: 3, md: 4 },
             color: 'black',
@@ -242,7 +245,9 @@ export default function WorldRankingTable(){
           >
            world ranking
           </Typography>
-
+          {/* Close Button */}
+            <CloseButton fallbackRoute="/dashboard" />
+</Box>
       {/* Unified Control + Summary Card */}
       <Paper elevation={0} sx={{
         mb:2.5,

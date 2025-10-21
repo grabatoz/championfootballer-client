@@ -16,6 +16,7 @@ import ThirdBadge from '@/Components/images/3rd.png';
 import React from 'react';
 import Link from 'next/link';
 import ShirtImg from '@/Components/images/shirtimg.png';
+import CloseButton from '@/Components/CloseButton';
 
 
 interface Player {
@@ -130,7 +131,9 @@ export default function LeaderBoardPage() {
   return (
     <Box sx={{ p: 2 }}>
 
-      
+      {/* Close Button */}
+      <CloseButton fallbackRoute="/dashboard" />
+
       <Box
         sx={{
           display: 'grid',
@@ -138,7 +141,7 @@ export default function LeaderBoardPage() {
           gap: 2,
           mb: 3,
           // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+          background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
           borderRadius: 2,
           boxShadow: 1,
           p: 2,
@@ -158,13 +161,13 @@ export default function LeaderBoardPage() {
               borderRadius: 2,
               boxShadow: selectedMetric === m.key ? 2 : 0,
               minHeight: 80,
-              border:'1px solid #e56a16',
+              border: '1px solid #e56a16',
               transition: 'all 0.2s',
               '&:hover': {
                 background: selectedMetric === m.key
                   ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);'
                   : 'rgba(255,255,255,0.1)',
-              border:'1px solid #e56a16',
+                border: '1px solid #e56a16',
 
               },
             }}
@@ -174,94 +177,94 @@ export default function LeaderBoardPage() {
             <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
           </Button>
         ))}
-            
-      {/* League dropdown (same style as All Leagues) */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-        <Button
-          onClick={handleLeaguesDropdownOpen}
-          disabled={!leagues.length}
-          endIcon={<ChevronDown size={18} />}
-          sx={{
-            textTransform: 'uppercase',
-            fontSize: { xs: '0.95rem', sm: '1.1rem' },
-            fontWeight: 'bold',
-            color: 'white',
-            backgroundColor: '#2B2B2B',
-            borderRadius: 2,
-            px: 2,
-            py: 1,
-            '&:hover': { backgroundColor: '#2B2B2B' },
-          }}
-        >
-          {selectedLeague
-            ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
-            : 'Select League'}
-        </Button>
-        <Menu
-          anchorEl={leaguesDropdownAnchor}
-          open={leaguesDropdownOpen}
-          onClose={handleLeaguesDropdownClose}
-          PaperProps={{
-            sx: {
-              p: 0.5,
-              mt: 1,
-              minWidth: 240,
-              bgcolor: 'rgba(15,15,15,0.92)',
-              color: '#E5E7EB',
-              borderRadius: 2.5,
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-              overflow: 'hidden',
-            }
-          }}
-        >
-          {sortedLeagues.map((leagueItem) => {
-            const isActive = leagueItem.id === selectedLeague;
-            return (
-              <MenuItem
-                key={leagueItem.id}
-                onClick={() => handleLeagueSelect(leagueItem.id)}
-                sx={{
-                  borderRadius: 1.5,
-                  mx: 0.5,
-                  my: 0.25,
-                  py: 1.25,
-                  px: 1.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  color: '#E5E7EB',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                  },
-                  ...(isActive && {
-                    background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
-                    border: '1px solid rgba(3,136,227,0.35)',
-                  }),
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={leagueItem.name}
+
+        {/* League dropdown (same style as All Leagues) */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+          <Button
+            onClick={handleLeaguesDropdownOpen}
+            disabled={!leagues.length}
+            endIcon={<ChevronDown size={18} />}
+            sx={{
+              textTransform: 'uppercase',
+              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              fontWeight: 'bold',
+              color: 'white',
+              backgroundColor: '#2B2B2B',
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': { backgroundColor: '#2B2B2B' },
+            }}
+          >
+            {selectedLeague
+              ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
+              : 'Select League'}
+          </Button>
+          <Menu
+            anchorEl={leaguesDropdownAnchor}
+            open={leaguesDropdownOpen}
+            onClose={handleLeaguesDropdownClose}
+            PaperProps={{
+              sx: {
+                p: 0.5,
+                mt: 1,
+                minWidth: 240,
+                bgcolor: 'rgba(15,15,15,0.92)',
+                color: '#E5E7EB',
+                borderRadius: 2.5,
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                overflow: 'hidden',
+              }
+            }}
+          >
+            {sortedLeagues.map((leagueItem) => {
+              const isActive = leagueItem.id === selectedLeague;
+              return (
+                <MenuItem
+                  key={leagueItem.id}
+                  onClick={() => handleLeagueSelect(leagueItem.id)}
                   sx={{
-                    '& .MuiListItemText-primary': {
-                      fontSize: '0.95rem',
-                      fontWeight: isActive ? 700 : 500,
-                      letterSpacing: 0.2,
-                      color: isActive ? '#FFFFFF' : '#E5E7EB',
-                    }
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 1.25,
+                    px: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#E5E7EB',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                    },
+                    ...(isActive && {
+                      background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
+                      border: '1px solid rgba(3,136,227,0.35)',
+                    }),
                   }}
-                />
-              </MenuItem>
-            );
-          })}
-        </Menu>
-      </Box>
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={leagueItem.name}
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        fontSize: '0.95rem',
+                        fontWeight: isActive ? 700 : 500,
+                        letterSpacing: 0.2,
+                        color: isActive ? '#FFFFFF' : '#E5E7EB',
+                      }
+                    }}
+                  />
+                </MenuItem>
+              );
+            })}
+          </Menu>
+        </Box>
       </Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Top Players</Typography>
       {loading ? (
@@ -274,44 +277,44 @@ export default function LeaderBoardPage() {
           else if (idx === 2) badgeImg = ThirdBadge;
           return (
             <React.Fragment key={player.id}>
-              <Link href={`/player/${player.id}`} passHref> 
-              <Paper sx={{ p: 2, display: 'flex', color:'white' , alignItems: 'center', background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', borderRadius: 0 }}>
-                {/* Ranking badge or number */}
-                <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
-                  {badgeImg ? (
-                    <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
-                  ) : (
-                    <Box sx={{
-                      width: 28, height: 28, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
-                    }}>{`${idx + 1}th`}</Box>
-                  )}
-                </Box>
-                <Box sx={{ position: 'relative', width: 64, height: 64, mr: 2 }}>
-                  <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#000',
-                      fontWeight: 800,
-                      fontSize: 18,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {/* {player.shirtNumber || '0'} */}
+              <Link href={`/player/${player.id}`} passHref>
+                <Paper sx={{ p: 2, display: 'flex', color: 'white', alignItems: 'center', background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', borderRadius: 0 }}>
+                  {/* Ranking badge or number */}
+                  <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                    {badgeImg ? (
+                      <img src={badgeImg.src} alt={`${idx + 1}st`} width={32} height={32} />
+                    ) : (
+                      <Box sx={{
+                        width: 28, height: 28, display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14
+                      }}>{`${idx + 1}th`}</Box>
+                    )}
                   </Box>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' , color:'white' }}>{player.name}</Typography>
-                  <Typography variant="body2">Position: {player.positionType}</Typography>
-                  <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
-                </Box>
-              </Paper>
-              <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                  <Box sx={{ position: 'relative', width: 64, height: 64, mr: 2 }}>
+                    <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#000',
+                        fontWeight: 800,
+                        fontSize: 18,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {/* {player.shirtNumber || '0'} */}
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>{player.name}</Typography>
+                    <Typography variant="body2">Position: {player.positionType}</Typography>
+                    <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
+                  </Box>
+                </Paper>
+                <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
               </Link>
             </React.Fragment>
           );

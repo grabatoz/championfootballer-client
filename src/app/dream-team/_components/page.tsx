@@ -9,6 +9,7 @@ import { Trophy, ChevronDown } from 'lucide-react';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import Image from 'next/image';
 import Link from 'next/link';
+import CloseButton from '@/Components/CloseButton';
 
 
 interface Player {
@@ -237,7 +238,9 @@ const DreamTeamPage = () => {
   ];
 
   return (
-    <Box sx={{ py: 4,p:3 , maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ py: 4, p: 3, maxWidth: 1200, mx: 'auto' }}>
+      {/* Close Button */}
+      <CloseButton fallbackRoute="/dashboard" />
       <Box
         sx={{
           display: "flex",
@@ -503,13 +506,13 @@ const DreamTeamPage = () => {
                     }}
                   >
                     <Link href={`/player/${player.id}`} prefetch={false} >
-                    <Image
-                      src={ShirtImg.src}
-                      alt="Player Shirt"
-                      width={94}
-                      height={94}
-                      style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
-                    />
+                      <Image
+                        src={ShirtImg.src}
+                        alt="Player Shirt"
+                        width={94}
+                        height={94}
+                        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
                     </Link>
                   </Box>
 

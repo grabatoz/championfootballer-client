@@ -70,6 +70,7 @@ import ExitToApp from '@mui/icons-material/ExitToApp';
 import People from '@mui/icons-material/People';
 // import SettingsIcon from '@mui/icons-material/Settings';
 import Star from '@mui/icons-material/Star';
+import CloseButton from '@/Components/CloseButton';
 // ...existing code...
 
 type Foot = 'L' | 'R';
@@ -204,353 +205,353 @@ interface LeagueMembersDialogProps {
 }
 
 function LeagueMembersDialog({
-  open,
-  onClose,
-  league,
-  currentUserId,
-  onRemoveMember,
-  onLeaveLeague,
-  onUpdateLeague,
-  onDeleteLeague,
-  openSettingsOnOpen,
+    open,
+    onClose,
+    league,
+    currentUserId,
+    onRemoveMember,
+    onLeaveLeague,
+    onUpdateLeague,
+    onDeleteLeague,
+    openSettingsOnOpen,
 }: LeagueMembersDialogProps) {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const [openSettings, setOpenSettings] = useState(false)
-  useEffect(() => {
-    if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
-      setOpenSettings(true)
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+    const [openSettings, setOpenSettings] = useState(false)
+    useEffect(() => {
+        if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
+            setOpenSettings(true)
+        }
+    }, [open, openSettingsOnOpen, league?.adminId, currentUserId])
+
+    if (!league) return null
+
+    const isAdmin = league.adminId === currentUserId
+    const memberCount = league.members?.length || 0
+
+    const handleRemoveMember = (memberId: string, memberName: string) => {
+        if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
+            // Guard in case a parent passes undefined
+            if (typeof onRemoveMember === 'function') onRemoveMember(memberId)
+        }
     }
-  }, [open, openSettingsOnOpen, league?.adminId, currentUserId])
 
-  if (!league) return null
-
-  const isAdmin = league.adminId === currentUserId
-  const memberCount = league.members?.length || 0
-
-  const handleRemoveMember = (memberId: string, memberName: string) => {
-    if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
-      // Guard in case a parent passes undefined
-      if (typeof onRemoveMember === 'function') onRemoveMember(memberId)
+    const handleLeaveLeague = () => {
+        if (window.confirm("Are you sure you want to leave this league?")) {
+            onLeaveLeague()
+        }
     }
-  }
 
-  const handleLeaveLeague = () => {
-    if (window.confirm("Are you sure you want to leave this league?")) {
-      onLeaveLeague()
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={isMobile}
-      TransitionComponent={Transition}
-      PaperProps={{
-        sx: {
-          bgcolor: 'rgba(15,15,15,0.92)',
-          color: '#E5E7EB',
-          borderRadius: isMobile ? 0 : 3,
-          border: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-          overflow: 'hidden',
-          maxHeight: isMobile ? '100vh' : '80vh',
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          background: 'transparent',
-          color: '#E5E7EB',
-          fontWeight: 700,
-          fontSize: { xs: 18, sm: 22 },
-          borderRadius: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          py: { xs: 2, sm: 3 },
-          px: { xs: 2, sm: 3 },
-          position: "relative",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "2px",
-            background: "linear-gradient(90deg, rgba(229,106,22,0.7), rgba(207,35,38,0.7))",
-          },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            sx={{
-              p: 1,
-              borderRadius: 2,
-              bgcolor: "rgba(255,255,255,0.06)",
-              display: "flex",
-              alignItems: "center",
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="sm"
+            fullWidth
+            fullScreen={isMobile}
+            TransitionComponent={Transition}
+            PaperProps={{
+                sx: {
+                    bgcolor: 'rgba(15,15,15,0.92)',
+                    color: '#E5E7EB',
+                    borderRadius: isMobile ? 0 : 3,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                    overflow: 'hidden',
+                    maxHeight: isMobile ? '100vh' : '80vh',
+                },
             }}
-          >
-            <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#e56a16" }} />
-          </Box>
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: "#E5E7EB",
-                fontSize: { xs: 16, sm: 20 },
-                lineHeight: 1.2,
-              }}
-            >
-              {formatLeagueName(league.name)}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#9CA3AF",
-                fontSize: { xs: 12, sm: 14 },
-                fontWeight: 500,
-              }}
-            >
-              {memberCount} {memberCount === 1 ? "Member" : "Members"}
-            </Typography>
-          </Box>
-        </Box>
-
-        <IconButton
-          onClick={onClose}
-          sx={{
-            color: "#E5E7EB",
-            bgcolor: "rgba(255,255,255,0.08)",
-            "&:hover": {
-              bgcolor: "rgba(255,255,255,0.12)",
-              color: "#fff",
-            },
-            transition: "all 0.2s ease",
-          }}
         >
-          <Close />
-        </IconButton>
-      </DialogTitle>
-
-      {/* Content */}
-      <DialogContent
-        sx={{
-          bgcolor: "transparent",
-          px: 0,
-          py: 0,
-          overflow: "auto",
-          "&::-webkit-scrollbar": { width: "6px" },
-          "&::-webkit-scrollbar-track": { background: "rgba(255,255,255,0.06)" },
-          "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
-        }}
-      >
-        <List sx={{ py: 0 }}>
-          {(league.members || []).map((member, index) => {
-            const memberName = `${member.firstName} ${member.lastName}`
-            const isLeagueAdmin = member.id === league.adminId
-            const isCurrentUser = member.id === currentUserId
-
-            return (
-              <Fade in={true} timeout={300 + index * 100} key={member.id}>
-                <Box>
-                  <ListItem
-                    sx={{
-                      py: { xs: 2, sm: 2.5 },
-                      px: { xs: 2, sm: 3 },
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
-                      borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.06)",
-                      },
-                    }}
-                  >
-                    <ListItemAvatar sx={{ minWidth: 56 }}>
-                      <Box
+            <DialogTitle
+                sx={{
+                    background: 'transparent',
+                    color: '#E5E7EB',
+                    fontWeight: 700,
+                    fontSize: { xs: 18, sm: 22 },
+                    borderRadius: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    py: { xs: 2, sm: 3 },
+                    px: { xs: 2, sm: 3 },
+                    position: "relative",
+                    "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: "2px",
+                        background: "linear-gradient(90deg, rgba(229,106,22,0.7), rgba(207,35,38,0.7))",
+                    },
+                }}
+            >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
                         sx={{
-                          position: 'relative',
-                          width: { xs: 44, sm: 52 },
-                          height: { xs: 44, sm: 52 },
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          background: 'transparent',
-                          // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
-                          // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                            p: 1,
+                            borderRadius: 2,
+                            bgcolor: "rgba(255,255,255,0.06)",
+                            display: "flex",
+                            alignItems: "center",
                         }}
-                      >
-                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#000',
-                            fontWeight: 800,
-                            fontSize: { xs: 14, sm: 16 },
-                            lineHeight: 1,
-                            textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                          }}
+                    >
+                        <People sx={{ fontSize: { xs: 20, sm: 24 }, color: "#e56a16" }} />
+                    </Box>
+                    <Box>
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                fontWeight: 700,
+                                color: "#E5E7EB",
+                                fontSize: { xs: 16, sm: 20 },
+                                lineHeight: 1.2,
+                            }}
                         >
-                          {/* {member.shirtNumber || '0'} */}
-                        </Box>
-                      </Box>
-                    </ListItemAvatar>
-
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                          <Typography
+                            {formatLeagueName(league.name)}
+                        </Typography>
+                        <Typography
+                            variant="body2"
                             sx={{
-                              fontWeight: 600,
-                              color: "#E5E7EB",
-                              fontSize: { xs: 16, sm: 18 },
+                                color: "#9CA3AF",
+                                fontSize: { xs: 12, sm: 14 },
+                                fontWeight: 500,
                             }}
-                          >
-                            {memberName}
-                          </Typography>
-                          {isCurrentUser && (
-                            <Chip
-                              label="You"
-                              size="small"
-                              sx={{
-                                bgcolor: "transparent",
-                                color: "#e56a16",
-                                border: '1px solid rgba(229,106,22,0.6)',
-                                fontWeight: 600,
-                                fontSize: 11,
-                                height: 20,
-                                borderRadius: '9999px',
-                              }}
-                            />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
-                          <Typography
-                            sx={{
-                              color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
-                              fontWeight: 500,
-                              fontSize: { xs: 13, sm: 14 },
-                            }}
-                          >
-                            {isLeagueAdmin ? "League Admin" : "Member"}
-                          </Typography>
-                        </Box>
-                      }
-                    />
+                        >
+                            {memberCount} {memberCount === 1 ? "Member" : "Members"}
+                        </Typography>
+                    </Box>
+                </Box>
 
-                    {isAdmin && member.id !== currentUserId && (
-                      <Tooltip title={`Remove ${memberName}`} arrow>
-                        <IconButton
-                          onClick={() => handleRemoveMember(member.id, memberName)}
-                          sx={{
-                            color: "#ff6b6b",
-                            bgcolor: "rgba(255, 107, 107, 0.12)",
+                <IconButton
+                    onClick={onClose}
+                    sx={{
+                        color: "#E5E7EB",
+                        bgcolor: "rgba(255,255,255,0.08)",
+                        "&:hover": {
+                            bgcolor: "rgba(255,255,255,0.12)",
+                            color: "#fff",
+                        },
+                        transition: "all 0.2s ease",
+                    }}
+                >
+                    <Close />
+                </IconButton>
+            </DialogTitle>
+
+            {/* Content */}
+            <DialogContent
+                sx={{
+                    bgcolor: "transparent",
+                    px: 0,
+                    py: 0,
+                    overflow: "auto",
+                    "&::-webkit-scrollbar": { width: "6px" },
+                    "&::-webkit-scrollbar-track": { background: "rgba(255,255,255,0.06)" },
+                    "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
+                }}
+            >
+                <List sx={{ py: 0 }}>
+                    {(league.members || []).map((member, index) => {
+                        const memberName = `${member.firstName} ${member.lastName}`
+                        const isLeagueAdmin = member.id === league.adminId
+                        const isCurrentUser = member.id === currentUserId
+
+                        return (
+                            <Fade in={true} timeout={300 + index * 100} key={member.id}>
+                                <Box>
+                                    <ListItem
+                                        sx={{
+                                            py: { xs: 2, sm: 2.5 },
+                                            px: { xs: 2, sm: 3 },
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 2,
+                                            bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
+                                            borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                                bgcolor: "rgba(255,255,255,0.06)",
+                                            },
+                                        }}
+                                    >
+                                        <ListItemAvatar sx={{ minWidth: 56 }}>
+                                            <Box
+                                                sx={{
+                                                    position: 'relative',
+                                                    width: { xs: 44, sm: 52 },
+                                                    height: { xs: 44, sm: 52 },
+                                                    borderRadius: 1,
+                                                    overflow: 'hidden',
+                                                    background: 'transparent',
+                                                    // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
+                                                    // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                                }}
+                                            >
+                                                <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                                <Box
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        inset: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: '#000',
+                                                        fontWeight: 800,
+                                                        fontSize: { xs: 14, sm: 16 },
+                                                        lineHeight: 1,
+                                                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                                                    }}
+                                                >
+                                                    {/* {member.shirtNumber || '0'} */}
+                                                </Box>
+                                            </Box>
+                                        </ListItemAvatar>
+
+                                        <ListItemText
+                                            primary={
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                                                    <Typography
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            color: "#E5E7EB",
+                                                            fontSize: { xs: 16, sm: 18 },
+                                                        }}
+                                                    >
+                                                        {memberName}
+                                                    </Typography>
+                                                    {isCurrentUser && (
+                                                        <Chip
+                                                            label="You"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: "transparent",
+                                                                color: "#e56a16",
+                                                                border: '1px solid rgba(229,106,22,0.6)',
+                                                                fontWeight: 600,
+                                                                fontSize: 11,
+                                                                height: 20,
+                                                                borderRadius: '9999px',
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                            }
+                                            secondary={
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                                                    {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
+                                                    <Typography
+                                                        sx={{
+                                                            color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
+                                                            fontWeight: 500,
+                                                            fontSize: { xs: 13, sm: 14 },
+                                                        }}
+                                                    >
+                                                        {isLeagueAdmin ? "League Admin" : "Member"}
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                        />
+
+                                        {isAdmin && member.id !== currentUserId && (
+                                            <Tooltip title={`Remove ${memberName}`} arrow>
+                                                <IconButton
+                                                    onClick={() => handleRemoveMember(member.id, memberName)}
+                                                    sx={{
+                                                        color: "#ff6b6b",
+                                                        bgcolor: "rgba(255, 107, 107, 0.12)",
+                                                        "&:hover": {
+                                                            bgcolor: "rgba(255, 107, 107, 0.2)",
+                                                            transform: "scale(1.05)",
+                                                        },
+                                                        transition: "all 0.2s ease",
+                                                    }}
+                                                >
+                                                    <Delete sx={{ fontSize: 20 }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </ListItem>
+                                    {index < (league.members?.length || 0) - 1 && (
+                                        <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
+                                    )}
+                                </Box>
+                            </Fade>
+                        )
+                    })}
+                </List>
+            </DialogContent>
+
+            {/* Footer */}
+            <DialogActions
+                sx={{
+                    background: "transparent",
+                    p: { xs: 2, sm: 3 },
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 2,
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                }}
+            >
+                {!isAdmin && (
+                    <Button
+                        startIcon={<ExitToApp />}
+                        onClick={handleLeaveLeague}
+                        sx={{
+                            fontWeight: 600,
+                            bgcolor: "#fff",
+                            color: "#d32f2f",
+                            borderRadius: 2,
+                            px: 3,
+                            py: 1,
+                            textTransform: "none",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
                             "&:hover": {
-                              bgcolor: "rgba(255, 107, 107, 0.2)",
-                              transform: "scale(1.05)",
+                                bgcolor: "#ffebee",
+                                transform: "translateY(-1px)",
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
                             },
                             transition: "all 0.2s ease",
-                          }}
-                        >
-                          <Delete sx={{ fontSize: 20 }} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </ListItem>
-                  {index < (league.members?.length || 0) - 1 && (
-                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
-                  )}
+                        }}
+                    >
+                        Leave League
+                    </Button>
+                )}
+
+                <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+
+                    <Button
+                        onClick={onClose}
+                        sx={{
+                            fontWeight: 600,
+                            color: "#e56a16",
+                            borderColor: "#e56a16",
+                            borderRadius: 2,
+                            border: "2px solid",
+                            bgcolor: "transparent",
+                            px: 3,
+                            py: 1,
+                            textTransform: "none",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                            "&:hover": {
+                                bgcolor: "rgba(229,106,22,0.12)",
+                                borderColor: "#e56a16",
+                                transform: "translateY(-1px)",
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                            },
+                            transition: "all 0.2s ease",
+                        }}
+                    >
+                        Close
+                    </Button>
                 </Box>
-              </Fade>
-            )
-          })}
-        </List>
-      </DialogContent>
-
-      {/* Footer */}
-      <DialogActions
-        sx={{
-          background: "transparent",
-          p: { xs: 2, sm: 3 },
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 2,
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        {!isAdmin && (
-          <Button
-            startIcon={<ExitToApp />}
-            onClick={handleLeaveLeague}
-            sx={{
-              fontWeight: 600,
-              bgcolor: "#fff",
-              color: "#d32f2f",
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              "&:hover": {
-                bgcolor: "#ffebee",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            Leave League
-          </Button>
-        )}
-
-        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
-         
-          <Button
-            onClick={onClose}
-            sx={{
-              fontWeight: 600,
-              color: "#e56a16",
-              borderColor: "#e56a16",
-              borderRadius: 2,
-              border: "2px solid",
-              bgcolor: "transparent",
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              "&:hover": {
-                bgcolor: "rgba(229,106,22,0.12)",
-                borderColor: "#e56a16",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            Close
-          </Button>
-        </Box>
-      </DialogActions>
-      {isAdmin && league && (
-        <LeagueSettingsDialog
-          open={openSettings}
-          onClose={() => setOpenSettings(false)}
-          league={league}
+            </DialogActions>
+            {isAdmin && league && (
+                <LeagueSettingsDialog
+                    open={openSettings}
+                    onClose={() => setOpenSettings(false)}
+                    league={league}
                     onUpdate={async (data) => {
                         // Coerce Partial<League & {admins: string[]}> into LeagueUpdatePayload
                         const payload: LeagueUpdatePayload = {
@@ -563,19 +564,19 @@ function LeagueMembersDialog({
                                 : (league.adminId ? [league.adminId] : (league.administrators || []).map(a => a.id)),
                         }
                         await onUpdateLeague(payload)
-            setOpenSettings(false)
-          }}
-          onDelete={async () => {
-            await onDeleteLeague()
-            setOpenSettings(false)
-          }}
-          currentUserId={currentUserId}
-          onRemoveMember={onRemoveMember}
-          onLeaveLeague={onLeaveLeague}
-        />
-      )}
-    </Dialog>
-  )
+                        setOpenSettings(false)
+                    }}
+                    onDelete={async () => {
+                        await onDeleteLeague()
+                        setOpenSettings(false)
+                    }}
+                    currentUserId={currentUserId}
+                    onRemoveMember={onRemoveMember}
+                    onLeaveLeague={onLeaveLeague}
+                />
+            )}
+        </Dialog>
+    )
 }
 
 // const getBadgeForPosition = (position: number) => {
@@ -1627,7 +1628,7 @@ export default function LeagueDetailPage() {
         xpRecentTotal?: number;
         profileXP?: number;
     }>({});
-    
+
     // State for members dialog
     const [openMembers, setOpenMembers] = useState(false);
     const [, setLoadingMembers] = useState(false);
@@ -1637,32 +1638,32 @@ export default function LeagueDetailPage() {
     const handleOpenMembers = useCallback(async (league: League) => {
         setLoadingMembers(true);
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          if (data.success) {
-            const admin = data.league.administrators?.[0];
-            setSelectedLeague({
-              ...league,
-              adminId: admin?.id,
-              members: (data.league.members || []).map((m: User) => ({
-                id: m.id,
-                firstName: m.firstName,
-                lastName: m.lastName,
-                profilePicture: m.profilePicture,
-                email: m.email,
-                shirtNumber: m.shirtNumber,
-              })),
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            setOpenMembers(true);
-          } else {
-            toast.error(data.message || 'Failed to fetch league members');
-          }
+            const data = await response.json();
+            if (data.success) {
+                const admin = data.league.administrators?.[0];
+                setSelectedLeague({
+                    ...league,
+                    adminId: admin?.id,
+                    members: (data.league.members || []).map((m: User) => ({
+                        id: m.id,
+                        firstName: m.firstName,
+                        lastName: m.lastName,
+                        profilePicture: m.profilePicture,
+                        email: m.email,
+                        shirtNumber: m.shirtNumber,
+                    })),
+                });
+                setOpenMembers(true);
+            } else {
+                toast.error(data.message || 'Failed to fetch league members');
+            }
         } catch {
-          toast.error('Failed to fetch league members');
+            toast.error('Failed to fetch league members');
         } finally {
-          setLoadingMembers(false);
+            setLoadingMembers(false);
         }
     }, [token]);
 
@@ -2008,7 +2009,7 @@ export default function LeagueDetailPage() {
             setError('Failed to fetch league details');
         }
     }, [leagueId, token]);
-    
+
     useEffect(() => {
         // Wait for auth to finish loading, user to be authenticated, and token to be available
         if (authLoading) return;
@@ -2057,13 +2058,13 @@ export default function LeagueDetailPage() {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             interface LeagueData {
                 id: string | number;
                 name: string;
                 [key: string]: unknown;
             }
-            
+
             interface AuthStatusResponse {
                 success: boolean;
                 user?: {
@@ -2072,9 +2073,9 @@ export default function LeagueDetailPage() {
                     leagues?: LeagueData[];
                 };
             }
-            
+
             const data: AuthStatusResponse = await response.json();
-            
+
             if (data.success && data.user) {
                 // Get admin league IDs (prefer adminLeagues, fallback to administeredLeagues)
                 const adminLeaguesArr: LeagueData[] = data.user.adminLeagues || data.user.administeredLeagues || [];
@@ -2083,27 +2084,27 @@ export default function LeagueDetailPage() {
                         .map((l: LeagueData) => String(l?.id))
                         .filter((id: string) => id !== 'undefined')
                 );
-                
+
                 // Get member league IDs
                 const memberLeagueIds = new Set<string>(
                     (data.user.leagues || [])
                         .map((l: LeagueData) => String(l?.id))
                         .filter((id: string) => id !== 'undefined')
                 );
-                
+
                 // Combine joined and managed leagues
                 const userLeagues: LeagueData[] = [
                     ...(data.user.leagues || []),
                     ...adminLeaguesArr
                 ];
-                
+
                 // Remove duplicates and add userRole
                 const uniqueLeagues = Array.from(
                     new Map<string, League>(
                         userLeagues.map((league: LeagueData) => {
                             const leagueId = String(league.id);
-                            const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId) 
-                                ? 'ADMIN' 
+                            const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
+                                ? 'ADMIN'
                                 : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
                             return [leagueId, {
                                 ...league,
@@ -2113,7 +2114,7 @@ export default function LeagueDetailPage() {
                         })
                     ).values()
                 );
-                
+
                 setAllLeagues(uniqueLeagues);
             }
         } catch (error) {
@@ -3678,6 +3679,8 @@ export default function LeagueDetailPage() {
                 backgroundPosition: 'center',
             }}
         >
+            {/* Close Button */}
+            <CloseButton fallbackRoute="/dashboard" />
             <Container maxWidth="lg">
                 {/* Show page structure immediately */}
 
@@ -3955,26 +3958,26 @@ export default function LeagueDetailPage() {
                                                 <Settings size={20} />
                                             </IconButton>
                                         )} */}
-                                         <IconButton
-                                                onClick={() => {
-                                                    const isAdmin = (league?.adminId || league?.administrators?.[0]?.id) === (user?.id || '')
-                                                    if (isAdmin) {
-                                                        setIsSettingsOpen(true)
-                                                    } else {
-                                                        // Non-admins: open the Players view (similar to members dialog)
-                                                        if (league) handleOpenMembers(league!)
-                                                    }
-                                                }}
-                                                sx={{
-                                                    ml: 0.5,
-                                                    color: 'white',
-                                                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                                                    p: 1,
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                <Settings size={20} />
-                                            </IconButton>
+                                        <IconButton
+                                            onClick={() => {
+                                                const isAdmin = (league?.adminId || league?.administrators?.[0]?.id) === (user?.id || '')
+                                                if (isAdmin) {
+                                                    setIsSettingsOpen(true)
+                                                } else {
+                                                    // Non-admins: open the Players view (similar to members dialog)
+                                                    if (league) handleOpenMembers(league!)
+                                                }
+                                            }}
+                                            sx={{
+                                                ml: 0.5,
+                                                color: 'white',
+                                                '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                                                p: 1,
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            <Settings size={20} />
+                                        </IconButton>
                                     </Box>
                                 </Box>
 
@@ -5100,13 +5103,13 @@ export default function LeagueDetailPage() {
                                                     </Box> */}
 
                                                             {/* // ...existing code... */}
-                                                            <Box sx={{ 
-                                                                display: 'flex', 
-                                                                justifyContent: 'center', 
-                                                                alignItems: 'center', 
+                                                            <Box sx={{
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
                                                                 flexWrap: 'wrap',
-                                                                gap: 0.75, 
-                                                                mt: 2 
+                                                                gap: 0.75,
+                                                                mt: 2
                                                             }}>
                                                                 {/* Admin-only: ADD Score button */}
                                                                 {isAdmin && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
@@ -5163,7 +5166,7 @@ export default function LeagueDetailPage() {
                                                                         </Button>
                                                                     )
                                                                 )}
-                                                                
+
                                                                 {/* All Members: Add Your Stats button */}
                                                                 {isMember && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
                                                                     match.status === 'RESULT_UPLOADED' ? (
@@ -5219,16 +5222,16 @@ export default function LeagueDetailPage() {
                                                                         </Button>
                                                                     )
                                                                 )}
-                                                                
+
                                                                 {/* View Team button */}
                                                                 <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                                     <span>
                                                                         <Button
                                                                             size="small"
-                                                                            onClick={(e) => { 
-                                                                                e.stopPropagation(); 
-                                                                                setViewTeamMatch({ leagueId, matchId: match.id }); 
-                                                                                setViewTeamOpen(true); 
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setViewTeamMatch({ leagueId, matchId: match.id });
+                                                                                setViewTeamOpen(true);
                                                                             }}
                                                                             sx={{
                                                                                 backgroundColor: '#FA5836',
@@ -5249,7 +5252,7 @@ export default function LeagueDetailPage() {
                                                                         </Button>
                                                                     </span>
                                                                 </Tooltip>
-                                                                
+
                                                                 {/* Match Results button */}
                                                                 <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                                     <span>
@@ -5272,7 +5275,7 @@ export default function LeagueDetailPage() {
                                                                             }}
                                                                             disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
                                                                         >
-                                                                           Match Results
+                                                                            Match Results
                                                                         </Button>
                                                                     </span>
                                                                 </Tooltip>
@@ -5316,24 +5319,24 @@ export default function LeagueDetailPage() {
                                             <h2 className="text-lg font-bold text-white">League Table</h2>
                                         </div> */}
 
-                        <div className="p-2 sm:p-3 px-1 sm:px-2 pb-2">
-                            {/* bg-[rgba(59,130,246,0.8)] */}
-                            <div className="rounded-lg px-1 sm:px-2 py-1 mb-2 sm:mb-4 flex items-center">
-                                <div className="flex-1 text-white font-bold text-[10px] sm:text-xs md:text-sm ml-2 sm:ml-8">Name</div>
-                                <div className="flex gap-1 sm:gap-2 md:gap-4 text-white font-bold">
-                                    <div className="min-w-8 sm:min-w-12 text-center text-[9px] sm:text-xs md:text-sm">MOTM</div>
-                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">P</div>
-                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">W</div>
-                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">D</div>
-                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">L</div>
-                                    <div className="min-w-7 sm:min-w-10 text-center text-[9px] sm:text-xs md:text-sm">W%</div>
-                                    {league?.showPoints === false ? (
-                                        <div className="min-w-7 sm:min-w-9 text-center text-[9px] sm:text-xs md:text-sm">Pts</div>
-                                    ) : (
-                                        <div className="min-w-8 sm:min-w-[50px] text-center text-[9px] sm:text-xs md:text-sm">XP</div>
-                                    )}
-                                </div>
-                            </div>                                            <div className="space-y-[1px]">
+                                        <div className="p-2 sm:p-3 px-1 sm:px-2 pb-2">
+                                            {/* bg-[rgba(59,130,246,0.8)] */}
+                                            <div className="rounded-lg px-1 sm:px-2 py-1 mb-2 sm:mb-4 flex items-center">
+                                                <div className="flex-1 text-white font-bold text-[10px] sm:text-xs md:text-sm ml-2 sm:ml-8">Name</div>
+                                                <div className="flex gap-1 sm:gap-2 md:gap-4 text-white font-bold">
+                                                    <div className="min-w-8 sm:min-w-12 text-center text-[9px] sm:text-xs md:text-sm">MOTM</div>
+                                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">P</div>
+                                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">W</div>
+                                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">D</div>
+                                                    <div className="min-w-5 sm:min-w-7 text-center text-[9px] sm:text-xs md:text-sm">L</div>
+                                                    <div className="min-w-7 sm:min-w-10 text-center text-[9px] sm:text-xs md:text-sm">W%</div>
+                                                    {league?.showPoints === false ? (
+                                                        <div className="min-w-7 sm:min-w-9 text-center text-[9px] sm:text-xs md:text-sm">Pts</div>
+                                                    ) : (
+                                                        <div className="min-w-8 sm:min-w-[50px] text-center text-[9px] sm:text-xs md:text-sm">XP</div>
+                                                    )}
+                                                </div>
+                                            </div>                                            <div className="space-y-[1px]">
                                                 {tableData.map((player) => {
                                                     // const position = index + 1;
                                                     // const badge = getBadgeForPosition(position);

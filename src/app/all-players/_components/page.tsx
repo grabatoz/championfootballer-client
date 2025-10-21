@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 // import ThirdBadge from '@/Components/images/3rd.png';
 import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
+import CloseButton from '@/Components/CloseButton';
 
 interface Player {
   id: string;
@@ -189,20 +190,24 @@ const AllPlayersPage = () => {
   console.log('Sorted Players:', sortedPlayers);
 
   return (
-    <Container maxWidth="md" sx={{
-      py: { xs: 2, sm: 4 },
-      // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-      // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-      minHeight: '100vh',
-      color: 'white',
-      borderRadius: { xs: 2, sm: 5 },
-      overflow: 'hidden',
-      mt: { xs: 1, sm: 3 },
-      px: { xs: 0.5, sm: 2 },
-      mb: { xs: 1, sm: 3 },
-    }}>
-      <Paper elevation={0} sx={{
+    <Box sx={{ position: 'relative', minHeight: '100vh' , maxWidth:'lg' , py:4 }}>
+      {/* Close Button - Top Right */}
+      <CloseButton fallbackRoute="/dashboard" />
+      
+      <Container maxWidth="md" sx={{
+        py: { xs: 2, sm: 4 },
+        // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
+        // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+        minHeight: '100vh',
+        color: 'white',
+        borderRadius: { xs: 2, sm: 5 },
+        overflow: 'hidden',
+        mt: { xs: 1, sm: 3 },
+        px: { xs: 0.5, sm: 2 },
+        mb: { xs: 1, sm: 3 },
+      }}>
+        <Paper elevation={0} sx={{
         p: { xs: 1, sm: 3 },
         borderRadius: { xs: 2, sm: 3 },
         backgroundColor: 'transparent',
@@ -388,6 +393,7 @@ const AllPlayersPage = () => {
         )}
       </Paper>
     </Container>
+    </Box>
   );
 };
 

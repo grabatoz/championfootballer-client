@@ -36,6 +36,7 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
+import CloseButton from '@/Components/CloseButton';
 // import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
@@ -1656,6 +1657,8 @@ export default function GlobalTrophyRoom() {
   // UI
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
+       {/* Close Button */}
+            <CloseButton fallbackRoute="/dashboard" />
       <Box
         sx={{
           display: 'grid',

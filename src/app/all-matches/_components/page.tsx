@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 import CloseIcon from '@mui/icons-material/Close';
+import CloseButton from '@/Components/CloseButton';
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
@@ -421,7 +422,7 @@ export default function AllMatches() {
     };
 
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
-    const [activeMatchId, ] = React.useState<string | null>(null);
+    const [activeMatchId,] = React.useState<string | null>(null);
     const [stats, setStats] = React.useState({
         goals: 0,
         assists: 0,
@@ -1115,7 +1116,7 @@ export default function AllMatches() {
     // Open Match Stats modal instead of navigating for play actions
     const [matchStatsOpen, setMatchStatsOpen] = React.useState(false);
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
-    const [selectedLeagueIdForDialog, ] = React.useState<string | null>(null);
+    const [selectedLeagueIdForDialog,] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
 
 
@@ -1129,6 +1130,7 @@ export default function AllMatches() {
             }}
         >
             <Container maxWidth="lg">
+
                 {/* <Button
                     startIcon={<ArrowLeft />}
                     onClick={handleBackToDashboard}
@@ -1141,23 +1143,26 @@ export default function AllMatches() {
                 </Button> */}
 
                 <Box sx={{ mb: { xs: 3, md: 5 } }}>
-                    <Typography variant="h3" sx={{
-                        mb: { xs: 3, md: 4 },
-                        color: 'black',
-                        // fontFamily: 'Arial Black, Arial, sans-serif',
-                        fontFamily: '"Anton", sans-serif',
-                        fontWeight: 'semibold',
-                        fontSize: { xs: '32px', sm: '42px', md: '56px' },
-                        textAlign: { xs: 'center', md: 'left' },
-                        textTransform: 'uppercase',
-                        letterSpacing: '2px',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}
-                        className='all-leagues-heading'
-                    >
-                        ALL MATCHES
-                    </Typography>
-
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}>
+                        <Typography variant="h3" sx={{
+                            // mb: { xs: 3, md: 4 },
+                            color: 'black',
+                            // fontFamily: 'Arial Black, Arial, sans-serif',
+                            fontFamily: '"Anton", sans-serif',
+                            fontWeight: 'semibold',
+                            fontSize: { xs: '32px', sm: '42px', md: '56px' },
+                            textAlign: { xs: 'center', md: 'left' },
+                            textTransform: 'uppercase',
+                            letterSpacing: '2px',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                        }}
+                            className='all-leagues-heading'
+                        >
+                            ALL MATCHES
+                        </Typography>
+                        {/* Close Button */}
+                        <CloseButton fallbackRoute="/dashboard" />
+                    </Box>
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
@@ -1774,13 +1779,13 @@ export default function AllMatches() {
                                                     </Tooltip>
                                                 </Box>
                                             </Box> */}
-                                            <Box sx={{ 
-                                                display: 'flex', 
-                                                justifyContent: 'center', 
-                                                alignItems: 'center', 
+                                            <Box sx={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
                                                 flexWrap: 'wrap',
-                                                gap: 0.75, 
-                                                mt: 2 
+                                                gap: 0.75,
+                                                mt: 2
                                             }}>
                                                 {/* Admin-only: ADD Score button */}
                                                 {isAdmin && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
@@ -1837,7 +1842,7 @@ export default function AllMatches() {
                                                         </Button>
                                                     )
                                                 )}
-                                                
+
                                                 {/* All Members: Add Your Stats button */}
                                                 {isMember && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
                                                     match.status === 'RESULT_UPLOADED' ? (
@@ -1893,16 +1898,16 @@ export default function AllMatches() {
                                                         </Button>
                                                     )
                                                 )}
-                                                
+
                                                 {/* View Team button */}
                                                 <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                     <span>
                                                         <Button
                                                             size="small"
-                                                            onClick={(e) => { 
-                                                                e.stopPropagation(); 
-                                                                setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id }); 
-                                                                setViewTeamOpen(true); 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id });
+                                                                setViewTeamOpen(true);
                                                             }}
                                                             sx={{
                                                                 backgroundColor: '#FA5836',
@@ -1923,7 +1928,7 @@ export default function AllMatches() {
                                                         </Button>
                                                     </span>
                                                 </Tooltip>
-                                                
+
                                                 {/* Match Results button */}
                                                 <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                     <span>
