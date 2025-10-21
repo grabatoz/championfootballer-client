@@ -21,7 +21,7 @@ import {
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { fetchPlayedWithPlayers, fetchLeaguePlayers } from '@/lib/features/userSlice';
+import { fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
 // import FirstBadge from '@/Components/images/1st.png';
