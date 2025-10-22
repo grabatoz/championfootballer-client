@@ -1620,8 +1620,10 @@ function AllLeagues() {
         >
           Back to Dashboard
         </Button> */}
+          {/* Close Button */}
+          <CloseButton fallbackRoute="/dashboard" />
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}>
+          {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
             <Typography variant="h3" sx={{
               color: 'black',
               fontFamily: '"Anton", sans-serif',
@@ -1636,9 +1638,7 @@ function AllLeagues() {
             >
               ALL LEAGUES
             </Typography>
-            {/* Close Button */}
-            <CloseButton fallbackRoute="/dashboard" />
-          </Box>
+          {/* </Box> */}
           {/* Create/Join League Section */}
           <Box sx={{
             display: 'flex',

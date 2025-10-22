@@ -192,7 +192,9 @@ const AllPlayersPage = () => {
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh' , maxWidth:'lg' , py:4 }}>
       {/* Close Button - Top Right */}
+      <Box sx={{ml:4}}>
       <CloseButton fallbackRoute="/dashboard" />
+      </Box>
       
       <Container maxWidth="md" sx={{
         py: { xs: 2, sm: 4 },

@@ -5971,13 +5971,24 @@ export default function LeagueDetailPage() {
             </Dialog>
             {/* // ...existing code... */}
             <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ fontWeight: 'bold' }}>Team Preview</DialogTitle>
+                <DialogTitle sx={{ 
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}>
+                    Team Preview
+                    <IconButton 
+                        onClick={() => setViewTeamOpen(false)} 
+                        size="small"
+                        sx={{ color: 'inherit' }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent dividers sx={{ p: 0 }}>
                     <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setViewTeamOpen(false)}>Close</Button>
-                </DialogActions>
             </Dialog>
 
 

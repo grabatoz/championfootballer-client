@@ -1141,28 +1141,28 @@ export default function AllMatches() {
                 >
                     Back to Dashboard
                 </Button> */}
-
+                {/* Close Button */}
+                <CloseButton fallbackRoute="/dashboard" />
                 <Box sx={{ mb: { xs: 3, md: 5 } }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}>
-                        <Typography variant="h3" sx={{
-                            // mb: { xs: 3, md: 4 },
-                            color: 'black',
-                            // fontFamily: 'Arial Black, Arial, sans-serif',
-                            fontFamily: '"Anton", sans-serif',
-                            fontWeight: 'semibold',
-                            fontSize: { xs: '32px', sm: '42px', md: '56px' },
-                            textAlign: { xs: 'center', md: 'left' },
-                            textTransform: 'uppercase',
-                            letterSpacing: '2px',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                        }}
-                            className='all-leagues-heading'
-                        >
-                            ALL MATCHES
-                        </Typography>
-                        {/* Close Button */}
-                        <CloseButton fallbackRoute="/dashboard" />
-                    </Box>
+                    {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
+                    <Typography variant="h3" sx={{
+                        // mb: { xs: 3, md: 4 },
+                        color: 'black',
+                        // fontFamily: 'Arial Black, Arial, sans-serif',
+                        fontFamily: '"Anton", sans-serif',
+                        fontWeight: 'semibold',
+                        fontSize: { xs: '32px', sm: '42px', md: '56px' },
+                        textAlign: { xs: 'center', md: 'left' },
+                        textTransform: 'uppercase',
+                        letterSpacing: '2px',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                        className='all-leagues-heading'
+                    >
+                        ALL MATCHES
+                    </Typography>
+
+                    {/* </Box> */}
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
@@ -2437,13 +2437,27 @@ export default function AllMatches() {
 
 
             <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ fontWeight: 'bold' }}>Team Preview</DialogTitle>
+                <DialogTitle sx={{
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}>
+                    Team Preview
+                    <IconButton
+                        onClick={() => setViewTeamOpen(false)}
+                        size="small"
+                        sx={{ color: 'inherit' }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent dividers sx={{ p: 0 }}>
                     <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
                 </DialogContent>
-                <DialogActions>
+                {/* <DialogActions>
                     <Button onClick={() => setViewTeamOpen(false)}>Close</Button>
-                </DialogActions>
+                </DialogActions> */}
             </Dialog>
 
         </Box>
