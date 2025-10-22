@@ -1377,8 +1377,10 @@ export default function AllMatches() {
                                             />
                                                             <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 {(() => {
-                                                    const isLeagueAdmin = leagueItem.administrators?.some((admin: any) => admin.id === user?.id);
-                                                    const isLeagueMember = leagueItem.members?.some((member: any) => member.id === user?.id);
+                                                    // Define LeagueUser type if not already defined
+                                                    type LeagueUser = { id: string };
+                                                    const isLeagueAdmin = leagueItem.administrators?.some((admin: LeagueUser) => admin.id === user?.id);
+                                                    const isLeagueMember = leagueItem.members?.some((member: LeagueUser) => member.id === user?.id);
                                                     const userRole = isLeagueAdmin ? 'ADMIN' : isLeagueMember ? 'MEMBER' : null;
                                                     
                                                     return userRole ? (
