@@ -3679,9 +3679,11 @@ export default function LeagueDetailPage() {
                 backgroundPosition: 'center',
             }}
         >
+            {/* <Box sx={{ ml:5}}> */}
+            {/* </Box> */}
+            <Container maxWidth="lg">
             {/* Close Button */}
             <CloseButton fallbackRoute="/dashboard" />
-            <Container maxWidth="lg">
                 {/* Show page structure immediately */}
 
                 {/* Access control for non-members - only show when league data is available */}
