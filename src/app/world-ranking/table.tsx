@@ -338,7 +338,7 @@ export default function WorldRankingTable(){
           </Box>
         </Box>
         <Typography sx={{ position:'relative', mt:2, fontSize:11.7, lineHeight:1.5, color:'#c3c3c3', maxWidth:880 }}>
-          View global performance of all registered players. Your row is highlighted. Use Average mode to normalize by matches played. Scroll is auto-focused on you if ranked in the visible list.
+          View global performance of all registered players (guest players excluded). Your row is highlighted. Use Average mode to normalize by matches played. Scroll is auto-focused on you if ranked in the visible list.
         </Typography>
       </Paper>
 

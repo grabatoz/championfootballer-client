@@ -1032,6 +1032,7 @@ export function updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: 
 }
 
 // World Ranking -------------------------------------------------------------
+// Note: Guest players are automatically excluded from world ranking by the backend
 export interface WorldRankingPlayer {
   id: string;
   name: string;
