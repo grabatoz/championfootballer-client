@@ -2063,7 +2063,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 sx={{
                     p: { xs: 1.5, sm: 2 },
                     my: 2,
-                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    // background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                     color: 'white',
                     borderRadius: 3,
                     border: '1px solid #3a3a3a',
@@ -2686,11 +2687,25 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         
         return (
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <DialogTitle sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    color: 'white'
+                }}>
                     Match Stats
-                    <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                    <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+                        <CloseIcon />
+                    </IconButton>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: 0 }}>
+                <DialogContent 
+                    dividers 
+                    sx={{ 
+                        p: 0,
+                           background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                    }}
+                >
                     {content}
                 </DialogContent>
             </Dialog>
