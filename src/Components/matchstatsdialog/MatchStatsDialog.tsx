@@ -1011,7 +1011,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 throw new Error(errorData.message || 'Failed to upload result');
             }
             
-            const data = await res.json();
+            // const data = await res.json();
             
             toast.success('Match details saved successfully!');
             
