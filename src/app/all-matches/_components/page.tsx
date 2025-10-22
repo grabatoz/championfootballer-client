@@ -2290,8 +2290,6 @@ export default function AllMatches() {
                 showAdminGoalsSection={shouldShowAdminGoals}
             />
 
-
-
             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
                 <DialogTitle sx={{ fontWeight: 'bold' }}>Are you sure you want to delete this match?</DialogTitle>
                 <DialogContent>

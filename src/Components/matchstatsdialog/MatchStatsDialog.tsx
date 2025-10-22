@@ -1572,6 +1572,28 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     };
 
     if (loading) {
+        // If showAdminGoalsSection is true, show loading inside the admin dialog
+        if (showAdminGoalsSection) {
+            return (
+                <Dialog 
+                    open={showAdminGoalsSection} 
+                    onClose={onClose}
+                    fullWidth 
+                    maxWidth="sm"
+                >
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white' }}>
+                        Admin Can Add Goals Both Teams
+                        <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                        <CircularProgress sx={{ color: 'white' }} />
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+
         const inner = (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
                 <CircularProgress />
@@ -2113,8 +2135,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
 
             {!showAdminGoalsSection && (
-            <></>
-            /* <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
+            // <></>
+             <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
                 <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
                 <div className="w-full h-px bg-white mb-6"></div>
 
@@ -2160,176 +2182,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Link>
                         ))}
                 </div>
-            </div> */
+            </div> 
             )}
 
-
-
-
-
-
-
-
-        
-
-            {isAdmin && !selectedLeagueHasNoMatches && showAdminGoalsSection && (
-                <Box sx={{
-                    mt: 4,
-                    mb: 4,
-                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-                    color: 'white',
-                    p: { xs: 2, sm: 3 },
-                    borderRadius: 3,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
-                    border: '1px solid #3a3a3a',
-                    maxWidth: 700,
-                    mx: 'auto',
-                }}>
-                    <Typography variant="h6" gutterBottom>Admin Can Add Goals Both Teams</Typography>
-                    <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
-                    <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => {
-                                setHomeGoals(prev => {
-                                    const next = Math.max(0, prev - 1);
-                                    setHomeGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
-                            <TextField
-                                label={`${match.homeTeamName} Goals`}
-                                type="number"
-                                value={homeGoalsInput}
-                                onChange={e => {
-                                    const raw = e.target.value;
-                                    // allow empty to let user clear
-                                    if (raw === '') {
-                                        setHomeGoalsInput('');
-                                        setHomeGoals(0);
-                                        return;
-                                    }
-                                    // clamp negatives
-                                    const n = Math.max(0, Number(raw));
-                                    const str = String(Number.isFinite(n) ? n : 0);
-                                    setHomeGoalsInput(str);
-                                    setHomeGoals(Number(str));
-                                }}
-                                variant="outlined"
-                                sx={{
-                                    width: '150px',
-                                    input: { color: 'white' },
-                                    label: { color: 'white' },
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': { borderColor: 'white' },
-                                        '&:hover fieldset': { borderColor: 'white' },
-                                        '&.Mui-focused fieldset': { borderColor: 'white' },
-                                    },
-                                    '& .MuiInputLabel-root': { color: 'white' },
-                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
-                                }}
-                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
-                                InputLabelProps={{ style: { color: 'white' } }}
-                                disabled={!league.active}
-                            />
-                            <IconButton onClick={() => {
-                                setHomeGoals(prev => {
-                                    const next = prev + 1;
-                                    setHomeGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => {
-                                setAwayGoals(prev => {
-                                    const next = Math.max(0, prev - 1);
-                                    setAwayGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Remove /></IconButton>
-                            <TextField
-                                label={`${match.awayTeamName} Goals`}
-                                type="number"
-                                value={awayGoalsInput}
-                                onChange={e => {
-                                    const raw = e.target.value;
-                                    if (raw === '') {
-                                        setAwayGoalsInput('');
-        								setAwayGoals(0);
-                                        return;
-                                    }
-                                    const n = Math.max(0, Number(raw));
-                                    const str = String(Number.isFinite(n) ? n : 0);
-                                    setAwayGoalsInput(str);
-                                    setAwayGoals(Number(str));
-                                }}
-                                variant="outlined"
-                                sx={{
-                                    width: '150px',
-                                    input: { color: 'white' },
-                                    label: { color: 'white' },
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': { borderColor: 'white' },
-                                        '&:hover fieldset': { borderColor: 'white' },
-                                        '&.Mui-focused fieldset': { borderColor: 'white' },
-                                    },
-                                    '& .MuiInputLabel-root': { color: 'white' },
-                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
-                                }}
-                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
-                                InputLabelProps={{ style: { color: 'white' } }}
-                                disabled={!league.active}
-                            />
-                            <IconButton onClick={() => {
-                                setAwayGoals(prev => {
-                                    const next = prev + 1;
-                                    setAwayGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league.active}><Add /></IconButton>
-                        </Box>
-                    </Box>
-                    <Box sx={{ mb: 2 }}>
-                        <TextField
-                            label="Match Note"
-                            multiline
-                            rows={3}
-                            value={note}
-                            onChange={e => setNote(e.target.value)}
-                            fullWidth
-                            variant="outlined"
-                            disabled={!league.active}
-                            sx={{
-                                input: { color: 'white' },
-                                textarea: { color: 'white' },
-                                label: { color: 'white' },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': { borderColor: 'white' },
-                                    '&:hover fieldset': { borderColor: 'white' },
-                                    '&.Mui-focused fieldset': { borderColor: 'white' },
-                                },
-                                '& .MuiInputLabel-root': { color: 'white' },
-                                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
-                            }}
-                            InputLabelProps={{ style: { color: 'white' } }}
-                        />
-                    </Box>
-                    <Button
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSaveDetails}
-                        disabled={!league.active || savingMatchDetails}
-                    >
-                        {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save Match Details'}
-                    </Button>
-                </Box>
-            )}
             {/* --- NEW: Player selection dialog (team-restricted) --- */}
             <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle>
@@ -2655,7 +2510,180 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         </Box>
     );
 
+    // If showAdminGoalsSection is true, render ONLY the admin dialog (no background content)
+    if (showAdminGoalsSection && isAdmin) {
+        const handleAdminDialogClose = () => {
+            if (onClose) {
+                onClose();
+            }
+        };
+
+        return (
+            <Dialog 
+                open={open === true && showAdminGoalsSection === true}
+                onClose={handleAdminDialogClose}
+                fullWidth 
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white' }}>
+                    Admin Can Add Goals Both Teams
+                    <IconButton onClick={handleAdminDialogClose} size="small" sx={{ color: 'white' }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white', pt: 3 }}>
+                    <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, mt:2 ,alignItems: { xs: 'stretch', sm: 'center' } }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton onClick={() => {
+                                setHomeGoals(prev => {
+                                    const next = Math.max(0, prev - 1);
+                                    setHomeGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Remove /></IconButton>
+                            <TextField
+                                label={`${match?.homeTeamName || 'Home'} Goals`}
+                                type="number"
+                                value={homeGoalsInput}
+                                onChange={e => {
+                                    const raw = e.target.value;
+                                    if (raw === '') {
+                                        setHomeGoalsInput('');
+                                        setHomeGoals(0);
+                                        return;
+                                    }
+                                    const n = Math.max(0, Number(raw));
+                                    const str = String(Number.isFinite(n) ? n : 0);
+                                    setHomeGoalsInput(str);
+                                    setHomeGoals(Number(str));
+                                }}
+                                variant="outlined"
+                                sx={{
+                                    width: '150px',
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': { borderColor: 'white' },
+                                        '&:hover fieldset': { borderColor: 'white' },
+                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                    },
+                                    '& .MuiInputLabel-root': { color: 'white' },
+                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                }}
+                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                                disabled={!league?.active}
+                            />
+                            <IconButton onClick={() => {
+                                setHomeGoals(prev => {
+                                    const next = prev + 1;
+                                    setHomeGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Add /></IconButton>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton onClick={() => {
+                                setAwayGoals(prev => {
+                                    const next = Math.max(0, prev - 1);
+                                    setAwayGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Remove /></IconButton>
+                            <TextField
+                                label={`${match?.awayTeamName || 'Away'} Goals`}
+                                type="number"
+                                value={awayGoalsInput}
+                                onChange={e => {
+                                    const raw = e.target.value;
+                                    if (raw === '') {
+                                        setAwayGoalsInput('');
+                                        setAwayGoals(0);
+                                        return;
+                                    }
+                                    const n = Math.max(0, Number(raw));
+                                    const str = String(Number.isFinite(n) ? n : 0);
+                                    setAwayGoalsInput(str);
+                                    setAwayGoals(Number(str));
+                                }}
+                                variant="outlined"
+                                sx={{
+                                    width: '150px',
+                                    input: { color: 'white' },
+                                    label: { color: 'white' },
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': { borderColor: 'white' },
+                                        '&:hover fieldset': { borderColor: 'white' },
+                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                    },
+                                    '& .MuiInputLabel-root': { color: 'white' },
+                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                }}
+                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
+                                InputLabelProps={{ style: { color: 'white' } }}
+                                disabled={!league?.active}
+                            />
+                            <IconButton onClick={() => {
+                                setAwayGoals(prev => {
+                                    const next = prev + 1;
+                                    setAwayGoalsInput(String(next));
+                                    return next;
+                                });
+                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Add /></IconButton>
+                        </Box>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            label="Match Note"
+                            multiline
+                            rows={3}
+                            value={note}
+                            onChange={e => setNote(e.target.value)}
+                            fullWidth
+                            variant="outlined"
+                            disabled={!league?.active}
+                            sx={{
+                                input: { color: 'white' },
+                                textarea: { color: 'white' },
+                                label: { color: 'white' },
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': { borderColor: 'white' },
+                                    '&:hover fieldset': { borderColor: 'white' },
+                                    '&.Mui-focused fieldset': { borderColor: 'white' },
+                                },
+                                '& .MuiInputLabel-root': { color: 'white' },
+                                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                            }}
+                            InputLabelProps={{ style: { color: 'white' } }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', p: 2 }}>
+                    <Button
+                        sx={{
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                        }}
+                        variant="contained"
+                        onClick={handleSaveDetails}
+                        disabled={!league?.active || savingMatchDetails}
+                        fullWidth
+                    >
+                        {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save Match Details'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
     if (typeof open === 'boolean') {
+        // Don't render main dialog if admin section is supposed to show
+        if (showAdminGoalsSection) {
+            return null;
+        }
+        
         return (
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

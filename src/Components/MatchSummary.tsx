@@ -674,13 +674,19 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           )}
         </Box>
       )}
-      <MatchStatsDialog
-        open={statsDialogOpen}
-        onClose={() => setStatsDialogOpen(false)}
-        initialLeagueId={leagueId}
-        initialMatchId={matchId}
-        showAdminGoalsSection={shouldShowAdminGoals}
-      />
+      {statsDialogOpen && (
+        <MatchStatsDialog
+          open={statsDialogOpen}
+          onClose={() => {
+            // Close both states together in batch
+            setShouldShowAdminGoals(false);
+            setStatsDialogOpen(false);
+          }}
+          initialLeagueId={leagueId}
+          initialMatchId={matchId}
+          showAdminGoalsSection={shouldShowAdminGoals}
+        />
+      )}
     </Box>
   )
 }
