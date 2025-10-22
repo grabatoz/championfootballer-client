@@ -5120,7 +5120,7 @@ export default function LeagueDetailPage() {
                                                                             <span>
                                                                                 <Button
                                                                                     size="small"
-                                                                                    disabled
+                                                                                    // disabled
                                                                                     sx={{
                                                                                         backgroundColor: '#0388E3',
                                                                                         color: 'white',
