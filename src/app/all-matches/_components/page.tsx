@@ -148,7 +148,33 @@ export default function AllMatches() {
                 // Remove duplicates
                 const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
 
-                setLeagues(uniqueLeagues);
+                // Fetch detailed info for all leagues to get administrators and members
+                const detailedLeagues = await Promise.all(
+                    uniqueLeagues.map(async (league) => {
+                        try {
+                            const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            const leagueData = await leagueResponse.json();
+                            if (leagueData.success && leagueData.league) {
+                                return {
+                                    ...league,
+                                    administrators: leagueData.league.administrators,
+                                    members: leagueData.league.members
+                                };
+                            }
+                            return league;
+                        } catch (error) {
+                            console.error(`Error fetching details for league ${league.id}:`, error);
+                            return league;
+                        }
+                    })
+                );
+
+                setLeagues(detailedLeagues);
             }
         } catch (error) {
             console.error('Error fetching leagues:', error);
@@ -1349,8 +1375,31 @@ export default function AllMatches() {
                                                     }
                                                 }}
                                             />
-                                            {isActive ? (
-                                                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                {(() => {
+                                                    const isLeagueAdmin = leagueItem.administrators?.some((admin: any) => admin.id === user?.id);
+                                                    const isLeagueMember = leagueItem.members?.some((member: any) => member.id === user?.id);
+                                                    const userRole = isLeagueAdmin ? 'ADMIN' : isLeagueMember ? 'MEMBER' : null;
+                                                    
+                                                    return userRole ? (
+                                                        <Box
+                                                            sx={{
+                                                                px: 1,
+                                                                py: 0.25,
+                                                                bgcolor: userRole === 'ADMIN' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                                                                color: userRole === 'ADMIN' ? '#1F2937' : '#FFFFFF',
+                                                                borderRadius: '9999px',
+                                                                fontSize: 10,
+                                                                fontWeight: 700,
+                                                                letterSpacing: 0.3,
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            {userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                                                        </Box>
+                                                    ) : null;
+                                                })()}
+                                                {/* {isActive && (
                                                     <Box
                                                         sx={{
                                                             px: 1,
@@ -1366,8 +1415,8 @@ export default function AllMatches() {
                                                     >
                                                         Current
                                                     </Box>
-                                                </Box>
-                                            ) : null}
+                                                )} */}
+                                            </Box>
                                         </MenuItem>
                                     );
                                 })}
