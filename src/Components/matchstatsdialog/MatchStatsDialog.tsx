@@ -677,6 +677,23 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedLeagueId, resolvedMatchId, token]);
 
+    // Update goals when match changes (ensures admin dialog always shows current match goals)
+    useEffect(() => {
+        if (match) {
+            const hg = typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0;
+            const ag = typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0;
+            setHomeGoals(hg);
+            setAwayGoals(ag);
+            setHomeGoalsInput(String(hg));
+            setAwayGoalsInput(String(ag));
+            if (match.notes) {
+                setNote(match.notes);
+            }
+        }
+    }, [match]);
+
+    // (Removed duplicate useEffect for admin dialog open. Goals are now always set from match change.)
+
     // When opened as a dialog with explicit ids, use them and skip preferred auto-select
     useEffect(() => {
         const run = async () => {
@@ -976,7 +993,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // CHANGED: do not toggle global loading; refetch silently and show local spinner on button
     const handleSaveDetails = async () => {
-        if (!token || !matchId) return;
+        if (!token || !resolvedMatchId) {
+            toast.error('Match ID is missing. Please select a match first.');
+            return;
+        }
+        
         try {
             setSavingMatchDetails(true);
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/upload-result`, {
@@ -984,11 +1005,27 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
             });
-            if (!res.ok) throw new Error('Failed to upload result');
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to upload result');
+            }
+            
+            const data = await res.json();
+            
+            toast.success('Match details saved successfully!');
+            
             // Ensure state stays full by refetching without blanking the page
             await fetchLeagueAndMatchDetails(true);
+            
+            // Close the admin dialog after successful save
+            if (onClose) {
+                onClose();
+            }
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to save');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to save match details';
+            toast.error(errorMessage);
+            setError(errorMessage);
         } finally {
             setSavingMatchDetails(false);
         }
