@@ -190,10 +190,17 @@ const AllPlayersPage = () => {
   console.log('Sorted Players:', sortedPlayers);
 
   return (
-    <Box sx={{ position: 'relative', minHeight: '100vh' , maxWidth:'lg' , py:4 }}>
+    <Box sx={{ 
+      position: 'relative', 
+      minHeight: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      py: 4 
+    }}>
       {/* Close Button - Top Right */}
-      <Box sx={{ml:4}}>
-      <CloseButton fallbackRoute="/dashboard" />
+      <Box sx={{ position: 'absolute', top: 16, left: 26, zIndex: 10 }}>
+        <CloseButton fallbackRoute="/dashboard" />
       </Box>
       
       <Container maxWidth="md" sx={{

@@ -507,7 +507,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         <Box
           component="form"
           onSubmit={handleRegisterSubmit}
-          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 9.5 } , mb:7 }}
+          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 5 } , mb:7 }}
         >
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>

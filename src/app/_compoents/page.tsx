@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, Paper, Typography, Button, Card } from '@mui/material';
+import { Box, Paper, Typography, Button, Card, Modal, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import AuthTabs from '@/Components/authtabs/authtabs';
 import Image from 'next/image';
 import Layer from '@/Components/images/championfootballnewlogo.png';
@@ -20,6 +21,7 @@ import AuthSocialButtons from '@/Components/AuthSocialButtons';
 
 export default function LandingPage() {
   const [showLogin, setShowLogin] = useState(true);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
   // Feature cards (id, title, image)
   const features = [
@@ -178,14 +180,22 @@ export default function LandingPage() {
               <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
                 <Button
                   variant="contained"
-                  onClick={() => setShowLogin(!showLogin)}
+                  onClick={() => {
+                    if (showLogin) {
+                      // Join button clicked - open modal with register form
+                      setIsJoinModalOpen(true);
+                    } else {
+                      // Toggle back to Login
+                      setShowLogin(true);
+                    }
+                  }}
                   sx={{
                     color: 'white',
                     textTransform: 'none',
                     fontSize: '1rem',
                     fontWeight: 'bold',
                     backgroundColor: '#000000',
-                    '&:hover': { backgroundColor: '#000000' },
+                    '&:hover': { backgroundColor: '#333333' },
                     borderRadius: 2,
                     px: 1,
                     mt:{sm:0, xs:0 , md:-5}
@@ -202,6 +212,55 @@ export default function LandingPage() {
 
           </Paper>
         </Box>
+
+        {/* Join Modal - Popup for registration */}
+        <Modal
+          open={isJoinModalOpen}
+          onClose={() => setIsJoinModalOpen(false)}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Paper
+            elevation={8}
+            sx={{
+              width: { xs: '90%', sm: '500px', md: '450px' },
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              borderRadius: 3,
+              bgcolor: 'rgba(255, 255, 255, 0.95)',
+              p: { xs: 3, md: 4 },
+              position: 'relative',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            {/* Close button */}
+            <IconButton
+              onClick={() => setIsJoinModalOpen(false)}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: 'grey.500',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            {/* Auth Tabs - Register form */}
+            <Box sx={{ width: '100%', overflow: 'visible' }}>
+              <AuthTabs showLogin={false} onToggleForm={() => {}} />
+            </Box>
+
+            {/* Social Buttons */}
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+              <AuthSocialButtons />
+            </Box>
+          </Paper>
+        </Modal>
       </Box>
 
       {/* BOTTOM GROUP: move images into a separate, centered box anchored to bottom on md+ */}
