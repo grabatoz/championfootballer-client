@@ -40,6 +40,16 @@ import CloseButton from '@/Components/CloseButton';
 // import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
+interface LeagueComputedStatus {
+  matchesPlayed?: number;
+  gamesPlayed?: number;
+  maxGames?: number;
+  locked?: boolean;
+  isComplete?: boolean;
+  missing?: string[];
+  [key: string]: unknown;
+}
+
 interface User {
   id: string;
   firstName?: string; // Make optional to match UserProfile
@@ -57,6 +67,8 @@ interface Match {
   manOfTheMatchVotes: Record<string, string>;
   playerStats: Record<string, { goals: number; assists: number }>;
   status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
+  active?: boolean;
+  end?: string | Date;
 }
 
 interface League {
@@ -65,6 +77,12 @@ interface League {
   members: User[];
   matches: Match[];
   maxGames: number;
+  computedStatus?: LeagueComputedStatus;
+  isLocked?: boolean;
+  isComplete?: boolean;
+  isCompleted?: boolean;
+  active?: boolean;
+  status?: string;
 }
 
 interface PlayerStats {
@@ -1281,6 +1299,55 @@ export default function GlobalTrophyRoom() {
   const [filter, setFilter] = useState<'all' | 'my'>('all');
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
+  const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  // Helper: determine if a league is completed
+  const leagueIsCompleted = React.useCallback((l: League): boolean => {
+    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
+    if (missingArr.length > 0) return false;
+
+    const toNum = (v: unknown): number | undefined => {
+      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
+    const played = playedFromComputed;
+    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
+
+    if (Array.isArray(l.matches)) {
+      const matches = l.matches ?? [];
+      const completedCount = matches.reduce((acc, m) => {
+        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+        const endedByFlag = m.active === false;
+        const endedByEnd = Boolean(m.end);
+        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
+      }, 0);
+      if (typeof maxG === 'number' && maxG > 0) {
+        if (completedCount < maxG) return false;
+        return true;
+      }
+    }
+
+    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
+      if (played < maxG) return false;
+      return true;
+    }
+
+    if (l?.computedStatus?.isComplete === true) return true;
+    if (l?.computedStatus?.locked === true) return true;
+    if (l?.isComplete === true) return true;
+    if (l?.isCompleted === true) return true;
+    if (l?.isLocked === true) return true;
+
+    const sRaw = (l?.status ?? '').toString();
+    const s = sRaw.trim().toUpperCase();
+    const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
+    if (completionStatuses.has(s)) return true;
+    if (typeof l?.active === 'boolean' && l.active === false) return true;
+    return false;
+  }, []);
+
   // Quick-view modal state
   const [openQuickView, setOpenQuickView] = useState(false);
   const [quickView, setQuickView] = useState<{
@@ -1314,7 +1381,15 @@ export default function GlobalTrophyRoom() {
     setLeaguesDropdownAnchor(null);
   };
   const handleLeagueSelect = (id: string | 'all') => {
-    setSelectedLeagueId(id === 'all' ? 'all' : String(id));
+    const newId = id === 'all' ? 'all' : String(id);
+    setSelectedLeagueId(newId);
+    if (newId !== 'all') {
+      try {
+        localStorage.setItem(PREFERRED_LEAGUE_KEY, newId);
+      } catch (err) {
+        console.error('[Trophy Room] Failed to save preferred league:', err);
+      }
+    }
     handleLeaguesDropdownClose();
   };
 
@@ -1366,7 +1441,103 @@ export default function GlobalTrophyRoom() {
         const data = await res.json();
         if (res.ok && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
-          setLeagues(normalizeLeaguesFromAuthData(userPayload));
+          const rawLeagues = normalizeLeaguesFromAuthData(userPayload);
+
+          // Enrich with computed status
+          const enrichedLeagues = await Promise.all(
+            rawLeagues.map(async (league) => {
+              try {
+                const leagueId = String(league.id);
+                const [statusRes, detailsRes] = await Promise.all([
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  }),
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  })
+                ]);
+
+                let matchesFromDetails: Match[] | undefined = undefined;
+                let maxGamesFromDetails: number | undefined = undefined;
+
+                if (detailsRes.ok) {
+                  const leagueData = await detailsRes.json();
+                  const rawMatches = leagueData?.league?.matches as unknown;
+                  if (Array.isArray(rawMatches)) {
+                    matchesFromDetails = rawMatches as Match[];
+                  }
+                  if (typeof leagueData?.league?.maxGames === 'number') {
+                    maxGamesFromDetails = leagueData.league.maxGames as number;
+                  }
+                }
+
+                if (statusRes.ok) {
+                  const statusData = await statusRes.json();
+                  const raw = (statusData?.status || {}) as Record<string, unknown>;
+                  const toNum = (v: unknown): number | undefined => {
+                    const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+                    return Number.isFinite(n) ? n : undefined;
+                  };
+                  const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed);
+                  const maxGames = toNum(raw?.maxGames);
+                  const locked = raw?.locked === true;
+                  const isComplete = raw?.isComplete === true;
+                  const missingRaw = raw?.missing as unknown;
+                  const missing = Array.isArray(missingRaw) ? missingRaw : [];
+                  const computed: LeagueComputedStatus = {
+                    ...(raw as LeagueComputedStatus),
+                    matchesPlayed,
+                    gamesPlayed: matchesPlayed,
+                    maxGames,
+                    locked,
+                    isComplete,
+                    missing,
+                  };
+                  return {
+                    ...league,
+                    computedStatus: computed,
+                    isLocked: computed?.locked === true,
+                    maxGames: maxGames ?? maxGamesFromDetails,
+                    matches: matchesFromDetails,
+                  } as League;
+                }
+
+                return league as League;
+              } catch (error) {
+                console.error(`Error fetching details for league`, error);
+                return league as League;
+              }
+            })
+          );
+
+          // Filter out completed leagues
+          const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
+
+          // Sort alphabetically
+          activeLeagues.sort((a, b) => {
+            const an = (a?.name ?? '').toString().trim().toLowerCase();
+            const bn = (b?.name ?? '').toString().trim().toLowerCase();
+            if (an < bn) return -1;
+            if (an > bn) return 1;
+            return String(a.id).localeCompare(String(b.id));
+          });
+
+          setLeagues(activeLeagues);
+
+          // Auto-select preferred league from localStorage or first league (not 'all' for trophy room)
+          if (activeLeagues.length > 0) {
+            const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+            const preferred = storedId ? activeLeagues.find(l => l.id === storedId) : null;
+            // Trophy room allows 'all' option, so we default to 'all' if no preference
+            if (preferred) {
+              setSelectedLeagueId(preferred.id);
+            } else {
+              setSelectedLeagueId('all');
+            }
+          }
+
+          console.log('[Trophy Room] Total:', enrichedLeagues.length, 'Active:', activeLeagues.length);
+
           // If server didn't send backendTotalXP via /leagues/trophy-room yet, derive from auth payload user
           try {
             const maybeUser = data?.user ?? data;
@@ -1384,7 +1555,7 @@ export default function GlobalTrophyRoom() {
         setLeagues([]);
       }
     })();
-  }, [token]);
+  }, [token, leagueIsCompleted]);
 
   useEffect(() => {
     const fetchWinners = async () => {
