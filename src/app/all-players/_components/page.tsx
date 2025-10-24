@@ -80,7 +80,7 @@ interface LeagueOption {
 //   administeredLeagues?: unknown;
 // }
 
-const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object';
+// const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object';
 
 // Convert an unknown array into a list of {id, name} with string ids; filters invalid entries
 // function parseLeagueOptions(value: unknown): LeagueOption[] {
