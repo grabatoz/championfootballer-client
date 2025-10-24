@@ -328,28 +328,28 @@ export default function MatchDetailsPage() {
   };
 
   // const router = useRouter();
-  const handleCloseAndGoBack = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      // If there is browser history, just go back
-      if (window.history.length > 1) {
-        router.back();
-        return;
-      }
-      // Try referrer when history stack isn't available (e.g., direct open)
-      const ref = document.referrer;
-      if (ref && ref.startsWith(window.location.origin)) {
-        const path = ref.replace(window.location.origin, '') || '/';
-        router.push(path);
-        return;
-      }
-    }
-    // Fallbacks
-    if (match?.leagueId) {
-      router.push(`/league/${match.leagueId}`);
-    } else {
-      router.push('/all-matches');
-    }
-  }, [router, match]);
+  // const handleCloseAndGoBack = useCallback(() => {
+  //   if (typeof window !== 'undefined') {
+  //     // If there is browser history, just go back
+  //     if (window.history.length > 1) {
+  //       router.back();
+  //       return;
+  //     }
+  //     // Try referrer when history stack isn't available (e.g., direct open)
+  //     const ref = document.referrer;
+  //     if (ref && ref.startsWith(window.location.origin)) {
+  //       const path = ref.replace(window.location.origin, '') || '/';
+  //       router.push(path);
+  //       return;
+  //     }
+  //   }
+  //   // Fallbacks
+  //   if (match?.leagueId) {
+  //     router.push(`/league/${match.leagueId}`);
+  //   } else {
+  //     router.push('/all-matches');
+  //   }
+  // }, [router, match]);
 
 
   const JerseyAvatar = ({
@@ -402,9 +402,14 @@ export default function MatchDetailsPage() {
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
       {/* Top-right close button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
         <Tooltip title="Close and go back">
-          <IconButton onClick={handleCloseAndGoBack} sx={{ color: '#fff' }} aria-label="Close and go back">
+          <IconButton onClick={() => router.push('/all-matches')} sx={{ color: '#fff' ,   background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+            //  mb:2,
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }
+          }} aria-label="Close and go back">
             <CloseIcon />
           </IconButton>
         </Tooltip>

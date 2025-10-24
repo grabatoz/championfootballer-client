@@ -38,11 +38,11 @@ export default function CloseButton({ fallbackRoute = '/dashboard' }: CloseButto
           onClick={handleCloseAndGoBack} 
           sx={{ 
             color: '#fff',
-             background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-             mb:2,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
+              background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+              mb:2,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              }
           }} 
           aria-label="Close and go back"
         >
