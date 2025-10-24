@@ -75,28 +75,28 @@ interface LeagueOption {
 }
 
 // Minimal shape we expect from API for user leagues
-type ApiUser = {
-  leagues?: unknown;
-  administeredLeagues?: unknown;
-}
+// type ApiUser = {
+//   leagues?: unknown;
+//   administeredLeagues?: unknown;
+// }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object';
 
 // Convert an unknown array into a list of {id, name} with string ids; filters invalid entries
-function parseLeagueOptions(value: unknown): LeagueOption[] {
-  if (!Array.isArray(value)) return [];
-  const out: LeagueOption[] = [];
-  for (const item of value) {
-    if (isRecord(item)) {
-      const id = item.id as string | number | undefined;
-      const name = item.name as string | undefined;
-      if ((typeof id === 'string' || typeof id === 'number') && typeof name === 'string' && name.length > 0) {
-        out.push({ id: String(id), name });
-      }
-    }
-  }
-  return out;
-}
+// function parseLeagueOptions(value: unknown): LeagueOption[] {
+//   if (!Array.isArray(value)) return [];
+//   const out: LeagueOption[] = [];
+//   for (const item of value) {
+//     if (isRecord(item)) {
+//       const id = item.id as string | number | undefined;
+//       const name = item.name as string | undefined;
+//       if ((typeof id === 'string' || typeof id === 'number') && typeof name === 'string' && name.length > 0) {
+//         out.push({ id: String(id), name });
+//       }
+//     }
+//   }
+//   return out;
+// }
 
 const AllPlayersPage = () => {
   const dispatch = useDispatch<AppDispatch>();

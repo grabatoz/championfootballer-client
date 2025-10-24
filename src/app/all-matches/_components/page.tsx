@@ -231,18 +231,18 @@ export default function AllMatches() {
             if (data.success && data.user) {
                 // Get admin league IDs
                 const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
-                const adminLeagueIds = new Set<string>(
-                    adminLeaguesArr
-                        .map((l) => String(l?.id))
-                        .filter((id) => id !== 'undefined')
-                );
+                // const adminLeagueIds = new Set<string>(
+                //     adminLeaguesArr
+                //         .map((l) => String(l?.id))
+                //         .filter((id) => id !== 'undefined')
+                // );
 
                 // Get member league IDs
-                const memberLeagueIds = new Set<string>(
-                    ((data.user.leagues || []) as Array<{ id?: string | number }>)
-                        .map((l) => String(l?.id))
-                        .filter((id) => id !== 'undefined')
-                );
+                // const memberLeagueIds = new Set<string>(
+                //     ((data.user.leagues || []) as Array<{ id?: string | number }>)
+                //         .map((l) => String(l?.id))
+                //         .filter((id) => id !== 'undefined')
+                // );
 
                 // Combine joined and managed leagues
                 const userLeagues = [
