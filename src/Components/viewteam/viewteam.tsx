@@ -296,7 +296,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // ALWAYS returns positions in STANDARD VERTICAL coordinates (0-1 range)
   // Home team = top half (y: 0-0.5), Away team = bottom half (y: 0.5-1.0)
   // CSS rotation will handle visual display for horizontal mode
-  const autoLayout = React.useCallback((players: Player[], teamSide: 'home'|'away', isHorizontal: boolean = false): TeamPositions => {
+  const autoLayout = React.useCallback((players: Player[], teamSide: 'home'|'away'): TeamPositions => {
     const isHome = teamSide === 'home';
     const keyOf = (p: Player) => String(p.id || p.name);
 
@@ -421,7 +421,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           setHomePos(serverHome);
         } else {
           console.log('[Team View Load] ✗ Using auto layout for home (no saved positions)');
-          setHomePos(autoLayout(home, 'home', isHorizontal));
+          setHomePos(autoLayout(home, 'home'));
         }
         
         if (hasAwayPositions) {
@@ -429,14 +429,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           setAwayPos(serverAway);
         } else {
           console.log('[Team View Load] ✗ Using auto layout for away (no saved positions)');
-          setAwayPos(autoLayout(away, 'away', isHorizontal));
+          setAwayPos(autoLayout(away, 'away'));
         }
       } catch (e) {
         console.warn('team-view load failed', e);
         // keep players empty instead of showing demo
         const isHorizontal = window.innerWidth >= 900;
-        setHomePos(prev => (Object.keys(prev).length ? prev : autoLayout(homePlayers, 'home', isHorizontal)));
-        setAwayPos(prev => (Object.keys(prev).length ? prev : autoLayout(awayPlayers, 'away', isHorizontal)));
+        setHomePos(prev => (Object.keys(prev).length ? prev : autoLayout(homePlayers, 'home')));
+        setAwayPos(prev => (Object.keys(prev).length ? prev : autoLayout(awayPlayers, 'away')));
       } finally {
         if (active) setDataLoaded(true);
       }
@@ -720,7 +720,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       const missingHome = homePlayers.filter(p => !homePos[String(p.id || p.name)]);
       if (missingHome.length > 0) {
         console.log('[Orientation/Players Change] Adding auto-layout for', missingHome.length, 'home players');
-        const auto = autoLayout(homePlayers, 'home', isHorizontal);
+        const auto = autoLayout(homePlayers, 'home');
         setHomePos(prev => {
           const merged = { ...prev };
           missingHome.forEach(p => {
@@ -736,7 +736,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       const missingAway = awayPlayers.filter(p => !awayPos[String(p.id || p.name)]);
       if (missingAway.length > 0) {
         console.log('[Orientation/Players Change] Adding auto-layout for', missingAway.length, 'away players');
-        const auto = autoLayout(awayPlayers, 'away', isHorizontal);
+        const auto = autoLayout(awayPlayers, 'away');
         setAwayPos(prev => {
           const merged = { ...prev };
           missingAway.forEach(p => {
@@ -755,28 +755,28 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const players = homePlayers || [];
     const merged: TeamPositions = { ...base };
     if (players.length) {
-      const auto = autoLayout(players, 'home', isHorizontal);
+      const auto = autoLayout(players, 'home');
       players.forEach(p => {
         const k = String(p.id || p.name);
         if (!merged[k] && auto[k]) merged[k] = auto[k];
       });
     }
     return merged;
-  }, [homePos, homePlayers, autoLayout, isHorizontal]);
+  }, [homePos, homePlayers, autoLayout]);
 
   const awayPositions = React.useMemo(() => {
     const base = awayPos || {};
     const players = awayPlayers || [];
     const merged: TeamPositions = { ...base };
     if (players.length) {
-      const auto = autoLayout(players, 'away', isHorizontal);
+      const auto = autoLayout(players, 'away');
       players.forEach(p => {
         const k = String(p.id || p.name);
         if (!merged[k] && auto[k]) merged[k] = auto[k];
       });
     }
     return merged;
-  }, [awayPos, awayPlayers, autoLayout, isHorizontal]);
+  }, [awayPos, awayPlayers, autoLayout]);
 
   // Guests for home team
   const homeGuests = React.useMemo(() => {
@@ -1047,8 +1047,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             away: (m.removed?.away || []).map(String),
           });
           const isHoriz = window.innerWidth >= 900;
-          setHomePos(m.positions?.home || autoLayout(arrangePlayers(m.homeTeam || [], m.homeCaptainId), 'home', isHoriz));
-          setAwayPos(m.positions?.away || autoLayout(arrangePlayers(m.awayTeam || [], m.awayCaptainId), 'away', isHoriz));
+          setHomePos(m.positions?.home || autoLayout(arrangePlayers(m.homeTeam || [], m.homeCaptainId), 'home'));
+          setAwayPos(m.positions?.away || autoLayout(arrangePlayers(m.awayTeam || [], m.awayCaptainId), 'away'));
         }
         setReplaceOpen(false);
       } else {
