@@ -101,7 +101,7 @@ type BasicUser = { id: string; firstName: string; lastName?: string; shirtNumber
 const primaryColor = 'rgb(229,106,22)';
 const primaryColor2 = 'rgb(207,35,38)';
 const awayTeamColor = 'rgb(3,136,227)'; // Blue color for away team
-const awayTeamColor2 = 'rgb(13, 71, 161)'; // Darker blue
+// const awayTeamColor2 = 'rgb(13, 71, 161)'; // Darker blue
 const textColor = '#111';
 
 // Default fallback demo players (keep if you want preview only)

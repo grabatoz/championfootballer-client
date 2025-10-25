@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, X, Shuffle, UserPlus, Scale } from 'lucide-react';
+import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { cacheManager } from '@/lib/cacheManager';
 import ShirtImg from '@/Components/images/shirtimg.png';
@@ -78,6 +78,10 @@ export default function EditMatchPage() {
   const [guestTeam, setGuestTeam] = useState<'home' | 'away'>('home');
   const [guestName, setGuestName] = useState('');
 
+  // Player context menu
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ player: PlayerOption; team: 'home' | 'away' } | null>(null);
+
   // NEW: availability map
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityRecord['status']>>({});
   const [availabilityVersion, setAvailabilityVersion] = useState(0);
@@ -133,6 +137,88 @@ export default function EditMatchPage() {
     }
   }, [matchId, token]);
 
+  // Menu handlers for player context menu
+  const handlePlayerClick = (event: React.MouseEvent<HTMLElement>, player: PlayerOption, team: 'home' | 'away') => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedPlayer({ player, team });
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedPlayer(null);
+  };
+
+  const handleRemovePlayer = () => {
+    if (!selectedPlayer) return;
+    const { player, team } = selectedPlayer;
+
+    if (team === 'home') {
+      // Remove from home team
+      setHomeTeamUsers(prev => prev.filter(p => p.id !== player.id));
+      // If it was the captain, clear captain
+      if (homeCaptain?.id === player.id) setHomeCaptain(null);
+      // If it's a guest, also remove from homeGuests
+      if (player.isGuest && player.guestTempId) {
+        const g = homeGuests.find(g => g.tempId === player.guestTempId);
+        if (g) removeStagedGuest('home', g.tempId);
+      }
+    } else {
+      // Remove from away team
+      setAwayTeamUsers(prev => prev.filter(p => p.id !== player.id));
+      // If it was the captain, clear captain
+      if (awayCaptain?.id === player.id) setAwayCaptain(null);
+      // If it's a guest, also remove from awayGuests
+      if (player.isGuest && player.guestTempId) {
+        const g = awayGuests.find(g => g.tempId === player.guestTempId);
+        if (g) removeStagedGuest('away', g.tempId);
+      }
+    }
+
+    handleMenuClose();
+    toast.success('Player removed');
+  };
+
+  const handleSwitchTeam = () => {
+    if (!selectedPlayer) return;
+    const { player, team } = selectedPlayer;
+
+    if (team === 'home') {
+      // Move from home to away
+      setHomeTeamUsers(prev => prev.filter(p => p.id !== player.id));
+      setAwayTeamUsers(prev => [...prev, { ...player, team: 'away' }]);
+      
+      // If it was home captain, clear it
+      if (homeCaptain?.id === player.id) setHomeCaptain(null);
+      
+      // If it's a guest, update the guest's team
+      if (player.isGuest && player.guestTempId) {
+        const g = homeGuests.find(g => g.tempId === player.guestTempId);
+        if (g) {
+          removeStagedGuest('home', g.tempId);
+          setAwayGuests(prev => [...prev, { ...g, team: 'away' }]);
+        }
+      }
+    } else {
+      // Move from away to home
+      setAwayTeamUsers(prev => prev.filter(p => p.id !== player.id));
+      setHomeTeamUsers(prev => [...prev, { ...player, team: 'home' }]);
+      
+      // If it was away captain, clear it
+      if (awayCaptain?.id === player.id) setAwayCaptain(null);
+      
+      // If it's a guest, update the guest's team
+      if (player.isGuest && player.guestTempId) {
+        const g = awayGuests.find(g => g.tempId === player.guestTempId);
+        if (g) {
+          removeStagedGuest('away', g.tempId);
+          setHomeGuests(prev => [...prev, { ...g, team: 'home' }]);
+        }
+      }
+    }
+
+    handleMenuClose();
+    toast.success('Player switched to other team');
+  };
 
   // Helper: already picked in either team
   // const isAlreadyPicked = (id: string) =>
@@ -1186,7 +1272,12 @@ export default function EditMatchPage() {
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     mr: 1,
-                                    position: 'relative'
+                                    position: 'relative',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePlayerClick(e, opt, 'home');
                                   }}
                                 >
                                   <Avatar
@@ -1294,7 +1385,12 @@ export default function EditMatchPage() {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    mr: 1
+                                    mr: 1,
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePlayerClick(e, opt, 'away');
                                   }}
                                 >
                                   <Avatar
@@ -1648,6 +1744,7 @@ export default function EditMatchPage() {
                       }}
                       draggable
                       onDragEnd={() => movePlayer(homeCaptain, 'away')}
+                      onClick={(e) => handlePlayerClick(e, homeCaptain, 'home')}
                     >
                       <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
                       <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
@@ -1726,6 +1823,7 @@ export default function EditMatchPage() {
                         }}
                         draggable
                         onDragEnd={() => movePlayer(user, 'away')}
+                        onClick={(e) => handlePlayerClick(e, user, 'home')}
                       >
                         <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
                         <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
@@ -1814,6 +1912,7 @@ export default function EditMatchPage() {
                       }}
                       draggable
                       onDragEnd={() => movePlayer(awayCaptain, 'home')}
+                      onClick={(e) => handlePlayerClick(e, awayCaptain, 'away')}
                     >
                       <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
                       <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
@@ -1892,6 +1991,7 @@ export default function EditMatchPage() {
                         }}
                         draggable
                         onDragEnd={() => movePlayer(user, 'home')}
+                        onClick={(e) => handlePlayerClick(e, user, 'away')}
                       >
                         <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
                         <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
@@ -1953,6 +2053,76 @@ export default function EditMatchPage() {
           </Box>
         </Box>
       </Box>
+      
+      {/* Player Context Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(30, 30, 30, 0.98)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 2,
+            minWidth: 180,
+            mt: 1
+          }
+        }}
+      >
+        <MenuItem 
+          onClick={handleSwitchTeam}
+          sx={{
+            color: 'white',
+            py: 1.5,
+            '&:hover': {
+              bgcolor: 'rgba(56, 142, 60, 0.2)',
+            }
+          }}
+        >
+          <ListItemIcon>
+            <ArrowLeftRight size={20} color="#4caf50" />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Switch Team"
+            primaryTypographyProps={{
+              fontSize: 14,
+              fontWeight: 500
+            }}
+          />
+        </MenuItem>
+        
+        <MenuItem 
+          onClick={handleRemovePlayer}
+          sx={{
+            color: 'white',
+            py: 1.5,
+            '&:hover': {
+              bgcolor: 'rgba(244, 67, 54, 0.2)',
+            }
+          }}
+        >
+          <ListItemIcon>
+            <UserMinus size={20} color="#f44336" />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Remove Player"
+            primaryTypographyProps={{
+              fontSize: 14,
+              fontWeight: 500
+            }}
+          />
+        </MenuItem>
+      </Menu>
+
       <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth='xs'>
         <DialogTitle sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>Add Guest Player</DialogTitle>
         <DialogContent sx={{ pt: 3, bgcolor: 'rgba(15,15,15,0.95)', color: 'white' }}>
