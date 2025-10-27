@@ -2071,7 +2071,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                             )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
+                                                                {(isAdmin || user?.id === match.homeCaptainId) && match.status === 'RESULT_PUBLISHED' && league.active && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
@@ -2276,7 +2276,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                             )}
                                                             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
                                                                 {/* Admin Stats Button */}
-                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
+                                                                {(isAdmin || user?.id === match.awayCaptainId) && match.status === 'RESULT_PUBLISHED' && league.active && (
                                                                     <Button
                                                                         onClick={() => handleOpenAdminStatsModal(player)}
                                                                         startIcon={<Add />}
