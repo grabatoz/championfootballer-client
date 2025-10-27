@@ -1532,7 +1532,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             setShowInlineStats(true);
         }
     }, [showInlineStats, user, league, canPlayerSubmitStats, isUserAssignedToTeam, selectedLeagueHasNoMatches, showAdminGoalsSection]);
-    const canAdminSubmitStats = baseCanSubmit && (editWindow?.adminCanSubmit ?? false);
+    // const canAdminSubmitStats = baseCanSubmit && (editWindow?.adminCanSubmit ?? false);
 
     // Fetch edit window details
     const fetchEditWindow = useCallback(async () => {
