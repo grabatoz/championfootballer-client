@@ -446,7 +446,7 @@ export default function EditMatchPage() {
     fetchPrediction();
   };
 
-  // Balance by XP using backend XP map for league (fallback to skill when no XP)
+  // Balance by XP using league average XP per match (fallback to skill when no avg)
   const balanceTeams = async () => {
     if (isBalancing) return;
     setIsBalancing(true);
@@ -454,7 +454,8 @@ export default function EditMatchPage() {
       const combinedReg = [...homeTeamUsers.filter(p => !p.isGuest), ...awayTeamUsers.filter(p => !p.isGuest)];
       if (combinedReg.length < 2) { toast.error('Need at least 2 registered players'); return; }
 
-      const xpMap = await ensureXPMap();
+      // Ensure maps are loaded (fills userLeagueXP and userLeagueAvgXP)
+      await ensureXPMap();
 
       // Keep guests on current teams; include their contribution as league-average
       const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest);
@@ -470,19 +471,10 @@ export default function EditMatchPage() {
       const byId = new Map<string, PlayerOption>();
       combinedReg.forEach(p => byId.set(p.id, p));
 
-      // Compute rating basis: XP preferred, fallback to skill if all zeros
-      const ratingsArr = combinedReg.map(p => ({ id: p.id, xp: Number(xpMap[p.id] ?? 0), skill: calcSkill(p) }));
-      const xpValues = ratingsArr.map(r => r.xp);
-      const totalXp = xpValues.reduce((a, b) => a + b, 0);
-      const hasAnyXP = xpValues.some(v => v > 0);
-      const basis: 'xp' | 'skill' = hasAnyXP && totalXp > 0 ? 'xp' : 'skill';
-
+      // Use league average XP per match for registered players; fallback to skill
+      const ratingsArr = combinedReg.map(p => ({ id: p.id, rating: getAvgRating(p) }));
       const idToRating = new Map<string, number>();
-      if (basis === 'xp') {
-        ratingsArr.forEach(r => idToRating.set(r.id, r.xp));
-      } else {
-        ratingsArr.forEach(r => idToRating.set(r.id, r.skill));
-      }
+      ratingsArr.forEach(r => idToRating.set(r.id, r.rating));
 
       // Guest contribution: use median of non-zero ratings to avoid skew; fallback to average if needed
       const values = Array.from(idToRating.values());
@@ -493,7 +485,9 @@ export default function EditMatchPage() {
         const mid = Math.floor(arr.length / 2);
         return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
       };
-      const guestValue = nonZero.length > 0 ? medianVal(nonZero) : avgVal(values);
+      // Prefer the league-wide average XP for guests to align with UI preview; fallback to median/avg of ratings or 50
+      const fallbackGuest = nonZero.length > 0 ? medianVal(nonZero) : avgVal(values);
+      const guestValue = leagueAvgXPValue > 0 ? leagueAvgXPValue : (fallbackGuest > 0 ? fallbackGuest : 50);
 
       // Start sums with guest contributions (kept fixed)
       const homeGuestSum = guestValue * homeGuestsOnly.length;
@@ -583,7 +577,7 @@ export default function EditMatchPage() {
       };
 
       // Prepare orders
-      const withRating = combinedReg.map(p => ({ id: p.id, rating: idToRating.get(p.id) ?? 0 }));
+  const withRating = combinedReg.map(p => ({ id: p.id, rating: idToRating.get(p.id) ?? 0 }));
       const desc = [...withRating].sort((a, b) => b.rating - a.rating);
       const asc = [...withRating].sort((a, b) => a.rating - b.rating);
       const randomize = (arr: typeof withRating) => {
