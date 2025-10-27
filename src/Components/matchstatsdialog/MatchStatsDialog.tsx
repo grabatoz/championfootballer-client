@@ -1771,7 +1771,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
 
     const content = (
-        <Box sx={{ p: { xs: 0.5, sm: 2, md: 4 }, minHeight: '100vh', color: 'black' }}>
+        <Box sx={{ p: { xs: 0.5, sm: 2, md: 2 }, minHeight: '100vh', color: 'black' }}>
             {/* --- NEW: League selector and show matches toolbar --- */}
             {!showAdminGoalsSection && (
             <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
