@@ -310,8 +310,8 @@ export default function EditMatchPage() {
   const guestToPlayer = (g: StagedGuest): PlayerOption => ({ id: `guest-${g.tempId}`, firstName: g.firstName, lastName: g.lastName, email: '', isGuest: true, guestTempId: g.tempId, team: g.team, existingGuestId: g.existingId });
 
   // Prediction from API
-  const [homeWinChance, setHomeWinChance] = useState<number | null>(null);
-  const [awayWinChance, setAwayWinChance] = useState<number | null>(null);
+  const [, setHomeWinChance] = useState<number | null>(null);
+  const [, setAwayWinChance] = useState<number | null>(null);
   const [, setHomeStrength] = useState<number | null>(null);
   const [, setAwayStrength] = useState<number | null>(null);
 

@@ -1598,37 +1598,37 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // const canSubmitStats = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
 
     // Replace old openStats with window-aware version
-    const openStats = () => {
-        if (!isUserAssignedToTeam) {
-            toast.error('You must be assigned to a team to add your stats.');
-            return;
-        }
-        if (!baseCanSubmit) {
-            toast.error('Stats are available after result upload.');
-            return;
-        }
+    // const openStats = () => {
+    //     if (!isUserAssignedToTeam) {
+    //         toast.error('You must be assigned to a team to add your stats.');
+    //         return;
+    //     }
+    //     if (!baseCanSubmit) {
+    //         toast.error('Stats are available after result upload.');
+    //         return;
+    //     }
 
-        // Admins can always edit (per rule) — keep inline UX consistent
-        if (isAdmin && canAdminSubmitStats) {
-            setShowInlineStats(true);
-            return;
-        }
+    //     // Admins can always edit (per rule) — keep inline UX consistent
+    //     if (isAdmin && canAdminSubmitStats) {
+    //         setShowInlineStats(true);
+    //         return;
+    //     }
 
-        // Player path: honor backend canPlayerSubmit (same logic as page view)
-        if (!(editWindow?.canPlayerSubmit ?? false)) {
-            toast.error("It's not possible to add stats for earlier games. Please ask the admin to make changes to older games.");
-            return;
-        }
+    //     // Player path: honor backend canPlayerSubmit (same logic as page view)
+    //     if (!(editWindow?.canPlayerSubmit ?? false)) {
+    //         toast.error("It's not possible to add stats for earlier games. Please ask the admin to make changes to older games.");
+    //         return;
+    //     }
 
-        // Previous match info toast
-        const idxFromEnd = editWindow?.indexFromEnd;
-        if (idxFromEnd === 1) {
-            toast('You are adding stats for the previous match.', { icon: 'ℹ️' });
-        }
+    //     // Previous match info toast
+    //     const idxFromEnd = editWindow?.indexFromEnd;
+    //     if (idxFromEnd === 1) {
+    //         toast('You are adding stats for the previous match.', { icon: 'ℹ️' });
+    //     }
 
-        // Open inline stats instead of a modal
-        setShowInlineStats(true);
-    };
+    //     // Open inline stats instead of a modal
+    //     setShowInlineStats(true);
+    // };
 
     if (loading) {
         // If showAdminGoalsSection is true, show loading inside the admin dialog

@@ -4403,13 +4403,13 @@ export default function LeagueDetailPage() {
                                                 }}>
                                                     <List>
                                                         {[...league.members]
-                                                            .sort((a, b) => {
-                                                                const xpA = (a as any)?.xp ?? 0;
-                                                                const xpB = (b as any)?.xp ?? 0;
+                                                            .sort((a: User, b: User) => {
+                                                                const xpA = a?.xp ?? 0;
+                                                                const xpB = b?.xp ?? 0;
                                                                 if (xpB !== xpA) return xpB - xpA; // Desc by points
                                                                 // Stable tie-breaker by name to avoid flicker
-                                                                const nameA = `${(a as any)?.firstName ?? ''} ${(a as any)?.lastName ?? ''}`.toLowerCase();
-                                                                const nameB = `${(b as any)?.firstName ?? ''} ${(b as any)?.lastName ?? ''}`.toLowerCase();
+                                                                const nameA = `${a?.firstName ?? ''} ${a?.lastName ?? ''}`.toLowerCase();
+                                                                const nameB = `${b?.firstName ?? ''} ${b?.lastName ?? ''}`.toLowerCase();
                                                                 return nameA.localeCompare(nameB);
                                                             })
                                                             .map((member) => (

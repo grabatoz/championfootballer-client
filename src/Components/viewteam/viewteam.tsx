@@ -434,7 +434,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       } catch (e) {
         console.warn('team-view load failed', e);
         // keep players empty instead of showing demo
-        const isHorizontal = window.innerWidth >= 900;
+        // const isHorizontal = window.innerWidth >= 900;
         setHomePos(prev => (Object.keys(prev).length ? prev : autoLayout(homePlayers, 'home')));
         setAwayPos(prev => (Object.keys(prev).length ? prev : autoLayout(awayPlayers, 'away')));
       } finally {
@@ -1058,7 +1058,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             home: (m.removed?.home || []).map(String),
             away: (m.removed?.away || []).map(String),
           });
-          const isHoriz = window.innerWidth >= 900;
+          // const isHoriz = window.innerWidth >= 900;
           setHomePos(m.positions?.home || autoLayout(arrangePlayers(m.homeTeam || [], m.homeCaptainId), 'home'));
           setAwayPos(m.positions?.away || autoLayout(arrangePlayers(m.awayTeam || [], m.awayCaptainId), 'away'));
         }
