@@ -2178,6 +2178,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
+                                                            disabled={!league?.active}
                                                         >
                                                             View Team
                                                         </Button>
@@ -2204,7 +2205,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
-                                                            disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                            disabled={!league?.active}
                                                         >
                                                             Match Results
                                                         </Button>
