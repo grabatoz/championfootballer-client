@@ -5464,7 +5464,7 @@ export default function LeagueDetailPage() {
                                                                                 transition: 'all 0.2s ease-in-out',
                                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                             }}
-                                                                            disabled={!league?.active}
+                                                                            disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
                                                                         >
                                                                             Match Results
                                                                         </Button>

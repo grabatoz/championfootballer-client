@@ -379,6 +379,19 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const resolvedMatchId = currentMatchId || matchId;
     const preferredAppliedRef = useRef(false);
 
+    // Unified dialog paper styling to match app theme
+    const dialogPaperSx = {
+        p: 0,
+        bgcolor: 'rgba(15,15,15,0.95)',
+        color: '#E5E7EB',
+        borderRadius: 3,
+        border: '1px solid rgba(255,255,255,0.1)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)'
+    } as const;
+    const dialogTitleSx = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff', bgcolor: 'transparent' } as const;
+    const dialogContentSx = { color: '#E5E7EB', bgcolor: 'transparent' } as const;
+
     // --- NEW: handlers to fetch leagues and matches ---
     const openLeagueSelector = useCallback(async () => {
         setLeagueSelectOpen(true);
@@ -434,9 +447,113 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 })),
                 active: typeof l.active === 'boolean' ? l.active : true,
             }));
-            setAvailableLeagues(normalized);
-            if (normalized.length === 0) {
-                toast.error('No leagues found for your account.');
+            // Filter to only INCOMPLETE leagues (like Home)
+            try {
+                const enriched = await Promise.all(
+                    normalized.map(async (l) => {
+                        try {
+                            const [statusRes, detailsRes] = await Promise.all([
+                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, { headers: { Authorization: `Bearer ${token}` } }),
+                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { headers: { Authorization: `Bearer ${token}` } })
+                            ]);
+                            const statusJson = await statusRes.json().catch(() => ({} as Record<string, unknown>));
+                            const rawObj: Record<string, unknown> = (statusJson?.status as Record<string, unknown>) || (statusJson as Record<string, unknown>) || {};
+                            const detailsJson = await detailsRes.json().catch(() => ({} as Record<string, unknown>));
+                            const leagueObj: Record<string, unknown> = (detailsJson?.league as Record<string, unknown>) || {};
+
+                            const toNum = (v: unknown): number | undefined => {
+                                const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+                                return Number.isFinite(n) ? (n as number) : undefined;
+                            };
+                            const getNum = (o: Record<string, unknown>, key: string): number | undefined => toNum(o?.[key]);
+                            const getBool = (o: Record<string, unknown>, key: string): boolean => o?.[key] === true;
+                            const getArray = (o: Record<string, unknown>, key: string): unknown[] => Array.isArray(o?.[key]) ? (o[key] as unknown[]) : [];
+
+                            const missing = getArray(rawObj, 'missing');
+                            const matchesPlayed = getNum(rawObj, 'matchesPlayed') ?? getNum(rawObj, 'gamesPlayed');
+                            const maxGames = getNum(rawObj, 'maxGames') ?? getNum(leagueObj, 'maxGames');
+                            const isCompleteFlag = getBool(rawObj, 'isComplete');
+                            const locked = getBool(rawObj, 'locked');
+                            const matchesRaw = leagueObj?.['matches'];
+                            const matches: Array<Record<string, unknown>> = Array.isArray(matchesRaw) ? (matchesRaw as Array<Record<string, unknown>>) : [];
+
+                            let completed = false;
+                            if (missing.length > 0) {
+                                completed = false;
+                            } else if (matches.length > 0 && typeof maxGames === 'number' && maxGames > 0) {
+                                const completedCount = matches.reduce((acc, m) => {
+                                    const mo = m as Record<string, unknown>;
+                                    const statusVal = mo?.['status'];
+                                    const status = typeof statusVal === 'string' ? statusVal.toLowerCase() : '';
+                                    const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+                                    const activeVal = mo?.['active'];
+                                    const endedByFlag = activeVal === false;
+                                    const endedVal = mo?.['end'];
+                                    const endedByEnd = Boolean(endedVal);
+                                    return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
+                                }, 0);
+                                completed = completedCount >= maxGames;
+                            } else if (typeof maxGames === 'number' && maxGames > 0 && typeof matchesPlayed === 'number') {
+                                completed = matchesPlayed >= maxGames;
+                            } else if (isCompleteFlag || locked) {
+                                completed = true;
+                            } else if (l.active === false) {
+                                completed = true;
+                            }
+                            // Try to enrich administrators from league details
+                            const adminsPrimary = getArray(leagueObj, 'administrators');
+                            const adminsAlt1 = adminsPrimary.length ? adminsPrimary : getArray(leagueObj, 'admins');
+                            const adminsAlt2 = adminsAlt1.length ? adminsAlt1 : getArray(leagueObj, 'managers');
+                            const adminsRaw: unknown[] = adminsAlt2;
+                            const adminsNorm: User[] = adminsRaw.map((u) => {
+                                const obj = (u || {}) as Record<string, unknown>;
+                                const idVal = obj.id ?? obj['userId'] ?? obj['_id'];
+                                const fnVal = obj['firstName'] ?? obj['first_name'] ?? obj['fname'] ?? '';
+                                const lnVal = obj['lastName'] ?? obj['last_name'] ?? obj['lname'] ?? '';
+                                return {
+                                    id: String(idVal ?? ''),
+                                    firstName: String(fnVal ?? ''),
+                                    lastName: String(lnVal ?? ''),
+                                } as User;
+                            }).filter((a) => a.id);
+
+                            const mergedLeague: League = {
+                                ...l,
+                                administrators: adminsNorm.length ? adminsNorm : l.administrators,
+                            };
+
+                            return { league: mergedLeague, completed };
+                        } catch {
+                            // If status/details fail, keep it visible (assume incomplete)
+                            return { league: l, completed: false };
+                        }
+                    })
+                );
+                const visible = enriched.filter(e => !e.completed).map(e => e.league);
+                const sortedVisible = [...visible].sort((a, b) => {
+                    const an = (a?.name ?? '').toString().trim().toLowerCase();
+                    const bn = (b?.name ?? '').toString().trim().toLowerCase();
+                    if (an < bn) return -1;
+                    if (an > bn) return 1;
+                    return String(a.id).localeCompare(String(b.id));
+                });
+                setAvailableLeagues(sortedVisible);
+                if (sortedVisible.length === 0) {
+                    toast.error('No incomplete leagues found for your account.');
+                }
+            } catch {
+                // Fallback: show normalized list if enrichment fails
+                const sortedNormalized = [...normalized].sort((a, b) => {
+                    const an = (a?.name ?? '').toString().trim().toLowerCase();
+                    const bn = (b?.name ?? '').toString().trim().toLowerCase();
+                    if (an < bn) return -1;
+                    if (an > bn) return 1;
+                    return String(a.id).localeCompare(String(b.id));
+                });
+                setAvailableLeagues(sortedNormalized);
+                if (normalized.length === 0) {
+                    toast.error('No leagues found for your account.');
+                }
             }
         } catch (e: unknown) {
             setLeaguesError(e instanceof Error ? e.message : 'Failed to load leagues');
@@ -533,7 +650,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             if (!Array.isArray(matchesArr)) matchesArr = [];
             // Always filter by selected league id to be consistent across endpoints
             const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === String(leagueIdForList));
-            setSelectedLeagueMatches(filtered);
+            // Sort latest first
+            const toTime = (m: Partial<Match>): number => {
+                const s = (m?.start || m?.date || m?.updatedAt || m?.createdAt) as string | undefined;
+                const t = s ? new Date(s).getTime() : NaN;
+                if (!Number.isNaN(t)) return t;
+                const n = Number(m?.id);
+                return Number.isFinite(n) ? n : 0;
+            };
+            const sorted = [...filtered].sort((a, b) => toTime(b) - toTime(a));
+            setSelectedLeagueMatches(sorted);
             if (filtered.length === 0) {
                 toast('No matches found for this league yet.');
             }
@@ -1639,15 +1765,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     onClose={onClose}
                     fullWidth 
                     maxWidth="sm"
+                    PaperProps={{ sx: dialogPaperSx }}
                 >
-                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white' }}>
+                    <DialogTitle sx={dialogTitleSx}>
                         Admin Can Add Goals Both Teams
-                        <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+                        <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}>
                             <CloseIcon />
                         </IconButton>
                     </DialogTitle>
-                    <DialogContent sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-                        <CircularProgress sx={{ color: 'white' }} />
+                    <DialogContent sx={{ ...dialogContentSx, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                        <CircularProgress sx={{ color: '#fff' }} />
                     </DialogContent>
                 </Dialog>
             );
@@ -1660,12 +1787,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         );
         if (typeof open === 'boolean') {
             return (
-                <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
-                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>
                         Match Stats
-                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                        <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}><CloseIcon /></IconButton>
                     </DialogTitle>
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={dialogContentSx}>
                         {inner}
                     </DialogContent>
                 </Dialog>
@@ -1678,26 +1805,26 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         // Embedded: show a simple starter UI that lets the user select a league instead of a hard error
         if (typeof open === 'boolean') {
             return (
-                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted>
-                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>
                         Match Stats
-                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                        <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}><CloseIcon /></IconButton>
                     </DialogTitle>
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={dialogContentSx}>
                         <Box sx={{ display: 'grid', gap: 2 }}>
                             {!!error && (
-                                <Alert severity="error">{error}</Alert>
+                                <Alert severity="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Alert>
                             )}
-                            <Typography variant="body1">Select a league to view and add stats.</Typography>
+                            <Typography variant="body1" sx={{ color: '#E5E7EB' }}>Select a league to view and add stats.</Typography>
                             <Box>
                                 <Button
                                     onClick={openLeagueSelector}
                                     variant="contained"
                                     sx={{
-                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                        color: 'white',
-                                        fontWeight: 'bold',
-                                        '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                        background: 'linear-gradient(135deg,#e56a16,#cf2326)',
+                                        color: '#fff',
+                                        fontWeight: 700,
+                                        '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' },
                                     }}
                                 >
                                     Select League
@@ -1728,12 +1855,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         );
         if (typeof open === 'boolean') {
             return (
-                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted>
-                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>
                         Match Stats
-                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                        <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}><CloseIcon /></IconButton>
                     </DialogTitle>
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={dialogContentSx}>
                         {inner}
                     </DialogContent>
                 </Dialog>
@@ -1789,9 +1916,30 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
                     }}
                 >
-                    {(selectedLeagueNameForList || league?.name)
-                        ? `${selectedLeagueNameForList || league?.name}`
-                        : 'Select League'}
+                    {(() => {
+                        const chosenId = String(selectedLeagueIdForList || resolvedLeagueId || league?.id || '');
+                        const chosen = availableLeagues.find(al => String(al.id) === chosenId);
+                        const admins: User[] = Array.isArray(league?.administrators) ? (league!.administrators as User[]) : [];
+                        const isAdmin = chosen && Array.isArray(chosen.administrators)
+                            ? chosen.administrators.some(a => String(a.id) === String(user?.id))
+                            : admins.some(a => String(a.id) === String(user?.id));
+                        const name = (selectedLeagueNameForList || league?.name);
+                        if (!name) return 'Select League';
+                        return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <span>{name}</span>
+                                {/* <span style={{
+                                    fontSize: 11,
+                                    padding: '2px 6px',
+                                    borderRadius: 6,
+                                    border: '1px solid',
+                                    borderColor: isAdmin ? 'rgba(255,213,79,0.5)' : 'rgba(255,255,255,0.2)',
+                                    color: isAdmin ? '#ffd54f' : '#e5e7eb',
+                                    background: 'rgba(255,255,255,0.06)'
+                                }}>{isAdmin ? 'Admin' : 'Member'}</span> */}
+                            </Box>
+                        );
+                    })()}
                 </Button>
                 {/* Label + Match selector */}
                 <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem', ml: 1 }}>Select a Match:</Typography>
@@ -2499,11 +2647,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             )}
 
             {/* --- NEW: Player selection dialog (team-restricted) --- */}
-            <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>
+            <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs" PaperProps={{ sx: dialogPaperSx }}>
+                <DialogTitle sx={dialogTitleSx}>
                     {pickCategory === 'defence' ? 'Select player for Defensive Impact' : 'Select player for Influence'}
+                    <IconButton onClick={() => setIsPickDialogOpen(false)} size="small" sx={{ color: '#fff' }}>
+                        <CloseIcon />
+                    </IconButton>
                 </DialogTitle>
-                <DialogContent dividers>
+                <DialogContent dividers sx={dialogContentSx}>
                     <Box sx={{ display: 'grid', gap: 1 }}>
                         {myTeamPlayers.map(p => (
                             <Button
@@ -2513,95 +2664,98 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 variant="outlined"
                                 sx={{
                                     justifyContent: 'flex-start',
-                                    borderColor: '#bdbdbd',
-                                    color: '#111',
-                                    '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    color: '#E5E7EB',
+                                    '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                                 }}
                             >
                                 {p.firstName} {p.lastName}
                             </Button>
                         ))}
                         {myTeamPlayers.length === 0 && (
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
                                 No players available.
                             </Typography>
                         )}
                     </Box>
                 </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setIsPickDialogOpen(false)}
-                        variant="outlined"
-                        disabled={savingPick}
-                        sx={{
-                            color: '#111',
-                            borderColor: '#bdbdbd',
-                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                        }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
+                {/* Close button removed in favor of top-right X */}
             </Dialog>
 
             {/* --- NEW: League selection dialog --- */}
-            <Dialog open={leagueSelectOpen} onClose={() => setLeagueSelectOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Select a League</DialogTitle>
-                <DialogContent dividers>
+            <Dialog open={leagueSelectOpen} onClose={() => setLeagueSelectOpen(false)} fullWidth maxWidth="xs" PaperProps={{ sx: dialogPaperSx }}>
+                <DialogTitle sx={dialogTitleSx}>
+                    Select a League
+                    <IconButton onClick={() => setLeagueSelectOpen(false)} size="small" sx={{ color: '#fff' }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers sx={dialogContentSx}>
                     {leaguesLoading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={18} />
-                            <Typography>Loading leagues…</Typography>
+                            <CircularProgress size={18} sx={{ color: '#fff' }} />
+                            <Typography sx={{ color: '#E5E7EB' }}>Loading leagues…</Typography>
                         </Box>
                     )}
                     {leaguesError && (
-                        <Alert severity="error" sx={{ mb: 1 }}>{leaguesError}</Alert>
+                        <Alert severity="error" sx={{ mb: 1, bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{leaguesError}</Alert>
                     )}
                     {!leaguesLoading && !leaguesError && (
                         <Box sx={{ display: 'grid', gap: 1 }}>
-                            {availableLeagues.map((l) => (
-                                <Button
-                                    key={l.id}
-                                    onClick={() => handleSelectLeague(l)}
-                                    variant="outlined"
-                                    sx={{
-                                        justifyContent: 'flex-start',
-                                        borderColor: '#bdbdbd',
-                                        color: '#111',
-                                        '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                                    }}
-                                >
-                                    {l.name}
-                                </Button>
-                            ))}
+                            {availableLeagues.map((l) => {
+                                const isAdminForLeague = Array.isArray(l.administrators)
+                                    ? l.administrators.some(a => String(a.id) === String(user?.id))
+                                    : false;
+                                return (
+                                    <Button
+                                        key={l.id}
+                                        onClick={() => handleSelectLeague(l)}
+                                        variant="outlined"
+                                        sx={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            borderColor: 'rgba(255,255,255,0.3)',
+                                            color: '#E5E7EB',
+                                            textTransform: 'none',
+                                            '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
+                                        }}
+                                    >
+                                        <Typography sx={{ color: '#E5E7EB', fontWeight: 500 }}>{l.name}</Typography>
+                                        <Typography
+                                            sx={{
+                                                ml: 2,
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 1,
+                                                fontSize: 12,
+                                                color: isAdminForLeague ? '#9CA3AF' : '#9CA3AF',
+                                                border: '1px solid',
+                                                borderColor: isAdminForLeague ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.2)',
+                                                bgcolor: 'rgba(255,255,255,0.04)'
+                                            }}
+                                        >
+                                            {isAdminForLeague ? 'Admin' : 'Member'}
+                                        </Typography>
+                                    </Button>
+                                );
+                            })}
                             {availableLeagues.length === 0 && (
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
                                     No leagues available.
                                 </Typography>
                             )}
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setLeagueSelectOpen(false)}
-                        variant="outlined"
-                        sx={{
-                            color: '#111',
-                            borderColor: '#bdbdbd',
-                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                        }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
             </Dialog>
 
 
             {!selectedLeagueHasNoMatches && (
-                <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm">
-                    <DialogTitle>Your Stats for the Match</DialogTitle>
-                    <DialogContent>
+                <Dialog open={isStatsModalOpen} onClose={handleCloseStatsModal} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>Your Stats for the Match</DialogTitle>
+                    <DialogContent sx={dialogContentSx}>
                         <StatCounter icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />} label="Goals Scored" value={stats.goals} onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)} />
                         <StatCounter icon={<img src={Assist.src} alt="Assists" style={{ width: 24, height: 24 }} />} label="Assists" value={stats.assists} onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)} onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)} />
                         <StatCounter icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 24, height: 24 }} />} label="Clean Sheets" value={stats.cleanSheets} onIncrement={() => handleStatChange('cleanSheets', 1, 1)} onDecrement={() => handleStatChange('cleanSheets', -1, 1)} />
@@ -2625,9 +2779,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             onClick={handleCloseStatsModal}
                             variant="outlined"
                             sx={{
-                                color: '#111',
-                                borderColor: '#bdbdbd',
-                                '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                color: '#E5E7EB',
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                             }}
                         >
                             Cancel
@@ -2637,9 +2791,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             variant="contained"
                             disabled={isSubmittingStats}
                             sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                color: 'white',
-                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                background: 'linear-gradient(135deg,#e56a16,#cf2326)',
+                                color: '#fff',
+                                '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' },
                             }}
                         >
                             {isSubmittingStats ? <CircularProgress size={24} /> : 'Upload'}
@@ -2649,9 +2803,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             )}
 
             {/* Matches selection dialog */}
-            <Dialog open={matchesDialogOpen} onClose={() => setMatchesDialogOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle>Select a Match</DialogTitle>
-                <DialogContent dividers>
+            <Dialog open={matchesDialogOpen} onClose={() => setMatchesDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
+                <DialogTitle sx={dialogTitleSx}>
+                    Select a Match
+                    <IconButton onClick={() => setMatchesDialogOpen(false)} size="small" sx={{ color: '#fff' }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers sx={dialogContentSx}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                         <Typography sx={{ fontWeight: 600 }}>League</Typography>
                         <Button
@@ -2669,15 +2828,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     </Box>
                     {matchesLoading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={18} />
-                            <Typography>Loading matches…</Typography>
+                            <CircularProgress size={18} sx={{ color: '#fff' }} />
+                            <Typography sx={{ color: '#E5E7EB' }}>Loading matches…</Typography>
                         </Box>
                     )}
                     {matchesError && (
-                        <Alert severity="error" sx={{ mb: 1 }}>{matchesError}</Alert>
+                        <Alert severity="error" sx={{ mb: 1, bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{matchesError}</Alert>
                     )}
                     {!matchesLoading && !matchesError && selectedLeagueMatches.length === 0 && (
-                        <Typography sx={{ opacity: 0.9 }}>No matches found.</Typography>
+                        <Typography sx={{ opacity: 0.9, color: '#9CA3AF' }}>No matches found.</Typography>
                     )}
                     {!matchesLoading && !matchesError && selectedLeagueMatches.length > 0 && (
                         <Box sx={{ display: 'grid', gap: 1 }}>
@@ -2701,16 +2860,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     variant="outlined"
                                     sx={{
                                         justifyContent: 'space-between',
-                                        borderColor: '#bdbdbd',
-                                        color: '#111',
-                                        '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                        borderColor: 'rgba(255,255,255,0.3)',
+                                        color: '#E5E7EB',
+                                        '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                                     }}
                                 >
                                     <Box sx={{ textAlign: 'left' }}>
-                                        <Typography sx={{ fontWeight: 600 }}>
+                                        <Typography sx={{ fontWeight: 600, color: '#fff' }}>
                                             {m.homeTeamName} vs {m.awayTeamName}
                                         </Typography>
-                                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                        <Typography variant="body2" sx={{ opacity: 0.9, color: '#B0BEC5' }}>
                                             {m.date ? new Date(m.date).toLocaleString() : 'Date: N/A'}{m.location ? ` • ${m.location}` : ''}
                                         </Typography>
                                     </Box>
@@ -2719,26 +2878,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setMatchesDialogOpen(false)}
-                        variant="outlined"
-                        sx={{
-                            color: '#111',
-                            borderColor: '#bdbdbd',
-                            '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
-                        }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
             </Dialog>
 
             {/* Admin Stats Modal */}
             {!selectedLeagueHasNoMatches && (
-                <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm">
-                    <DialogTitle>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
-                    <DialogContent>
+                <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
+                    <DialogContent sx={dialogContentSx}>
                         <StatCounter
                             icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />}
                             label="Goals Scored"
@@ -2798,9 +2944,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
                             variant="outlined"
                             sx={{
-                                color: '#111',
-                                borderColor: '#bdbdbd',
-                                '&:hover': { borderColor: '#9e9e9e', backgroundColor: 'rgba(0,0,0,0.04)' },
+                                color: '#E5E7EB',
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                             }}
                         >
                             Cancel
@@ -2810,11 +2956,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             variant="contained"
                             disabled={isSubmittingAdminStats}
                             sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                color: 'white',
-                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                background: 'linear-gradient(135deg,#e56a16,#cf2326)',
+                                color: '#fff',
+                                '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)' },
                             }}
-                        >
+                        >   
                             {isSubmittingAdminStats ? <CircularProgress size={24} /> : 'Upload'}
                         </Button>
                     </DialogActions>
@@ -2837,14 +2983,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 onClose={handleAdminDialogClose}
                 fullWidth 
                 maxWidth="sm"
+                PaperProps={{ sx: dialogPaperSx }}
             >
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white' }}>
+                <DialogTitle sx={dialogTitleSx}>
                     Admin Can Add Goals Both Teams
-                    <IconButton onClick={handleAdminDialogClose} size="small" sx={{ color: 'white' }}>
+                    <IconButton onClick={handleAdminDialogClose} size="small" sx={{ color: '#fff' }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', color: 'white', pt: 3 }}>
+                <DialogContent sx={{ ...dialogContentSx, pt: 3 }}>
                     <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, mt:2 ,alignItems: { xs: 'stretch', sm: 'center' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <IconButton onClick={() => {
@@ -3057,6 +3204,36 @@ const StatCounter = ({ label, value, onIncrement, onDecrement, icon, compact = f
         </Box>
     </Box>
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
