@@ -186,7 +186,7 @@ const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
             minWidth: 'auto',
             px: 2,
             py: 0.5,
-            fontSize: '0.75rem',
+            fontSize: {xs:  '0.6rem', sm: '0.75rem', md: '0.875rem' },
             fontWeight: 'bold',
             textTransform: 'none',
             backgroundColor: voted ? 'red' : 'transparent',
@@ -1903,7 +1903,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     </Box>
                 )}
                 {/* Scoreboard */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.5, sm: 1.5 }, gap: 1, flexWrap: 'wrap' }}>
+                {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.5, sm: 1.5 }, gap: 1, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.25rem', md: '1.5rem' } }}>
                             {match.homeTeamName} ({typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0})
@@ -1913,211 +1913,421 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {match.awayTeamName} ({typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0})
                         </Typography>
                     </Box>
-                </Box>
+                </Box> */}
 
-                <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
-                    <CardContent sx={{
-                        p: { xs: 0.5, sm: 2 },
-                        maxHeight: { xs: 250, sm: 400 },
-                        overflowY: 'auto',
-                        scrollbarWidth: 'none',
-                        '&::-webkit-scrollbar': { display: 'none' }
-                    }}>
-                        {(() => {
-                            const combinedPlayers = [...(homePlayersAll || []), ...(awayPlayersAll || [])].filter(Boolean);
-                            return combinedPlayers.length > 0 ? (
-                                <Box sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(3, 1fr)' },
-                                    gap: { xs: 0.5, sm: 1, md: 2 }
-                                }}>
-                                    {combinedPlayers.map((player) => (
-                                        <Box key={player.id} sx={{
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            p: { xs: 0.5, sm: 1, md: 2 },
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'row' }, gap: { xs: 0.5, sm: 1, md: 3 } }}>
+                    {/* Home Team Section */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: { xs: 0.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                            gap: { xs: 0.5, sm: 1 }
+                        }}>
+                            <Typography variant="h5" color="white" sx={{
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.875rem', sm: '1.25rem', md: '1.5rem' },
+                                lineHeight: { xs: 1.2, sm: 1.5 }
+                            }}>
+                                {match.homeTeamName} ({typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0})
+                            </Typography>
+
+                            {/* Add Stats Button for Home Team */}
+                            {/* {user && canPlayerSubmitStats && league.active &&
+                                (match.homeTeamUsers ?? []).some(player => player.id === user.id) && (
+                                    <Button
+                                        onClick={() => setShowInlineStats(true)}
+                                        startIcon={<Add />}
+                                        variant="contained"
+                                        size="small"
+                                        sx={{
                                             background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                            color: 'white',
+                                            fontWeight: 'bold',
                                             borderRadius: 1.5,
-                                            border: '1px solid #4b4b4b',
-                                            minHeight: { xs: 40, sm: 60, md: 100 },
-                                            position: 'relative',
-                                            '&:hover': {
-                                                background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
-                                                transform: 'translateY(-1px)',
-                                                transition: 'all 0.2s ease'
-                                            }
-                                        }}>
-                                            {/* MOTM Coin - Top Right Corner */}
-                                            {/* {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
-                                                <Box sx={{ position: 'absolute', top: { xs: 2, sm: 4, md: 8 }, right: { xs: 2, sm: 4, md: 8 }, zIndex: 3 }}>
-                                                    <MotmCoin
-                                                        voted={votedForId === player.id}
-                                                        onClick={() => handleVote(player.id)}
-                                                        disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
-                                                        color="#43a047"
-                                                        sx={{ width: { xs: 20, sm: 35, md: 65 }, height: { xs: 20, sm: 35, md: 65 }, mr: { xs: 0.25, sm: 0.5, md: 1 }, mt: { xs: 0.25, sm: 0.5, md: 1 } }}
-                                                    />
-                                                </Box>
-                                            )} */}
+                                            px: { xs: 0.5, sm: 1, md: 2 },
+                                            py: { xs: 0.25, sm: 0.5, md: 1 },
+                                            fontSize: { xs: 7, sm: 10, md: 12 },
+                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                            height: { xs: 19, sm: 32, md: 36 },
+                                            whiteSpace: 'nowrap',
+                        
+                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                            mr: { xs: 0.5, sm: 1, md: 1 }
+                                        }}
+                                    >
+                                        Add Stats
+                                    </Button>
+                                )} */}
+                        </Box>
 
-                                            {player.hasOwnProperty('isGuest') ? (
-                                                <JerseyAvatar
-                                                    // number={player.shirtNumber || 'G'}
-                                                    sx={{
-                                                        width: { xs: 25, sm: 35, md: 74 },
-                                                        height: { xs: 25, sm: 35, md: 74 },
-                                                        mr: { xs: 0.5, sm: 1, md: 2 },
-                                                        flexShrink: 0,
-                                                        opacity: 0.9
-                                                    }}
-                                                />
-                                            ) : (
-                                                <Link href={`/player/${player.id}`}>
-                                                    <JerseyAvatar
-                                                        // number={player.shirtNumber || '0'}
-                                                        sx={{
-                                                            width: { xs: 25, sm: 35, md: 74 },
-                                                            height: { xs: 25, sm: 35, md: 74 },
-                                                            mr: { xs: 0.5, sm: 1, md: 2 },
-                                                            flexShrink: 0,
-                                                        }}
-                                                    />
-                                                </Link>
-                                            )}
+                        <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
+                            <CardContent sx={{
+                                p: { xs: 0.5, sm: 2 },
+                                maxHeight: { xs: 250, sm: 400 },
+                                overflowY: 'auto',
+                                scrollbarWidth: 'none',
+                                '&::-webkit-scrollbar': { display: 'none' }
+                            }}>
+                                {homePlayersAll.length > 0 ? (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        {homePlayersAll.map((player, index) => {
+                                            return (
+                                                <React.Fragment key={player.id}>
+                                                    <Box sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        p: { xs: 0.5, sm: 1, md: 2 },
+                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                        borderRadius: 0,
+                                                        border: '1px solid #4b4b4b',
+                                                        borderBottom: index === homePlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
+                                                        minHeight: { xs: 40, sm: 60, md: 100 },
+                                                        position: 'relative',
+                                                        '&:hover': {
+                                                            background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
+                                                            transform: 'translateY(-1px)',
+                                                            transition: 'all 0.2s ease'
+                                                        }
+                                                    }}>
+                                                        
 
-                                            {/* Player Info */}
-                                            <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                                {player.hasOwnProperty('isGuest') ? (
-                                                    <>
-                                                        <Typography variant="h6" sx={{
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                        }}>
-                                                            {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{
-                                                            color: '#D1D5DB',
-                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                        }}>
-                                                            Guest Player
-                                                        </Typography>
-                                                    </>
-                                                ) : (
-                                                    <Link href={`/player/${player.id}`}>
-                                                        <Typography variant="h6" sx={{
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                        }}>
-                                                            {player.firstName} {player.lastName}
-                                                            {(player.id === match.homeCaptainId || player.id === match.awayCaptainId) ? ' (C)' : ''}
-                                                        </Typography>
+                                                        {player.hasOwnProperty('isGuest') ? (
+                                                            <JerseyAvatar
+                                                                sx={{
+                                                                    width: { xs: 25, sm: 35, md: 74 },
+                                                                    height: { xs: 25, sm: 35, md: 74 },
+                                                                    mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                    flexShrink: 0,
+                                                                    opacity: 0.9
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Link href={`/player/${player.id}`}>
+                                                                <JerseyAvatar
+                                                                    sx={{
+                                                                        width: { xs: 25, sm: 35, md: 74 },
+                                                                        height: { xs: 25, sm: 35, md: 74 },
+                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                />
+                                                            </Link>
+                                                        )}
 
-                                                        <Typography variant="body2" sx={{
-                                                            color: '#D1D5DB',
-                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                        }}>
-                                                            {player.positionType || 'Player'}
-                                                        </Typography>
-                                                    </Link>
-                                                )}
+                                                        {/* Player Info */}
+                                                        <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            {player.hasOwnProperty('isGuest') ? (
+                                                                <>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        Guest Player
+                                                                    </Typography>
+                                                                </>
+                                                            ) : (
+                                                                <Link href={`/player/${player.id}`}>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName}
+                                                                        {player.id === match.homeCaptainId ? ' (C)' : ''}
+                                                                    </Typography>
 
-                                                {/* Player Add Stats (self) - only for last two matches */}
-                                                {/* {!player.hasOwnProperty('isGuest') && user?.id === player.id && league.active && (editWindow?.canPlayerSubmit ?? false) && (
-                                                    <Button
-                                                        onClick={openStats}
-                                                        startIcon={<Add />}
-                                                        variant="contained"
-                                                        size="small"
-                                                        sx={{
-                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                            color: 'white',
-                                                            fontWeight: 'bold',
-                                                            borderRadius: 1.5,
-                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                            fontSize: { xs: 5, sm: 7, md: 10 },
-                                                            minWidth: { xs: 'auto', sm: 'auto' },
-                                                            height: { xs: 16, sm: 20, md: 28 },
-                                                            whiteSpace: 'nowrap',
-                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                            mr: { xs: 0.25, sm: 0.5, md: 0.5 }
-                                                        }}
-                                                    >
-                                                        Add Stats
-                                                    </Button>
-                                                )} */}
-
-                                                {/* Admin Stats Button and MOTM Vote Button */}
-                                                <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, alignItems: 'center', mt: { xs: 0.25, sm: 0.5, md: 0.5 } }}>
-                                                    {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
-                                                        <Button
-                                                            onClick={() => handleOpenAdminStatsModal(player)}
-                                                            startIcon={<Add />}
-                                                            variant="contained"
-                                                            size="small"
-                                                            sx={{
-                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
-                                                                borderRadius: 1.5,
-                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                                fontSize: { xs: 5, sm: 7, md: 10 },
-                                                                minWidth: { xs: 'auto', sm: 'auto' },
-                                                                height: { xs: 16, sm: 20, md: 28 },
-                                                                whiteSpace: 'nowrap',
-                                                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
-                                                            }}
-                                                        >
-                                                            Edit Stats
-                                                        </Button>
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        {player.positionType || 'Player'}
+                                                                    </Typography>
+                                                                </Link>
+                                                            )}
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
+                                                                {/* Admin Stats Button */}
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
+                                                                    <Button
+                                                                        onClick={() => handleOpenAdminStatsModal(player)}
+                                                                        startIcon={<Add />}
+                                                                        variant="contained"
+                                                                        size="small"
+                                                                        sx={{
+                                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            borderRadius: 1.5,
+                                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                            fontSize: { xs: 5, sm: 7, md: 10 },
+                                                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                                                            height: { xs: 16, sm: 20, md: 28 },
+                                                                            whiteSpace: 'nowrap',
+                                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 }
+                                                                        }}
+                                                                    >
+                                                                        Edit Stats
+                                                                    </Button>
+                                                                )}
+                                                                {/* MOTM Vote Button placed next to Edit Stats */}
+                                                                {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
+                                                                    <MotmCoin
+                                                                        voted={votedForId === player.id}
+                                                                        onClick={() => handleVote(player.id)}
+                                                                        disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
+                                                                        sx={{ width: { xs: 20, sm: 20, md: 48 }, height: { xs: 16, sm: 20, md: 28 } }}
+                                                                    />
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                    {index < homePlayersAll.length - 1 && (
+                                                        <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
-                                                    
-                                                    {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
-                                                        <MotmCoin
-                                                            voted={votedForId === player.id}
-                                                            onClick={() => handleVote(player.id)}
-                                                            disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
-                                                            sx={{ 
-                                                                minWidth: { xs: 'auto', sm: 'auto' },
-                                                                height: { xs: 16, sm: 20, md: 28 },
-                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                                fontSize: { xs: 5, sm: 7, md: 10 }
-                                                            }}
-                                                        />
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </Box>
+                                ) : (
+                                    <Typography color="white" sx={{ textAlign: 'center', fontStyle: 'italic', fontSize: { xs: 10, sm: 14 } }}>
+                                        No players assigned
+                                    </Typography>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </Box>
+
+                    {/* Away Team Section */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: { xs: 0.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                            gap: { xs: 0.5, sm: 1 }
+                        }}>
+                            <Typography variant="h5" color="white" sx={{
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.875rem', sm: '1.25rem', md: '1.5rem' },
+                                lineHeight: { xs: 1.2, sm: 1.5 }
+                            }}>
+                                {match.awayTeamName} ({typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0})
+                            </Typography>
+
+                            {/* Add Stats Button for Away Team */}
+                            {/* {user && canPlayerSubmitStats && league.active &&
+                                (match.awayTeamUsers ?? []).some(player => player.id === user.id) && (
+                                    <Button
+                                        onClick={() => setShowInlineStats(true)}
+                                        startIcon={<Add />}
+                                        variant="contained"
+                                        size="small"
+                                        sx={{
+                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                            color: 'white',
+                                            fontWeight: 'bold',
+                                            borderRadius: 1.5,
+                                            px: { xs: 0.5, sm: 1, md: 2 },
+                                            py: { xs: 0.25, sm: 0.5, md: 1 },
+                                            fontSize: { xs: 7, sm: 10, md: 12 },
+                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                            height: { xs: 19, sm: 32, md: 36 },
+                                            whiteSpace: 'nowrap',
+                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                            mr: { xs: 0.5, sm: 1, md: 1 }
+                                        }}
+                                    >
+                                        Add Stats
+                                    </Button>
+                                )} */}
+                        </Box>
+
+                        <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
+                            <CardContent sx={{
+                                p: { xs: 0.5, sm: 2 },
+                                maxHeight: { xs: 250, sm: 400 },
+                                overflowY: 'auto',
+                                scrollbarWidth: 'none',
+                                '&::-webkit-scrollbar': { display: 'none' }
+                            }}>
+                                {awayPlayersAll.length > 0 ? (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        {awayPlayersAll.map((player, index) => {
+                                            return (
+                                                <React.Fragment key={player.id}>
+                                                    <Box sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        p: { xs: 0.5, sm: 1, md: 2 },
+                                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                        borderRadius: 0,
+                                                        border: '1px solid #4b4b4b',
+                                                        borderBottom: index === awayPlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
+                                                        minHeight: { xs: 40, sm: 60, md: 100 },
+                                                        position: 'relative',
+                                                        '&:hover': {
+                                                            background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
+                                                            transform: 'translateY(-1px)',
+                                                            transition: 'all 0.2s ease'
+                                                        }
+                                                    }}>
+                                                        
+
+                                                        {player.hasOwnProperty('isGuest') ? (
+                                                            <JerseyAvatar
+                                                                sx={{
+                                                                    width: { xs: 25, sm: 35, md: 74 },
+                                                                    height: { xs: 25, sm: 35, md: 74 },
+                                                                    mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                    flexShrink: 0,
+                                                                    opacity: 0.9
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Link href={`/player/${player.id}`}>
+                                                                <JerseyAvatar
+                                                                    sx={{
+                                                                        width: { xs: 25, sm: 35, md: 74 },
+                                                                        height: { xs: 25, sm: 35, md: 74 },
+                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                />
+                                                            </Link>
+                                                        )}
+                                                        {/* Player Info */}
+                                                        <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            {player.hasOwnProperty('isGuest') ? (
+                                                                <>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        Guest Player
+                                                                    </Typography>
+                                                                </>
+                                                            ) : (
+                                                                <Link href={`/player/${player.id}`}>
+                                                                    <Typography variant="h6" sx={{
+                                                                        color: 'white',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: { xs: 8, sm: 10, md: 16 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 0.5 },
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
+                                                                    }}>
+                                                                        {player.firstName} {player.lastName}
+                                                                        {player.id === match.awayCaptainId ? ' (C)' : ''}
+                                                                    </Typography>
+
+                                                                    <Typography variant="body2" sx={{
+                                                                        color: '#D1D5DB',
+                                                                        fontSize: { xs: 6, sm: 8, md: 14 },
+                                                                        mb: { xs: 0.25, sm: 0.5, md: 1 },
+                                                                        lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
+                                                                    }}>
+                                                                        {player.positionType || 'Player'}
+                                                                    </Typography>
+                                                                </Link>
+                                                            )}
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
+                                                                {/* Admin Stats Button */}
+                                                                {isAdmin && match.status === 'RESULT_PUBLISHED' && league.active && (
+                                                                    <Button
+                                                                        onClick={() => handleOpenAdminStatsModal(player)}
+                                                                        startIcon={<Add />}
+                                                                        variant="contained"
+                                                                        size="small"
+                                                                        sx={{
+                                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                                                            color: 'white',
+                                                                            fontWeight: 'bold',
+                                                                            borderRadius: 1.5,
+                                                                            px: { xs: 0.25, sm: 0.5, md: 1.5 },
+                                                                            py: { xs: 0.125, sm: 0.25, md: 0.5 },
+                                                                            fontSize: { xs: 5, sm: 7, md: 10 },
+                                                                            minWidth: { xs: 'auto', sm: 'auto' },
+                                                                            height: { xs: 16, sm: 20, md: 28 },
+                                                                            whiteSpace: 'nowrap',
+                                                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                                                            mt: { xs: 0.25, sm: 0.5, md: 0.5 }
+                                                                        }}
+                                                                    >
+                                                                        Edit Stats
+                                                                    </Button>
+                                                                )}
+                                                                {/* MOTM Vote Button placed next to Edit Stats */}
+                                                                {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
+                                                                    <MotmCoin
+                                                                        voted={votedForId === player.id}
+                                                                        onClick={() => handleVote(player.id)}
+                                                                        disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
+                                                                        sx={{ width: { xs: 20, sm: 20, md: 48 }, height: { xs: 16, sm: 20, md: 28 } }}
+                                                                    />
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                    {index < awayPlayersAll.length - 1 && (
+                                                        <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
                                                     )}
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            ) : (
-                                <Typography color="white" sx={{ textAlign: 'center', fontStyle: 'italic', fontSize: { xs: 10, sm: 14 } }}>
-                                    No players assigned
-                                </Typography>
-                            );
-                        })()}
-                    </CardContent>
-                </Card>
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </Box>
+                                ) : (
+                                    <Typography color="white" sx={{ textAlign: 'center', fontStyle: 'italic', fontSize: { xs: 10, sm: 14 } }}>
+                                        No players assigned
+                                    </Typography>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </Box>
+                </Box>
             </Paper>
             )}
 
