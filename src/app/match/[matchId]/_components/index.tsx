@@ -483,6 +483,38 @@ export default function MatchDetailsPage() {
                   ...guestPlayers
                 ];
 
+                // Always order table by highest to lowest points (XP first, with sensible fallbacks)
+                const getStats = (player: PlayerWithTeam): Partial<MatchStatLite> => {
+                  const embedded = (player.statistics?.[0] as Partial<MatchStatLite>) || {};
+                  return perPlayerStats[player.id] || embedded || {};
+                };
+
+                const getPoints = (player: PlayerWithTeam): number => {
+                  const s = getStats(player);
+                  // Prefer xpAwarded when available; fall back to impact, then goals, then assists
+                  return (
+                    (typeof s.xpAwarded === 'number' ? s.xpAwarded : undefined) ??
+                    (typeof s.impact === 'number' ? s.impact : undefined) ??
+                    (typeof s.goals === 'number' ? s.goals : undefined) ??
+                    (typeof s.assists === 'number' ? s.assists : 0)
+                  );
+                };
+
+                const sortedPlayers = [...allPlayers].sort((a, b) => {
+                  const pb = getPoints(b);
+                  const pa = getPoints(a);
+                  // Descending by points; if tie, prefer higher goals, then assists
+                  if (pb !== pa) return pb - pa;
+                  const sb = getStats(b);
+                  const sa = getStats(a);
+                  const gb = typeof sb.goals === 'number' ? sb.goals : 0;
+                  const ga = typeof sa.goals === 'number' ? sa.goals : 0;
+                  if (gb !== ga) return gb - ga;
+                  const ab = typeof sb.assists === 'number' ? sb.assists : 0;
+                  const aa = typeof sa.assists === 'number' ? sa.assists : 0;
+                  return ab - aa;
+                });
+
                 return (
                   <Box
                     sx={{
@@ -564,7 +596,7 @@ export default function MatchDetailsPage() {
 
                           {/* Rows */}
                           <Box>
-                            {allPlayers.map((player, idx) => {
+                            {sortedPlayers.map((player, idx) => {
                               const embedded = (player.statistics?.[0] as Partial<MatchStatLite>) || {};
                               // Prefer API-fetched per-match stats for guests; fall back to embedded for users
                               const stats: Partial<MatchStatLite> = perPlayerStats[player.id] || embedded;

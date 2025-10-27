@@ -665,7 +665,7 @@ export default function PlayerStatsPage() {
     return (
         <>
          {/* Close Button */}
-         <Box sx={{mr:4 , mt:2}}>
+         <Box sx={{ml:4 , mt:3}}>
             <CloseButton fallbackRoute="/dashboard" />
          </Box>
         <Container
@@ -674,7 +674,7 @@ export default function PlayerStatsPage() {
                 py: 3,
                 minHeight: '100vh',
                 background: ORANGE_GRAD,
-                mt: 5,
+                mt: 1,
                 mb: 5,
                 borderRadius: 3, // Rounded corners for the background
             }}

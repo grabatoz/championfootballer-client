@@ -2532,22 +2532,9 @@ export default function LeagueDetailPage() {
             winPercentage: s.played ? `${Math.round((s.wins / s.played) * 100)}%` : '0%'
         }));
 
-        // Place Champion at 1st and Runner-Up at 2nd
-        const championId = leagueWinners?.champion;
-        const runnerUpId = leagueWinners?.runnerUp;
-
+        // Always order by highest to lowest XP points; tie-breakers: wins, draws, then fewer losses
         list.sort((a, b) => {
-            // Champion always first
-            if (championId) {
-                if (a.id === championId && b.id !== championId) return -1;
-                if (b.id === championId && a.id !== championId) return 1;
-            }
-            // Runner-up second (unless the other is champion)
-            if (runnerUpId) {
-                if (a.id === runnerUpId && b.id !== runnerUpId && b.id !== championId) return -1;
-                if (b.id === runnerUpId && a.id !== runnerUpId && a.id !== championId) return 1;
-            }
-            // Fallback: normal table sort
+            if ((b.xp ?? 0) !== (a.xp ?? 0)) return (b.xp ?? 0) - (a.xp ?? 0);
             if (b.wins !== a.wins) return b.wins - a.wins;
             if (b.draws !== a.draws) return b.draws - a.draws;
             return a.losses - b.losses;
@@ -4415,7 +4402,17 @@ export default function LeagueDetailPage() {
                                                     mt: 0.7
                                                 }}>
                                                     <List>
-                                                        {league.members.map((member) => (
+                                                        {[...league.members]
+                                                            .sort((a, b) => {
+                                                                const xpA = (a as any)?.xp ?? 0;
+                                                                const xpB = (b as any)?.xp ?? 0;
+                                                                if (xpB !== xpA) return xpB - xpA; // Desc by points
+                                                                // Stable tie-breaker by name to avoid flicker
+                                                                const nameA = `${(a as any)?.firstName ?? ''} ${(a as any)?.lastName ?? ''}`.toLowerCase();
+                                                                const nameB = `${(b as any)?.firstName ?? ''} ${(b as any)?.lastName ?? ''}`.toLowerCase();
+                                                                return nameA.localeCompare(nameB);
+                                                            })
+                                                            .map((member) => (
                                                             <React.Fragment key={member.id}>
                                                                 <ListItem
                                                                     onClick={() => {
@@ -5559,21 +5556,11 @@ export default function LeagueDetailPage() {
                                                                     <div className="hidden sm:block mr-2">
                                                                         <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
                                                                             <div className="relative w-full h-full">
-                                                                                {/* Colored shirt using mask */}
-                                                                                <div
-                                                                                    style={{
-                                                                                        position: 'absolute',
-                                                                                        inset: 0,
-                                                                                        backgroundColor: '#00A77F',
-                                                                                        WebkitMaskImage: `url(${ShirtImg.src})`,
-                                                                                        maskImage: `url(${ShirtImg.src})`,
-                                                                                        WebkitMaskRepeat: 'no-repeat',
-                                                                                        maskRepeat: 'no-repeat',
-                                                                                        WebkitMaskPosition: 'center',
-                                                                                        maskPosition: 'center',
-                                                                                        WebkitMaskSize: 'contain',
-                                                                                        maskSize: 'contain',
-                                                                                    }}
+                                                                                <Image
+                                                                                    src={ShirtImg}
+                                                                                    alt="Shirt"
+                                                                                    fill
+                                                                                    style={{ objectFit: 'contain', pointerEvents: 'none' }}
                                                                                 />
                                                                             </div>
                                                                         </div>
