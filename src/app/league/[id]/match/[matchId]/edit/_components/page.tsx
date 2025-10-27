@@ -315,8 +315,11 @@ export default function EditMatchPage() {
   const [, setHomeStrength] = useState<number | null>(null);
   const [, setAwayStrength] = useState<number | null>(null);
 
-  // XP map for league (used to balance by XP)
+  // XP maps for league
+  // - userLeagueXP: total XP per player within this league
+  // - userLeagueAvgXP: average XP per match within this league (backend computed)
   const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
+  const [userLeagueAvgXP, setUserLeagueAvgXP] = useState<Record<string, number>>({});
   const [xpLoading, setXpLoading] = useState(false);
   // Track balancing run to prevent repeated clicks and show progress
   const [isBalancing, setIsBalancing] = useState(false);
@@ -333,15 +336,23 @@ export default function EditMatchPage() {
       const json = await res.json();
       // Support either { xp } or { data: { xp } }
       const xpMap = (json?.xp || json?.data?.xp || {}) as Record<string, number>;
+      const avgMap = (json?.avg || json?.data?.avg || {}) as Record<string, number>;
       setUserLeagueXP(xpMap);
+      setUserLeagueAvgXP(avgMap);
       return xpMap;
     } catch {
       setUserLeagueXP({});
+      setUserLeagueAvgXP({});
       return {} as Record<string, number>;
     } finally {
       setXpLoading(false);
     }
   }, [leagueId, token, userLeagueXP]);
+
+  // Ensure XP maps are available for preview UI as soon as league loads
+  useEffect(() => {
+    if (leagueId && token) { void ensureXPMap(); }
+  }, [leagueId, token, ensureXPMap]);
 
   const fetchPrediction = useCallback(async () => {
     if (!matchId || !token) return;
@@ -379,6 +390,41 @@ export default function EditMatchPage() {
     const total = keys.reduce((sum, k) => sum + (s?.[k] ?? 0), 0);
     return Math.round(total / keys.length);
   };
+
+  // League-average XP and fallback logic
+  const nonZeroAvgValues = React.useMemo(() =>
+    Object.values(userLeagueAvgXP || {}).filter(v => typeof v === 'number' && v > 0) as number[],
+    [userLeagueAvgXP]
+  );
+  const leagueAvgXPValue = React.useMemo(() => {
+    if (nonZeroAvgValues.length === 0) return 0;
+    const sum = nonZeroAvgValues.reduce((a, b) => a + b, 0);
+    return Math.round(((sum / nonZeroAvgValues.length) + Number.EPSILON) * 100) / 100;
+  }, [nonZeroAvgValues]);
+  const getAvgRating = (p?: PlayerOption | null): number => {
+    if (!p) return 0;
+    if (p.isGuest) {
+      // Guests get league average XP; fallback to skill if league has no XP yet
+      return leagueAvgXPValue > 0 ? leagueAvgXPValue : calcSkill(p);
+    }
+    const v = userLeagueAvgXP[p.id];
+    // If player has XP avg, use it; otherwise fallback to skill
+    return typeof v === 'number' && v > 0 ? v : calcSkill(p);
+  };
+
+  // XP-based team percentage calculation
+  const xpBased = React.useMemo(() => {
+    const homeSum = homeTeamUsers.reduce((s, p) => s + getAvgRating(p), 0);
+    const awaySum = awayTeamUsers.reduce((s, p) => s + getAvgRating(p), 0);
+    const total = homeSum + awaySum;
+    if (total <= 0) {
+      return { homeSum, awaySum, total, homePct: 0, awayPct: 0 };
+    }
+    const factor = total / 100; // as requested: divide by 100, then multiply with team sum
+    const awayPct = (awaySum / factor);
+    const homePct = 100 - awayPct;
+    return { homeSum, awaySum, total, homePct, awayPct };
+  }, [homeTeamUsers, awayTeamUsers, userLeagueAvgXP, leagueAvgXPValue]);
 
   // Shuffle (pure random for registered players; keep guests on their original teams)
   const shuffleTeams = () => {
@@ -1603,18 +1649,18 @@ export default function EditMatchPage() {
                   <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Team Balance</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                     <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof homeWinChance === 'number' ? `${homeWinChance}%` : '—'}</Typography>
+                      <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.homePct)}%` : '—'}</Typography>
                       <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
                     </Box>
                     <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{typeof awayWinChance === 'number' ? `${awayWinChance}%` : '—'}</Typography>
+                      <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.awayPct)}%` : '—'}</Typography>
                       <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
                     </Box>
                   </Box>
-                  {typeof homeWinChance === 'number' && (
+                  {xpBased.total > 0 && (
                     <LinearProgress
                       variant="determinate"
-                      value={homeWinChance}
+                      value={Math.round(xpBased.homePct)}
                       sx={{
                         height: { xs: 6, sm: 8 },
                         borderRadius: { xs: 3, sm: 4 },
@@ -1627,6 +1673,11 @@ export default function EditMatchPage() {
                     />
                   )}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
+                    {/* {xpBased.total > 0 && (
+                      <Typography variant="caption" sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
+                        XP-based ratio
+                      </Typography>
+                    )} */}
                   </Box>
                   {/* 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: { xs: 0.5, sm: 1 } }}>
@@ -1778,6 +1829,9 @@ export default function EditMatchPage() {
                         <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                           Skill: {calcSkill(homeCaptain)}
                         </Typography>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
+                          Avg XP: {getAvgRating(homeCaptain)}
+                        </Typography>
                       </Box>
                       {homeCaptain.isGuest && (
                         <IconButton
@@ -1855,6 +1909,9 @@ export default function EditMatchPage() {
                           </Typography>
                           <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                             Skill: {calcSkill(user)}
+                          </Typography>
+                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
+                            Avg XP: {getAvgRating(user)}
                           </Typography>
                         </Box>
                         {user.isGuest && (
@@ -1943,8 +2000,11 @@ export default function EditMatchPage() {
                           )}
                         </Typography>
                         <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
-                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3F', display: { xs: 'none', sm: 'block' } }}>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                           Skill: {calcSkill(awayCaptain)}
+                        </Typography>
+                        <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
+                          Avg XP: {getAvgRating(awayCaptain)}
                         </Typography>
                       </Box>
                       {awayCaptain.isGuest && (
@@ -2021,8 +2081,11 @@ export default function EditMatchPage() {
                               />
                             )}
                           </Typography>
-                          <Typography sx={{ fontSize: { xs: 4, sm: 5, md: 7 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
+                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
                             Skill: {calcSkill(user)}
+                          </Typography>
+                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
+                            Avg XP: {getAvgRating(user)}
                           </Typography>
                         </Box>
                         {user.isGuest && (
