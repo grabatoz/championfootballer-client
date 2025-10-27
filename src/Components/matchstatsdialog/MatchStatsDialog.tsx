@@ -1917,9 +1917,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     }}
                 >
                     {(() => {
-                        const chosenId = String(selectedLeagueIdForList || resolvedLeagueId || league?.id || '');
-                        const chosen = availableLeagues.find(al => String(al.id) === chosenId);
-                        const admins: User[] = Array.isArray(league?.administrators) ? (league!.administrators as User[]) : [];
+                        // const chosenId = String(selectedLeagueIdForList || resolvedLeagueId || league?.id || '');
+                        // const chosen = availableLeagues.find(al => String(al.id) === chosenId);
+                        // const admins: User[] = Array.isArray(league?.administrators) ? (league!.administrators as User[]) : [];
                         // const isAdmin = chosen && Array.isArray(chosen.administrators)
                         //     ? chosen.administrators.some(a => String(a.id) === String(user?.id))
                         //     : admins.some(a => String(a.id) === String(user?.id));
