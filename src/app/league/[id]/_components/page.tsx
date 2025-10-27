@@ -12,7 +12,7 @@ import {
     Chip,
     Divider,
     CircularProgress,
-    Dialog, 
+    Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
@@ -2257,7 +2257,7 @@ export default function LeagueDetailPage() {
                                     matches: matchesFromDetails,
                                 } as League;
                             }
-                        } catch {}
+                        } catch { }
                         const leagueId = String(l.id);
                         const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
                             ? 'ADMIN'
@@ -2300,7 +2300,7 @@ export default function LeagueDetailPage() {
                         })));
                         console.groupEnd();
                     }
-                } catch {}
+                } catch { }
             }
         } catch (error) {
             console.error('Error fetching leagues:', error);
@@ -3854,8 +3854,8 @@ export default function LeagueDetailPage() {
             {/* <Box sx={{ ml:5}}> */}
             {/* </Box> */}
             <Container maxWidth="lg">
-            {/* Close Button */}
-            <CloseButton fallbackRoute="/dashboard" />
+                {/* Close Button */}
+                <CloseButton fallbackRoute="/dashboard" />
                 {/* Show page structure immediately */}
 
                 {/* Access control for non-members - only show when league data is available */}
@@ -4413,25 +4413,25 @@ export default function LeagueDetailPage() {
                                                                 return nameA.localeCompare(nameB);
                                                             })
                                                             .map((member) => (
-                                                            <React.Fragment key={member.id}>
-                                                                <ListItem
-                                                                    onClick={() => {
-                                                                        router.push(`/player/${member.id}`);
-                                                                    }}
-                                                                    sx={{
-                                                                        // boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                                                        cursor: 'pointer',
-                                                                        py: { xs: 1, sm: 2 },
-                                                                        px: { xs: 1, sm: 2 },
-                                                                        alignItems: 'center',
-                                                                        // backgroundColor: '#3B8271',
-                                                                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                                                                    }}
-                                                                >
-                                                                    <ListItemAvatar>
-                                                                        <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
-                                                                            <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                                                                            {/* <Box
+                                                                <React.Fragment key={member.id}>
+                                                                    <ListItem
+                                                                        onClick={() => {
+                                                                            router.push(`/player/${member.id}`);
+                                                                        }}
+                                                                        sx={{
+                                                                            // boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                                                            cursor: 'pointer',
+                                                                            py: { xs: 1, sm: 2 },
+                                                                            px: { xs: 1, sm: 2 },
+                                                                            alignItems: 'center',
+                                                                            // backgroundColor: '#3B8271',
+                                                                            background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+                                                                        }}
+                                                                    >
+                                                                        <ListItemAvatar>
+                                                                            <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
+                                                                                <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
+                                                                                {/* <Box
                                                                                 sx={{
                                                                                     position: 'absolute',
                                                                                     top: 0, left: 0, right: 0, bottom: 0,
@@ -4442,42 +4442,42 @@ export default function LeagueDetailPage() {
                                                                             >
                                                                                 {member?.shirtNumber ?? '00'}
                                                                             </Box> */}
+                                                                            </Box>
+                                                                        </ListItemAvatar>
+                                                                        <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
+                                                                            <Box sx={{
+                                                                                display: 'flex',
+                                                                                flexDirection: 'column',
+                                                                                alignItems: 'flex-end', // Changed from 'center' to 'flex-start'
+                                                                                // alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
+                                                                                minWidth: { xs: 24, sm: 40 },
+                                                                                width: { xs: 100, sm: 150 }, // Added fixed width
+                                                                                color: 'white'
+                                                                            }}>
+                                                                                {/* #00C853 */}
+                                                                                <SignalCellularAltIcon sx={{ color: 'green', fontSize: { xs: 16, sm: 24 } }} />
+
+                                                                                {/* {member?.position} */}
+                                                                            </Box>
+                                                                            <Typography variant="h6" component="span" sx={{
+                                                                                fontWeight: 'bold',
+                                                                                minWidth: { xs: 36, sm: 60 },
+                                                                                textAlign: 'center',
+                                                                                fontSize: { xs: 13, sm: 20 },
+                                                                                color: 'white'
+                                                                            }}>
+                                                                                {/* {member.shirtNumber} */}
+                                                                                {member.xp}
+                                                                            </Typography>
                                                                         </Box>
-                                                                    </ListItemAvatar>
-                                                                    <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
-                                                                        <Box sx={{
-                                                                            display: 'flex',
-                                                                            flexDirection: 'column',
-                                                                            alignItems: 'flex-end', // Changed from 'center' to 'flex-start'
-                                                                            // alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
-                                                                            minWidth: { xs: 24, sm: 40 },
-                                                                            width: { xs: 100, sm: 150 }, // Added fixed width
-                                                                            color: 'white'
-                                                                        }}>
-                                                                            {/* #00C853 */}
-                                                                            <SignalCellularAltIcon sx={{ color: 'green', fontSize: { xs: 16, sm: 24 } }} />
+                                                                    </ListItem>
+                                                                    <div className="h-[2px] bg-white"></div>
 
-                                                                            {/* {member?.position} */}
-                                                                        </Box>
-                                                                        <Typography variant="h6" component="span" sx={{
-                                                                            fontWeight: 'bold',
-                                                                            minWidth: { xs: 36, sm: 60 },
-                                                                            textAlign: 'center',
-                                                                            fontSize: { xs: 13, sm: 20 },
-                                                                            color: 'white'
-                                                                        }}>
-                                                                            {/* {member.shirtNumber} */}
-                                                                            {member.xp}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                </ListItem>
-                                                                <div className="h-[2px] bg-white"></div>
+                                                                    {/* <Divider className='h-[1px]' sx={{ backgroundColor: 'white', mb: 0, mt: 0 }} /> */}
 
-                                                                {/* <Divider className='h-[1px]' sx={{ backgroundColor: 'white', mb: 0, mt: 0 }} /> */}
-
-                                                            </React.Fragment>
-                                                        ))}
+                                                                </React.Fragment>
+                                                            ))}
                                                     </List>
                                                 </Box>
                                                 {/* )} */}
@@ -5437,7 +5437,7 @@ export default function LeagueDetailPage() {
                                                                                 transition: 'all 0.2s ease-in-out',
                                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                             }}
-                                                                             disabled={!league?.active }
+                                                                            disabled={!league?.active}
                                                                         >
                                                                             View Team
                                                                         </Button>
@@ -5464,7 +5464,7 @@ export default function LeagueDetailPage() {
                                                                                 transition: 'all 0.2s ease-in-out',
                                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                                             }}
-                                                                            disabled={!league?.active }
+                                                                            disabled={!league?.active}
                                                                         >
                                                                             Match Results
                                                                         </Button>
@@ -6152,15 +6152,15 @@ export default function LeagueDetailPage() {
             </Dialog>
             {/* // ...existing code... */}
             <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ 
+                <DialogTitle sx={{
                     fontWeight: 'bold',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between'
                 }}>
                     Team Preview
-                    <IconButton 
-                        onClick={() => setViewTeamOpen(false)} 
+                    <IconButton
+                        onClick={() => setViewTeamOpen(false)}
                         size="small"
                         sx={{ color: 'inherit' }}
                     >
