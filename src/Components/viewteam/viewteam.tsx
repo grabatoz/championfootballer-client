@@ -800,6 +800,18 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     return Array.from(m.values());
   }, [guests]);
 
+  // Simple count-based lineup matchup percent
+  // If both teams have equal players (including guests) => 100%
+  // Otherwise: min(count)/max(count) * 100 (rounded)
+  const totalHomeCount = React.useMemo(() => (homePlayers?.length || 0) + (homeGuests?.length || 0), [homePlayers, homeGuests]);
+  const totalAwayCount = React.useMemo(() => (awayPlayers?.length || 0) + (awayGuests?.length || 0), [awayPlayers, awayGuests]);
+  const lineupMatchupPct = React.useMemo(() => {
+    const maxC = Math.max(totalHomeCount, totalAwayCount);
+    if (maxC === 0) return 0;
+    const minC = Math.min(totalHomeCount, totalAwayCount);
+    return Math.round((minC / maxC) * 100);
+  }, [totalHomeCount, totalAwayCount]);
+
   // Simple row layout for guests within same half
   // SWAPPED: home at y=0.99 (right when rotated), away at y=0.01 (left when rotated)
   const homeGuestRowPositions = React.useMemo(() => {
@@ -1411,7 +1423,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>
             Team matchup is{' '}
             <span style={{ color: primaryColor }}>
-              {insightsLoading || !teamInsights ? '…' : `${teamInsights.matchupPct}%`}
+              {`${lineupMatchupPct}%`}
             </span>
           </Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
