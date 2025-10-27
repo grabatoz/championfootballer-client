@@ -765,6 +765,8 @@ export default function AllMatches() {
     // Replace handleLeagueSelect to only update state and close the menu
     const handleLeagueSelect = (selectedLeagueId: string) => {
         if (selectedLeagueId !== selectedLeague) {
+            // Persist preference so other pages/components (e.g., Match Stats Dialog) can auto-select this league
+            try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(selectedLeagueId)); } catch {}
             setSelectedLeague(selectedLeagueId);
             setLoading(true); // effects will fetch matches and league details
         }
