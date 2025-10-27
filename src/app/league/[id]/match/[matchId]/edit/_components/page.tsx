@@ -426,28 +426,23 @@ export default function EditMatchPage() {
     return { homeSum, awaySum, total, homePct, awayPct };
   }, [homeTeamUsers, awayTeamUsers, userLeagueAvgXP, leagueAvgXPValue]);
 
-  // Shuffle (pure random for registered players; keep guests on their original teams)
+  // Shuffle: swap all players between teams (including guests) exactly
   const shuffleTeams = () => {
-    const homeReg = homeTeamUsers.filter(p => !p.isGuest);
-    const awayReg = awayTeamUsers.filter(p => !p.isGuest);
-    const combined = [...homeReg, ...awayReg];
-    if (combined.length < 2) { toast.error('Need at least 2 players'); return; }
-    // Fisher-Yates shuffle
-    const arr = [...combined];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    // Preserve original registered counts per team for better UX
-    const newHomeReg = arr.slice(0, homeReg.length);
-    const newAwayReg = arr.slice(homeReg.length);
-    const newHome = [...newHomeReg, ...homeTeamUsers.filter(p => p.isGuest)];
-    const newAway = [...newAwayReg, ...awayTeamUsers.filter(p => p.isGuest)];
+    const oldHome = homeTeamUsers;
+    const oldAway = awayTeamUsers;
+    const newHome = oldAway.map(p => p.isGuest ? { ...p, team: 'home' } as PlayerOption : p);
+    const newAway = oldHome.map(p => p.isGuest ? { ...p, team: 'away' } as PlayerOption : p);
+
     setHomeTeamUsers(newHome);
     setAwayTeamUsers(newAway);
+
+    // Also swap staged guests to keep state consistent
+    setHomeGuests(awayGuests.map(g => ({ ...g, team: 'home' })));
+    setAwayGuests(homeGuests.map(g => ({ ...g, team: 'away' })));
+
+    // Clear captains when teams change massively
     setHomeCaptain(null); setAwayCaptain(null);
-    toast.success('Teams shuffled randomly');
-    // Update prediction immediately
+    toast.success('Teams swapped');
     fetchPrediction();
   };
 
