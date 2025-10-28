@@ -1043,6 +1043,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             // Only in embedded mode
             if (typeof open !== 'boolean') return;
             if (!open) return;
+            // NEW: if caller provided explicit league/match, do NOT auto-select anything
+            if (initialLeagueId || initialMatchId) return;
             // If route provided ids or we already resolved, nothing to do
             if ((leagueId && matchId) || (resolvedLeagueId && resolvedMatchId)) {
                 console.log('MatchStatsDialog: ids already present', { leagueId, matchId, resolvedLeagueId, resolvedMatchId });
@@ -1119,7 +1121,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
         };
         run();
-    }, [open, token, leagueId, matchId, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails]);
+    }, [open, token, leagueId, matchId, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails, initialLeagueId, initialMatchId]);
 
     // CHANGED: do not toggle global loading; refetch silently and show local spinner on button
     const handleSaveDetails = async () => {
@@ -1424,7 +1426,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
         try {
             // Fetch existing stats for the selected player
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${player.id}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats?playerId=${player.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -1802,6 +1804,28 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     }
 
     if (error || !league || !match) {
+        // Embedded: if opened specifically for Admin Goals, don't show league selector fallback.
+        if (typeof open === 'boolean' && showAdminGoalsSection) {
+            return (
+                <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted PaperProps={{ sx: dialogPaperSx }}>
+                    <DialogTitle sx={dialogTitleSx}>
+                        Admin Can Add Goals Both Teams
+                        <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}><CloseIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers sx={{ ...dialogContentSx }}>
+                        {error ? (
+                            <Alert severity="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Alert>
+                        ) : (
+                            <Typography variant="body1" sx={{ color: '#E5E7EB', mb: 2 }}>Loading match details…</Typography>
+                        )}
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 120 }}>
+                            <CircularProgress sx={{ color: '#fff' }} />
+                        </Box>
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+
         // Embedded: show a simple starter UI that lets the user select a league instead of a hard error
         if (typeof open === 'boolean') {
             return (
