@@ -377,7 +377,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const [currentMatchId, setCurrentMatchId] = useState<string>('');
     const resolvedLeagueId = currentLeagueId || leagueId;
     const resolvedMatchId = currentMatchId || matchId;
-    const preferredAppliedRef = useRef(false);
+    const preferredAppliedRef = useRef<string | null>(null);
 
     // Unified dialog paper styling to match app theme
     const dialogPaperSx = {
@@ -829,7 +829,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         const run = async () => {
             if (typeof open !== 'boolean' || !open) return;
             if (!initialLeagueId && !initialMatchId) return;
-            preferredAppliedRef.current = true; // prevent preferred flow overriding this selection
+            // Mark as applied with a special marker to prevent preferred flow overriding this selection
+            preferredAppliedRef.current = '__explicit__';
             if (initialLeagueId) setCurrentLeagueId(String(initialLeagueId));
             if (initialMatchId) setCurrentMatchId(String(initialMatchId));
             if (token && (initialLeagueId || initialMatchId)) {
@@ -871,17 +872,35 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     useEffect(() => {
         const applyPreferredLeague = async () => {
             try {
-                if (preferredAppliedRef.current) return;
-                if (!token) return;
-                if (typeof window === 'undefined') return;
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+                if (typeof window === 'undefined') {
+                    setLoading(false);
+                    return;
+                }
                 const stored = localStorage.getItem('preferredLeagueId');
-                if (!stored) return;
+                if (!stored) {
+                    setLoading(false);
+                    return;
+                }
                 const preferredId = String(stored);
 
                 // If route already provides both ids for same league, no need to override
-                if (resolvedLeagueId === preferredId && resolvedMatchId) return;
+                if (resolvedLeagueId === preferredId && resolvedMatchId) {
+                    setLoading(false);
+                    return;
+                }
 
-                preferredAppliedRef.current = true;
+                // Skip if we've already applied this exact same preference (avoid redundant fetches)
+                if (preferredAppliedRef.current === preferredId) {
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('[MatchStats] Loading league from localStorage:', preferredId);
+                preferredAppliedRef.current = preferredId;
                 setLoading(true);
 
                 // Fetch matches for the preferred league and select the latest
@@ -959,10 +978,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         };
         // If dialog was opened with explicit ids, skip preferred flow
         if (typeof open === 'boolean' && open && (initialLeagueId || initialMatchId)) return;
+        
+        // Always check when dialog opens or token becomes available
+        if (typeof open === 'boolean' && !open) return; // Don't run when dialog is closed
+        
         applyPreferredLeague();
-        // We intentionally run when token changes; internal ref prevents repeats
+        // We intentionally run when token or open state changes; internal ref with league ID prevents duplicate fetches
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, resolvedLeagueId, resolvedMatchId, open, initialLeagueId, initialMatchId]);
+
+    // Reset ref when dialog closes so next open gets fresh data
+    useEffect(() => {
+        if (typeof open === 'boolean' && !open) {
+            // Dialog is closed, reset the ref so next time it opens fresh
+            preferredAppliedRef.current = null;
+        }
+    }, [open]);
 
     // Define after fetchLeagueAndMatchDetails so we can safely call it
     const handleSelectLeague = useCallback((l: League) => {
@@ -971,7 +1002,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         setLeagueSelectOpen(false);
         // Persist as preferred league for future auto-selection
         if (typeof window !== 'undefined') {
-            try { localStorage.setItem('preferredLeagueId', l.id); } catch { /* ignore quota errors */ }
+            try { 
+                localStorage.setItem('preferredLeagueId', l.id);
+                // Update ref immediately so if user reopens dialog, it uses this league
+                preferredAppliedRef.current = l.id;
+                console.log('[MatchStats] Manually selected league:', l.id);
+            } catch { /* ignore quota errors */ }
         }
         // reset UI state
         setSelectedLeagueMatches([]);
