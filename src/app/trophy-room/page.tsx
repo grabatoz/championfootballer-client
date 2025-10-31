@@ -1905,7 +1905,7 @@ export default function GlobalTrophyRoom() {
                 PaperProps={{
                   sx: {
                     p: 0.5,
-                    mt: 1,
+                    mt: 1, 
                     minWidth: 240,
                     bgcolor: 'rgba(15,15,15,0.92)',
                     color: '#E5E7EB',
