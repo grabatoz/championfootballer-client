@@ -83,6 +83,8 @@ interface League {
   isCompleted?: boolean;
   active?: boolean;
   status?: string;
+  // Derived on client: whether the user is an admin of this league
+  isAdmin?: boolean;
 }
 
 interface PlayerStats {
@@ -1174,10 +1176,17 @@ const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
 };
 
 // Helper: normalize leagues from /auth/data (user.leagues + administeredLeagues)
-const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
+const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; adminIds: Set<string> } => {
+  const adminLeaguesArr = (u?.administeredLeagues ?? u?.adminLeagues ?? []);
+  const adminIds = new Set<string>(
+    adminLeaguesArr
+      .map(l => (l && l.id != null ? String(l.id) : undefined))
+      .filter((v): v is string => typeof v === 'string')
+  );
+  
   const srcLeagues = [
     ...(u?.leagues ?? []),
-    ...(u?.administeredLeagues ?? u?.adminLeagues ?? []),
+    ...adminLeaguesArr,
   ];
 
   // de-duplicate by id
@@ -1216,13 +1225,16 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): League[] => {
     status: normalizeMatchStatus(m?.status),
   });
 
-  return uniqueList.map((l: BackendLeague): League => ({
+  const leagues = uniqueList.map((l: BackendLeague): League => ({
     id: String(l?.id ?? ''),
     name: l?.name ?? '',
     members: (l?.members ?? []).map(toUser),
     matches: (l?.matches ?? []).map(toMatch),
     maxGames: extractLeagueMaxGames(l),
+    isAdmin: adminIds.has(String(l?.id ?? '')),
   }));
+  
+  return { leagues, adminIds };
 };
 
 // Helper to normalize simple user from API leagues
@@ -1441,13 +1453,14 @@ export default function GlobalTrophyRoom() {
         const data = await res.json();
         if (res.ok && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
-          const rawLeagues = normalizeLeaguesFromAuthData(userPayload);
+          const { leagues: rawLeagues, adminIds } = normalizeLeaguesFromAuthData(userPayload);
 
           // Enrich with computed status
           const enrichedLeagues = await Promise.all(
             rawLeagues.map(async (league) => {
               try {
                 const leagueId = String(league.id);
+                const isAdmin = adminIds.has(leagueId);
                 const [statusRes, detailsRes] = await Promise.all([
                   fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1499,13 +1512,15 @@ export default function GlobalTrophyRoom() {
                     isLocked: computed?.locked === true,
                     maxGames: maxGames ?? maxGamesFromDetails,
                     matches: matchesFromDetails,
+                    isAdmin,
                   } as League;
                 }
 
-                return league as League;
+                return { ...league, isAdmin } as League;
               } catch (error) {
                 console.error(`Error fetching details for league`, error);
-                return league as League;
+                const leagueId = String(league.id);
+                return { ...league, isAdmin: adminIds.has(leagueId) } as League;
               }
             })
           );
@@ -1634,10 +1649,10 @@ export default function GlobalTrophyRoom() {
     if (!leagues?.length) return;
     // If current selection doesn't exist, pick default
     if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
-    const completed = leagues.find(l => isLeagueCompleted(l));
+    const completed = leagues.find(l => leagueIsCompleted(l));
     const defaultId = completed?.id ?? leagues[0].id;
     setSelectedLeagueId(String(defaultId));
-  }, [leagues]);
+  }, [leagues, selectedLeagueId, leagueIsCompleted]);
 
   // Use API-provided winners directly (already filtered by selectedLeagueId on the server)
   const baseTrophies: TrophyType[] =
@@ -1887,15 +1902,71 @@ export default function GlobalTrophyRoom() {
                 anchorEl={leaguesDropdownAnchor}
                 open={leaguesDropdownOpen}
                 onClose={handleLeaguesDropdownClose}
-                // MenuListProps={{ onMouseLeave: handleLeaguesDropdownClose }}
+                PaperProps={{
+                  sx: {
+                    p: 0.5,
+                    mt: 1,
+                    minWidth: 240,
+                    bgcolor: 'rgba(15,15,15,0.92)',
+                    color: '#E5E7EB',
+                    borderRadius: 2.5,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                    overflow: 'hidden',
+                  }
+                }}
               >
-                {/* <MenuItem onClick={() => handleLeagueSelect('all')}>All Leagues</MenuItem> */}
                 {leagues.length === 0 ? (
-                  <MenuItem disabled>League has not found</MenuItem>
+                  <MenuItem disabled sx={{ opacity: 0.7 }}>League has not found</MenuItem>
                 ) : (
                   leagues.map(l => (
-                    <MenuItem key={l.id} onClick={() => handleLeagueSelect(String(l.id))}>
-                      {l.name}
+                    <MenuItem 
+                      key={l.id} 
+                      onClick={() => handleLeagueSelect(String(l.id))}
+                      sx={{
+                        borderRadius: 1.5,
+                        mx: 0.5,
+                        my: 0.25,
+                        py: 1,
+                        px: 1.25,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        color: '#E5E7EB',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-1px)',
+                          background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        },
+                      }}
+                    >
+                      <Box component="span" sx={{ flex: 1 }}>{l.name}</Box>
+                      <Box
+                        sx={{
+                          ml: 'auto',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            px: 1,
+                            py: 0.25,
+                            bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.08)',
+                            color: l.isAdmin ? '#111827' : '#E5E7EB',
+                            borderRadius: '9999px',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: 0.3,
+                            textTransform: 'uppercase',
+                            border: l.isAdmin ? '1px solid rgba(255,255,255,0.0)' : '1px solid rgba(255,255,255,0.12)'
+                          }}
+                        >
+                          {l.isAdmin ? 'Admin' : 'Member'}
+                        </Box>
+                      </Box>
                     </MenuItem>
                   ))
                 )}

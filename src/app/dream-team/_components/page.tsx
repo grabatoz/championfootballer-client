@@ -68,6 +68,8 @@ interface League {
   maxGames?: number;
   active?: boolean;
   matches?: Match[];
+  // Derived on client: whether the user is an admin of this league
+  isAdmin?: boolean;
 }
 
 const DreamTeamPage = () => {
@@ -221,6 +223,11 @@ const DreamTeamPage = () => {
         console.log('Response data:', data);
         
         const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
+        const adminIds = new Set<string>(
+          adminLeaguesArr
+            .map(l => (l && (l as { id?: string | number }).id != null ? String((l as { id?: string | number }).id) : undefined))
+            .filter((v): v is string => typeof v === 'string')
+        );
         const userLeagues = [
           ...(data.user.leagues || []),
           ...adminLeaguesArr
@@ -239,6 +246,7 @@ const DreamTeamPage = () => {
           Array.from(uniqueLeaguesMap.values()).map(async (league) => {
             try {
               const leagueId = String((league as { id?: string | number }).id);
+              const isAdmin = adminIds.has(leagueId);
               const [statusRes, detailsRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
                   headers: { 'Authorization': `Bearer ${token}` }
@@ -290,13 +298,15 @@ const DreamTeamPage = () => {
                   isLocked: computed?.locked === true,
                   maxGames: maxGames ?? maxGamesFromDetails,
                   matches: matchesFromDetails,
+                  isAdmin,
                 } as League;
               }
 
-              return league as League;
+              return { ...(league as League), isAdmin } as League;
             } catch (error) {
               console.error(`Error fetching details for league`, error);
-              return league as League;
+              const leagueId = String((league as { id?: string | number }).id);
+              return { ...(league as League), isAdmin: adminIds.has(leagueId) } as League;
             }
           })
         );
@@ -615,8 +625,26 @@ const DreamTeamPage = () => {
                   }
                 }}
               />
-              {isActive ? (
-                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {/* Role chip: Admin or Member */}
+                <Box
+                  sx={{
+                    px: 1,
+                    py: 0.25,
+                    bgcolor: leagueItem.isAdmin ? '#fff' : 'rgba(255,255,255,0.08)',
+                    color: leagueItem.isAdmin ? '#111827' : '#E5E7EB',
+                    borderRadius: '9999px',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: 0.3,
+                    textTransform: 'uppercase',
+                    border: leagueItem.isAdmin ? '1px solid rgba(255,255,255,0.0)' : '1px solid rgba(255,255,255,0.12)'
+                  }}
+                >
+                  {leagueItem.isAdmin ? 'Admin' : 'Member'}
+                </Box>
+
+                {/* {isActive ? (
                   <Box
                     sx={{
                       px: 1,
@@ -632,8 +660,8 @@ const DreamTeamPage = () => {
                   >
                     Current
                   </Box>
-                </Box>
-              ) : null}
+                ) : null} */}
+              </Box>
             </MenuItem>
           );
         })}

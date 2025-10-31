@@ -72,6 +72,8 @@ interface LeagueOption {
   maxGames?: number;
   active?: boolean;
   matches?: Match[];
+  // Derived on client: whether the user is an admin of this league
+  isAdmin?: boolean;
 }
 
 // Minimal shape we expect from API for user leagues
@@ -169,6 +171,11 @@ const AllPlayersPage = () => {
       const data = await resp.json();
       if (data?.success && data?.user) {
         const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
+        const adminIds = new Set<string>(
+          adminLeaguesArr
+            .map(l => (l && (l as { id?: string | number }).id != null ? String((l as { id?: string | number }).id) : undefined))
+            .filter((v): v is string => typeof v === 'string')
+        );
         const userLeagues = [
           ...(data.user.leagues || []),
           ...adminLeaguesArr
@@ -187,6 +194,7 @@ const AllPlayersPage = () => {
           Array.from(uniqueLeaguesMap.values()).map(async (league) => {
             try {
               const leagueId = String((league as { id?: string | number }).id);
+              const isAdmin = adminIds.has(leagueId);
               const [statusRes, detailsRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
                   headers: { 'Authorization': `Bearer ${token}` }
@@ -240,12 +248,14 @@ const AllPlayersPage = () => {
                   isLocked: computed?.locked === true,
                   maxGames: maxGames ?? maxGamesFromDetails,
                   matches: matchesFromDetails,
+                  isAdmin,
                 } as LeagueOption;
               }
 
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
+                isAdmin,
               } as LeagueOption;
             } catch (error) {
               console.error(`Error fetching details for league`, error);
@@ -253,6 +263,7 @@ const AllPlayersPage = () => {
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
+                isAdmin: adminIds.has(leagueId),
               } as LeagueOption;
             }
           })
@@ -426,6 +437,28 @@ const AllPlayersPage = () => {
                   }
                 } catch {}
               }}
+              renderValue={(value) => {
+                const v = String(value ?? '');
+                if (v === 'all') return 'All Leagues';
+                const found = leagues.find(l => l.id === v);
+                return found?.name || '';
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    p: 0.5,
+                    mt: 1,
+                    minWidth: 240,
+                    bgcolor: 'rgba(15,15,15,0.92)',
+                    color: '#E5E7EB',
+                    borderRadius: 2.5,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                    overflow: 'hidden',
+                  },
+                },
+              }}
               input={<OutlinedInput notched={false} />}
               sx={{
                 color: '#fff',
@@ -436,7 +469,51 @@ const AllPlayersPage = () => {
             >
               <MenuItem value="all">All Leagues</MenuItem>
               {leagues.map((l) => (
-                <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+                <MenuItem key={l.id} value={l.id}
+                  sx={{
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 1,
+                    px: 1.25,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#E5E7EB',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                    },
+                  }}
+                >
+                  <Box component="span" sx={{ flex: 1 }}>{l.name}</Box>
+                  <Box
+                    sx={{
+                      ml: 'auto',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: l.isAdmin ? '#F59E0B' : 'rgba(255,255,255,0.08)',
+                        color: l.isAdmin ? '#111827' : '#E5E7EB',
+                        borderRadius: '9999px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: 0.3,
+                        textTransform: 'uppercase',
+                        border: l.isAdmin ? '1px solid rgba(255,255,255,0.0)' : '1px solid rgba(255,255,255,0.12)'
+                      }}
+                    >
+                      {l.isAdmin ? 'Admin' : 'Member'}
+                    </Box>
+                  </Box>
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
