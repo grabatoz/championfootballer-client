@@ -7,6 +7,7 @@ import {
   // Button,
   Paper,
   Button,
+  CircularProgress,
   TextField,
   Avatar,
   Dialog,
@@ -45,6 +46,9 @@ import Dashbg from '@/Components/images/dashbg.jpg'
 import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { getCache } from '@/lib/api';
+import type { LeaguesResponse } from '@/types/api';
 
 // const GreenDialogTextField = styled(TextField)(() => ({
 //   '& .MuiOutlinedInput-root': {
@@ -129,10 +133,13 @@ const isApiLeague = (val: unknown): val is ApiLeague => {
 const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number }) => {  
   const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [networkDone, setNetworkDone] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
+
+  const isFetching = !networkDone;
 
   // Helper: compute user's role for a newly created/joined league without using any-casts
   const computeUserRoleForCreatedLeague = (l: League, uid?: string | number): 'ADMIN' | 'MEMBER' | undefined => {
@@ -254,217 +261,190 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
     return `${capitalizedWords.join(' ')} (${firstChars.join('')})`;
   };
 
-  // Fetch user's leagues
+  // Fetch user's leagues (now optimized for instant initial render, enrichment runs in background)
   useEffect(() => {
+    const aborter = new AbortController();
     const fetchUserLeagues = async () => {
       if (!token) return;
 
       try {
+        setNetworkDone(false);
+        // Hit auth/status and immediately populate UI from joined/admin leagues
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` },
+          // Hint browsers not to cache; also avoids any proxy layer caching quirks
+          cache: 'no-store',
+          signal: aborter.signal,
+        } as RequestInit);
+
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!(data?.success && data?.user)) return;
+
+        // Prefer modern key adminLeagues; fall back to administeredLeagues for backward compatibility
+        const adminLeaguesArr = ((data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>);
+        const leaguesUnknown = ([
+          ...(data.user.leagues || []),
+          ...adminLeaguesArr
+        ]) as unknown[];
+
+        // Build quick lookup sets for roles
+        const adminSet = new Set<string>(
+          adminLeaguesArr
+            .map((l) => String(l?.id))
+            .filter((id) => id !== 'undefined')
+        );
+        const memberSet = new Set<string>(
+          ((data.user.leagues || []) as Array<{ id?: string | number }> )
+            .map((l) => String(l?.id))
+            .filter((id) => id !== 'undefined')
+        );
+
+        const leagues: ApiLeague[] = leaguesUnknown.filter(isApiLeague);
+        const uniqueLeagues: ApiLeague[] = Array.from(new Map<string, ApiLeague>(leagues.map(league => [String(league.id), league])).values());
+
+        // 1) Show minimal list immediately (no extra awaits)
+        const minimalList: LeagueWithComputed[] = uniqueLeagues.map((l) => {
+          const idStr = String(l.id);
+          const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr) ? 'ADMIN' : (memberSet.has(idStr) ? 'MEMBER' : undefined);
+          return {
+            id: l.id,
+            name: l.name,
+            status: typeof l?.status === 'string' && l.status.trim() !== '' ? l.status : 'active',
+            active: typeof l?.active === 'boolean' ? l.active : true,
+            updatedAt: l.updatedAt,
+            createdAt: l.createdAt,
+            image: l.image,
+            isComplete: l.isComplete,
+            isCompleted: l.isCompleted,
+            userRole: role,
+            maxGames: l.maxGames,
+          } as LeagueWithComputed;
         });
+        setUserLeagues(minimalList);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            // Prefer modern key adminLeagues; fall back to administeredLeagues for backward compatibility
-            const adminLeaguesArr = ((data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>);
-            const leaguesUnknown = ([
-              ...(data.user.leagues || []),
-              ...adminLeaguesArr
-            ]) as unknown[];
-
-            // Build quick lookup sets for roles
-            const adminSet = new Set<string>(
-              adminLeaguesArr
-                .map((l) => String(l?.id))
-                .filter((id) => id !== 'undefined')
-            );
-            const memberSet = new Set<string>(
-              ((data.user.leagues || []) as Array<{ id?: string | number }>)
-                .map((l) => String(l?.id))
-                .filter((id) => id !== 'undefined')
-            );
-
-            const leagues: ApiLeague[] = leaguesUnknown.filter(isApiLeague);
-
-            const uniqueLeagues: ApiLeague[] = Array.from(new Map<string, ApiLeague>(leagues.map(league => [String(league.id), league])).values());
-
-            // Enrich with computed status like on All Leagues page
-            const enrichedLeagues: LeagueWithComputed[] = await Promise.all(
-              uniqueLeagues.map(async (l: ApiLeague): Promise<LeagueWithComputed> => {
-                try {
-                  const [statusRes, detailsRes] = await Promise.all([
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    }),
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                  ]);
-
-                  let matchesFromDetails: Match[] | undefined = undefined;
-                  let maxGamesFromDetails: number | undefined = undefined;
-                  if (detailsRes.ok) {
-                    const leagueData = await detailsRes.json();
-                    const rawMatches = leagueData?.league?.matches as unknown;
-                    if (Array.isArray(rawMatches)) {
-                      matchesFromDetails = rawMatches as Match[];
-                    }
-                    // also capture maxGames if present in details
-                    if (typeof leagueData?.league?.maxGames === 'number') {
-                      maxGamesFromDetails = leagueData.league.maxGames as number;
-                    }
-                  }
-
-                  if (statusRes.ok) {
-                    const statusData = await statusRes.json();
-                    const raw = (statusData?.status || {}) as Record<string, unknown>;
-                    const toNum = (v: unknown): number | undefined => {
-                      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                      return Number.isFinite(n) ? n : undefined;
-                    };
-                    const matchesPlayed = toNum(
-                      raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed
-                    );
-                    const maxGames = toNum(
-                      raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? l?.maxGames
-                    );
-                    const locked = raw?.locked === true;
-                    // Normalize isComplete: respect backend flag, but we may override later in leagueIsCompleted
-                    const isComplete = raw?.isComplete === true;
-                    const missingRaw = (raw as Record<string, unknown>)?.missing as unknown;
-                    const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                    const computed: LeagueComputedStatus = {
-                      ...(raw as LeagueComputedStatus),
-                      matchesPlayed,
-                      gamesPlayed: matchesPlayed,
-                      maxGames,
-                      locked,
-                      isComplete,
-                      missing,
-                    };
-                    const idStr = String(l.id);
-                    const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr)
-                      ? 'ADMIN'
-                      : (memberSet.has(idStr) ? 'MEMBER' : undefined);
-                    return {
-                      id: l.id,
-                      name: l.name,
-                      status: l.status,
-                      active: l.active,
-                      updatedAt: l.updatedAt,
-                      createdAt: l.createdAt,
-                      image: l.image,
-                      isComplete: l.isComplete,
-                      isCompleted: l.isCompleted,
-                      computedStatus: computed,
-                      isLocked: computed?.locked === true,
-                      userRole: role,
-                      maxGames: maxGames ?? maxGamesFromDetails ?? l.maxGames,
-                      matches: matchesFromDetails,
-                    };
-                  }
-                } catch {}
-                const idStr = String(l.id);
-                const role: 'ADMIN' | 'MEMBER' | undefined = adminSet.has(idStr)
-                  ? 'ADMIN'
-                  : (memberSet.has(idStr) ? 'MEMBER' : undefined);
-                return {
-                  id: l.id,
-                  name: l.name,
-                  status: l.status,
-                  active: l.active,
-                  updatedAt: l.updatedAt,
-                  createdAt: l.createdAt,
-                  image: l.image,
-                  isComplete: l.isComplete,
-                  isCompleted: l.isCompleted,
-                  userRole: role,
-                  maxGames: l.maxGames,
-                  matches: undefined,
-                };
-              })
-            );
-
-            // Normalize minimal fields so we don't carry undefineds around
-            const normalizedLeagues: LeagueWithComputed[] = enrichedLeagues.map((l) => ({
-              ...l,
-              status: typeof l?.status === 'string' && l.status.trim() !== '' ? l.status : 'active',
-              active: typeof l?.active === 'boolean' ? l.active : true,
-            }));
-            setUserLeagues(normalizedLeagues);
-
-            // Debug: log league completion flags for verification
-            try {
-              if (typeof window !== 'undefined' && normalizedLeagues.length) {
-                const rows = normalizedLeagues.map((l) => {
-                  const matches = Array.isArray(l.matches) ? l.matches : [];
-                  const completedCount = matches.reduce((acc, m) => {
-                    const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-                    const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-                    const endedByFlag = m.active === false;
-                    const endedByEnd = Boolean(m.end);
-                    return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-                  }, 0);
-                  return ({
-                  id: l?.id,
-                  name: l?.name,
-                  isComplete: Boolean(l?.isComplete),
-                  isCompleted: Boolean(l?.isCompleted),
-                  computedIsComplete: Boolean(l?.computedStatus?.isComplete),
-                  locked: Boolean(l?.computedStatus?.locked || l?.isLocked),
-                  matchesPlayed: (l?.computedStatus?.matchesPlayed ?? l?.computedStatus?.gamesPlayed) ?? null,
-                  maxGames: l?.computedStatus?.maxGames ?? l?.maxGames ?? null,
-                  missingCount: Array.isArray(l?.computedStatus?.missing) ? (l?.computedStatus?.missing as unknown[]).length : 0,
-                  matchesCompleted: completedCount,
-                  matchesTotal: matches.length,
-                  status: String(l?.status ?? 'active'),
-                  active: typeof l?.active === 'boolean' ? l.active : true,
-                  });
-                });
-                console.group('[Home] League completion check');
-                console.table(rows);
-                console.groupEnd();
-              }
-            } catch {}
-
-            if (uniqueLeagues.length > 0) {
-              // 1) If user has a persisted preference, respect it only if it's NOT completed
-              const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-              const preferred = storedId ? normalizedLeagues.find(l => String(l.id) === String(storedId)) || null : null;
-
-              if (preferred && !leagueIsCompleted(preferred)) {
-                setSelectedLeague(preferred);
-              } else {
-                // 2) Otherwise prefer the most recent INCOMPLETE league
-                const incomplete = normalizedLeagues.filter(l => !leagueIsCompleted(l));
-                const latestIncomplete = incomplete.length
-                  ? [...incomplete].sort((a, b) => timeOf(b) - timeOf(a))[0]
-                  : null;
-
-                if (latestIncomplete) {
-                  setSelectedLeague(latestIncomplete);
-                } else {
-                  // 3) Fallback: most recent overall
-                  const latest = [...normalizedLeagues].sort((a, b) => timeOf(b) - timeOf(a))[0];
-                  setSelectedLeague(latest);
-                }
-              }
-            }
+        // Choose a sensible default quickly (based purely on recency for instant UX)
+        if (uniqueLeagues.length > 0) {
+          const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+          const preferred = storedId ? minimalList.find(l => String(l.id) === String(storedId)) || null : null;
+          if (preferred) {
+            setSelectedLeague(preferred);
+          } else {
+            const latest = [...minimalList].sort((a, b) => timeOf(b) - timeOf(a))[0];
+            setSelectedLeague(latest || null);
           }
         }
+
+        // 2) Enrich in the background per-league and update state incrementally
+        // Avoid blocking UI by not awaiting all; update each league as soon as its data arrives
+        uniqueLeagues.forEach(async (l) => {
+          try {
+            const [statusRes, detailsRes] = await Promise.all([
+              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit),
+              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit)
+            ]);
+
+            let matchesFromDetails: Match[] | undefined = undefined;
+            let maxGamesFromDetails: number | undefined = undefined;
+            if (detailsRes.ok) {
+              const leagueData = await detailsRes.json();
+              const rawMatches = leagueData?.league?.matches as unknown;
+              if (Array.isArray(rawMatches)) matchesFromDetails = rawMatches as Match[];
+              if (typeof leagueData?.league?.maxGames === 'number') maxGamesFromDetails = leagueData.league.maxGames as number;
+            }
+
+            let computed: LeagueComputedStatus | undefined = undefined;
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              const raw = (statusData?.status || {}) as Record<string, unknown>;
+              const toNum = (v: unknown): number | undefined => {
+                const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+                return Number.isFinite(n) ? n : undefined;
+              };
+              const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed);
+              const maxGames = toNum(raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? l?.maxGames);
+              const locked = raw?.locked === true;
+              const isComplete = raw?.isComplete === true;
+              const missingRaw = (raw as Record<string, unknown>)?.missing as unknown;
+              const missing = Array.isArray(missingRaw) ? missingRaw : [];
+              computed = {
+                ...(raw as LeagueComputedStatus),
+                matchesPlayed,
+                gamesPlayed: matchesPlayed,
+                maxGames,
+                locked,
+                isComplete,
+                missing,
+              };
+            }
+
+            // Update this league entry in-place
+            setUserLeagues((prev) => {
+              const arr = prev.map((item) => {
+                if (String(item.id) !== String(l.id)) return item;
+                const enriched: LeagueWithComputed = {
+                  ...item,
+                  computedStatus: computed ?? item.computedStatus,
+                  isLocked: (computed?.locked === true) || item.isLocked,
+                  maxGames: (computed?.maxGames ?? maxGamesFromDetails ?? item.maxGames),
+                  matches: matchesFromDetails ?? item.matches,
+                };
+                // Normalize defaults
+                return {
+                  ...enriched,
+                  status: typeof enriched?.status === 'string' && enriched.status!.trim() !== '' ? enriched.status : 'active',
+                  active: typeof enriched?.active === 'boolean' ? enriched.active : true,
+                };
+              });
+              return arr;
+            });
+          } catch {/* ignore enrichment failure */}
+        });
       } catch (error) {
         console.error('Error fetching leagues:', error);
       } finally {
         setLoading(false);
+        setNetworkDone(true);
       }
     };
 
     fetchUserLeagues();
+    return () => aborter.abort();
   }, [token, refreshKey]);
+
+  // Hydrate instantly from local cache to avoid delay on tab/page return
+  useEffect(() => {
+    try {
+      const cached = getCache<LeaguesResponse>('leagues_cache');
+      const leagues = cached?.leagues || [];
+      if (!Array.isArray(leagues) || leagues.length === 0) return;
+
+      const minimal: LeagueWithComputed[] = leagues.map((l) => ({
+        id: (l as unknown as { id: string | number }).id,
+        name: (l as unknown as { name?: string }).name,
+        status: (l as unknown as { status?: string }).status || 'active',
+        active: typeof (l as unknown as { active?: boolean }).active === 'boolean' ? (l as unknown as { active?: boolean }).active! : true,
+        updatedAt: (l as unknown as { updatedAt?: string }).updatedAt,
+        createdAt: (l as unknown as { createdAt?: string }).createdAt,
+        image: (l as unknown as { image?: string }).image,
+        userRole: computeUserRoleForCreatedLeague(l as unknown as League, currentUserId),
+        maxGames: (l as unknown as { maxGames?: number }).maxGames,
+      }));
+
+      if (minimal.length) {
+        setUserLeagues((prev) => prev.length ? prev : minimal);
+        const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+        const preferred = storedId ? minimal.find(l => String(l.id) === String(storedId)) || null : null;
+        if (preferred) {
+          setSelectedLeague((prev) => prev ?? preferred);
+        } else {
+          const latest = [...minimal].sort((a, b) => timeOf(b) - timeOf(a))[0];
+          if (latest) setSelectedLeague((prev) => prev ?? latest);
+        }
+      }
+    } catch { /* ignore cache issues */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // When a new league is created in the parent, immediately add/select it without waiting for a refetch
   useEffect(() => {
@@ -522,7 +502,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
     return arr;
   }, [userLeagues, selectedLeague]);
 
-  if (!loading && userLeagues.length === 0) {
+  // Keep the button visible even while fetching; show inline loader in the button instead of a separate skeleton
+
+  if (networkDone && userLeagues.length === 0) {
     return (
       <Box sx={{
         display: 'flex',
@@ -596,19 +578,26 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
         // Clicking the main button opens the list
           onClick={(e) => {
               e.stopPropagation();
+              if (isFetching) return; // Disable open while loading
               setShowDropdown(true);
             }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-            <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
+            {isFetching ? (
+              <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+            ) : (
+              <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
+            )}
             <Typography
               sx={{
                 fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
                 fontWeight: 'semibold'
               }}
             >
-              {selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Loading...'}
+              {isFetching
+                ? 'Loading…'
+                : (selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Select a league')}
             </Typography>
           </Box>
 
@@ -656,12 +645,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             aria-controls="league-dropdown-list"
             onClick={(e) => {
               e.stopPropagation();
+              if (isFetching) return; // Disable toggle while loading
               setShowDropdown(prev => !prev);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
+                if (isFetching) return;
                 setShowDropdown(prev => !prev);
               }
             }}
@@ -672,7 +663,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
       </Button>
 
       {/* Dropdown menu */}
-      {showDropdown && (
+      {showDropdown && !isFetching && (
         <Box
           sx={{
             position: 'absolute',

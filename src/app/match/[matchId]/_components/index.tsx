@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip, IconButton, Tooltip } from "@mui/material";
+import { useParams } from "next/navigation";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 import MatchSummary from '@/Components/MatchSummary';
 // import useMediaQuery from '@mui/material/useMediaQuery';
@@ -12,10 +12,11 @@ import MatchSummary from '@/Components/MatchSummary';
 // import ThirdBadge from '@/Components/images/3rd.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import React from "react";
-import CloseIcon from '@mui/icons-material/Close';
+// import CloseIcon from '@mui/icons-material/Close';
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
+import CloseButton from "@/Components/CloseButton";
 // import { ArrowLeft } from "lucide-react";
 
 // const getBadgeForPosition = (position: number) => {
@@ -122,7 +123,7 @@ type MatchStatLite = {
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = params?.matchId as string;
-  const router = useRouter();
+  // const router = useRouter();
   const { token, user } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
@@ -403,16 +404,7 @@ export default function MatchDetailsPage() {
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
       {/* Top-right close button */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-        <Tooltip title="Close and go back">
-          <IconButton onClick={() => router.push('/all-matches')} sx={{ color: '#fff' ,   background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-            //  mb:2,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }} aria-label="Close and go back">
-            <CloseIcon />
-          </IconButton>
-        </Tooltip>
+        <CloseButton fallbackRoute="/dashboard" />
       </Box>
       {/* <Button
         startIcon={<ArrowLeft />}
