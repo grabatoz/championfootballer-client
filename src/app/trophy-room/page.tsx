@@ -493,19 +493,19 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
 // Helper: treat league as "completed" if
 // - maxGames is provided: completedCount >= Number(maxGames)
 // - else: any completed match exists
-const isLeagueCompleted = (league: League) => {
-  const completedCount = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
-  const max = Number((league as League)?.maxGames ?? 0);
-  const result = max > 0 ? completedCount >= max : completedCount > 0;
-  console.debug('[TrophyRoom] isLeagueCompleted()', {
-    leagueId: league?.id,
-    name: league?.name,
-    maxGames: max,
-    completedCount,
-    result,
-  });
-  return result;
-};
+// const isLeagueCompleted = (league: League) => {
+//   const completedCount = (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
+//   const max = Number((league as League)?.maxGames ?? 0);
+//   const result = max > 0 ? completedCount >= max : completedCount > 0;
+//   console.debug('[TrophyRoom] isLeagueCompleted()', {
+//     leagueId: league?.id,
+//     name: league?.name,
+//     maxGames: max,
+//     completedCount,
+//     result,
+//   });
+//   return result;
+// };
 
 // SIMPLIFY: Final standing = maxGames reached (no extra stats completeness check)
 const isFinalLeagueStanding = (league: League): boolean => {
