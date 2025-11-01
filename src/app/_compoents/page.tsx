@@ -2,14 +2,11 @@
 
 import { Box, Paper, Typography, Button, Card, Modal, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import AuthTabs from '@/Components/authtabs/authtabs';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Layer from '@/Components/images/championfootballnewlogo.png';
-// import NewImg from '@/Components/images/desktoppicccc.png';
 import NewImg from '@/Components/images/Done1.jpg';
 import Newimg from '@/Components/images/Done2.png';
-// import NewImg from '@/Components/images/Done2.jpg';
-// import NewImg from '@/Components/images/dspic.png';
 import mobile from '@/Components/images/mobile.png';
 import image9 from '@/Components/images/1stpic.png';
 import image10 from '@/Components/images/2ndpic.png';
@@ -17,7 +14,17 @@ import image11 from '@/Components/images/3rdpic.png';
 import image12 from '@/Components/images/4thpic.png';
 
 import { useState } from 'react';
-import AuthSocialButtons from '@/Components/AuthSocialButtons';
+
+// Lazy load heavy components
+const AuthTabs = dynamic(() => import('@/Components/authtabs/authtabs'), {
+  loading: () => <Box sx={{ p: 2, textAlign: 'center', color: 'white' }}>Loading...</Box>,
+  ssr: true
+});
+
+const AuthSocialButtons = dynamic(() => import('@/Components/AuthSocialButtons'), {
+  loading: () => <Box sx={{ p: 1 }} />,
+  ssr: false
+});
 
 export default function LandingPage() {
   const [showLogin, setShowLogin] = useState(true);
@@ -112,6 +119,7 @@ export default function LandingPage() {
             width={250}
             height={80}
             style={{ maxWidth: '100%', height: 'auto', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
+            priority
           />
 
           <Typography
@@ -327,7 +335,8 @@ export default function LandingPage() {
                     fill
                     sizes="(max-width: 600px) 90vw, 25vw"
                     style={{ objectFit: 'contain' }}
-                    priority
+                    loading="lazy"
+                    placeholder="blur"
                   />
                 </Box>
               </Box>

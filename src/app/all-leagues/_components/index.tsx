@@ -1,5 +1,6 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
+import dynamic from 'next/dynamic';
 import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
@@ -16,7 +17,9 @@ import { AppDispatch } from '@/lib/store';
 import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
-import CloseButton from '@/Components/CloseButton';
+
+// Lazy load heavy components
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
 
 // Backend-computed league status types (avoid `any`)
 type LeagueStatusTotals = Record<string, number>;

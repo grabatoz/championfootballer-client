@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, forwardRef } from 'react';
+import dynamic from 'next/dynamic';
 import {
     Box,
     Typography,
@@ -46,32 +47,52 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame } from 'lucide-react';
 import { Tooltip, Slide } from '@mui/material';
 import Link from 'next/link';
-import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import TrophyRoom from '@/Components/TrophyRoom';
+
+// Lazy load heavy components
+const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const TrophyRoom = dynamic(() => import('@/Components/TrophyRoom'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
 import CloseIcon from '@mui/icons-material/Close';
 import { cacheManager } from "@/lib/cacheManager"
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
-import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import ShirtImg from '@/Components/images/shirtimg.png'
 import homeImg from '@/Components/images/matches.png'
 import awayImg from '@/Components/images/2nd champion icon football.png'
-import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
-import PlayerCard from '@/Components/playercard/playercard';
 import { Close, Delete } from '@mui/icons-material';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import ExitToApp from '@mui/icons-material/ExitToApp';
 import People from '@mui/icons-material/People';
 // import SettingsIcon from '@mui/icons-material/Settings';
 import Star from '@mui/icons-material/Star';
-import CloseButton from '@/Components/CloseButton';
 // ...existing code...
 
 type Foot = 'L' | 'R';

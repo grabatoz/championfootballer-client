@@ -2,9 +2,20 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import dynamic from 'next/dynamic';
 import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
-import MatchSummary from '@/Components/MatchSummary';
+
+// Lazy load heavy components
+const MatchSummary = dynamic(() => import('@/Components/MatchSummary'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
+
 // import useMediaQuery from '@mui/material/useMediaQuery';
 // import { useTheme } from '@mui/material/styles';
 // import FirstBadge from '@/Components/images/1st.png';
@@ -16,7 +27,6 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
-import CloseButton from "@/Components/CloseButton";
 // import { ArrowLeft } from "lucide-react";
 
 // const getBadgeForPosition = (position: number) => {

@@ -4,21 +4,43 @@ import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, D
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
-import PlayerCard from '@/Components/playercard/playercard';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import homeTeamIcon from '@/Components/images/matches.png';
 import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
-import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import { cacheManager } from "@/lib/cacheManager"
-import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 import { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 import CloseIcon from '@mui/icons-material/Close';
-import CloseButton from '@/Components/CloseButton';
+
+// Lazy load heavy components
+const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
+  loading: () => <CircularProgress size={24} />,
+  ssr: false
+});
+
+const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+
+const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+
+const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 

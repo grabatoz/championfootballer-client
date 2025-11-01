@@ -1,7 +1,7 @@
 "use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, lazy, Suspense } from "react"
 import { Person, Sports, AccountCircle } from "@mui/icons-material"
 import { Visibility, VisibilityOff, ArrowBack, ArrowForward } from "@mui/icons-material"
 import {
@@ -32,7 +32,6 @@ import {
   Fade,
   Modal,
 } from "@mui/material"
-import { MenuItem } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
@@ -49,8 +48,9 @@ import type { StaticImageData } from "next/image"
 import imgicon from "@/Components/images/imgicon.png"
 import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
-import { Country, State, City } from "country-state-city"
-import type { ICountry, IState, ICity } from "country-state-city"
+
+// Lazy load heavy location libraries only when needed
+const CountryStateCitySelector = lazy(() => import('./CountryStateCitySelector'));
 
 
 // ===== THEME (brand palette reused) =====
@@ -224,13 +224,24 @@ const PlayerProfileCard = () => {
   const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
   // const [shirtNumber, ] = useState(user?.shirtNumber || "00")
   // setShirtNumber
-  // Location fields
   const [country, setCountry] = useState(user?.country || "")
   const [stateProvince, setStateProvince] = useState(user?.state || "")
   const [city, setCity] = useState(user?.city || "")
-  // Selection codes for cascading lists
-  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
-  const [selectedStateCode, setSelectedStateCode] = useState<string>("")
+  
+  const handleLocationChange = {
+    country: (code: string, name: string) => {
+      setCountry(name);
+      setStateProvince('');
+      setCity('');
+    },
+    state: (code: string, name: string) => {
+      setStateProvince(name);
+      setCity('');
+    },
+    city: (name: string) => {
+      setCity(name);
+    }
+  };
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
@@ -262,57 +273,6 @@ const PlayerProfileCard = () => {
       : "Goalkeeper"
 
   const currentStyleOptions = playingStylesMap[resolvedPositionType]
-
-  // Compute location lists
-  const countries: ICountry[] = Country.getAllCountries() || []
-  const states: IState[] = selectedCountryCode ? (State.getStatesOfCountry(selectedCountryCode) || []) : []
-  const cities: ICity[] = selectedCountryCode
-    ? ((selectedStateCode && (State.getStatesOfCountry(selectedCountryCode)?.length ?? 0) > 0)
-        ? (City.getCitiesOfState(selectedCountryCode, selectedStateCode) || [])
-        : (City.getCitiesOfCountry(selectedCountryCode) || []))
-    : []
-
-  // Initialize selection from existing user data
-  useEffect(() => {
-    if (user?.country && !selectedCountryCode) {
-      const foundCountry = countries.find(c => c.name.toLowerCase() === String(user.country).toLowerCase())
-      if (foundCountry) {
-        setSelectedCountryCode(foundCountry.isoCode)
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.country])
-
-  useEffect(() => {
-    if (user?.state && selectedCountryCode && !selectedStateCode) {
-      const ss = State.getStatesOfCountry(selectedCountryCode)
-      const foundState = ss.find(s => s.name.toLowerCase() === String(user.state).toLowerCase())
-      if (foundState) {
-        setSelectedStateCode(foundState.isoCode)
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.state, selectedCountryCode])
-
-  // Handlers for cascading selection
-  const handleCountryChange = (code: string) => {
-    setSelectedCountryCode(code)
-    const c = countries.find(c => c.isoCode === code)
-    setCountry(c?.name || "")
-    // reset dependent fields
-    setSelectedStateCode("")
-    setStateProvince("")
-    setCity("")
-  }
-  const handleStateChange = (code: string) => {
-    setSelectedStateCode(code)
-    const s = states.find(s => s.isoCode === code)
-    setStateProvince(s?.name || "")
-    setCity("")
-  }
-  const handleCityChange = (name: string) => {
-    setCity(name)
-  }
 
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
 
@@ -855,59 +815,17 @@ const PlayerProfileCard = () => {
 
                     <Grid container spacing={1} mt={0.5} ml={0.2}>
                       {/* Country / State / City selectors */}
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>Country</StyledFormLabel> */}
-                          <StyledTextField
-                            size="small"
-                            select
-                            value={selectedCountryCode}
-                            onChange={(e) => handleCountryChange(e.target.value)}
-                            placeholder="Select Country"
-                            SelectProps={{ displayEmpty: true }}
-                          >
-                            <MenuItem value="" disabled>Select Country</MenuItem>
-                            {countries.map(c => (
-                              <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
-                            ))}
-                          </StyledTextField>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small" disabled={!selectedCountryCode || states.length === 0}>
-                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>State/Province</StyledFormLabel> */}
-                          <StyledTextField
-                            size="small"
-                            select
-                            value={selectedStateCode}
-                            onChange={(e) => handleStateChange(e.target.value)}
-                            placeholder="Select State"
-                            SelectProps={{ displayEmpty: true }}
-                          >
-                            <MenuItem value="" disabled>{states.length ? 'Select State' : 'No states available'}</MenuItem>
-                            {states.map(s => (
-                              <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
-                            ))}
-                          </StyledTextField>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small" disabled={!selectedCountryCode || (!selectedStateCode && (cities?.length ?? 0) === 0)}>
-                          {/* <StyledFormLabel sx={{ mb: 0.5 }}>City</StyledFormLabel> */}
-                          <StyledTextField
-                            size="small"
-                            select
-                            value={city}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            placeholder="Select City"
-                            SelectProps={{ displayEmpty: true }}
-                          >
-                            <MenuItem value="" disabled>Select City</MenuItem>
-                            {(cities ?? []).map(ci => (
-                              <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
-                            ))}
-                          </StyledTextField>
-                        </FormControl>
+                      <Grid item xs={12}>
+                        <Suspense fallback={<Box sx={{ p: 2, textAlign: 'center', color: themeColors.textDim }}>Loading locations...</Box>}>
+                          <CountryStateCitySelector
+                            country={country}
+                            stateProvince={stateProvince}
+                            city={city}
+                            onCountryChange={handleLocationChange.country}
+                            onStateChange={handleLocationChange.state}
+                            onCityChange={handleLocationChange.city}
+                          />
+                        </Suspense>
                       </Grid>
                       <Grid item xs={12} sm={3} md={2}>
                         <StyledTextField size="small" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />

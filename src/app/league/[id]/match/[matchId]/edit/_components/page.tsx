@@ -1,16 +1,21 @@
   "use client";
   import React, { useState, useEffect, useCallback, useRef } from 'react';
+  import dynamic from 'next/dynamic';
   import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-  import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
-  import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
   import dayjs, { Dayjs } from 'dayjs';
+  import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+  import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+  import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+  import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
   import { useAuth } from '@/lib/hooks';
   import { useParams, useRouter } from 'next/navigation';
   import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight } from 'lucide-react';
   import toast, { Toaster } from 'react-hot-toast';
   import { cacheManager } from '@/lib/cacheManager';
   import ShirtImg from '@/Components/images/shirtimg.png';
-  import CloseButton from '@/Components/CloseButton';
+
+  // Lazy load heavy components
+  const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
 
   interface User { id: string; firstName: string; lastName: string; email: string; profilePicture?: string; shirtNumber?: string; skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number; }; preferredFoot?: 'right' | 'left'; }
   interface League { id: string; name: string; members: User[]; active: boolean; }
@@ -1566,7 +1571,7 @@
                       <DatePicker
                         label='Match Date'
                         value={matchDate}
-                        onChange={nv => setMatchDate(dayjs(nv))}
+                        onChange={(nv: Dayjs | null) => setMatchDate(nv)}
                         slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
                       />
                     </Grid>
@@ -1574,7 +1579,7 @@
                       <TimePicker
                         label='Start Time'
                         value={startTime}
-                        onChange={nv => setStartTime(dayjs(nv))}
+                        onChange={(nv: Dayjs | null) => setStartTime(nv)}
                         slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
                       />
                     </Grid>

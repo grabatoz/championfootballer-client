@@ -1,7 +1,19 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Enable production optimizations
+  reactStrictMode: true,
+  
+  // Optimize bundle splitting
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+  },
+  
+  // Image optimization
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'lh4.googleusercontent.com' },
@@ -13,6 +25,11 @@ const nextConfig: NextConfig = {
       // Cloudinary
       { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
     ],
+  },
+  
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material'],
   },
 };
 

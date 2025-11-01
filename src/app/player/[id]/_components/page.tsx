@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
     Container,
     Typography,
@@ -35,7 +36,12 @@ import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
 import { BarChart } from '@mui/icons-material'; // Chart icon
 import StarKeeperImg from '@/Components/images/brown.svg';
-import CloseButton from '@/Components/CloseButton';
+
+// Lazy load heavy components
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
 
 // Gradients
 const ORANGE_GRAD = 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)';

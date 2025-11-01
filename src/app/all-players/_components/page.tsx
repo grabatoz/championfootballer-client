@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Container,
   Typography,
@@ -24,12 +25,14 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
-// import FirstBadge from '@/Components/images/1st.png';
-// import SecondBadge from '@/Components/images/2nd.png';
-// import ThirdBadge from '@/Components/images/3rd.png';
 import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
-import CloseButton from '@/Components/CloseButton';
+
+// Lazy load CloseButton
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
 
 interface Player {
   id: string;

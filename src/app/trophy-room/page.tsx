@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
@@ -30,13 +31,22 @@ import {
   Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import PlayerCard from '@/Components/playercard/playercard';
 import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
-import CloseButton from '@/Components/CloseButton';
+
+// Lazy load heavy components
+const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
+  loading: () => <CircularProgress size={40} />,
+  ssr: false
+});
+
+const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+  loading: () => <></>,
+  ssr: false
+});
 // import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---

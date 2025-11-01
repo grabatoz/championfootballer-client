@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Box,
   Typography,
@@ -20,7 +21,13 @@ import {
   GlobalStyles,
   // styled
 } from '@mui/material';
-import PlayerCard from '@/Components/playercard/playercard';
+
+// Lazy load heavy component
+const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
+  loading: () => <CircularProgress size={40} />,
+  ssr: false
+});
+
 // import Link from 'next/link';
 // import dash from '@/Components/images/dash.webp'
 import dash from '@/Components/images/dashdd.png'
