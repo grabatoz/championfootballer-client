@@ -473,7 +473,9 @@ const DreamTeamPage = () => {
               '&:hover': { backgroundColor: '#2B2B2B' },
             }}
           >
-            {noLeagues
+            {loading
+              ? 'Loading...'
+              : noLeagues
               ? 'No leagues found'
               : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
           </Button>
@@ -553,7 +555,9 @@ const DreamTeamPage = () => {
               gap: 1,
             }}
           >
-            {noLeagues
+            {loading
+              ? 'Loading...'
+              : noLeagues
               ? 'No leagues found'
               : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
           </Button>
