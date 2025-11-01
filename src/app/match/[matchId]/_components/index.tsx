@@ -138,10 +138,14 @@ export default function MatchDetailsPage() {
   const [perPlayerStats, setPerPlayerStats] = useState<Record<string, MatchStatLite>>({});
   const fetchedStatsKeysRef = useRef(new Set<string>());
 
-  useEffect(() => {
+  // Fetch match data function
+  const fetchMatchData = useCallback(() => {
     if (!matchId || !token) return;
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+    
+    console.log('🔄 Fetching match data with cache busting...');
+    
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}?_t=${Date.now()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {
@@ -149,7 +153,15 @@ export default function MatchDetailsPage() {
         return res.json();
       })
       .then(data => {
-        if (data.success && data.match) setMatch(data.match);
+        if (data.success && data.match) {
+          console.log('✅ Match data updated:', data.match);
+          setMatch(data.match);
+          // Reset detailed fetch flag to allow guests to be re-fetched
+          detailedFetchDone.current = false;
+          // Clear stats cache to force fresh fetch
+          fetchedStatsKeysRef.current.clear();
+          setPerPlayerStats({});
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -157,6 +169,27 @@ export default function MatchDetailsPage() {
         setLoading(false);
       });
   }, [matchId, token]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchMatchData();
+  }, [fetchMatchData]);
+
+  // Listen for match updates from stats dialog
+  useEffect(() => {
+    const handleMatchUpdate = (e: Event) => {
+      console.log('📢 Received match-updated event');
+      const customEvent = e as CustomEvent;
+      // Refresh if it's our match or general update
+      if (!customEvent.detail?.matchId || customEvent.detail.matchId === matchId) {
+        console.log('🔄 Refreshing match data due to update event...');
+        fetchMatchData();
+      }
+    };
+
+    window.addEventListener('match-updated', handleMatchUpdate);
+    return () => window.removeEventListener('match-updated', handleMatchUpdate);
+  }, [matchId, fetchMatchData]);
 
   useEffect(() => {
     if (match && match.leagueId && token) {

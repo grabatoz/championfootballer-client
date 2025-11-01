@@ -703,12 +703,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (!silent) setLoading(false);
                 return;
             }
+            
+            // 🔄 Add cache busting to ensure fresh data
+            const cacheBuster = `?_t=${Date.now()}`;
+            console.log('🔄 Fetching match details with cache busting...', { resolvedLeagueId, resolvedMatchId });
+            
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
-            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/matches/${resolvedMatchId}`, {
+            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/matches/${resolvedMatchId}${cacheBuster}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (matchResp.status === 404) {
-                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}`, {
+                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}${cacheBuster}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
@@ -753,8 +758,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
             const m = normalizeMatch(matchObj);
             setMatch(m);
+            
+            // 🎯 Update goals from fetched match data
             const hg = typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0;
             const ag = typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0;
+            console.log('✅ Match goals fetched:', { homeTeamGoals: hg, awayTeamGoals: ag });
             setHomeGoals(hg);
             setAwayGoals(ag);
             setHomeGoalsInput(String(hg));
@@ -812,6 +820,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         if (match) {
             const hg = typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0;
             const ag = typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0;
+            console.log('🔄 Updating goals from match state:', { homeTeamGoals: hg, awayTeamGoals: ag });
             setHomeGoals(hg);
             setAwayGoals(ag);
             setHomeGoalsInput(String(hg));
@@ -1183,8 +1192,26 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             
             toast.success('Match details saved successfully!');
             
-            // Ensure state stays full by refetching without blanking the page
+            // 🔄 Ensure state stays full by refetching without blanking the page
+            console.log('🔄 Refetching match details after save...');
             await fetchLeagueAndMatchDetails(true);
+            
+            // 📢 Dispatch event to notify other components
+            console.log('📢 Dispatching match-updated event for match:', resolvedMatchId);
+            window.dispatchEvent(new CustomEvent('match-updated', { 
+                detail: { matchId: resolvedMatchId } 
+            }));
+            
+            // 🗑️ Clear cache to force fresh data
+            const STORAGE_PREFIX = 'cf_cache_';
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(STORAGE_PREFIX) && 
+                    (key.includes('league') || key.includes('match'))) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            console.log('✅ Match details saved and events dispatched');
             
             // Close the admin dialog after successful save
             if (onClose) {

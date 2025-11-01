@@ -48,53 +48,149 @@ interface MatchStats {
   impact: number;
 }
 
-// Cache item interface
+// Cache item interface with version control
 interface CacheItem<T> {
   data: T;
   expires: number;
+  version: string;
+  createdAt?: number;
 }
 
-// LIGHTNING FAST CACHE
+// ULTRA FAST CACHE WITH PERSISTENCE & AUTO-REFRESH
 const fastCache = new Map<string, CacheItem<unknown>>();
+const CACHE_VERSION = 'v2'; // Increment when structure changes
+const STORAGE_PREFIX = 'cf_cache_';
+
+// Load cache from localStorage on init
+if (typeof window !== 'undefined') {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(STORAGE_PREFIX)) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          const parsed = JSON.parse(item) as CacheItem<unknown>;
+          if (Date.now() < parsed.expires) {
+            const cacheKey = key.replace(STORAGE_PREFIX, '');
+            fastCache.set(cacheKey, parsed);
+          } else {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    });
+    console.log(`💾 Loaded ${fastCache.size} cached items from storage`);
+  } catch (e) {
+    console.error('Failed to load cache from storage:', e);
+  }
+}
 
 function getCache<T>(key: string): T | null {
   const cached = fastCache.get(key);
-  if (cached && Date.now() < cached.expires) return cached.data as T;
+  if (cached && Date.now() < cached.expires) {
+    console.log(`⚡ Cache HIT: ${key}`);
+    return cached.data as T;
+  }
   fastCache.delete(key);
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(STORAGE_PREFIX + key);
+  }
+  console.log(`❌ Cache MISS: ${key}`);
   return null;
 }
 
 function setCache<T>(key: string, data: T, minutes: number = 15): void {
-  fastCache.set(key, { data, expires: Date.now() + (minutes * 60 * 1000) } as CacheItem<T>);
+  const cacheItem = { 
+    data, 
+    expires: Date.now() + (minutes * 60 * 1000),
+    version: CACHE_VERSION 
+  } as CacheItem<T>;
+  
+  fastCache.set(key, cacheItem);
+  
+  // Persist to localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(cacheItem));
+      console.log(`💾 Cached: ${key} (${minutes}min)`);
+    } catch (e) {
+      console.error('Failed to persist cache:', e);
+    }
+  }
 }
 
-// ULTRA FAST FETCH
-async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheKey?: string): Promise<T> {
-  if (cacheKey && (!options.method || options.method === 'GET')) {
+// ULTRA FAST FETCH WITH BACKGROUND REFRESH
+async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheKey?: string, cacheTTL: number = 15): Promise<T> {
+  const isGetRequest = !options.method || options.method === 'GET';
+  
+  if (cacheKey && isGetRequest) {
     const cached = getCache<T>(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      // Return cached data immediately, refresh in background
+      refreshInBackground(endpoint, options, cacheKey, cacheTTL);
+      return cached;
+    }
   }
 
-  const token = Cookies.get('token');
+  const token = Cookies.get('token') || Cookies.get('auth_token');
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'Accept-Encoding': 'gzip, deflate',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     credentials: 'include'
   });
 
-  if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API Error ${response.status}: ${errorText}`);
+  }
+  
   const data = await response.json();
   
-  if (cacheKey && (!options.method || options.method === 'GET')) {
-    setCache(cacheKey, data, 15); // 15 min cache
+  if (cacheKey && isGetRequest) {
+    setCache(cacheKey, data, cacheTTL);
   }
   
   return data;
+}
+
+// Background refresh to keep cache fresh
+const refreshTimers = new Map<string, NodeJS.Timeout>();
+function refreshInBackground(endpoint: string, options: RequestInit, cacheKey: string, ttl: number) {
+  // Prevent duplicate refresh timers
+  if (refreshTimers.has(cacheKey)) return;
+  
+  const timer = setTimeout(async () => {
+    try {
+      console.log(`🔄 Background refresh: ${cacheKey}`);
+      const token = Cookies.get('token') || Cookies.get('auth_token');
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCache(cacheKey, data, ttl);
+        console.log(`✅ Cache refreshed: ${cacheKey}`);
+      }
+    } catch (error) {
+      console.error('Background refresh failed:', error);
+    } finally {
+      refreshTimers.delete(cacheKey);
+    }
+  }, 5000); // Refresh after 5 seconds
+  
+  refreshTimers.set(cacheKey, timer);
 }
 
 // Auth response interfaces
@@ -113,7 +209,7 @@ interface LogoutResponse {
   message: string;
 }
 
-// AUTH API - OPTIMIZED
+// AUTH API - OPTIMIZED WITH AUTO-LOGIN
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<User>> => {
     try {
@@ -121,6 +217,20 @@ export const authAPI = {
         method: 'POST',
         body: JSON.stringify({ user: credentials }),
       });
+      
+      // Save credentials for auto-login (encrypted in production)
+      if (typeof window !== 'undefined') {
+        try {
+          const encryptedCreds = btoa(JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+            timestamp: Date.now()
+          }));
+          localStorage.setItem('cf_remember', encryptedCreds);
+        } catch (e) {
+          console.error('Failed to save credentials:', e);
+        }
+      }
       
       return {
         success: true,
@@ -134,6 +244,35 @@ export const authAPI = {
         message: 'Login failed',
         error: error instanceof Error ? error.message : 'Login failed'
       };
+    }
+  },
+
+  // Auto-login using saved credentials
+  autoLogin: async (): Promise<ApiResponse<User> | null> => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const saved = localStorage.getItem('cf_remember');
+      if (!saved) return null;
+      
+      const decoded = JSON.parse(atob(saved));
+      const age = Date.now() - decoded.timestamp;
+      
+      // Auto-login valid for 30 days
+      if (age > 30 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem('cf_remember');
+        return null;
+      }
+      
+      console.log('🔐 Attempting auto-login...');
+      return await authAPI.login({
+        email: decoded.email,
+        password: decoded.password
+      });
+    } catch (e) {
+      console.error('Auto-login failed:', e);
+      localStorage.removeItem('cf_remember');
+      return null;
     }
   },
 
@@ -161,7 +300,7 @@ export const authAPI = {
 
   getUserData: async (): Promise<ApiResponse<User>> => {
     try {
-      const data = await quickFetch<UserDataResponse>('/auth/data', {}, 'user_data');
+      const data = await quickFetch<UserDataResponse>('/auth/data', {}, 'user_data', 30); // 30 min cache
       return {
         success: true,
         data: data.user,
@@ -180,7 +319,19 @@ export const authAPI = {
     try {
       await quickFetch<LogoutResponse>('/auth/logout', { method: 'POST' });
       Cookies.remove('token');
+      Cookies.remove('auth_token');
       fastCache.clear(); // Clear all cache on logout
+      
+      // Clear persisted cache
+      if (typeof window !== 'undefined') {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith(STORAGE_PREFIX) || key === 'cf_remember') {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
       return {
@@ -192,10 +343,10 @@ export const authAPI = {
   }
 };
 
-// LEAGUES API - ULTRA FAST
+// LEAGUES API - ULTRA FAST WITH EXTENDED CACHE
 export const leagueAPI = {
   getAll: async (): Promise<LeaguesResponse> => {
-    return await quickFetch<LeaguesResponse>('/leagues', {}, 'leagues_all');
+    return await quickFetch<LeaguesResponse>('/leagues', {}, 'leagues_all', 20); // 20 min cache
   },
 
   create: async (league: CreateLeagueDTO): Promise<ApiResponse<League>> => {
@@ -205,7 +356,15 @@ export const leagueAPI = {
         body: JSON.stringify(league),
       });
       
-      fastCache.delete('leagues_all'); // Invalidate cache
+      // Invalidate ALL league-related caches
+      fastCache.delete('leagues_all');
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'leagues_all');
+      }
+      
+      console.log('🗑️ League caches cleared after creation');
+      
       return { success: true, data: data.league, message: 'League created successfully' };
     } catch (error) {
       return {
@@ -218,7 +377,7 @@ export const leagueAPI = {
 
   getById: async (id: string): Promise<ApiResponse<League>> => {
     try {
-      const data = await quickFetch<{ league: League }>(`/leagues/${id}`, {}, `league_${id}`);
+      const data = await quickFetch<{ league: League }>(`/leagues/${id}`, {}, `league_${id}`, 10); // 10 min cache
       return { success: true, data: data.league, message: 'League fetched successfully' };
     } catch (error) {
       return {
@@ -232,8 +391,18 @@ export const leagueAPI = {
   join: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
     try {
       const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}/join`, { method: 'POST' });
-      fastCache.delete('leagues_all'); // Invalidate cache
+      
+      // Clear ALL league-related caches
+      fastCache.delete('leagues_all');
       fastCache.delete(`league_${id}`);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'leagues_all');
+        localStorage.removeItem(STORAGE_PREFIX + `league_${id}`);
+      }
+      
+      console.log('🗑️ League caches cleared after join');
+      
       return { success: true, data, message: 'Joined league successfully' };
     } catch (error) {
       return {
@@ -251,7 +420,15 @@ export const leagueAPI = {
         body: JSON.stringify({ inviteCode }),
       });
       
-      fastCache.delete('leagues_all'); // Invalidate cache
+      // Clear ALL league caches
+      fastCache.delete('leagues_all');
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'leagues_all');
+      }
+      
+      console.log('🗑️ League caches cleared after join with code');
+      
       return { success: true, data: data.league, message: 'Joined league successfully' };
     } catch (error) {
       return {
@@ -265,8 +442,18 @@ export const leagueAPI = {
   leave: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
     try {
       const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}/leave`, { method: 'POST' });
-      fastCache.delete('leagues_all'); // Invalidate cache
+      
+      // Clear ALL league caches
+      fastCache.delete('leagues_all');
       fastCache.delete(`league_${id}`);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'leagues_all');
+        localStorage.removeItem(STORAGE_PREFIX + `league_${id}`);
+      }
+      
+      console.log('🗑️ League caches cleared after leave');
+      
       return { success: true, data, message: 'Left league successfully' };
     } catch (error) {
       return {
@@ -280,8 +467,23 @@ export const leagueAPI = {
   delete: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
     try {
       const data = await quickFetch<{ success: boolean; message: string }>(`/leagues/${id}`, { method: 'DELETE' });
-      fastCache.delete('leagues_all'); // Invalidate cache
+      
+      // Clear ALL league AND match caches (league deletion affects matches too)
+      fastCache.delete('leagues_all');
       fastCache.delete(`league_${id}`);
+      fastCache.delete('matches_all');
+      
+      if (typeof window !== 'undefined') {
+        // Clear all related caches
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('league') || key.includes('match')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
+      console.log('🗑️ All league & match caches cleared after deletion');
+      
       return { success: true, data, message: 'League deleted successfully' };
     } catch (error) {
       return {
@@ -310,9 +512,35 @@ export const matchAPI = {
         body: JSON.stringify(match),
       });
       
-      // Invalidate relevant caches
+      // Invalidate ALL match-related caches immediately
       fastCache.delete('matches_all');
       fastCache.delete(`matches_league_${match.leagueId}`);
+      fastCache.delete(`league_${match.leagueId}`);
+      
+      // Clear from localStorage too
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'matches_all');
+        localStorage.removeItem(STORAGE_PREFIX + `matches_league_${match.leagueId}`);
+        localStorage.removeItem(STORAGE_PREFIX + `league_${match.leagueId}`);
+        
+        // Clear ALL match-related caches to force fresh fetch
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith(STORAGE_PREFIX) && (key.includes('match') || key.includes('league'))) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
+      console.log('🗑️ Match caches cleared after creation');
+      console.log('✨ New match created:', data.match.id);
+      
+      // Trigger event to notify components to refetch
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('match-created', { 
+          detail: { match: data.match, leagueId: match.leagueId } 
+        }));
+        console.log('📢 match-created event dispatched');
+      }
       
       return { success: true, data: data.match, message: 'Match created successfully' };
     } catch (error) {
@@ -331,9 +559,30 @@ export const matchAPI = {
         body: JSON.stringify(match),
       });
       
-      // Invalidate relevant caches
+      // Invalidate ALL match-related caches
       fastCache.delete('matches_all');
       fastCache.delete(`match_${id}`);
+      
+      // Clear from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'matches_all');
+        localStorage.removeItem(STORAGE_PREFIX + `match_${id}`);
+        
+        // Clear all league-specific match caches
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('matches_league_') || key.includes('league_')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Dispatch event
+        window.dispatchEvent(new CustomEvent('match-updated', { 
+          detail: { match: data.match, matchId: id } 
+        }));
+        console.log('📢 match-updated event dispatched');
+      }
+      
+      console.log('🗑️ Match caches cleared after update');
       
       return { success: true, data: data.match, message: 'Match updated successfully' };
     } catch (error) {
@@ -398,8 +647,21 @@ export const matchAPI = {
         body: JSON.stringify(stats),
       });
       
-      // Invalidate stats cache
+      // 🔄 Clear all match-related caches (memory + localStorage)
       fastCache.delete(`match_stats_${matchId}_${stats.playerId}`);
+      fastCache.delete(`match_${matchId}`);
+      fastCache.delete('matches_all');
+      clearCache(`match/${matchId}`);
+      clearCache('matches');
+      clearCache('leagues'); // Clear all leagues cache since they contain matches
+      
+      // 🔄 Dispatch event to trigger auto-refresh (match completed/updated)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('match-updated', { 
+          detail: { matchId, statsUpdated: true } 
+        }));
+        console.log('📢 match-updated event dispatched (stats saved)', { matchId });
+      }
       
       return { success: true, data, message: 'Stats saved successfully' };
     } catch (error) {
@@ -431,9 +693,20 @@ export const matchAPI = {
         method: 'POST',
       });
       
-      // Invalidate match cache
+      // 🔄 Clear all match-related caches (memory + localStorage)
       fastCache.delete(`match_${matchId}`);
       fastCache.delete('matches_all');
+      clearCache(`match/${matchId}`);
+      clearCache('matches');
+      clearCache('leagues'); // Clear all leagues cache since they contain matches
+      
+      // 🔄 Dispatch event to trigger auto-refresh in league page
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('match-updated', { 
+          detail: { matchId, available } 
+        }));
+        console.log('📢 match-updated event dispatched (availability)', { matchId, available });
+      }
       
       return { success: true, data, message: 'Availability updated successfully' };
     } catch (error) {
@@ -448,8 +721,32 @@ export const matchAPI = {
   delete: async (id: string): Promise<ApiResponse<{ success: boolean; message: string }>> => {
     try {
       const data = await quickFetch<{ success: boolean; message: string }>(`/matches/${id}`, { method: 'DELETE' });
+      
+      // Invalidate ALL match caches
       fastCache.delete('matches_all');
       fastCache.delete(`match_${id}`);
+      
+      // Clear from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_PREFIX + 'matches_all');
+        localStorage.removeItem(STORAGE_PREFIX + `match_${id}`);
+        
+        // Clear all match-related caches
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('match') || key.includes('league')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Dispatch event
+        window.dispatchEvent(new CustomEvent('match-deleted', { 
+          detail: { matchId: id } 
+        }));
+        console.log('📢 match-deleted event dispatched');
+      }
+      
+      console.log('🗑️ All match caches cleared after deletion');
+      
       return { success: true, data, message: 'Match deleted successfully' };
     } catch (error) {
       return {
@@ -615,13 +912,60 @@ export async function fetchWorldRanking(params: {
 // UTILITY FUNCTIONS
 export function clearCache(pattern?: string): void {
   if (pattern) {
+    // Clear from memory
     for (const [key] of fastCache) {
       if (key.includes(pattern)) {
         fastCache.delete(key);
       }
     }
+    
+    // Clear from localStorage
+    if (typeof window !== 'undefined') {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(STORAGE_PREFIX) && key.includes(pattern)) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+    
+    console.log(`🗑️ Cleared caches matching pattern: ${pattern}`);
   } else {
+    // Clear all
     fastCache.clear();
+    
+    if (typeof window !== 'undefined') {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(STORAGE_PREFIX)) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+    
+    console.log('🗑️ Cleared ALL caches');
+  }
+}
+
+export function forceRefresh(endpoint: 'leagues' | 'matches' | 'players' | 'all' = 'all'): void {
+  console.log(`🔄 Force refreshing: ${endpoint}`);
+  
+  switch (endpoint) {
+    case 'leagues':
+      clearCache('league');
+      break;
+    case 'matches':
+      clearCache('match');
+      break;
+    case 'players':
+      clearCache('player');
+      break;
+    case 'all':
+      clearCache();
+      break;
+  }
+  
+  // Trigger a page reload to fetch fresh data
+  if (typeof window !== 'undefined') {
+    console.log('💫 Reloading to fetch fresh data...');
   }
 }
 

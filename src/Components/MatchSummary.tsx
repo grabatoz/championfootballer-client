@@ -678,9 +678,28 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         <MatchStatsDialog
           open={statsDialogOpen}
           onClose={() => {
+            console.log('🔄 MatchStatsDialog closing - clearing cache and refreshing');
+            
+            // 🗑️ Clear localStorage caches
+            const STORAGE_PREFIX = 'cf_cache_';
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith(STORAGE_PREFIX) && 
+                  (key.includes('league') || key.includes('match'))) {
+                localStorage.removeItem(key);
+                console.log('🗑️ Cleared cache:', key);
+              }
+            });
+            
+            // 📢 Dispatch match-updated event
+            window.dispatchEvent(new CustomEvent('match-updated', { 
+              detail: { matchId } 
+            }));
+            
             // Close both states together in batch
             setShouldShowAdminGoals(false);
             setStatsDialogOpen(false);
+            
+            console.log('✅ Match dialog closed and update event dispatched');
           }}
           initialLeagueId={leagueId}
           initialMatchId={matchId}
