@@ -114,7 +114,7 @@ export class CacheManager {
               count++;
             }
           }
-        } catch (e) {
+        } catch {
           // Invalid cache entry, remove it
           localStorage.removeItem(key);
           count++;
@@ -160,7 +160,7 @@ export class CacheManager {
           const type = key.replace('cf_cache_', '').split('_')[0];
           stats.byType[type] = (stats.byType[type] || 0) + 1;
         }
-      } catch (e) {
+      } catch {
         // Ignore invalid entries
       }
     });
