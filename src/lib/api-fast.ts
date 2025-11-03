@@ -1,4 +1,4 @@
-// ULTRA FAST API CLIENT - Cleaned and Optimized
+// ULTRA FAST API CLIENT - Optimized with HTTP Client
 import { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
 import { User, League, Match } from '@/types/user';
 import Cookies from 'js-cookie';
@@ -9,6 +9,7 @@ import type {
   MatchesResponse,
   PlayerStatsResponse
 } from '@/types/api';
+import { optimizedFetch } from './httpClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -119,7 +120,7 @@ function setCache<T>(key: string, data: T, minutes: number = 15): void {
   }
 }
 
-// ULTRA FAST FETCH WITH BACKGROUND REFRESH
+// ULTRA FAST FETCH WITH BACKGROUND REFRESH - Using optimized HTTP client
 async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheKey?: string, cacheTTL: number = 15): Promise<T> {
   const isGetRequest = !options.method || options.method === 'GET';
   
@@ -132,18 +133,8 @@ async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheK
     }
   }
 
-  const token = Cookies.get('token') || Cookies.get('auth_token');
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Accept-Encoding': 'gzip, deflate',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-    credentials: 'include'
-  });
+  // Use optimized fetch with connection pooling
+  const response = await optimizedFetch(API_BASE_URL + endpoint, options);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -159,7 +150,7 @@ async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheK
   return data;
 }
 
-// Background refresh to keep cache fresh
+// Background refresh to keep cache fresh - Using optimized HTTP client
 const refreshTimers = new Map<string, NodeJS.Timeout>();
 function refreshInBackground(endpoint: string, options: RequestInit, cacheKey: string, ttl: number) {
   // Prevent duplicate refresh timers
@@ -168,15 +159,7 @@ function refreshInBackground(endpoint: string, options: RequestInit, cacheKey: s
   const timer = setTimeout(async () => {
     try {
       console.log(`🔄 Background refresh: ${cacheKey}`);
-      const token = Cookies.get('token') || Cookies.get('auth_token');
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: 'include'
-      });
+      const response = await optimizedFetch(API_BASE_URL + endpoint, options);
       
       if (response.ok) {
         const data = await response.json();

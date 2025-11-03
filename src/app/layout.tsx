@@ -8,6 +8,7 @@ import LayoutContent from './LayoutContent';
 import Footer from "@/Components/footer/_components";
 import ToasterProvider from '@/Components/ToasterProvider';
 import AuthBootstrap from '@/Components/AuthBootstrap';
+import PerformanceMonitor from '@/Components/PerformanceMonitor';
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -48,6 +49,7 @@ export default function RootLayout({
             <Footer/>
           </LayoutContent>
           <ToasterProvider /> {/* mount once */}
+          <PerformanceMonitor /> {/* Performance monitoring in dev mode */}
         </Providers>
       </body>
     </html>
