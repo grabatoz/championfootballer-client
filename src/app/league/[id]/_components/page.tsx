@@ -77,7 +77,7 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
 });
 import CloseIcon from '@mui/icons-material/Close';
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
-import { LeaderboardResponse } from '@/types/api';
+// import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import ShirtImg from '@/Components/images/shirtimg.png'
 import homeImg from '@/Components/images/matches.png'
@@ -109,7 +109,7 @@ type PlayerCardProps = {
     position: ShortPosition;
 };
 
-type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
+// type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 type LeagueComputedStatus = {
     isComplete?: boolean;
