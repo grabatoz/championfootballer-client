@@ -14,7 +14,6 @@ import { User, League, Match } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
-import { cacheManager } from '@/lib/cacheManager';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
 
@@ -1006,7 +1005,6 @@ function AllLeagues() {
   const [isCreating, setIsCreating] = useState(false);
   const [leagues, setLeagues] = useState<LeagueWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const router = useRouter();
   const [leagueName, setLeagueName] = useState('');
   const [leagueNameError, setLeagueNameError] = useState<string>('');
@@ -1026,9 +1024,6 @@ function AllLeagues() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
-
-  // Cache timeout - 5 minutes
-  const CACHE_TIMEOUT = 5 * 60 * 1000;
 
   // Fixed continuous list of years from 2000 up to current year + a few future years (calendar-like)
   const yearOptions = useMemo(() => {
@@ -1089,8 +1084,7 @@ function AllLeagues() {
       const joined = normalizeLeagueFromPayload(payload);
 
       if (joined) {
-        // Update cache and put new league at the TOP without refetch
-        cacheManager.updateLeaguesCache(joined);
+        // Update local state with new league at the TOP
         setLeagues(prev => {
           const filtered = prev.filter(l => l.id !== joined.id);
           const enriched: LeagueWithStatus = { ...joined };
@@ -1098,7 +1092,7 @@ function AllLeagues() {
         });
         console.log('Joined league successfully:', joined.name);
       } else {
-        console.log('Join succeeded but payload missing league; keeping current list until next background sync');
+        console.log('Join succeeded but payload missing league');
       }
 
       toast.success('Successfully joined the league!');
@@ -1110,10 +1104,6 @@ function AllLeagues() {
       setIsJoining(false);
     }
   };
-
-  const updateLeaguesCacheWithNewLeague = useCallback((newLeague: League) => {
-    cacheManager.updateLeaguesCache(newLeague);
-  }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1228,17 +1218,8 @@ function AllLeagues() {
   //   }
   // }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]); // Only depend on token
 
-  const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
+  const fetchAllLeagues = useCallback(async () => {
     if (!token) return;
-
-    const now = Date.now();
-    const timeSinceLastFetch = now - lastFetchTime;
-
-    if (!forceRefresh && timeSinceLastFetch < CACHE_TIMEOUT && leagues.length > 0) {
-      console.log('Using cached leagues data');
-      setLoading(false);
-      return;
-    }
 
     try {
       console.log('Fetching all available leagues...');
@@ -1292,8 +1273,8 @@ function AllLeagues() {
                   if (statusData.success) {
                     enriched = {
                       ...enriched,
-                      computedStatus: statusData.status as LeagueStatus,            // { isComplete, totals, missing }
-                      isLocked: enriched.isLocked ?? false, // backend may set this flag
+                      computedStatus: statusData.status as LeagueStatus,
+                      isLocked: enriched.isLocked ?? false,
                     };
                   }
                 }
@@ -1307,7 +1288,6 @@ function AllLeagues() {
           );
 
           setLeagues(sortLeaguesByRecency(detailedLeagues));
-          setLastFetchTime(now);
           console.log('Setting detailed leagues:', detailedLeagues);
         }
       } else {
@@ -1320,47 +1300,13 @@ function AllLeagues() {
     } finally {
       setLoading(false);
     }
-  }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]);
+  }, [token]);
 
   useEffect(() => {
     if (token) {
-      fetchAllLeagues(false); // Don't force refresh on mount
+      fetchAllLeagues();
     }
-  }, [token]); // Remove fetchAllLeagues from dependencies
-
-  // Refresh data when page becomes visible - but only if cache is old
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && token) {
-        const now = Date.now();
-        const timeSinceLastFetch = now - lastFetchTime;
-
-        // Only fetch if cache is older than 2 minutes when page becomes visible
-        if (timeSinceLastFetch > 2 * 60 * 1000) {
-          fetchAllLeagues(false);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [token, lastFetchTime]); // Add lastFetchTime dependency
-
-  // Remove the focus event listener to prevent excessive API calls
-  // useEffect(() => {
-  //   const handleFocus = () => {
-  //     if (token) {
-  //       fetchAllLeagues();
-  //     }
-  //   };
-
-  //   window.addEventListener('focus', handleFocus);
-  //   return () => {
-  //     window.removeEventListener('focus', handleFocus);
-  //   };
-  // }, [token]);
+  }, [token, fetchAllLeagues]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -1395,9 +1341,8 @@ function AllLeagues() {
         setLeagueImage(null);
         setImagePreview(null);
 
-        // Update the leagues cache with the new league
+        // Optimistically add new league to state
         if (data.league) {
-          // Normalize to match League shape strictly
           const nowISO = new Date().toISOString();
           const normalized: League = {
             id: String(data.league.id),
@@ -1420,18 +1365,14 @@ function AllLeagues() {
             status: data.league.status,
           };
 
-          // Update cache with new league
-          updateLeaguesCacheWithNewLeague(normalized);
-
-          // Optimistically put new league at TOP without forcing a refetch
+          // Add new league at TOP
           setLeagues(prevLeagues => {
             const filtered = prevLeagues.filter(l => l.id !== normalized.id);
             const enriched: LeagueWithStatus = { ...normalized };
             return sortLeaguesByRecency([enriched, ...filtered]);
           });
-          console.log('Updated cache and local state with new league:', normalized);
+          console.log('Added new league to state:', normalized);
         }
-        // No forced refetch; list already updated optimistically.
       } else {
         console.error('Failed to create league:', data.message);
         toast.error(data.message || 'Failed to create league');
@@ -1488,7 +1429,7 @@ function AllLeagues() {
         // If current user was removed, refresh the entire leagues list
         if (memberId === user?.id) {
           setOpenMembers(false);
-          await fetchAllLeagues(true); // Force refresh
+          await fetchAllLeagues();
         } else {
           // Otherwise, just refetch members for this league
           handleOpenMembers(selectedLeague);
@@ -1511,7 +1452,7 @@ function AllLeagues() {
 
       if (response.ok) {
         setOpenMembers(false);
-        await fetchAllLeagues(true); // Force refresh after leaving league
+        await fetchAllLeagues();
         toast.success('Successfully left the league');
       } else {
         toast.error('Failed to leave league');
