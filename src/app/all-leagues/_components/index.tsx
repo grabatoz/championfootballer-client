@@ -154,9 +154,9 @@ const timeOf = (l: Pick<League, 'updatedAt' | 'createdAt'> | undefined | null): 
   return Number.isFinite(t) ? t : 0;
 };
 
-const compareLeaguesByRecency = (a: Pick<League, 'updatedAt' | 'createdAt'>, b: Pick<League, 'updatedAt' | 'createdAt'>): number => {
-  return timeOf(b) - timeOf(a);
-};
+// const compareLeaguesByRecency = (a: Pick<League, 'updatedAt' | 'createdAt'>, b: Pick<League, 'updatedAt' | 'createdAt'>): number => {
+//   return timeOf(b) - timeOf(a);
+// };
 
 // Sort leagues alphabetically by name (A-Z)
 const sortLeaguesByRecency = <T extends Pick<League, 'updatedAt' | 'createdAt'> & Pick<League, 'name'>>(arr: T[]): T[] => {
