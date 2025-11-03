@@ -1755,7 +1755,7 @@ export default function GlobalTrophyRoom() {
       });
       setOpenQuickView(true);
     } catch {
-      // On API error, do not compute skills locally
+  // On API error, do not compute skills locally
       const league = leagues.find(l => l.id === trophy.leagueId);
       if (!league) return;
       const player = league.members.find(m => m.id === trophy.winnerId);
@@ -1764,7 +1764,7 @@ export default function GlobalTrophyRoom() {
       // You may still show basic stats from local league if desired, but no skills calculation
       const perLeague = summarizeUserMatchesByLeague(player.id, [league]);
       const allMatches = perLeague[league.id] ?? [];
-      const list = allMatches.slice(-5).reverse();
+  const list = allMatches.slice(-10).reverse();
       const stats = calculatePlayerStats(league)[player.id];
 
       setQuickView({
@@ -2209,11 +2209,11 @@ export default function GlobalTrophyRoom() {
                 </Box>
               </Box>
 
-              {/* Right: Last 5 Matches */}
+              {/* Right: Last 10 Matches */}
               <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
-                <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 5 games</Typography>
+                <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 10 games</Typography>
                 <Stack direction="column" spacing={1}>
-                  {(quickView.lastFive ?? []).slice(0, 5).map((m, idx) => (
+                  {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
                     <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
                         sx={{
