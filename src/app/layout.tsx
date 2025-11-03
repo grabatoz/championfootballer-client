@@ -9,6 +9,7 @@ import Footer from "@/Components/footer/_components";
 import ToasterProvider from '@/Components/ToasterProvider';
 import AuthBootstrap from '@/Components/AuthBootstrap';
 import PerformanceMonitor from '@/Components/PerformanceMonitor';
+import ProductionOptimizer from '@/Components/ProductionOptimizer';
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.variable}`}
       >
         <Providers>
+          <ProductionOptimizer /> {/* Initialize production optimizations */}
           <AuthBootstrap />
           <AuthCheck />
           <LayoutContent>

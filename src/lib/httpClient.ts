@@ -1,7 +1,14 @@
 // ULTRA-FAST HTTP CLIENT WITH CONNECTION POOLING & REQUEST OPTIMIZATION
+// Optimized for both local and production environments
 import Cookies from 'js-cookie';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const IS_HTTPS = API_BASE_URL.startsWith('https://');
+
+// Production-specific optimizations
+const PRODUCTION_TIMEOUT = IS_HTTPS ? 15000 : 10000; // HTTPS may need more time for TLS
+const DNS_PREFETCH_ENABLED = IS_PRODUCTION && typeof window !== 'undefined';
 
 // Request queue for batching and deduplication
 interface PendingRequest {
@@ -30,7 +37,29 @@ export function getPerformanceMetrics() {
 }
 
 // Request timeout handler
-const DEFAULT_TIMEOUT = 10000; // 10 seconds
+const DEFAULT_TIMEOUT = IS_PRODUCTION ? PRODUCTION_TIMEOUT : 10000;
+
+// DNS Prefetch for production
+if (DNS_PREFETCH_ENABLED) {
+  try {
+    const apiDomain = new URL(API_BASE_URL).hostname;
+    const link = document.createElement('link');
+    link.rel = 'dns-prefetch';
+    link.href = `//${apiDomain}`;
+    document.head.appendChild(link);
+    
+    // Also add preconnect for faster connection
+    const preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = API_BASE_URL;
+    preconnect.crossOrigin = 'use-credentials';
+    document.head.appendChild(preconnect);
+    
+    console.log(`🚀 DNS prefetch enabled for: ${apiDomain}`);
+  } catch (e) {
+    console.warn('DNS prefetch setup failed:', e);
+  }
+}
 
 function timeoutPromise<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   return Promise.race([
@@ -63,7 +92,7 @@ export async function optimizedFetch(
   const startTime = performance.now();
   const token = Cookies.get('token') || Cookies.get('auth_token');
 
-  // Build optimized headers
+  // Build optimized headers with production-specific settings
   const headers: Record<string, string> = {
     'Accept': 'application/json',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -72,6 +101,14 @@ export async function optimizedFetch(
     'Connection': 'keep-alive',
     'Keep-Alive': 'timeout=120, max=100',
   };
+
+  // Production-specific headers
+  if (IS_PRODUCTION) {
+    // Help with CDN caching
+    headers['Cache-Control'] = method === 'GET' ? 'public, max-age=60' : 'no-cache';
+    // Reduce latency with early hints
+    headers['Priority'] = 'u=1'; // High priority for API calls
+  }
 
   // Merge with provided headers
   if (options.headers) {
@@ -90,9 +127,11 @@ export async function optimizedFetch(
     credentials: 'include',
     // Enable HTTP/2
     keepalive: true,
+    // Production-specific optimizations
+    mode: IS_PRODUCTION ? 'cors' : 'same-origin',
     // Signal for abort control
     signal: options.signal,
-  });
+  }) as Promise<Response>;
 
   // Store pending request for deduplication
   if (method === 'GET') {
