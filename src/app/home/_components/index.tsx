@@ -45,7 +45,7 @@ import { League, User, Match } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { ChevronRight, CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
-import { cacheManager } from '@/lib/cacheManager';
+import { leagueAPI } from '@/lib/api-ultra-fast';
 import { Trophy } from 'lucide-react';
 // import { Block } from '@mui/icons-material';
 // import { joinLeague } from '@/lib/features/leagueSlice';
@@ -53,9 +53,6 @@ import Dashbg from '@/Components/images/dashbg.jpg'
 import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
 import Link from 'next/link';
-
-import { getCache } from '@/lib/api';
-import type { LeaguesResponse } from '@/types/api';
 
 // const GreenDialogTextField = styled(TextField)(() => ({
 //   '& .MuiOutlinedInput-root': {
@@ -422,8 +419,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   // Hydrate instantly from local cache to avoid delay on tab/page return
   useEffect(() => {
     try {
-      const cached = getCache<LeaguesResponse>('leagues_cache');
-      const leagues = cached?.leagues || [];
+      // Use ultra-fast instant cache - 0ms retrieval!
+      const leagues = leagueAPI.getAllInstant();
+      
       if (!Array.isArray(leagues) || leagues.length === 0) return;
 
       const minimal: LeagueWithComputed[] = leagues.map((l) => ({
@@ -1105,7 +1103,7 @@ export default function PlayerDashboard() {
         };
 
         // Update local caches and UI immediately
-        updateLeaguesCacheWithNewLeague(normalized);
+        updateLeaguesCacheWithNewLeague();
         setCreatedLeague(normalized); // instantly visible in selector
         setLeaguesRefreshKey((k) => k + 1); // background refetch to stay in sync
       } else {
@@ -1121,8 +1119,9 @@ export default function PlayerDashboard() {
     }
   };
 
-  const updateLeaguesCacheWithNewLeague = useCallback((newLeague: League) => {
-    cacheManager.updateLeaguesCache(newLeague);
+  const updateLeaguesCacheWithNewLeague = useCallback(() => {
+    // Update ultra-fast cache instantly
+    leagueAPI.invalidateCache();
   }, []);
 
   const handleCreateLeague = async () => {
@@ -1189,7 +1188,7 @@ export default function PlayerDashboard() {
           };
 
           // Update cache with new league
-          updateLeaguesCacheWithNewLeague(newLeague);
+          updateLeaguesCacheWithNewLeague();
 
           // Update local state
           setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
