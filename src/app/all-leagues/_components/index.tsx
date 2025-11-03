@@ -147,12 +147,12 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
 };
 
 // Recency helpers: newest first by updatedAt or createdAt
-const timeOf = (l: Pick<League, 'updatedAt' | 'createdAt'> | undefined | null): number => {
-  if (!l) return 0;
-  const src = (l.updatedAt || l.createdAt || '').trim();
-  const t = Date.parse(src);
-  return Number.isFinite(t) ? t : 0;
-};
+// const timeOf = (l: Pick<League, 'updatedAt' | 'createdAt'> | undefined | null): number => {
+//   if (!l) return 0;
+//   const src = (l.updatedAt || l.createdAt || '').trim();
+//   const t = Date.parse(src);
+//   return Number.isFinite(t) ? t : 0;
+// };
 
 // const compareLeaguesByRecency = (a: Pick<League, 'updatedAt' | 'createdAt'>, b: Pick<League, 'updatedAt' | 'createdAt'>): number => {
 //   return timeOf(b) - timeOf(a);
