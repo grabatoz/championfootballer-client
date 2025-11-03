@@ -1265,7 +1265,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
               transform: { xs: 'none', md: 'rotate(90deg)' },
-              transformOrigin: 'center center'
+              transformOrigin: 'center center',
+              mt:{sm:2,xs:2,md:-10},
+              mb:{sm:2,xs:2,md:-10}
             }}
           >
             {awaitingTeams ? (

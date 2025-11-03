@@ -9,7 +9,7 @@
   import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
   import { useAuth } from '@/lib/hooks';
   import { useParams, useRouter } from 'next/navigation';
-  import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight } from 'lucide-react';
+  import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight, Crown } from 'lucide-react';
   import toast, { Toaster } from 'react-hot-toast';
   import { cacheManager } from '@/lib/cacheManager';
   import ShirtImg from '@/Components/images/shirtimg.png';
@@ -223,6 +223,18 @@
 
       handleMenuClose();
       toast.success('Player switched to other team');
+    };
+
+    const handleMakeCaptain = () => {
+      if (!selectedPlayer) return;
+      const { player, team } = selectedPlayer;
+      if (team === 'home') {
+        setHomeCaptain(player);
+      } else {
+        setAwayCaptain(player);
+      }
+      handleMenuClose();
+      toast.success('Player set as captain');
     };
 
     // Helper: already picked in either team
@@ -2135,6 +2147,27 @@
             }
           }}
         >
+          <MenuItem 
+            onClick={handleMakeCaptain}
+            sx={{
+              color: 'white',
+              py: 1.5,
+              '&:hover': {
+                bgcolor: 'rgba(255, 215, 0, 0.18)',
+              }
+            }}
+          >
+            <ListItemIcon>
+              <Crown size={20} color="#ffca28" />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Make Captain"
+              primaryTypographyProps={{
+                fontSize: 14,
+                fontWeight: 600
+              }}
+            />
+          </MenuItem>
           <MenuItem 
             onClick={handleSwitchTeam}
             sx={{
