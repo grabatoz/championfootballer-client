@@ -85,10 +85,10 @@ function setCacheInstant<T>(key: string, data: T, ttl: number = CACHE_TTL) {
 }
 
 // Event system for real-time cache updates
-const cacheEventListeners = new Map<string, Set<(data: any) => void>>();
+const cacheEventListeners = new Map<string, Set<(data: unknown) => void>>();
 
 // Dispatch cache update event
-function dispatchCacheEvent(key: string, data: any) {
+function dispatchCacheEvent(key: string, data: unknown) {
   const listeners = cacheEventListeners.get(key);
   if (listeners) {
     listeners.forEach(callback => {
@@ -102,7 +102,7 @@ function dispatchCacheEvent(key: string, data: any) {
 }
 
 // Subscribe to cache updates
-export function onCacheUpdate(key: string, callback: (data: any) => void) {
+export function onCacheUpdate(key: string, callback: (data: unknown) => void) {
   if (!cacheEventListeners.has(key)) {
     cacheEventListeners.set(key, new Set());
   }
