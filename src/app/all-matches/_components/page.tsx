@@ -1,46 +1,72 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 'use client';
 
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import PlayerCard from '@/Components/playercard/playercard';
 import Image from 'next/image';
 import homeTeamIcon from '@/Components/images/matches.png';
 import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
-import { cacheManager } from "@/lib/cacheManager"
+import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
+import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 import { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 import CloseIcon from '@mui/icons-material/Close';
-
-// Lazy load heavy components
-const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
-  loading: () => <CircularProgress size={24} />,
-  ssr: false
-});
-
-const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
-  loading: () => <CircularProgress />,
-  ssr: false
-});
-
-const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog'), {
-  loading: () => <CircularProgress />,
-  ssr: false
-});
-
-const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
-  loading: () => <CircularProgress />,
-  ssr: false
-});
-
-const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
-  loading: () => <></>,
-  ssr: false
-});
+import CloseButton from '@/Components/CloseButton';
 
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
@@ -165,6 +191,7 @@ export default function AllMatches() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<string>('all');
+    const [matchFilter, setMatchFilter] = useState<'all' | 'fixtures' | 'results'>('all');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -253,18 +280,6 @@ export default function AllMatches() {
             if (data.success && data.user) {
                 // Get admin league IDs
                 const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
-                // const adminLeagueIds = new Set<string>(
-                //     adminLeaguesArr
-                //         .map((l) => String(l?.id))
-                //         .filter((id) => id !== 'undefined')
-                // );
-
-                // Get member league IDs
-                // const memberLeagueIds = new Set<string>(
-                //     ((data.user.leagues || []) as Array<{ id?: string | number }>)
-                //         .map((l) => String(l?.id))
-                //         .filter((id) => id !== 'undefined')
-                // );
 
                 // Combine joined and managed leagues
                 const userLeagues = [
@@ -281,12 +296,13 @@ export default function AllMatches() {
                     }
                 });
 
-                // Fetch detailed info for all leagues to get administrators, members, and computed status
+                // Fetch detailed info for all leagues in parallel (faster)
                 const detailedLeagues = await Promise.all(
                     Array.from(uniqueLeaguesMap.values()).map(async (league) => {
                         try {
                             const leagueId = String((league as { id?: string | number }).id);
 
+                            // Fetch league status and details in parallel
                             const [statusRes, leagueResponse] = await Promise.all([
                                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
                                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -361,7 +377,7 @@ export default function AllMatches() {
                     })
                 );
 
-                // Filter out completed leagues (like home page)
+                // Filter out completed leagues
                 const activeLeagues = detailedLeagues.filter(l => !leagueIsCompleted(l));
 
                 // Sort alphabetically by name
@@ -436,7 +452,7 @@ export default function AllMatches() {
         } finally {
             setLoading(false);
         }
-    }, [token, selectedLeague]);
+    }, [token]); // Removed selectedLeague from dependencies
 
     useEffect(() => {
         if (token) {
@@ -587,19 +603,22 @@ export default function AllMatches() {
 
             const data = await response.json();
             if (data.success) {
-                // Update leaderboard cache with new stats
+                // Update leaderboard with new stats (direct state update, no cache)
                 if (data.updatedStats) {
-                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
-                        if (typeof value === 'number') {
-                            // Update cache if cacheManager is available
-                            if (typeof cacheManager !== 'undefined') {
-                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as PlayerStatsMetric);
-                            }
-                        }
-                    });
+                    // Stats updated successfully
+                    console.log('Stats updated:', data.updatedStats);
                 }
                 setStatsDialogOpen(false);
+                
+                // Auto-refresh matches after 1 second to get latest data
+                setTimeout(() => {
+                    if (selectedLeague && selectedLeague !== 'all') {
+                        fetchMatchesByLeague(selectedLeague);
+                    }
+                }, 1000);
+                
                 // Optionally show a success message
+                toast.success('Stats saved successfully');
             }
         } catch (err: unknown) {
             console.error(err instanceof Error ? err.message : String(err));
@@ -648,14 +667,18 @@ export default function AllMatches() {
             }
             const data = await response.json();
             if (data.success && data.match) {
-                // Update cache with new match data
-                cacheManager.updateMatchesCache(data.match);
-
-                // Update the matches array so the button toggles instantly
+                // Update the matches array directly (no cache)
                 setMatches(prevMatches => prevMatches.map(m =>
                     m.id === matchId ? { ...m, availableUsers: data.match.availableUsers } : m
                 ));
                 setToastMessage(action === 'available' ? 'You are now available for this match.' : 'You are now unavailable for this match.');
+                
+                // Auto-refresh matches after 1 second to get latest data
+                setTimeout(() => {
+                    if (selectedLeague && selectedLeague !== 'all') {
+                        fetchMatchesByLeague(selectedLeague);
+                    }
+                }, 1000);
             } else {
                 setToastMessage('Availability updated.');
             }
@@ -781,6 +804,20 @@ export default function AllMatches() {
         return [...matches].sort(compareMatchesDesc);
     }, [matches]);
 
+    // Filter matches based on selected filter
+    const filteredMatches = React.useMemo(() => {
+        if (matchFilter === 'fixtures') {
+            // Show only SCHEDULED matches
+            return sortedMatches.filter(m => m.status === 'SCHEDULED');
+        }
+        if (matchFilter === 'results') {
+            // Show only completed matches (RESULT_PUBLISHED or RESULT_UPLOADED)
+            return sortedMatches.filter(m => m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_UPLOADED');
+        }
+        // 'all' - show everything
+        return sortedMatches;
+    }, [sortedMatches, matchFilter]);
+
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
@@ -895,6 +932,13 @@ export default function AllMatches() {
 
             // Refresh league data to ensure sync without global spinner
             fetchLeagueDetails(true);
+            
+            // Also refresh matches list
+            setTimeout(() => {
+                if (selectedLeague && selectedLeague !== 'all') {
+                    fetchMatchesByLeague(selectedLeague);
+                }
+            }, 1000);
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
@@ -1034,6 +1078,13 @@ export default function AllMatches() {
 
             toast.success('Match restored successfully');
             fetchLeagueDetails(true);
+            
+            // Also refresh matches list
+            setTimeout(() => {
+                if (selectedLeague && selectedLeague !== 'all') {
+                    fetchMatchesByLeague(selectedLeague);
+                }
+            }, 1000);
 
         } catch (error) {
             console.error('Restore failed:', error);
@@ -1654,6 +1705,87 @@ export default function AllMatches() {
                         </Box>
                     </Box>
                 </Box>
+
+                {/* Filter Buttons - Only show when league is selected and has matches */}
+                {selectedLeague !== 'all' && matches.length > 0 && (
+                    <Box sx={{
+                        display: 'flex',
+                        gap: 2,
+                        mb: 3,
+                        justifyContent: 'center',
+                        flexWrap: 'wrap'
+                    }}>
+                        <Button
+                            variant={matchFilter === 'all' ? 'contained' : 'outlined'}
+                            onClick={() => setMatchFilter('all')}
+                            sx={{
+                                backgroundColor: matchFilter === 'all' ? '#0388E3' : 'transparent',
+                                color: matchFilter === 'all' ? 'white' : '#0388E3',
+                                borderColor: '#0388E3',
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                px: { xs: 2, sm: 3 },
+                                py: 1,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                '&:hover': {
+                                    backgroundColor: matchFilter === 'all' ? '#0369a1' : 'rgba(3, 136, 227, 0.1)',
+                                    borderColor: '#0388E3',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                            }}
+                        >
+                            All Matches
+                        </Button>
+
+                        <Button
+                            variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
+                            onClick={() => setMatchFilter('fixtures')}
+                            sx={{
+                                backgroundColor: matchFilter === 'fixtures' ? '#4CAF50' : 'transparent',
+                                color: matchFilter === 'fixtures' ? 'white' : '#4CAF50',
+                                borderColor: '#4CAF50',
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                px: { xs: 2, sm: 3 },
+                                py: 1,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                '&:hover': {
+                                    backgroundColor: matchFilter === 'fixtures' ? '#45a049' : 'rgba(76, 175, 80, 0.1)',
+                                    borderColor: '#4CAF50',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                            }}
+                        >
+                            Fixtures
+                        </Button>
+
+                        <Button
+                            variant={matchFilter === 'results' ? 'contained' : 'outlined'}
+                            onClick={() => setMatchFilter('results')}
+                            sx={{
+                                backgroundColor: matchFilter === 'results' ? '#FA5836' : 'transparent',
+                                color: matchFilter === 'results' ? 'white' : '#FA5836',
+                                borderColor: '#FA5836',
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                px: { xs: 2, sm: 3 },
+                                py: 1,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                '&:hover': {
+                                    backgroundColor: matchFilter === 'results' ? '#e54d2e' : 'rgba(250, 88, 54, 0.1)',
+                                    borderColor: '#FA5836',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                            }}
+                        >
+                            Results
+                        </Button>
+                    </Box>
+                )}
+
                 {/* Match Cards */}
                 <Box sx={{
                     display: 'grid',
@@ -1694,8 +1826,28 @@ export default function AllMatches() {
                                 No matches found in {selectedLeagueName}
                             </Typography>
                         </Paper>
+                    ) : filteredMatches.length === 0 ? (
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                borderRadius: 3,
+                                p: 4,
+                                textAlign: 'center',
+                                color: '#b0bec5',
+                            }}
+                        >
+                            <Typography variant="h6">No matches found</Typography>
+                            <Typography variant="body2">
+                                {matchFilter === 'fixtures' 
+                                    ? 'No scheduled fixtures found in this league'
+                                    : matchFilter === 'results'
+                                    ? 'No completed matches found in this league'
+                                    : 'No matches found in this league'}
+                            </Typography>
+                        </Paper>
                     ) : (
-                        sortedMatches.map((match) => {
+                        filteredMatches.map((match) => {
                             // const { availableCount, pendingCount } = getAvailabilityCounts(match);
                             // Use the latest availableUsers for this match to determine if the user is available
                             const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
@@ -2568,6 +2720,14 @@ export default function AllMatches() {
                 initialLeagueId={selectedLeagueIdForDialog || undefined}
                 initialMatchId={selectedMatchIdForDialog || undefined}
                 showAdminGoalsSection={shouldShowAdminGoals}
+                onSave={() => {
+                    // Auto-refresh matches after saving match results
+                    setTimeout(() => {
+                        if (selectedLeague && selectedLeague !== 'all') {
+                            fetchMatchesByLeague(selectedLeague);
+                        }
+                    }, 1000);
+                }}
             />
 
             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
@@ -2781,45 +2941,49 @@ export default function AllMatches() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // 'use client';
 
 // import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 // import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 // import { useAuth } from '@/lib/hooks';
 // import React, { useEffect, useState, useCallback } from 'react';
-// import PlayerCard from '@/Components/playercard/playercard';
+// import dynamic from 'next/dynamic';
 // import Image from 'next/image';
 // import homeTeamIcon from '@/Components/images/matches.png';
 // import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 // import { Card, CardContent } from '@mui/material';
 // import Link from 'next/link';
-// import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 // import { cacheManager } from "@/lib/cacheManager"
-// import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 // import { LeaderboardResponse } from '@/types/api';
 // import toast from 'react-hot-toast';
 // import { useRouter } from 'next/navigation';
-// import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 // import CloseIcon from '@mui/icons-material/Close';
-// import CloseButton from '@/Components/CloseButton';
+
+// // Lazy load heavy components
+// const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
+//   loading: () => <CircularProgress size={24} />,
+//   ssr: false
+// });
+
+// const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
+//   loading: () => <CircularProgress />,
+//   ssr: false
+// });
+
+// const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog'), {
+//   loading: () => <CircularProgress />,
+//   ssr: false
+// });
+
+// const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
+//   loading: () => <CircularProgress />,
+//   ssr: false
+// });
+
+// const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
+//   loading: () => <></>,
+//   ssr: false
+// });
 
 // type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
@@ -2944,7 +3108,6 @@ export default function AllMatches() {
 //     const [matches, setMatches] = useState<Match[]>([]);
 //     const [leagues, setLeagues] = useState<League[]>([]);
 //     const [selectedLeague, setSelectedLeague] = useState<string>('all');
-//     const [matchFilter, setMatchFilter] = useState<'all' | 'fixtures' | 'results'>('all');
 //     const [loading, setLoading] = useState(true);
 //     const [teamModalOpen, setTeamModalOpen] = useState(false);
 //     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -3379,16 +3542,7 @@ export default function AllMatches() {
 //                     });
 //                 }
 //                 setStatsDialogOpen(false);
-                
-//                 // Auto-refresh matches after 1 second to get latest data
-//                 setTimeout(() => {
-//                     if (selectedLeague && selectedLeague !== 'all') {
-//                         fetchMatchesByLeague(selectedLeague);
-//                     }
-//                 }, 1000);
-                
 //                 // Optionally show a success message
-//                 toast.success('Stats saved successfully');
 //             }
 //         } catch (err: unknown) {
 //             console.error(err instanceof Error ? err.message : String(err));
@@ -3445,13 +3599,6 @@ export default function AllMatches() {
 //                     m.id === matchId ? { ...m, availableUsers: data.match.availableUsers } : m
 //                 ));
 //                 setToastMessage(action === 'available' ? 'You are now available for this match.' : 'You are now unavailable for this match.');
-                
-//                 // Auto-refresh matches after 1 second to get latest data
-//                 setTimeout(() => {
-//                     if (selectedLeague && selectedLeague !== 'all') {
-//                         fetchMatchesByLeague(selectedLeague);
-//                     }
-//                 }, 1000);
 //             } else {
 //                 setToastMessage('Availability updated.');
 //             }
@@ -3577,20 +3724,6 @@ export default function AllMatches() {
 //         return [...matches].sort(compareMatchesDesc);
 //     }, [matches]);
 
-//     // Filter matches based on selected filter
-//     const filteredMatches = React.useMemo(() => {
-//         if (matchFilter === 'fixtures') {
-//             // Show only SCHEDULED matches
-//             return sortedMatches.filter(m => m.status === 'SCHEDULED');
-//         }
-//         if (matchFilter === 'results') {
-//             // Show only completed matches (RESULT_PUBLISHED or RESULT_UPLOADED)
-//             return sortedMatches.filter(m => m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_UPLOADED');
-//         }
-//         // 'all' - show everything
-//         return sortedMatches;
-//     }, [sortedMatches, matchFilter]);
-
 //     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
 //     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
@@ -3705,13 +3838,6 @@ export default function AllMatches() {
 
 //             // Refresh league data to ensure sync without global spinner
 //             fetchLeagueDetails(true);
-            
-//             // Also refresh matches list
-//             setTimeout(() => {
-//                 if (selectedLeague && selectedLeague !== 'all') {
-//                     fetchMatchesByLeague(selectedLeague);
-//                 }
-//             }, 1000);
 
 //         } catch (e) {
 //             console.error('Delete/Archive operation failed:', e);
@@ -3851,13 +3977,6 @@ export default function AllMatches() {
 
 //             toast.success('Match restored successfully');
 //             fetchLeagueDetails(true);
-            
-//             // Also refresh matches list
-//             setTimeout(() => {
-//                 if (selectedLeague && selectedLeague !== 'all') {
-//                     fetchMatchesByLeague(selectedLeague);
-//                 }
-//             }, 1000);
 
 //         } catch (error) {
 //             console.error('Restore failed:', error);
@@ -4478,87 +4597,6 @@ export default function AllMatches() {
 //                         </Box>
 //                     </Box>
 //                 </Box>
-
-//                 {/* Filter Buttons - Only show when league is selected and has matches */}
-//                 {selectedLeague !== 'all' && matches.length > 0 && (
-//                     <Box sx={{
-//                         display: 'flex',
-//                         gap: 2,
-//                         mb: 3,
-//                         justifyContent: 'center',
-//                         flexWrap: 'wrap'
-//                     }}>
-//                         <Button
-//                             variant={matchFilter === 'all' ? 'contained' : 'outlined'}
-//                             onClick={() => setMatchFilter('all')}
-//                             sx={{
-//                                 backgroundColor: matchFilter === 'all' ? '#0388E3' : 'transparent',
-//                                 color: matchFilter === 'all' ? 'white' : '#0388E3',
-//                                 borderColor: '#0388E3',
-//                                 fontWeight: 'bold',
-//                                 fontSize: { xs: '0.8rem', sm: '0.9rem' },
-//                                 px: { xs: 2, sm: 3 },
-//                                 py: 1,
-//                                 borderRadius: 2,
-//                                 textTransform: 'none',
-//                                 '&:hover': {
-//                                     backgroundColor: matchFilter === 'all' ? '#0369a1' : 'rgba(3, 136, 227, 0.1)',
-//                                     borderColor: '#0388E3',
-//                                 },
-//                                 transition: 'all 0.2s ease-in-out',
-//                             }}
-//                         >
-//                             All Matches
-//                         </Button>
-
-//                         <Button
-//                             variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
-//                             onClick={() => setMatchFilter('fixtures')}
-//                             sx={{
-//                                 backgroundColor: matchFilter === 'fixtures' ? '#4CAF50' : 'transparent',
-//                                 color: matchFilter === 'fixtures' ? 'white' : '#4CAF50',
-//                                 borderColor: '#4CAF50',
-//                                 fontWeight: 'bold',
-//                                 fontSize: { xs: '0.8rem', sm: '0.9rem' },
-//                                 px: { xs: 2, sm: 3 },
-//                                 py: 1,
-//                                 borderRadius: 2,
-//                                 textTransform: 'none',
-//                                 '&:hover': {
-//                                     backgroundColor: matchFilter === 'fixtures' ? '#45a049' : 'rgba(76, 175, 80, 0.1)',
-//                                     borderColor: '#4CAF50',
-//                                 },
-//                                 transition: 'all 0.2s ease-in-out',
-//                             }}
-//                         >
-//                             Fixtures
-//                         </Button>
-
-//                         <Button
-//                             variant={matchFilter === 'results' ? 'contained' : 'outlined'}
-//                             onClick={() => setMatchFilter('results')}
-//                             sx={{
-//                                 backgroundColor: matchFilter === 'results' ? '#FA5836' : 'transparent',
-//                                 color: matchFilter === 'results' ? 'white' : '#FA5836',
-//                                 borderColor: '#FA5836',
-//                                 fontWeight: 'bold',
-//                                 fontSize: { xs: '0.8rem', sm: '0.9rem' },
-//                                 px: { xs: 2, sm: 3 },
-//                                 py: 1,
-//                                 borderRadius: 2,
-//                                 textTransform: 'none',
-//                                 '&:hover': {
-//                                     backgroundColor: matchFilter === 'results' ? '#e54d2e' : 'rgba(250, 88, 54, 0.1)',
-//                                     borderColor: '#FA5836',
-//                                 },
-//                                 transition: 'all 0.2s ease-in-out',
-//                             }}
-//                         >
-//                             Results
-//                         </Button>
-//                     </Box>
-//                 )}
-
 //                 {/* Match Cards */}
 //                 <Box sx={{
 //                     display: 'grid',
@@ -4599,28 +4637,8 @@ export default function AllMatches() {
 //                                 No matches found in {selectedLeagueName}
 //                             </Typography>
 //                         </Paper>
-//                     ) : filteredMatches.length === 0 ? (
-//                         <Paper
-//                             elevation={0}
-//                             sx={{
-//                                 background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-//                                 borderRadius: 3,
-//                                 p: 4,
-//                                 textAlign: 'center',
-//                                 color: '#b0bec5',
-//                             }}
-//                         >
-//                             <Typography variant="h6">No matches found</Typography>
-//                             <Typography variant="body2">
-//                                 {matchFilter === 'fixtures' 
-//                                     ? 'No scheduled fixtures found in this league'
-//                                     : matchFilter === 'results'
-//                                     ? 'No completed matches found in this league'
-//                                     : 'No matches found in this league'}
-//                             </Typography>
-//                         </Paper>
 //                     ) : (
-//                         filteredMatches.map((match) => {
+//                         sortedMatches.map((match) => {
 //                             // const { availableCount, pendingCount } = getAvailabilityCounts(match);
 //                             // Use the latest availableUsers for this match to determine if the user is available
 //                             const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
@@ -5493,14 +5511,6 @@ export default function AllMatches() {
 //                 initialLeagueId={selectedLeagueIdForDialog || undefined}
 //                 initialMatchId={selectedMatchIdForDialog || undefined}
 //                 showAdminGoalsSection={shouldShowAdminGoals}
-//                 onSave={() => {
-//                     // Auto-refresh matches after saving match results
-//                     setTimeout(() => {
-//                         if (selectedLeague && selectedLeague !== 'all') {
-//                             fetchMatchesByLeague(selectedLeague);
-//                         }
-//                     }, 1000);
-//                 }}
 //             />
 
 //             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
@@ -5676,3 +5686,10 @@ export default function AllMatches() {
 //         </Box>
 //     );
 // }
+
+
+
+
+
+
+
