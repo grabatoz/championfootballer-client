@@ -690,33 +690,33 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
             {/* Active (checked) color set to orange (#E56A16) */}
             <FormControl>
-              <Typography sx={{ color: "#fff" }}>Gender</Typography>
+              <Typography sx={{ color: "black" }}>Gender</Typography>
               <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
                 <FormControlLabel
                   value="male"
                   control={
                     <Radio
                       sx={{
-                        color: "#fff",
+                        color: "black",
                         "&.Mui-checked": { color: "#E56A16" },
                       }}
                     />
                   }
                   label="Male"
-                  sx={{ color: "#fff" }}
+                  sx={{ color: "black" }}
                 />
                 <FormControlLabel
                   value="female"
                   control={
                     <Radio
                       sx={{
-                        color: "#fff",
+                        color: "black",
                         "&.Mui-checked": { color: "#E56A16" },
                       }}
                     />
                   }
                   label="Female"
-                  sx={{ color: "#fff" }}
+                  sx={{ color: "black" }}
                 />
               </RadioGroup>
             </FormControl>
@@ -727,16 +727,16 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                   sx={{
-                    color: "#fff",
+                    color: "black",
                     "&.Mui-checked": { color: "#E56A16" },
                   }}
                 />
               }
               // Label contains a link to the terms page
               label={
-                <span>
+                <span className="text-black" >
                   I accept the{" "}
-                  <Link href="/terms" style={{ color: "#fff", textDecoration: "underline" }}>
+                  <Link href="/terms" style={{ color: "black", textDecoration: "underline" }}>
                     terms and conditions
                   </Link>
                 </span>
