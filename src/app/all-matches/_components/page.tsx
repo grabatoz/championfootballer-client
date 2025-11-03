@@ -61,14 +61,14 @@ import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
 import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
-import { LeaderboardResponse } from '@/types/api';
+// import { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import TeamPreviewScreen from '@/Components/viewteam/viewteam';
 import CloseIcon from '@mui/icons-material/Close';
 import CloseButton from '@/Components/CloseButton';
 
-type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
+// type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 
 interface Match {
