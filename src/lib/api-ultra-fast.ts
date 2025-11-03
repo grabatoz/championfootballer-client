@@ -23,6 +23,18 @@ interface InstantCache<T> {
 const instantCache = new Map<string, InstantCache<unknown>>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const STORAGE_KEY = 'cf_instant_cache';
+const CHUNK_SIZE = 50; // Items per chunk for large arrays
+
+// Chunk-based cache for progressive loading
+interface ChunkedCache<T> {
+  chunks: T[][];
+  totalItems: number;
+  lastUpdate: number;
+  expires: number;
+  isComplete: boolean;
+}
+
+const chunkedCache = new Map<string, ChunkedCache<unknown>>();
 
 // Load cache from localStorage synchronously on init
 if (typeof window !== 'undefined') {
@@ -38,6 +50,19 @@ if (typeof window !== 'undefined') {
       });
       console.log(`⚡ Instant cache loaded: ${instantCache.size} items`);
     }
+
+    // Load chunked cache
+    const chunkedStored = localStorage.getItem(STORAGE_KEY + '_chunked');
+    if (chunkedStored) {
+      const parsed = JSON.parse(chunkedStored);
+      Object.entries(parsed).forEach(([key, value]) => {
+        const cache = value as ChunkedCache<unknown>;
+        if (Date.now() < cache.expires) {
+          chunkedCache.set(key, cache);
+        }
+      });
+      console.log(`📦 Chunked cache loaded: ${chunkedCache.size} collections`);
+    }
   } catch (e) {
     console.error('Cache load error:', e);
   }
@@ -51,6 +76,7 @@ function saveCache() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     try {
+      // Save regular instant cache
       const cacheObj: Record<string, InstantCache<unknown>> = {};
       instantCache.forEach((value, key) => {
         if (Date.now() < value.expires) {
@@ -58,6 +84,17 @@ function saveCache() {
         }
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheObj));
+
+      // Save chunked cache separately
+      const chunkedObj: Record<string, ChunkedCache<unknown>> = {};
+      chunkedCache.forEach((value, key) => {
+        if (Date.now() < value.expires) {
+          chunkedObj[key] = value;
+        }
+      });
+      localStorage.setItem(STORAGE_KEY + '_chunked', JSON.stringify(chunkedObj));
+      
+      console.log(`💾 Cache saved: ${instantCache.size} instant + ${chunkedCache.size} chunked`);
     } catch (e) {
       console.error('Cache save error:', e);
     }
@@ -82,6 +119,51 @@ function setCacheInstant<T>(key: string, data: T, ttl: number = CACHE_TTL) {
     timestamp: Date.now()
   });
   saveCache();
+}
+
+// Progressive chunk-based cache setters
+function setCacheChunked<T>(key: string, items: T[], ttl: number = CACHE_TTL) {
+  const chunks: T[][] = [];
+  
+  // Split into chunks
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    chunks.push(items.slice(i, i + CHUNK_SIZE));
+  }
+  
+  chunkedCache.set(key, {
+    chunks,
+    totalItems: items.length,
+    lastUpdate: Date.now(),
+    expires: Date.now() + ttl,
+    isComplete: true
+  });
+  
+  // Also save flat version for instant retrieval
+  setCacheInstant(key, items, ttl);
+  
+  console.log(`📦 Chunked cache set: ${key} (${chunks.length} chunks, ${items.length} items)`);
+}
+
+// Get chunked cache progressively (returns chunks one by one)
+function* getCacheChunkedGenerator<T>(key: string): Generator<T[], void, void> {
+  const cached = chunkedCache.get(key);
+  if (cached && Date.now() < cached.expires) {
+    console.log(`📦 Chunked cache hit: ${key} (${cached.chunks.length} chunks)`);
+    for (const chunk of cached.chunks) {
+      yield chunk as T[];
+    }
+  }
+}
+
+// Get all chunks at once (flattened)
+function getCacheChunkedAll<T>(key: string): T[] | null {
+  const cached = chunkedCache.get(key);
+  if (cached && Date.now() < cached.expires) {
+    const flattened = (cached.chunks as T[][]).flat();
+    console.log(`📦 Chunked cache hit (flat): ${key} (${flattened.length} items)`);
+    return flattened;
+  }
+  return null;
 }
 
 // Event system for real-time cache updates
@@ -251,10 +333,12 @@ export const authAPI = {
       Cookies.remove('token');
       Cookies.remove('auth_token');
       
-      // Clear all caches
+      // Clear all caches (instant + chunked)
       instantCache.clear();
+      chunkedCache.clear();
       if (typeof window !== 'undefined') {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY + '_chunked');
       }
       
       return { success: true, message: 'Logged out successfully' };
@@ -268,14 +352,22 @@ export const authAPI = {
   }
 };
 
-// LEAGUES API - INSTANT CACHE
+// LEAGUES API - INSTANT CACHE + CHUNKED
 export const leagueAPI = {
   /**
    * Get all leagues - instantly from cache if available
    * Returns cached data immediately (0ms), updates in background
    */
   getAll: async (): Promise<LeaguesResponse> => {
-    return await ultraFastFetch<LeaguesResponse>('/leagues', {}, 'leagues_all');
+    const response = await ultraFastFetch<LeaguesResponse>('/leagues', {}, 'leagues_all');
+    
+    // If response has leagues array, save in chunks for progressive loading
+    if (response?.leagues && Array.isArray(response.leagues)) {
+      setCacheChunked('leagues_chunked', response.leagues);
+      console.log(`📦 Leagues cached in chunks: ${response.leagues.length} total`);
+    }
+    
+    return response;
   },
 
   /**
@@ -288,11 +380,30 @@ export const leagueAPI = {
   },
 
   /**
+   * Get leagues in chunks progressively (for smooth UI rendering)
+   * Returns a generator that yields chunks of leagues
+   */
+  getAllChunked: function* (): Generator<League[], void, void> {
+    const generator = getCacheChunkedGenerator<League>('leagues_chunked');
+    for (const chunk of generator) {
+      yield chunk;
+    }
+  },
+
+  /**
+   * Get all chunked leagues at once (flattened array)
+   */
+  getAllChunkedFlat: (): League[] => {
+    return getCacheChunkedAll<League>('leagues_chunked') || leagueAPI.getAllInstant();
+  },
+
+  /**
    * Invalidate leagues cache
    * Call this after creating/updating/deleting a league
    */
   invalidateCache: () => {
     instantCache.delete('leagues_all');
+    chunkedCache.delete('leagues_chunked');
     dispatchCacheEvent('leagues_all', null);
   },
 
@@ -387,14 +498,43 @@ export const leagueAPI = {
   }
 };
 
-// MATCHES API - INSTANT CACHE
+// MATCHES API - INSTANT CACHE + CHUNKED
 export const matchAPI = {
   getAll: async (): Promise<MatchesResponse> => {
-    return await ultraFastFetch<MatchesResponse>('/matches', {}, 'matches_all');
+    const response = await ultraFastFetch<MatchesResponse>('/matches', {}, 'matches_all');
+    
+    // Save matches in chunks
+    if (response?.matches && Array.isArray(response.matches)) {
+      setCacheChunked('matches_chunked', response.matches);
+      console.log(`📦 Matches cached in chunks: ${response.matches.length} total`);
+    }
+    
+    return response;
+  },
+
+  getAllChunked: function* (): Generator<Match[], void, void> {
+    const generator = getCacheChunkedGenerator<Match>('matches_chunked');
+    for (const chunk of generator) {
+      yield chunk;
+    }
   },
 
   getByLeague: async (leagueId: string): Promise<MatchesResponse> => {
-    return await ultraFastFetch<MatchesResponse>(`/matches?leagueId=${leagueId}`, {}, `matches_league_${leagueId}`);
+    const response = await ultraFastFetch<MatchesResponse>(`/matches?leagueId=${leagueId}`, {}, `matches_league_${leagueId}`);
+    
+    // Save league matches in chunks
+    if (response?.matches && Array.isArray(response.matches)) {
+      setCacheChunked(`matches_league_${leagueId}_chunked`, response.matches);
+    }
+    
+    return response;
+  },
+
+  getByLeagueChunked: function* (leagueId: string): Generator<Match[], void, void> {
+    const generator = getCacheChunkedGenerator<Match>(`matches_league_${leagueId}_chunked`);
+    for (const chunk of generator) {
+      yield chunk;
+    }
   },
 
   create: async (match: CreateMatchDTO): Promise<ApiResponse<Match>> => {
@@ -498,10 +638,25 @@ export const matchAPI = {
   }
 };
 
-// PLAYERS API - INSTANT CACHE
+// PLAYERS API - INSTANT CACHE + CHUNKED
 export const playerAPI = {
   getAll: async (): Promise<PlayersResponse> => {
-    return await ultraFastFetch<PlayersResponse>('/players', {}, 'players_all');
+    const response = await ultraFastFetch<PlayersResponse>('/players', {}, 'players_all');
+    
+    // Save players in chunks
+    if (response?.players && Array.isArray(response.players)) {
+      setCacheChunked('players_chunked', response.players);
+      console.log(`📦 Players cached in chunks: ${response.players.length} total`);
+    }
+    
+    return response;
+  },
+
+  getAllChunked: function* (): Generator<User[], void, void> {
+    const generator = getCacheChunkedGenerator<User>('players_chunked');
+    for (const chunk of generator) {
+      yield chunk;
+    }
   },
 
   getStats: async (playerId: string): Promise<PlayerStatsResponse> => {
