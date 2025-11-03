@@ -15,13 +15,19 @@ import {
   TableCell,
   ToggleButtonGroup,
   ToggleButton,
-  CardContent
+  CardContent,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  SelectChangeEvent,
+  Avatar
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { fetchPlayerStats } from '@/lib/features/playerStatsSlice';
+import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
 import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { styled } from '@mui/material/styles';
@@ -98,6 +104,8 @@ interface LeagueMatch {
   team1Id?: string;
   team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
   team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
+  // Added for filtering by selected league
+  leagueId?: string;
 }
 interface LeagueWithMatches {
   id: string;
@@ -242,14 +250,57 @@ function calcPoints(ps: PlayerMatchStats | undefined): number {
 
 // ---------- COMPONENT ----------
 export default function CareerPage() {
-  const { user } = useAuth();
+  // ...existing code...
+  // Make sure data is initialized before leaguesForYear
+  const { data: rawData, filters } = useSelector((s: RootState) => s.playerStats);
+  const data: PlayerStatsData | undefined = rawData ?? undefined;
+
+  // Ensure leaguesForYear is defined for dropdown usage
+  const leaguesForYear = useMemo(() => {
+    const list = (data?.leagues || []) as any[];
+    if (!list.length) return [];
+    const effectiveYear = filters.year && filters.year !== 'all' ? filters.year : String((() => {
+      const years = list.flatMap((l: any) => Array.isArray(l.matches) ? l.matches : []).map((m: any) => dayjs(m.date).year());
+      return years.length ? Math.max(...years) : dayjs().year();
+    })());
+    return list.filter(l => Array.isArray(l.matches) && l.matches.some((m: any) => dayjs(m.date).year().toString() === effectiveYear));
+  }, [data, filters.year]);
+  const { user, token } = useAuth();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const dispatch = useDispatch<AppDispatch>();
-  const { data: rawData, filters } = useSelector((s: RootState) => s.playerStats);
-  // Normalize null -> undefined to match internal typing expectations
-  const data: PlayerStatsData | undefined = rawData ?? undefined;
+  // ...existing code...
+
+  // Get league and year from URL params (passed from player stats page)
+  const urlLeagueId = searchParams?.get('leagueId');
+  const urlYear = searchParams?.get('year');
+
+  // State for available leagues
+  // Use leagues from Redux state if available, fallback to local state
+  const leaguesFromRedux = useSelector((state: RootState) => state.playerStats.data?.leagues) as LeagueWithMatches[] | undefined;
+  const [availableLeagues, setAvailableLeagues] = useState<LeagueWithMatches[]>([]);
+
+  // Initialize filters from URL params on mount
+  useEffect(() => {
+    if (urlLeagueId) {
+      dispatch(setLeagueFilter(urlLeagueId));
+    }
+    if (urlYear) {
+      dispatch(setYearFilter(urlYear));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Extract available leagues from Redux state or data
+  useEffect(() => {
+    if (leaguesFromRedux && leaguesFromRedux.length > 0) {
+      setAvailableLeagues(leaguesFromRedux);
+    } else if (data?.leagues) {
+      setAvailableLeagues(data.leagues as LeagueWithMatches[]);
+    }
+  }, [leaguesFromRedux, data]);
 
   const loading = !data;
 
@@ -262,9 +313,16 @@ export default function CareerPage() {
   const matches: LeagueMatch[] = useMemo(() => {
     const d: PlayerStatsData | undefined = data;
     return (d?.leagues || [])
-      .flatMap((l: LeagueWithMatches) => l.matches || [])
+      .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
   }, [data]);
+
+  // Matches filtered by selected league and year (for "Your Stats")
+  const filteredMatches = useMemo(() => {
+    const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : m.leagueId === filters.leagueId;
+    const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
+    return matches.filter(m => byLeague(m) && byYear(m));
+  }, [matches, filters.leagueId, filters.year]);
 
   // ------------- NEW STATE (grouping + range) -------------
   const [groupMode, setGroupMode] = useState<'auto'|'weekly'|'monthly'>('auto');
@@ -272,7 +330,8 @@ export default function CareerPage() {
 
   // ------------- AGGREGATION (supports forced modes) -------------
   const { performanceData, groupingType } = useMemo(() => {
-    if (!matches.length) {
+    const base = filteredMatches;
+    if (!base.length) {
       return {
         performanceData: [] as PerformanceRow[],
         groupingType: 'weekly' as const,
@@ -281,7 +340,7 @@ export default function CareerPage() {
 
     const buildWeekly = (): PerformanceRow[] => {
       const map = new Map<string, PerformanceRow>();
-      matches.forEach(m => {
+      base.forEach(m => {
         const weekStart = dayjs(m.date).startOf('week');
         const key = weekStart.format('YYYY-MM-DD');
         if (!map.has(key)) {
@@ -337,7 +396,7 @@ export default function CareerPage() {
 
     const buildMonthly = (): PerformanceRow[] => {
       const map = new Map<string, PerformanceRow>();
-      matches.forEach(m => {
+      base.forEach(m => {
         const monthStart = dayjs(m.date).startOf('month');
         const key = monthStart.format('YYYY-MM');
         if (!map.has(key)) {
@@ -419,7 +478,7 @@ export default function CareerPage() {
         groupingType: 'monthly' as const,
       };
     }
-  }, [matches, groupMode]);
+  }, [filteredMatches, groupMode]);
 
   // ------------- RANGE FILTER -------------
   const chartData = useMemo(() => {
@@ -446,7 +505,7 @@ export default function CareerPage() {
       Penalties: 0,
       'MOTM Votes': 0
     };
-    matches.forEach(m => {
+    filteredMatches.forEach(m => {
       const ps = m.playerStats || {};
       total.Goals += ps.goals || 0;
       total.Assists += ps.assists || 0;
@@ -476,7 +535,7 @@ export default function CareerPage() {
       value,
       scaled: Math.round((value / maxVal) * 100)
     }));
-  }, [matches]);
+  }, [filteredMatches]);
 
   // Compute top strengths as the most effective ways points are earned
   // We map player match stats into contribution buckets, then rank by scaled value
@@ -513,7 +572,7 @@ export default function CareerPage() {
 
   // --- Focus Area suggestion ---
   const focusSuggestion = useMemo(() => {
-    if (!matches.length || !influence.length) {
+    if (!filteredMatches.length || !influence.length) {
       return 'Play a few more games to unlock a personalized focus area.';
     }
     const actionMap: Record<string, string> = {
@@ -538,13 +597,13 @@ export default function CareerPage() {
     }
     const metricName = target.metric === 'MOTM Votes' ? 'MOTM votes' : target.metric.toLowerCase();
     return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
-  }, [matches.length, influence, strengths]);
+  }, [filteredMatches.length, influence, strengths]);
 
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
     console.log('Debug - All matches for impact:', matches);
     
-    const played = [...matches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+    const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
     const last10 = played.slice(-10);
     const prev10 = played.slice(-20, -10);
 
@@ -595,7 +654,52 @@ export default function CareerPage() {
     };
 
     return { last: agg(last10), prev: agg(prev10) };
-  }, [matches]);
+  }, [filteredMatches]);
+
+  // Aggregated stats for current filters ("Your Stats")
+  const yourStats = useMemo(() => {
+    const arr = filteredMatches;
+    const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
+    const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
+
+    const n = arr.length || 0;
+    let wins = 0, draws = 0, losses = 0;
+
+    // Prefer explicit per-player result first
+    wins = count(arr, ps => ps.result === 'W');
+    draws = count(arr, ps => ps.result === 'D');
+    losses = count(arr, ps => ps.result === 'L');
+
+    // If not available, attempt to use match fields
+    if (wins === 0 && draws === 0 && losses === 0 && n > 0) {
+      arr.forEach(m => {
+        if (m.result) {
+          const r = String(m.result).toUpperCase();
+          if (r === 'W') wins++; else if (r === 'D') draws++; else if (r === 'L') losses++;
+          return;
+        }
+        if (m.team1Score != null && m.team2Score != null) {
+          const isTeam1 = m.team1Players?.some(p => p.id === String(playerId)) || m.team1Id === String(playerId);
+          if (m.team1Score === m.team2Score) draws++;
+          else if ((isTeam1 && m.team1Score > m.team2Score) || (!isTeam1 && m.team2Score > m.team1Score)) wins++;
+          else losses++;
+          return;
+        }
+        if (m.homeTeamGoals != null && m.awayTeamGoals != null) {
+          const isHome = m.homeTeamId === String(playerId);
+          if (m.homeTeamGoals === m.awayTeamGoals) draws++;
+          else if ((isHome && m.homeTeamGoals > m.awayTeamGoals) || (!isHome && m.awayTeamGoals > m.homeTeamGoals)) wins++;
+          else losses++;
+        }
+      });
+    }
+
+    const winRate = n ? (wins / n) * 100 : 0;
+    const impactAvg = n ? sum(arr, ps => ps.impact || 0) / n : 0;
+    const motmVotes = sum(arr, ps => ps.motmVotes || 0);
+    const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
+    return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga };
+  }, [filteredMatches, playerId]);
 
   // Enhanced positive impact messages with better detection
   // const positiveImpactMsgs = useMemo(() => {
@@ -648,7 +752,10 @@ export default function CareerPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, {
+          cache: 'no-store',
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+        });
         if (!res.ok) {
           console.warn('Player name fetch failed:', res.status, res.statusText);
           return;
@@ -666,7 +773,7 @@ export default function CareerPage() {
     })();
 
     return () => { aborted = true; };
-  }, [playerId, playerNameFromStats]);
+  }, [playerId, playerNameFromStats, token]);
 
   // Real Influence data from backend
   const influenceRadarData = useMemo(() => {
@@ -679,7 +786,7 @@ export default function CareerPage() {
       'MOTM Votes': 0
     };
 
-    matches.forEach(match => {
+    filteredMatches.forEach(match => {
       const ps = match.playerStats || {};
       playerTotals.Goals += ps.goals || 0;
       playerTotals.Assists += ps.assists || 0;
@@ -689,7 +796,7 @@ export default function CareerPage() {
     });
 
     // Calculate per-game averages for player
-    const matchCount = Math.max(matches.length, 1);
+    const matchCount = Math.max(filteredMatches.length, 1);
     const playerAvgPerGame = {
       Goals: +(playerTotals.Goals / matchCount).toFixed(1),
       Assists: +(playerTotals.Assists / matchCount).toFixed(1),
@@ -714,7 +821,7 @@ export default function CareerPage() {
       [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
       'League Avg': +(leagueAvg[metric as keyof typeof leagueAvg]).toFixed(1)
     }));
-  }, [matches, playerName]);
+  }, [filteredMatches, playerName]);
 
   // Calculate actual win/loss/draw data from backend matches
   const actualWinLossData = useMemo(() => {
@@ -722,125 +829,61 @@ export default function CareerPage() {
     let losses = 0;
     let draws = 0;
 
-    console.log('Debug - Raw data:', data);
-    console.log('Debug - Matches:', matches);
+    const arr = filteredMatches;
+    arr.forEach(match => {
+      // Prefer explicit per-player result
+      const r = match.playerStats?.result || match.result || match.outcome;
+      if (r) {
+        const up = String(r).toUpperCase();
+        if (up === 'W' || up === 'WIN') wins++;
+        else if (up === 'L' || up === 'LOSS' || up === 'LOSE') losses++;
+        else if (up === 'D' || up === 'DRAW') draws++;
+        return;
+      }
+      // Try team score comparisons
+      if (match.team1Score != null && match.team2Score != null) {
+        const isTeam1 = match.team1Players?.some(p => p.id === String(playerId)) || match.team1Id === String(playerId);
+        if (match.team1Score === match.team2Score) draws++;
+        else if ((isTeam1 && match.team1Score > match.team2Score) || (!isTeam1 && match.team2Score > match.team1Score)) wins++;
+        else losses++;
+        return;
+      }
+      if (match.homeTeamGoals != null && match.awayTeamGoals != null) {
+        const isHome = match.homeTeamId === String(playerId);
+        if (match.homeTeamGoals === match.awayTeamGoals) draws++;
+        else if ((isHome && match.homeTeamGoals > match.awayTeamGoals) || (!isHome && match.awayTeamGoals > match.homeTeamGoals)) wins++;
+        else losses++;
+      }
+    });
 
-    // Real logic: Check each match and determine win/loss/draw
-    if (data?.leagues) {
-      data.leagues.forEach(league => {
-        league.matches?.forEach(match => {
-          console.log('Debug - Single match:', match);
-          
-          // Method 1: If match has direct result field
-          if (match.result) {
-            switch (match.result.toUpperCase()) {
-              case 'W':
-              case 'WIN':
-                wins++;
-                break;
-              case 'L':
-              case 'LOSS':
-              case 'LOSE':
-                losses++;
-                break;
-              case 'D':
-              case 'DRAW':
-                draws++;
-                break;
-            }
-          }
-          // Method 2: If match has home/away scores
-          else if (match.homeTeamGoals !== undefined && match.awayTeamGoals !== undefined) {
-            const homeGoals = match.homeTeamGoals;
-            const awayGoals = match.awayTeamGoals;
-            
-            // Need to determine if current player is home or away team
-            const currentPlayerId = playerId;
-            const isHomeTeam = match.homeTeamId === currentPlayerId;
-            
-            if (homeGoals === awayGoals) {
-              draws++;
-            } else if ((isHomeTeam && homeGoals > awayGoals) || (!isHomeTeam && awayGoals > homeGoals)) {
-              wins++;
-            } else {
-              losses++;
-            }
-          }
-          // Method 3: If match has team scores
-          else if (match.team1Score !== undefined && match.team2Score !== undefined) {
-            const team1Score = match.team1Score;
-            const team2Score = match.team2Score;
-            
-            // Assume current player is team1 (adjust logic based on your data structure)
-            const isTeam1 = match.team1Players?.some(player => player.id === playerId) || 
-                           match.team1Id === playerId;
-            
-            if (team1Score === team2Score) {
-              draws++;
-            } else if ((isTeam1 && team1Score > team2Score) || (!isTeam1 && team2Score > team1Score)) {
-              wins++;
-            } else {
-              losses++;
-            }
-          }
-        });
-      });
-    }
-
-    console.log('Debug - Results:', { wins, losses, draws });
-
-    // If no data found, check alternative data sources
-    if (wins === 0 && losses === 0 && draws === 0) {
-      // Try to fetch from matches array directly
-      matches.forEach(match => {
-        // Check if match has playerStats with result
-        if (match.playerStats?.result) {
-          const result = match.playerStats.result.toUpperCase();
-          if (result === 'W') wins++;
-          else if (result === 'L') losses++;
-          else if (result === 'D') draws++;
-        }
-        // Or check match outcome
-        else if (match.outcome) {
-          const outcome = match.outcome.toUpperCase();
-          if (outcome === 'WIN' || outcome === 'W') wins++;
-          else if (outcome === 'LOSS' || outcome === 'LOSE' || outcome === 'L') losses++;
-          else if (outcome === 'DRAW' || outcome === 'D') draws++;
-        }
-      });
-    }
-
-    const totalMatches = wins + losses + draws;
-    
-    // If still no data, use sample data for testing
-    if (totalMatches === 0) {
-      console.log('No match results found, using sample data');
+    const total = wins + losses + draws;
+    if (total === 0) {
       return [
         { name: 'Win', value: 55, color: '#15b67a' },
         { name: 'Loss', value: 30, color: '#d32f2f' },
         { name: 'Draw', value: 15, color: '#ffb300' },
       ];
     }
-
-    const winPercent = Math.round((wins / totalMatches) * 100);
-    const lossPercent = Math.round((losses / totalMatches) * 100);
+    const winPercent = Math.round((wins / total) * 100);
+    const lossPercent = Math.round((losses / total) * 100);
     const drawPercent = 100 - winPercent - lossPercent;
-
-    console.log('Final percentages:', { winPercent, lossPercent, drawPercent });
-
     return [
       { name: 'Win', value: winPercent, color: '#15b67a' },
       { name: 'Loss', value: lossPercent, color: '#d32f2f' },
       { name: 'Draw', value: drawPercent, color: '#ffb300' },
     ];
-  }, [data, matches, playerId]);
+  }, [filteredMatches, playerId]);
 
   // Alternative: Direct API call to get match results
   useEffect(() => {
     const fetchMatchResults = async () => {
       try {
         // Call your matches API endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
         if (response.ok) {
           const matchData = await response.json();
           console.log('Match results from API:', matchData);
@@ -854,7 +897,7 @@ export default function CareerPage() {
     if (playerId) {
       fetchMatchResults();
     }
-  }, [playerId]);
+  }, [playerId, token]);
 
   // Add synergy types (place near other interfaces)
   interface SynergyPairing {
@@ -881,6 +924,29 @@ export default function CareerPage() {
   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
   const [, setSelectedSynergyLeagueId] = useState<string | null>(null);
 
+  // --- League Ranking (Goals) ---
+  const [leagueRank, setLeagueRank] = useState<number | null>(null);
+  useEffect(() => {
+    const fetchRank = async () => {
+      try {
+        if (!filters.leagueId || filters.leagueId === 'all' || !playerId) {
+          setLeagueRank(null);
+          return;
+        }
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}`;
+        const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+        if (!res.ok) { setLeagueRank(null); return; }
+        const json = await res.json();
+        const players: Array<{ id: string; value?: number }> = json?.players || [];
+        const idx = players.findIndex(p => String(p.id) === String(playerId));
+        setLeagueRank(idx >= 0 ? idx + 1 : null);
+      } catch {
+        setLeagueRank(null);
+      }
+    };
+    fetchRank();
+  }, [filters.leagueId, playerId, token]);
+
   // Fetch Simple Synergy (backend: /players/:playerId/simple-synergy)
   useEffect(() => {
     if (!playerId) return;
@@ -905,8 +971,8 @@ export default function CareerPage() {
         const leagueParam = (filters.leagueId && filters.leagueId !== 'all')
           ? `?leagueId=${encodeURIComponent(filters.leagueId)}`
           : '';
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
-        const res = await fetch(url);
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
+  const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
 
         // Gracefully treat 404 / 204 as "no data" (not an error)
         if (res.status === 404 || res.status === 204) {
@@ -1012,7 +1078,7 @@ export default function CareerPage() {
     })();
 
     return () => { aborted = true; };
-  }, [playerId, matches, filters.leagueId]);
+  }, [playerId, matches, filters.leagueId, token]);
 
   return (
     <Box
@@ -1051,6 +1117,98 @@ export default function CareerPage() {
           >
             {playerName ? `${playerName} Performance Dashboard` : 'Player Performance Dashboard'}
           </Typography>
+
+          {/* League Selector Dropdown */}
+          {/* {availableLeagues.length > 0 && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              mb: 2
+            }}>
+              <FormControl
+                size="small"
+                sx={{
+                  minWidth: 250,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: themeColors.surfaceAlt,
+                    color: themeColors.text,
+                    borderRadius: 2,
+                    border: `1px solid ${themeColors.border}`,
+                    '& fieldset': { border: 'none' },
+                    '&:hover': { 
+                      borderColor: themeColors.primary,
+                      boxShadow: `0 0 0 1px ${themeColors.primary}`
+                    },
+                    '&.Mui-focused': { 
+                      borderColor: themeColors.primary,
+                      boxShadow: `0 0 0 2px ${themeColors.primary}`
+                    },
+                  },
+                  '& .MuiSelect-icon': { color: themeColors.text },
+                }}
+              >
+                <Select
+                  value={filters.leagueId || 'all'}
+                  onChange={(e: SelectChangeEvent) => dispatch(setLeagueFilter(e.target.value))}
+                  displayEmpty
+                  sx={{
+                    color: themeColors.text,
+                    fontWeight: 700,
+                    fontSize: 14,
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: themeColors.surfaceAlt,
+                        color: themeColors.text,
+                        border: `1px solid ${themeColors.border}`,
+                        borderRadius: 2,
+                        mt: 0.5,
+                        '& .MuiMenuItem-root': {
+                          fontSize: 14,
+                          fontWeight: 600,
+                          '&:hover': {
+                            bgcolor: 'rgba(229,106,22,0.15)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(229,106,22,0.25)',
+                            '&:hover': {
+                              bgcolor: 'rgba(229,106,22,0.35)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="all">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ 
+                        width: 8, 
+                        height: 8, 
+                        borderRadius: '50%',
+                        background: themeColors.gradient 
+                      }} />
+                      All Leagues
+                    </Box>
+                  </MenuItem>
+                  {availableLeagues.map((league) => (
+                    <MenuItem key={league.id} value={league.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ 
+                          width: 8, 
+                          height: 8, 
+                          borderRadius: '50%',
+                          background: themeColors.gradient 
+                        }} />
+                        {league.name || `League ${league.id}`}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )} */}
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -1101,6 +1259,97 @@ export default function CareerPage() {
                       <ToggleButton value="monthly" aria-label="monthly grouping">Monthly</ToggleButton>
                     </ToggleButtonGroup>
                   </Box>
+
+                  {/* League selector (Left side) - All Leagues button and League dropdown */}
+                  {availableLeagues.length > 0 && (
+                    <Box sx={{ position: 'absolute', top: 8, left: 10, zIndex: 6, display: 'flex', gap: 0.5 }}>
+                      {/* All Leagues Button */}
+                      <Button
+                        size="small"
+                        variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
+                        onClick={() => dispatch(setLeagueFilter('all'))}
+                        sx={{
+                          minWidth: 'auto',
+                          px: 1.5,
+                          py: 0.5,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: 'none',
+                          color: themeColors.text,
+                          borderColor: themeColors.border,
+                          background: filters.leagueId === 'all' || !filters.leagueId 
+                            ? themeColors.primary 
+                            : 'transparent',
+                          '&:hover': {
+                            background: filters.leagueId === 'all' || !filters.leagueId 
+                              ? themeColors.primary 
+                              : 'rgba(229,106,22,0.1)',
+                            borderColor: themeColors.primary
+                          }
+                        }}
+                      >
+                        All Leagues
+                      </Button>
+
+                      {/* League Dropdown */}
+                      <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <Select
+                          value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
+                          onChange={(e: SelectChangeEvent) => {
+                            if (e.target.value) dispatch(setLeagueFilter(e.target.value));
+                          }}
+                          displayEmpty
+                          sx={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: themeColors.text,
+                            bgcolor: filters.leagueId && filters.leagueId !== 'all' 
+                              ? themeColors.primary 
+                              : themeColors.surfaceAlt,
+                            borderRadius: 1,
+                            height: 32,
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: themeColors.border,
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: themeColors.primary,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: themeColors.primary,
+                            },
+                            '& .MuiSelect-icon': { color: themeColors.text },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: themeColors.surfaceAlt,
+                                border: `1px solid ${themeColors.border}`,
+                                '& .MuiMenuItem-root': {
+                                  fontSize: 12,
+                                  color: themeColors.text,
+                                  '&:hover': { bgcolor: 'rgba(229,106,22,0.15)' },
+                                  '&.Mui-selected': { 
+                                    bgcolor: 'rgba(229,106,22,0.25)',
+                                    '&:hover': { bgcolor: 'rgba(229,106,22,0.35)' }
+                                  },
+                                },
+                              },
+                            },
+                          }}
+                        >
+                          <MenuItem value="" disabled>
+                            <em>Select a League</em>
+                          </MenuItem>
+                          {(leaguesForYear || []).map((league) => (
+                            <MenuItem key={league.id} value={league.id}>
+                              {league.name || `League ${league.id}`}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  )}
+
                   {/* Title centered top */}
                   <Box sx={{ textAlign: 'center', pt: 1.5, pb: 0.5 }}>
                     <Typography sx={{ fontSize: 16, fontWeight: 700, color: themeColors.text, letterSpacing: 0.4 }}>
@@ -1439,7 +1688,7 @@ export default function CareerPage() {
                       
                       {/* Debug info - remove this later */}
                       <Box sx={{ mb: 1, fontSize: 10, color: themeColors.textFaint }}>
-                        Total Matches: {matches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
+                        Total Matches: {filteredMatches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
                       </Box>
 
                       {loading ? (
@@ -1566,7 +1815,14 @@ export default function CareerPage() {
               {/* Impact Section - UPDATED */}
               <GlassCard sx={{ mb: 2 }}>
                 <CardContent>
-                  <SectionTitle>Impact</SectionTitle>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <SectionTitle>Impact</SectionTitle>
+                    {filters.leagueId && filters.leagueId !== 'all' && (
+                      <Typography sx={{ fontSize: 12, color: themeColors.textFaint, fontWeight: 700 }}>
+                        Ranked: {leagueRank ? `#${leagueRank}` : '—'}
+                      </Typography>
+                    )}
+                  </Box>
                   
                   <Grid container spacing={2} alignItems="center">
                     {/* Circle with Matches Played */}
@@ -1587,7 +1843,7 @@ export default function CareerPage() {
                           }}
                         >
                           <Typography sx={{ fontSize: 24, fontWeight: 'bold', color: themeColors.text }}>
-                            {matches.length}
+                            {filteredMatches.length}
                           </Typography>
                         </Box>
                         <Typography sx={{ fontSize: 12, fontWeight: 600, textAlign: 'center', color: themeColors.textDim }}>
@@ -1602,7 +1858,7 @@ export default function CareerPage() {
                         <TableHead>
                           <TableRow>
                             <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-                            <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Last {lastPrev10.last.n}</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
                             <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Progress Prev {lastPrev10.prev.n}</TableCell>
                             <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
                           </TableRow>
@@ -1618,36 +1874,34 @@ export default function CareerPage() {
                             return (
                               <>
                                 <ImpactRow 
-// -                                  title="% Impact" 
                                   title="Game Contribution" 
-                                  value={last.impactAvg.toFixed(1)} 
-                                  change={prev.n > 0 ? deltaNum(last.impactAvg, prev.impactAvg) : '0.0'} 
-                                  up={last.impactAvg >= prev.impactAvg} 
+                                  value={yourStats.impactAvg.toFixed(1)} 
+                                  change={prev.n > 0 ? deltaNum(yourStats.impactAvg, prev.impactAvg) : '0.0'} 
+                                  up={yourStats.impactAvg >= prev.impactAvg} 
                                 />
                                 <ImpactRow 
                                   title="Win Rate" 
-                                  value={pct(last.winRate)} 
-                                  change={prev.n > 0 ? deltaPct(last.winRate, prev.winRate) : '0.0%'} 
-                                  up={last.winRate >= prev.winRate} 
+                                  value={pct(yourStats.winRate)} 
+                                  change={prev.n > 0 ? deltaPct(yourStats.winRate, prev.winRate) : '0.0%'} 
+                                  up={yourStats.winRate >= prev.winRate} 
                                 />
                                 <ImpactRow 
                                   title="MOTM Votes" 
-                                  value={`${last.motmVotes}`} 
-                                  change={prev.n > 0 ? deltaInt(last.motmVotes, prev.motmVotes) : '0'} 
-                                  up={last.motmVotes >= prev.motmVotes} 
+                                  value={`${yourStats.motmVotes}`} 
+                                  change={prev.n > 0 ? deltaInt(yourStats.motmVotes, prev.motmVotes) : '0'} 
+                                  up={yourStats.motmVotes >= prev.motmVotes} 
                                 />
                                 <ImpactRow 
                                   title="Goal Diff" 
-                                  value={`${last.wins - last.losses}`} 
-                                  change={prev.n > 0 ? deltaInt((last.wins - last.losses), (prev.wins - prev.losses)) : '0'} 
-                                  up={(last.wins - last.losses) >= (prev.wins - prev.losses)} 
+                                  value={`${yourStats.wins - yourStats.losses}`} 
+                                  change={prev.n > 0 ? deltaInt((yourStats.wins - yourStats.losses), (prev.wins - prev.losses)) : '0'} 
+                                  up={(yourStats.wins - yourStats.losses) >= (prev.wins - prev.losses)} 
                                 />
                                 <ImpactRow 
                                   title="Goals + Assist" 
-                                  value={`${last.ga}`} 
-                                 
-                                  change={prev.n > 0 ? deltaInt(last.ga, prev.ga) : '0'} 
-                                  up={last.ga >= prev.ga} 
+                                  value={`${yourStats.ga}`} 
+                                  change={prev.n > 0 ? deltaInt(yourStats.ga, prev.ga) : '0'} 
+                                  up={yourStats.ga >= prev.ga} 
                                 />
                               </>
                             );
@@ -1702,7 +1956,7 @@ export default function CareerPage() {
                     <TableBody>
                       {strengths.map((s) => {
                         // Player's per-match rate for the metric as "You"
-                        const n = Math.max(matches.length, 1);
+                        const n = Math.max(filteredMatches.length, 1);
                         const youVal = (s.value / n).toFixed(2);
                         // Diff vs chosen percentile threshold using scaled percentage
                         const thresholdPct = strengthComparison.threshold * 100;

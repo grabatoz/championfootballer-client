@@ -1048,7 +1048,13 @@ export default function PlayerStatsPage() {
                                             },
                                             transition: 'all 0.2s ease-in-out'
                                         }}
-                                        onClick={() => router.push(`/player/${playerId}/career`)}
+                                        onClick={() => {
+                                            const params = new URLSearchParams();
+                                            if (leagueId && leagueId !== 'all') params.set('leagueId', leagueId);
+                                            if (year && year !== 'all') params.set('year', year);
+                                            const query = params.toString();
+                                            router.push(`/player/${playerId}/career${query ? `?${query}` : ''}`);
+                                        }}
                                     >
                                         View Chart
                                     </Button>
