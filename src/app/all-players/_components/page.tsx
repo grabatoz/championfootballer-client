@@ -312,25 +312,31 @@ const AllPlayersPage = () => {
     try {
       const allPlayersMap = new Map<string, Player>();
       
-      // Fetch players from each league
-      for (const league of leagues) {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`,
-          {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }
-        );
-        const data = await response.json();
-        
+      // Fetch players from ALL leagues in parallel (faster)
+      const playerResponses = await Promise.all(
+        leagues.map(league =>
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          )
+        )
+      );
+      
+      // Process all responses
+      const allPlayerData = await Promise.all(
+        playerResponses.map(response => response.json())
+      );
+      
+      // Add all players to map (avoiding duplicates)
+      allPlayerData.forEach(data => {
         if (data?.success && data?.players) {
-          // Add players to map to avoid duplicates
           data.players.forEach((player: Player) => {
             if (!allPlayersMap.has(player.id)) {
               allPlayersMap.set(player.id, player);
             }
           });
         }
-      }
+      });
       
       // Dispatch to update the state with all unique players
       const allPlayers = Array.from(allPlayersMap.values());
