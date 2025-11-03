@@ -1037,14 +1037,14 @@ export default function PlayerDashboard() {
     }
   }, [user]);
 
-  // Fallback: if xp is missing after auth init, fetch it from /auth/data and merge
+  // Fallback: if xp is missing after auth init, fetch it from /auth/status and merge
   useEffect(() => {
     const maybeFetchXP = async () => {
       try {
         if (!token) return;
         // Only fetch if no xp present
         if (!user || typeof user.xp === 'number') return;
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!resp.ok) return;
