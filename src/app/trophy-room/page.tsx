@@ -1453,19 +1453,26 @@ export default function GlobalTrophyRoom() {
 
 
   useEffect(() => {
-    // Fetch all leagues once (independent of the selected filter)
-    if (!token) return;
+    // PRIORITY 1: Fetch leagues FIRST (blocking), then render UI
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
+      setLoading(true); // Keep loading screen until data is ready
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/data`, {
+        // Fetch leagues data
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
+        
         if (res.ok && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
           const { leagues: rawLeagues, adminIds } = normalizeLeaguesFromAuthData(userPayload);
 
-          // Enrich with computed status
+          // Enrich with computed status (parallel fetch for better performance)
           const enrichedLeagues = await Promise.all(
             rawLeagues.map(async (league) => {
               try {
@@ -1549,11 +1556,10 @@ export default function GlobalTrophyRoom() {
 
           setLeagues(activeLeagues);
 
-          // Auto-select preferred league from localStorage or first league (not 'all' for trophy room)
+          // Auto-select preferred league from localStorage or first league
           if (activeLeagues.length > 0) {
             const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
             const preferred = storedId ? activeLeagues.find(l => l.id === storedId) : null;
-            // Trophy room allows 'all' option, so we default to 'all' if no preference
             if (preferred) {
               setSelectedLeagueId(preferred.id);
             } else {
@@ -1563,7 +1569,7 @@ export default function GlobalTrophyRoom() {
 
           console.log('[Trophy Room] Total:', enrichedLeagues.length, 'Active:', activeLeagues.length);
 
-          // If server didn't send backendTotalXP via /leagues/trophy-room yet, derive from auth payload user
+          // Extract XP from auth payload
           try {
             const maybeUser = data?.user ?? data;
             if (isBackendUser(maybeUser)) {
@@ -1576,8 +1582,12 @@ export default function GlobalTrophyRoom() {
         } else {
           setLeagues([]);
         }
-      } catch {
+      } catch (err) {
+        console.error('[Trophy Room] Failed to fetch leagues:', err);
         setLeagues([]);
+      } finally {
+        // Only hide loading after data is ready
+        setLoading(false);
       }
     })();
   }, [token, leagueIsCompleted]);
