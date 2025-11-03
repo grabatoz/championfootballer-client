@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
@@ -36,17 +35,8 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
-
-// Lazy load heavy components
-const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
-  loading: () => <CircularProgress size={40} />,
-  ssr: false
-});
-
-const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
-  loading: () => <></>,
-  ssr: false
-});
+import PlayerCard from '@/Components/playercard/playercard';
+import CloseButton from '@/Components/CloseButton';
 // import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
@@ -1389,7 +1379,7 @@ export default function GlobalTrophyRoom() {
   }>({});
 
   // League filter dropdown (like league page)
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | 'all'>('all');
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | 'all' | null>(null);
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
@@ -1462,8 +1452,8 @@ export default function GlobalTrophyRoom() {
     (async () => {
       setLoading(true); // Keep loading screen until data is ready
       try {
-        // Fetch leagues data
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+        // Fetch leagues data with cache-busting
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?_=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -1472,75 +1462,15 @@ export default function GlobalTrophyRoom() {
           const userPayload = data?.user ?? data;
           const { leagues: rawLeagues, adminIds } = normalizeLeaguesFromAuthData(userPayload);
 
-          // Enrich with computed status (parallel fetch for better performance)
-          const enrichedLeagues = await Promise.all(
-            rawLeagues.map(async (league) => {
-              try {
-                const leagueId = String(league.id);
-                const isAdmin = adminIds.has(leagueId);
-                const [statusRes, detailsRes] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  }),
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  })
-                ]);
-
-                let matchesFromDetails: Match[] | undefined = undefined;
-                let maxGamesFromDetails: number | undefined = undefined;
-
-                if (detailsRes.ok) {
-                  const leagueData = await detailsRes.json();
-                  const rawMatches = leagueData?.league?.matches as unknown;
-                  if (Array.isArray(rawMatches)) {
-                    matchesFromDetails = rawMatches as Match[];
-                  }
-                  if (typeof leagueData?.league?.maxGames === 'number') {
-                    maxGamesFromDetails = leagueData.league.maxGames as number;
-                  }
-                }
-
-                if (statusRes.ok) {
-                  const statusData = await statusRes.json();
-                  const raw = (statusData?.status || {}) as Record<string, unknown>;
-                  const toNum = (v: unknown): number | undefined => {
-                    const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                    return Number.isFinite(n) ? n : undefined;
-                  };
-                  const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed);
-                  const maxGames = toNum(raw?.maxGames);
-                  const locked = raw?.locked === true;
-                  const isComplete = raw?.isComplete === true;
-                  const missingRaw = raw?.missing as unknown;
-                  const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                  const computed: LeagueComputedStatus = {
-                    ...(raw as LeagueComputedStatus),
-                    matchesPlayed,
-                    gamesPlayed: matchesPlayed,
-                    maxGames,
-                    locked,
-                    isComplete,
-                    missing,
-                  };
-                  return {
-                    ...league,
-                    computedStatus: computed,
-                    isLocked: computed?.locked === true,
-                    maxGames: maxGames ?? maxGamesFromDetails,
-                    matches: matchesFromDetails,
-                    isAdmin,
-                  } as League;
-                }
-
-                return { ...league, isAdmin } as League;
-              } catch (error) {
-                console.error(`Error fetching details for league`, error);
-                const leagueId = String(league.id);
-                return { ...league, isAdmin: adminIds.has(leagueId) } as League;
-              }
-            })
-          );
+          // NO EXTRA API CALLS - Use data from /auth/status directly
+          const enrichedLeagues = rawLeagues.map((league) => {
+            const leagueId = String(league.id);
+            const isAdmin = adminIds.has(leagueId);
+            return {
+              ...league,
+              isAdmin,
+            } as League;
+          });
 
           // Filter out completed leagues
           const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
@@ -1563,7 +1493,8 @@ export default function GlobalTrophyRoom() {
             if (preferred) {
               setSelectedLeagueId(preferred.id);
             } else {
-              setSelectedLeagueId('all');
+              // Select first league by default
+              setSelectedLeagueId(activeLeagues[0].id);
             }
           }
 
@@ -1592,22 +1523,20 @@ export default function GlobalTrophyRoom() {
     })();
   }, [token, leagueIsCompleted]);
 
+  // Fetch ALL trophy winners ONCE (no league filter) - then filter client-side for instant switching
   useEffect(() => {
     const fetchWinners = async () => {
       if (!token) return;
       setLoading(true);
       try {
-        const q =
-          selectedLeagueId && selectedLeagueId !== 'all'
-            ? `?leagueId=${encodeURIComponent(String(selectedLeagueId))}`
-            : '';
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room${q}`, {
+        // Fetch ALL trophies at once (no leagueId parameter)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?_=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
 
         if (res.ok && data?.success) {
-          // Only update winners and XP; DO NOT overwrite leagues here
+          // Store ALL winners - filtering by league happens client-side for instant switching
           setApiAllWinners(Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : []);
           setBackendTotalXP(typeof data.backendTotalXP === 'number' ? data.backendTotalXP : undefined);
           setError(null);
@@ -1625,7 +1554,7 @@ export default function GlobalTrophyRoom() {
       }
     };
     fetchWinners();
-  }, [token, selectedLeagueId]);
+  }, [token]); // Only fetch once when token is available - no selectedLeagueId dependency!
 
   // Persist and fetch achievements for the current user (saves XP to DB, then loads badges)
   useEffect(() => {
@@ -1634,7 +1563,7 @@ export default function GlobalTrophyRoom() {
       try {
         // First, persist any newly unlocked achievements and ensure XP is saved to profile
         try {
-          const awardRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements/award`, {
+          const awardRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements/award?_=${Date.now()}`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -1645,7 +1574,7 @@ export default function GlobalTrophyRoom() {
         } catch {}
 
         // Then, fetch server-computed achievements summary for display
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements?_=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data: ServerAchievementsResponse = await res.json();
@@ -1664,15 +1593,15 @@ export default function GlobalTrophyRoom() {
     })();
   }, [token]);
 
-  // Auto-select a default league (prefer a completed league, else first)
-  useEffect(() => {
-    if (!leagues?.length) return;
-    // If current selection doesn't exist, pick default
-    if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
-    const completed = leagues.find(l => leagueIsCompleted(l));
-    const defaultId = completed?.id ?? leagues[0].id;
-    setSelectedLeagueId(String(defaultId));
-  }, [leagues, selectedLeagueId, leagueIsCompleted]);
+  // Auto-select a default league (prefer a completed league, else first) - REMOVED to prevent double refresh
+  // Initial selection is now done in the first useEffect after leagues are fetched
+  // useEffect(() => {
+  //   if (!leagues?.length) return;
+  //   if (selectedLeagueId !== 'all' && leagues.some(l => l.id === selectedLeagueId)) return;
+  //   const completed = leagues.find(l => leagueIsCompleted(l));
+  //   const defaultId = completed?.id ?? leagues[0].id;
+  //   setSelectedLeagueId(String(defaultId));
+  // }, [leagues, selectedLeagueId, leagueIsCompleted]);
 
   // Use API-provided winners directly (already filtered by selectedLeagueId on the server)
   const baseTrophies: TrophyType[] =
@@ -1750,7 +1679,7 @@ export default function GlobalTrophyRoom() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view?_=${Date.now()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -1916,7 +1845,7 @@ export default function GlobalTrophyRoom() {
               >
                 {selectedLeague
                   ? formatLeagueName(selectedLeague.name)
-                  : (leagues.length ? 'All Leagues' : 'League has not found')}
+                  : (leagues.length ? (leagues[0] ? formatLeagueName(leagues[0].name) : 'All Leagues') : 'League has not found')}
               </Button>
               <Menu
                 anchorEl={leaguesDropdownAnchor}

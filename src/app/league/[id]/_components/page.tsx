@@ -76,7 +76,6 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   ssr: false
 });
 import CloseIcon from '@mui/icons-material/Close';
-import { cacheManager } from "@/lib/cacheManager"
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
 import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
@@ -1976,32 +1975,10 @@ export default function LeagueDetailPage() {
             if (data.success) {
                 console.log('✅ Stats saved successfully!');
                 
-                // 🔥 CLEAR ALL CACHES - Force complete refresh
-                const STORAGE_PREFIX = 'cf_cache_';
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith(STORAGE_PREFIX) && 
-                        (key.includes('league') || key.includes('match'))) {
-                        localStorage.removeItem(key);
-                        console.log('🗑️ Cleared cache:', key);
-                    }
-                });
-                
-                // Update leaderboard cache with new stats
-                if (data.updatedStats) {
-                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
-                        if (typeof value === 'number') {
-                            // Update cache if cacheManager is available
-                            if (typeof cacheManager !== 'undefined') {
-                                cacheManager.updateLeaderboardCache(data.playerId, value, metric as PlayerStatsMetric);
-                            }
-                        }
-                    });
-                }
-                
                 // Close dialog
                 setStatsDialogOpen(false);
                 
-                // 🔄 FORCE IMMEDIATE REFRESH - Fetch fresh data from backend
+                // 🔄 Fetch fresh data from backend
                 console.log('🔄 Forcing immediate data refresh...');
                 await fetchLeagueDetails();
                 
@@ -2212,6 +2189,13 @@ export default function LeagueDetailPage() {
             interface LeagueData {
                 id: string | number;
                 name: string;
+                maxGames?: number;
+                matches?: Match[];
+                isComplete?: boolean;
+                isCompleted?: boolean;
+                isLocked?: boolean;
+                status?: string;
+                active?: boolean;
                 [key: string]: unknown;
             }
 
@@ -2227,7 +2211,7 @@ export default function LeagueDetailPage() {
             const data: AuthStatusResponse = await response.json();
 
             if (data.success && data.user) {
-                // Get admin league IDs (prefer adminLeagues, fallback to administeredLeagues)
+                // Get admin league IDs
                 const adminLeaguesArr: LeagueData[] = data.user.adminLeagues || data.user.administeredLeagues || [];
                 const adminLeagueIds = new Set<string>(
                     adminLeaguesArr
@@ -2242,13 +2226,12 @@ export default function LeagueDetailPage() {
                         .filter((id: string) => id !== 'undefined')
                 );
 
-                // Combine joined and managed leagues
+                // Combine and remove duplicates
                 const userLeagues: LeagueData[] = [
                     ...(data.user.leagues || []),
                     ...adminLeaguesArr
                 ];
 
-                // Remove duplicates
                 const uniqueLeaguesMap = new Map<string, LeagueData>();
                 userLeagues.forEach(league => {
                     const id = String(league.id);
@@ -2257,87 +2240,35 @@ export default function LeagueDetailPage() {
                     }
                 });
 
-                // Enrich with computed status like home page
-                const enrichedLeagues: League[] = await Promise.all(
-                    Array.from(uniqueLeaguesMap.values()).map(async (l: LeagueData): Promise<League> => {
-                        try {
-                            const [statusRes, detailsRes] = await Promise.all([
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, {
-                                    headers: { 'Authorization': `Bearer ${token}` }
-                                }),
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, {
-                                    headers: { 'Authorization': `Bearer ${token}` }
-                                })
-                            ]);
+                // Convert to League type with role assignment (no extra API calls)
+                const simpleLeagues: League[] = Array.from(uniqueLeaguesMap.values()).map((l: LeagueData) => {
+                    const leagueId = String(l.id);
+                    const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
+                        ? 'ADMIN'
+                        : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
+                    
+                    return {
+                        ...l,
+                        id: leagueId,
+                        name: l.name || '',
+                        inviteCode: '',
+                        createdAt: '',
+                        members: [],
+                        administrators: [],
+                        matches: l.matches || [],
+                        active: l.active ?? true,
+                        maxGames: l.maxGames || 20,
+                        showPoints: true,
+                        userRole: role,
+                        isComplete: l.isComplete,
+                        isCompleted: l.isCompleted,
+                        isLocked: l.isLocked,
+                        status: l.status,
+                    } as League;
+                });
 
-                            let matchesFromDetails: Match[] | undefined = undefined;
-                            let maxGamesFromDetails: number | undefined = undefined;
-                            if (detailsRes.ok) {
-                                const leagueData = await detailsRes.json();
-                                const rawMatches = leagueData?.league?.matches as unknown;
-                                if (Array.isArray(rawMatches)) {
-                                    matchesFromDetails = rawMatches as Match[];
-                                }
-                                if (typeof leagueData?.league?.maxGames === 'number') {
-                                    maxGamesFromDetails = leagueData.league.maxGames as number;
-                                }
-                            }
-
-                            if (statusRes.ok) {
-                                const statusData = await statusRes.json();
-                                const raw = (statusData?.status || {}) as Record<string, unknown>;
-                                const toNum = (v: unknown): number | undefined => {
-                                    const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                                    return Number.isFinite(n) ? n : undefined;
-                                };
-                                const matchesPlayed = toNum(
-                                    raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed
-                                );
-                                const maxGames = toNum(
-                                    raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? l?.maxGames
-                                );
-                                const locked = raw?.locked === true;
-                                const isComplete = raw?.isComplete === true;
-                                const missingRaw = (raw as Record<string, unknown>)?.missing as unknown;
-                                const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                                const computed: LeagueComputedStatus = {
-                                    ...(raw as LeagueComputedStatus),
-                                    matchesPlayed,
-                                    gamesPlayed: matchesPlayed,
-                                    maxGames,
-                                    locked,
-                                    isComplete,
-                                    missing,
-                                };
-                                const leagueId = String(l.id);
-                                const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
-                                    ? 'ADMIN'
-                                    : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
-                                return {
-                                    ...l,
-                                    id: leagueId,
-                                    computedStatus: computed,
-                                    isLocked: computed?.locked === true,
-                                    userRole: role,
-                                    maxGames: maxGames ?? maxGamesFromDetails ?? (l?.maxGames as number | undefined),
-                                    matches: matchesFromDetails,
-                                } as League;
-                            }
-                        } catch { }
-                        const leagueId = String(l.id);
-                        const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
-                            ? 'ADMIN'
-                            : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
-                        return {
-                            ...l,
-                            id: leagueId,
-                            userRole: role,
-                        } as League;
-                    })
-                );
-
-                // Filter out completed leagues (like home page)
-                const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
+                // Filter out completed leagues
+                const activeLeagues = simpleLeagues.filter(l => !leagueIsCompleted(l));
 
                 // Sort alphabetically by name
                 activeLeagues.sort((a, b) => {
@@ -2351,22 +2282,11 @@ export default function LeagueDetailPage() {
                 setAllLeagues(activeLeagues);
 
                 // Debug log
-                try {
-                    if (typeof window !== 'undefined' && enrichedLeagues.length) {
-                        console.group('[League Detail] League completion check');
-                        console.log('Total leagues:', enrichedLeagues.length);
-                        console.log('Active (not completed):', activeLeagues.length);
-                        console.table(enrichedLeagues.map(l => ({
-                            id: l?.id,
-                            name: l?.name,
-                            isComplete: Boolean(l?.isComplete),
-                            locked: Boolean(l?.computedStatus?.locked || l?.isLocked),
-                            matchesPlayed: l?.computedStatus?.matchesPlayed ?? null,
-                            maxGames: l?.computedStatus?.maxGames ?? l?.maxGames ?? null,
-                        })));
-                        console.groupEnd();
-                    }
-                } catch { }
+                console.log('[League Detail] Fetched leagues:', {
+                    total: simpleLeagues.length,
+                    active: activeLeagues.length,
+                    completed: simpleLeagues.length - activeLeagues.length
+                });
             }
         } catch (error) {
             console.error('Error fetching leagues:', error);
@@ -2479,21 +2399,6 @@ export default function LeagueDetailPage() {
             console.log('✅ Response from server:', data);
 
             if (data.success) {
-                // 🔄 CLEAR ALL CACHES - Force fresh data
-                console.log('🗑️ Clearing all match/league caches...');
-                
-                // Clear localStorage cache
-                if (typeof window !== 'undefined') {
-                    const STORAGE_PREFIX = 'cf_cache_';
-                    Object.keys(localStorage).forEach(key => {
-                        if (key.startsWith(STORAGE_PREFIX) && 
-                            (key.includes('league') || key.includes('match'))) {
-                            localStorage.removeItem(key);
-                            console.log('🗑️ Removed cache:', key);
-                        }
-                    });
-                }
-
                 // 🔄 Dispatch event for auto-refresh
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('match-updated', { 
@@ -2502,7 +2407,7 @@ export default function LeagueDetailPage() {
                     console.log('📢 match-updated event dispatched');
                 }
 
-                // 🔄 Force fresh fetch from backend
+                // 🔄 Fetch fresh data from backend
                 console.log('🔄 Fetching fresh league data...');
                 await fetchLeagueDetails();
                 
@@ -2536,12 +2441,8 @@ export default function LeagueDetailPage() {
             });
             const data = await response.json();
             if (data.success) {
-                // Update cache with new league data
-                if (data.league) {
-                    cacheManager.updateLeaguesCache(data.league);
-                }
                 toast.success('League updated successfully!');
-                fetchLeagueDetails();
+                await fetchLeagueDetails();
                 setIsSettingsOpen(false);
             } else {
                 toast.error(data.message || 'Failed to update league');
@@ -2560,8 +2461,6 @@ export default function LeagueDetailPage() {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
-                    // Clear league cache since league is deleted
-                    cacheManager.clearCache('leagues_cache');
                     toast.success('League deleted successfully.');
                     router.push('/all-leagues');
                 } else {
@@ -6039,23 +5938,13 @@ export default function LeagueDetailPage() {
                         {/* Match Stats Dialog (embedded) */}
                         <PlayMatchPagee
                             open={matchStatsOpen}
-                            onClose={() => {
-                                console.log('🔄 PlayMatchPagee closing - clearing cache and refreshing');
+                            onClose={async () => {
+                                console.log('🔄 PlayMatchPagee closing - refreshing data');
                                 
-                                // 🗑️ Clear all caches
-                                const STORAGE_PREFIX = 'cf_cache_';
-                                Object.keys(localStorage).forEach(key => {
-                                    if (key.startsWith(STORAGE_PREFIX) && 
-                                        (key.includes('league') || key.includes('match'))) {
-                                        localStorage.removeItem(key);
-                                        console.log('🗑️ Cleared cache:', key);
-                                    }
-                                });
+                                // � Fetch fresh league data from backend
+                                await fetchLeagueDetails();
                                 
-                                // 🔄 Force refresh league data
-                                fetchLeagueDetails();
-                                
-                                // 📢 Dispatch event
+                                // 📢 Dispatch event for other components
                                 window.dispatchEvent(new CustomEvent('match-updated'));
                                 
                                 // Close dialog

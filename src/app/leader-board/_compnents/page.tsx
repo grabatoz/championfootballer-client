@@ -82,54 +82,24 @@ export default function LeaderBoardPage() {
   const { token } = useAuth();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
-  // Helper: determine if a league is completed
+  // Helper: determine if a league is completed (SIMPLIFIED for speed)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
-    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-    if (missingArr.length > 0) return false;
-
-    const toNum = (v: unknown): number | undefined => {
-      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-      return Number.isFinite(n) ? n : undefined;
-    };
-    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-    const played = playedFromComputed;
-    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
-
-    if (Array.isArray(l.matches)) {
-      const matches = l.matches ?? [];
-      const completedCount = matches.reduce((acc, m) => {
-        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-        const endedByFlag = m.active === false;
-        const endedByEnd = Boolean(m.end);
-        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-      }, 0);
-      if (typeof maxG === 'number' && maxG > 0) {
-        if (completedCount < maxG) return false;
-        return true;
-      }
-    }
-
-    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-      if (played < maxG) return false;
-      return true;
-    }
-
-    if (l?.computedStatus?.isComplete === true) return true;
-    if (l?.computedStatus?.locked === true) return true;
+    // Check explicit completion flags
     if (l?.isComplete === true) return true;
     if (l?.isCompleted === true) return true;
     if (l?.isLocked === true) return true;
-
-    const sRaw = (l?.status ?? '').toString();
-    const s = sRaw.trim().toUpperCase();
-    const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
-    if (completionStatuses.has(s)) return true;
-    if (typeof l?.active === 'boolean' && l.active === false) return true;
+    
+    // Check status field
+    const status = (l?.status ?? '').toString().trim().toUpperCase();
+    if (status === 'COMPLETED' || status === 'FINISHED' || status === 'ENDED') return true;
+    
+    // Check active flag
+    if (l?.active === false) return true;
+    
     return false;
   }, []);
 
-  // Fetch only the leagues where the current user is a member
+  // Fetch only the leagues where the current user is a member - OPTIMIZED
   useEffect(() => {
     if (!token) return;
     
@@ -161,78 +131,18 @@ export default function LeaderBoardPage() {
             }
           });
 
-          // Enrich with computed status
-          const enrichedLeagues = await Promise.all(
-            Array.from(uniqueLeaguesMap.values()).map(async (league) => {
-              try {
-                const leagueId = String((league as { id?: string | number }).id);
-                const isAdmin = adminIds.has(leagueId);
-                const [statusRes, detailsRes] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  }),
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  })
-                ]);
-
-                let matchesFromDetails: Match[] | undefined = undefined;
-                let maxGamesFromDetails: number | undefined = undefined;
-
-                if (detailsRes.ok) {
-                  const leagueData = await detailsRes.json();
-                  const rawMatches = leagueData?.league?.matches as unknown;
-                  if (Array.isArray(rawMatches)) {
-                    matchesFromDetails = rawMatches as Match[];
-                  }
-                  if (typeof leagueData?.league?.maxGames === 'number') {
-                    maxGamesFromDetails = leagueData.league.maxGames as number;
-                  }
-                }
-
-                if (statusRes.ok) {
-                  const statusData = await statusRes.json();
-                  const raw = (statusData?.status || {}) as Record<string, unknown>;
-                  const toNum = (v: unknown): number | undefined => {
-                    const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                    return Number.isFinite(n) ? n : undefined;
-                  };
-                  const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed);
-                  const maxGames = toNum(raw?.maxGames);
-                  const locked = raw?.locked === true;
-                  const isComplete = raw?.isComplete === true;
-                  const missingRaw = raw?.missing as unknown;
-                  const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                  const computed: LeagueComputedStatus = {
-                    ...(raw as LeagueComputedStatus),
-                    matchesPlayed,
-                    gamesPlayed: matchesPlayed,
-                    maxGames,
-                    locked,
-                    isComplete,
-                    missing,
-                  };
-                  return {
-                    ...league,
-                    computedStatus: computed,
-                    isLocked: computed?.locked === true,
-                    maxGames: maxGames ?? maxGamesFromDetails,
-                    matches: matchesFromDetails,
-                    isAdmin,
-                  } as League;
-                }
-
-                return { ...(league as League), isAdmin } as League;
-              } catch (error) {
-                console.error(`Error fetching details for league`, error);
-                const leagueId = String((league as { id?: string | number }).id);
-                return { ...(league as League), isAdmin: adminIds.has(leagueId) } as League;
-              }
-            })
-          );
+          // Create simple league list without enrichment
+          const simpleLeagues = Array.from(uniqueLeaguesMap.values()).map((league) => {
+            const leagueId = String((league as { id?: string | number }).id);
+            const isAdmin = adminIds.has(leagueId);
+            return { 
+              ...(league as League), 
+              isAdmin 
+            } as League;
+          });
 
           // Filter out completed leagues
-          const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
+          const activeLeagues = simpleLeagues.filter(l => !leagueIsCompleted(l));
 
           // Sort alphabetically
           activeLeagues.sort((a, b) => {
@@ -251,8 +161,6 @@ export default function LeaderBoardPage() {
             const preferred = storedId ? activeLeagues.find(l => l.id === storedId) : null;
             setSelectedLeague(preferred ? preferred.id : activeLeagues[0].id);
           }
-
-          console.log('[Leader Board] Total:', enrichedLeagues.length, 'Active:', activeLeagues.length);
         }
       } catch (error) {
         console.error('Error fetching leagues:', error);
@@ -276,7 +184,6 @@ export default function LeaderBoardPage() {
         setLoading(false);
       });
   }, [selectedMetric, selectedLeague, token]);
-  console.log('Players:', players);
 
   const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
     setLeaguesDropdownAnchor(event.currentTarget);
@@ -293,9 +200,7 @@ export default function LeaderBoardPage() {
       setSelectedLeague(leagueId);
       try {
         localStorage.setItem(PREFERRED_LEAGUE_KEY, leagueId);
-      } catch (err) {
-        console.error('[Leader Board] Failed to save preferred league:', err);
-      }
+      } catch {}
     }
     handleLeaguesDropdownClose();
   };
