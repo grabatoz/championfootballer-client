@@ -158,8 +158,13 @@ const compareLeaguesByRecency = (a: Pick<League, 'updatedAt' | 'createdAt'>, b: 
   return timeOf(b) - timeOf(a);
 };
 
-const sortLeaguesByRecency = <T extends Pick<League, 'updatedAt' | 'createdAt'>>(arr: T[]): T[] => {
-  return [...arr].sort(compareLeaguesByRecency);
+// Sort leagues alphabetically by name (A-Z)
+const sortLeaguesByRecency = <T extends Pick<League, 'updatedAt' | 'createdAt'> & Pick<League, 'name'>>(arr: T[]): T[] => {
+  return [...arr].sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase();
+    const nameB = (b.name || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 };
 
 
@@ -1225,6 +1230,7 @@ function AllLeagues() {
       console.log('Fetching all available leagues...');
       setLoading(true);
 
+      // First get the user's leagues from auth/status
       const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1234,13 +1240,16 @@ function AllLeagues() {
       if (authResponse.ok) {
         const authData = await authResponse.json();
         if (authData.success && authData.user) {
+          // Combine joined and managed leagues
           const userLeagues: League[] = [
             ...(authData.user.leagues || []),
             ...(authData.user.administeredLeagues || [])
           ].filter((league: League) => league && league.id);
 
+          // Remove duplicates
           const uniqueLeagues: League[] = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
 
+          // Now fetch detailed information for each league
           const detailedLeagues: LeagueWithStatus[] = await Promise.all(
             uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus> => {
               try {
