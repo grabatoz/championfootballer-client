@@ -159,195 +159,69 @@ const DreamTeamPage = () => {
 
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
-  // Helper: determine if a league is completed (exclude from dropdown)
-  const leagueIsCompleted = useCallback((l: League): boolean => {
-    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-    if (missingArr.length > 0) return false;
-
-    const toNum = (v: unknown): number | undefined => {
-      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-      return Number.isFinite(n) ? n : undefined;
-    };
-    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-    const played = playedFromComputed;
-    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
-
-    if (Array.isArray(l.matches)) {
-      const matches = l.matches ?? [];
-      const completedCount = matches.reduce((acc, m) => {
-        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-        const endedByFlag = m.active === false;
-        const endedByEnd = Boolean(m.end);
-        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-      }, 0);
-      if (typeof maxG === 'number' && maxG > 0) {
-        if (completedCount < maxG) return false;
-        return true;
-      }
-    }
-
-    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-      if (played < maxG) return false;
-      return true;
-    }
-
-    if (l?.computedStatus?.isComplete === true) return true;
-    if (l?.computedStatus?.locked === true) return true;
-    if (l?.isComplete === true) return true;
-    if (l?.isCompleted === true) return true;
-    if (l?.isLocked === true) return true;
-
-    const sRaw = (l?.status ?? '').toString();
-    const s = sRaw.trim().toUpperCase();
-    const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
-    if (completionStatuses.has(s)) return true;
-    if (typeof l?.active === 'boolean' && l.active === false) return true;
-    return false;
-  }, []);
-
   const fetchLeagues = useCallback(async () => {
-    console.log('🔍 Fetching leagues...');
-    console.log('Token:', token ? 'Present' : 'Missing');
-    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
-
+    if (!token) return;
+    
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Response data:', data);
-        
-        const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
-        const adminIds = new Set<string>(
-          adminLeaguesArr
-            .map(l => (l && (l as { id?: string | number }).id != null ? String((l as { id?: string | number }).id) : undefined))
-            .filter((v): v is string => typeof v === 'string')
-        );
-        const userLeagues = [
-          ...(data.user.leagues || []),
-          ...adminLeaguesArr
-        ];
+      if (!response.ok) {
+        setLoading(false);
+        return;
+      }
 
-        const uniqueLeaguesMap = new Map();
-        userLeagues.forEach(league => {
-          const id = String((league as { id?: string | number }).id);
-          if (!uniqueLeaguesMap.has(id)) {
-            uniqueLeaguesMap.set(id, league);
-          }
-        });
+      const data = await response.json();
+      
+      // Get admin leagues IDs
+      const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
+      const adminIds = new Set<string>(
+        adminLeaguesArr
+          .map(l => (l && (l as { id?: string | number }).id != null ? String((l as { id?: string | number }).id) : undefined))
+          .filter((v): v is string => typeof v === 'string')
+      );
+      
+      // Combine all leagues
+      const userLeagues = [
+        ...(data.user.leagues || []),
+        ...adminLeaguesArr
+      ];
 
-        // Enrich with computed status
-        const enrichedLeagues = await Promise.all(
-          Array.from(uniqueLeaguesMap.values()).map(async (league) => {
-            try {
-              const leagueId = String((league as { id?: string | number }).id);
-              const isAdmin = adminIds.has(leagueId);
-              const [statusRes, detailsRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-              ]);
-
-              let matchesFromDetails: Match[] | undefined = undefined;
-              let maxGamesFromDetails: number | undefined = undefined;
-
-              if (detailsRes.ok) {
-                const leagueData = await detailsRes.json();
-                const rawMatches = leagueData?.league?.matches as unknown;
-                if (Array.isArray(rawMatches)) {
-                  matchesFromDetails = rawMatches as Match[];
-                }
-                if (typeof leagueData?.league?.maxGames === 'number') {
-                  maxGamesFromDetails = leagueData.league.maxGames as number;
-                }
-              }
-
-              if (statusRes.ok) {
-                const statusData = await statusRes.json();
-                const raw = (statusData?.status || {}) as Record<string, unknown>;
-                const toNum = (v: unknown): number | undefined => {
-                  const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                  return Number.isFinite(n) ? n : undefined;
-                };
-                const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed);
-                const maxGames = toNum(raw?.maxGames);
-                const locked = raw?.locked === true;
-                const isComplete = raw?.isComplete === true;
-                const missingRaw = raw?.missing as unknown;
-                const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                const computed: LeagueComputedStatus = {
-                  ...(raw as LeagueComputedStatus),
-                  matchesPlayed,
-                  gamesPlayed: matchesPlayed,
-                  maxGames,
-                  locked,
-                  isComplete,
-                  missing,
-                };
-                return {
-                  ...league,
-                  computedStatus: computed,
-                  isLocked: computed?.locked === true,
-                  maxGames: maxGames ?? maxGamesFromDetails,
-                  matches: matchesFromDetails,
-                  isAdmin,
-                } as League;
-              }
-
-              return { ...(league as League), isAdmin } as League;
-            } catch (error) {
-              console.error(`Error fetching details for league`, error);
-              const leagueId = String((league as { id?: string | number }).id);
-              return { ...(league as League), isAdmin: adminIds.has(leagueId) } as League;
-            }
-          })
-        );
-
-        // Filter out completed leagues
-        const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
-
-        // Sort alphabetically
-        activeLeagues.sort((a, b) => {
-          const an = (a?.name ?? '').toString().trim().toLowerCase();
-          const bn = (b?.name ?? '').toString().trim().toLowerCase();
-          if (an < bn) return -1;
-          if (an > bn) return 1;
-          return String(a.id).localeCompare(String(b.id));
-        });
-
-        setLeagues(activeLeagues);
-
-        // Auto-select preferred league from localStorage or first league
-        if (activeLeagues.length > 0) {
-          const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-          const preferred = storedId ? activeLeagues.find(l => l.id === storedId) : null;
-          setSelectedLeague(preferred ? preferred.id : activeLeagues[0].id);
-        } else {
-          setSelectedLeague('');
-          setLoading(false);
+      // Remove duplicates & add isAdmin flag
+      const uniqueLeaguesMap = new Map();
+      userLeagues.forEach(league => {
+        const id = String((league as { id?: string | number }).id);
+        if (!uniqueLeaguesMap.has(id)) {
+          uniqueLeaguesMap.set(id, { ...league, isAdmin: adminIds.has(id) });
         }
+      });
 
-        // Debug log
-        console.log('[Dream Team] Total:', enrichedLeagues.length, 'Active:', activeLeagues.length);
+      const allLeagues = Array.from(uniqueLeaguesMap.values()) as League[];
+
+      // Sort alphabetically
+      allLeagues.sort((a, b) => {
+        const an = (a?.name ?? '').toString().trim().toLowerCase();
+        const bn = (b?.name ?? '').toString().trim().toLowerCase();
+        return an.localeCompare(bn) || String(a.id).localeCompare(String(b.id));
+      });
+
+      setLeagues(allLeagues);
+
+      // Auto-select preferred league
+      if (allLeagues.length > 0) {
+        const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+        const preferred = storedId ? allLeagues.find(l => l.id === storedId) : null;
+        setSelectedLeague(preferred ? preferred.id : allLeagues[0].id);
       } else {
-        console.error('Response not ok:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
+        setSelectedLeague('');
         setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching leagues:', error);
       setLoading(false);
     }
-  }, [token, leagueIsCompleted]);
+  }, [token]);
 
   const fetchDreamTeam = useCallback(async (leagueId: string) => {
     setLoading(true);
@@ -367,31 +241,16 @@ const DreamTeamPage = () => {
   }, [token]);
 
   useEffect(() => {
-    console.log('🔍 useEffect triggered - token:', token ? 'Present' : 'Missing');
     if (token) {
-      console.log('✅ Token found, calling fetchLeagues');
       fetchLeagues();
-    } else {
-      console.log('❌ No token found, skipping fetchLeagues');
     }
   }, [token, fetchLeagues]);
 
   useEffect(() => {
-    console.log('🔍 useEffect triggered - selectedLeague:', selectedLeague);
     if (token && selectedLeague) {
-      console.log('✅ Token and selectedLeague found, calling fetchDreamTeam');
       fetchDreamTeam(selectedLeague);
-    } else {
-      console.log('❌ Missing token or selectedLeague, skipping fetchDreamTeam');
     }
   }, [token, selectedLeague, fetchDreamTeam]);
-
-  useEffect(() => {
-    console.log('Leagues:', leagues);
-    console.log('Selected League:', selectedLeague);
-    console.log('Dream Team:', dreamTeam);
-    console.log('Loading:', loading);
-  }, [leagues, selectedLeague, dreamTeam, loading]);
 
   // Responsive field positions for different breakpoints (xs/sm/md)
   type ResponsivePos = string | { xs?: string; sm?: string; md?: string; lg?: string };
