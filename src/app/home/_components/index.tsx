@@ -167,6 +167,17 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   // Persist selection across navigation
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
+  // Auto-save any selected league as the preferred league
+  useEffect(() => {
+    try {
+      if (selectedLeague?.id) {
+        localStorage.setItem(PREFERRED_LEAGUE_KEY, String(selectedLeague.id));
+      }
+    } catch {
+      // ignore storage errors (quota/SSG)
+    }
+  }, [selectedLeague?.id]);
+
   // Helper: determine if a league is completed (exclude from dropdown)
   const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
     // If there are any missing items (e.g., pending stats), do NOT treat as completed
