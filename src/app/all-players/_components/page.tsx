@@ -453,6 +453,8 @@ const AllPlayersPage = () => {
                 return found?.name || '';
               }}
               MenuProps={{
+                anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                transformOrigin: { vertical: 'top', horizontal: 'left' },
                 PaperProps: {
                   sx: {
                     p: 0.5,
@@ -464,7 +466,22 @@ const AllPlayersPage = () => {
                     border: '1px solid rgba(255,255,255,0.08)',
                     backdropFilter: 'blur(10px)',
                     boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                    overflow: 'hidden',
+                    // Cap height and enable vertical scrolling when items overflow
+                    maxHeight: 320,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    overscrollBehavior: 'contain',
+                    // Improve scrollbar visibility (Firefox + WebKit)
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#374151 #111827',
+                    '&::-webkit-scrollbar': { width: 8 },
+                    '&::-webkit-scrollbar-track': { background: '#111827' },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: '#374151',
+                      borderRadius: 20,
+                      border: '2px solid #111827'
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': { background: '#4b5563' },
                   },
                 },
               }}
@@ -509,7 +526,7 @@ const AllPlayersPage = () => {
                       sx={{
                         px: 1,
                         py: 0.25,
-                        bgcolor: l.isAdmin ? '#F59E0B' : 'rgba(255,255,255,0.08)',
+                        bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.08)',
                         color: l.isAdmin ? '#111827' : '#E5E7EB',
                         borderRadius: '9999px',
                         fontSize: 10,
