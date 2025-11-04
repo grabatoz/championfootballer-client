@@ -2111,7 +2111,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
   if (!mounted) {
     return (
-      <AppBar position="static" sx={{ backgroundColor: 'white', boxShadow: 2 }}>
+      // <AppBar position="static" sx={{ backgroundColor: 'white', boxShadow: 2 }}>
+       <AppBar position="sticky" sx={{ backgroundColor: 'white', boxShadow: 2, top: 0, zIndex: (theme) => theme.zIndex.drawer + 2 }}>
         <Toolbar>
           <Box sx={{ height: 40, width: 120, bgcolor: '#e0e0e0', borderRadius: 1 }} />
         </Toolbar>
@@ -2122,11 +2123,15 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   return (
     <>
       <AppBar
-        position="static"
+        // position="static"
+          position="sticky"
         sx={{
           background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
           boxShadow: 3,
-          px: { xs: 1, sm: 2, md: 2 }
+          // px: { xs: 1, sm: 2, md: 2 }
+           px: { xs: 1, sm: 2, md: 2 },
+          top: 0,
+          zIndex: (theme) => theme.zIndex.drawer + 2
         }}
       >
         <Toolbar sx={{ 
