@@ -1,56 +1,27 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'use client';
+    'use client';
 
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
+// Local inline replacement for lucide-react SquarePen to avoid HMR issues
+type IconProps = { size?: number; color?: string; className?: string };
+const SquarePen: React.FC<IconProps> = ({ size = 24, color = 'currentColor', className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <path d="M13.5 6.5l4 4" />
+        <path d="M12 8l-6 6v3h3l6-6" />
+    </svg>
+);
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
@@ -104,6 +75,23 @@ interface Match {
     archived?: boolean;
     active?: boolean;
 }
+
+// Normalize status strings coming from API to our expected union
+const normalizeStatus = (s: unknown): Match['status'] => {
+    const t = String(s ?? '').trim().toUpperCase();
+    if (t === 'RESULT_PUBLISHED') return 'RESULT_PUBLISHED';
+    if (t === 'RESULT_UPLOADED') return 'RESULT_UPLOADED';
+    if (t === 'SCHEDULED') return 'SCHEDULED';
+    // Fuzzy fallbacks for inconsistent server values
+    if (t.includes('UPLOAD')) return 'RESULT_UPLOADED';
+    if (t.includes('PUBLISH')) return 'RESULT_PUBLISHED';
+    return 'SCHEDULED';
+};
+
+const normalizeMatch = (m: any): Match => ({
+    ...m,
+    status: normalizeStatus(m?.status),
+});
 
 type LeagueComputedStatus = {
     isComplete?: boolean;
@@ -432,7 +420,8 @@ export default function AllMatches() {
             }
             const data = await response.json();
             if (data.success && data.league && data.league.matches) {
-                setMatches(data.league.matches);
+                const normalized = (data.league.matches as any[]).map(normalizeMatch);
+                setMatches(normalized);
                 // Update the leagues array to include members for the selected league
                 setLeagues(prevLeagues => {
                     const otherLeagues = prevLeagues.filter(l => l.id !== data.league.id);
@@ -1705,87 +1694,6 @@ export default function AllMatches() {
                         </Box>
                     </Box>
                 </Box>
-
-                {/* Filter Buttons - Only show when league is selected and has matches */}
-                {selectedLeague !== 'all' && matches.length > 0 && (
-                    <Box sx={{
-                        display: 'flex',
-                        gap: 2,
-                        mb: 3,
-                        justifyContent: 'center',
-                        flexWrap: 'wrap'
-                    }}>
-                        <Button
-                            variant={matchFilter === 'all' ? 'contained' : 'outlined'}
-                            onClick={() => setMatchFilter('all')}
-                            sx={{
-                                backgroundColor: matchFilter === 'all' ? '#0388E3' : 'transparent',
-                                color: matchFilter === 'all' ? 'white' : '#0388E3',
-                                borderColor: '#0388E3',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                px: { xs: 2, sm: 3 },
-                                py: 1,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    backgroundColor: matchFilter === 'all' ? '#0369a1' : 'rgba(3, 136, 227, 0.1)',
-                                    borderColor: '#0388E3',
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                            }}
-                        >
-                            All Matches
-                        </Button>
-
-                        <Button
-                            variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
-                            onClick={() => setMatchFilter('fixtures')}
-                            sx={{
-                                backgroundColor: matchFilter === 'fixtures' ? '#4CAF50' : 'transparent',
-                                color: matchFilter === 'fixtures' ? 'white' : '#4CAF50',
-                                borderColor: '#4CAF50',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                px: { xs: 2, sm: 3 },
-                                py: 1,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    backgroundColor: matchFilter === 'fixtures' ? '#45a049' : 'rgba(76, 175, 80, 0.1)',
-                                    borderColor: '#4CAF50',
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                            }}
-                        >
-                            Fixtures
-                        </Button>
-
-                        <Button
-                            variant={matchFilter === 'results' ? 'contained' : 'outlined'}
-                            onClick={() => setMatchFilter('results')}
-                            sx={{
-                                backgroundColor: matchFilter === 'results' ? '#FA5836' : 'transparent',
-                                color: matchFilter === 'results' ? 'white' : '#FA5836',
-                                borderColor: '#FA5836',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                px: { xs: 2, sm: 3 },
-                                py: 1,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    backgroundColor: matchFilter === 'results' ? '#e54d2e' : 'rgba(250, 88, 54, 0.1)',
-                                    borderColor: '#FA5836',
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                            }}
-                        >
-                            Results
-                        </Button>
-                    </Box>
-                )}
-
                 {/* Match Cards */}
                 <Box sx={{
                     display: 'grid',
@@ -1855,7 +1763,7 @@ export default function AllMatches() {
                             // const isScheduled = match.status === 'scheduled';
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
-                            const isCompleted = match.status === 'RESULT_PUBLISHED';
+                            const isCompleted = match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
                             return (
                                 isCompleted ? (
 
@@ -2267,7 +2175,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
-                                                            disabled={!league?.active}
+                                                            disabled={!leagueForMatch?.active}
                                                         >
                                                             ADD Score
                                                         </Button>
@@ -2323,7 +2231,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
-                                                            disabled={!league?.active}
+                                                            disabled={!leagueForMatch?.active}
                                                         >
                                                             Add Your Stats
                                                         </Button>
@@ -2354,7 +2262,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
-                                                            disabled={!league?.active}
+                                                            disabled={!leagueForMatch?.active}
                                                         >
                                                             View Team
                                                         </Button>
@@ -2366,7 +2274,7 @@ export default function AllMatches() {
                                                     <span>
                                                         <Button
                                                             size="small"
-                                                            onClick={() => router.push(`match/${match.id}`)}
+                                                            onClick={() => router.push(`/match/${match.id}`)}
                                                             sx={{
                                                                 backgroundColor: '#FA5836',
                                                                 color: 'white',
@@ -2381,7 +2289,7 @@ export default function AllMatches() {
                                                                 transition: 'all 0.2s ease-in-out',
                                                                 '&:hover': { bgcolor: '#FA5836', boxShadow: '0 4px 8px rgba(250, 88, 54, 0.4)', transform: 'translateY(-1px)' },
                                                             }}
-                                                            disabled={!league?.active ||  match.status === 'RESULT_UPLOADED'}
+                                                            disabled={!leagueForMatch?.active ||  match.status === 'RESULT_UPLOADED'}
                                                         >
                                                             Match Results
                                                         </Button>
@@ -2423,10 +2331,10 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                router.push(`/league/${String(match.leagueId)}/match/${match.id}/edit`);
                                                             }}
                                                             sx={{ color: 'white' }}
-                                                            disabled={!league?.active}
+                                                            disabled={!leagueForMatch?.active}
                                                         >
                                                             <Edit size={20} />
                                                         </IconButton>

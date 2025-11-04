@@ -21,7 +21,7 @@ import {
   MenuItem,
   FormControl,
   SelectChangeEvent,
-  Avatar
+  // Avatar
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -1865,7 +1865,7 @@ export default function CareerPage() {
                         </TableHead>
                         <TableBody>
                           {(() => {
-                            const { last, prev } = lastPrev10;
+                            const { prev } = lastPrev10;
                             const pct = (n: number) => `${n.toFixed(1)}%`;
                             const deltaPct = (a: number, b: number) => `${(a - b).toFixed(1)}%`;
                             const deltaNum = (a: number, b: number) => `${(a - b).toFixed(1)}`;
