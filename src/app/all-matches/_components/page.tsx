@@ -2,26 +2,6 @@
 
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
-// Local inline replacement for lucide-react SquarePen to avoid HMR issues
-type IconProps = { size?: number; color?: string; className?: string };
-const SquarePen: React.FC<IconProps> = ({ size = 24, color = 'currentColor', className }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <path d="M13.5 6.5l4 4" />
-        <path d="M12 8l-6 6v3h3l6-6" />
-    </svg>
-);
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PlayerCard from '@/Components/playercard/playercard';
@@ -1784,7 +1764,7 @@ export default function AllMatches() {
                                         }}
                                     >
                                         <CardContent sx={{ p: 2 }}>
-                                            {isAdmin && (
+                                            {/* {isAdmin && (
                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
                                                     {match?.archived ? (
                                                         <Tooltip title="Restore Match">
@@ -1816,7 +1796,55 @@ export default function AllMatches() {
                                                         </Tooltip>
                                                     )}
                                                 </Box>
-                                            )}
+                                            )} */}
+    {isAdmin && (
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0 }}>
+                                                                    {match.archived ? (
+                                                                        <Tooltip title="Restore Match">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    // Open actions dialog instead of immediate restore
+                                                                                    setArchivedActionMatch(match);
+                                                                                    setArchivedActionOpen(true);
+                                                                                }}
+                                                                                sx={{ color: '#4CAF50' }}
+                                                                            >
+                                                                                <Undo2 size={20} />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Tooltip title="Edit">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                    }}
+                                                                                    sx={{ color: 'white' }}
+                                                                                    disabled={!league?.active}
+                                                                                >
+                                                                                    <Edit size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                            <Tooltip title="Delete / Archive">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleRequestDeleteMatch(match);
+                                                                                    }}
+                                                                                    sx={{ color: '#ffb4b4' }}
+                                                                                >
+                                                                                    <Trash2 size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                        </>
+                                                                    )}
+                                                                </Box>
+                                                            )}
 
                                             {/* Archived label */}
                                             {match.archived && (
@@ -1929,7 +1957,7 @@ export default function AllMatches() {
                                                             }}>
                                                                 Full time
                                                             </Typography>
-                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -7 }} />
+                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -9 }} />
                                                         </Box>
                                                     </Box>
                                                 </Link>
