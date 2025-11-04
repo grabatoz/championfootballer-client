@@ -1,5 +1,4 @@
-    'use client';
-
+'use client';
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
@@ -68,9 +67,12 @@ const normalizeStatus = (s: unknown): Match['status'] => {
     return 'SCHEDULED';
 };
 
-const normalizeMatch = (m: any): Match => ({
+// The API may send status as any arbitrary string; all other fields should match Match
+type ApiMatch = Omit<Match, 'status'> & { status?: unknown };
+
+const normalizeMatch = (m: ApiMatch): Match => ({
     ...m,
-    status: normalizeStatus(m?.status),
+    status: normalizeStatus(m.status),
 });
 
 type LeagueComputedStatus = {
@@ -159,7 +161,7 @@ export default function AllMatches() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<string>('all');
-    const [matchFilter, setMatchFilter] = useState<'all' | 'fixtures' | 'results'>('all');
+    const [matchFilter,] = useState<'all' | 'fixtures' | 'results'>('all');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -400,7 +402,7 @@ export default function AllMatches() {
             }
             const data = await response.json();
             if (data.success && data.league && data.league.matches) {
-                const normalized = (data.league.matches as any[]).map(normalizeMatch);
+                const normalized = (data.league.matches as ApiMatch[]).map(normalizeMatch);
                 setMatches(normalized);
                 // Update the leagues array to include members for the selected league
                 setLeagues(prevLeagues => {

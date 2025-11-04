@@ -256,15 +256,26 @@ export default function CareerPage() {
   const data: PlayerStatsData | undefined = rawData ?? undefined;
 
   // Ensure leaguesForYear is defined for dropdown usage
-  const leaguesForYear = useMemo(() => {
-    const list = (data?.leagues || []) as any[];
-    if (!list.length) return [];
-    const effectiveYear = filters.year && filters.year !== 'all' ? filters.year : String((() => {
-      const years = list.flatMap((l: any) => Array.isArray(l.matches) ? l.matches : []).map((m: any) => dayjs(m.date).year());
+  const leaguesForYear: LeagueWithMatches[] = useMemo(() => {
+    const list: LeagueWithMatches[] = Array.isArray(data?.leagues)
+      ? (data?.leagues as LeagueWithMatches[])
+      : [];
+    if (list.length === 0) return [];
+
+    const fallbackYear = (() => {
+      const years = list
+        .flatMap((l) => (Array.isArray(l.matches) ? (l.matches as LeagueMatch[]) : []))
+        .map((m) => dayjs(m.date).year());
       return years.length ? Math.max(...years) : dayjs().year();
-    })());
-    return list.filter(l => Array.isArray(l.matches) && l.matches.some((m: any) => dayjs(m.date).year().toString() === effectiveYear));
-  }, [data, filters.year]);
+    })();
+
+    const effectiveYear = filters.year && filters.year !== 'all' ? String(filters.year) : String(fallbackYear);
+    return list.filter(
+      (l) =>
+        Array.isArray(l.matches) &&
+        (l.matches as LeagueMatch[]).some((m) => dayjs(m.date).year().toString() === effectiveYear)
+    );
+  }, [data?.leagues, filters.year]);
   const { user, token } = useAuth();
   const params = useParams();
   const router = useRouter();
@@ -1340,9 +1351,9 @@ export default function CareerPage() {
                           <MenuItem value="" disabled>
                             <em>Select a League</em>
                           </MenuItem>
-                          {(leaguesForYear || []).map((league) => (
+                          {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
                             <MenuItem key={league.id} value={league.id}>
-                              {league.name || `League ${league.id}`}
+                              {league.name ?? `League ${league.id}`}
                             </MenuItem>
                           ))}
                         </Select>
