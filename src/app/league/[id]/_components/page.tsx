@@ -4996,7 +4996,7 @@ export default function LeagueDetailPage() {
                                                             )} */}
 
                                                             {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0 }}>
                                                                     {match.archived ? (
                                                                         <Tooltip title="Restore Match">
                                                                             <IconButton
@@ -5013,18 +5013,33 @@ export default function LeagueDetailPage() {
                                                                             </IconButton>
                                                                         </Tooltip>
                                                                     ) : (
-                                                                        <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
+                                                                        <>
+                                                                            <Tooltip title="Edit">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                    }}
+                                                                                    sx={{ color: 'white' }}
+                                                                                    disabled={!league?.active}
+                                                                                >
+                                                                                    <Edit size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                            <Tooltip title="Delete / Archive">
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleRequestDeleteMatch(match);
+                                                                                    }}
+                                                                                    sx={{ color: '#ffb4b4' }}
+                                                                                >
+                                                                                    <Trash2 size={20} />
+                                                                                </IconButton>
+                                                                            </Tooltip>
+                                                                        </>
                                                                     )}
                                                                 </Box>
                                                             )}
@@ -5126,7 +5141,7 @@ export default function LeagueDetailPage() {
                                                                         </Box>
 
                                                                         {/* Date and Status - Right Side */}
-                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 32, right: 8 }}>
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 39, right: 8 }}>
                                                                             <Typography variant="body2" sx={{
                                                                                 color: 'white',
                                                                                 fontWeight: 'bold',
@@ -5140,7 +5155,7 @@ export default function LeagueDetailPage() {
                                                                             }}>
                                                                                 Full time
                                                                             </Typography>
-                                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                            <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -7.5 }} />
                                                                         </Box>
                                                                     </Box>
                                                                 </Link>
@@ -5210,7 +5225,7 @@ export default function LeagueDetailPage() {
                                                                     </Box>
 
                                                                     {/* Date and Status - Right Side */}
-                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 32, right: 8 }}>
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'absolute', top: 39, right: 8 }}>
                                                                         <Typography variant="body2" sx={{
                                                                             color: 'white',
                                                                             fontWeight: 'bold',
@@ -5224,7 +5239,7 @@ export default function LeagueDetailPage() {
                                                                         }}>
                                                                             Pending confirmation
                                                                         </Typography> */}
-                                                                        <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -6 }} />
+                                                                        <Divider sx={{ height: '70px', width: '0.5px', color: 'white', bgcolor: '#fff', mr: 8.5, mt: -5.5 }} />
                                                                     </Box>
                                                                 </Box>
                                                             )}
