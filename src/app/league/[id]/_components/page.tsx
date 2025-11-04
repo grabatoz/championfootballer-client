@@ -6294,7 +6294,7 @@ export default function LeagueDetailPage() {
                                 </Box>
                             </Box>
                             {/* Right: Last 10 Matches */}
-                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', height: '320px', mt: 1, borderRadius: 2, overflowY: 'auto' }}>
+                            <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', height: '420px', mt: 1, mr: 1, borderRadius: 2, overflowY: 'auto' }}>
                                 <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 10 games</Typography>
                                 <Stack direction="column" spacing={1}>
                                     {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
