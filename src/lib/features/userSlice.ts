@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI, playerAPI } from '../api';
-import type { User } from '@/types/user';
+import { User } from '@/types/user';
 
 interface Player {
   id: string;

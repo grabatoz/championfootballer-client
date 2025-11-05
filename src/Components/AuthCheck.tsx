@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { initializeFromStorage } from '@/lib/features/authSlice';
-import type { AppDispatch } from '@/lib/store';
+import { AppDispatch } from '@/lib/store';
 import Cookies from 'js-cookie';
 
 export default function AuthCheck() {

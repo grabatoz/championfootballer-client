@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { leagueAPI } from '../api';
-import type {  CreateLeagueDTO } from '@/types/api';
+import {  CreateLeagueDTO } from '@/types/api';
 import Cookies from 'js-cookie';
-import type { League } from '@/types/user';
+import { League } from '@/types/user';
 
 interface LeagueState {
   leagues: League[];

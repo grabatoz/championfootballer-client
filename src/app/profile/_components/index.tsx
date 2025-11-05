@@ -229,12 +229,12 @@ const PlayerProfileCard = () => {
   const [city, setCity] = useState(user?.city || "")
   
   const handleLocationChange = {
-    country: (_code: string, name: string) => {
+    country: (code: string, name: string) => {
       setCountry(name);
       setStateProvince('');
       setCity('');
     },
-    state: (_code: string, name: string) => {
+    state: (code: string, name: string) => {
       setStateProvince(name);
       setCity('');
     },
@@ -1136,7 +1136,7 @@ const PlayerProfileCard = () => {
                           <Box mt="auto" sx={{ px: 1.5 /* add horizontal padding so thumb not stuck to edge */ }}>
                             <StyledSlider
                               value={skill.value ?? 50}
-                              onChange={(_e, v) => skill.setter(v as number)}
+                              onChange={(e, v) => skill.setter(v as number)}
                               min={50}
                               max={99}
                               step={1}

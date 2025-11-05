@@ -9,8 +9,7 @@ import GoldenBootImg from '@/Components/images/goldenboot.png';
 import KingPlayMakerImg from '@/Components/images/kingplaymaker.png';
 import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
-import Image from 'next/image';
-import type { StaticImageData } from 'next/image';
+import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import { ChevronDown } from 'lucide-react';
 import HatTrickBadge from '@/Components/images/brown.svg'

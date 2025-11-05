@@ -1,4 +1,4 @@
-import type { User } from '@/types/user';
+import { User } from '@/types/user';
 import Cookies from 'js-cookie';
 
 export function saveAuthData(userData: User, userId: string, token: string) {

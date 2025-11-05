@@ -38,10 +38,10 @@ class ChunkCacheManager {
     return `${resource}_chunk_${chunkIndex}`;
   }
 
-  // Generate metadata key (currently unused)
-  // private getMetaKey(resource: string): string {
-  //   return `${resource}_meta`;
-  // }
+  // Generate metadata key
+  private getMetaKey(resource: string): string {
+    return `${resource}_meta`;
+  }
 
   // Load cache from localStorage
   private loadFromStorage<T>(key: string): CacheChunk<T> | null {

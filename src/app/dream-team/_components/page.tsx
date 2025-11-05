@@ -141,19 +141,21 @@ const DreamTeamPage = () => {
     return (pos || '').toUpperCase().slice(0, 3);
   };
 
-  // Jersey number helper types and function - currently unused but kept for future reference
-  // type JerseyValue = number | string;
-  // type WithJerseyFields = {
-  //   jerseyNumber?: JerseyValue;
-  //   shirtNumber?: JerseyValue;
-  //   number?: JerseyValue;
-  // };
-  // const getJerseyNumber = (p: (Player & WithJerseyFields) | undefined, type: string): string => {
-  //   const num: JerseyValue | undefined = p?.jerseyNumber ?? p?.shirtNumber ?? p?.number;
-  //   if (typeof num === 'number' || typeof num === 'string') return String(num);
-  //   const defaults: Record<string, string> = { goalkeeper: '1', defenders: '4', midfielders: '8', forwards: '9' };
-  //   return defaults[type] || '?';
-  // };
+  type JerseyValue = number | string;
+  type WithJerseyFields = {
+    jerseyNumber?: JerseyValue;
+    shirtNumber?: JerseyValue;
+    number?: JerseyValue;
+  };
+
+  // Jersey number helper (uses player.jerseyNumber/shirtNumber/number if present; otherwise sensible defaults)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const getJerseyNumber = (p: (Player & WithJerseyFields) | undefined, type: string): string => {
+    const num: JerseyValue | undefined = p?.jerseyNumber ?? p?.shirtNumber ?? p?.number;
+    if (typeof num === 'number' || typeof num === 'string') return String(num);
+    const defaults: Record<string, string> = { goalkeeper: '1', defenders: '4', midfielders: '8', forwards: '9' };
+    return defaults[type] || '?';
+  };
 
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 

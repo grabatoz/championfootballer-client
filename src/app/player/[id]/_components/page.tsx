@@ -13,18 +13,18 @@ import {
     Button,
     CircularProgress,
     FormControl,
+    SelectChangeEvent,
     TextField,
     Grid,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch, RootState } from '@/lib/store';
+import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter, clearPlayerStats } from '@/lib/features/playerStatsSlice';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
 import BaloonDImg from '@/Components/images/baloond.png';
-import Image, { type StaticImageData } from 'next/image';
+import Image, { StaticImageData } from 'next/image';
 import dayjs from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import { playerAPI } from '@/lib/api';

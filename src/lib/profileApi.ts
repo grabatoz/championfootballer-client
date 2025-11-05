@@ -1,5 +1,5 @@
-import type { ApiResponse } from '@/types/api';
-import type { User } from '@/types/user';
+import { ApiResponse } from '@/types/api';
+import { User } from '@/types/user';
 import Cookies from 'js-cookie';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';

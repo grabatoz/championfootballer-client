@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import type { StaticImageData } from 'next/image';
+import Image, { StaticImageData } from 'next/image';
 import {
   Box,
   Typography,

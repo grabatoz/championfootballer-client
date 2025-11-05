@@ -1,8 +1,8 @@
 // Simple shadcn style calendar wrapper (React Day Picker)
 'use client';
 import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
-import type {
+import {
+  DayPicker,
   DayPickerSingleProps,
   Matcher,
   ClassNames

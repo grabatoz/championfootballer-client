@@ -10,9 +10,6 @@ import ToasterProvider from '@/Components/ToasterProvider';
 import AuthBootstrap from '@/Components/AuthBootstrap';
 import PerformanceMonitor from '@/Components/PerformanceMonitor';
 import ProductionOptimizer from '@/Components/ProductionOptimizer';
-import WebVitalsMonitor from '@/Components/WebVitalsMonitor';
-import EnhancedPerformanceMonitor from '@/Components/EnhancedPerformanceMonitor';
-import { registerServiceWorker } from '@/lib/registerServiceWorker';
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -33,28 +30,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Champion Footballer",
   description: "Your ultimate football management platform",
-  manifest: "/manifest.json",
-  themeColor: "#4CAF50",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/icon-192.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Champion Footballer",
-  },
 };
-
-// Register service worker on mount
-if (typeof window !== 'undefined') {
-  registerServiceWorker();
-}
 
 export default function RootLayout({
   children,
@@ -68,8 +44,6 @@ export default function RootLayout({
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}
-          <WebVitalsMonitor /> {/* Core Web Vitals tracking */}
-          <EnhancedPerformanceMonitor /> {/* Enhanced performance monitoring */}
           <AuthBootstrap />
           <AuthCheck />
           <LayoutContent>
