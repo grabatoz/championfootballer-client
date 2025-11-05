@@ -10,12 +10,12 @@ import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
-import { User, League, Match } from '@/types/user';
+import type { User, League, Match } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
-import { AppDispatch } from '@/lib/store';
+import type { AppDispatch } from '@/lib/store';
 import Tooltip from '@mui/material/Tooltip';
-import Slide, { SlideProps } from '@mui/material/Slide';
+import Slide, { type SlideProps } from '@mui/material/Slide';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });

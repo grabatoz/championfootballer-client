@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, Chip } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
 import { useAuth } from '@/lib/hooks';
 
 // Lazy load heavy components

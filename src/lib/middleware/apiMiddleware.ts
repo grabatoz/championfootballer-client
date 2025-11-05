@@ -1,6 +1,6 @@
-import { Middleware, AnyAction } from '@reduxjs/toolkit';
+import type { Middleware, AnyAction } from '@reduxjs/toolkit';
 import { authAPI } from '../api';
-import { RegisterCredentials } from '@/types/api';
+import type { RegisterCredentials } from '@/types/api';
 
 interface ApiRequest<T = unknown> {
   type: string;

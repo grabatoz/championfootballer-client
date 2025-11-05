@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchWorldRanking, WorldRankingPlayer, WorldRankingResponse } from '@/lib/api';
+import { fetchWorldRanking } from '@/lib/api';
+import type { WorldRankingPlayer, WorldRankingResponse } from '@/lib/api';
 import { Box, Typography, Select, MenuItem, ToggleButtonGroup, ToggleButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, TextField, CircularProgress, Chip, Button } from '@mui/material';
 import Link from 'next/link';
 import { Country } from 'country-state-city';

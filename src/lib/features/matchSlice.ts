@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { matchAPI } from '../api';
-import { CreateMatchDTO } from '@/types/api';
-import { Match } from '@/types/user';
+import type { CreateMatchDTO } from '@/types/api';
+import type { Match } from '@/types/user';
 
 interface MatchState {
   matches: Match[];
@@ -19,7 +19,7 @@ const initialState: MatchState = {
 
 export const fetchMatches = createAsyncThunk(
   'match/fetchAll',
-  async (leagueId: string | undefined, { getState, rejectWithValue }) => {
+  async (_leagueId: string | undefined, { getState, rejectWithValue }) => {
     try {
       const { auth } = getState() as { auth: { token: string | null } };
       if (!auth.token) {

@@ -28,8 +28,8 @@
 //
 // Solves the "slow tab switching" problem once and for all!
 
-import { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
-import { User, League, Match } from '@/types/user';
+import type { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
+import type { User, League, Match } from '@/types/user';
 import Cookies from 'js-cookie';
 import type {
   LeaguesResponse,

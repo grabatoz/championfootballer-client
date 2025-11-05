@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { profileAPI } from '../api';
-import { User, League, Match } from '@/types/user';
+import type { User, League, Match } from '@/types/user';
 
 interface Statistics {
   matchesPlayed: number;

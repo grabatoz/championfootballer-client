@@ -1,7 +1,8 @@
 'use client';
 
 import { Provider } from 'react-redux';
-import { makeStore, AppStore } from './store';
+import type { AppStore } from './store';
+import { makeStore } from './store';
 import { useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'

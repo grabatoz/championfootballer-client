@@ -39,9 +39,9 @@ import toast, { Toaster } from 'react-hot-toast';
 // import players from '@/Components/images/players.png'
 // import trophy from '@/Components/images/trophy.png'
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/store';
+import type { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
-import { League, User, Match } from '@/types/user';
+import type { League, User, Match } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
 import { ChevronRight, CloudUpload, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';

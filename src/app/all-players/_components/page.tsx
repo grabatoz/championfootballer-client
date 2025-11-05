@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/store';
+import type { AppDispatch, RootState } from '@/lib/store';
 import { fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';

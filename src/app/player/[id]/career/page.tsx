@@ -20,13 +20,13 @@ import {
   Select,
   MenuItem,
   FormControl,
-  SelectChangeEvent,
   // Avatar
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/store';
+import type { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
 import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';

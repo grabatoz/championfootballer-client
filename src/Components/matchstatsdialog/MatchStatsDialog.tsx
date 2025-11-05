@@ -17,9 +17,8 @@ import {
     DialogTitle,
     IconButton,
     Alert,
-    SxProps,
-    Theme,
 } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
@@ -35,7 +34,7 @@ import CleanSheet from '@/Components/images/cleansheet.png'
 // import penalty from '@/Components/images/penalty.png'
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
-import { LeaderboardPlayer } from '@/types/api';
+import type { LeaderboardPlayer } from '@/types/api';
 // import Check from '@/Components/images/check.png'
 // import Coin from '@/Components/images/icon.png'
 import Shirt from '@/Components/images/shirtimg.png'

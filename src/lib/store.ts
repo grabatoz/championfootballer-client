@@ -6,7 +6,8 @@ import userReducer from './features/userSlice';
 import profileReducer from './features/profileSlice';
 import playerStatsReducer from './features/playerStatsSlice';
 import { leaguesApi } from './features/leaguesApi';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import type { TypedUseSelectorHook } from 'react-redux';
 // import { apiMiddleware } from './middleware/apiMiddleware';
 
 export const makeStore = () => {
@@ -22,8 +23,19 @@ export const makeStore = () => {
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
-        serializableCheck: false,
+        serializableCheck: {
+          // Ignore these action types
+          ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+          // Ignore these field paths in all actions
+          ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+          // Ignore these paths in the state
+          ignoredPaths: ['items.dates'],
+        },
+        // Enable immutability checks only in development
+        immutableCheck: process.env.NODE_ENV !== 'production',
       }).concat(leaguesApi.middleware),
+    // Enable Redux DevTools only in development
+    devTools: process.env.NODE_ENV !== 'production',
   });
 };
 

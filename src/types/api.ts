@@ -1,4 +1,4 @@
-import { User, League, Match } from './user';
+import type { User, League, Match } from './user';
 
 export interface ApiResponse<T> {
   message: string;

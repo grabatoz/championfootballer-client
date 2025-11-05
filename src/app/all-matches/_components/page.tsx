@@ -10,7 +10,7 @@ import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 import { Card, CardContent } from '@mui/material';
 import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
-import { LeaderboardResponse } from '@/types/api';
+import type { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import CloseIcon from '@mui/icons-material/Close';
