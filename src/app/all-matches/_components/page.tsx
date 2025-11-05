@@ -1,5 +1,4 @@
 'use client';
-
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert } from '@mui/material';
 import { Calendar, ChevronDown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
@@ -165,6 +164,7 @@ export default function AllMatches() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<string>('all');
+    const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures'>('all');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -443,6 +443,25 @@ export default function AllMatches() {
             fetchLeagues();
         }
     }, [token, fetchLeagues]);
+
+    // Debug: log status distribution to help identify filtering issues
+    useEffect(() => {
+        try {
+            if (!matches || matches.length === 0) return;
+            const norm = (s: unknown) => (typeof s === 'string' ? s.trim().toUpperCase() : '');
+            const counts: Record<string, number> = {};
+            matches.forEach(m => {
+                const s = norm(m.status);
+                counts[s || '(empty)'] = (counts[s || '(empty)'] || 0) + 1;
+            });
+            // eslint-disable-next-line no-console
+            console.group('[All Matches] Status distribution');
+            // eslint-disable-next-line no-console
+            console.table(counts);
+            // eslint-disable-next-line no-console
+            console.groupEnd();
+        } catch {}
+    }, [matches]);
 
     // Add this effect for auto-select
     useEffect(() => {
@@ -777,9 +796,44 @@ export default function AllMatches() {
         return getBestDateMs(b) - getBestDateMs(a);
     };
 
+    const filteredMatches = React.useMemo(() => {
+        const arr = Array.isArray(matches) ? matches : [];
+
+        const normalizeStatus = (s: unknown): string =>
+            typeof s === 'string' ? s.trim().toUpperCase() : '';
+
+        // Treat these as fixtures (upcoming) across possible backend variants
+        const fixtureStatuses = new Set([
+            'SCHEDULED', 'PLANNED', 'UPCOMING', 'NOT_STARTED', 'CREATED', 'PENDING'
+        ]);
+
+        const isFixture = (m: Match): boolean => {
+            const st = normalizeStatus(m?.status);
+            if (st && fixtureStatuses.has(st)) return true;
+            // Fallback: if status missing, use date in future as fixture
+            if (!st) {
+                const t = new Date(m?.date as string).getTime();
+                if (Number.isFinite(t) && t > Date.now()) return true;
+            }
+            return false;
+        };
+
+        switch (matchFilter) {
+            case 'results': {
+                // Everything that is not considered a fixture
+                return arr.filter(m => !isFixture(m));
+            }
+            case 'fixtures':
+                return arr.filter(isFixture);
+            case 'all':
+            default:
+                return arr;
+        }
+    }, [matches, matchFilter]);
+
     const sortedMatches = React.useMemo(() => {
-        return [...matches].sort(compareMatchesDesc);
-    }, [matches]);
+        return [...filteredMatches].sort(compareMatchesDesc);
+    }, [filteredMatches]);
 
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
@@ -1670,6 +1724,56 @@ export default function AllMatches() {
                                 })}
                             </Menu>
                         </Box>
+
+                        {/* Filters: All | Results | Matches | Fixtures */}
+                        <Box sx={{
+                            display: 'flex',
+                            gap: 1,
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            mt: { xs: 1, md: 0 }
+                        }}>
+                            <Button
+                                variant={matchFilter === 'all' ? 'contained' : 'outlined'}
+                                onClick={() => setMatchFilter('all')}
+                                sx={{
+                                    backgroundColor: matchFilter === 'all' ? '#0388E3' : 'transparent',
+                                    color: 'white',
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    textTransform: 'none',
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                All Matches
+                            </Button>
+                            <Button
+                                variant={matchFilter === 'results' ? 'contained' : 'outlined'}
+                                onClick={() => setMatchFilter('results')}
+                                sx={{
+                                    backgroundColor: matchFilter === 'results' ? '#0388E3' : 'transparent',
+                                    color: 'white',
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    textTransform: 'none',
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                Results
+                            </Button>
+                            
+                            <Button
+                                variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
+                                onClick={() => setMatchFilter('fixtures')}
+                                sx={{
+                                    backgroundColor: matchFilter === 'fixtures' ? '#0388E3' : 'transparent',
+                                    color: 'white',
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    textTransform: 'none',
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                Fixtures
+                            </Button>
+                        </Box>
                     </Box>
                 </Box>
                 {/* Match Cards */}
@@ -1712,6 +1816,28 @@ export default function AllMatches() {
                                 No matches found in {selectedLeagueName}
                             </Typography>
                         </Paper>
+                    ) : sortedMatches.length === 0 ? (
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                borderRadius: 3,
+                                p: 4,
+                                textAlign: 'center',
+                                color: '#b0bec5',
+                            }}
+                        >
+                            <Typography variant="h6">
+                                {matchFilter === 'fixtures' ? 'No fixtures found' : matchFilter === 'results' ? 'No results yet' : 'No matches found'}
+                            </Typography>
+                            <Typography variant="body2">
+                                {matchFilter === 'fixtures'
+                                    ? 'There are no upcoming fixtures for this league.'
+                                    : matchFilter === 'results'
+                                        ? 'No completed matches have been recorded yet.'
+                                        : `No matches found in ${selectedLeagueName}`}
+                            </Typography>
+                        </Paper>
                     ) : (
                         sortedMatches.map((match) => {
                             // const { availableCount, pendingCount } = getAvailabilityCounts(match);
@@ -1721,7 +1847,7 @@ export default function AllMatches() {
                             // const isScheduled = match.status === 'scheduled';
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
-                            const isCompleted = match.status === 'RESULT_PUBLISHED' || 'RESULT_UPLOADED';
+                            const isCompleted = match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
                             return (
                                 isCompleted ? (
 
@@ -2506,7 +2632,7 @@ export default function AllMatches() {
                                             </Box>
 
 
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: -3 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                     {/* Availability button */}
                                                     {isMember && (
@@ -2572,7 +2698,7 @@ export default function AllMatches() {
                                     </Card>
                                 )
                             )
-                        })
+})
                     )}
 
                 </Box>
