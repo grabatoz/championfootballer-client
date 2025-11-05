@@ -294,6 +294,29 @@ export default function MatchDetailsPage() {
   useEffect(() => {
     if (matchId && token) fetchVotes();
   }, [matchId, token, fetchVotes]);
+
+  // Live-update votes without page refresh: listen for vote-related events
+  useEffect(() => {
+    const handleVotesEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      // If event carries a matchId, ensure it matches; otherwise, refresh anyway
+      if (!customEvent.detail?.matchId || customEvent.detail.matchId === matchId) {
+        fetchVotes();
+      }
+    };
+
+    // These events can be dispatched by dialogs/forms after a vote change
+    window.addEventListener('votes-updated', handleVotesEvent);
+    window.addEventListener('vote-submitted', handleVotesEvent);
+    // Also react to general match updates to keep votes in sync
+    window.addEventListener('match-updated', handleVotesEvent);
+
+    return () => {
+      window.removeEventListener('votes-updated', handleVotesEvent);
+      window.removeEventListener('vote-submitted', handleVotesEvent);
+      window.removeEventListener('match-updated', handleVotesEvent);
+    };
+  }, [matchId, fetchVotes]);
   const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
 
   function getTeamSkillAvg(players: User[]) {
@@ -502,8 +525,8 @@ export default function MatchDetailsPage() {
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
-                // Shared grid template: Player | Goals | Assists | Clean Sheets | Impact | XP
-                const GRID_COLS = 'minmax(200px, 1fr) 56px 56px 110px 56px 56px';
+                // Shared grid template: Player | Goals | Assists | Clean Sheets | Impact | Votes | XP
+                const GRID_COLS = 'minmax(200px, 1fr) 56px 56px 110px 56px 56px 56px';
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
                   firstName: g.firstName,
@@ -626,6 +649,7 @@ export default function MatchDetailsPage() {
                               Clean Sheets
                             </Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Imp</Box>
+                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Votes</Box>
                             <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>XP</Box>
                           </Box>
 
@@ -716,6 +740,7 @@ export default function MatchDetailsPage() {
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.assists ?? 0}</Box>
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.impact ?? 0}</Box>
+                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{playerVotes[player.id] ?? 0}</Box>
                                       <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.xpAwarded ?? 0}</Box>
                                     </Box>
                                     <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
