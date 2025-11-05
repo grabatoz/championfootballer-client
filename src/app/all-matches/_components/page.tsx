@@ -1731,6 +1731,8 @@ export default function AllMatches() {
                             gap: 1,
                             flexWrap: 'wrap',
                             alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '100%',
                             mt: { xs: 1, md: 0 }
                         }}>
                             <Button
