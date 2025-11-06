@@ -2142,18 +2142,21 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 180, sm: 220, md: 280, lg: 350 }, 
-              display: 'flex' 
+              width: { xs: 160, sm: 200, md: 260, lg: 320 },
+              height: { xs: 36, md: 40 },
+              display: 'flex',
+              alignItems: 'center'
             }}>
               <Image
                 src={cflogo}
                 alt="Champion Footballer Logo"
-                width={350}
-                height={40}
+                width={320}
+                height={64}
                 priority
+                sizes="(max-width:600px) 160px, (max-width:900px) 200px, (max-width:1200px) 260px, 320px"
                 style={{
-                  height: '40px',
-                  width: '100%',
+                  height: '100%',
+                  width: 'auto',
                   objectFit: 'contain'
                 }}
               />
@@ -2176,7 +2179,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             display: 'flex', 
             alignItems: 'center',
             gap: { xs: 0.5, md: 1 },
-            flexShrink: 0
+            flexShrink: 0,
           }}>
             {isAuthenticated && (
               <>
@@ -2246,6 +2249,25 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   alignItems: 'center',
                   gap: 0.5
                 }}>
+                  {/* MOBILE ADD STATS BUTTON */}
+                  {/* <Button
+                    onClick={() => setStatsOpen(true)}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      display: { xs: 'inline-flex', lg: 'none' },
+                      textTransform: 'none',
+                      color: '#fff',
+                      borderColor: 'rgba(255,255,255,0.6)',
+                      px: 1,
+                      py: 0.5,
+                      lineHeight: 1,
+                      fontSize: '12px',
+                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: '#fff' }
+                    }}
+                  >
+                    Add Stats
+                  </Button> */}
                   {/* MOBILE NOTIFICATION BELL */}
                   <IconButton
                     onClick={handleNotificationClick}
@@ -2862,6 +2884,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             width: 280,
             background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
             boxShadow: 3,
+            mt:7
           },
         }}
       >
@@ -2901,6 +2924,30 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 </Button>
               </ListItem>
                        )}
+            {/* ADD STATS BUTTON IN MOBILE DRAWER */}
+            {isAuthenticated && (
+              <ListItem disablePadding>
+                <Button
+                  onClick={() => { setStatsOpen(true); setDrawerOpen(false); }}
+                  fullWidth
+                  disableRipple
+                  sx={{
+                    justifyContent: 'flex-start',
+                    px: 3,
+                    py: 1.25,
+                    color: '#fff',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    mb: 0.5,
+                    background: 'rgba(255,255,255,0.06)',
+                    '&:hover': { background: 'rgba(255,255,255,0.12)' }
+                  }}
+                >
+                  Add Stats
+                </Button>
+              </ListItem>
+            )}
             
             {/* MOBILE NAVIGATION LINKS */}
             {isAuthenticated && (
