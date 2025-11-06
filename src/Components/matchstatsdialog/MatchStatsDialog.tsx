@@ -26,6 +26,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Add, Remove } from '@mui/icons-material';
 import toast from 'react-hot-toast';
+import { mutateWithRefresh, clearCacheByResource, dispatchRefreshEvent } from '@/lib/utils/cacheManager';
 import Goals from '@/Components/images/goal.png'
 // import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
@@ -1177,11 +1178,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         
         try {
             setSavingMatchDetails(true);
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/upload-result`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
-            });
+            
+            // 🚀 Use cache manager for automatic cache invalidation on mutation
+            const res = await mutateWithRefresh(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/upload-result`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
+                },
+                'match',
+                resolvedMatchId
+            );
             
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
@@ -1192,17 +1200,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             
             toast.success('Match details saved successfully!');
             
-            // 🔄 Ensure state stays full by refetching without blanking the page
-            console.log('🔄 Refetching match details after save...');
-            await fetchLeagueAndMatchDetails(true);
-            
-            // 📢 Dispatch event to notify other components
-            console.log('📢 Dispatching match-updated event for match:', resolvedMatchId);
-            window.dispatchEvent(new CustomEvent('match-updated', { 
-                detail: { matchId: resolvedMatchId } 
-            }));
-            
-            // 🗑️ Clear cache to force fresh data
+            // �️ Clear cache FIRST to ensure fresh data on next fetch
+            console.log('�️ Clearing cache for fresh data...');
             const STORAGE_PREFIX = 'cf_cache_';
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith(STORAGE_PREFIX) && 
@@ -1211,10 +1210,27 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
             });
             
-            console.log('✅ Match details saved and events dispatched');
+            // 📢 Dispatch event IMMEDIATELY to trigger parent refresh
+            console.log('📢 Dispatching match-updated event for match:', resolvedMatchId);
+            window.dispatchEvent(new CustomEvent('match-updated', { 
+                detail: { matchId: resolvedMatchId } 
+            }));
+            
+            // ⏱️ Small delay to let parent component start fetching
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // 🔄 Refetch local match details
+            console.log('🔄 Refetching local match details...');
+            await fetchLeagueAndMatchDetails(true);
+            
+            console.log('✅ Match details saved, cache cleared, events dispatched');
+            
+            // ⏱️ Another small delay before closing dialog
+            await new Promise(resolve => setTimeout(resolve, 200));
             
             // Close the admin dialog after successful save
             if (onClose) {
+                console.log('🚪 Closing dialog after successful save');
                 onClose();
             }
         } catch (err: unknown) {

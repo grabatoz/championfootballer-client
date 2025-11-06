@@ -14,6 +14,8 @@ import { LeaderboardResponse } from '@/types/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import CloseIcon from '@mui/icons-material/Close';
+import { optimizedFetch } from '@/lib/utils/optimizedFetch';
+import { mutateWithRefresh } from '@/lib/utils/cacheManager';
 
 // Lazy load heavy components
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
@@ -244,12 +246,13 @@ export default function AllMatches() {
 
     const fetchLeagues = useCallback(async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+            // 🚀 Use optimizedFetch with 3-minute cache for auth status
+            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cacheTTL: 180000 // 3 minutes TTL
             });
-            const data = await response.json();
             if (data.success && data.user) {
                 // Get admin league IDs
                 const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
@@ -287,12 +290,15 @@ export default function AllMatches() {
                         try {
                             const leagueId = String((league as { id?: string | number }).id);
 
+                            // 🚀 Use optimizedFetch with 5-minute cache for league details
                             const [statusRes, leagueResponse] = await Promise.all([
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    cacheTTL: 300000 // 5 minutes
                                 }),
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
-                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    cacheTTL: 300000 // 5 minutes
                                 })
                             ]);
 
@@ -300,27 +306,25 @@ export default function AllMatches() {
                             let maxGamesFromDetails: number | undefined = undefined;
                             let enrichedLeague = { ...league };
 
-                            if (leagueResponse.ok) {
-                                const leagueData = await leagueResponse.json();
-                                if (leagueData.success && leagueData.league) {
-                                    enrichedLeague = {
-                                        ...league,
-                                        administrators: leagueData.league.administrators,
-                                        members: leagueData.league.members
+                            // optimizedFetch returns JSON directly
+                            if (leagueResponse?.success && leagueResponse?.league) {
+                                enrichedLeague = {
+                                    ...league,
+                                    administrators: leagueResponse.league.administrators,
+                                    members: leagueResponse.league.members
                                     };
-                                    const rawMatches = leagueData.league.matches as unknown;
+                                    const rawMatches = leagueResponse.league.matches as unknown;
                                     if (Array.isArray(rawMatches)) {
                                         matchesFromDetails = rawMatches as Match[];
                                     }
-                                    if (typeof leagueData.league.maxGames === 'number') {
-                                        maxGamesFromDetails = leagueData.league.maxGames as number;
+                                    if (typeof leagueResponse.league.maxGames === 'number') {
+                                        maxGamesFromDetails = leagueResponse.league.maxGames as number;
                                     }
-                                }
                             }
 
-                            if (statusRes.ok) {
-                                const statusData = await statusRes.json();
-                                const raw = (statusData?.status || {}) as Record<string, unknown>;
+                            // optimizedFetch returns JSON directly
+                            if (statusRes?.success || statusRes?.status) {
+                                const raw = (statusRes?.status || {}) as Record<string, unknown>;
                                 const toNum = (v: unknown): number | undefined => {
                                     const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
                                     return Number.isFinite(n) ? n : undefined;
@@ -405,16 +409,14 @@ export default function AllMatches() {
     const fetchMatchesByLeague = useCallback(async (leagueId: string) => {
         setLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+            // 🚀 Use optimizedFetch with 3-minute cache for match data
+            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                cacheTTL: 180000 // 3 minutes TTL
             });
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-            }
-            const data = await response.json();
             if (data.success && data.league && data.league.matches) {
                 setMatches(data.league.matches);
                 // Update the leagues array to include members for the selected league
@@ -550,13 +552,13 @@ export default function AllMatches() {
     const fetchLeagueDetails = useCallback(async (suppressLoading: boolean = false) => {
         if (!suppressLoading) setLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}`, {
+            // 🚀 Use optimizedFetch with 3-minute cache for league details
+            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cacheTTL: 180000 // 3 minutes TTL
             });
-
-            const data = await response.json();
             if (data.success) {
                 console.log('Server Response - League Data:', data.league);
                 console.log('Server Response - Matches:', data.league.matches);
@@ -582,19 +584,25 @@ export default function AllMatches() {
 
         setIsSubmittingStats(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    goals: stats.goals,
-                    assists: stats.assists,
-                    cleanSheets: stats.cleanSheets,
-                    penalties: stats.penalties,
-                    freeKicks: stats.freeKicks,
-                    defence: stats.defence,
-                    impact: stats.impact,
-                }),
-            });
+            // 🚀 Use mutateWithRefresh for automatic cache invalidation on POST
+            const response = await mutateWithRefresh(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`,
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        goals: stats.goals,
+                        assists: stats.assists,
+                        cleanSheets: stats.cleanSheets,
+                        penalties: stats.penalties,
+                        freeKicks: stats.freeKicks,
+                        defence: stats.defence,
+                        impact: stats.impact,
+                    }),
+                },
+                'match',
+                activeMatchId
+            );
 
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
@@ -656,12 +664,18 @@ export default function AllMatches() {
         const action = isAvailable ? 'unavailable' : 'available';
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const response = await fetch(`${apiUrl}/matches/${matchId}/availability?action=${action}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
+            // 🚀 Use mutateWithRefresh for automatic cache invalidation
+            const response = await mutateWithRefresh(
+                `${apiUrl}/matches/${matchId}/availability?action=${action}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
                 },
-            });
+                'match',
+                matchId
+            );
             if (!response.ok) {
                 throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
             }
@@ -895,15 +909,20 @@ export default function AllMatches() {
 
         try {
             if (hasScores) {
-                // Archive the match
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                // 🚀 Use mutateWithRefresh for automatic cache invalidation on PATCH
+                const res = await mutateWithRefresh(
+                    `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ archived: true })
                     },
-                    body: JSON.stringify({ archived: true })
-                });
+                    'match',
+                    m.id
+                );
 
                 if (!res.ok) {
                     const errorData = await res.text();
@@ -928,11 +947,16 @@ export default function AllMatches() {
                 setToastMessage('Match archived (Canceled by Admin)');
 
             } else {
-                // Hard delete
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                // 🚀 Use mutateWithRefresh for automatic cache invalidation on DELETE
+                const res = await mutateWithRefresh(
+                    `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
+                    {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    },
+                    'match',
+                    m.id
+                );
 
                 if (!res.ok) throw new Error('Failed to delete match');
 
@@ -960,11 +984,12 @@ export default function AllMatches() {
     const getHasStats = useCallback(async (matchId: string): Promise<boolean> => {
         if (!token) return true; // default safe
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
-                headers: { Authorization: `Bearer ${token}` }
+            // 🚀 Use optimizedFetch with 2-minute cache for stats check
+            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cacheTTL: 120000 // 2 minutes TTL
             });
-            if (!res.ok) return true;
-            const data = await res.json();
+            if (!data || !data.success) return true;
             return !!data.hasStats;
         } catch {
             return true; // safe default
@@ -978,10 +1003,16 @@ export default function AllMatches() {
         // }
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            // 🚀 Use mutateWithRefresh for automatic cache invalidation on DELETE
+            const res = await mutateWithRefresh(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`,
+                {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                },
+                'match',
+                match.id
+            );
 
             if (res.status === 400) {
                 // Backend says cannot delete (likely stats exist)
@@ -1063,14 +1094,20 @@ export default function AllMatches() {
 
     const handleRestoreMatch = async (match: Match) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            // 🚀 Use mutateWithRefresh for automatic cache invalidation on PATCH
+            const res = await mutateWithRefresh(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ archived: false })
                 },
-                body: JSON.stringify({ archived: false })
-            });
+                'match',
+                match.id
+            );
 
             if (!res.ok) {
                 throw new Error('Failed to restore match');

@@ -1,15 +1,15 @@
 'use client';
   
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Box, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Button } from '@mui/material';
-import { useAuth } from '@/lib/useAuth';
-import fieldImg from '@/Components/images/ground.webp'; // Place your field image in public/assets/field.png
-// import dreamteam from '@/Components/images/dream.png'
+import { useAuth } from '@/lib/hooks';
+import fieldImg from '@/Components/images/ground.webp';
 import { Trophy, ChevronDown } from 'lucide-react';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import Image from 'next/image';
 import Link from 'next/link';
 import CloseButton from '@/Components/CloseButton';
+import { optimizedFetch, invalidateCache } from '@/lib/utils/optimizedFetch';
 
 
 interface Player {
@@ -49,6 +49,13 @@ type LeagueComputedStatus = {
   [key: string]: unknown;
 };
 
+type ResponsivePos = string | { xs?: string; sm?: string; md?: string; lg?: string };
+interface FieldPosition {
+  type: 'goalkeeper' | 'defenders' | 'midfielders' | 'forwards';
+  left: ResponsivePos;
+  top: ResponsivePos;
+}
+
 interface Match {
   status?: string;
   active?: boolean;
@@ -72,6 +79,76 @@ interface League {
   isAdmin?: boolean;
 }
 
+// Memoized player component to prevent unnecessary re-renders
+interface PlayerCardProps {
+  player: Player;
+  position: FieldPosition;
+  positionIndex: number;
+}
+
+const PlayerCard = memo<PlayerCardProps>(({ player, position, positionIndex }) => (
+  <Box
+    sx={{
+      position: 'absolute',
+      left: position.left,
+      top: position.top,
+      transform: 'translate(-50%, -50%)',
+      textAlign: 'center',
+      zIndex: 2,
+    }}
+  >
+    {/* Shirt image; player name shown below (no jersey number) */}
+    <Box
+      sx={{
+        position: 'relative',
+        width: { xs: 56, sm: 72, md: 94 },
+        height: { xs: 56, sm: 72, md: 94 },
+        mx: 'auto',
+      }}
+    >
+      <Link href={`/player/${player.id}`} prefetch={false}>
+        <Image
+          src={ShirtImg.src}
+          alt="Player Shirt"
+          width={94}
+          height={94}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+        />
+      </Link>
+    </Box>
+
+    {/* Player name below the shirt */}
+    <Typography
+      component="div"
+      sx={{
+        mt: 0.5,
+        px: 0.5,
+        maxWidth: { xs: 88, sm: 110, md: 140 },
+        overflow: 'hidden',
+        textOverflow: { xs: 'ellipsis', sm: 'ellipsis', md: 'ellipsis' },
+        whiteSpace: { xs: 'nowrap', sm: 'nowrap', md: 'nowrap' },
+        color: '#ffffff',
+        fontWeight: 700,
+        fontSize: { xs: 10, sm: 12, md: 12 },
+        lineHeight: 1.2,
+        textAlign: 'center',
+        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+      }}
+    >
+      {player.firstName} {player.lastName}
+    </Typography>
+  </Box>
+), (prevProps, nextProps) => {
+  // Custom comparison: only re-render if player data changes
+  return (
+    prevProps.player.id === nextProps.player.id &&
+    prevProps.player.firstName === nextProps.player.firstName &&
+    prevProps.player.lastName === nextProps.player.lastName
+  );
+});
+
+PlayerCard.displayName = 'PlayerCard';
+
 const DreamTeamPage = () => {
   const { token } = useAuth();
   const [dreamTeam, setDreamTeam] = useState<DreamTeam>({
@@ -92,7 +169,7 @@ const DreamTeamPage = () => {
     setLeaguesDropdownAnchor(e.currentTarget);
   };
   const handleLeaguesDropdownClose = () => setLeaguesDropdownAnchor(null);
-  const handleLeagueSelect = (id: string) => {
+  const handleLeagueSelect = useCallback((id: string) => {
     setSelectedLeague(id);
     // Persist selection
     try {
@@ -101,7 +178,10 @@ const DreamTeamPage = () => {
       }
     } catch {}
     handleLeaguesDropdownClose();
-  };
+    
+    // Invalidate dream team cache for new league
+    invalidateCache(/\/dream-team\?leagueId=/);
+  }, []);
 
   const formatLeagueName = (name: string) => {
     if (!name) return '';
@@ -110,7 +190,8 @@ const DreamTeamPage = () => {
     return caps;
   };
 
-  const sortedLeagues = React.useMemo(() => {
+  // Memoize sorted leagues
+  const sortedLeagues = useMemo(() => {
     if (!leagues?.length) return [];
     const arr = [...leagues];
     const idx = selectedLeague ? arr.findIndex(l => l.id === selectedLeague) : -1;
@@ -121,8 +202,8 @@ const DreamTeamPage = () => {
     return arr;
   }, [leagues, selectedLeague]);
 
-  // Flatten Dream Team players for lists
-  const dreamTeamPlayers = React.useMemo(() => {
+  // Memoize flattened Dream Team players
+  const dreamTeamPlayers = useMemo(() => {
     const list: Player[] = [];
     if (dreamTeam?.goalkeeper?.length) list.push(...dreamTeam.goalkeeper);
     if (dreamTeam?.defenders?.length) list.push(...dreamTeam.defenders);
@@ -130,6 +211,35 @@ const DreamTeamPage = () => {
     if (dreamTeam?.forwards?.length) list.push(...dreamTeam.forwards);
     return list;
   }, [dreamTeam]);
+  
+  // Memoize field positions configuration
+  const fieldPositions: FieldPosition[] = useMemo(() => [
+    {
+      type: 'goalkeeper',
+      left: { xs: '50%', sm: '48%', md: '47%' },
+      top: { xs: '82%', sm: '78%', md: '75%' },
+    },
+    {
+      type: 'defenders',
+      left: { xs: '28%', sm: '30%', md: '30%' },
+      top: { xs: '64%', sm: '63%', md: '62%' },
+    },
+    {
+      type: 'defenders',
+      left: { xs: '72%', sm: '66%', md: '65%' },
+      top: { xs: '64%', sm: '63%', md: '62%' },
+    },
+    {
+      type: 'midfielders',
+      left: { xs: '50%', sm: '48%', md: '47%' },
+      top: { xs: '46%', sm: '45%', md: '44%' },
+    },
+    {
+      type: 'forwards',
+      left: { xs: '50%', sm: '48%', md: '47%' },
+      top: { xs: '20%', sm: '19%', md: '18%' },
+    },
+  ], []);
 
   // Position abbreviation for UI (GK, DF, MD, ST)
   const posAbbr = (pos: string) => {
@@ -163,16 +273,17 @@ const DreamTeamPage = () => {
     if (!token) return;
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
+      // Use optimized fetch with caching
+      const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+        staleWhileRevalidate: 2 * 60 * 1000,
+      }) as { user?: { adminLeagues?: unknown[]; administeredLeagues?: unknown[]; leagues?: unknown[] } };
+      
+      if (!data?.user) {
         setLoading(false);
         return;
       }
-
-      const data = await response.json();
       
       // Get admin leagues IDs
       const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
@@ -189,11 +300,14 @@ const DreamTeamPage = () => {
       ];
 
       // Remove duplicates & add isAdmin flag
-      const uniqueLeaguesMap = new Map();
+      const uniqueLeaguesMap = new Map<string, League & { isAdmin?: boolean }>();
       userLeagues.forEach(league => {
-        const id = String((league as { id?: string | number }).id);
-        if (!uniqueLeaguesMap.has(id)) {
-          uniqueLeaguesMap.set(id, { ...league, isAdmin: adminIds.has(id) });
+        if (league != null && typeof league === 'object') {
+          const leagueObj = league as League;
+          const id = String(leagueObj.id);
+          if (!uniqueLeaguesMap.has(id)) {
+            uniqueLeaguesMap.set(id, Object.assign({}, leagueObj, { isAdmin: adminIds.has(id) }));
+          }
         }
       });
 
@@ -226,11 +340,17 @@ const DreamTeamPage = () => {
   const fetchDreamTeam = useCallback(async (leagueId: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dream-team?leagueId=${leagueId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
+      // Use optimized fetch with caching
+      const data = await optimizedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/dream-team?leagueId=${leagueId}`, 
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+          staleWhileRevalidate: 60 * 1000,
+        }
+      ) as { dreamTeam?: DreamTeam };
+      
+      if (data?.dreamTeam) {
         setDreamTeam(data.dreamTeam);
       }
     } catch (error) {
@@ -251,43 +371,6 @@ const DreamTeamPage = () => {
       fetchDreamTeam(selectedLeague);
     }
   }, [token, selectedLeague, fetchDreamTeam]);
-
-  // Responsive field positions for different breakpoints (xs/sm/md)
-  type ResponsivePos = string | { xs?: string; sm?: string; md?: string; lg?: string };
-  interface FieldPosition {
-    type: 'goalkeeper' | 'defenders' | 'midfielders' | 'forwards';
-    left: ResponsivePos;
-    top: ResponsivePos;
-  }
-
-  const fieldPositions: FieldPosition[] = [
-    // Slightly different placement on mobile to avoid overlap
-    {
-      type: 'goalkeeper',
-      left: { xs: '50%', sm: '48%', md: '47%' },
-      top: { xs: '82%', sm: '78%', md: '75%' },
-    },
-    {
-      type: 'defenders',
-      left: { xs: '28%', sm: '30%', md: '30%' },
-      top: { xs: '64%', sm: '63%', md: '62%' },
-    },
-    {
-      type: 'defenders',
-      left: { xs: '72%', sm: '66%', md: '65%' },
-      top: { xs: '64%', sm: '63%', md: '62%' },
-    },
-    {
-      type: 'midfielders',
-      left: { xs: '50%', sm: '48%', md: '47%' },
-      top: { xs: '46%', sm: '45%', md: '44%' },
-    },
-    {
-      type: 'forwards',
-      left: { xs: '50%', sm: '48%', md: '47%' },
-      top: { xs: '20%', sm: '19%', md: '18%' },
-    },
-  ];
 
   return (
     <Box sx={{ py: 4, p: 3, maxWidth: 1200, mx: 'auto' }}>
@@ -567,7 +650,7 @@ const DreamTeamPage = () => {
             }}
           >
             <Image fill src={fieldImg} alt="Football Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {/* Overlay players */}
+            {/* Overlay players - using memoized component */}
             {fieldPositions.map((pos, idx) => {
               let player: Player | undefined;
               if (pos.type === 'goalkeeper') player = dreamTeam.goalkeeper[0];
@@ -576,58 +659,12 @@ const DreamTeamPage = () => {
               if (pos.type === 'forwards') player = dreamTeam.forwards[0];
               if (!player) return null;
               return (
-                <Box
-                  key={pos.type + idx}
-                  sx={{
-                    position: 'absolute',
-                    left: pos.left,
-                    top: pos.top,
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center',
-                    zIndex: 2,
-                  }}
-                >
-                  {/* Shirt image; player name shown below (no jersey number) */}
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      width: { xs: 56, sm: 72, md: 94 },
-                      height: { xs: 56, sm: 72, md: 94 },
-                      mx: 'auto',
-                    }}
-                  >
-                    <Link href={`/player/${player.id}`} prefetch={false} >
-                      <Image
-                        src={ShirtImg.src}
-                        alt="Player Shirt"
-                        width={94}
-                        height={94}
-                        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
-                    </Link>
-                  </Box>
-
-                  {/* Player name below the shirt */}
-                  <Typography
-                    component="div"
-                    sx={{
-                      mt: 0.5,
-                      px: 0.5,
-                      maxWidth: { xs: 88, sm: 110, md: 140 },
-                      overflow: 'hidden',
-                      textOverflow: { xs: 'ellipsis', sm: 'ellipsis', md: 'ellipsis' },
-                      whiteSpace: { xs: 'nowrap', sm: 'nowrap', md: 'nowrap' },
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: { xs: 10, sm: 12, md: 12 },
-                      lineHeight: 1.2,
-                      textAlign: 'center',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                    }}
-                  >
-                    {player.firstName} {player.lastName}
-                  </Typography>
-                </Box>
+                <PlayerCard
+                  key={`${pos.type}-${idx}-${player.id}`}
+                  player={player}
+                  position={pos}
+                  positionIndex={idx}
+                />
               );
             })}
           </Box>

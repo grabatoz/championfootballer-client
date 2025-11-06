@@ -587,9 +587,428 @@ interface LeagueSettingsDialogProps {
   currentUserId: string
   onRemoveMember: (memberId: string) => void | Promise<void>
   onLeaveLeague?: () => void | Promise<void>
+  onMembersChanged?: () => void | Promise<void>;
 }
 
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+// function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+//   const [name, setName] = useState('')
+//   const [adminId, setAdminId] = useState('')
+//   const [isActive, setIsActive] = useState(true)
+//   const [maxGames, setMaxGames] = useState(20)
+//   const [showPoints, setShowPoints] = useState(true)
+
+//   useEffect(() => {
+//     if (league) {
+//       setName(league.name || '')
+//       setIsActive(league.active !== false)
+//       setMaxGames(league.maxGames || 20)
+//       setShowPoints(league.showPoints !== false)
+//       // Prefer explicit adminId, fall back to first administrator if present
+//       setAdminId(league.adminId || league.administrators?.[0]?.id || '')
+//     }
+//   }, [league])
+
+//   const handleUpdate = () => {
+//     const updatedData: LeagueUpdatePayload = {
+//       name,
+//       active: isActive,
+//       maxGames,
+//       showPoints,
+//       admins: adminId ? [adminId] : [],
+//     }
+//     onUpdate(updatedData)
+//   }
+
+//   if (!league) return null
+
+//   // Helper to determine if a given user is an admin of this league
+//   const isUserLeagueAdmin = (userId?: string | null): boolean => {
+//     if (!userId) return false
+//     if (league.adminId && league.adminId === userId) return true
+//     if (Array.isArray(league.administrators)) {
+//       return league.administrators.some(a => a?.id === userId)
+//     }
+//     return false
+//   }
+
+//   const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+
+//   // Remove member with admin safety: if removing current admin, require selecting replacement admin first
+//   const handleAdminRemoveMember = async (member: User) => {
+//     const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'this member'
+
+//     // If removing an admin, enforce replacement selection
+//     if (isUserLeagueAdmin(member.id)) {
+//       if (!adminId || adminId === member.id) {
+//         window.alert('Please select a replacement admin from the "Select league admin" dropdown before removing this admin.')
+//         return
+//       }
+//       const confirmAdmin = window.confirm(`You are removing an admin (\"${memberName}\"). The admin role will be transferred to the selected replacement before removal. Continue?`)
+//       if (!confirmAdmin) return
+//       try {
+//         await Promise.resolve(onUpdate({
+//           name,
+//           active: isActive,
+//           maxGames,
+//           showPoints,
+//           admins: [adminId],
+//         }))
+//       } catch {
+//         // If updating admin fails, abort removal
+//         return
+//       }
+//     }
+
+//     const confirmRemove = window.confirm(`Remove ${memberName} from the league?`)
+//     if (!confirmRemove) return
+//     try {
+//       if (typeof onRemoveMember === 'function') {
+//         await Promise.resolve(onRemoveMember(member.id))
+//       }
+//     } catch {}
+//   }
+
+//   return (
+//     <Dialog
+//       open={open}
+//       onClose={onClose}
+//       fullWidth
+//       maxWidth="md"
+//       PaperProps={{
+//         sx: {
+//           bgcolor: 'rgba(15,15,15,0.92)',
+//           color: '#E5E7EB',
+//           borderRadius: 3,
+//           border: '1px solid rgba(255,255,255,0.08)',
+//           backdropFilter: 'blur(10px)',
+//           boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+//           overflow: 'hidden',
+//         },
+//       }}
+//     >
+//       <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
+//         Manage League Settings
+//         <IconButton
+//           aria-label="close"
+//           onClick={onClose}
+//           sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+//         >
+//           <Close />
+//         </IconButton>
+//       </DialogTitle>
+
+//       <DialogContent>
+//         <Grid container spacing={3} sx={{ mt: 0 }}>
+//           <Grid item xs={12} md={6}>
+//             <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+//               <FormControl fullWidth>
+//                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                   Select league admin
+//                 </Typography>
+//                 <Select
+//                   value={adminId}
+//                   onChange={(e) => setAdminId(e.target.value as string)}
+//                   sx={{
+//                     color: '#E5E7EB',
+//                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+//                     '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+//                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+//                     '& .MuiSelect-icon': { color: '#E5E7EB' },
+//                   }}
+//                   MenuProps={{
+//                     PaperProps: {
+//                       sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+//                     },
+//                   }}
+//                 >
+//                   {(league.members || []).map((member: User) => (
+//                     <MenuItem key={member.id} value={member.id}>
+//                       {member.firstName} {member.lastName}
+//                     </MenuItem>
+//                   ))}
+//                 </Select>
+//               </FormControl>
+
+//               <FormControl fullWidth>
+//                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                   League name
+//                 </Typography>
+//                 <TextField
+//                   fullWidth
+//                   value={name}
+//                   onChange={(e) => {
+//                     const raw = e.target.value || ''
+//                     const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+//                     setName(cleaned)
+//                   }}
+//                   sx={{
+//                     '& .MuiOutlinedInput-root': {
+//                       color: '#E5E7EB',
+//                       '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+//                       '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+//                       '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+//                     },
+//                     '& .MuiInputBase-input': { color: '#E5E7EB' },
+//                   }}
+//                   InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+//                   FormHelperTextProps={{ sx: { color: '#E5E7EB' } }}
+//                   inputProps={{ maxLength: 20 }}
+//                   helperText="Max 20 characters, letters/numbers only"
+//                 />
+//               </FormControl>
+
+//               <FormControl component="fieldset">
+//                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                   Change league active status
+//                 </Typography>
+//                 <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
+//                   <FormControlLabel
+//                     value="active"
+//                     control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+//                     label="Active"
+//                   />
+//                   <FormControlLabel
+//                     value="inactive"
+//                     control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+//                     label="Inactive"
+//                   />
+//                 </RadioGroup>
+//               </FormControl>
+
+//               <FormControl fullWidth>
+//                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                   Maximum number of matches
+//                 </Typography>
+//                 <TextField
+//                   fullWidth
+//                   type="number"
+//                   value={maxGames}
+//                   onChange={(e) => setMaxGames(Number(e.target.value))}
+//                   sx={{
+//                     '& .MuiOutlinedInput-root': {
+//                       color: '#E5E7EB',
+//                       '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+//                       '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+//                       '&.Mui-focused fieldset': { borderColor: '#0388E3' },
+//                     },
+//                     '& .MuiInputBase-input': { color: '#E5E7EB' },
+//                   }}
+//                 />
+//               </FormControl>
+
+//               <FormControlLabel
+//                 control={
+//                   <Switch
+//                     checked={showPoints}
+//                     onChange={(e) => setShowPoints(e.target.checked)}
+//                     sx={{
+//                       '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
+//                       '& .Mui-checked': { color: '#27ab83' },
+//                       '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+//                     }}
+//                   />
+//                 }
+//                 label="CF Advance Point Scoring"
+//                 sx={{ color: '#E5E7EB' }}
+//               />
+//             </Box>
+//           </Grid>
+//           <Grid item xs={12} md={6}>
+//             {/* Members management (right side) */}
+//             <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
+//               <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+//                 Manage members
+//               </Typography>
+//               <List sx={{ py: 0 }}>
+//                 {(league.members || []).map((member: User, index: number) => {
+//                   const memberName = `${member.firstName} ${member.lastName}`.trim()
+//                   const isLeagueAdmin = isUserLeagueAdmin(member.id)
+//                   const isCurrentUser = member.id === currentUserId
+//                   return (
+//                     <Box key={member.id}>
+//                       <ListItem
+//                         sx={{
+//                           py: { xs: 1.5, sm: 2 },
+//                           px: { xs: 1.5, sm: 2 },
+//                           display: 'flex',
+//                           alignItems: 'center',
+//                           gap: 2,
+//                           bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
+//                           borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
+//                         }}
+//                       >
+//                         <ListItemAvatar>
+//                           <Avatar sx={{ bgcolor: '#374151' }}>
+//                             {(member.firstName?.[0] || '?').toUpperCase()}
+//                           </Avatar>
+//                         </ListItemAvatar>
+//                         <ListItemText
+//                           primary={
+//                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+//                               <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
+//                                 {memberName || 'Unnamed'}
+//                               </Typography>
+//                               <Chip
+//                                     label={isLeagueAdmin ? 'League Admin' : 'Member'}
+//                                 size="small"
+//                                 sx={{
+//                                   bgcolor: 'transparent',
+//                                   color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
+//                                   border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
+//                                   fontWeight: 600,
+//                                   fontSize: 11,
+//                                   height: 20,
+//                                   borderRadius: '9999px',
+//                                 }}
+//                               />
+//                             </Box>
+//                           }
+//                         />
+
+//                             {/* Right-side remove button: visible to any league admin for any member except themself */}
+//                             {currentUserIsAdmin && member.id !== currentUserId && (
+//                           <Tooltip title={`Remove ${memberName}`} arrow>
+//                             <IconButton
+//                                   onClick={() => handleAdminRemoveMember(member)}
+//                               sx={{
+//                                 color: '#ff6b6b',
+//                                 bgcolor: 'rgba(255, 107, 107, 0.12)',
+//                                 '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
+//                               }}
+//                             >
+//                               <Delete sx={{ fontSize: 20 }} />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </ListItem>
+//                       {index < (league.members?.length || 0) - 1 && (
+//                         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
+//                       )}
+//                     </Box>
+//                   )
+//                 })}
+//               </List>
+//             </Box>
+//           </Grid>
+//         </Grid>
+//       </DialogContent>
+
+//       <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+//         <Box sx={{ display: 'flex', gap: 1 }}>
+//           {currentUserId && (
+//             <Button
+//               variant="outlined"
+//               color="warning"
+//               onClick={() => {
+//                 const isAdmin = league.adminId === currentUserId
+//                 const confirmMsg = isAdmin
+//                   ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+//                   : 'Are you sure you want to leave this league?'
+//                 if (!window.confirm(confirmMsg)) return
+
+//                 if (isAdmin) {
+//                   // Prefer selected admin if different, otherwise first other member
+//                   let replacementId = adminId && adminId !== currentUserId ? adminId : ''
+//                   if (!replacementId) {
+//                     const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+//                     if (firstOther) replacementId = firstOther.id
+//                   }
+//                   if (!replacementId) {
+//                     window.alert('Cannot leave as admin because no other members are available to assign as admin.')
+//                     return
+//                   }
+//                   try {
+//                     onUpdate({
+//                       name,
+//                       active: isActive,
+//                       maxGames,
+//                       showPoints,
+//                       admins: [replacementId],
+//                     })
+//                   } catch { }
+//                 }
+
+//                 // Trigger leave action if provided
+//                 if (typeof onLeaveLeague === 'function') {
+//                   try { onLeaveLeague() } catch { }
+//                 }
+//                 try { onClose() } catch { }
+//               }}
+//               sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
+//             >
+//               Leave League
+//             </Button>
+//           )}
+//         </Box>
+//         <Box sx={{ display: 'flex', gap: 1 }}>
+//           <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+//             Update League
+//           </Button>
+//           <Button variant="contained" color="error" onClick={onDelete}>
+//             Delete League
+//           </Button>
+//         </Box>
+//       </DialogActions>
+//     </Dialog>
+//   )
+// }
+
+// const cardStyles = {
+//   borderRadius: 3,
+//   p: { xs: 1.5, md: 3 },
+//   color: 'white',
+//   background: '#1f673b',
+//   border: '1px solid rgba(255,255,255,0.18)',
+//   transition: 'transform 0.2s, box-shadow 0.2s',
+//   '&:hover': {
+//     transform: 'translateY(-4px) scale(1.03)',
+//     boxShadow: '0 8px 32px 0 rgba(31,38,135,0.27)',
+//   },
+//   display: 'flex',
+//   flexDirection: 'column',
+//   gap: { xs: 1, md: 1 },
+//   width: { xs: '100%', md: 'auto' }, // Full width on small screens, auto on large screens for two cards
+//   minWidth: { xs: '100%', md: '300px' }, // Minimum width on large screens
+//   boxSizing: 'border-box',
+// };
+
+// const iconButtonStyles = {
+//   position: 'absolute',
+//   color: 'white',
+//   border: '2px solid white',
+//   borderRadius: 2,
+//   right: { xs: 0, md: '0' },
+//   p: { xs: 0.6, md: 1.2 },
+//   '&:hover': {
+//     backgroundColor: 'rgba(255,255,255,0.1)',
+//   },
+// };
+
+// const buttonStyles = {
+//   base: {
+//     color: 'white',
+//     fontWeight: 'bold',
+//     borderRadius: 2,
+//     px: { xs: 2, md: 4 },
+//     py: { xs: 1, md: 1 },
+//     fontSize: { xs: '0.7rem', md: '0.875rem' },
+//     textTransform: 'none',
+//   },
+//   outlined: {
+//     bgcolor: '#43a047',
+//     borderColor: '#43a047',
+//     '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' },
+//   },
+//   contained: {
+//     bgcolor: '#43a047',
+//     boxShadow: '0 2px 8px rgba(0,200,83,0.12)',
+//     '&:hover': { bgcolor: '#388e3c' },
+//   },
+// };
+
+
+
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged }: LeagueSettingsDialogProps) {
   const [name, setName] = useState('')
   const [adminId, setAdminId] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -618,11 +1037,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     onUpdate(updatedData)
   }
 
-  if (!league) return null
-
   // Helper to determine if a given user is an admin of this league
   const isUserLeagueAdmin = (userId?: string | null): boolean => {
-    if (!userId) return false
+    if (!userId || !league) return false
     if (league.adminId && league.adminId === userId) return true
     if (Array.isArray(league.administrators)) {
       return league.administrators.some(a => a?.id === userId)
@@ -631,6 +1048,25 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }
 
   const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+
+  // Sort members: Admins first, then current user, then by name
+  const sortedMembers = React.useMemo(() => {
+    const list = Array.isArray(league?.members) ? [...league.members] : [] as User[];
+    return list.sort((a, b) => {
+      const aAdmin = isUserLeagueAdmin(a.id) ? 1 : 0;
+      const bAdmin = isUserLeagueAdmin(b.id) ? 1 : 0;
+      if (aAdmin !== bAdmin) return bAdmin - aAdmin; // admins first
+      const aCur = a.id === currentUserId ? 1 : 0;
+      const bCur = b.id === currentUserId ? 1 : 0;
+      if (aCur !== bCur) return bCur - aCur; // current user next
+      const an = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+      const bn = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+      return an.localeCompare(bn);
+    });
+  }, [league?.members, currentUserId]);
+
+  // Do not return before declaring hooks to preserve hook order. Render nothing if no league.
+  if (!league) return null
 
   // Remove member with admin safety: if removing current admin, require selecting replacement admin first
   const handleAdminRemoveMember = async (member: User) => {
@@ -663,8 +1099,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     try {
       if (typeof onRemoveMember === 'function') {
         await Promise.resolve(onRemoveMember(member.id))
+        if (typeof onMembersChanged === 'function') {
+          await Promise.resolve(onMembersChanged())
+        }
       }
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -720,7 +1159,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     },
                   }}
                 >
-                  {(league.members || []).map((member: User) => (
+                  {sortedMembers.map((member: User) => (
                     <MenuItem key={member.id} value={member.id}>
                       {member.firstName} {member.lastName}
                     </MenuItem>
@@ -819,7 +1258,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 Manage members
               </Typography>
               <List sx={{ py: 0 }}>
-                {(league.members || []).map((member: User, index: number) => {
+                {sortedMembers.map((member: User, index: number) => {
                   const memberName = `${member.firstName} ${member.lastName}`.trim()
                   const isLeagueAdmin = isUserLeagueAdmin(member.id)
                   const isCurrentUser = member.id === currentUserId
@@ -848,7 +1287,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                 {memberName || 'Unnamed'}
                               </Typography>
                               <Chip
-                                    label={isLeagueAdmin ? 'League Admin' : 'Member'}
+                                label={isLeagueAdmin ? 'League Admin' : 'Member'}
                                 size="small"
                                 sx={{
                                   bgcolor: 'transparent',
@@ -864,11 +1303,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           }
                         />
 
-                            {/* Right-side remove button: visible to any league admin for any member except themself */}
-                            {currentUserIsAdmin && member.id !== currentUserId && (
+                        {/* Right-side remove button: visible to any league admin for any member except themself */}
+                        {currentUserIsAdmin && member.id !== currentUserId && (
                           <Tooltip title={`Remove ${memberName}`} arrow>
                             <IconButton
-                                  onClick={() => handleAdminRemoveMember(member)}
+                              onClick={() => handleAdminRemoveMember(member)}
                               sx={{
                                 color: '#ff6b6b',
                                 bgcolor: 'rgba(255, 107, 107, 0.12)',
@@ -880,7 +1319,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           </Tooltip>
                         )}
                       </ListItem>
-                      {index < (league.members?.length || 0) - 1 && (
+                      {index < (sortedMembers?.length || 0) - 1 && (
                         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
                       )}
                     </Box>
@@ -899,7 +1338,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               variant="outlined"
               color="warning"
               onClick={() => {
-                const isAdmin = league.adminId === currentUserId
+                const isAdmin = !!(league && league.adminId === currentUserId)
                 const confirmMsg = isAdmin
                   ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
                   : 'Are you sure you want to leave this league?'
@@ -909,7 +1348,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   // Prefer selected admin if different, otherwise first other member
                   let replacementId = adminId && adminId !== currentUserId ? adminId : ''
                   if (!replacementId) {
-                    const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+                    const firstOther = ((league?.members || []) as User[]).find(m => m.id !== currentUserId)
                     if (firstOther) replacementId = firstOther.id
                   }
                   if (!replacementId) {
@@ -951,60 +1390,6 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     </Dialog>
   )
 }
-
-// const cardStyles = {
-//   borderRadius: 3,
-//   p: { xs: 1.5, md: 3 },
-//   color: 'white',
-//   background: '#1f673b',
-//   border: '1px solid rgba(255,255,255,0.18)',
-//   transition: 'transform 0.2s, box-shadow 0.2s',
-//   '&:hover': {
-//     transform: 'translateY(-4px) scale(1.03)',
-//     boxShadow: '0 8px 32px 0 rgba(31,38,135,0.27)',
-//   },
-//   display: 'flex',
-//   flexDirection: 'column',
-//   gap: { xs: 1, md: 1 },
-//   width: { xs: '100%', md: 'auto' }, // Full width on small screens, auto on large screens for two cards
-//   minWidth: { xs: '100%', md: '300px' }, // Minimum width on large screens
-//   boxSizing: 'border-box',
-// };
-
-// const iconButtonStyles = {
-//   position: 'absolute',
-//   color: 'white',
-//   border: '2px solid white',
-//   borderRadius: 2,
-//   right: { xs: 0, md: '0' },
-//   p: { xs: 0.6, md: 1.2 },
-//   '&:hover': {
-//     backgroundColor: 'rgba(255,255,255,0.1)',
-//   },
-// };
-
-// const buttonStyles = {
-//   base: {
-//     color: 'white',
-//     fontWeight: 'bold',
-//     borderRadius: 2,
-//     px: { xs: 2, md: 4 },
-//     py: { xs: 1, md: 1 },
-//     fontSize: { xs: '0.7rem', md: '0.875rem' },
-//     textTransform: 'none',
-//   },
-//   outlined: {
-//     bgcolor: '#43a047',
-//     borderColor: '#43a047',
-//     '&:hover': { bgcolor: '#388e3c', borderColor: '#388e3c' },
-//   },
-//   contained: {
-//     bgcolor: '#43a047',
-//     boxShadow: '0 2px 8px rgba(0,200,83,0.12)',
-//     '&:hover': { bgcolor: '#388e3c' },
-//   },
-// };
-
 function AllLeagues() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -1140,88 +1525,7 @@ function AllLeagues() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch { }
   };
-
-  // const fetchAllLeagues = useCallback(async (forceRefresh: boolean = false) => {
-  //   if (!token) return;
-
-  //   const now = Date.now();
-  //   const timeSinceLastFetch = now - lastFetchTime;
-
-  //   // Check if we need to fetch (either forced refresh or cache expired)
-  //   if (!forceRefresh && timeSinceLastFetch < CACHE_TIMEOUT && leagues.length > 0) {
-  //     console.log('Using cached leagues data');
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Fetching all available leagues...');
-  //     setLoading(true);
-
-  //     // First get the user's leagues from auth/status
-  //     const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`
-  //       }
-  //     });
-
-  //     if (authResponse.ok) {
-  //       const authData = await authResponse.json();
-  //       if (authData.success && authData.user) {
-  //         // Combine joined and managed leagues
-  //         const userLeagues = [
-  //           ...(authData.user.leagues || []),
-  //           ...(authData.user.administeredLeagues || [])
-  //         ].filter(league => league && league.id); // Filter out undefined/null leagues
-
-  //         // Remove duplicates
-  //         const uniqueLeagues = Array.from(new Map(userLeagues.map(league => [league.id, league])).values());
-
-  //         // Now fetch detailed information for each league
-  //         const detailedLeagues = await Promise.all(
-  //           uniqueLeagues.map(async (league) => {
-  //             try {
-  //               const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-  //                 headers: {
-  //                   'Authorization': `Bearer ${token}`
-  //                 }
-  //               });
-
-  //               if (leagueResponse.ok) {
-  //                 const leagueData = await leagueResponse.json();
-  //                 if (leagueData.success) {
-  //                   return {
-  //                     ...league,
-  //                     members: leagueData.league.members || [],
-  //                     matches: leagueData.league.matches || [],
-  //                     administrators: leagueData.league.administrators || []
-  //                   };
-  //                 }
-  //               }
-  //               // If individual league fetch fails, return the basic league info
-  //               return league;
-  //             } catch (error) {
-  //               console.warn(`Failed to fetch details for league ${league.id}:`, error);
-  //               return league;
-  //             }
-  //           })
-  //         );
-
-  //         setLeagues(detailedLeagues);
-  //         setLastFetchTime(now); // Update last fetch time
-  //         console.log('Setting detailed leagues:', detailedLeagues);
-  //       }
-  //     } else {
-  //       console.error('Failed to fetch leagues');
-  //       toast.error('Failed to fetch leagues');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching leagues:', error);
-  //     toast.error('An error occurred while fetching leagues');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, [token, lastFetchTime, leagues.length, CACHE_TIMEOUT]); // Only depend on token
+  
 
   const fetchAllLeagues = useCallback(async () => {
     if (!token) return;
@@ -1476,7 +1780,7 @@ function AllLeagues() {
     if (!selectedLeague) return;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1547,6 +1851,107 @@ function AllLeagues() {
       toast.error(msg);
     }
   }, [selectedLeague, token]);
+
+  // Admin Settings dialog: update/delete handlers that operate on adminSettingsLeague
+  const handleUpdateLeagueFromAdminSettings = useCallback(async (data: LeagueUpdatePayload) => {
+    if (!adminSettingsLeague) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          active: data.active,
+          maxGames: data.maxGames,
+          showPoints: data.showPoints,
+          admins: data.admins,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.success === false) {
+        throw new Error(json.message || 'Failed to update league');
+      }
+
+      toast.success('League updated');
+
+      // Update leagues list optimistically
+      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? {
+        ...l,
+        name: data.name ?? l.name,
+        active: data.active ?? l.active,
+        maxGames: data.maxGames ?? l.maxGames,
+        showPoints: data.showPoints ?? l.showPoints,
+        administrators: data.admins && data.admins.length > 0
+          ? (l.members || []).filter(m => data.admins!.includes(m.id))
+          : l.administrators,
+        updatedAt: new Date().toISOString(),
+      } : l));
+
+      // Update adminSettingsLeague details
+      setAdminSettingsLeague(prev => prev ? {
+        ...prev,
+        name: data.name ?? prev.name,
+        active: data.active ?? prev.active,
+        maxGames: data.maxGames ?? prev.maxGames,
+        showPoints: data.showPoints ?? prev.showPoints,
+        administrators: data.admins && data.admins.length > 0
+          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
+          : prev.administrators,
+        updatedAt: new Date().toISOString(),
+      } : prev);
+
+      // If currently selectedLeague matches, keep it in sync as well
+      setSelectedLeague(prev => (prev && prev.id === adminSettingsLeague.id) ? {
+        ...prev,
+        name: data.name ?? prev.name,
+        active: data.active ?? prev.active,
+        maxGames: data.maxGames ?? prev.maxGames,
+        showPoints: data.showPoints ?? prev.showPoints,
+        administrators: data.admins && data.admins.length > 0
+          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
+          : prev.administrators,
+        updatedAt: new Date().toISOString(),
+      } : prev);
+
+      // Optional: refresh full data for consistency
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to update league';
+      toast.error(msg);
+    }
+  }, [adminSettingsLeague, token, fetchAllLeagues]);
+
+  const handleDeleteLeagueFromAdminSettings = useCallback(async () => {
+    if (!adminSettingsLeague) return;
+    if (!window.confirm('Are you sure you want to delete this league? This action cannot be undone.')) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete league');
+      toast.success('League deleted');
+      // Remove from local state
+      setLeagues(prev => prev.filter(l => l.id !== adminSettingsLeague.id));
+      // Clear dialog/selection states
+      setAdminSettingsLeague(null);
+      setOpenAdminSettings(false);
+      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+        setSelectedLeague(null);
+        setOpenMembers(false);
+      }
+      // Ensure lists are fresh
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete league';
+      toast.error(msg);
+    }
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
   // const handleBackToAllLeagues = () => {
   //   router.push('/home');
   // };
@@ -1560,7 +1965,7 @@ function AllLeagues() {
       }}
     >
       <Container maxWidth="lg">
-        
+
         {/* <Button
           startIcon={<ArrowLeft />}
           onClick={handleBackToAllLeagues}
@@ -1573,24 +1978,24 @@ function AllLeagues() {
         >
           Back to Dashboard
         </Button> */}
-          {/* Close Button */}
-          <CloseButton fallbackRoute="/dashboard" />
+        {/* Close Button */}
+        <CloseButton fallbackRoute="/dashboard" />
         <Box sx={{ mb: { xs: 3, md: 5 } }}>
           {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
-            <Typography variant="h3" sx={{
-              color: 'black',
-              fontFamily: '"Anton", sans-serif',
-              fontWeight: 'semibold',
-              fontSize: { xs: '32px', sm: '42px', md: '56px' },
-              textAlign: { xs: 'center', md: 'left' },
-              textTransform: 'uppercase',
-              letterSpacing: '2px',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}
-              className='all-leagues-heading'
-            >
-              ALL LEAGUES
-            </Typography>
+          <Typography variant="h3" sx={{
+            color: 'black',
+            fontFamily: '"Anton", sans-serif',
+            fontWeight: 'semibold',
+            fontSize: { xs: '32px', sm: '42px', md: '56px' },
+            textAlign: { xs: 'center', md: 'left' },
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}
+            className='all-leagues-heading'
+          >
+            ALL LEAGUES
+          </Typography>
           {/* </Box> */}
           {/* Create/Join League Section */}
           <Box sx={{
@@ -1831,7 +2236,7 @@ function AllLeagues() {
               height: 44,
               fontWeight: 'bold',
               textTransform: 'none',
-              '&:hover': { bgcolor: '#0388E3' , color: 'white'},
+              '&:hover': { bgcolor: '#0388E3', color: 'white' },
               color: completionTab === 'completed' ? 'white' : 'black',
             }}
           >
@@ -1849,7 +2254,7 @@ function AllLeagues() {
               height: 44,
               fontWeight: 'bold',
               textTransform: 'none',
-              '&:hover': { bgcolor: '#0388E3' , color: 'white'},
+              '&:hover': { bgcolor: '#0388E3', color: 'white' },
             }}
           >
             Incomplete Leagues
@@ -2411,21 +2816,88 @@ function AllLeagues() {
       </Container>
       <Toaster position="top-center" reverseOrder={false} />
       {openAdminSettings && adminSettingsLeague && (
+        // <LeagueSettingsDialog
+        //   open={openAdminSettings}
+        //   onClose={() => setOpenAdminSettings(false)}
+        //   league={adminSettingsLeague}
+        //   onUpdate={async (data) => {
+        //     await handleUpdateLeagueFromSettings(data)
+        //     setOpenAdminSettings(false)
+        //   }}
+        //   onDelete={async () => {
+        //     await handleDeleteLeagueFromSettings()
+        //     setOpenAdminSettings(false)
+        //   }}
+        //   currentUserId={user?.id || ''}
+        //   onRemoveMember={handleRemoveMember}
+        //   onLeaveLeague={handleLeaveLeague}
+        // />
         <LeagueSettingsDialog
           open={openAdminSettings}
           onClose={() => setOpenAdminSettings(false)}
           league={adminSettingsLeague}
           onUpdate={async (data) => {
-            await handleUpdateLeagueFromSettings(data)
-            setOpenAdminSettings(false)
+            await handleUpdateLeagueFromAdminSettings(data);
+            setOpenAdminSettings(false);
           }}
           onDelete={async () => {
-            await handleDeleteLeagueFromSettings()
-            setOpenAdminSettings(false)
+            await handleDeleteLeagueFromAdminSettings();
+            // dialog is closed in the handler too; this is safe
+            setOpenAdminSettings(false);
           }}
           currentUserId={user?.id || ''}
-          onRemoveMember={handleRemoveMember}
+          onRemoveMember={async (memberId: string) => {
+            try {
+              const lid = adminSettingsLeague?.id || selectedLeague?.id;
+              if (!lid || !token) return;
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}/users/${memberId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+              if (!res.ok) {
+                const msg = await res.text().catch(() => '');
+                throw new Error(msg || 'Failed to remove member');
+              }
+
+              // Optimistically update dialog/local states for instant UI feedback
+              try {
+                // Update the admin settings dialog league
+                setAdminSettingsLeague(prev => prev ? {
+                  ...prev,
+                  members: (prev.members || []).filter(m => m.id !== memberId),
+                  administrators: (prev.administrators || []).filter(a => a.id !== memberId),
+                } : prev);
+
+                // If selectedLeague is the same league, update it too
+                setSelectedLeague(prev => (prev && prev.id === lid) ? {
+                  ...prev,
+                  members: (prev.members || []).filter(m => m.id !== memberId),
+                  administrators: (prev.administrators || []).filter(a => a.id !== memberId),
+                } : prev);
+
+                // Update the leagues list if it contains members/admins
+                setLeagues(prev => prev.map(l => l.id === lid ? {
+                  ...l,
+                  members: Array.isArray(l.members) ? l.members.filter(m => m.id !== memberId) : l.members,
+                  administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => a.id !== memberId) : l.administrators,
+                } : l));
+              } catch { /* noop */ }
+
+              // Refresh full leagues data to ensure consistency
+              await fetchAllLeagues();
+              try { toast.success('Member removed'); } catch { }
+            } catch (err) {
+              const message = err instanceof Error ? err.message : 'Failed to remove member';
+              console.error('Remove member failed:', err);
+              if (typeof window !== 'undefined') {
+                try { toast.error(message); } catch { window.alert(message); }
+              }
+            }
+          }}
           onLeaveLeague={handleLeaveLeague}
+
         />
       )}
       <LeagueMembersDialog

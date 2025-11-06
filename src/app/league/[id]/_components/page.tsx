@@ -45,10 +45,13 @@ import {
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame } from 'lucide-react';
+import { optimizedFetch, invalidateCache } from '@/lib/utils/optimizedFetch';
+import { apiCache } from '@/lib/utils/apiCache';
 import { Tooltip, Slide } from '@mui/material';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 
 // Lazy load heavy components
 const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
@@ -188,6 +191,7 @@ interface LeagueSettingsDialogProps {
     onLeaveLeague?: () => void;
     onUpdateLeague?: (data: LeagueUpdatePayload) => Promise<void> | void;
     onDeleteLeague?: () => Promise<void> | void;
+    onMembersChanged?: () => void | Promise<void>;
 }
 
 type LeagueUpdatePayload = {
@@ -240,6 +244,7 @@ interface LeagueMembersDialogProps {
     onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
     onDeleteLeague: () => Promise<void> | void
     openSettingsOnOpen?: boolean
+    onMembersChanged?: () => void | Promise<void>
 }
 
 function LeagueMembersDialog({
@@ -252,6 +257,7 @@ function LeagueMembersDialog({
     onUpdateLeague,
     onDeleteLeague,
     openSettingsOnOpen,
+    onMembersChanged,
 }: LeagueMembersDialogProps) {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -611,599 +617,14 @@ function LeagueMembersDialog({
                     currentUserId={currentUserId}
                     onRemoveMember={onRemoveMember}
                     onLeaveLeague={onLeaveLeague}
+                    onMembersChanged={onMembersChanged}
                 />
             )}
         </Dialog>
     )
 }
 
-// const getBadgeForPosition = (position: number) => {
-//     switch (position) {
-//         case 1:
-//             return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
-//         case 2:
-//             return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
-//         case 3:
-//             return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
-//         default:
-//             return `${position}th`
-//     }
-// }
-
-// const getRowStyles = (index: number) => {
-//     if (index === 0) {
-//         return "bg-[rgba(30,58,138,0.8)]" // First place - darker blue
-//     } else if (index === 1) {
-//         return "bg-[rgba(30,58,138,0.6)]" // Second place - medium blue
-//     } else if (index === 2) {
-//         return "bg-[rgba(30,58,138,0.5)]" // Third place - lighter blue
-//     }
-//     return "bg-[rgba(30,58,138,0.4)]" // All other places - light blue
-// }
-
-
-// function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete }: LeagueSettingsDialogProps) {
-//     const [name, setName] = useState('');
-//     const [adminId, setAdminId] = useState('');
-//     const [isActive, setIsActive] = useState(true);
-//     const [maxGames, setMaxGames] = useState(20);
-//     const [showPoints, setShowPoints] = useState(true);
-
-//     useEffect(() => {
-//         if (league) {
-//             setName(league.name || '');
-//             setIsActive(league.active !== false);
-//             setMaxGames(league.maxGames || 20);
-//             setShowPoints(league.showPoints !== false);
-//             setAdminId(league.administrators?.[0]?.id || '');
-//         }
-//     }, [league]);
-
-//     const handleUpdate = () => {
-//         const updatedData = {
-//             name,
-//             active: isActive,
-//             maxGames,
-//             showPoints,
-//             admins: [adminId],
-//         };
-//         onUpdate(updatedData);
-//     };
-
-//     if (!league) return null;
-
-//     return (
-//         <Dialog
-//             open={open}
-//             onClose={onClose}
-//             fullWidth
-//             maxWidth="md"
-//             PaperProps={{
-//                 sx: {
-//                     bgcolor: 'rgba(15,15,15,0.92)',
-//                     color: '#E5E7EB',
-//                     borderRadius: 3,
-//                     border: '1px solid rgba(255,255,255,0.08)',
-//                     backdropFilter: 'blur(10px)',
-//                     boxShadow:
-//                         '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-//                     overflow: 'hidden',
-//                 },
-//             }}
-//         >
-//             <DialogTitle
-//                 sx={{
-//                     fontWeight: 'bold',
-//                     position: 'relative',
-//                     color: '#E5E7EB',
-//                 }}
-//             >
-//                 Manage League Settings
-//                 <IconButton
-//                     aria-label="close"
-//                     onClick={onClose}
-//                     sx={{
-//                         position: 'absolute',
-//                         right: 8,
-//                         top: 8,
-//                         color: '#9CA3AF',
-//                         '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-//                     }}
-//                 >
-//                     <CloseIcon />
-//                 </IconButton>
-//             </DialogTitle>
-
-//             <DialogContent>
-//                 <Box
-//                     component="form"
-//                     noValidate
-//                     autoComplete="off"
-//                     sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}
-//                 >
-//                     <FormControl fullWidth>
-//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                             Select league admin
-//                         </Typography>
-//                         <Select
-//                             value={adminId}
-//                             onChange={(e) => setAdminId(e.target.value)}
-//                             sx={{
-//                                 color: '#E5E7EB',
-//                                 '& .MuiOutlinedInput-notchedOutline': {
-//                                     borderColor: 'rgba(255,255,255,0.2)',
-//                                 },
-//                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-//                                     borderColor: 'rgba(255,255,255,0.35)',
-//                                 },
-//                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-//                                     borderColor: '#0388E3',
-//                                 },
-//                                 '& .MuiSelect-icon': { color: '#E5E7EB' },
-//                             }}
-//                             MenuProps={{
-//                                 PaperProps: {
-//                                     sx: {
-//                                         bgcolor: 'rgba(15,15,15,0.98)',
-//                                         color: '#E5E7EB',
-//                                         border: '1px solid rgba(255,255,255,0.08)',
-//                                     },
-//                                 },
-//                             }}
-//                         >
-//                             {league.members.map((member: User) => (
-//                                 <MenuItem key={member.id} value={member.id}>
-//                                     {member.firstName} {member.lastName}
-//                                 </MenuItem>
-//                             ))}
-//                         </Select>
-//                     </FormControl>
-
-//                     <FormControl fullWidth>
-//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                             League name
-//                         </Typography>
-//                         <TextField
-//                             fullWidth
-//                             value={name}
-//                             onChange={(e) => setName(e.target.value)}
-//                             sx={{
-//                                 '& .MuiOutlinedInput-root': {
-//                                     color: '#E5E7EB',
-//                                     '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-//                                     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-//                                     '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-//                                 },
-//                                 '& .MuiInputBase-input': { color: '#E5E7EB' },
-//                             }}
-//                             InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-//                         />
-//                     </FormControl>
-
-//                     <FormControl component="fieldset">
-//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                             Change league active status
-//                         </Typography>
-//                         <RadioGroup
-//                             row
-//                             value={isActive ? 'active' : 'inactive'}
-//                             onChange={(e) => setIsActive(e.target.value === 'active')}
-//                         >
-//                             <FormControlLabel
-//                                 value="active"
-//                                 control={
-//                                     <Radio
-//                                         sx={{
-//                                             color: 'rgba(255,255,255,0.6)',
-//                                             '&.Mui-checked': { color: '#27ab83' },
-//                                         }}
-//                                     />
-//                                 }
-//                                 label="Active"
-//                             />
-//                             <FormControlLabel
-//                                 value="inactive"
-//                                 control={
-//                                     <Radio
-//                                         sx={{
-//                                             color: 'rgba(255,255,255,0.6)',
-//                                             '&.Mui-checked': { color: '#27ab83' },
-//                                         }}
-//                                     />
-//                                 }
-//                                 label="Inactive"
-//                             />
-//                         </RadioGroup>
-//                     </FormControl>
-
-//                     <FormControl fullWidth>
-//                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                             Maximum number of matches
-//                         </Typography>
-//                         <TextField
-//                             fullWidth
-//                             type="number"
-//                             value={maxGames}
-//                             onChange={(e) => setMaxGames(Number(e.target.value))}
-//                             sx={{
-//                                 '& .MuiOutlinedInput-root': {
-//                                     color: '#E5E7EB',
-//                                     '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-//                                     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-//                                     '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-//                                 },
-//                                 '& .MuiInputBase-input': { color: '#E5E7EB' },
-//                             }}
-//                         />
-//                     </FormControl>
-
-//                     <FormControlLabel
-//                         control={
-//                             <Switch
-//                                 checked={showPoints}
-//                                 onChange={(e) => setShowPoints(e.target.checked)}
-//                                 sx={{
-//                                     '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-//                                     '& .Mui-checked': { color: '#27ab83' },
-//                                     '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
-//                                 }}
-//                             />
-//                         }
-//                         label="CF Advance Point Scoring"
-//                         sx={{ color: '#E5E7EB' }}
-//                     />
-//                 </Box>
-//             </DialogContent>
-
-//             <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-//                 <Button
-//                     onClick={handleUpdate}
-//                     variant="contained"
-//                     sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}
-//                 >
-//                     Update League
-//                 </Button>
-//                 <Button variant="contained" color="error" onClick={onDelete}>
-//                     Delete League
-//                 </Button>
-//             </DialogActions>
-//         </Dialog>
-//     );
-// }
-
-
-// function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
-//     const [name, setName] = useState('')
-//     const [adminId, setAdminId] = useState('')
-//     const [isActive, setIsActive] = useState(true)
-//     const [maxGames, setMaxGames] = useState(20)
-//     const [showPoints, setShowPoints] = useState(true)
-
-//     useEffect(() => {
-//         if (league) {
-//             setName(league.name || '')
-//             setIsActive(league.active !== false)
-//             setMaxGames(league.maxGames || 20)
-//             setShowPoints(league.showPoints !== false)
-//             setAdminId(league.administrators?.[0]?.id || '')
-//         }
-//     }, [league])
-
-//     const handleUpdate = () => {
-//         const updatedData: LeagueUpdatePayload = {
-//             name,
-//             active: isActive,
-//             maxGames,
-//             showPoints,
-//             admins: adminId ? [adminId] : [],
-//         }
-//         onUpdate(updatedData)
-//     }
-
-//     const handleLeaveLeague = () => {
-//         if (!league || !currentUserId) return
-//         const leagueAdminId = league.administrators?.[0]?.id || ''
-//         const isCurrentUserAdmin = currentUserId === leagueAdminId
-
-//         const confirmMsg = isCurrentUserAdmin
-//             ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
-//             : 'Are you sure you want to leave this league?'
-
-//         if (!window.confirm(confirmMsg)) return
-
-//         if (isCurrentUserAdmin) {
-//             // Determine replacement admin: prefer selected adminId if it's another member; otherwise pick first other member
-//             let replacementId = adminId && adminId !== currentUserId ? adminId : ''
-//             if (!replacementId) {
-//                 const firstOther = (league.members || []).find(m => m.id !== currentUserId)
-//                 if (firstOther) replacementId = firstOther.id
-//             }
-
-//             if (!replacementId) {
-//                 // No other member to assign
-//                 window.alert('Cannot leave as admin because no other members are available to assign as admin.')
-//                 return
-//             }
-
-//             // First, update league admin, then remove current user
-//             try {
-//                 onUpdate({
-//                     name,
-//                     active: isActive,
-//                     maxGames,
-//                     showPoints,
-//                     admins: [replacementId],
-//                 })
-//             } catch { /* noop */ }
-//         }
-
-//         if (typeof onLeaveLeague === 'function') {
-//             try { onLeaveLeague() } catch { /* noop */ }
-//         } else if (typeof onRemoveMember === 'function' && currentUserId) {
-//             onRemoveMember(currentUserId)
-//         }
-
-//         try { onClose() } catch { /* noop */ }
-//     }
-
-//     if (!league) return null
-
-//     return (
-//         <Dialog
-//             open={open}
-//             onClose={onClose}
-//             fullWidth
-//             maxWidth="md"
-//             PaperProps={{
-//                 sx: {
-//                     bgcolor: 'rgba(15,15,15,0.92)',
-//                     color: '#E5E7EB',
-//                     borderRadius: 3,
-//                     border: '1px solid rgba(255,255,255,0.08)',
-//                     backdropFilter: 'blur(10px)',
-//                     boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-//                     overflow: 'hidden',
-//                 },
-//             }}
-//         >
-//             <DialogTitle sx={{ fontWeight: 'bold', position: 'relative', color: '#E5E7EB' }}>
-//                 Manage League Settings
-//                 <IconButton
-//                     aria-label="close"
-//                     onClick={onClose}
-//                     sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
-//                 >
-//                     <Close />
-//                 </IconButton>
-//             </DialogTitle>
-
-//             <DialogContent>
-//                 <Grid container spacing={3} sx={{ mt: 0 }}>
-//                     <Grid item xs={12} md={6}>
-//                         <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-//                             <FormControl fullWidth>
-//                                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                                     Select league admin
-//                                 </Typography>
-//                                 <Select
-//                                     value={adminId}
-//                                     onChange={(e) => setAdminId(e.target.value as string)}
-//                                     sx={{
-//                                         color: '#E5E7EB',
-//                                         '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-//                                         '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
-//                                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
-//                                         '& .MuiSelect-icon': { color: '#E5E7EB' },
-//                                     }}
-//                                     MenuProps={{
-//                                         PaperProps: {
-//                                             sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
-//                                         },
-//                                     }}
-//                                 >
-//                                     {(league.members || []).map((member: User) => (
-//                                         <MenuItem key={member.id} value={member.id}>
-//                                             {member.firstName} {member.lastName}
-//                                         </MenuItem>
-//                                     ))}
-//                                 </Select>
-//                             </FormControl>
-
-//                             <FormControl fullWidth>
-//                                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                                     League name
-//                                 </Typography>
-//                                 <TextField
-//                                     fullWidth
-//                                     value={name}
-//                                     onChange={(e) => {
-//                                         const raw = e.target.value || ''
-//                                         const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
-//                                         setName(cleaned)
-//                                     }}
-//                                     sx={{
-//                                         '& .MuiOutlinedInput-root': {
-//                                             color: '#E5E7EB',
-//                                             '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-//                                             '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-//                                             '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-//                                         },
-//                                         '& .MuiInputBase-input': { color: '#E5E7EB' },
-//                                     }}
-//                                     InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-//                                     inputProps={{ maxLength: 20 }}
-//                                     helperText="Max 20 characters, letters/numbers only"
-//                                 />
-//                             </FormControl>
-
-//                             <FormControl component="fieldset">
-//                                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                                     Change league active status
-//                                 </Typography>
-//                                 <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
-//                                     <FormControlLabel
-//                                         value="active"
-//                                         control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-//                                         label="Active"
-//                                     />
-//                                     <FormControlLabel
-//                                         value="inactive"
-//                                         control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-//                                         label="Inactive"
-//                                     />
-//                                 </RadioGroup>
-//                             </FormControl>
-
-//                             <FormControl fullWidth>
-//                                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                                     Maximum number of matches
-//                                 </Typography>
-//                                 <TextField
-//                                     fullWidth
-//                                     type="number"
-//                                     value={maxGames}
-//                                     onChange={(e) => setMaxGames(Number(e.target.value))}
-//                                     sx={{
-//                                         '& .MuiOutlinedInput-root': {
-//                                             color: '#E5E7EB',
-//                                             '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-//                                             '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
-//                                             '&.Mui-focused fieldset': { borderColor: '#0388E3' },
-//                                         },
-//                                         '& .MuiInputBase-input': { color: '#E5E7EB' },
-//                                     }}
-//                                 />
-//                             </FormControl>
-
-//                             <FormControlLabel
-//                                 control={
-//                                     <Switch
-//                                         checked={showPoints}
-//                                         onChange={(e) => setShowPoints(e.target.checked)}
-//                                         sx={{
-//                                             '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-//                                             '& .Mui-checked': { color: '#27ab83' },
-//                                             '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
-//                                         }}
-//                                     />
-//                                 }
-//                                 label="CF Advance Point Scoring"
-//                                 sx={{ color: '#E5E7EB' }}
-//                             />
-//                         </Box>
-//                     </Grid>
-//                     <Grid item xs={12} md={6}>
-//                         {/* Members management (now on right side, no inner scroll) */}
-//                         <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
-//                             <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-//                                 Manage members
-//                             </Typography>
-//                             <List sx={{ py: 0 }}>
-//                                 {(league.members || []).map((member: User, index: number) => {
-//                                     const memberName = `${member.firstName} ${member.lastName}`.trim()
-//                                     const leagueAdminId = league.administrators?.[0]?.id || ''
-//                                     const isLeagueAdmin = member.id === leagueAdminId
-//                                     const isCurrentUser = currentUserId ? member.id === currentUserId : false
-//                                     return (
-//                                         <Box key={member.id}>
-//                                             <ListItem
-//                                                 sx={{
-//                                                     py: { xs: 1.5, sm: 2 },
-//                                                     px: { xs: 1.5, sm: 2 },
-//                                                     display: 'flex',
-//                                                     alignItems: 'center',
-//                                                     gap: 2,
-//                                                     bgcolor: isCurrentUser ? 'rgba(255,255,255,0.06)' : 'transparent',
-//                                                     borderLeft: isCurrentUser ? '3px solid #e56a16' : 'none',
-//                                                 }}
-//                                             >
-//                                                 <ListItemAvatar>
-//                                                     <Avatar sx={{ bgcolor: '#374151' }}>
-//                                                         {(member.firstName?.[0] || '?').toUpperCase()}
-//                                                     </Avatar>
-//                                                 </ListItemAvatar>
-//                                                 <ListItemText
-//                                                     primary={
-//                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-//                                                             <Typography sx={{ fontWeight: 600, color: '#E5E7EB' }}>
-//                                                                 {memberName || 'Unnamed'}
-//                                                             </Typography>
-//                                                             <Chip
-//                                                                 label={isLeagueAdmin ? 'League Admin' : 'Member'}
-//                                                                 size="small"
-//                                                                 sx={{
-//                                                                     bgcolor: 'transparent',
-//                                                                     color: isLeagueAdmin ? '#e56a16' : '#9CA3AF',
-//                                                                     border: `1px solid ${isLeagueAdmin ? 'rgba(229,106,22,0.6)' : 'rgba(156,163,175,0.6)'}`,
-//                                                                     fontWeight: 600,
-//                                                                     fontSize: 11,
-//                                                                     height: 20,
-//                                                                     borderRadius: '9999px',
-//                                                                 }}
-//                                                             />
-//                                                         </Box>
-//                                                     }
-//                                                 />
-
-//                                                 {/* Right-side remove button only for admin and not for self or the league admin */}
-//                                                 {currentUserId && onRemoveMember && (league.administrators?.[0]?.id === currentUserId) && !isLeagueAdmin && member.id !== currentUserId && (
-//                                                     <Tooltip title={`Remove ${memberName}`} arrow>
-//                                                         <IconButton
-//                                                             onClick={() => {
-//                                                                 if (window.confirm(`Remove ${memberName} from the league?`)) {
-//                                                                     onRemoveMember(member.id)
-//                                                                 }
-//                                                             }}
-//                                                             sx={{
-//                                                                 color: '#ff6b6b',
-//                                                                 bgcolor: 'rgba(255, 107, 107, 0.12)',
-//                                                                 '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.2)' },
-//                                                             }}
-//                                                         >
-//                                                             <Delete sx={{ fontSize: 20 }} />
-//                                                         </IconButton>
-//                                                     </Tooltip>
-//                                                 )}
-//                                             </ListItem>
-//                                             {index < (league.members?.length || 0) - 1 && (
-//                                                 <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
-//                                             )}
-//                                         </Box>
-//                                     )
-//                                 })}
-//                             </List>
-//                         </Box>
-//                     </Grid>
-//                 </Grid>
-//             </DialogContent>
-
-//             <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-//                 <Box sx={{ display: 'flex', gap: 1 }}>
-//                     {currentUserId && (
-//                         <Button
-//                             variant="outlined"
-//                             color="warning"
-//                             onClick={handleLeaveLeague}
-//                             sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
-//                         >
-//                             Leave League
-//                         </Button>
-//                     )}
-//                 </Box>
-//                 <Box sx={{ display: 'flex', gap: 1 }}>
-//                     <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
-//                         Update League
-//                     </Button>
-//                     <Button variant="contained" color="error" onClick={onDelete}>
-//                         Delete League
-//                     </Button>
-//                 </Box>
-//             </DialogActions>
-//         </Dialog>
-//     )
-// }
-
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague }: LeagueSettingsDialogProps) {
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged }: LeagueSettingsDialogProps) {
     const [name, setName] = useState('')
     const [adminId, setAdminId] = useState('')
     const [isActive, setIsActive] = useState(true)
@@ -1232,11 +653,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         onUpdate(updatedData)
     }
 
-    if (!league) return null
-
     // Helper to determine if a given user is an admin of this league
     const isUserLeagueAdmin = (userId?: string | null): boolean => {
-        if (!userId) return false
+        if (!userId || !league) return false
         if (league.adminId && league.adminId === userId) return true
         if (Array.isArray(league.administrators)) {
             return league.administrators.some(a => a?.id === userId)
@@ -1245,6 +664,25 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     }
 
     const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+
+    // Sort members: Admins first, then current user, then by name
+    const sortedMembers = React.useMemo(() => {
+        const list = Array.isArray(league?.members) ? [...league.members] : [] as User[];
+        return list.sort((a, b) => {
+            const aAdmin = isUserLeagueAdmin(a.id) ? 1 : 0;
+            const bAdmin = isUserLeagueAdmin(b.id) ? 1 : 0;
+            if (aAdmin !== bAdmin) return bAdmin - aAdmin; // admins first
+            const aCur = a.id === currentUserId ? 1 : 0;
+            const bCur = b.id === currentUserId ? 1 : 0;
+            if (aCur !== bCur) return bCur - aCur; // current user next
+            const an = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+            const bn = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+            return an.localeCompare(bn);
+        });
+    }, [league?.members, currentUserId]);
+
+    // Do not return before declaring hooks to preserve hook order. Render nothing if no league.
+    if (!league) return null
 
     // Remove member with admin safety: if removing current admin, require selecting replacement admin first
     const handleAdminRemoveMember = async (member: User) => {
@@ -1277,6 +715,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         try {
             if (typeof onRemoveMember === 'function') {
                 await Promise.resolve(onRemoveMember(member.id))
+                if (typeof onMembersChanged === 'function') {
+                    await Promise.resolve(onMembersChanged())
+                }
             }
         } catch { }
     }
@@ -1334,7 +775,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                         },
                                     }}
                                 >
-                                    {(league.members || []).map((member: User) => (
+                                    {sortedMembers.map((member: User) => (
                                         <MenuItem key={member.id} value={member.id}>
                                             {member.firstName} {member.lastName}
                                         </MenuItem>
@@ -1433,7 +874,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                 Manage members
                             </Typography>
                             <List sx={{ py: 0 }}>
-                                {(league.members || []).map((member: User, index: number) => {
+                                {sortedMembers.map((member: User, index: number) => {
                                     const memberName = `${member.firstName} ${member.lastName}`.trim()
                                     const isLeagueAdmin = isUserLeagueAdmin(member.id)
                                     const isCurrentUser = member.id === currentUserId
@@ -1494,7 +935,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                                     </Tooltip>
                                                 )}
                                             </ListItem>
-                                            {index < (league.members?.length || 0) - 1 && (
+                                            {index < (sortedMembers?.length || 0) - 1 && (
                                                 <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
                                             )}
                                         </Box>
@@ -1513,7 +954,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             variant="outlined"
                             color="warning"
                             onClick={() => {
-                                const isAdmin = league.adminId === currentUserId
+                                const isAdmin = !!(league && league.adminId === currentUserId)
                                 const confirmMsg = isAdmin
                                     ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
                                     : 'Are you sure you want to leave this league?'
@@ -1523,7 +964,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                                     // Prefer selected admin if different, otherwise first other member
                                     let replacementId = adminId && adminId !== currentUserId ? adminId : ''
                                     if (!replacementId) {
-                                        const firstOther = (league.members || []).find(m => m.id !== currentUserId)
+                                        const firstOther = ((league?.members || []) as User[]).find(m => m.id !== currentUserId)
                                         if (firstOther) replacementId = firstOther.id
                                     }
                                     if (!replacementId) {
@@ -1585,7 +1026,8 @@ export default function LeagueDetailPage() {
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
     const [league, setLeague] = useState<League | null>(null);
-    console.log('leagues matches', league?.matches)
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Force re-render trigger
+    console.log('leagues matches', league?.matches, 'refreshTrigger:', refreshTrigger)
     const [error, setError] = useState<string | null>(null);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
@@ -1672,27 +1114,29 @@ export default function LeagueDetailPage() {
     const [, setLoadingMembers] = useState(false);
     const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
 
-    // Callback hooks for members dialog
+    // Optimized: Callback hooks for members dialog with caching
     const handleOpenMembers = useCallback(async (league: League) => {
         setLoadingMembers(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+                staleWhileRevalidate: 60 * 1000,
+            }) as { success: boolean; league: { administrators?: User[]; members?: User[] }; message?: string };
             if (data.success) {
                 const admin = data.league.administrators?.[0];
                 setSelectedLeague({
                     ...league,
                     adminId: admin?.id,
                     members: (data.league.members || []).map((m: User) => ({
+                        ...m,
                         id: m.id,
                         firstName: m.firstName,
                         lastName: m.lastName,
                         profilePicture: m.profilePicture,
                         email: m.email,
                         shirtNumber: m.shirtNumber,
-                    })),
+                    })) as User[],
                 });
                 setOpenMembers(true);
             } else {
@@ -1730,11 +1174,13 @@ export default function LeagueDetailPage() {
         if (!token || !leagueId) return;
         (async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${encodeURIComponent(leagueId)}`, {
+                // Optimized: Use caching for trophy room data
+                const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${encodeURIComponent(leagueId)}`, {
                     headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await res.json();
-                if (!res.ok || !data?.success || !Array.isArray(data?.trophyWinners)) {
+                    cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+                    staleWhileRevalidate: 2 * 60 * 1000,
+                }) as { success?: boolean; trophyWinners?: Array<{ title: string; winnerId: string | number | null }> };
+                if (!data?.success || !Array.isArray(data?.trophyWinners)) {
                     setLeagueWinners({});
                     return;
                 }
@@ -1875,73 +1321,6 @@ export default function LeagueDetailPage() {
             return { ...prev, [stat]: Math.min(newValue, max) };
         });
     };
-
-    // Fetch existing stats for the player in this match
-    // const fetchExistingStats = useCallback(async (matchId: string) => {
-    //     if (!token || !user) return;
-
-    //     try {
-    //         // Fetch existing stats for the current user
-    //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${user.id}`, {
-    //             headers: { 'Authorization': `Bearer ${token}` }
-    //         });
-
-    //         // Check if endpoint exists (not 404 or 405)
-    //         if (response.status === 404 || response.status === 405) {
-    //             // Endpoint doesn't exist, use default stats
-    //             setStats({
-    //                 goals: 0,
-    //                 assists: 0,
-    //                 cleanSheets: 0,
-    //                 penalties: 0,
-    //                 freeKicks: 0,
-    //                 defence: 0,
-    //                 impact: 0
-    //             });
-    //             return;
-    //         }
-
-    //         const data = await response.json();
-
-    //         if (data.success && data.stats) {
-    //             // Use existing stats if available
-    //             setStats({
-    //                 goals: data.stats.goals || 0,
-    //                 assists: data.stats.assists || 0,
-    //                 cleanSheets: data.stats.cleanSheets || 0,
-    //                 penalties: data.stats.penalties || 0,
-    //                 freeKicks: data.stats.freeKicks || 0,
-    //                 defence: data.stats.defence || 0,
-    //                 impact: data.stats.impact || 0,
-    //             });
-    //         } else {
-    //             // Reset to 0 if no existing stats
-    //             setStats({
-    //                 goals: 0,
-    //                 assists: 0,
-    //                 cleanSheets: 0,
-    //                 penalties: 0,
-    //                 freeKicks: 0,
-    //                 defence: 0,
-    //                 impact: 0
-    //             });
-    //         }
-    //     } catch (error) {
-    //         console.error('Failed to fetch existing stats:', error);
-    //         // Reset to 0 on error
-    //         setStats({
-    //             goals: 0,
-    //             assists: 0,
-    //             cleanSheets: 0,
-    //             penalties: 0,
-    //             freeKicks: 0,
-    //             defence: 0,
-    //             impact: 0
-    //         });
-    //     }
-    // }, [token, user]);
-
-    // Save stats to backend
     const handleSaveStats = async () => {
         if (!activeMatchId || !token) return;
 
@@ -1949,7 +1328,8 @@ export default function LeagueDetailPage() {
         try {
             console.log('💾 Saving stats for match:', activeMatchId);
             
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`, {
+            // Optimized: Use optimizedFetch with skipCache for POST
+            const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1961,17 +1341,9 @@ export default function LeagueDetailPage() {
                     defence: stats.defence,
                     impact: stats.impact,
                 }),
-            });
+                skipCache: true, // Don't cache POST requests
+            }) as { success: boolean };
 
-            // Check if endpoint exists (not 404 or 405)
-            if (response.status === 404 || response.status === 405) {
-                // Endpoint doesn't exist, show error message
-                console.error('Stats saving is not available yet. Please contact the administrator.');
-                setStatsDialogOpen(false);
-                return;
-            }
-
-            const data = await response.json();
             if (data.success) {
                 console.log('✅ Stats saved successfully!');
                 
@@ -2028,34 +1400,70 @@ export default function LeagueDetailPage() {
 
     console.log('league', league)
 
-    const fetchLeagueDetails = useCallback(async () => {
+    const fetchLeagueDetails = useCallback(async (forceRefresh = false) => {
         try {
-            console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
+            console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing', 'Force:', forceRefresh);
             
-            // 🔄 Add cache busting to force fresh data from backend
-            const cacheBuster = `?_t=${Date.now()}`;
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}${cacheBuster}`, {
-                method: 'GET',
+            // Optimized: Use caching, but allow cache bypas s for real-time updates
+            const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
-            });
+                },
+                cacheTTL: forceRefresh ? 0 : 5 * 60 * 1000, // Skip cache if forceRefresh
+                staleWhileRevalidate: forceRefresh ? 0 : 2 * 60 * 1000,
+                skipCache: forceRefresh, // Bypass cache completely for real-time updates
+            }) as { success: boolean; league: League; message?: string };
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
             if (data.success) {
                 console.log('✅ Fresh League Data Received:', data.league);
                 console.log('✅ Total Matches:', data.league.matches?.length || 0);
                 if (data.league.matches) {
                     data.league.matches.forEach((match: Match, index: number) => {
-                        console.log(`  Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | Status: ${match.status}`);
+                        console.log(`  Match ${index + 1}: ${match.homeTeamName} (${match.homeTeamGoals || 0}) vs ${match.awayTeamName} (${match.awayTeamGoals || 0}) | Status: ${match.status}`);
                     });
                 }
-                setLeague(data.league);
-                console.log('✅ League state updated successfully');
+                
+                // Force a new object reference to trigger React re-render
+                const updatedLeague = {
+                    ...data.league,
+                    matches: data.league.matches ? data.league.matches.map(m => ({
+                        ...m,
+                        homeTeamGoals: m.homeTeamGoals,
+                        awayTeamGoals: m.awayTeamGoals,
+                        _timestamp: Date.now() // Force unique reference
+                    })) : []
+                };
+                
+                console.log('📊 Setting league state with updated data...');
+                
+                // Use functional update to ensure latest state
+                setLeague(prevLeague => {
+                    console.log('📊 Previous league matches:', prevLeague?.matches?.length || 0);
+                    console.log('📊 New league matches:', updatedLeague.matches.length);
+                    return updatedLeague;
+                });
+                
+                // Force component re-render with small delay to ensure state is set
+                setTimeout(() => {
+                    setRefreshTrigger(prev => {
+                        const newTrigger = prev + 1;
+                        console.log('🔄 Refresh trigger updated:', prev, '->', newTrigger);
+                        return newTrigger;
+                    });
+                }, 50);
+                
+                console.log('✅ League state updated successfully with fresh data');
+                
+                // Dispatch event for other listeners
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('league-data-updated', {
+                        detail: { 
+                            leagueId: data.league.id, 
+                            timestamp: Date.now(),
+                            matchCount: updatedLeague.matches.length 
+                        }
+                    }));
+                }
             } else {
                 setError(data.message || 'Failed to fetch league details');
                 console.error('❌ API Error:', data.message);
@@ -2078,7 +1486,71 @@ export default function LeagueDetailPage() {
     // This handles both manual operations AND automatic match completion detection
     useCombinedMatchRefresh(fetchLeagueDetails, 60000); // Check every 60 seconds
 
-    // Professional access logic: allow if user and profile player have ever shared ANY league
+    // 🎯 Real-time score update listener - triggers immediate refresh when scores are updated
+    useEffect(() => {
+        const handleScoreUpdate = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const matchId = customEvent.detail?.matchId;
+            console.log('⚡⚡⚡ SCORE UPDATE EVENT RECEIVED ⚡⚡⚡');
+            console.log('   Match ID:', matchId);
+            console.log('   Current refreshTrigger:', refreshTrigger);
+            console.log('   League ID:', leagueId);
+            
+            // 🗑️ Clear ALL cache layers FIRST
+            console.log('🗑️ Clearing all cache layers for fresh data...');
+            
+            // 1. Clear localStorage cache
+            const STORAGE_PREFIX = 'cf_cache_';
+            let clearedCount = 0;
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(STORAGE_PREFIX) && 
+                    (key.includes('league') || key.includes('match'))) {
+                    localStorage.removeItem(key);
+                    clearedCount++;
+                }
+            });
+            console.log(`  ✅ Cleared ${clearedCount} localStorage cache entries`);
+            
+            // 2. Clear in-memory apiCache
+            apiCache.invalidatePattern(/league|match/i);
+            console.log('  ✅ Cleared in-memory apiCache');
+            
+            // 3. Invalidate specific league endpoint
+            if (leagueId) {
+                invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`);
+                console.log(`  ✅ Invalidated league ${leagueId} cache`);
+            }
+            
+            console.log('🔄 Triggering immediate league data refresh with full cache bypass...');
+            
+            // Force immediate refresh with cache bypass for real-time updates
+            const beforeTrigger = refreshTrigger;
+            fetchLeagueDetails(true).then(() => {
+                console.log('✅✅✅ REFRESH COMPLETE ✅✅✅');
+                console.log('   RefreshTrigger before:', beforeTrigger);
+                console.log('   RefreshTrigger after (should be +1):', refreshTrigger);
+                console.log('   League loaded:', !!league);
+                console.log('   Matches count:', league?.matches?.length || 0);
+                
+                if (refreshTrigger === beforeTrigger) {
+                    console.warn('⚠️ WARNING: RefreshTrigger did NOT update! UI may not refresh!');
+                }
+            });
+            
+            console.log('✅ League data refresh triggered - scores should update immediately!');
+        };
+
+        // Listen for score-updated events from MatchStatsDialog
+        window.addEventListener('score-updated', handleScoreUpdate);
+        window.addEventListener('match-updated', handleScoreUpdate);
+        
+        return () => {
+            window.removeEventListener('score-updated', handleScoreUpdate);
+            window.removeEventListener('match-updated', handleScoreUpdate);
+        };
+    }, [fetchLeagueDetails, leagueId]);
+
+    // Optimized: Professional access logic with caching
     useEffect(() => {
         if (!user || !profilePlayerId) {
             setCheckedCommonLeague(true);
@@ -2086,12 +1558,16 @@ export default function LeagueDetailPage() {
             return;
         }
         Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }).then(res => res.json()),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${profilePlayerId}/stats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }).then(res => res.json())
+            optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+                staleWhileRevalidate: 60 * 1000,
+            }) as Promise<{ user: { leagues?: League[]; administeredLeagues?: League[] } }>,
+            optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${profilePlayerId}/stats`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+                staleWhileRevalidate: 60 * 1000,
+            }) as Promise<{ data?: { leagues?: User[] } }>
         ]).then(([userData, playerData]) => {
             const userLeagues = [
                 ...(userData.user.leagues || []),
@@ -2175,17 +1651,11 @@ export default function LeagueDetailPage() {
         return false;
     }, []);
 
-    // Fetch all user leagues for dropdown
+    // Optimized: Fetch all user leagues for dropdown with caching
     const fetchAllLeagues = useCallback(async () => {
         if (!token) return;
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
             interface LeagueData {
                 id: string | number;
                 name: string;
@@ -2208,7 +1678,13 @@ export default function LeagueDetailPage() {
                 };
             }
 
-            const data: AuthStatusResponse = await response.json();
+            const data: AuthStatusResponse = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+                staleWhileRevalidate: 2 * 60 * 1000, // 2 minutes stale
+            });
 
             if (data.success && data.user) {
                 // Get admin league IDs
@@ -2293,15 +1769,18 @@ export default function LeagueDetailPage() {
         }
     }, [token, leagueIsCompleted]);
 
-    // Fetch XP for all users in this league (from API)
+    // Optimized: Fetch XP for all users in this league with caching
     useEffect(() => {
         async function fetchXP() {
             if (!league?.id) return;
             try {
                 const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, { headers });
-                const json = await res.json().catch(() => ({}));
-                if (res.ok && (json?.success === undefined || json?.success)) {
+                const json = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, { 
+                    headers,
+                    cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+                    staleWhileRevalidate: 60 * 1000, // 1 minute stale
+                }) as { success?: boolean; xp?: Record<string, number>; data?: { xp?: Record<string, number> } };
+                if (json?.success === undefined || json?.success) {
                     // Support either { xp } or { data: { xp } }
                     const xpMap = json.xp || json.data?.xp || {};
                     setUserLeagueXP(xpMap as Record<string, number>);
@@ -2338,29 +1817,26 @@ export default function LeagueDetailPage() {
         setLeaguesDropdownAnchor(null);
     };
 
-    // Handle league selection
+    // Optimized: Handle league selection with caching
     const handleLeagueSelect = async (selectedLeagueId: string) => {
         if (selectedLeagueId !== leagueId) {
             // Fetch the new league data first, then update URL and state
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeagueId}`, {
+                const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeagueId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
-                    }
-                });
+                    },
+                    cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+                    staleWhileRevalidate: 2 * 60 * 1000, // 2 minutes stale
+                }) as { success: boolean; league: League };
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.league) {
-                        // Update league data first
-                        setLeague(data.league);
-                        setError(null);
+                if (data.success && data.league) {
+                    // Update league data first
+                    setLeague(data.league);
+                    setError(null);
 
-                        // Update URL after data is set
-                        router.replace(`/league/${selectedLeagueId}`, { scroll: false });
-                    } else {
-                        setError('Failed to load league data');
-                    }
+                    // Update URL after data is set
+                    router.replace(`/league/${selectedLeagueId}`, { scroll: false });
                 } else {
                     setError('Failed to load league data');
                 }
@@ -2384,18 +1860,15 @@ export default function LeagueDetailPage() {
         try {
             console.log('🔄 Toggling availability with action:', action);
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const response = await fetch(`${apiUrl}/matches/${matchId}/availability?action=${action}`, {
+            // Optimized: Use optimizedFetch with skipCache for POST
+            const data = await optimizedFetch(`${apiUrl}/matches/${matchId}/availability?action=${action}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-            });
+                skipCache: true, // Don't cache POST requests
+            }) as { success: boolean; message?: string };
 
-            if (!response.ok) {
-                throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
-            }
-
-            const data = await response.json();
             console.log('✅ Response from server:', data);
 
             if (data.success) {
@@ -2556,22 +2029,23 @@ export default function LeagueDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [league?.id]);
 
-    // Fetch MOTM votes per player via quick-view endpoint when league changes
+    // Optimized: Fetch MOTM votes per player with caching
     useEffect(() => {
         if (!league?.id || !token || !league.members?.length) return;
         let ignore = false;
-        const controller = new AbortController();
         (async () => {
             try {
                 const entries = await Promise.all(
                     league.members.map(async (m) => {
                         try {
-                            const res = await fetch(
+                            const data = await optimizedFetch(
                                 `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(league.id)}/player/${encodeURIComponent(m.id)}/quick-view`,
-                                { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
-                            );
-                            if (!res.ok) return [m.id, 0] as const;
-                            const data = await res.json();
+                                { 
+                                    headers: { Authorization: `Bearer ${token}` },
+                                    cacheTTL: 3 * 60 * 1000, // 3 minutes cache
+                                    staleWhileRevalidate: 60 * 1000,
+                                }
+                            ) as { motmCount?: number; data?: { motmCount?: number } };
                             const cnt = Number((data?.motmCount ?? data?.data?.motmCount ?? 0));
                             return [m.id, Number.isFinite(cnt) ? cnt : 0] as const;
                         } catch {
@@ -2586,7 +2060,6 @@ export default function LeagueDetailPage() {
         })();
         return () => {
             ignore = true;
-            controller.abort();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [league?.id, token]);
@@ -2599,15 +2072,17 @@ export default function LeagueDetailPage() {
     // { deleted useMemo computing leagueStats }
     // ...existing code...
 
+    // Optimized: Fetch league statistics with caching
     useEffect(() => {
         if (!league?.id || !token) return;
         (async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/statistics`, {
+                const json = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/statistics`, {
                     headers: { Authorization: `Bearer ${token}` },
-                });
-                const json = await res.json();
-                if (json?.success) setLeagueStats(json.data);
+                    cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+                    staleWhileRevalidate: 2 * 60 * 1000,
+                }) as { success?: boolean; data?: LeagueStatistics };
+                if (json?.success) setLeagueStats(json.data || null);
             } catch (e) {
                 console.error('Failed to load league statistics', e);
                 setLeagueStats(null);
@@ -2749,244 +2224,6 @@ export default function LeagueDetailPage() {
             </Box>
         );
     }
-
-    // Add this component before the main return statement
-
-    // const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
-    //     if (!match) return null;
-
-    //     return (
-    //         <Dialog
-    //             open={open}
-    //             onClose={onClose}
-    //             fullWidth
-    //             maxWidth="sm"
-    //             PaperProps={{
-    //                 sx: {
-    //                     bgcolor: 'rgba(15,15,15,0.95)',
-    //                     color: '#E5E7EB',
-    //                     borderRadius: 3,
-    //                     border: '1px solid rgba(255,255,255,0.1)',
-    //                     backdropFilter: 'blur(20px)',
-    //                     boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-    //                     overflow: 'hidden',
-    //                 },
-    //             }}
-    //         >
-    //             <DialogTitle
-    //                 sx={{
-    //                     fontWeight: 'bold',
-    //                     position: 'relative',
-    //                     color: '#E5E7EB',
-    //                     background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-    //                     borderBottom: '1px solid rgba(255,255,255,0.1)',
-    //                     py: 2.5
-    //                 }}
-    //             >
-    //                 Match Details
-    //                 <IconButton
-    //                     aria-label="close"
-    //                     onClick={onClose}
-    //                     sx={{
-    //                         position: 'absolute',
-    //                         right: 8,
-    //                         top: 8,
-    //                         color: '#9CA3AF',
-    //                         '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-    //                     }}
-    //                 >
-    //                     <CloseIcon />
-    //                 </IconButton>
-    //             </DialogTitle>
-
-    //             <DialogContent sx={{ p: 0 }}>
-    //                 {/* Match Header */}
-    //                 <Box sx={{ 
-    //                     p: 3, 
-    //                     background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-    //                     color: 'white'
-    //                 }}>
-    //                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-    //                         {/* Home Team */}
-    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    //                             <Image
-    //                                 src={match.homeTeamImage || homeImg}
-    //                                 alt={match.homeTeamName}
-    //                                 width={32}
-    //                                 height={32}
-    //                                 style={{ borderRadius: '4px' }}
-    //                             />
-    //                             <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
-    //                                 {formatMatchName(match.homeTeamName)}
-    //                             </Typography>
-    //                             {match.status === 'completed' && (
-    //                                 <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
-    //                                     {match.homeTeamGoals || 0}
-    //                                 </Typography>
-    //                             )}
-    //                         </Box>
-
-    //                         {/* VS Divider */}
-    //                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1 }}>
-    //                             <Typography variant="body2" sx={{ 
-    //                                 backgroundColor: 'rgba(255,255,255,0.2)', 
-    //                                 px: 2, 
-    //                                 py: 0.5, 
-    //                                 borderRadius: 2,
-    //                                 fontWeight: 'bold'
-    //                             }}>
-    //                                 VS
-    //                             </Typography>
-    //                         </Box>
-
-    //                         {/* Away Team */}
-    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    //                             <Image
-    //                                 src={match.awayTeamImage || awayImg}
-    //                                 alt={match.awayTeamName}
-    //                                 width={32}
-    //                                 height={32}
-    //                                 style={{ borderRadius: '4px' }}
-    //                             />
-    //                             <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
-    //                                 {formatMatchName(match.awayTeamName)}
-    //                             </Typography>
-    //                             {match.status === 'completed' && (
-    //                                 <Typography variant="h5" sx={{ fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
-    //                                     {match.awayTeamGoals || 0}
-    //                                 </Typography>
-    //                             )}
-    //                         </Box>
-    //                     </Box>
-    //                 </Box>
-
-    //                 {/* Match Info */}
-    //                 <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-    //                     {/* Date & Time */}
-    //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    //                         <Calendar size={20} color="#E5E7EB" />
-    //                         <Box>
-    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-    //                                 Date & Time
-    //                             </Typography>
-    //                             <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-    //                                 {formatMatchDate(match.date)} at {formatMatchTime(match.date)}
-    //                             </Typography>
-    //                         </Box>
-    //                     </Box>
-
-    //                     {/* Location */}
-    //                     {match.location && (
-    //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    //                             <Box sx={{ 
-    //                                 width: 20, 
-    //                                 height: 20, 
-    //                                 display: 'flex', 
-    //                                 alignItems: 'center', 
-    //                                 justifyContent: 'center' 
-    //                             }}>
-    //                                 📍
-    //                             </Box>
-    //                             <Box>
-    //                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-    //                                     Location
-    //                                 </Typography>
-    //                                 <Typography variant="body1" sx={{ color: '#E5E7EB', fontWeight: 'bold' }}>
-    //                                     {match.location}
-    //                                 </Typography>
-    //                             </Box>
-    //                         </Box>
-    //                     )}
-
-    //                     {/* Status */}
-    //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    //                         <Box sx={{ 
-    //                             width: 20, 
-    //                             height: 20, 
-    //                             display: 'flex', 
-    //                             alignItems: 'center', 
-    //                             justifyContent: 'center' 
-    //                         }}>
-    //                             {match.status === 'completed' ? '✅' : match.status === 'ongoing' ? '⚡' : '⏰'}
-    //                         </Box>
-    //                         <Box>
-    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem' }}>
-    //                                 Status
-    //                             </Typography>
-    //                             <Chip 
-    //                                 label={match.status === 'completed' ? 'Completed' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
-    //                                 size="small"
-    //                                 sx={{
-    //                                     backgroundColor: match.status === 'completed' ? '#16a34a' : match.status === 'ongoing' ? '#ea580c' : '#0388E3',
-    //                                     color: 'white',
-    //                                     fontWeight: 'bold',
-    //                                     fontSize: '0.75rem'
-    //                                 }}
-    //                             />
-    //                         </Box>
-    //                     </Box>
-
-    //                     {/* Availability Info for Scheduled Matches */}
-    //                     {match.status === 'scheduled' && (
-    //                         <Box sx={{ 
-    //                             mt: 2, 
-    //                             p: 2, 
-    //                             backgroundColor: 'rgba(255,255,255,0.05)', 
-    //                             borderRadius: 2,
-    //                             border: '1px solid rgba(255,255,255,0.1)'
-    //                         }}>
-    //                             <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
-    //                                 Player Availability
-    //                             </Typography>
-    //                             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-    //                                 <Chip 
-    //                                     label={`Available: ${getAvailabilityCounts(match).availableCount}`}
-    //                                     size="small"
-    //                                     sx={{ backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold' }}
-    //                                 />
-    //                                 <Chip 
-    //                                     label={`Pending: ${getAvailabilityCounts(match).pendingCount}`}
-    //                                     size="small"
-    //                                     sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
-    //                                 />
-    //                             </Box>
-    //                         </Box>
-    //                     )}
-    //                 </Box>
-    //             </DialogContent>
-
-    //             <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-    //                 <Button
-    //                     onClick={onClose}
-    //                     variant="outlined"
-    //                     sx={{
-    //                         color: '#E5E7EB',
-    //                         borderColor: 'rgba(255,255,255,0.2)',
-    //                         '&:hover': {
-    //                             backgroundColor: 'rgba(255,255,255,0.05)',
-    //                             borderColor: 'rgba(255,255,255,0.3)'
-    //                         }
-    //                     }}
-    //                 >
-    //                     Close
-    //                 </Button>
-    //                 <Link href={`/match/${match.id}`} passHref>
-    //                     <Button
-    //                         variant="contained"
-    //                         sx={{
-    //                             backgroundColor: '#0388E3',
-    //                             '&:hover': { backgroundColor: '#0369a1' }
-    //                         }}
-    //                     >
-    //                         View Full Details
-    //                     </Button>
-    //                 </Link>
-    //             </DialogActions>
-    //         </Dialog>
-    //     );
-    // };
-
-    // Replace your MatchDetailModal component with this updated version
 
     const MatchDetailModal = ({ open, onClose, match }: { open: boolean; onClose: () => void; match: Match | null }) => {
         if (!match) return null;
@@ -3302,55 +2539,6 @@ export default function LeagueDetailPage() {
         setConfirmDeleteOpen(true);
     };
 
-    // const handleConfirmDeleteMatch = async () => {
-    //     if (!matchPendingDelete || !token || !league) return;
-    //     const m = matchPendingDelete;
-    //     setConfirmDeleteOpen(false);
-
-    //     const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
-    //                       (m.awayTeamGoals ?? 0) > 0 ||
-    //                       m.status === 'completed';
-
-    //     try {
-    //         if (hasScores) {
-    //             // Archive
-    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-    //                 method: 'PATCH',
-    //                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    //                 body: JSON.stringify({ archived: true })
-    //             });
-    //             if (!res.ok) throw new Error('Failed to archive match');
-
-    //             setLeague(prev => prev ? {
-    //                 ...prev,
-    //                 matches: prev.matches.map(mm => mm.id === m.id ? { ...mm, archived: true } : mm)
-    //             } : prev);
-    //             setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
-    //             setToastMessage('Match archived. (Canceled by Admin)');
-    //         } else {
-    //             // Hard delete
-    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-    //                 method: 'DELETE',
-    //                 headers: { 'Authorization': `Bearer ${token}` }
-    //             });
-    //             if (!res.ok) throw new Error('Failed to delete match');
-
-    //             setLeague(prev => prev ? {
-    //                 ...prev,
-    //                 matches: prev.matches.filter(mm => mm.id !== m.id)
-    //             } : prev);
-    //             setUndoInfo({ match: m, action: 'delete' });
-    //             setToastMessage('Match deleted.');
-    //         }
-    //     } catch (e) {
-    //         console.error(e);
-    //         toast.error('Delete/Archive failed');
-    //     } finally {
-    //         setMatchPendingDelete(null);
-    //     }
-    // };
-
-    // Replace the existing handleConfirmDeleteMatch function with this:
 
     const handleConfirmDeleteMatch = async () => {
         if (!matchPendingDelete || !token || !league) return;
@@ -3422,99 +2610,6 @@ export default function LeagueDetailPage() {
         }
     };
 
-    // ...existing code...
-    // const handleConfirmDeleteMatch = async () => {
-    //     if (!matchPendingDelete || !token || !league) return;
-    //     const m = matchPendingDelete;
-    //     setConfirmDeleteOpen(false);
-
-    //     try {
-    //         const hasStats = await getHasStats(m.id);
-
-    //         if (hasStats) {
-    //             // Archive the match if any player stats exist
-    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-    //                 method: 'PATCH',
-    //                 headers: {
-    //                     'Authorization': `Bearer ${token}`,
-    //                     'Content-Type': 'application/json'
-    //                 },
-    //                 body: JSON.stringify({ archived: true })
-    //             });
-
-    //             if (!res.ok) {
-    //                 const errorData = await res.text();
-    //                 console.error('Archive failed:', errorData);
-    //                 throw new Error('Failed to archive match');
-    //             }
-
-    //             setLeague(prev => prev ? {
-    //                 ...prev,
-    //                 matches: prev.matches.map(mm =>
-    //                     mm.id === m.id ? { ...mm, archived: true } : mm
-    //                 )
-    //             } : prev);
-
-    //             setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
-    //             setToastMessage('Match archived (Canceled by Admin)');
-    //         } else {
-    //             // Permanently delete if no player stats exist
-    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-    //                 method: 'DELETE',
-    //                 headers: { 'Authorization': `Bearer ${token}` }
-    //             });
-
-    //             if (!res.ok) throw new Error('Failed to delete match');
-
-    //             setLeague(prev => prev ? {
-    //                 ...prev,
-    //                 matches: prev.matches.filter(mm => mm.id !== m.id)
-    //             } : prev);
-
-    //             setUndoInfo({ match: m, action: 'delete' });
-    //             setToastMessage('Match deleted permanently');
-    //         }
-
-    //         // Refresh league data to ensure sync
-    //         fetchLeagueDetails();
-
-    //     } catch (e) {
-    //         console.error('Delete/Archive operation failed:', e);
-    //         toast.error('Failed to process match delete/archive');
-    //     } finally {
-    //         setMatchPendingDelete(null);
-    //     }
-    // };
-    // ...existing code...
-
-
-    // const handleUndo = async () => {
-    //     if (!undoInfo || !token) return;
-    //     const { match, action } = undoInfo;
-    //     try {
-    //         if (action === 'archive') {
-    //             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-    //                 method: 'PATCH',
-    //                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    //                 body: JSON.stringify({ archived: false })
-    //             });
-    //             if (!res.ok) throw new Error('Failed to restore');
-
-    //             setLeague(prev => prev ? {
-    //                 ...prev,
-    //                 matches: prev.matches.map(mm => mm.id === match.id ? { ...mm, archived: false } : mm)
-    //             } : prev);
-    //             setToastMessage('Match restored.');
-    //         } else {
-    //             toast.error('Undo not available for permanent delete.');
-    //         }
-    //     } catch {
-    //         toast.error('Undo failed');
-    //     } finally {
-    //         setUndoInfo(null);
-    //     }
-    // };
-
     const handleUndo = async () => {
         if (!undoInfo || !token) return;
         const { match, action } = undoInfo;
@@ -3578,87 +2673,7 @@ export default function LeagueDetailPage() {
         }
     };
 
-    // Archive match (scores exist)
-    // const archiveMatch = async (matchId: string, archived: boolean) => {
-    //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
-    //         method: 'PATCH',
-    //         headers: {
-    //             'Authorization': `Bearer ${token}`,
-    //             'Content-Type': 'application/json'
-    //         },
-    //         body: JSON.stringify({ archived })
-    //     });
-    //     return response.json();
-    // };
-
-    // Delete match (no scores)
-    // const deleteMatch = async (matchId: string) => {
-    //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
-    //         method: 'DELETE',
-    //         headers: {
-    //             'Authorization': `Bearer ${token}`
-    //         }
-    //     });
-    //     return response.json();
-    // };
-
-    // Usage in your component:
-    // const handleDeleteMatch = async (match: Match) => {
-    //     const hasScores = (match.homeTeamGoals || 0) > 0 ||
-    //         (match.awayTeamGoals || 0) > 0 ||
-    //         match.status === 'completed' || match.status === 'RESULT_PUBLISHED';
-
-    //     try {
-    //         if (hasScores) {
-    //             await archiveMatch(match.id, true);
-    //             toast.success('Match archived successfully');
-    //         } else {
-    //             await deleteMatch(match.id);
-    //             toast.success('Match deleted successfully');
-    //         }
-    //         // Refresh data - FIXED: Use fetchLeagueDetails instead of fetchMatches
-    //         fetchLeagueDetails();
-    //     } catch (error) {
-    //         toast.error('Failed to delete/archive match');
-    //     }
-    // };
-
-
-    // Add these functions before your return statement
-
-    // const handlePermanentDelete = async (match: Match) => {
-    //     if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
-    //         return;
-    //     }
-
-    //     try {
-    //         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-    //             method: 'DELETE',
-    //             headers: { 'Authorization': `Bearer ${token}` }
-    //         });
-
-    //         if (!res.ok) {
-    //             throw new Error('Failed to permanently delete match');
-    //         }
-
-    //         // Remove from local state
-    //         setLeague(prev => prev ? {
-    //             ...prev,
-    //             matches: prev.matches.filter(mm => mm.id !== match.id)
-    //         } : prev);
-
-    //         toast.success('Match permanently deleted');
-    //         fetchLeagueDetails();
-
-    //     } catch (error) {
-    //         console.error('Permanent delete failed:', error);
-    //         toast.error('Failed to permanently delete match');
-    //     }
-    // };
-
-    // ...existing code...
-
-    // ...existing code...
+ 
 
     const handleRestoreMatch = async (match: Match) => {
         try {
@@ -3691,65 +2706,6 @@ export default function LeagueDetailPage() {
             toast.error('Failed to restore match');
         }
     };
-
-
-    // Add this new dialog before your return statement
-    // const ArchivedMatchActionDialog = ({ open, onClose, match }: { 
-    //     open: boolean; 
-    //     onClose: () => void; 
-    //     match: Match | null 
-    // }) => {
-    //     if (!match) return null;
-
-    //     return (
-    //         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-    //             <DialogTitle sx={{ fontWeight: 'bold', color: '#E5E7EB', bgcolor: 'rgba(15,15,15,0.95)' }}>
-    //                 Archived Match Actions
-    //             </DialogTitle>
-    //             <DialogContent sx={{ bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB' }}>
-    //                 <Typography variant="body1" sx={{ mb: 2 }}>
-    //                     This match is currently archived. What would you like to do?
-    //                 </Typography>
-    //                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-    //                     • <strong>Restore:</strong> Bring the match back to active status
-    //                 </Typography>
-    //                 <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-    //                     • <strong>Permanently Delete:</strong> Remove all match data forever (cannot be undone)
-    //                 </Typography>
-    //             </DialogContent>
-    //             <DialogActions sx={{ bgcolor: 'rgba(15,15,15,0.95)', gap: 1 }}>
-    //                 <Button onClick={onClose} variant="outlined" sx={{ color: '#E5E7EB', borderColor: 'rgba(255,255,255,0.2)' }}>
-    //                     Cancel
-    //                 </Button>
-    //                 <Button 
-    //                     onClick={() => {
-    //                         handleRestoreMatch(match);
-    //                         onClose();
-    //                     }}
-    //                     variant="contained" 
-    //                     sx={{ bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}
-    //                     startIcon={<Undo2 size={16} />}
-    //                 >
-    //                     Restore Match
-    //                 </Button>
-    //                 <Button 
-    //                     onClick={() => {
-    //                         handlePermanentDelete(match);
-    //                         onClose();
-    //                     }}
-    //                     variant="contained" 
-    //                     color="error"
-    //                     startIcon={<Trash2 size={16} />}
-    //                 >
-    //                     Permanently Delete
-    //                 </Button>
-    //             </DialogActions>
-    //         </Dialog>
-    //     );
-    // };
-
-
-
 
     const resultColor = (r?: string) => (r === 'W' ? '#16a34a' : r === 'L' ? '#dc2626' : '#64748b');
 
@@ -4019,23 +2975,7 @@ export default function LeagueDetailPage() {
                                                         }}
                                                     />
                                                     <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        {/* {leagueItem.id === leagueId && (
-                                                            <Box
-                                                                sx={{
-                                                                    px: 1,
-                                                                    py: 0.25,
-                                                                    bgcolor: '#0388E3',
-                                                                    color: 'white',
-                                                                    borderRadius: '9999px',
-                                                                    fontSize: 10,
-                                                                    fontWeight: 700,
-                                                                    letterSpacing: 0.3,
-                                                                    textTransform: 'uppercase',
-                                                                }}
-                                                            >
-                                                                Current
-                                                            </Box>
-                                                        )} */}
+                                                      
                                                         {leagueItem.userRole && (
                                                             <Box
                                                                 sx={{
@@ -4420,17 +3360,7 @@ export default function LeagueDetailPage() {
                                                                         <ListItemAvatar>
                                                                             <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
                                                                                 <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                                                                                {/* <Box
-                                                                                sx={{
-                                                                                    position: 'absolute',
-                                                                                    top: 0, left: 0, right: 0, bottom: 0,
-                                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                    color: '#000', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 },
-                                                                                    // textShadow: '0 1px 2px rgba(255,255,255,0.5)'
-                                                                                }}
-                                                                            >
-                                                                                {member?.shirtNumber ?? '00'}
-                                                                            </Box> */}
+                                                                             
                                                                             </Box>
                                                                         </ListItemAvatar>
                                                                         <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
@@ -4527,7 +3457,7 @@ export default function LeagueDetailPage() {
                                                     // const { availableCount, pendingCount } = getAvailabilityCounts(match);
                                                     return (
                                                         <Card
-                                                            key={match.id}
+                                                            key={`${match.id}-${refreshTrigger}-${match.homeTeamGoals}-${match.awayTeamGoals}`}
                                                             onClick={(event) => handleMatchCardClick(match, event)}
                                                             sx={{
                                                                 position: 'relative',
@@ -4571,148 +3501,6 @@ export default function LeagueDetailPage() {
                                                                         </Tooltip>
                                                                     </Box>
                                                                 )}
-
-                                                                {/* // Update your admin buttons in the match cards */}
-                                                                {/* {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    <Tooltip title="Edit">
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                router.push(`/league/${league?.id}/match/${match.id}/edit`);
-                                                                            }}
-                                                                            sx={{ color: 'white' }}
-                                                                            disabled={!league?.active}
-                                                                        >
-                                                                            <Edit size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                    <Tooltip title={match.archived ? "Permanently Delete" : "Archive / Delete"}>
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (match.archived) {
-                                                                                    // If already archived, offer permanent delete
-                                                                                    handlePermanentDelete(match);
-                                                                                } else {
-                                                                                    // Normal archive/delete flow
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }
-                                                                            }}
-                                                                            sx={{ color: match.archived ? '#ff4444' : '#ffb4b4' }}
-                                                                        >
-                                                                            <Trash2 size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                    {match.archived && (
-                                                                        <Tooltip title="Restore Match">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRestoreMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#4CAF50' }}
-                                                                            >
-                                                                                <Undo2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                </Box>
-                                                            )} */}
-
-                                                                {/* // ...existing code... */}
-                                                                {/* // ...existing code... */}
-                                                                {/* {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    {match.archived ? (
-                                                                        <Tooltip title="Restore Match">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    // Open actions dialog and run deletable check (results card)
-                                                                                    setArchivedActionMatch(match);
-                                                                                    setArchivedActionOpen(true);
-                                                                                    checkCanHardDelete(match.id);
-                                                                                }}
-                                                                                sx={{ color: '#4CAF50' }}
-                                                                            >
-                                                                                <Undo2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    ) : (
-                                                                        <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                </Box>
-                                                            )} */}
-
-                                                                {/* {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    {match.archived ? (
-                                                                        <Tooltip title="Restore Match">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setArchivedActionMatch(match);
-                                                                                    setArchivedActionOpen(true); // check will auto-run via useEffect
-                                                                                }}
-                                                                                sx={{ color: '#4CAF50' }}
-                                                                            >
-                                                                                <Undo2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    ) : (
-                                                                        <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                </Box>
-                                                            )} */}
-
-
-                                                                {/* // ...existing code... */}
-                                                                {/* // ...existing code... */}
-
-                                                                {/* Add archived label */}
-                                                                {/* {match.archived && (
-                                                                <Chip
-                                                                    label="Canceled by Admin"
-                                                                    size="small"
-                                                                    sx={{
-                                                                        position: 'absolute',
-                                                                        top: 8,
-                                                                        left: 8,
-                                                                        backgroundColor: '#b91c1c',
-                                                                        color: 'white',
-                                                                        fontWeight: 'bold'
-                                                                    }}
-                                                                />
-                                                            )} */}
-
                                                                 <Box sx={{
                                                                     display: 'flex',
                                                                     flexDirection: 'column',
@@ -4723,6 +3511,7 @@ export default function LeagueDetailPage() {
                                                                     <Box sx={{
                                                                         display: 'flex',
                                                                         alignItems: 'center',
+                                                                        justifyContent: 'space-between',
                                                                         width: '100%'
                                                                     }}>
                                                                         <Box sx={{
@@ -4751,6 +3540,19 @@ export default function LeagueDetailPage() {
                                                                                 {formatMatchName(match.homeTeamName)}
                                                                             </Typography>
                                                                         </Box>
+                                                                        <Typography
+                                                                            variant="h6"
+                                                                            sx={{ 
+                                                                                color: 'white', 
+                                                                                fontWeight: 'bold', 
+                                                                                fontSize: '1.1rem', 
+                                                                                minWidth: 20, 
+                                                                                textAlign: 'right', 
+                                                                                mr: 9 
+                                                                            }}
+                                                                        >
+                                                                            {match.homeTeamGoals || 0}
+                                                                        </Typography>
                                                                     </Box>
 
                                                                     {/* Bottom Row - Away Team */}
@@ -4786,8 +3588,20 @@ export default function LeagueDetailPage() {
                                                                             >
                                                                                 {formatMatchName(match.awayTeamName)}
                                                                             </Typography>
-
                                                                         </Box>
+                                                                        <Typography
+                                                                            variant="h6"
+                                                                            sx={{ 
+                                                                                color: 'white', 
+                                                                                fontWeight: 'bold', 
+                                                                                fontSize: '1.1rem', 
+                                                                                minWidth: 20, 
+                                                                                textAlign: 'right', 
+                                                                                mr: 9 
+                                                                            }}
+                                                                        >
+                                                                            {match.awayTeamGoals || 0}
+                                                                        </Typography>
                                                                     </Box>
 
 
@@ -4853,32 +3667,6 @@ export default function LeagueDetailPage() {
                                                                             </Button>
                                                                         )}
                                                                     </Box>
-                                                                    {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
-                                                                    <Button
-                                                                        size="small"
-                                                                        onClick={(e) => e.stopPropagation()} // Prevent card click
-                                                                        sx={{
-                                                                            backgroundColor: '#FA5836',
-                                                                            color: 'white',
-                                                                            fontSize: '0.75rem',
-                                                                            py: 0.5,
-                                                                            px: 1,
-                                                                            borderRadius: 1,
-                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                            transition: 'all 0.2s ease-in-out',
-                                                                            '&:hover': {
-                                                                                bgcolor: '#FA5836',
-                                                                                boxShadow: '0 4px 8px #FA5836',
-                                                                                transform: 'translateY(-1px)',
-                                                                            },
-                                                                            '&:active': {
-                                                                                transform: 'translateY(0)', // Reset when clicked
-                                                                            },
-                                                                        }}
-                                                                    >
-                                                                        Available: {availableCount} | Pending: {pendingCount}
-                                                                    </Button>
-                                                                </Box> */}
                                                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
                                                                         <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
                                                                             <span>
@@ -4936,7 +3724,7 @@ export default function LeagueDetailPage() {
                                                 .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED') // include uploaded
                                                 .sort(compareMatchesDesc)
                                                 .map((match) => (
-                                                    <Card key={match.id} sx={{
+                                                    <Card key={`${match.id}-${refreshTrigger}-${match.homeTeamGoals}-${match.awayTeamGoals}-${match.status}`} sx={{
                                                         position: 'relative',
                                                         borderRadius: 3,
                                                         backdropFilter: 'blur(10px)',
@@ -4947,54 +3735,6 @@ export default function LeagueDetailPage() {
                                                         }
                                                     }}>
                                                         <CardContent sx={{ p: 2 }}>
-                                                            {/* {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    <Tooltip title="Delete / Archive">
-                                                                        <IconButton
-                                                                            size="small"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleRequestDeleteMatch(match);
-                                                                            }}
-                                                                            sx={{ color: '#ffb4b4' }}
-                                                                        >
-                                                                            <Trash2 size={20} />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                </Box>
-                                                            )} */}
-                                                            {/* {isAdmin && (
-                                                                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                                    {match.archived ? (
-                                                                        <Tooltip title="Restore Match">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRestoreMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#4CAF50' }}
-                                                                            >
-                                                                                <Undo2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    ) : (
-                                                                        <Tooltip title="Delete / Archive">
-                                                                            <IconButton
-                                                                                size="small"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRequestDeleteMatch(match);
-                                                                                }}
-                                                                                sx={{ color: '#ffb4b4' }}
-                                                                            >
-                                                                                <Trash2 size={20} />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                </Box>
-                                                            )} */}
-
                                                             {isAdmin && (
                                                                 <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0 }}>
                                                                     {match.archived ? (
@@ -5857,7 +4597,40 @@ export default function LeagueDetailPage() {
                             onUpdate={handleUpdateLeague}
                             onDelete={handleDeleteLeague}
                             currentUserId={user?.id}
-                            onRemoveMember={undefined}
+                            onRemoveMember={async (memberId: string) => {
+                                try {
+                                    const lid = (league?.id || selectedLeague?.id || (typeof leagueId === 'string' ? leagueId : '')) as string;
+                                    if (!lid) return;
+                                    const token = Cookies.get('token') || Cookies.get('auth_token');
+                                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}/users/${memberId}`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                        },
+                                    });
+                                    if (!res.ok) {
+                                        const msg = await res.text().catch(() => '');
+                                        throw new Error(msg || 'Failed to remove member');
+                                    }
+
+                                    // Optimistically update local league state for instant UI feedback
+                                    try {
+                                        setLeague(prev => prev ? { ...prev, members: (prev.members || []).filter(m => m.id !== memberId) } : prev);
+                                    } catch {}
+
+                                    // Invalidate caches and refresh league data
+                                    try { apiCache.invalidatePattern(/league|match/i); } catch { /* noop */ }
+                                    try { invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`); } catch { /* noop */ }
+                                    await fetchLeagueDetails(true);
+                                    try { toast.success('Member removed'); } catch {}
+                                } catch (err) {
+                                    const message = err instanceof Error ? err.message : 'Failed to remove member';
+                                    console.error('Remove member failed:', err);
+                                    if (typeof window !== 'undefined') {
+                                        try { toast.error(message); } catch { window.alert(message); }
+                                    }
+                                }
+                            }}
                             onLeaveLeague={undefined}
                             onUpdateLeague={undefined}
                             onDeleteLeague={undefined}
@@ -5868,10 +4641,44 @@ export default function LeagueDetailPage() {
                             onClose={() => setOpenMembers(false)}
                             league={selectedLeague}
                             currentUserId={user?.id || ''}
-                            onRemoveMember={() => { /* optional: non-admins cannot remove here */ }}
+                            onRemoveMember={async (memberId: string) => {
+                                try {
+                                    const lid = (selectedLeague?.id || league?.id || (typeof leagueId === 'string' ? leagueId : '')) as string;
+                                    if (!lid) return;
+                                    const token = Cookies.get('token') || Cookies.get('auth_token');
+                                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}/users/${memberId}`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                        },
+                                    });
+                                    if (!res.ok) {
+                                        const msg = await res.text().catch(() => '');
+                                        throw new Error(msg || 'Failed to remove member');
+                                    }
+
+                                    // Optimistically update the dialog's local league copy so the list updates immediately
+                                    try {
+                                        setSelectedLeague(prev => prev ? { ...prev, members: (prev.members || []).filter(m => m.id !== memberId) } : prev);
+                                    } catch {}
+
+                                    // Invalidate caches and refresh league data
+                                    try { apiCache.invalidatePattern(/league|match/i); } catch { /* noop */ }
+                                    try { invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`); } catch { /* noop */ }
+                                    await fetchLeagueDetails(true);
+                                    try { toast.success('Member removed'); } catch {}
+                                } catch (err) {
+                                    const message = err instanceof Error ? err.message : 'Failed to remove member';
+                                    console.error('Remove member failed:', err);
+                                    if (typeof window !== 'undefined') {
+                                        try { toast.error(message); } catch { window.alert(message); }
+                                    }
+                                }
+                            }}
                             onLeaveLeague={handleLeaveLeague}
                             onUpdateLeague={async () => { /* no-op on this page for now */ }}
                             onDeleteLeague={async () => { /* no-op on this page for now */ }}
+                            onMembersChanged={fetchLeagueDetails}
                         />
                         <Snackbar
                             open={!!toastMessage}
@@ -5942,24 +4749,20 @@ export default function LeagueDetailPage() {
                                 }
                             />
                         )}
-                        {/* <PlayerStatsDialog
-                            open={statsDialogOpen}
-                            onClose={() => setStatsDialogOpen(false)}
-                            onSave={handleSaveStats}
-                            isSubmitting={isSubmittingStats}
-                            stats={stats}
-                            handleStatChange={handleStatChange}
-                            teamGoals={getMatchGoals()}
-                        /> */}
-
                         {/* Match Stats Dialog (embedded) */}
                         <PlayMatchPagee
                             open={matchStatsOpen}
                             onClose={async () => {
-                                console.log('🔄 PlayMatchPagee closing - refreshing data');
+                                console.log('🔄 PlayMatchPagee closing - clearing cache and refreshing data');
                                 
-                                // � Fetch fresh league data from backend
-                                await fetchLeagueDetails();
+                                // 🗑️ Clear all cache layers
+                                apiCache.invalidatePattern(/league|match/i);
+                                if (league?.id) {
+                                    invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`);
+                                }
+                                
+                                // 🔥 Force fresh league data from backend (bypass cache)
+                                await fetchLeagueDetails(true);
                                 
                                 // 📢 Dispatch event for other components
                                 window.dispatchEvent(new CustomEvent('match-updated'));
@@ -5984,12 +4787,6 @@ export default function LeagueDetailPage() {
                             handleStatChange={handleStatChange}
                             teamGoals={getMatchGoals()}
                         />
-
-                        {/* <MatchDetailModal
-                            open={matchDetailModalOpen}
-                            onClose={() => setMatchDetailModalOpen(false)}
-                            match={selectedMatchDetail}
-                        /> */}
                         <MatchDetailModal
                             open={matchDetailModalOpen}
                             onClose={() => setMatchDetailModalOpen(false)}
@@ -6018,49 +4815,6 @@ export default function LeagueDetailPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
-            {/* <Dialog
-                open={archivedActionOpen}
-                onClose={() => setArchivedActionOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle sx={{ fontWeight: 'bold' }}>Archived Match Actions</DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2">
-                        Choose an action for this archived match.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            if (!archivedActionMatch) return;
-                            handleRestoreMatch(archivedActionMatch);
-                            setArchivedActionOpen(false);
-                        }}
-                        startIcon={<Undo2 size={16} />}
-                    >
-                        Undo
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => {
-                            if (!archivedActionMatch) return;
-                            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-                            if (ok) {
-                                handlePermanentDelete(archivedActionMatch);
-                                setArchivedActionOpen(false);
-                            }
-                        }}
-                        startIcon={<Trash2 size={16} />}
-                    >
-                        Permanently Delete
-                    </Button>
-                </DialogActions>
-            </Dialog> */}
-
-            {/* // ...existing code... */}
             <Dialog
                 open={archivedActionOpen}
                 onClose={() => setArchivedActionOpen(false)}
@@ -6093,57 +4847,6 @@ export default function LeagueDetailPage() {
                     >
                         Undo
                     </Button>
-                    {/* <Tooltip
-                        title={
-                            archivedActionHasStats ? 'Match has stats. Cannot permanently delete.' : ''
-                        }
-                    >
-                        <span>
-                            <Button
-                                variant="contained"
-                                color="error"
-                                disabled={archivedActionChecking || archivedActionHasStats === true}
-                                onClick={() => {
-                                    if (!archivedActionMatch) return;
-                                    const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-                                    if (ok) {
-                                        handlePermanentDelete(archivedActionMatch);
-                                        setArchivedActionOpen(false);
-                                    }
-                                }}
-                                startIcon={<Trash2 size={16} />}
-                            >
-                                Permanently Delete
-                            </Button>
-                        </span>
-                    </Tooltip> */}
-                    {/* // ...existing code... */}
-                    {/* <Tooltip
-                        title={
-                            archivedActionHasStats !== false
-                                ? 'Match cannot be permanently deleted (stats present or status unknown).'
-                                : ''
-                        }
-                    >
-                        <span>
-                            <Button
-                                variant="contained"
-                                color="error"
-                                disabled={archivedActionChecking || archivedActionHasStats !== false}
-                                onClick={() => {
-                                    if (!archivedActionMatch) return;
-                                    const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-                                    if (ok) {
-                                        handlePermanentDelete(archivedActionMatch);
-                                        setArchivedActionOpen(false);
-                                    }
-                                }}
-                                startIcon={<Trash2 size={16} />}
-                            >
-                                Permanently Delete
-                            </Button>
-                        </span>
-                    </Tooltip> */}
                     <Tooltip
                         title={
                             archivedActionHasStats === true
