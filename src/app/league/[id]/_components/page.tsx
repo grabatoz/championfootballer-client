@@ -2918,13 +2918,15 @@ export default function LeagueDetailPage() {
                                                     p: 0.5,
                                                     mt: 1,
                                                     minWidth: 240,
+                                                    maxHeight: 360,
                                                     bgcolor: 'rgba(15,15,15,0.92)',
                                                     color: '#E5E7EB',
                                                     borderRadius: 2.5,
                                                     border: '1px solid rgba(255,255,255,0.08)',
                                                     backdropFilter: 'blur(10px)',
                                                     boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                                                    overflow: 'hidden',
+                                                    overflowY: 'auto',
+                                                    overflowX: 'hidden',
 
                                                 }
                                             }}
@@ -2957,6 +2959,9 @@ export default function LeagueDetailPage() {
                                                             transform: 'translateY(-1px)',
                                                             background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
                                                         },
+                                                          maxHeight: 360,
+                                                           overflowY: 'auto',
+                                                    overflowX: 'hidden',
 
                                                     }}
                                                 >
