@@ -1,12 +1,37 @@
 /**
  * 🔄 Centralized Cache Manager
  * Automatically invalidates cache on POST/PUT/PATCH/DELETE operations
+ * WITH BACKGROUND UPLOAD SUPPORT
  */
 
 import { apiCache } from './apiCache';
 import { invalidateCache } from './optimizedFetch';
 
 const STORAGE_PREFIX = 'cf_cache_';
+
+// Background upload tracking
+const uploadLog: Array<{ url: string; method: string; timestamp: number; status: 'pending' | 'success' | 'failed' }> = [];
+
+/**
+ * Log upload activity
+ */
+function logUpload(url: string, method: string, status: 'pending' | 'success' | 'failed') {
+    uploadLog.push({ url, method, timestamp: Date.now(), status });
+    
+    // Keep only last 50 entries
+    if (uploadLog.length > 50) {
+        uploadLog.shift();
+    }
+    
+    console.log(`📊 [Upload Log] ${method} ${url} - ${status.toUpperCase()}`);
+}
+
+/**
+ * Get upload activity log
+ */
+export function getUploadLog() {
+    return [...uploadLog];
+}
 
 /**
  * Clear all cache layers (localStorage + in-memory + specific endpoints)
@@ -77,6 +102,7 @@ export function clearCacheByResource(resourceType: 'league' | 'match' | 'team' |
 
 /**
  * Enhanced fetch wrapper that auto-clears cache on mutations (POST/PUT/PATCH/DELETE)
+ * AND logs upload activity
  */
 export async function fetchWithCacheInvalidation(
     url: string,
@@ -87,8 +113,26 @@ export async function fetchWithCacheInvalidation(
     
     console.log(`🌐 [CacheManager] ${method} ${url}`);
     
+    // Log upload start
+    if (isMutation) {
+        logUpload(url, method, 'pending');
+    }
+    
     // Perform the fetch
-    const response = await fetch(url, options);
+    let response: Response;
+    try {
+        response = await fetch(url, options);
+        
+        // Log upload result
+        if (isMutation) {
+            logUpload(url, method, response.ok ? 'success' : 'failed');
+        }
+    } catch (error) {
+        if (isMutation) {
+            logUpload(url, method, 'failed');
+        }
+        throw error;
+    }
     
     // If mutation was successful, clear related cache
     if (isMutation && response.ok) {
@@ -119,9 +163,11 @@ export async function fetchWithCacheInvalidation(
         }
         
         // Dispatch global cache-cleared event
-        window.dispatchEvent(new CustomEvent('cache-cleared', {
-            detail: { method, url, timestamp: Date.now() }
-        }));
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cache-cleared', {
+                detail: { method, url, timestamp: Date.now() }
+            }));
+        }
     }
     
     return response;
@@ -143,7 +189,7 @@ export function dispatchRefreshEvent(resourceType: 'league' | 'match' | 'team', 
 }
 
 /**
- * Complete mutation workflow: fetch + clear cache + dispatch event
+ * Complete mutation workflow: fetch + clear cache + dispatch event + log upload
  */
 export async function mutateWithRefresh(
     url: string,
@@ -151,7 +197,7 @@ export async function mutateWithRefresh(
     resourceType?: 'league' | 'match' | 'team',
     resourceId?: string | number
 ): Promise<Response> {
-    // Perform mutation with auto cache clearing
+    // Perform mutation with auto cache clearing and upload logging
     const response = await fetchWithCacheInvalidation(url, options);
     
     // If successful and resource type provided, dispatch specific event
@@ -162,10 +208,29 @@ export async function mutateWithRefresh(
     return response;
 }
 
+/**
+ * Get cache and upload statistics
+ */
+export function getCacheAndUploadStats() {
+    const recentUploads = uploadLog.slice(-10);
+    const stats = {
+        uploadLog: recentUploads,
+        totalUploads: uploadLog.length,
+        successfulUploads: uploadLog.filter(u => u.status === 'success').length,
+        failedUploads: uploadLog.filter(u => u.status === 'failed').length,
+        pendingUploads: uploadLog.filter(u => u.status === 'pending').length,
+    };
+    
+    console.table(recentUploads);
+    return stats;
+}
+
 export default {
     clearAllCache,
     clearCacheByResource,
     fetchWithCacheInvalidation,
     dispatchRefreshEvent,
-    mutateWithRefresh
+    mutateWithRefresh,
+    getUploadLog,
+    getCacheAndUploadStats,
 };

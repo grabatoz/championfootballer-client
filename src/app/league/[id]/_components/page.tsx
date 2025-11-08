@@ -55,28 +55,28 @@ import Cookies from 'js-cookie';
 
 // Lazy load heavy components
 const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
-  loading: () => <CircularProgress />,
-  ssr: false
+    loading: () => <CircularProgress />,
+    ssr: false
 });
 const TrophyRoom = dynamic(() => import('@/Components/TrophyRoom'), {
-  loading: () => <CircularProgress />,
-  ssr: false
+    loading: () => <CircularProgress />,
+    ssr: false
 });
 const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog'), {
-  loading: () => <CircularProgress />,
-  ssr: false
+    loading: () => <CircularProgress />,
+    ssr: false
 });
 const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
-  loading: () => <CircularProgress />,
-  ssr: false
+    loading: () => <CircularProgress />,
+    ssr: false
 });
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
-  loading: () => <CircularProgress />,
-  ssr: false
+    loading: () => <CircularProgress />,
+    ssr: false
 });
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
-  loading: () => <></>,
-  ssr: false
+    loading: () => <></>,
+    ssr: false
 });
 import CloseIcon from '@mui/icons-material/Close';
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
@@ -1026,7 +1026,7 @@ export default function LeagueDetailPage() {
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
     const [league, setLeague] = useState<League | null>(null);
-    const [refreshTrigger, setRefreshTrigger] = useState(0); // Force re-render trigger
+    const [refreshTrigger, setRefreshTrigger] = useState(Date.now()); // Force re-render trigger with timestamp
     console.log('leagues matches', league?.matches, 'refreshTrigger:', refreshTrigger)
     const [error, setError] = useState<string | null>(null);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
@@ -1327,7 +1327,7 @@ export default function LeagueDetailPage() {
         setIsSubmittingStats(true);
         try {
             console.log('💾 Saving stats for match:', activeMatchId);
-            
+
             // Optimized: Use optimizedFetch with skipCache for POST
             const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${activeMatchId}/stats`, {
                 method: 'POST',
@@ -1346,22 +1346,22 @@ export default function LeagueDetailPage() {
 
             if (data.success) {
                 console.log('✅ Stats saved successfully!');
-                
+
                 // Close dialog
                 setStatsDialogOpen(false);
-                
+
                 // 🔄 Fetch fresh data from backend
                 console.log('🔄 Forcing immediate data refresh...');
                 await fetchLeagueDetails();
-                
+
                 // 📢 Dispatch event for other components
-                window.dispatchEvent(new CustomEvent('match-updated', { 
-                    detail: { matchId: activeMatchId } 
+                window.dispatchEvent(new CustomEvent('match-updated', {
+                    detail: { matchId: activeMatchId }
                 }));
-                
+
                 // ✅ Show success message
                 toast.success('Stats saved successfully!');
-                
+
                 console.log('✨ Match updated and refreshed!');
             }
         } catch (err: unknown) {
@@ -1403,8 +1403,30 @@ export default function LeagueDetailPage() {
     const fetchLeagueDetails = useCallback(async (forceRefresh = false) => {
         try {
             console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing', 'Force:', forceRefresh);
-            
-            // Optimized: Use caching, but allow cache bypas s for real-time updates
+
+            // If force refresh, clear ALL caches first
+            if (forceRefresh) {
+                console.log('🗑️ Force refresh - clearing ALL caches first...');
+                
+                // Clear in-memory cache
+                const leagueUrl = `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`;
+                invalidateCache(leagueUrl);
+                invalidateCache(/league|match/i);
+                
+                // Clear localStorage caches too
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('cf_cache_') || key.includes('cf_instant_cache')) && 
+                        (key.includes('league') || key.includes(leagueId))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                console.log(`  ✅ Cleared ${keysToRemove.length} localStorage cache entries`);
+            }
+
+            // Optimized: Use caching, but allow cache bypass for real-time updates
             const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1422,7 +1444,7 @@ export default function LeagueDetailPage() {
                         console.log(`  Match ${index + 1}: ${match.homeTeamName} (${match.homeTeamGoals || 0}) vs ${match.awayTeamName} (${match.awayTeamGoals || 0}) | Status: ${match.status}`);
                     });
                 }
-                
+
                 // Force a new object reference to trigger React re-render
                 const updatedLeague = {
                     ...data.league,
@@ -1433,34 +1455,27 @@ export default function LeagueDetailPage() {
                         _timestamp: Date.now() // Force unique reference
                     })) : []
                 };
-                
+
                 console.log('📊 Setting league state with updated data...');
-                
-                // Use functional update to ensure latest state
-                setLeague(prevLeague => {
-                    console.log('📊 Previous league matches:', prevLeague?.matches?.length || 0);
-                    console.log('📊 New league matches:', updatedLeague.matches.length);
-                    return updatedLeague;
-                });
-                
-                // Force component re-render with small delay to ensure state is set
-                setTimeout(() => {
-                    setRefreshTrigger(prev => {
-                        const newTrigger = prev + 1;
-                        console.log('🔄 Refresh trigger updated:', prev, '->', newTrigger);
-                        return newTrigger;
-                    });
-                }, 50);
-                
+
+                // Direct state update for immediate refresh
+                setLeague(updatedLeague);
+                console.log('📊 Previous league matches:', league?.matches?.length || 0);
+                console.log('📊 New league matches:', updatedLeague.matches.length);
+
+                // Force component re-render immediately with timestamp
+                setRefreshTrigger(Date.now());
+                console.log('🔄 Refresh trigger updated with timestamp:', Date.now());
+
                 console.log('✅ League state updated successfully with fresh data');
-                
+
                 // Dispatch event for other listeners
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('league-data-updated', {
-                        detail: { 
-                            leagueId: data.league.id, 
+                        detail: {
+                            leagueId: data.league.id,
                             timestamp: Date.now(),
-                            matchCount: updatedLeague.matches.length 
+                            matchCount: updatedLeague.matches.length
                         }
                     }));
                 }
@@ -1478,7 +1493,17 @@ export default function LeagueDetailPage() {
         // Wait for auth to finish loading, user to be authenticated, and token to be available
         if (authLoading) return;
         if (!isAuthenticated || !token || !leagueId) return;
-        fetchLeagueDetails();
+        
+        // Check if we just created a match (flag set by match creation page)
+        const justCreatedMatch = localStorage.getItem(`match_created_${leagueId}`);
+        if (justCreatedMatch) {
+            console.log('🎯 Detected fresh match creation - forcing cache bypass!');
+            localStorage.removeItem(`match_created_${leagueId}`);
+            // Force refresh with cache bypass
+            fetchLeagueDetails(true);
+        } else {
+            fetchLeagueDetails();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, authLoading, isAuthenticated, leagueId]);
 
@@ -1495,34 +1520,34 @@ export default function LeagueDetailPage() {
             console.log('   Match ID:', matchId);
             console.log('   Current refreshTrigger:', refreshTrigger);
             console.log('   League ID:', leagueId);
-            
+
             // 🗑️ Clear ALL cache layers FIRST
             console.log('🗑️ Clearing all cache layers for fresh data...');
-            
+
             // 1. Clear localStorage cache
             const STORAGE_PREFIX = 'cf_cache_';
             let clearedCount = 0;
             Object.keys(localStorage).forEach(key => {
-                if (key.startsWith(STORAGE_PREFIX) && 
+                if (key.startsWith(STORAGE_PREFIX) &&
                     (key.includes('league') || key.includes('match'))) {
                     localStorage.removeItem(key);
                     clearedCount++;
                 }
             });
             console.log(`  ✅ Cleared ${clearedCount} localStorage cache entries`);
-            
+
             // 2. Clear in-memory apiCache
             apiCache.invalidatePattern(/league|match/i);
             console.log('  ✅ Cleared in-memory apiCache');
-            
+
             // 3. Invalidate specific league endpoint
             if (leagueId) {
                 invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`);
                 console.log(`  ✅ Invalidated league ${leagueId} cache`);
             }
-            
+
             console.log('🔄 Triggering immediate league data refresh with full cache bypass...');
-            
+
             // Force immediate refresh with cache bypass for real-time updates
             const beforeTrigger = refreshTrigger;
             fetchLeagueDetails(true).then(() => {
@@ -1531,24 +1556,98 @@ export default function LeagueDetailPage() {
                 console.log('   RefreshTrigger after (should be +1):', refreshTrigger);
                 console.log('   League loaded:', !!league);
                 console.log('   Matches count:', league?.matches?.length || 0);
-                
+
                 if (refreshTrigger === beforeTrigger) {
                     console.warn('⚠️ WARNING: RefreshTrigger did NOT update! UI may not refresh!');
                 }
             });
-            
+
             console.log('✅ League data refresh triggered - scores should update immediately!');
         };
 
         // Listen for score-updated events from MatchStatsDialog
         window.addEventListener('score-updated', handleScoreUpdate);
         window.addEventListener('match-updated', handleScoreUpdate);
-        
+
         return () => {
             window.removeEventListener('score-updated', handleScoreUpdate);
             window.removeEventListener('match-updated', handleScoreUpdate);
         };
     }, [fetchLeagueDetails, leagueId]);
+
+    // 🎯 Match created listener - triggers immediate refresh when new match is created
+    useEffect(() => {
+        const handleMatchCreated = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const { leagueId: eventLeagueId, match } = customEvent.detail || {};
+            
+            console.log('⚡⚡⚡ MATCH CREATED EVENT RECEIVED ⚡⚡⚡');
+            console.log('   Event League ID:', eventLeagueId);
+            console.log('   Current League ID:', leagueId);
+            console.log('   New Match:', match);
+
+            // Only refresh if this event is for the current league
+            if (eventLeagueId && eventLeagueId !== leagueId) {
+                console.log('   ℹ️ Event for different league, skipping refresh');
+                return;
+            }
+
+            console.log('🔄 Triggering immediate league data refresh for new match...');
+            
+            // DON'T clear cf_instant_cache or cf_cache_* - they were just updated!
+            // Only clear in-memory cache to force fresh fetch
+            console.log('🗑️ Clearing in-memory cache only (localStorage already updated)...');
+            
+            try {
+                const leagueUrl = `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`;
+                invalidateCache(leagueUrl);
+                invalidateCache(/league|match/i); // Clear all league/match related cache
+                console.log('  ✅ Cleared in-memory cache');
+            } catch (error) {
+                console.warn('  ⚠️ Failed to clear in-memory cache:', error);
+            }
+
+            // Force immediate refresh with cache bypass to get fresh data from server
+            fetchLeagueDetails(true).then(() => {
+                console.log('✅✅✅ NEW MATCH LOADED SUCCESSFULLY ✅✅✅');
+                console.log('   Total matches:', league?.matches?.length || 0);
+            });
+        };
+
+        const handleCacheCleared = () => {
+            console.log('⚡ CACHE CLEARED EVENT RECEIVED - Refreshing league data...');
+            fetchLeagueDetails(true);
+        };
+
+        const handleLeagueUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const { leagueId: eventLeagueId } = customEvent.detail || {};
+            
+            console.log('⚡ LEAGUE UPDATED EVENT RECEIVED');
+            console.log('   Event League ID:', eventLeagueId);
+            console.log('   Current League ID:', leagueId);
+
+            // Only refresh if this event is for the current league
+            if (eventLeagueId && eventLeagueId !== leagueId) {
+                console.log('   ℹ️ Event for different league, skipping refresh');
+                return;
+            }
+
+            console.log('🔄 Triggering league data refresh...');
+            fetchLeagueDetails(true);
+        };
+
+        // Listen for match-created, cache-cleared, and league-updated events
+        window.addEventListener('match-created', handleMatchCreated);
+        window.addEventListener('cache-cleared', handleCacheCleared);
+        window.addEventListener('league-updated', handleLeagueUpdated);
+
+        return () => {
+            window.removeEventListener('match-created', handleMatchCreated);
+            window.removeEventListener('cache-cleared', handleCacheCleared);
+            window.removeEventListener('league-updated', handleLeagueUpdated);
+        };
+    }, [fetchLeagueDetails, leagueId, league?.matches?.length]);
 
     // Optimized: Professional access logic with caching
     useEffect(() => {
@@ -1722,7 +1821,7 @@ export default function LeagueDetailPage() {
                     const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
                         ? 'ADMIN'
                         : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
-                    
+
                     return {
                         ...l,
                         id: leagueId,
@@ -1775,7 +1874,7 @@ export default function LeagueDetailPage() {
             if (!league?.id) return;
             try {
                 const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-                const json = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, { 
+                const json = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, {
                     headers,
                     cacheTTL: 3 * 60 * 1000, // 3 minutes cache
                     staleWhileRevalidate: 60 * 1000, // 1 minute stale
@@ -1874,8 +1973,8 @@ export default function LeagueDetailPage() {
             if (data.success) {
                 // 🔄 Dispatch event for auto-refresh
                 if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('match-updated', { 
-                        detail: { matchId, available: action === 'available' } 
+                    window.dispatchEvent(new CustomEvent('match-updated', {
+                        detail: { matchId, available: action === 'available' }
                     }));
                     console.log('📢 match-updated event dispatched');
                 }
@@ -1883,11 +1982,11 @@ export default function LeagueDetailPage() {
                 // 🔄 Fetch fresh data from backend
                 console.log('🔄 Fetching fresh league data...');
                 await fetchLeagueDetails();
-                
-                setToastMessage(action === 'available' 
-                    ? '✅ You are now available for this match.' 
+
+                setToastMessage(action === 'available'
+                    ? '✅ You are now available for this match.'
                     : '❌ You are now unavailable for this match.');
-                
+
                 console.log('✅ Availability updated successfully!');
             } else {
                 throw new Error(data.message || 'Failed to update availability');
@@ -2040,7 +2139,7 @@ export default function LeagueDetailPage() {
                         try {
                             const data = await optimizedFetch(
                                 `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(league.id)}/player/${encodeURIComponent(m.id)}/quick-view`,
-                                { 
+                                {
                                     headers: { Authorization: `Bearer ${token}` },
                                     cacheTTL: 3 * 60 * 1000, // 3 minutes cache
                                     staleWhileRevalidate: 60 * 1000,
@@ -2673,7 +2772,7 @@ export default function LeagueDetailPage() {
         }
     };
 
- 
+
 
     const handleRestoreMatch = async (match: Match) => {
         try {
@@ -2741,8 +2840,8 @@ export default function LeagueDetailPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             const data = await res.json();
-            console.log('fdsf',data);
-            
+            console.log('fdsf', data);
+
             if (!res.ok || !data?.success) return;
             const player: User & PlayerProfileLike = {
                 id: String(data.player?.id ?? playerId),
@@ -2959,9 +3058,9 @@ export default function LeagueDetailPage() {
                                                             transform: 'translateY(-1px)',
                                                             background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
                                                         },
-                                                          maxHeight: 360,
-                                                           overflowY: 'auto',
-                                                    overflowX: 'hidden',
+                                                        maxHeight: 360,
+                                                        overflowY: 'auto',
+                                                        overflowX: 'hidden',
 
                                                     }}
                                                 >
@@ -2980,7 +3079,7 @@ export default function LeagueDetailPage() {
                                                         }}
                                                     />
                                                     <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                      
+
                                                         {leagueItem.userRole && (
                                                             <Box
                                                                 sx={{
@@ -3365,7 +3464,7 @@ export default function LeagueDetailPage() {
                                                                         <ListItemAvatar>
                                                                             <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
                                                                                 <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                                                                             
+
                                                                             </Box>
                                                                         </ListItemAvatar>
                                                                         <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
@@ -3421,8 +3520,8 @@ export default function LeagueDetailPage() {
                                 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                                         {/* <Typography variant="h6" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
-                                            Season Schedule
-                                        </Typography> */}
+                    Season Schedule
+                </Typography> */}
                                         {isAdmin && (
                                             <Link href={`/league/${leagueId}/match`} passHref>
                                                 <Button
@@ -3545,19 +3644,6 @@ export default function LeagueDetailPage() {
                                                                                 {formatMatchName(match.homeTeamName)}
                                                                             </Typography>
                                                                         </Box>
-                                                                        <Typography
-                                                                            variant="h6"
-                                                                            sx={{ 
-                                                                                color: 'white', 
-                                                                                fontWeight: 'bold', 
-                                                                                fontSize: '1.1rem', 
-                                                                                minWidth: 20, 
-                                                                                textAlign: 'right', 
-                                                                                mr: 9 
-                                                                            }}
-                                                                        >
-                                                                            {match.homeTeamGoals || 0}
-                                                                        </Typography>
                                                                     </Box>
 
                                                                     {/* Bottom Row - Away Team */}
@@ -3594,21 +3680,7 @@ export default function LeagueDetailPage() {
                                                                                 {formatMatchName(match.awayTeamName)}
                                                                             </Typography>
                                                                         </Box>
-                                                                        <Typography
-                                                                            variant="h6"
-                                                                            sx={{ 
-                                                                                color: 'white', 
-                                                                                fontWeight: 'bold', 
-                                                                                fontSize: '1.1rem', 
-                                                                                minWidth: 20, 
-                                                                                textAlign: 'right', 
-                                                                                mr: 9 
-                                                                            }}
-                                                                        >
-                                                                            {match.awayTeamGoals || 0}
-                                                                        </Typography>
                                                                     </Box>
-
 
                                                                     {/* Date and Status - Right Side */}
                                                                     <Box sx={{
@@ -4058,11 +4130,11 @@ export default function LeagueDetailPage() {
                                                                                 <Button
                                                                                     size="small"
                                                                                     // disabled
-                                                                                     onClick={() => {
-                                                                                setSelectedMatchIdForDialog(match.id);
-                                                                                setShouldShowAdminGoals(true);
-                                                                                setMatchStatsOpen(true);
-                                                                            }}
+                                                                                    onClick={() => {
+                                                                                        setSelectedMatchIdForDialog(match.id);
+                                                                                        setShouldShowAdminGoals(true);
+                                                                                        setMatchStatsOpen(true);
+                                                                                    }}
                                                                                     sx={{
                                                                                         backgroundColor: '#0388E3',
                                                                                         color: 'white',
@@ -4621,13 +4693,13 @@ export default function LeagueDetailPage() {
                                     // Optimistically update local league state for instant UI feedback
                                     try {
                                         setLeague(prev => prev ? { ...prev, members: (prev.members || []).filter(m => m.id !== memberId) } : prev);
-                                    } catch {}
+                                    } catch { }
 
                                     // Invalidate caches and refresh league data
                                     try { apiCache.invalidatePattern(/league|match/i); } catch { /* noop */ }
                                     try { invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`); } catch { /* noop */ }
                                     await fetchLeagueDetails(true);
-                                    try { toast.success('Member removed'); } catch {}
+                                    try { toast.success('Member removed'); } catch { }
                                 } catch (err) {
                                     const message = err instanceof Error ? err.message : 'Failed to remove member';
                                     console.error('Remove member failed:', err);
@@ -4665,13 +4737,13 @@ export default function LeagueDetailPage() {
                                     // Optimistically update the dialog's local league copy so the list updates immediately
                                     try {
                                         setSelectedLeague(prev => prev ? { ...prev, members: (prev.members || []).filter(m => m.id !== memberId) } : prev);
-                                    } catch {}
+                                    } catch { }
 
                                     // Invalidate caches and refresh league data
                                     try { apiCache.invalidatePattern(/league|match/i); } catch { /* noop */ }
                                     try { invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`); } catch { /* noop */ }
                                     await fetchLeagueDetails(true);
-                                    try { toast.success('Member removed'); } catch {}
+                                    try { toast.success('Member removed'); } catch { }
                                 } catch (err) {
                                     const message = err instanceof Error ? err.message : 'Failed to remove member';
                                     console.error('Remove member failed:', err);
@@ -4759,22 +4831,22 @@ export default function LeagueDetailPage() {
                             open={matchStatsOpen}
                             onClose={async () => {
                                 console.log('🔄 PlayMatchPagee closing - clearing cache and refreshing data');
-                                
+
                                 // 🗑️ Clear all cache layers
                                 apiCache.invalidatePattern(/league|match/i);
                                 if (league?.id) {
                                     invalidateCache(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`);
                                 }
-                                
+
                                 // 🔥 Force fresh league data from backend (bypass cache)
                                 await fetchLeagueDetails(true);
-                                
+
                                 // 📢 Dispatch event for other components
                                 window.dispatchEvent(new CustomEvent('match-updated'));
-                                
+
                                 // Close dialog
                                 setMatchStatsOpen(false);
-                                
+
                                 console.log('✅ Match dialog closed and data refreshed');
                             }}
                             initialLeagueId={league?.id}

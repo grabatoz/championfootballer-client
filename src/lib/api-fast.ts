@@ -700,7 +700,9 @@ export const matchAPI = {
 
   getStats: async (matchId: string, playerId: string): Promise<ApiResponse<MatchStats>> => {
     try {
-      const data = await quickFetch<{ stats: MatchStats }>(`/matches/${matchId}/stats?playerId=${playerId}`, {}, `match_stats_${matchId}_${playerId}`);
+      // Add cache busting to always get latest stats
+      const cacheBuster = `&_t=${Date.now()}`;
+      const data = await quickFetch<{ stats: MatchStats }>(`/matches/${matchId}/stats?playerId=${playerId}${cacheBuster}`, {}, `match_stats_${matchId}_${playerId}`);
       return { success: true, data: data.stats, message: 'Stats fetched successfully' };
     } catch (error) {
       return {

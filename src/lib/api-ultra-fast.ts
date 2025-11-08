@@ -544,9 +544,55 @@ export const matchAPI = {
         body: JSON.stringify(match),
       });
       
-      // Invalidate ALL match caches
+      // 🗑️ AGGRESSIVELY clear ALL match and league caches
+      console.log('🗑️ Clearing all match caches after creation...');
+      
+      // Clear instant cache
       instantCache.delete('matches_all');
       instantCache.delete(`matches_league_${match.leagueId}`);
+      instantCache.delete(`league_${match.leagueId}`);
+      
+      // Clear chunked cache
+      chunkedCache.delete('matches_chunked');
+      chunkedCache.delete(`matches_league_${match.leagueId}_chunked`);
+      
+      // Clear localStorage completely for matches and leagues
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY + '_chunked');
+        
+        // Clear ALL match/league related items
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.includes('match') || key.includes('league') || 
+              key.includes('cf_instant') || key.includes('cf_cache')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
+      console.log('✅ All caches cleared');
+      console.log('✨ New match created:', data.match.id);
+      
+      // 📢 Dispatch multiple events to trigger UI updates
+      if (typeof window !== 'undefined') {
+        // Event 1: match-created (for match lists)
+        window.dispatchEvent(new CustomEvent('match-created', { 
+          detail: { match: data.match, leagueId: match.leagueId, timestamp: Date.now() } 
+        }));
+        
+        // Event 2: cache-cleared (for cache manager)
+        window.dispatchEvent(new CustomEvent('cache-cleared', {
+          detail: { method: 'POST', url: '/matches', timestamp: Date.now() }
+        }));
+        
+        // Event 3: league-updated (for league pages)
+        window.dispatchEvent(new CustomEvent('league-updated', {
+          detail: { leagueId: match.leagueId, timestamp: Date.now() }
+        }));
+        
+        console.log('📢 Events dispatched: match-created, cache-cleared, league-updated');
+      }
       
       return { success: true, data: data.match, message: 'Match created successfully' };
     } catch (error) {
@@ -565,12 +611,34 @@ export const matchAPI = {
         body: JSON.stringify(match),
       });
       
-      // Invalidate match caches
+      // 🗑️ Clear all match caches
+      console.log('🗑️ Clearing match caches after update...');
       instantCache.forEach((_, key) => {
-        if (key.includes('match')) {
+        if (key.includes('match') || key.includes('league')) {
           instantCache.delete(key);
         }
       });
+      chunkedCache.forEach((_, key) => {
+        if (key.includes('match') || key.includes('league')) {
+          chunkedCache.delete(key);
+        }
+      });
+      
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.includes('match') || key.includes('league')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // 📢 Dispatch update event
+        window.dispatchEvent(new CustomEvent('match-updated', { 
+          detail: { match: data.match, matchId: id, timestamp: Date.now() } 
+        }));
+        console.log('📢 match-updated event dispatched');
+      }
       
       return { success: true, data: data.match, message: 'Match updated successfully' };
     } catch (error) {
@@ -620,12 +688,34 @@ export const matchAPI = {
     try {
       const data = await fetchAndCache<{ success: boolean; message: string }>(`/matches/${id}`, { method: 'DELETE' });
       
-      // Clear all match caches
+      // 🗑️ Clear all match caches
+      console.log('🗑️ Clearing all match caches after deletion...');
       instantCache.forEach((_, key) => {
-        if (key.includes('match')) {
+        if (key.includes('match') || key.includes('league')) {
           instantCache.delete(key);
         }
       });
+      chunkedCache.forEach((_, key) => {
+        if (key.includes('match') || key.includes('league')) {
+          chunkedCache.delete(key);
+        }
+      });
+      
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.includes('match') || key.includes('league')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // 📢 Dispatch deletion event
+        window.dispatchEvent(new CustomEvent('match-deleted', { 
+          detail: { matchId: id, timestamp: Date.now() } 
+        }));
+        console.log('📢 match-deleted event dispatched');
+      }
       
       return { success: true, data, message: 'Match deleted successfully' };
     } catch (error) {

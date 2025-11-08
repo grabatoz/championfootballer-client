@@ -1,5 +1,6 @@
-// CHUNK-BASED CACHE WITH REAL-TIME UPDATES
+// CHUNK-BASED CACHE WITH REAL-TIME UPDATES + BACKGROUND UPLOAD
 // Advanced caching system that updates only affected chunks when data changes
+// AND uploads data to server in background
 
 import { optimizedFetch } from './httpClient';
 import Cookies from 'js-cookie';
@@ -9,6 +10,107 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 // Chunk configuration
 const CHUNK_SIZE = 20; // Items per chunk
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+// Background upload queue
+interface PendingUpload {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  endpoint: string;
+  data?: unknown;
+  retries: number;
+  timestamp: number;
+}
+
+class BackgroundUploader {
+  private uploads = new Map<string, PendingUpload>();
+  private isUploading = false;
+  private uploadTimer: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Start auto-upload every 5 seconds
+    if (typeof window !== 'undefined') {
+      this.uploadTimer = setInterval(() => this.processUploads(), 5000);
+    }
+  }
+
+  enqueue(upload: Omit<PendingUpload, 'id' | 'retries' | 'timestamp'>) {
+    const id = `${upload.type}_${upload.endpoint}_${Date.now()}`;
+    this.uploads.set(id, {
+      ...upload,
+      id,
+      retries: 0,
+      timestamp: Date.now(),
+    });
+    console.log(`📤 [BgUpload] Queued: ${upload.type} ${upload.endpoint}`);
+    
+    // Trigger immediate upload for creates
+    if (upload.type === 'create') {
+      setTimeout(() => this.processUploads(), 100);
+    }
+  }
+
+  async processUploads() {
+    if (this.isUploading || this.uploads.size === 0) return;
+
+    this.isUploading = true;
+    const batch = Array.from(this.uploads.values()).slice(0, 5); // Process 5 at a time
+
+    for (const upload of batch) {
+      try {
+        await this.upload(upload);
+        this.uploads.delete(upload.id);
+        console.log(`✅ [BgUpload] Success: ${upload.endpoint}`);
+      } catch (error) {
+        upload.retries++;
+        if (upload.retries >= 3) {
+          console.error(`❌ [BgUpload] Failed after 3 retries: ${upload.endpoint}`, error);
+          this.uploads.delete(upload.id);
+        } else {
+          console.warn(`⚠️ [BgUpload] Retry ${upload.retries}/3: ${upload.endpoint}`);
+        }
+      }
+    }
+
+    this.isUploading = false;
+  }
+
+  private async upload(item: PendingUpload) {
+    const token = Cookies.get('token') || Cookies.get('auth_token');
+    
+    const options: RequestInit = {
+      method: item.type === 'create' ? 'POST' : item.type === 'update' ? 'PUT' : 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+
+    if (item.data) {
+      options.body = JSON.stringify(item.data);
+    }
+
+    const response = await fetch(`${API_BASE_URL}${item.endpoint}`, options);
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  getStatus() {
+    return {
+      pending: this.uploads.size,
+      isUploading: this.isUploading,
+    };
+  }
+
+  destroy() {
+    if (this.uploadTimer) clearInterval(this.uploadTimer);
+  }
+}
+
+const bgUploader = new BackgroundUploader();
 
 // Cache storage
 interface CacheChunk<T> {
@@ -157,7 +259,7 @@ class ChunkCacheManager {
   }
 
   // Update a single item in cache (real-time update)
-  updateItem<T extends { id: string }>(resource: string, updatedItem: T): void {
+  updateItem<T extends { id: string }>(resource: string, updatedItem: T, uploadToServer = true): void {
     console.log(`🔄 Updating item ${updatedItem.id} in ${resource}`);
     
     // Find which chunk contains this item
@@ -175,6 +277,15 @@ class ChunkCacheManager {
           this.saveToStorage(key, chunk);
           console.log(`✅ Updated item in ${key}`);
           
+          // Upload to server in background
+          if (uploadToServer) {
+            bgUploader.enqueue({
+              type: 'update',
+              endpoint: `/${resource}/${updatedItem.id}`,
+              data: updatedItem,
+            });
+          }
+          
           // Notify listeners
           this.notifyListeners(resource, updatedItem);
           return;
@@ -187,7 +298,7 @@ class ChunkCacheManager {
   }
 
   // Add a new item to cache (prepend to first chunk)
-  addItem<T extends { id: string }>(resource: string, newItem: T): void {
+  addItem<T extends { id: string }>(resource: string, newItem: T, uploadToServer = true): void {
     console.log(`➕ Adding new item ${newItem.id} to ${resource}`);
     
     const firstChunkKey = this.getChunkKey(resource, 0);
@@ -199,7 +310,7 @@ class ChunkCacheManager {
       // Check if item already exists
       if (data.some((item) => item.id === newItem.id)) {
         console.log(`Item ${newItem.id} already exists, updating instead`);
-        this.updateItem(resource, newItem);
+        this.updateItem(resource, newItem, uploadToServer);
         return;
       }
       
@@ -226,6 +337,15 @@ class ChunkCacheManager {
         meta.version++;
       }
       
+      // Upload to server in background
+      if (uploadToServer) {
+        bgUploader.enqueue({
+          type: 'create',
+          endpoint: `/${resource}`,
+          data: newItem,
+        });
+      }
+      
       // Notify listeners
       this.notifyListeners(resource, newItem);
     } else {
@@ -235,7 +355,7 @@ class ChunkCacheManager {
   }
 
   // Remove an item from cache
-  removeItem<T extends { id: string }>(resource: string, itemId: string): void {
+  removeItem<T extends { id: string }>(resource: string, itemId: string, uploadToServer = true): void {
     console.log(`🗑️ Removing item ${itemId} from ${resource}`);
     
     for (const [key, chunk] of this.chunks.entries()) {
@@ -256,6 +376,14 @@ class ChunkCacheManager {
             meta.totalItems--;
             meta.lastUpdated = Date.now();
             meta.version++;
+          }
+          
+          // Upload deletion to server in background
+          if (uploadToServer) {
+            bgUploader.enqueue({
+              type: 'delete',
+              endpoint: `/${resource}/${itemId}`,
+            });
           }
           
           // Notify listeners
@@ -378,6 +506,7 @@ class ChunkCacheManager {
         (sum, set) => sum + set.size,
         0
       ),
+      uploadStatus: bgUploader.getStatus(),
       resources: {} as Record<string, unknown>,
     };
 
@@ -502,4 +631,14 @@ export function invalidateCache(resource?: string): void {
 
 export function getCacheStats(): Record<string, unknown> {
   return chunkCache.getStats();
+}
+
+// Force process pending uploads
+export function forceUploadSync(): Promise<void> {
+  return bgUploader.processUploads();
+}
+
+// Get upload queue status
+export function getUploadStatus() {
+  return bgUploader.getStatus();
 }

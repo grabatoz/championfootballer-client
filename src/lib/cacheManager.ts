@@ -10,6 +10,99 @@ import type {
 } from '@/types/api';
 import type { League, User, Match } from '@/types/user';
 
+// Background upload queue for syncing cache to server
+interface UploadQueueItem {
+  type: 'create' | 'update' | 'delete';
+  endpoint: string;
+  data?: unknown;
+  timestamp: number;
+}
+
+class UploadQueue {
+  private queue: UploadQueueItem[] = [];
+  private isProcessing = false;
+  private uploadInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Auto-upload every 10 seconds
+    if (typeof window !== 'undefined') {
+      this.uploadInterval = setInterval(() => this.processQueue(), 10000);
+    }
+  }
+
+  add(item: UploadQueueItem) {
+    this.queue.push(item);
+    console.log(`📤 Upload queued: ${item.type} ${item.endpoint}`);
+    
+    // Trigger immediate upload for critical operations
+    if (item.type === 'create' || item.type === 'delete') {
+      this.processQueue();
+    }
+  }
+
+  async processQueue() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    
+    this.isProcessing = true;
+    console.log(`🔄 Processing upload queue (${this.queue.length} items)...`);
+
+    const itemsToProcess = [...this.queue];
+    this.queue = [];
+
+    for (const item of itemsToProcess) {
+      try {
+        await this.uploadItem(item);
+        console.log(`✅ Uploaded: ${item.type} ${item.endpoint}`);
+      } catch (error) {
+        console.error(`❌ Upload failed: ${item.endpoint}`, error);
+        // Re-queue failed items
+        this.queue.push(item);
+      }
+    }
+
+    this.isProcessing = false;
+  }
+
+  private async uploadItem(item: UploadQueueItem) {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const token = typeof document !== 'undefined' 
+      ? document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+      : undefined;
+
+    const options: RequestInit = {
+      method: item.type === 'create' ? 'POST' : item.type === 'update' ? 'PUT' : 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+
+    if (item.data) {
+      options.body = JSON.stringify(item.data);
+    }
+
+    const response = await fetch(`${API_BASE_URL}${item.endpoint}`, options);
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  clear() {
+    this.queue = [];
+  }
+
+  destroy() {
+    if (this.uploadInterval) {
+      clearInterval(this.uploadInterval);
+    }
+  }
+}
+
+const uploadQueue = new UploadQueue();
+
 // Helper to ensure profilePicture is string | undefined
 function normalizeProfilePicture(pic: string | null | undefined): string | undefined {
   return pic === null ? undefined : pic;
@@ -79,7 +172,7 @@ export class CacheManager {
   }
 
   // Leagues Cache Management
-  public updateLeaguesCache(newLeague: League): void {
+  public updateLeaguesCache(newLeague: League, uploadToServer = true): void {
     const key = 'leagues_cache';
     const existing = getCache<LeaguesResponse>(key);
     if (existing && existing.leagues) {
@@ -88,9 +181,19 @@ export class CacheManager {
     } else {
       setCache(key, { success: true, leagues: [newLeague] });
     }
+
+    // Upload to server in background
+    if (uploadToServer) {
+      uploadQueue.add({
+        type: 'create',
+        endpoint: '/leagues',
+        data: newLeague,
+        timestamp: Date.now(),
+      });
+    }
   }
 
-  public updateLeaguesCacheOnJoin(joinedLeague: League): void {
+  public updateLeaguesCacheOnJoin(joinedLeague: League, uploadToServer = true): void {
     const key = 'leagues_cache';
     const existing = getCache<LeaguesResponse>(key);
     if (existing && existing.leagues) {
@@ -98,6 +201,15 @@ export class CacheManager {
       if (!leagueExists) {
         const updatedLeagues = [...existing.leagues, joinedLeague];
         setCache(key, { ...existing, leagues: updatedLeagues });
+
+        // Upload join action to server
+        if (uploadToServer) {
+          uploadQueue.add({
+            type: 'update',
+            endpoint: `/leagues/${joinedLeague.id}/join`,
+            timestamp: Date.now(),
+          });
+        }
       }
     }
   }
@@ -127,7 +239,7 @@ export class CacheManager {
   }
 
   // Players Cache Management
-  public updatePlayersCache(newPlayer: User): void {
+  public updatePlayersCache(newPlayer: User, uploadToServer = true): void {
     const key = 'players_cache';
     const existing = getCache<PlayersResponse>(key);
     if (existing && existing.players) {
@@ -137,8 +249,28 @@ export class CacheManager {
         const updatedPlayers = [...existing.players];
         updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], ...normalizedPlayer };
         setCache(key, { ...existing, players: updatedPlayers });
+        
+        // Upload update to server
+        if (uploadToServer) {
+          uploadQueue.add({
+            type: 'update',
+            endpoint: `/players/${newPlayer.id}`,
+            data: normalizedPlayer,
+            timestamp: Date.now(),
+          });
+        }
       } else {
         setCache(key, { ...existing, players: [...existing.players, normalizedPlayer] });
+        
+        // Upload new player to server
+        if (uploadToServer) {
+          uploadQueue.add({
+            type: 'create',
+            endpoint: '/players',
+            data: normalizedPlayer,
+            timestamp: Date.now(),
+          });
+        }
       }
     }
   }
@@ -153,7 +285,7 @@ export class CacheManager {
   }
 
   // Matches Cache Management
-  public updateMatchesCache(newMatch: Match): void {
+  public updateMatchesCache(newMatch: Match, uploadToServer = true): void {
     const key = 'matches_cache';
     const existing = getCache<MatchesResponse>(key);
     if (existing && existing.matches) {
@@ -169,8 +301,28 @@ export class CacheManager {
         const updatedMatches = [...existing.matches];
         updatedMatches[matchIndex] = { ...updatedMatches[matchIndex], ...normalizedMatch };
         setCache(key, { ...existing, matches: updatedMatches });
+        
+        // Upload update to server
+        if (uploadToServer) {
+          uploadQueue.add({
+            type: 'update',
+            endpoint: `/matches/${newMatch.id}`,
+            data: normalizedMatch,
+            timestamp: Date.now(),
+          });
+        }
       } else {
         setCache(key, { ...existing, matches: [...existing.matches, normalizedMatch] });
+        
+        // Upload new match to server
+        if (uploadToServer) {
+          uploadQueue.add({
+            type: 'create',
+            endpoint: '/matches',
+            data: normalizedMatch,
+            timestamp: Date.now(),
+          });
+        }
       }
     }
   }
@@ -185,7 +337,7 @@ export class CacheManager {
   }
 
   // Generic Cache Update
-  public updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: (existing: T, newData: T) => T): void {
+  public updateAnyCache<T>(cacheKey: string, newData: T, mergeFunction?: (existing: T, newData: T) => T, uploadConfig?: { endpoint: string; type: 'create' | 'update' }): void {
     const existing = getCache<T>(cacheKey);
     if (existing) {
       const updatedData = mergeFunction ? mergeFunction(existing, newData) : newData;
@@ -193,6 +345,29 @@ export class CacheManager {
     } else {
       setCache(cacheKey, newData);
     }
+
+    // Upload to server if config provided
+    if (uploadConfig) {
+      uploadQueue.add({
+        type: uploadConfig.type,
+        endpoint: uploadConfig.endpoint,
+        data: newData,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  // Force upload queue processing
+  public forceUpload(): Promise<void> {
+    return uploadQueue.processQueue();
+  }
+
+  // Get upload queue status
+  public getUploadStatus(): { pending: number; processing: boolean } {
+    return {
+      pending: uploadQueue['queue'].length,
+      processing: uploadQueue['isProcessing'],
+    };
   }
 
   // Clear specific cache

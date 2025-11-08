@@ -1772,9 +1772,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         }
                     });
                 }
+                
+                // 🔄 Clear stats cache for this player to force fresh fetch
+                clearCacheByResource('stats', `${resolvedMatchId}_${user?.id}`);
+                
+                toast.success('Stats saved successfully!');
                 setIsStatsModalOpen(false);
                 setShowInlineStats(false);
-                // Optionally show a success message
+                
+                // Refetch match details to update UI
+                await fetchLeagueAndMatchDetails(true);
             }
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : String(err));
@@ -1790,8 +1797,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         setSelectedPlayerForAdmin(player);
 
         try {
-            // Fetch existing stats for the selected player
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats?playerId=${player.id}`, {
+            // Fetch existing stats for the selected player with cache busting
+            const cacheBuster = `&_t=${Date.now()}`;
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats?playerId=${player.id}${cacheBuster}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -2099,9 +2107,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const data = await response.json();
 
             if (data.success) {
+                // 🔄 Clear stats cache for this player to force fresh fetch
+                clearCacheByResource('stats', `${resolvedMatchId}_${selectedPlayerForAdmin.id}`);
+                
                 toast.success(`Stats added for ${selectedPlayerForAdmin.firstName} ${selectedPlayerForAdmin.lastName}`);
                 handleCloseAdminStatsModal();
-                fetchLeagueAndMatchDetails();
+                
+                // Refetch match details to update UI
+                await fetchLeagueAndMatchDetails(true);
             } else {
                 toast.error(data.message || 'Failed to add stats');
             }
