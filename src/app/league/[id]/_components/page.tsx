@@ -1026,7 +1026,7 @@ export default function LeagueDetailPage() {
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
     const [league, setLeague] = useState<League | null>(null);
-    const [refreshTrigger, setRefreshTrigger] = useState(Date.now()); // Force re-render trigger with timestamp
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Force re-render trigger
     console.log('leagues matches', league?.matches, 'refreshTrigger:', refreshTrigger)
     const [error, setError] = useState<string | null>(null);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
@@ -1404,29 +1404,7 @@ export default function LeagueDetailPage() {
         try {
             console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing', 'Force:', forceRefresh);
 
-            // If force refresh, clear ALL caches first
-            if (forceRefresh) {
-                console.log('🗑️ Force refresh - clearing ALL caches first...');
-                
-                // Clear in-memory cache
-                const leagueUrl = `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`;
-                invalidateCache(leagueUrl);
-                invalidateCache(/league|match/i);
-                
-                // Clear localStorage caches too
-                const keysToRemove: string[] = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.includes('cf_cache_') || key.includes('cf_instant_cache')) && 
-                        (key.includes('league') || key.includes(leagueId))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(key => localStorage.removeItem(key));
-                console.log(`  ✅ Cleared ${keysToRemove.length} localStorage cache entries`);
-            }
-
-            // Optimized: Use caching, but allow cache bypass for real-time updates
+            // Optimized: Use caching, but allow cache bypas s for real-time updates
             const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1458,14 +1436,21 @@ export default function LeagueDetailPage() {
 
                 console.log('📊 Setting league state with updated data...');
 
-                // Direct state update for immediate refresh
-                setLeague(updatedLeague);
-                console.log('📊 Previous league matches:', league?.matches?.length || 0);
-                console.log('📊 New league matches:', updatedLeague.matches.length);
+                // Use functional update to ensure latest state
+                setLeague(prevLeague => {
+                    console.log('📊 Previous league matches:', prevLeague?.matches?.length || 0);
+                    console.log('📊 New league matches:', updatedLeague.matches.length);
+                    return updatedLeague;
+                });
 
-                // Force component re-render immediately with timestamp
-                setRefreshTrigger(Date.now());
-                console.log('🔄 Refresh trigger updated with timestamp:', Date.now());
+                // Force component re-render with small delay to ensure state is set
+                setTimeout(() => {
+                    setRefreshTrigger(prev => {
+                        const newTrigger = prev + 1;
+                        console.log('🔄 Refresh trigger updated:', prev, '->', newTrigger);
+                        return newTrigger;
+                    });
+                }, 50);
 
                 console.log('✅ League state updated successfully with fresh data');
 
@@ -1493,17 +1478,7 @@ export default function LeagueDetailPage() {
         // Wait for auth to finish loading, user to be authenticated, and token to be available
         if (authLoading) return;
         if (!isAuthenticated || !token || !leagueId) return;
-        
-        // Check if we just created a match (flag set by match creation page)
-        const justCreatedMatch = localStorage.getItem(`match_created_${leagueId}`);
-        if (justCreatedMatch) {
-            console.log('🎯 Detected fresh match creation - forcing cache bypass!');
-            localStorage.removeItem(`match_created_${leagueId}`);
-            // Force refresh with cache bypass
-            fetchLeagueDetails(true);
-        } else {
-            fetchLeagueDetails();
-        }
+        fetchLeagueDetails();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, authLoading, isAuthenticated, leagueId]);
 
@@ -1574,80 +1549,6 @@ export default function LeagueDetailPage() {
             window.removeEventListener('match-updated', handleScoreUpdate);
         };
     }, [fetchLeagueDetails, leagueId]);
-
-    // 🎯 Match created listener - triggers immediate refresh when new match is created
-    useEffect(() => {
-        const handleMatchCreated = (event: Event) => {
-            const customEvent = event as CustomEvent;
-            const { leagueId: eventLeagueId, match } = customEvent.detail || {};
-            
-            console.log('⚡⚡⚡ MATCH CREATED EVENT RECEIVED ⚡⚡⚡');
-            console.log('   Event League ID:', eventLeagueId);
-            console.log('   Current League ID:', leagueId);
-            console.log('   New Match:', match);
-
-            // Only refresh if this event is for the current league
-            if (eventLeagueId && eventLeagueId !== leagueId) {
-                console.log('   ℹ️ Event for different league, skipping refresh');
-                return;
-            }
-
-            console.log('🔄 Triggering immediate league data refresh for new match...');
-            
-            // DON'T clear cf_instant_cache or cf_cache_* - they were just updated!
-            // Only clear in-memory cache to force fresh fetch
-            console.log('🗑️ Clearing in-memory cache only (localStorage already updated)...');
-            
-            try {
-                const leagueUrl = `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`;
-                invalidateCache(leagueUrl);
-                invalidateCache(/league|match/i); // Clear all league/match related cache
-                console.log('  ✅ Cleared in-memory cache');
-            } catch (error) {
-                console.warn('  ⚠️ Failed to clear in-memory cache:', error);
-            }
-
-            // Force immediate refresh with cache bypass to get fresh data from server
-            fetchLeagueDetails(true).then(() => {
-                console.log('✅✅✅ NEW MATCH LOADED SUCCESSFULLY ✅✅✅');
-                console.log('   Total matches:', league?.matches?.length || 0);
-            });
-        };
-
-        const handleCacheCleared = () => {
-            console.log('⚡ CACHE CLEARED EVENT RECEIVED - Refreshing league data...');
-            fetchLeagueDetails(true);
-        };
-
-        const handleLeagueUpdated = (event: Event) => {
-            const customEvent = event as CustomEvent;
-            const { leagueId: eventLeagueId } = customEvent.detail || {};
-            
-            console.log('⚡ LEAGUE UPDATED EVENT RECEIVED');
-            console.log('   Event League ID:', eventLeagueId);
-            console.log('   Current League ID:', leagueId);
-
-            // Only refresh if this event is for the current league
-            if (eventLeagueId && eventLeagueId !== leagueId) {
-                console.log('   ℹ️ Event for different league, skipping refresh');
-                return;
-            }
-
-            console.log('🔄 Triggering league data refresh...');
-            fetchLeagueDetails(true);
-        };
-
-        // Listen for match-created, cache-cleared, and league-updated events
-        window.addEventListener('match-created', handleMatchCreated);
-        window.addEventListener('cache-cleared', handleCacheCleared);
-        window.addEventListener('league-updated', handleLeagueUpdated);
-
-        return () => {
-            window.removeEventListener('match-created', handleMatchCreated);
-            window.removeEventListener('cache-cleared', handleCacheCleared);
-            window.removeEventListener('league-updated', handleLeagueUpdated);
-        };
-    }, [fetchLeagueDetails, leagueId, league?.matches?.length]);
 
     // Optimized: Professional access logic with caching
     useEffect(() => {

@@ -21,7 +21,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseButton from '@/Components/CloseButton';
-import { invalidateCache } from '@/lib/chunkCache';
 
 /* ================== CUSTOM CALENDAR ================== */
 interface CustomCalendarProps {
@@ -433,78 +432,29 @@ export default function ScheduleMatchPage() {
                 cacheData[leagueCacheKey] = leagueCache;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheData));
                 
-                console.log('  ✅ New match added to cf_instant_cache');
+                console.log('  ✅ New match added to cache');
                 console.log('  📊 Total matches in cache:', leagueCache.data.league.matches.length);
               }
             }
           }
-          
-          // ALSO update cf_cache_* (GET request caches)
-          const allKeys = Object.keys(localStorage);
-          const cfCacheKeys = allKeys.filter(k => 
-            k.startsWith('cf_cache_') && k.includes('league') && k.includes(league.id)
-          );
-          
-          cfCacheKeys.forEach(cacheKey => {
-            try {
-              const cachedData = localStorage.getItem(cacheKey);
-              if (cachedData) {
-                const parsed = JSON.parse(cachedData);
-                let updated = false;
-                
-                // Handle different cache structures
-                if (parsed.league?.matches) {
-                  if (!Array.isArray(parsed.league.matches)) {
-                    parsed.league.matches = [];
-                  }
-                  parsed.league.matches.unshift(json.match);
-                  updated = true;
-                } else if (parsed.data?.league?.matches) {
-                  if (!Array.isArray(parsed.data.league.matches)) {
-                    parsed.data.league.matches = [];
-                  }
-                  parsed.data.league.matches.unshift(json.match);
-                  updated = true;
-                }
-                
-                if (updated) {
-                  localStorage.setItem(cacheKey, JSON.stringify(parsed));
-                  console.log(`  ✅ Updated ${cacheKey.substring(0, 40)}...`);
-                }
-              }
-            } catch (err) {
-              console.warn(`  ⚠️ Failed to update ${cacheKey}:`, err);
-            }
-          });
         } catch (error) {
           console.warn('⚠️ Failed to update cache:', error);
           // Not critical, continue with clearing
         }
         
-        // 🗑️ STEP 2: Clear ALL caches (localStorage + in-memory apiCache)
-        console.log('🗑️ Clearing stale cache layers...');
-        
-        // 2a. Clear only match-specific caches (NOT league caches - we just updated those!)
+        // 🗑️ STEP 2: Clear other caches to force refresh elsewhere
+        console.log('🗑️ Clearing stale caches...');
         const keys = Object.keys(localStorage);
         let clearedCount = 0;
         keys.forEach((key) => {
-          // Clear ONLY match-specific caches, keep league caches intact
-          if (key.includes('match') && !key.includes('league') && !key.includes('cf_instant')) {
+          // Clear match-specific caches but keep the updated league cache
+          if ((key.includes('match') && !key.includes('cf_instant')) || 
+              key.includes('cf_cache')) {
             localStorage.removeItem(key);
             clearedCount++;
           }
         });
-        console.log(`  ✅ Cleared ${clearedCount} match-specific cache items`);
-        
-        // 2b. Clear in-memory cache for league endpoint
-        try {
-          const leagueUrl = `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`;
-          invalidateCache(leagueUrl);
-          invalidateCache(); // Clear all cache
-          console.log('  ✅ Cleared in-memory cache');
-        } catch (error) {
-          console.warn('  ⚠️ Failed to clear cache:', error);
-        }
+        console.log(`  ✅ Cleared ${clearedCount} stale cache items`);
         
         // 📢 STEP 3: Dispatch events to update UI everywhere
         console.log('📢 Dispatching events...');
@@ -533,17 +483,10 @@ export default function ScheduleMatchPage() {
         }));
         
         console.log('✅ Events dispatched: match-created, cache-cleared, league-updated');
-        
-        // Set flag so league page knows to force refresh on load
-        localStorage.setItem(`match_created_${league.id}`, 'true');
       }
       
       toast.success('Match created');
-      
-      // Small delay to ensure events are processed before navigation
-      setTimeout(() => {
-        router.push(`/league/${league.id}`);
-      }, 100);
+      router.push(`/league/${league.id}`);
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
