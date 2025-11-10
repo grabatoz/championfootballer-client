@@ -288,12 +288,22 @@ export default function LeaderBoardPage() {
               borderRadius: 2,
               px: 2,
               py: 1,
+              whiteSpace: 'nowrap', // keep text on one line
+              minWidth: { xs: 200, sm: 240 }, // prevent wrapping for "No leagues found"
+              '&.Mui-disabled': {
+                color: '#FFFFFF', // force white text when disabled
+                opacity: 1, // remove dimming
+                backgroundColor: '#2B2B2B', // keep same background
+                WebkitTextFillColor: '#FFFFFF', // ensure on Safari
+              },
               '&:hover': { backgroundColor: '#2B2B2B' },
             }}
           >
-            {selectedLeague
-              ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
-              : 'Select League'}
+            {leagues.length === 0
+              ? 'No leagues found'
+              : (selectedLeague
+                ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
+                : 'Select League')}
           </Button>
           <Menu
             anchorEl={leaguesDropdownAnchor}
