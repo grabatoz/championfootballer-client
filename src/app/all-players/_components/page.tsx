@@ -110,6 +110,7 @@ const AllPlayersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
+  const [leaguesLoading, setLeaguesLoading] = useState<boolean>(false);
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -167,6 +168,7 @@ const AllPlayersPage = () => {
 
   const fetchLeagues = useCallback(async () => {
     if (!token) return;
+    setLeaguesLoading(true);
     try {
       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -297,6 +299,8 @@ const AllPlayersPage = () => {
       }
     } catch (e) {
       console.error('Failed to load leagues', e);
+    } finally {
+      setLeaguesLoading(false);
     }
   }, [token, leagueIsCompleted]);
 
@@ -392,24 +396,23 @@ const AllPlayersPage = () => {
 
   console.log('Sorted Players:', sortedPlayers);
 
+  const noLeagues = !leaguesLoading && leagues.length === 0;
+
   return (
-    <Box sx={{ 
-      position: 'relative', 
+    <Box sx={{
+      position: 'relative',
       minHeight: '100vh',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'flex-start',
-      py: 4 
+      py: 4
     }}>
-      {/* Close Button - Top Right */}
+      {/* Close Button - Top Left (design choice) */}
       <Box sx={{ position: 'absolute', top: 16, left: 26, zIndex: 10 }}>
         <CloseButton fallbackRoute="/dashboard" />
       </Box>
-      
       <Container maxWidth="md" sx={{
         py: { xs: 2, sm: 4 },
-        // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-        // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
         minHeight: '100vh',
         color: 'white',
@@ -431,7 +434,7 @@ const AllPlayersPage = () => {
           All Players
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'center' }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl size="small" sx={{ minWidth: 240 }}>
             {/* InputLabel removed intentionally; provide OutlinedInput with notched={false} to avoid notch gap */}
             <Select
               id="league-select"
@@ -447,6 +450,7 @@ const AllPlayersPage = () => {
                 } catch {}
               }}
               renderValue={(value) => {
+                if (noLeagues) return 'No leagues found';
                 const v = String(value ?? '');
                 if (v === 'all') return 'All Leagues';
                 const found = leagues.find(l => l.id === v);
@@ -491,7 +495,32 @@ const AllPlayersPage = () => {
                 '.MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+                // Improve disabled look when no leagues
+                '& .MuiOutlinedInput-root.Mui-disabled': {
+                  opacity: 1,
+                  cursor: 'default',
+                  backgroundColor: 'rgba(229,106,22,0.18)',
+                  boxShadow: '0 0 0 1px rgba(229,106,22,0.5) inset',
+                  borderRadius: 6
+                },
+                '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e56a16'
+                },
+                '& .MuiOutlinedInput-input.Mui-disabled': {
+                  WebkitTextFillColor: '#E5E7EB',
+                  color: '#E5E7EB'
+                },
+                '& .MuiSelect-select': {
+                  whiteSpace: 'nowrap'
+                },
+                // Apply always-on hover highlight when there are no leagues
+                ...(noLeagues ? {
+                  // backgroundColor: 'rgba(229,106,22,0.15)',
+                  boxShadow: '0 0 0 1px rgba(229,106,22,0.6) inset',
+                  borderRadius: 1.5,
+                } : {})
               }}
+              disabled={noLeagues}
             >
               <MenuItem value="all">All Leagues</MenuItem>
               {leagues.map((l) => (
@@ -572,6 +601,7 @@ const AllPlayersPage = () => {
             }}
           />
         </Box>
+        {!noLeagues && (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
           <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
           <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
@@ -579,6 +609,7 @@ const AllPlayersPage = () => {
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>XP Points</Typography>
           </Box>
         </Box>
+        )}
         {searchQuery && filteredPlayers.length === 0 && (
           <Typography sx={{ color: 'white', borderRadius: 2, px: 2, py: 1, mt: 1, textAlign: 'center', fontWeight: 500 }}>
             User not found
@@ -587,6 +618,13 @@ const AllPlayersPage = () => {
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <CircularProgress />
+          </Box>
+        ) : noLeagues ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: { xs: '30vh', sm: '40vh' } }}>
+            <Paper elevation={0} sx={{ p: 3, textAlign: 'center', background: 'rgba(255,255,255,0.06)', borderRadius: 3, color: '#fff' }}>
+              <Typography variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
+              <Typography variant="body2">Create a new league or join an existing one to see players here.</Typography>
+            </Paper>
           </Box>
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
@@ -695,8 +733,8 @@ const AllPlayersPage = () => {
             </List>
           </Box>
         )}
-      </Paper>
-    </Container>
+        </Paper>
+      </Container>
     </Box>
   );
 };
