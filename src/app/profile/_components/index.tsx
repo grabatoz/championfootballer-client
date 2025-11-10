@@ -391,7 +391,7 @@ const PlayerProfileCard = () => {
 
   const handleDeleteProfile = async () => {
     if (!token) return
-    if (!window.confirm("Delete account permanently? This cannot be undone.")) return
+    if (!window.confirm("Delete account permanently? This cannot be undo.")) return
     try {
       setIsUpdating(true)
       const ok = await deleteProfile(token)
