@@ -2170,7 +2170,7 @@ export default function CareerPage() {
               </Box>
 
               {/* Back Button */}
-              <Box sx={{ textAlign: 'center', mt: 4 }}>
+              {/* <Box sx={{ textAlign: 'center', mt: 4 }}>
                 <Typography
                   component="button"
                   onClick={() => router.push(`/player/${playerId}`)}
@@ -2194,7 +2194,7 @@ export default function CareerPage() {
                 >
                   Back to Player Profile
                 </Typography>
-              </Box>
+              </Box> */}
             </Box>
           )}
         </Box>
