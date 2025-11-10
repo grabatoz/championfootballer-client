@@ -10,6 +10,7 @@ import ToasterProvider from '@/Components/ToasterProvider';
 import AuthBootstrap from '@/Components/AuthBootstrap';
 import PerformanceMonitor from '@/Components/PerformanceMonitor';
 import ProductionOptimizer from '@/Components/ProductionOptimizer';
+import FetchAuthMonitor from '@/Components/FetchAuthMonitor';
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -44,6 +45,7 @@ export default function RootLayout({
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}
+          <FetchAuthMonitor /> {/* Global fetch auth injection & debug */}
           <AuthBootstrap />
           <AuthCheck />
           <LayoutContent>

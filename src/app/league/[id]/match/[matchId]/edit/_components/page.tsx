@@ -1,7 +1,7 @@
   "use client";
   import React, { useState, useEffect, useCallback, useRef } from 'react';
   import dynamic from 'next/dynamic';
-  import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+  import { Box, Typography, Paper, Button, TextField, CircularProgress, Autocomplete, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, LinearProgress, Chip, Grid, InputAdornment, Alert, Menu, MenuItem, ListItemIcon, ListItemText, type PaperProps } from '@mui/material';
   import dayjs, { Dayjs } from 'dayjs';
   import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
   import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -9,7 +9,7 @@
   import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
   import { useAuth } from '@/lib/hooks';
   import { useParams, useRouter } from 'next/navigation';
-  import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight, Crown } from 'lucide-react';
+  import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight, Crown, Check } from 'lucide-react';
   import toast, { Toaster } from 'react-hot-toast';
   import { cacheManager } from '@/lib/cacheManager';
   import ShirtImg from '@/Components/images/shirtimg.png';
@@ -38,6 +38,23 @@
   export default function EditMatchPage() {
     // Fallback team image (used in responsive preview)
     const defaultTeamImage = '/assets/cflogo2.png';
+    const defaultTeamImagee = '/assets/imgicon.png';
+
+    // Black dropdown container for Autocomplete to remove white bars
+    const BlackPaper = (props: PaperProps) => (
+      <Paper
+        {...props}
+        elevation={0}
+        sx={{
+          bgcolor: '#000',
+          color: '#fff',
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          ...(props.sx as any)
+        }}
+      />
+    );
+
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
@@ -1269,15 +1286,18 @@
                             // List all players: do not disable by availability
                             getOptionDisabled={() => false}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
+                            PaperComponent={BlackPaper}
+                            
                             ListboxProps={{
                               sx: {
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(2, 1fr)',
                                 gap: 1,
-                                p: 1
+                                p: 1,
+                                bgcolor: '#000'
                               }
                             }}
-                            renderOption={(props, option) => {
+                            renderOption={(props, option, { selected }) => {
                               const isAvailable = availabilityMap[option.id] === 'available';
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
@@ -1289,13 +1309,39 @@
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     p: 1,
-                                    position: 'relative'
+                                    position: 'relative',
+                                    bgcolor: '#000', // set background to black
+                                    border: '1px solid',
+                                    borderColor: selected ? (isAvailable ? '#43a047' : '#fff') : 'rgba(255,255,255,0.15)',
+                                    borderRadius: 1,
+                                    transition: 'background-color .2s ease,border-color .2s ease, transform .08s ease',
+                                    '&:hover': {
+                                      bgcolor: 'rgba(255,255,255,0.06)',
+                                      borderColor: '#fff',
+                                      transform: 'translateY(-1px)'
+                                    }
                                   }}
                                 >
-                                  <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5, border: '3px solid', borderColor: isAvailable ? '#43a047' : '#fff' }} />
-                                  <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : 'bLACK' }}>
+                                  <Avatar
+                                    src={option.profilePicture || defaultTeamImagee}
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      mb: 0.5,
+                                      border: '3px solid',
+                                      borderColor: isAvailable ? '#43a047' : '#fff',
+                                      bgcolor: '#000',
+                                      '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                    }}
+                                  />
+                                  <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                     {option.firstName}
                                   </Typography>
+                                  {selected && (
+                                    <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isAvailable ? '#43a047' : '#fff', border: '1px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}>
+                                      <Check size={12} />
+                                    </Box>
+                                  )}
                                   {/* Show shirt number: green if available, black otherwise */}
                                   {/* <Box sx={{
                                     mt: 0.4,
@@ -1333,8 +1379,16 @@
                                     }}
                                   >
                                     <Avatar
-                                      src={opt.profilePicture || defaultTeamImage}
-                                      sx={{ width: 32, height: 32, mb: 0.3, border: '3px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}
+                                      src={opt.profilePicture || defaultTeamImagee}
+                                      sx={{
+                                        width: 32,
+                                        height: 32,
+                                        mb: 0.3,
+                                        border: '3px solid',
+                                        borderColor: isAvailable ? '#43a047' : '#fff',
+                                        bgcolor: '#000',
+                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                      }}
                                     />
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                       {opt.firstName}
@@ -1383,15 +1437,18 @@
                             // List all players: do not disable by availability
                             getOptionDisabled={() => false}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
+                            PaperComponent={BlackPaper}
+                            
                             ListboxProps={{
                               sx: {
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(2, 1fr)',
                                 gap: 1,
-                                p: 1
+                                p: 1,
+                                bgcolor: '#000'
                               }
                             }}
-                            renderOption={(props, option) => {
+                            renderOption={(props, option, { selected }) => {
                               const isAvailable = availabilityMap[option.id] === 'available';
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
@@ -1404,12 +1461,38 @@
                                     alignItems: 'center',
                                     p: 1,
                                     position: 'relative'
+                                    ,bgcolor: '#000', // set background to black
+                                    border: '1px solid',
+                                    borderColor: selected ? (isAvailable ? '#43a047' : '#fff') : 'rgba(255,255,255,0.15)',
+                                    borderRadius: 1,
+                                    transition: 'background-color .2s ease,border-color .2s ease, transform .08s ease',
+                                    '&:hover': {
+                                      bgcolor: 'rgba(255,255,255,0.06)',
+                                      borderColor: '#fff',
+                                      transform: 'translateY(-1px)'
+                                    }
                                   }}
                                 >
-                                  <Avatar src={option.profilePicture || defaultTeamImage} sx={{ width: 40, height: 40, mb: 0.5, border: '3px solid', borderColor: isAvailable ? '#43a047' : '#fff' }} />
-                                  <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 , color: isAvailable ? '#43a047' : 'black' }}>
+                                  <Avatar
+                                    src={option.profilePicture || defaultTeamImagee}
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      mb: 0.5,
+                                      border: '3px solid',
+                                      borderColor: isAvailable ? '#43a047' : '#fff',
+                                      bgcolor: '#000',
+                                      '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                    }}
+                                  />
+                                  <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 , color: isAvailable ? '#43a047' : '#fff' }}>
                                     {option.firstName}
                                   </Typography>
+                                  {selected && (
+                                    <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isAvailable ? '#43a047' : '#fff', border: '1px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}>
+                                      <Check size={12} />
+                                    </Box>
+                                  )}
                                   {/* Shirt number: green if available, black otherwise */}
                                   {/* <Box sx={{
                                     mt: 0.4,
@@ -1446,8 +1529,16 @@
                                     }}
                                   >
                                     <Avatar
-                                      src={opt.profilePicture || defaultTeamImage}
-                                      sx={{ width: 32, height: 32, mb: 0.3, border: '3px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}
+                                      src={opt.profilePicture || defaultTeamImagee}
+                                      sx={{
+                                        width: 32,
+                                        height: 32,
+                                        mb: 0.3,
+                                        border: '3px solid',
+                                        borderColor: isAvailable ? '#43a047' : '#fff',
+                                        bgcolor: '#000',
+                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                      }}
                                     />
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                       {opt.firstName}
@@ -1496,23 +1587,50 @@
                             isOptionEqualToValue={(o, v) => o.id === v.id}
                             getOptionLabel={o => `${o.firstName} ${o.lastName}`}
                             disabled={!homeTeamUsers.length}
+                            PaperComponent={BlackPaper}
+                            
                             renderInput={params => (
                               <TextField
                                 {...params}
                                 label="Select Home Captain"
                                 placeholder="Choose captain"
-                                sx={autocompleteStyles}
+                                sx={{ ...autocompleteStyles }}
                                 helperText={homeCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
                             )}
-                            renderOption={(props, option) => (
-                              <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: .5 }}>
+                            renderOption={(props, option, { selected }) => (
+                              <Box
+                                component="li"
+                                {...props}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  py: .5,
+                                  px: 1,
+                                  bgcolor: '#000',
+                                  borderLeft: selected ? '3px solid #43a047' : '3px solid transparent',
+                                  borderRadius: 1,
+                                  cursor: 'pointer',
+                                  transition: 'background-color .2s ease,border-color .2s ease, box-shadow .2s ease, transform .08s ease',
+                                  '& .MuiAvatar-root': { transition: 'box-shadow .2s ease, border-color .2s ease' },
+                                  '&:hover': {
+                                    bgcolor: 'rgba(255,255,255,0.08)',
+                                    borderLeft: selected ? '3px solid #43a047' : '3px solid #fff',
+                                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.20)',
+                                    transform: 'translateY(-1px)'
+                                  },
+                                  '&:hover .MuiAvatar-root': {
+                                    boxShadow: '0 0 0 2px rgba(255,255,255,0.35)'
+                                  }
+                                }}
+                              >
                                 <Avatar
-                                  src={option.profilePicture || defaultTeamImage}
+                                  src={option.profilePicture || defaultTeamImagee}
                                   sx={{ width: 30, height: 30 }}
                                 />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                <Typography variant="body2" sx={{ flex: 1, color: '#fff' }}>
                                   {option.firstName} {option.lastName}
                                 </Typography>
                                 {!option.isGuest && (
@@ -1537,23 +1655,50 @@
                             isOptionEqualToValue={(o, v) => o.id === v.id}
                             getOptionLabel={o => `${o.firstName} ${o.lastName}`}
                             disabled={!awayTeamUsers.length}
+                            PaperComponent={BlackPaper}
+                            
                             renderInput={params => (
                               <TextField
                                 {...params}
                                 label="Select Away Captain"
                                 placeholder="Choose captain"
-                                sx={autocompleteStyles}
+                                sx={{ ...autocompleteStyles }}
                                 helperText={awayCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
                             )}
-                            renderOption={(props, option) => (
-                              <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: .5 }}>
+                            renderOption={(props, option, { selected }) => (
+                              <Box
+                                component="li"
+                                {...props}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  py: .5,
+                                  px: 1,
+                                  bgcolor: '#000',
+                                  borderLeft: selected ? '3px solid #43a047' : '3px solid transparent',
+                                  borderRadius: 1,
+                                  cursor: 'pointer',
+                                  transition: 'background-color .2s ease,border-color .2s ease, box-shadow .2s ease, transform .08s ease',
+                                  '& .MuiAvatar-root': { transition: 'box-shadow .2s ease, border-color .2s ease' },
+                                  '&:hover': {
+                                    bgcolor: 'rgba(255,255,255,0.08)',
+                                    borderLeft: selected ? '3px solid #43a047' : '3px solid #fff',
+                                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.20)',
+                                    transform: 'translateY(-1px)'
+                                  },
+                                  '&:hover .MuiAvatar-root': {
+                                    boxShadow: '0 0 0 2px rgba(255,255,255,0.35)'
+                                  }
+                                }}
+                              >
                                 <Avatar
-                                  src={option.profilePicture || defaultTeamImage}
+                                  src={option.profilePicture || defaultTeamImagee}
                                   sx={{ width: 30, height: 30 }}
                                 />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                <Typography variant="body2" sx={{ flex: 1, color: '#fff' }}>
                                   {option.firstName} {option.lastName}
                                 </Typography>
                                 {!option.isGuest && (
