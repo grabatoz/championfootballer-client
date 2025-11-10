@@ -1457,7 +1457,7 @@ export default function AllMatches() {
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [selectedLeagueIdForDialog,] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
-    // Header helper: reflect loading/no-league/selected league label
+        // Header helper: reflect loading/no-league/selected league label
     const noLeagues = !loading && leagues.length === 0;
 
 
@@ -1600,7 +1600,7 @@ export default function AllMatches() {
                                     flexShrink: 1,
                                     minWidth: 0,
                                     textAlign: { xs: 'left', md: 'left' },
-                                    color: 'white',
+                                    // color: 'white',
                                     backgroundColor: '#2B2B2B',
                                     borderRadius: 2,
                                     px: 2,
@@ -1611,6 +1611,14 @@ export default function AllMatches() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 1,
+                                    // Dynamic text color: grey when no leagues, white otherwise
+                                    color: noLeagues ? '#fff' : 'white',
+                                    // Keep readable disabled style without dimming background
+                                    '&.Mui-disabled': {
+                                        color: '#fff',
+                                        backgroundColor: '#2B2B2B',
+                                        opacity: 1
+                                    },
                                     // border: '1px solid rgba(255,255,255,0.3)',
                                 }}
                                 endIcon={<ChevronDown size={20} />}
@@ -1818,61 +1826,69 @@ export default function AllMatches() {
                     gap: 3,
                 }}>
                     {loading ? (
-                        <Typography color="#fff" align="center">Loading matches...</Typography>
+                        <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '20vh', md: '30vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography color="#fff" align="center">Loading matches...</Typography>
+                        </Box>
                     ) : selectedLeague === 'all' ? (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                background: 'rgba(255,255,255,0.06)',
-                                borderRadius: 3,
-                                p: 4,
-                                textAlign: 'center',
-                                color: '#fff',
-                            }}
-                        >
-                            <Typography variant="h6">Select a League</Typography>
-                            <Typography variant="body2">
-                                Choose a league from the dropdown to view its matches
-                            </Typography>
-                        </Paper>
+                        <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '25vh', md: '40vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    background: 'rgba(255,255,255,0.06)',
+                                    borderRadius: 3,
+                                    p: 4,
+                                    textAlign: 'center',
+                                    color: '#fff',
+                                }}
+                            >
+                                <Typography variant="h6">No leagues found</Typography>
+                                <Typography variant="body2">
+                                  Create a new league or join an existing one to get started.
+                                </Typography>
+                            </Paper>
+                        </Box>
                     ) : matches.length === 0 ? (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                borderRadius: 3,
-                                p: 4,
-                                textAlign: 'center',
-                                color: '#b0bec5',
-                            }}
-                        >
-                            <Typography variant="h6">No matches found</Typography>
-                            <Typography variant="body2">
-                                No matches found in {selectedLeagueName}
-                            </Typography>
-                        </Paper>
+                        <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '20vh', md: '30vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    borderRadius: 3,
+                                    p: 4,
+                                    textAlign: 'center',
+                                    color: '#b0bec5',
+                                }}
+                            >
+                                <Typography variant="h6">No matches found</Typography>
+                                <Typography variant="body2">
+                                    No matches found in {selectedLeagueName}
+                                </Typography>
+                            </Paper>
+                        </Box>
                     ) : sortedMatches.length === 0 ? (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                borderRadius: 3,
-                                p: 4,
-                                textAlign: 'center',
-                                color: '#b0bec5',
-                            }}
-                        >
-                            <Typography variant="h6">
-                                {matchFilter === 'fixtures' ? 'No fixtures found' : matchFilter === 'results' ? 'No results yet' : 'No matches found'}
-                            </Typography>
-                            <Typography variant="body2">
-                                {matchFilter === 'fixtures'
-                                    ? 'There are no upcoming fixtures for this league.'
-                                    : matchFilter === 'results'
-                                        ? 'No completed matches have been recorded yet.'
-                                        : `No matches found in ${selectedLeagueName}`}
-                            </Typography>
-                        </Paper>
+                        <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '20vh', md: '30vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                    borderRadius: 3,
+                                    p: 4,
+                                    textAlign: 'center',
+                                    color: '#b0bec5',
+                                }}
+                            >
+                                <Typography variant="h6">
+                                    {matchFilter === 'fixtures' ? 'No fixtures found' : matchFilter === 'results' ? 'No results yet' : 'No matches found'}
+                                </Typography>
+                                <Typography variant="body2">
+                                    {matchFilter === 'fixtures'
+                                        ? 'There are no upcoming fixtures for this league.'
+                                        : matchFilter === 'results'
+                                            ? 'No completed matches have been recorded yet.'
+                                            : `No matches found in ${selectedLeagueName}`}
+                                </Typography>
+                            </Paper>
+                        </Box>
                     ) : (
                         sortedMatches.map((match) => {
                             // const { availableCount, pendingCount } = getAvailabilityCounts(match);
