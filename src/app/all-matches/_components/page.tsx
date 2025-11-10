@@ -1457,6 +1457,8 @@ export default function AllMatches() {
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
     const [selectedLeagueIdForDialog,] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
+    // Header helper: reflect loading/no-league/selected league label
+    const noLeagues = !loading && leagues.length === 0;
 
 
     return (
@@ -1584,50 +1586,44 @@ export default function AllMatches() {
                                   '& .MuiInputLabel-root': { color: '#8C8C8C' },
                                 }}
                               /> */}
-                            {league ? (
-                                <Button
-                                    onClick={handleLeaguesDropdownOpen}
-                                    sx={{
-                                        textTransform: 'uppercase',
-                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
-                                        fontWeight: 'bold',
-                                        lineHeight: 1.2,
-                                        wordBreak: 'break-word',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'wrap',
-                                        flexShrink: 1,
-                                        minWidth: 0,
-                                        textAlign: { xs: 'left', md: 'left' },
-                                        color: 'white',
+                            <Button
+                                onClick={handleLeaguesDropdownOpen}
+                                sx={{
+                                    textTransform: 'uppercase',
+                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+                                    fontWeight: 'bold',
+                                    lineHeight: 1.2,
+                                    wordBreak: 'break-word',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'wrap',
+                                    flexShrink: 1,
+                                    minWidth: 0,
+                                    textAlign: { xs: 'left', md: 'left' },
+                                    color: 'white',
+                                    backgroundColor: '#2B2B2B',
+                                    borderRadius: 2,
+                                    px: 2,
+                                    py: 1,
+                                    '&:hover': {
                                         backgroundColor: '#2B2B2B',
-                                        borderRadius: 2,
-                                        px: 2,
-                                        py: 1,
-                                        '&:hover': {
-                                            backgroundColor: '#2B2B2B',
-                                        },
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        // border: '1px solid rgba(255,255,255,0.3)',
-                                    }}
-                                    endIcon={<ChevronDown size={20} />}
-                                >
-                                    {formatLeagueName(league.name)}
-                                </Button>
-                            ) : (
-                                <Typography
-                                    sx={{
-                                        textTransform: 'uppercase',
-                                        fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
-                                        fontWeight: 'bold',
-                                        color: 'white',
-                                    }}
-                                >
-                                    Loading...
-                                </Typography>
-                            )}
+                                    },
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    // border: '1px solid rgba(255,255,255,0.3)',
+                                }}
+                                endIcon={<ChevronDown size={20} />}
+                                disabled={noLeagues}
+                            >
+                                 {loading
+              ? 'Loading...'
+              : noLeagues
+              ? 'No leagues found'
+                                    : formatLeagueName(
+                                        leagues.find(l => l.id === selectedLeague)?.name || 'Select League'
+                                      )}
+                            </Button>
                             <Menu
                                 anchorEl={leaguesDropdownAnchor}
                                 open={leaguesDropdownOpen}
