@@ -1535,7 +1535,8 @@ function AllLeagues() {
       setLoading(true);
 
       // First get the user's leagues from auth/status
-      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+      const ts = Date.now();
+      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?bust=${ts}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1554,19 +1555,26 @@ function AllLeagues() {
           const uniqueLeagues: League[] = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
 
           // Now fetch detailed information for each league
-          const detailedLeagues: LeagueWithStatus[] = await Promise.all(
-            uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus> => {
+          const detailedLeagues: Array<LeagueWithStatus | null> = await Promise.all(
+            uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus | null> => {
               try {
+                const bust = Date.now();
                 const [leagueResponse, statusResponse] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                   }),
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status?bust=${bust}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                   })
                 ]);
 
                 let enriched: LeagueWithStatus = { ...league };
+
+                // If access is forbidden now, drop this league from the list
+                if (leagueResponse.status === 403 || statusResponse.status === 403) {
+                  console.debug('[Leagues] Skipping league due to 403 (no access):', league.id);
+                  return null;
+                }
 
                 if (leagueResponse.ok) {
                   const leagueData = await leagueResponse.json();
@@ -1600,7 +1608,7 @@ function AllLeagues() {
             })
           );
 
-          setLeagues(sortLeaguesByRecency(detailedLeagues));
+          setLeagues(sortLeaguesByRecency(detailedLeagues.filter(Boolean) as LeagueWithStatus[]));
           console.log('Setting detailed leagues:', detailedLeagues);
         }
       } else {
@@ -1701,9 +1709,20 @@ function AllLeagues() {
   const handleOpenMembers = async (league: League) => {
     setLoadingMembers(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const bust = Date.now();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
+
+      if (response.status === 403) {
+        // Lost access—remove from UI and inform the user
+        setLeagues(prev => prev.filter(l => l.id !== league.id));
+        setSelectedLeague(null);
+        setOpenMembers(false);
+        toast.error("You don't have access to this league anymore");
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         const admin = data.league.administrators?.[0];
@@ -1744,8 +1763,25 @@ function AllLeagues() {
           setOpenMembers(false);
           await fetchAllLeagues();
         } else {
-          // Otherwise, just refetch members for this league
-          handleOpenMembers(selectedLeague);
+          // Optimistic local update for instant UI feedback
+          setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
+            ...l,
+            members: Array.isArray(l.members) ? l.members.filter(m => m.id !== memberId) : l.members,
+            administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => a.id !== memberId) : l.administrators,
+            updatedAt: new Date().toISOString(),
+          } : l));
+          setSelectedLeague(prev => prev ? {
+            ...prev,
+            members: Array.isArray(prev.members) ? prev.members.filter(m => m.id !== memberId) : prev.members,
+            administrators: Array.isArray(prev.administrators) ? prev.administrators.filter(a => a.id !== memberId) : prev.administrators,
+            updatedAt: new Date().toISOString(),
+          } : prev);
+          try {
+            window.dispatchEvent(new CustomEvent('league-updated', { detail: { leagueId: selectedLeague.id, reason: 'member-removed' } }));
+          } catch {}
+          // Background refresh to ensure consistency (no-cache bust)
+          await handleOpenMembers(selectedLeague);
+          try { toast.success('Member removed'); } catch {}
         }
       } else {
         toast.error('Failed to remove member');
