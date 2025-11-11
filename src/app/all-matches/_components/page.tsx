@@ -1745,12 +1745,12 @@ export default function AllMatches() {
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         backdropFilter: 'blur(10px)',
                                         boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                                        // Fixed height with vertical scroll
-                                        height: 320,
+                                        // Dynamic height: only grow to content, but allow scroll if content exceeds 320px
+                                        maxHeight: 320,
                                         overflowY: 'auto',
                                         overflowX: 'hidden',
                                         overscrollBehavior: 'contain',
-                                        // Themed scrollbars
+                                        // Themed scrollbars (only appear if needed)
                                         scrollbarWidth: 'thin',
                                         scrollbarColor: '#374151 #111827',
                                         '&::-webkit-scrollbar': { width: 8 },

@@ -329,7 +329,7 @@ export default function LeaderBoardPage() {
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
                 // Fixed height with vertical scroll
-                height: 320,
+                maxHeight: 320,
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
