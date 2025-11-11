@@ -6109,9 +6109,25 @@ export default function LeagueDetailPage() {
                                                         </Typography>
                                                     ) : (
                                                         (() => {
-                                                            const played = leagueStats.playedMatches ?? 0;
-                                                            const remaining = leagueStats.remaining ?? Math.max((league?.maxGames ?? 0) - played, 0);
-                                                            const total = (league?.maxGames ?? (played + remaining)) || (played + remaining);
+                                                            // Compute season progress with correct Remaining logic
+                                                            const maxGames = Number(league?.maxGames ?? 0);
+
+                                                            // Prefer backend-provided playedMatches; otherwise derive from matches
+                                                            const derivedPlayed = (() => {
+                                                                if (typeof leagueStats?.playedMatches === 'number') return Number(leagueStats.playedMatches);
+                                                                const matches = Array.isArray(league?.matches) ? league.matches : [];
+                                                                return matches.filter(m => m?.status === 'RESULT_PUBLISHED' || m?.status === 'RESULT_UPLOADED').length;
+                                                            })();
+
+                                                            const played = derivedPlayed;
+
+                                                            // If maxGames is set (>0), Remaining = maxGames - played; else fallback to server remaining
+                                                            const remaining = maxGames > 0
+                                                                ? Math.max(maxGames - played, 0)
+                                                                : Number(leagueStats?.remaining ?? 0);
+
+                                                            // Total games is maxGames when provided; otherwise played + remaining
+                                                            const total = maxGames > 0 ? maxGames : played + remaining;
                                                             const pct = total > 0 ? Math.round((played / total) * 100) : 0;
 
                                                             const createdD = leagueStats.created ? new Date(leagueStats.created) : null;
