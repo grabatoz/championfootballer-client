@@ -409,14 +409,22 @@ export default function AllMatches() {
     const fetchMatchesByLeague = useCallback(async (leagueId: string) => {
         setLoading(true);
         try {
-            // 🚀 Use optimizedFetch with 3-minute cache for match data
-            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+            // 🔄 Force fresh data using cache buster and no-store (same approach as league page)
+            const cacheBuster = `?_t=${Date.now()}`;
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}${cacheBuster}`, {
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                cacheTTL: 180000 // 3 minutes TTL
+                cache: 'no-store'
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
             if (data.success && data.league && data.league.matches) {
                 setMatches(data.league.matches);
                 // Update the leagues array to include members for the selected league
@@ -433,7 +441,8 @@ export default function AllMatches() {
             } else {
                 setMatches([]);
             }
-        } catch {
+        } catch (e) {
+            console.error('Failed to fetch matches by league:', e);
             setMatches([]);
         } finally {
             setLoading(false);
@@ -485,6 +494,52 @@ export default function AllMatches() {
             setMatches([]); // Clear matches when "All Leagues" is selected
             setLoading(false);
         }
+    }, [selectedLeague, token, fetchMatchesByLeague]);
+
+    // Optimistically inject newly created match into current list (no wait)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handleMatchCreated = (evt: Event) => {
+            try {
+                const e = evt as CustomEvent<{ match: Match; leagueId: string }>; // payload from league page
+                const payload = e?.detail as any;
+                if (!payload || !payload.match) return;
+                // Only show if current view is that league
+                if (selectedLeague !== 'all' && payload.leagueId === selectedLeague) {
+                    setMatches(prev => {
+                        const list = prev || [];
+                        const exists = list.some(m => m.id === payload.match.id);
+                        if (exists) return list;
+                        // Put newest on top (same as league page behavior)
+                        return [payload.match as Match, ...list];
+                    });
+                }
+            } catch (err) {
+                console.warn('match-created optimistic update failed', err);
+            }
+        };
+        window.addEventListener('match-created', handleMatchCreated as EventListener);
+        return () => window.removeEventListener('match-created', handleMatchCreated as EventListener);
+    }, [selectedLeague]);
+
+    // Listen to creation/update events to refresh instantly like league page
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handleRefresh = () => {
+            if (token && selectedLeague !== 'all') {
+                fetchMatchesByLeague(selectedLeague);
+            }
+        };
+        window.addEventListener('match-created', handleRefresh);
+        window.addEventListener('match-updated', handleRefresh);
+        window.addEventListener('league-updated', handleRefresh);
+        window.addEventListener('cache-cleared', handleRefresh);
+        return () => {
+            window.removeEventListener('match-created', handleRefresh);
+            window.removeEventListener('match-updated', handleRefresh);
+            window.removeEventListener('league-updated', handleRefresh);
+            window.removeEventListener('cache-cleared', handleRefresh);
+        };
     }, [selectedLeague, token, fetchMatchesByLeague]);
 
     // Get the name of the selected league for display
@@ -549,35 +604,75 @@ export default function AllMatches() {
 
 
 
-    const fetchLeagueDetails = useCallback(async (suppressLoading: boolean = false) => {
-        if (!suppressLoading) setLoading(true);
-        try {
-            // 🚀 Use optimizedFetch with 3-minute cache for league details
-            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                cacheTTL: 180000 // 3 minutes TTL
-            });
-            if (data.success) {
-                console.log('Server Response - League Data:', data.league);
-                console.log('Server Response - Matches:', data.league.matches);
-                if (data.league.matches) {
-                    data.league.matches.forEach((match: Match, index: number) => {
-                        console.log(`Match ${index + 1} End Time:`, match.end);
-                    });
+    // const fetchLeagueDetails = useCallback(async (suppressLoading: boolean = false) => {
+    //     if (!suppressLoading) setLoading(true);
+    //     try {
+    //         // 🚀 Use optimizedFetch with 3-minute cache for league details
+    //         const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}`, {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             cacheTTL: 180000 // 3 minutes TTL
+    //         });
+    //         if (data.success) {
+    //             console.log('Server Response - League Data:', data.league);
+    //             console.log('Server Response - Matches:', data.league.matches);
+    //             if (data.league.matches) {
+    //                 data.league.matches.forEach((match: Match, index: number) => {
+    //                     console.log(`Match ${index + 1} End Time:`, match.end);
+    //                 });
+    //             }
+    //             setLeague(data.league);
+    //         } else {
+    //             setError(data.message || 'Failed to fetch league details');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching league details:', error);
+    //         setError('Failed to fetch league details');
+    //     } finally {
+    //         if (!suppressLoading) setLoading(false);
+    //     }
+    // }, [selectedLeague, token]);
+
+    
+        const fetchLeagueDetails = useCallback(async () => {
+            try {
+                console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
+    
+                // 🔄 Add cache busting to force fresh data from backend
+                const cacheBuster = `?_t=${Date.now()}`;
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}${cacheBuster}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                setLeague(data.league);
-            } else {
-                setError(data.message || 'Failed to fetch league details');
+    
+                const data = await response.json();
+                console.log('✅ League details fetched successfully from API', data);
+                if (data.success) {
+                    console.log('✅ Fresh League Data Received:', data.league);
+                    console.log('✅ Total Matches:', data.league.matches?.length || 0);
+                    if (data.league.matches) {
+                        data.league.matches.forEach((match: Match, index: number) => {
+                            console.log(`  Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | Status: ${match.status}`);
+                        });
+                    }
+                    setLeague(data.league);
+                    console.log('✅ League state updated successfully');
+                } else {
+                    setError(data.message || 'Failed to fetch league details');
+                    console.error('❌ API Error:', data.message);
+                }
+            } catch (error) {
+                console.error('❌ Error fetching league details:', error);
+                setError('Failed to fetch league details');
             }
-        } catch (error) {
-            console.error('Error fetching league details:', error);
-            setError('Failed to fetch league details');
-        } finally {
-            if (!suppressLoading) setLoading(false);
-        }
-    }, [selectedLeague, token]);
+        }, [selectedLeague, token]);
 
     const handleSaveStats = async () => {
         if (!activeMatchId || !token) return;
@@ -971,8 +1066,8 @@ export default function AllMatches() {
                 setToastMessage('Match deleted permanently');
             }
 
-            // Refresh league data to ensure sync without global spinner
-            fetchLeagueDetails(true);
+            // Refresh league data to ensure sync
+            fetchLeagueDetails();
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
@@ -1038,7 +1133,7 @@ export default function AllMatches() {
             setMatches(prev => prev.filter(mm => mm.id !== match.id));
 
             toast.success('Match permanently deleted');
-            fetchLeagueDetails(true);
+            fetchLeagueDetails();
 
         } catch (error) {
             console.error('Permanent delete failed:', error);
@@ -1124,7 +1219,7 @@ export default function AllMatches() {
             setMatches(prev => prev.map(mm => mm.id === match.id ? { ...mm, archived: false } : mm));
 
             toast.success('Match restored successfully');
-            fetchLeagueDetails(true);
+            fetchLeagueDetails();
 
         } catch (error) {
             console.error('Restore failed:', error);

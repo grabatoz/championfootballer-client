@@ -2442,6 +2442,7 @@ export default function LeagueDetailPage() {
             }
 
             const data = await response.json();
+            console.log('✅ League details fetched successfully from API', data);
             if (data.success) {
                 console.log('✅ Fresh League Data Received:', data.league);
                 console.log('✅ Total Matches:', data.league.matches?.length || 0);
