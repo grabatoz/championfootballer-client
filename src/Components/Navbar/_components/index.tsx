@@ -606,7 +606,8 @@ function getSeeHref(meta?: NotificationMeta): string | undefined {
     (typeof obj['leagueId'] === 'string' ? (obj['leagueId'] as string) : undefined) ??
     (typeof obj['league_id'] === 'string' ? (obj['league_id'] as string) : undefined);
 
-  if (leagueId && matchId) return `/league/${String(leagueId)}/match/${String(matchId)}/play`;
+  // if (leagueId && matchId) return `/league/${String(leagueId)}/match/${String(matchId)}/play`;
+   if (matchId) return `/match/${String(matchId)}`;
   if (matchId) return `/match/${String(matchId)}`;
   return undefined;
 }
@@ -906,9 +907,15 @@ function buildNotificationDisplay(
           </Box>
         )}
 
-        {seeHref && (
+        {matchId && (
           <Box sx={{ mt: 1 }}>
-            <Button component={Link} href={seeHref} size="small" variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }}>
+            <Button
+              component={Link}
+              href={(matchId ? `/match/${matchId}` : '#')}
+              size="small"
+              variant="contained"
+              sx={{ textTransform: 'none', fontWeight: 700 }}
+            >
               See
             </Button>
           </Box>
