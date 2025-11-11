@@ -5793,8 +5793,13 @@ export default function LeagueDetailPage() {
                                                                     )
                                                                 )}
 
-                                                                {/* All Members: Add Your Stats button */}
-                                                                {isMember && ((match.homeTeamUsers?.length || 0) > 0 || (match.awayTeamUsers?.length || 0) > 0) && (
+                                                                {/* Admins always see; players see only if they are in this match */}
+                                                                {(isAdmin || (
+                                                                    isMember && (
+                                                                        match.homeTeamUsers?.some((u) => String(u?.id) === String(user?.id)) ||
+                                                                        match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id))
+                                                                    )
+                                                                )) && (
                                                                     match.status === 'RESULT_UPLOADED' ? (
                                                                         <Tooltip title="Awaiting captain confirmation">
                                                                             <span>
