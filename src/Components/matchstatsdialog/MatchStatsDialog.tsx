@@ -3472,12 +3472,12 @@ const StatCounter = ({ label, value, onIncrement, onDecrement, icon, compact = f
     }}>
         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             {icon}
-            <Typography sx={{ ml: 1.5, fontWeight: 500, fontSize: compact ? '0.9rem' : '1rem' }}>{label}</Typography>
+            <Typography sx={{ ml: 1.5, fontWeight: 500, fontSize: compact ? '0.9rem' : '1rem', color: '#fff' }}>{label}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={onDecrement} size="small" sx={{ color: compact ? '#fff' : undefined }}><Remove /></IconButton>
-            <Typography sx={{ mx: compact ? 1 : 2, fontWeight: 800, minWidth: '20px', textAlign: 'center' }}>{value}</Typography>
-            <IconButton onClick={onIncrement} size="small" sx={{ color: compact ? '#fff' : undefined }}><Add /></IconButton>
+            <IconButton onClick={onDecrement} size="small" sx={{ color: '#fff' }}><Remove /></IconButton>
+            <Typography sx={{ mx: compact ? 1 : 2, fontWeight: 800, minWidth: '20px', textAlign: 'center', color: '#fff' }}>{value}</Typography>
+            <IconButton onClick={onIncrement} size="small" sx={{ color: '#fff' }}><Add /></IconButton>
         </Box>
     </Box>
 );
