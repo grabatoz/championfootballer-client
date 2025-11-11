@@ -5964,7 +5964,27 @@ export default function LeagueDetailPage() {
                                                     )}
                                                 </div>
                                             </div>                                            <div className="space-y-[1px]">
-                                                {tableData.map((player) => {
+                                                {[...tableData]
+                                                    .sort((a, b) => {
+                                                        const aPts = (a.wins ?? 0) * 3 + (a.draws ?? 0);
+                                                        const bPts = (b.wins ?? 0) * 3 + (b.draws ?? 0);
+                                                        const aXP = a.xp ?? 0;
+                                                        const bXP = b.xp ?? 0;
+
+                                                        // If showing match points (Pts), rank by points; otherwise rank by XP
+                                                        if (league?.showPoints === false) {
+                                                            if (bPts !== aPts) return bPts - aPts; // higher points first
+                                                            if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0); // more wins
+                                                            if ((a.played ?? 0) !== (b.played ?? 0)) return (a.played ?? 0) - (b.played ?? 0); // fewer games played
+                                                            return (a.name || '').localeCompare(b.name || '');
+                                                        } else {
+                                                            if (bXP !== aXP) return bXP - aXP; // higher XP first
+                                                            if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0);
+                                                            if (bPts !== aPts) return bPts - aPts;
+                                                            return (a.name || '').localeCompare(b.name || '');
+                                                        }
+                                                    })
+                                                    .map((player, index) => {
                                                     // const position = index + 1;
                                                     // const badge = getBadgeForPosition(position);
                                                     const points = player.wins * 3 + player.draws;
@@ -5989,6 +6009,9 @@ export default function LeagueDetailPage() {
                                                             }} className={`px-1 sm:px-2 py-1.5 min-h-[50px] sm:min-h-[70px] flex items-center`}>
 
                                                                 <div className="flex items-center min-w-0 flex-1">
+                                                                    {/* <div className="w-7 sm:w-8 text-center text-white/90 font-extrabold text-[10px] sm:text-xs mr-1 sm:mr-2">
+                                                                        {(() => { const pos = index + 1; const s = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th'; return `${pos}${s}`; })()}
+                                                                    </div> */}
                                                                     <div className="hidden sm:block mr-2">
                                                                         <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
                                                                             <div className="relative w-full h-full">
@@ -6067,7 +6090,7 @@ export default function LeagueDetailPage() {
                                             >
                                                 <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                                     Statistics
-                                                </Typography>
+                                                 </Typography>
 
                                                 <Box
                                                     sx={{
