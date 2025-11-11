@@ -2041,22 +2041,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // Auto-open inline stats when eligible and hide the old button
     useEffect(() => {
-        // Show inline stats only if all conditions are met
+        // Show inline stats for last two matches to players (team-assigned) or league admins.
+        // Admins bypass player submission gating and team assignment.
         const shouldShow = user &&
             league?.active &&
-            canPlayerSubmitStats &&
-            isUserAssignedToTeam &&
+            (canPlayerSubmitStats || isAdmin) &&
             isMatchWithinLastTwo &&
             !selectedLeagueHasNoMatches &&
-            !showAdminGoalsSection;
+            !showAdminGoalsSection &&
+            (isUserAssignedToTeam || isAdmin);
 
         if (shouldShow && !showInlineStats) {
             setShowInlineStats(true);
         } else if (!shouldShow && showInlineStats) {
-            // Hide if conditions are no longer met (e.g., match is too old)
             setShowInlineStats(false);
         }
-    }, [showInlineStats, user, league, canPlayerSubmitStats, isUserAssignedToTeam, isMatchWithinLastTwo, selectedLeagueHasNoMatches, showAdminGoalsSection]);
+    }, [showInlineStats, user, league, canPlayerSubmitStats, isUserAssignedToTeam, isMatchWithinLastTwo, selectedLeagueHasNoMatches, showAdminGoalsSection, isAdmin]);
     // const canAdminSubmitStats = baseCanSubmit && (editWindow?.adminCanSubmit ?? false);
 
     // Fetch edit window details
@@ -2350,7 +2350,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             {!showAdminGoalsSection && (
                 <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3, display: selectedLeagueHasNoMatches ? 'none' : 'block' }}>
-                    {showInlineStats && isUserAssignedToTeam && isMatchWithinLastTwo && userTeamName && (
+                    {showInlineStats && isMatchWithinLastTwo && (isUserAssignedToTeam || isAdmin) && (
                         <Box
                             sx={{
                                 mb: 1,
@@ -2366,22 +2366,21 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             }}
                         >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{ fontWeight: 700, color: '#fff' }}
-                                >
-                                    Add YourStats
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>
+                                    {isAdmin && !isUserAssignedToTeam ? 'Admin Quick Stats' : 'Add YourStats'}
                                 </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontWeight: 600,
-                                        color: '#E59616',
-                                        fontSize: '0.875rem'
-                                    }}
-                                >
-                                    Your are in this team: {userTeamName}
-                                </Typography>
+                                {(userTeamName || isAdmin) && (
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                            color: '#E59616',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    >
+                                        {userTeamName ? `You are in this team: ${userTeamName}` : 'League Admin'}
+                                    </Typography>
+                                )}
                             </Box>
                             <Divider sx={{ my: 0.75, borderColor: 'rgba(255,255,255,0.2)' }} />
 
