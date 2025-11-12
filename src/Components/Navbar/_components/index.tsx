@@ -1301,7 +1301,10 @@ export default function NavigationBar() {
   // 🔥 UPDATED FETCH NOTIFICATIONS - USE COMPONENT LEVEL TOKEN
   const fetchNotifications = async (showLogs?: boolean) => {
     try {
-      setLoading(true);
+      // Only set loading on initial fetch or manual refresh, not on background polls
+      if (showLogs) {
+        setLoading(true);
+      }
       
       if (showLogs) {
         console.log('🔔 Fetching notifications...');
@@ -1380,7 +1383,10 @@ export default function NavigationBar() {
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
     } finally {
-      setLoading(false);
+      // Only reset loading if it was set (i.e., during initial/manual fetch)
+      if (showLogs) {
+        setLoading(false);
+      }
     }
   };
 
@@ -1543,10 +1549,13 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       console.log('✅ User authenticated with token, starting notification system...');
       fetchNotifications(true);
       
-      // Poll every 30 seconds
+      // Poll every 60 seconds (reduced from 30s to minimize loading issues)
       const interval = setInterval(() => {
-        fetchNotifications();
-      }, 30000);
+        // Only fetch if notification panel is NOT open to prevent disruption
+        if (!openNotifications) {
+          fetchNotifications();
+        }
+      }, 60000); // Changed from 30000ms to 60000ms (1 minute)
       
       return () => {
         console.log('🛑 Clearing notification interval...'); 
@@ -1558,7 +1567,7 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, [isAuthenticated, token, user?.id]); // 🔥 ADDED TOKEN AND USER ID TO DEPENDENCY ARRAY
+  }, [isAuthenticated, token, user?.id, openNotifications]); // Added openNotifications to dependency
 
   const handleSignOut = async () => {
     try {
