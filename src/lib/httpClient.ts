@@ -92,18 +92,23 @@ export async function optimizedFetch(
   const startTime = performance.now();
   const token = Cookies.get('token') || Cookies.get('auth_token');
 
-  // Build safe headers for browsers (avoid forbidden/non-simple headers that trigger CORS issues)
+  // Build optimized headers with production-specific settings
   const headers: Record<string, string> = {
     'Accept': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'application/json',
+    // Enable HTTP/2 and connection reuse
+    'Connection': 'keep-alive',
+    'Keep-Alive': 'timeout=120, max=100',
   };
 
-  // Only set Content-Type for non-GET requests with a body
-  if (method !== 'GET' && options.body) {
-    headers['Content-Type'] = 'application/json';
+  // Production-specific headers
+  if (IS_PRODUCTION) {
+    // Help with CDN caching
+    headers['Cache-Control'] = method === 'GET' ? 'public, max-age=60' : 'no-cache';
+    // Reduce latency with early hints
+    headers['Priority'] = 'u=1'; // High priority for API calls
   }
-
-  // Avoid adding Cache-Control/Priority request headers from the browser.
-  // Those are not simple CORS request headers and are often blocked by API allow-lists.
 
   // Merge with provided headers
   if (options.headers) {
