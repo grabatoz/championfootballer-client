@@ -770,76 +770,16 @@ function buildNotificationDisplay(
 
     const node = (
       <Box>
-        <Typography
-          component="div"
-          sx={{ fontWeight: 800, color: '#111', fontSize: '14px', lineHeight: 1.35 }}
-        >
-          New Match Scheduled!{' '}
-          <Box component="span" sx={{ fontWeight: 900 }}>
-            ⚽ Match {matchNo || '?'} for {leagueName}
-          </Box>{' '}is scheduled.{' '}
-          {matchId && (
-            <Typography
-              component={Link}
-              href={seeDetailsHref}
-              sx={{
-                fontWeight: 700,
-                color: '#0b57d0',
-                textDecoration: 'underline',
-                '&:hover': { color: '#063a8f' }
-              }}
-            >
-              See details
-            </Typography>
-          )}
+        <Typography sx={{ fontWeight: 700, color: '#111', fontSize: '12px', lineHeight: 1.25, mb: 0.3 }}>
+         New Match Scheduled! ⚽ Match {matchNo || '?'} • {leagueName}
         </Typography>
 
-        {(startFmt || endFmt) && (
-          <Box sx={{ mt: 1 }}>
-            <Typography
-              sx={{
-                fontSize: '12px',
-                fontWeight: 700,
-                color: '#111',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                flexWrap: 'wrap'
-              }}
-            >
-              {startFmt && <Box component="span">{startFmt}</Box>}
-              {startFmt && endFmt && <Box component="span" sx={{ mx: 0.25 }}>-</Box>}
-              {endFmt && <Box component="span">{endFmt}</Box>}
-            </Typography>
-          </Box>
-        )}
-
-        {/* NEW: Always show dateLine if available (even without times) */}
-        {dateLine && (
-          <Typography
-            sx={{
-              mt: 0.6,
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#444'
-            }}
-          >
-            {dateLine}
-          </Typography>
-        )}
-
-        {venue && (
-          <Typography
-            sx={{
-              mt: 0.4,
-              fontSize: '12px',
-              fontWeight: 500,
-              color: '#555'
-            }}
-          >
-            {venue}
-          </Typography>
-        )}
+        <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#555', lineHeight: 1.3 }}>
+          {startFmt}{startFmt && endFmt && ' - '}{endFmt}
+          {(startFmt || endFmt) && dateLine && ' • '}
+          {dateLine}
+          {venue && ` • ${venue}`}
+        </Typography>
       </Box>
     );
 
@@ -2669,54 +2609,81 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                               const showAvailability = ALWAYS_SHOW_AVAILABILITY ? true : !ended;
                               if (!showAvailability) return null;
                               return (
-                                <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
-                                    Can you play?
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Box
-                                      component="button"
-                                      disabled={saving}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSetAvailability(matchId, 'YES', notification.id);
-                                      }}
-                                      style={{ all: 'unset', cursor: 'pointer' }}
-                                      aria-pressed={selected === 'YES'}
-                                    >
-                                      <Box sx={{
-                                        px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                        display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
-                                        bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
-                                        color: selected === 'YES' ? '#fff' : '#0d7a33',
-                                        borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
-                                        boxShadow: selected === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
-                                        opacity: saving && selected === 'YES' ? 0.7 : 1
-                                      }}>
-                                        ✅ Yes
+                                <Box sx={{ mt: 1.5 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                                    <Typography sx={{ fontSize: '13px', fontWeight: 600, flexShrink: 0 }}>
+                                      Can you play?
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                                      <Box
+                                        component="button"
+                                        disabled={saving}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSetAvailability(matchId, 'YES', notification.id);
+                                        }}
+                                        style={{ all: 'unset', cursor: 'pointer' }}
+                                        aria-pressed={selected === 'YES'}
+                                      >
+                                        <Box sx={{
+                                          px: 1, py: 0.4, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                          display: 'inline-flex', alignItems: 'center', gap: 0.3, transition: '0.2s',
+                                          bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
+                                          color: selected === 'YES' ? '#fff' : '#0d7a33',
+                                          borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
+                                          boxShadow: selected === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
+                                          opacity: saving && selected === 'YES' ? 0.7 : 1,
+                                          whiteSpace: 'nowrap'
+                                        }}>
+                                          ✅ Yes
+                                        </Box>
                                       </Box>
-                                    </Box>
-                                    <Box
-                                      component="button"
-                                      disabled={saving}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSetAvailability(matchId, 'NO', notification.id);
-                                      }}
-                                      style={{ all: 'unset', cursor: 'pointer' }}
-                                      aria-pressed={selected === 'NO'}
-                                    >
-                                      <Box sx={{
-                                        px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                        display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
-                                        bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
-                                        color: selected === 'NO' ? '#fff' : '#c62828',
-                                        borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
-                                        boxShadow: selected === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
-                                        opacity: saving && selected === 'NO' ? 0.7 : 1
-                                      }}>
-                                        ❌ No
+                                      <Box
+                                        component="button"
+                                        disabled={saving}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSetAvailability(matchId, 'NO', notification.id);
+                                        }}
+                                        style={{ all: 'unset', cursor: 'pointer' }}
+                                        aria-pressed={selected === 'NO'}
+                                      >
+                                        <Box sx={{
+                                          px: 1, py: 0.4, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
+                                          display: 'inline-flex', alignItems: 'center', gap: 0.3, transition: '0.2s',
+                                          bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
+                                          color: selected === 'NO' ? '#fff' : '#c62828',
+                                          borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
+                                          boxShadow: selected === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
+                                          opacity: saving && selected === 'NO' ? 0.7 : 1,
+                                          whiteSpace: 'nowrap'
+                                        }}>
+                                          ❌ No
+                                        </Box>
                                       </Box>
+                                      <Button
+                                        component={Link}
+                                        href={`/match/${matchId}`}
+                                        size="small"
+                                        variant="text"
+                                        sx={{
+                                          textTransform: 'none',
+                                          fontWeight: 700,
+                                          color: '#fff',
+                                          bgcolor: '#0b57d0',
+                                          fontSize: '12px',
+                                          px: 0.75,
+                                          py: 0.4,
+                                          minWidth: 'auto',
+                                          whiteSpace: 'nowrap',
+                                          '&:hover': { 
+                                            color: '#fff',
+                                            bgcolor: '#0b57d0'
+                                          }
+                                        }}
+                                      >
+                                        See details →
+                                      </Button>
                                     </Box>
                                   </Box>
                                   {saving && (
