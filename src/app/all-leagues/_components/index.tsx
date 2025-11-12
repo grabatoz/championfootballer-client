@@ -1414,6 +1414,8 @@ function AllLeagues() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
+  // Persist preferred league selection across app
+  const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
   // Fixed continuous list of years from 2000 up to current year + a few future years (calendar-like)
   const yearOptions = useMemo(() => {
@@ -1474,6 +1476,8 @@ function AllLeagues() {
       const joined = normalizeLeagueFromPayload(payload);
 
       if (joined) {
+        // Save joined league as preferred immediately
+        try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(joined.id)); } catch {}
         // Update local state with new league at the TOP
         setLeagues(prev => {
           const filtered = prev.filter(l => l.id !== joined.id);
@@ -1687,6 +1691,9 @@ function AllLeagues() {
             currentTeams: data.league.currentTeams,
             status: data.league.status,
           };
+
+          // Save created league as preferred immediately
+          try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(normalized.id)); } catch {}
 
           // Add new league at TOP
           setLeagues(prevLeagues => {

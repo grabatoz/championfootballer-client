@@ -472,6 +472,12 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   // When a new league is created in the parent, immediately add/select it without waiting for a refetch
   useEffect(() => {
     if (!createdLeague || !createdLeague.id) return;
+    // Save as preferred league immediately so it's remembered across navigations
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PREFERRED_LEAGUE_KEY, String(createdLeague.id));
+      }
+    } catch {}
     setUserLeagues(prev => {
       const map = new Map(prev.map(l => [String(l.id), l]));
       const entry: LeagueWithComputed = {
