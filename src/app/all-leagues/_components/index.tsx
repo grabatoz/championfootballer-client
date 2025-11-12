@@ -1559,12 +1559,14 @@ function AllLeagues() {
             uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus | null> => {
               try {
                 const bust = Date.now();
+                // NOTE: Removed 'Cache-Control' and 'Pragma' custom request headers to avoid CORS preflight rejection
+                // Server must explicitly allow any non-simple headers in Access-Control-Allow-Headers; removing fixes the error you saw.
                 const [leagueResponse, statusResponse] = await Promise.all([
                   fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    headers: { 'Authorization': `Bearer ${token}` }
                   }),
                   fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status?bust=${bust}`, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    headers: { 'Authorization': `Bearer ${token}` }
                   })
                 ]);
 
@@ -1710,8 +1712,9 @@ function AllLeagues() {
     setLoadingMembers(true);
     try {
       const bust = Date.now();
+      // Removed 'Cache-Control' / 'Pragma' to prevent CORS failure
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.status === 403) {
