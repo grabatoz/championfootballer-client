@@ -80,7 +80,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
     matchStatus === 'started' ||
     matchStatus === 'LIVE' ||
     matchStatus === 'IN_PROGRESS';
-  const displayStatus = isCompleted ? 'RESULT_PUBLISHED' : (isLive ? 'LIVE' : 'UPCOMING');
+  const displayStatus = isCompleted ? 'FINISHED' : (isLive ? 'LIVE' : 'UPCOMING');
   const [pctLeft, setPctLeft] = useState<number | null>(null);
   const [pctRight, setPctRight] = useState<number | null>(null);
   const [predLoading, setPredLoading] = useState(false);

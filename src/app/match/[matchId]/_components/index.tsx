@@ -525,8 +525,13 @@ export default function MatchDetailsPage() {
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
-                // Shared grid template: Player | Goals | Assists | Clean Sheets | Impact | Votes | XP
-                const GRID_COLS = 'minmax(200px, 1fr) 56px 56px 110px 56px 56px 56px';
+                // Responsive grid template: Player | Goals | Assists | Clean Sheets | Impact | Votes | XP
+                // Mobile: smaller columns, Desktop: comfortable spacing
+                const GRID_COLS = {
+                  xs: 'minmax(140px, 1fr) 45px 45px 70px 45px 45px 45px', // Mobile
+                  sm: 'minmax(180px, 1fr) 50px 50px 90px 50px 50px 50px', // Tablet
+                  md: 'minmax(200px, 1fr) 56px 56px 110px 56px 56px 56px' // Desktop
+                };
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
                   firstName: g.firstName,
@@ -577,70 +582,111 @@ export default function MatchDetailsPage() {
                   <Box
                     sx={{
                       width: "100%",
-                      overflowX: "auto",
-                      mt: 4,
-                      scrollbarWidth: "none",
-                      "&::-webkit-scrollbar": { display: "none" },
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
+                      mt: { xs: 2, sm: 3, md: 4 },
                     }}
                   >
+                    {/* Fixed Header - Outside scroll container */}
                     <Box
                       sx={{
-                        flex: 1,
-                        maxWidth: 1260,
-                        minWidth: 320,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
+                        width: "100%",
+                        maxWidth: { xs: '100%', md: 1260 },
+                        mx: "auto",
+                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                        borderRadius: { xs: '8px 8px 0 0', md: '12px 12px 0 0' },
+                        p: { xs: 0.5, sm: 1 },
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        sx={{ 
+                          textAlign: "center", 
+                          fontSize: { xs: 14, sm: 16, md: 17 }, 
+                          color: '#fff', 
+                          py: { xs: 1, sm: 1.5, md: 2 }
+                        }}
+                      >
+                        Match Result
+                      </Typography>
+                      <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                    </Box>
+
+                    {/* Scrollable Table Container */}
+                    <Box
+                      sx={{
+                        width: "100%",
+                        maxWidth: { xs: '100%', md: 1260 },
+                        mx: "auto",
+                        overflowX: "auto",
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "rgba(255,255,255,0.3) transparent",
+                        "&::-webkit-scrollbar": { 
+                          height: "6px",
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          backgroundColor: "rgba(255,255,255,0.3)",
+                          borderRadius: "3px"
+                        },
                       }}
                     >
                       <Box
                         sx={{
                           width: "100%",
-                          maxHeight: 520,
+                          maxHeight: { xs: 400, sm: 480, md: 520 },
                           overflowY: "auto",
-                          scrollbarWidth: "none",
-                          "&::-webkit-scrollbar": { display: "none" },
+                          scrollbarWidth: "thin",
+                          scrollbarColor: "rgba(255,255,255,0.3) transparent",
+                          "&::-webkit-scrollbar": { 
+                            width: "6px"
+                          },
+                          "&::-webkit-scrollbar-thumb": {
+                            backgroundColor: "rgba(255,255,255,0.3)",
+                            borderRadius: "3px"
+                          },
                           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                          borderRadius: 3,
-                          p: 1,
-                          fontSize: { xs: 11, sm: 13, md: 15 },
+                          borderRadius: { xs: '0 0 8px 8px', md: '0 0 12px 12px' },
+                          p: { xs: 0.5, sm: 1 },
+                          fontSize: { xs: 10, sm: 12, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: 720 }}>
-                          <Typography
-                            variant="h6"
-                            fontWeight="bold"
-                            sx={{ mb: 2, textAlign: "center", fontSize: 17, color: '#fff', mt: 2 }}
-                          >
-                            Match Result
-                          </Typography>
-                          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-
+                        <Box sx={{ minWidth: { xs: 600, sm: 680, md: 720 } }}>
                           {/* Header */}
                           <Box
                             sx={{
                               background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                              borderRadius: 3,
-                              px: 2,
-                              py: 1,
-                              mb: 2,
+                              borderRadius: { xs: 2, md: 3 },
+                              px: { xs: 1, sm: 1.5, md: 2 },
+                              py: { xs: 0.5, sm: 0.75, md: 1 },
+                              mb: { xs: 1, sm: 1.5, md: 2 },
                               display: 'grid',
-                              gridTemplateColumns: GRID_COLS,
+                              gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                               alignItems: 'center',
-                              columnGap: 1,
+                              columnGap: { xs: 0.5, sm: 0.75, md: 1 },
                             }}
                           >
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, pl: 2 }}>Player</Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Goals</Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Assists</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              pl: { xs: 0.5, sm: 1, md: 2 } 
+                            }}>Player</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              textAlign: 'center' 
+                            }}>Goals</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              textAlign: 'center' 
+                            }}>Assists</Box>
                             <Box
                               sx={{
                                 color: 'white',
                                 fontWeight: 'bold',
-                                fontSize: 14,
+                                fontSize: { xs: 10, sm: 11, md: 14 },
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
                               }}
@@ -648,9 +694,24 @@ export default function MatchDetailsPage() {
                             >
                               Clean Sheets
                             </Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Imp</Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>Votes</Box>
-                            <Box sx={{ color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>XP</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              textAlign: 'center' 
+                            }}>Imp</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              textAlign: 'center' 
+                            }}>Votes</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 11, sm: 12, md: 14 }, 
+                              textAlign: 'center' 
+                            }}>XP</Box>
                           </Box>
 
                           {/* Rows */}
@@ -670,21 +731,34 @@ export default function MatchDetailsPage() {
                                     <Box
                                       sx={{
                                         display: 'grid',
-                                        gridTemplateColumns: GRID_COLS,
+                                        gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                                         alignItems: 'center',
-                                        columnGap: 1,
-                                        p: 1.5,
+                                        columnGap: { xs: 0.5, sm: 0.75, md: 1 },
+                                        p: { xs: 0.75, sm: 1, md: 1.5 },
                                         background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
                                         color: textColor,
                                         fontWeight,
                                         boxShadow: 3,
-                                        minHeight: 60,
+                                        minHeight: { xs: 45, sm: 50, md: 60 },
+                                        '&:hover': {
+                                          opacity: 0.9,
+                                          transition: 'opacity 0.2s'
+                                        }
                                       }}
                                     >
                                       {/* Player cell */}
                                       <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 44 }}>
-                                          <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+                                        <Box sx={{ 
+                                          display: 'flex', 
+                                          alignItems: 'center', 
+                                          mr: { xs: 0.5, sm: 1, md: 2 }, 
+                                          minWidth: { xs: 28, sm: 36, md: 44 }
+                                        }}>
+                                          <Box sx={{ 
+                                            position: 'relative', 
+                                            width: { xs: 28, sm: 32, md: 40 }, 
+                                            height: { xs: 28, sm: 32, md: 40 } 
+                                          }}>
                                             <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           </Box>
                                         </Box>
@@ -694,7 +768,7 @@ export default function MatchDetailsPage() {
                                           sx={{
                                             fontWeight: 'medium',
                                             color: 'white',
-                                            fontSize: 14,
+                                            fontSize: { xs: 11, sm: 12, md: 14 },
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
@@ -707,11 +781,11 @@ export default function MatchDetailsPage() {
                                               label="G"
                                               size="small"
                                               sx={{
-                                                ml: 1,
-                                                height: 18,
+                                                ml: { xs: 0.3, sm: 0.5, md: 1 },
+                                                height: { xs: 14, sm: 16, md: 18 },
                                                 bgcolor: '#e67e22',
                                                 color: 'white',
-                                                fontSize: 10,
+                                                fontSize: { xs: 8, sm: 9, md: 10 },
                                                 '& .MuiChip-label': { px: 0.5, fontWeight: 700 }
                                               }}
                                             />
@@ -720,28 +794,46 @@ export default function MatchDetailsPage() {
 
                                         <Box
                                           sx={{
-                                            minWidth: 8,
+                                            minWidth: { xs: 6, sm: 7, md: 8 },
                                             textAlign: 'center',
-                                            fontSize: 12,
+                                            fontSize: { xs: 10, sm: 11, md: 12 },
                                             fontWeight: 800,
                                             color: '#fff',
                                             bgcolor: isHome ? '#16a34a' : '#2563eb',
-                                            px: 1,
-                                            py: 0.8,
+                                            px: { xs: 0.5, sm: 0.75, md: 1 },
+                                            py: { xs: 0.4, sm: 0.6, md: 0.8 },
                                             borderRadius: 1,
-                                            ml: 2,
+                                            ml: { xs: 0.5, sm: 1, md: 2 },
                                             flexShrink: 0,
                                           }}
                                         />
                                       </Box>
 
                                       {/* Stats cells */}
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.goals ?? 0}</Box>
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.assists ?? 0}</Box>
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.cleanSheets ?? 0}</Box>
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.impact ?? 0}</Box>
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{playerVotes[player.id] ?? 0}</Box>
-                                      <Box sx={{ textAlign: 'center', fontSize: 14 }}>{stats.xpAwarded ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{stats.goals ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{stats.assists ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{stats.cleanSheets ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{stats.impact ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{playerVotes[player.id] ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{stats.xpAwarded ?? 0}</Box>
                                     </Box>
                                     <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                   </Link>
