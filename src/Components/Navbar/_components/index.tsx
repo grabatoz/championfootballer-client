@@ -59,6 +59,7 @@ type NotificationKind =
   | 'RESULT_CONFIRMATION_REQUEST'
   | 'CAPTAIN_CONFIRMED'
   | 'CAPTAIN_REVISION_SUGGESTED'
+  | 'MATCH_ENDED'
   | 'GENERAL';
 interface NotificationMeta {
   matchId?: string;
@@ -1956,6 +1957,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   const [statsOpen, setStatsOpen] = useState(false);
   const [statsSubmitting, setStatsSubmitting] = useState(false);
   const [myStats, setMyStats] = useState({ goals: 0, assists: 0, cleanSheets: 0, penalties: 0, freeKicks: 0, defence: 0, impact: 0 });
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
 
   const handleStatChange = (stat: 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact', increment: number, max: number) => {
     setMyStats(prev => {
@@ -2392,12 +2395,18 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       {/* Local popup driven by useState. It hosts a simplified stats dialog UI. */}
       <PlayMatchPagee
         open={statsOpen}
-        onClose={() => setStatsOpen(false)}
+        onClose={() => {
+          setStatsOpen(false);
+          setSelectedMatchId(null);
+          setSelectedLeagueId(null);
+        }}
         onSave={handleStatsSave}
         isSubmitting={statsSubmitting}
         stats={myStats}
         handleStatChange={handleStatChange}
         teamGoals={10}
+        initialMatchId={selectedMatchId || undefined}
+        initialLeagueId={selectedLeagueId || undefined}
       />
 
       {/* NOTIFICATION POPOVER - ENHANCED */}
@@ -2584,7 +2593,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   >
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Box sx={{ flex: 1, pr: 1 }}>
-                        {!isMatchType && notification.type !== 'MATCH_CREATED' && (
+                        {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && (
                           <Typography
                             variant="subtitle2"
                             sx={{
@@ -2598,7 +2607,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                           </Typography>
                         )}
 
-                        {!isMatchType && display.node}
+                        {!isMatchType && notification.type !== 'MATCH_ENDED' && display.node}
 
                         {isAvailType && (
                           <Box>
@@ -2825,6 +2834,110 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             )}
                           </Box>
                         )}
+
+                        {/* MATCH_ENDED notification - Show "See Details" and "Add Stats" buttons */}
+                        {(() => {
+                          const isMatchEnded = notification.type === 'MATCH_ENDED';
+                          if (isMatchEnded) {
+                            console.log('🔍 MATCH_ENDED notification found:', {
+                              type: notification.type,
+                              matchId,
+                              meta: notification.meta,
+                              condition: isMatchEnded && !!matchId
+                            });
+                          }
+                          return null;
+                        })()}
+                        {notification.type === 'MATCH_ENDED' && matchId && (
+                          <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {/* Match Details Header */}
+                            <Box sx={{ width: '100%' }}>
+                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#E56A16', mb: 0.5 }}>
+                                ⏰ Match Has Ended!
+                              </Typography>
+                              
+                              {/* Display notification body (contains teams and location) */}
+                              <Typography sx={{ fontSize: '12px', color: '#555', mb: 1 }}>
+                                {notification.body}
+                              </Typography>
+
+                              {/* League and Match Number */}
+                              {confirmLeagueName && (
+                                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
+                                  🏆 League: {confirmLeagueName}
+                                </Typography>
+                              )}
+                              {confirmMatchNo && (
+                                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
+                                  ⚽ Match #{confirmMatchNo}
+                                </Typography>
+                              )}
+                              {confirmDateLine && (
+                                <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#666', mb: 1 }}>
+                                  📅 {confirmDateLine}
+                                </Typography>
+                              )}
+                            </Box>
+
+                            {/* Action Buttons */}
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                              <Button
+                                component={Link}
+                                href={`/match/${matchId}`}
+                                size="small"
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!notification.read) markAsRead(notification.id);
+                                }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  color: '#fff',
+                                  bgcolor: '#0b57d0',
+                                  fontSize: '12px',
+                                  px: 1.2,
+                                  py: 0.5,
+                                  '&:hover': {
+                                    color: '#fff',
+                                    bgcolor: '#0847a6'
+                                  }
+                                }}
+                              >
+                                📋 See Details
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Extract leagueId from notification meta
+                                  const leagueId = (notification.meta as MatchMeta)?.leagueId || (notification.meta as MatchMeta)?.league_id;
+                                  setSelectedMatchId(matchId);
+                                  setSelectedLeagueId(leagueId || null);
+                                  setStatsOpen(true);
+                                  handleNotificationClose();
+                                  if (!notification.read) markAsRead(notification.id);
+                                }}
+                                size="small"
+                                variant="contained"
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  color: '#fff',
+                                  bgcolor: '#0d7a33',
+                                  fontSize: '12px',
+                                  px: 1.2,
+                                  py: 0.5,
+                                  '&:hover': {
+                                    color: '#fff',
+                                    bgcolor: '#0a5e28'
+                                  }
+                                }}
+                              >
+                                ✨ Add Stats
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
                         
                         <Typography
                           variant="caption"
@@ -2862,7 +2975,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        sx={{
+        sx={{ 
           '& .MuiDrawer-paper': {
             width: 280,
             background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
@@ -2911,7 +3024,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {isAuthenticated && (
               <ListItem disablePadding>
                 <Button
-                  onClick={() => { setStatsOpen(true); setDrawerOpen(false); }}
+                  onClick={() => { 
+                    setSelectedMatchId(null);
+                    setSelectedLeagueId(null);
+                    setStatsOpen(true); 
+                    setDrawerOpen(false); 
+                  }}
                   fullWidth
                   disableRipple
                   sx={{
