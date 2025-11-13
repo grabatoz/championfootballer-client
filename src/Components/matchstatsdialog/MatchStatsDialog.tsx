@@ -1713,6 +1713,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         }
                     });
                 }
+                
+                // 🆕 Trigger notification refresh for all players
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('refresh-notifications'));
+                    console.log('🔔 Vote successful - notification refresh triggered');
+                }
             }
         } catch {
             setError('An error occurred while voting.');

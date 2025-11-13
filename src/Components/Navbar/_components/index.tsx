@@ -60,6 +60,7 @@ type NotificationKind =
   | 'CAPTAIN_CONFIRMED'
   | 'CAPTAIN_REVISION_SUGGESTED'
   | 'MATCH_ENDED'
+  | 'MOTM_VOTE'
   | 'GENERAL';
 interface NotificationMeta {
   matchId?: string;
@@ -1498,9 +1499,17 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
         }
       }, 60000); // Changed from 30000ms to 60000ms (1 minute)
       
+      // 🆕 Listen for custom refresh events (e.g., after voting)
+      const handleRefreshEvent = () => {
+        console.log('🔔 Received notification refresh event');
+        fetchNotifications(true);
+      };
+      window.addEventListener('refresh-notifications', handleRefreshEvent);
+      
       return () => {
         console.log('🛑 Clearing notification interval...'); 
         clearInterval(interval);
+        window.removeEventListener('refresh-notifications', handleRefreshEvent);
       };
     } else {
       console.log('❌ User not authenticated or missing token/user, skipping notifications');
@@ -2593,7 +2602,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   >
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Box sx={{ flex: 1, pr: 1 }}>
-                        {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && (
+                        {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && (
                           <Typography
                             variant="subtitle2"
                             sx={{
@@ -2607,7 +2616,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                           </Typography>
                         )}
 
-                        {!isMatchType && notification.type !== 'MATCH_ENDED' && display.node}
+                        {!isMatchType && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && display.node}
 
                         {isAvailType && (
                           <Box>
@@ -2934,6 +2943,52 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                 }}
                               >
                                 ✨ Add Stats
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* MOTM_VOTE notification - Show voter and voted player */}
+                        {notification.type === 'MOTM_VOTE' && matchId && (
+                          <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {/* Vote Details */}
+                            <Box sx={{ width: '100%' }}>
+                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#FFD700', mb: 0.5 }}>
+                                {notification.title}
+                              </Typography>
+                              
+                              {/* Display notification body with league and match info */}
+                              <Typography sx={{ fontSize: '12px', color: '#333', mb: 1, fontWeight: 500, lineHeight: 1.5 }}>
+                                {notification.body}
+                              </Typography>
+                            </Box>
+
+                            {/* Action Button */}
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                component={Link}
+                                href={`/match/${matchId}`}
+                                size="small"
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!notification.read) markAsRead(notification.id);
+                                }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  color: '#fff',
+                                  bgcolor: '#FFD700',
+                                  fontSize: '11px',
+                                  px: 1,
+                                  py: 0.4,
+                                  '&:hover': {
+                                    color: '#000',
+                                    bgcolor: '#FFC700'
+                                  }
+                                }}
+                              >
+                                🏆 View Match
                               </Button>
                             </Box>
                           </Box>
