@@ -1872,44 +1872,87 @@ export default function GlobalTrophyRoom() {
           {filter === 'all' && (
            
             <>
-              <Typography
-                variant="overline"
-                sx={{
-                  display: 'block',
-                  color: 'black',
-                  letterSpacing: 1,
-                  fontWeight: 700,
-                  mb: 0.5,
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' , md: '1rem'},
-                }}
-              >
-                Select League
-              </Typography>
-              <Button
-                onClick={handleLeaguesDropdownOpen}
-                // onMouseEnter={handleLeaguesDropdownOpen}
-                disabled={!leagues.length}
-                sx={{
-                  textTransform: 'uppercase',
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  fontWeight: 'bold',
-                  lineHeight: 1.2,
-                  color: 'white',
-                  backgroundColor: '#2B2B2B',
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  '&:hover': { backgroundColor: '#2B2B2B' },
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-                endIcon={<ChevronDown size={20} />}
-              >
-                {selectedLeague
-                  ? formatLeagueName(selectedLeague.name)
-                  : (leagues.length ? (leagues[0] ? formatLeagueName(leagues[0].name) : 'All Leagues') : 'League has not found')}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+                <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      display: 'block',
+                      color: 'black',
+                      letterSpacing: 1,
+                      fontWeight: 700,
+                      mb: 0.5,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' , md: '1rem'},
+                    }}
+                  >
+                    Select League
+                  </Typography>
+                  <Button
+                    onClick={handleLeaguesDropdownOpen}
+                    // onMouseEnter={handleLeaguesDropdownOpen}
+                    disabled={!leagues.length}
+                    sx={{
+                      textTransform: 'uppercase',
+                      fontSize: { xs: '1rem', sm: '1.1rem' },
+                      fontWeight: 'bold',
+                      lineHeight: 1.2,
+                      color: 'white',
+                      backgroundColor: '#2B2B2B',
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      '&:hover': { backgroundColor: '#2B2B2B' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      width: '100%',
+                      justifyContent: 'space-between',
+                    }}
+                    endIcon={<ChevronDown size={20} />}
+                  >
+                    {selectedLeague
+                      ? formatLeagueName(selectedLeague.name)
+                      : (leagues.length ? (leagues[0] ? formatLeagueName(leagues[0].name) : 'All Leagues') : 'League has not found')}
+                  </Button>
+                </Box>
+                
+                {yearOptions.length > 0 && (
+                  <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        display: 'block',
+                        color: 'black',
+                        letterSpacing: 1,
+                        fontWeight: 700,
+                        mb: 0.5,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                      }}
+                    >
+                      Select Year
+                    </Typography>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 16px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        backgroundColor: '#2B2B2B',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="all">All Years</option>
+                      {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </Box>
+                )}
+              </Box>
               <Menu
                 anchorEl={leaguesDropdownAnchor}
                 open={leaguesDropdownOpen}
@@ -2000,44 +2043,6 @@ export default function GlobalTrophyRoom() {
                   ))
                 )}
               </Menu>
-              
-              {/* Year Filter */}
-              {yearOptions.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography
-                    variant="overline"
-                    sx={{
-                      display: 'block',
-                      color: 'black',
-                      letterSpacing: 1,
-                      fontWeight: 700,
-                      mb: 0.5,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-                    }}
-                  >
-                    Select Year
-                  </Typography>
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      fontSize: '1rem',
-                      fontWeight: 'bold',
-                      color: 'white',
-                      backgroundColor: '#2B2B2B',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                  >
-                    <option value="all">All Years</option>
-                    {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </Box>
-              )}
             </>
           )}
         </Box>
