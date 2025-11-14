@@ -112,6 +112,7 @@ const AllPlayersPage = () => {
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState<boolean>(false);
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -211,6 +212,7 @@ const AllPlayersPage = () => {
 
               let matchesFromDetails: Match[] | undefined = undefined;
               let maxGamesFromDetails: number | undefined = undefined;
+              let createdAt: string | undefined = undefined;
 
               if (detailsRes.ok) {
                 const leagueData = await detailsRes.json();
@@ -221,6 +223,7 @@ const AllPlayersPage = () => {
                 if (typeof leagueData?.league?.maxGames === 'number') {
                   maxGamesFromDetails = leagueData.league.maxGames as number;
                 }
+                createdAt = leagueData?.league?.createdAt;
               }
 
               if (statusRes.ok) {
@@ -253,6 +256,7 @@ const AllPlayersPage = () => {
                   isLocked: computed?.locked === true,
                   maxGames: maxGames ?? maxGamesFromDetails,
                   matches: matchesFromDetails,
+                  createdAt,
                   isAdmin,
                 } as LeagueOption;
               }
@@ -260,6 +264,7 @@ const AllPlayersPage = () => {
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
+                createdAt,
                 isAdmin,
               } as LeagueOption;
             } catch (error) {
@@ -310,15 +315,77 @@ const AllPlayersPage = () => {
     }
   }, [token, fetchLeagues]);
 
+  // Extract years dynamically from existing leagues
+  const yearOptions = React.useMemo(() => {
+    const yearsSet = new Set<string>();
+    leagues.forEach((l) => {
+      if (l.createdAt) {
+        const t = Date.parse(l.createdAt);
+        if (Number.isFinite(t)) {
+          const year = new Date(t).getFullYear();
+          yearsSet.add(String(year));
+        }
+      }
+    });
+    return Array.from(yearsSet).sort((a, b) => Number(b) - Number(a));
+  }, [leagues]);
+
+  // Filter leagues by year
+  const filteredLeagues = React.useMemo(() => {
+    if (selectedYear === 'all') return leagues;
+    return leagues.filter(l => {
+      const t = Date.parse(l.createdAt || '');
+      if (!Number.isFinite(t)) return false;
+      const year = String(new Date(t).getFullYear());
+      return year === selectedYear;
+    });
+  }, [leagues, selectedYear]);
+
+  // Auto-adjust selectedLeague when year changes
+  useEffect(() => {
+    if (filteredLeagues.length === 0) {
+      // No leagues for this year - reset to 'all'
+      setSelectedLeague('all');
+    } else {
+      // When we have leagues, check if we should auto-select
+      const currentLeagueExists = filteredLeagues.some(l => l.id === selectedLeague);
+      
+      // Auto-select if:
+      // 1. Current selection is 'all' but we have leagues available, OR
+      // 2. Current selection doesn't exist in filtered leagues
+      if (selectedLeague === 'all' || !currentLeagueExists) {
+        // Try to get preferred league from localStorage
+        let leagueToSelect = filteredLeagues[0].id;
+        try {
+          if (typeof window !== 'undefined') {
+            const preferredLeagueId = localStorage.getItem(PREFERRED_LEAGUE_KEY);
+            // Check if preferred league exists in filtered leagues
+            if (preferredLeagueId && filteredLeagues.some(l => l.id === preferredLeagueId)) {
+              leagueToSelect = preferredLeagueId;
+            }
+          }
+        } catch {}
+        
+        setSelectedLeague(leagueToSelect);
+      }
+    }
+  }, [filteredLeagues, selectedLeague]);
+
   const fetchAllLeaguesPlayers = useCallback(async () => {
-    if (!token || leagues.length === 0) return;
+    if (!token) return;
+    
+    // If no leagues for selected year, clear players
+    if (filteredLeagues.length === 0) {
+      dispatch({ type: 'user/fetchPlayedWithPlayers/fulfilled', payload: [] });
+      return;
+    }
     
     try {
       const allPlayersMap = new Map<string, Player>();
       
       // Fetch players from ALL leagues in parallel (faster)
       const playerResponses = await Promise.all(
-        leagues.map(league =>
+        filteredLeagues.map(league =>
           fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
@@ -348,7 +415,7 @@ const AllPlayersPage = () => {
     } catch (error) {
       console.error('Error fetching all leagues players:', error);
     }
-  }, [token, leagues, dispatch]);
+  }, [token, filteredLeagues, dispatch]);
 
   useEffect(() => {
     if (!token) return;
@@ -433,8 +500,40 @@ const AllPlayersPage = () => {
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff', fontSize: { xs: 20, sm: 32 } }}>
           All Players
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'center' }}>
-          <FormControl size="small" sx={{ minWidth: 240 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'flex-start' }}>
+          {/* Year Filter */}
+          <Box sx={{ minWidth: 160, maxWidth: 200 }}>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              style={{
+                width: '100%',
+                height: '40px',
+                padding: '0 12px',
+                backgroundColor: 'transparent',
+                color: '#fff',
+                border: '1px solid #e56a16',
+                borderRadius: '4px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                All Years
+              </option>
+              {Array.from(new Set([
+                '2020', '2021', '2022', '2023', '2024', '2025',
+                ...yearOptions
+              ])).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
+                <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </Box>
+
+          <FormControl size="small" sx={{ minWidth: 240, maxWidth: 300 }}>
             {/* InputLabel removed intentionally; provide OutlinedInput with notched={false} to avoid notch gap */}
             <Select
               id="league-select"
@@ -450,11 +549,13 @@ const AllPlayersPage = () => {
                 } catch {}
               }}
               renderValue={(value) => {
+                if (filteredLeagues.length === 0) return 'No leagues for selected year';
                 if (noLeagues) return 'No leagues found';
                 const v = String(value ?? '');
                 if (v === 'all') return 'All Leagues';
-                const found = leagues.find(l => l.id === v);
-                return found?.name || '';
+                // Search in filteredLeagues first, then fallback to all leagues
+                const found = filteredLeagues.find(l => l.id === v) || leagues.find(l => l.id === v);
+                return found?.name || 'Select League';
               }}
               MenuProps={{
                 anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
@@ -514,16 +615,16 @@ const AllPlayersPage = () => {
                   whiteSpace: 'nowrap'
                 },
                 // Apply always-on hover highlight when there are no leagues
-                ...(noLeagues ? {
+                ...(noLeagues || filteredLeagues.length === 0 ? {
                   // backgroundColor: 'rgba(229,106,22,0.15)',
                   boxShadow: '0 0 0 1px rgba(229,106,22,0.6) inset',
                   borderRadius: 1.5,
                 } : {})
               }}
-              disabled={noLeagues}
+              disabled={noLeagues || filteredLeagues.length === 0}
             >
               <MenuItem value="all">All Leagues</MenuItem>
-              {leagues.map((l) => (
+              {filteredLeagues.map((l) => (
                 <MenuItem key={l.id} value={l.id}
                   sx={{
                     borderRadius: 1.5,
@@ -572,6 +673,7 @@ const AllPlayersPage = () => {
               ))}
             </Select>
           </FormControl>
+
           <TextField
             fullWidth
             variant="outlined"
