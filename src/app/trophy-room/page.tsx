@@ -1873,6 +1873,46 @@ export default function GlobalTrophyRoom() {
            
             <>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+                {yearOptions.length > 0 && (
+                  <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        display: 'block',
+                        color: 'black',
+                        letterSpacing: 1,
+                        fontWeight: 700,
+                        mb: 0.5,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                      }}
+                    >
+                      Select Year
+                    </Typography>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 16px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        backgroundColor: '#2B2B2B',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="all">All Years</option>
+                      {/* Static years + Dynamic years (merged and deduplicated) */}
+                      {Array.from(new Set(['2020', '2021', '2022', '2023', '2024', '2025', ...yearOptions]))
+                        .sort((a, b) => Number(b) - Number(a))
+                        .map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </Box>
+                )}
+                
                 <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
                   <Typography
                     variant="overline"
@@ -1917,46 +1957,6 @@ export default function GlobalTrophyRoom() {
                         : (filteredLeagues[0] ? formatLeagueName(filteredLeagues[0].name) : 'Select League'))}
                   </Button>
                 </Box>
-                
-                {yearOptions.length > 0 && (
-                  <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
-                    <Typography
-                      variant="overline"
-                      sx={{
-                        display: 'block',
-                        color: 'black',
-                        letterSpacing: 1,
-                        fontWeight: 700,
-                        mb: 0.5,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-                      }}
-                    >
-                      Select Year
-                    </Typography>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 16px',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        color: 'white',
-                        backgroundColor: '#2B2B2B',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        outline: 'none',
-                      }}
-                    >
-                      <option value="all">All Years</option>
-                      {/* Static years + Dynamic years (merged and deduplicated) */}
-                      {Array.from(new Set(['2020', '2021', '2022', '2023', '2024', '2025', ...yearOptions]))
-                        .sort((a, b) => Number(b) - Number(a))
-                        .map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </Box>
-                )}
               </Box>
               <Menu
                 anchorEl={leaguesDropdownAnchor}
