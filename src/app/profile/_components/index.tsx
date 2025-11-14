@@ -836,7 +836,7 @@ const PlayerProfileCard = () => {
                                 setCity(v)
                                 setStateProvince(v)
                               }}
-                              helperText="Enter your city, town or region"
+                              // helperText="Enter your city, town or region"
                               placeholder="London"
                               fullWidth
                             />
