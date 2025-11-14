@@ -196,6 +196,25 @@ export default function PlayerStatsPage() {
     const [search, setSearch] = useState('');
     const [, setLeagues] = useState<League[]>([]);
 
+    // Latest year present in data (fallback: current year)
+    const latestYearInData = useMemo(() => {
+        const years = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [])
+            .flatMap((l: LeagueWithMatchesTyped) => (hasMatches(l) ? (l.matches || []) : []))
+            .map((m: LeagueMatch) => dayjs(m.date).year());
+        return years.length ? Math.max(...years) : dayjs().year();
+    }, [data]);
+
+    // Filter leagues by selected year (uses matches' date)
+    const leaguesForYear = useMemo<LeagueWithMatchesTyped[]>(() => {
+        const list = (data?.leagues || []) as LeagueWithMatchesTyped[];
+        if (!list.length) return [];
+        const effectiveYear = !year || year === 'all' ? String(latestYearInData) : year;
+        return list.filter(l =>
+            hasMatches(l) &&
+            (l.matches || []).some(m => dayjs(m.date).year().toString() === effectiveYear)
+        );
+    }, [data, year, latestYearInData]);
+
     // --- Teammate (co-players) search state ---
     type LeaguePlayer = {
         id: string;
@@ -250,12 +269,7 @@ export default function PlayerStatsPage() {
     const fetchTeammates = useCallback(async () => {
         if (!token) return;
         if (!playerId) return;
-        if (!leagueId || leagueId === 'all') {
-            // If "All" selected just clear (or could later aggregate)
-            setTeammates([]);
-            setSearchTriggered(true);
-            return;
-        }
+        if (!leagueId) return;
 
         const fetchKey = `${playerId}_${leagueId}`;
         if (fetchKey === lastFetchKeyRef.current && teammates.length && searchTriggered) {
@@ -274,36 +288,81 @@ export default function PlayerStatsPage() {
         try {
             let list: RawPlayer[] | undefined;
 
-            // Primary (league-wise teammates for any player)
-            const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${leagueId}/teammates`;
-            const res = await fetch(primaryUrl, {
-                credentials: 'include',
-                headers: { Authorization: `Bearer ${token}` },
-                signal: controller.signal
-            });
+            // Handle "All Leagues" case - aggregate from all leagues
+            if (leagueId === 'all') {
+                const allTeammates = new Map<string, RawPlayer>();
+                
+                // Get leagues for the selected year
+                const leaguesToFetch = leaguesForYear || [];
+                
+                // Fetch teammates from each league
+                for (const league of leaguesToFetch) {
+                    try {
+                        const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${league.id}/teammates`;
+                        const res = await fetch(primaryUrl, {
+                            credentials: 'include',
+                            headers: { Authorization: `Bearer ${token}` },
+                            signal: controller.signal
+                        });
 
-            if (res.ok) {
-                const json: TeammateAPIResponse = await res.json();
-                if (Array.isArray(json)) {
-                    list = json;
-                } else if (json?.data && Array.isArray(json.data)) {
-                    list = json.data;
-                } else if (json?.players && Array.isArray(json.players)) {
-                    list = json.players;
+                        if (res.ok) {
+                            const json: TeammateAPIResponse = await res.json();
+                            let leagueList: RawPlayer[] = [];
+                            
+                            if (Array.isArray(json)) {
+                                leagueList = json;
+                            } else if (json?.data && Array.isArray(json.data)) {
+                                leagueList = json.data;
+                            } else if (json?.players && Array.isArray(json.players)) {
+                                leagueList = json.players;
+                            }
+
+                            // Add to map to avoid duplicates
+                            leagueList.forEach(player => {
+                                if (player.id && !allTeammates.has(player.id)) {
+                                    allTeammates.set(player.id, player);
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        // Continue with other leagues if one fails
+                        console.log(`Failed to fetch teammates for league ${league.id}`, err);
+                    }
                 }
-            }
 
-            // Fallback: league players (admin/user listing)
-            if (!list) {
-                const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/players`, {
+                list = Array.from(allTeammates.values());
+            } else {
+                // Single league case
+                const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${leagueId}/teammates`;
+                const res = await fetch(primaryUrl, {
                     credentials: 'include',
                     headers: { Authorization: `Bearer ${token}` },
                     signal: controller.signal
                 });
-                if (fbRes.ok) {
-                    const fb = await fbRes.json();
-                    const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
-                    list = raw as RawPlayer[];
+
+                if (res.ok) {
+                    const json: TeammateAPIResponse = await res.json();
+                    if (Array.isArray(json)) {
+                        list = json;
+                    } else if (json?.data && Array.isArray(json.data)) {
+                        list = json.data;
+                    } else if (json?.players && Array.isArray(json.players)) {
+                        list = json.players;
+                    }
+                }
+
+                // Fallback: league players (admin/user listing)
+                if (!list) {
+                    const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/players`, {
+                        credentials: 'include',
+                        headers: { Authorization: `Bearer ${token}` },
+                        signal: controller.signal
+                    });
+                    if (fbRes.ok) {
+                        const fb = await fbRes.json();
+                        const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
+                        list = raw as RawPlayer[];
+                    }
                 }
             }
 
@@ -320,7 +379,7 @@ export default function PlayerStatsPage() {
         } finally {
             setTeammatesLoading(false);
         }
-    }, [token, playerId, leagueId, teammates.length, searchTriggered]);
+    }, [token, playerId, leagueId, teammates.length, searchTriggered, leaguesForYear]);
 
     // Close panel on outside click / ESC
     useEffect(() => {
@@ -484,25 +543,6 @@ export default function PlayerStatsPage() {
         const arr = ['all', ...Array.from({ length: 12 }, (_, i) => String(nowYear - i))];
         return arr;
     }, []);
-
-    // Latest year present in data (fallback: current year)
-    const latestYearInData = useMemo(() => {
-        const years = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [])
-            .flatMap((l: LeagueWithMatchesTyped) => (hasMatches(l) ? (l.matches || []) : []))
-            .map((m: LeagueMatch) => dayjs(m.date).year());
-        return years.length ? Math.max(...years) : dayjs().year();
-    }, [data]);
-
-    // Filter leagues by selected year (uses matches' date)
-    const leaguesForYear = useMemo<LeagueWithMatchesTyped[]>(() => {
-        const list = (data?.leagues || []) as LeagueWithMatchesTyped[];
-        if (!list.length) return [];
-        const effectiveYear = !year || year === 'all' ? String(latestYearInData) : year;
-        return list.filter(l =>
-            hasMatches(l) &&
-            (l.matches || []).some(m => dayjs(m.date).year().toString() === effectiveYear)
-        );
-    }, [data, year, latestYearInData]);
 
     // Helper: get latest league (by latest match date within the selected year)
     const getLatestLeagueIdForYear = (list: LeagueWithMatchesTyped[], y: string) => {
@@ -790,17 +830,14 @@ export default function PlayerStatsPage() {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <TextField
                             size="small"
-                            placeholder={leagueId === 'all' ? 'Select a league to load teammates' : 'Search Teammates'}
+                            placeholder="Search Teammates"
                             fullWidth
                             value={search}
-                            disabled={leagueId === 'all'}
                             onFocus={() => {
-                                if (leagueId === 'all') return;
                                 setShowTeammatePanel(true);
                                 if (!searchTriggered && !teammatesLoading) fetchTeammates();
                             }}
                             onClick={() => {
-                                if (leagueId === 'all') return;
                                 setShowTeammatePanel(true);
                                 if (!searchTriggered && !teammatesLoading) fetchTeammates();
                             }}
@@ -832,18 +869,17 @@ export default function PlayerStatsPage() {
                             variant="contained"
                             size="small"
                             onClick={() => {
-                                if (leagueId === 'all') return;
                                 if (!searchTriggered) fetchTeammates();
                                 setShowTeammatePanel(true);
                             }}
-                            disabled={!leagueId || leagueId === 'all' || teammatesLoading}
+                            disabled={!leagueId || teammatesLoading}
                             sx={{ background: '#0bb77f', fontWeight: 800, textTransform: 'none', whiteSpace: 'nowrap' }}
                         >
                             {teammatesLoading ? '...' : (searchTriggered ? 'Refresh' : 'Load')}
                         </Button>
                     </Box>
 
-                    {showTeammatePanel && leagueId !== 'all' && (
+                    {showTeammatePanel && (
                         <Paper
                             elevation={3}
                             sx={{
@@ -864,7 +900,7 @@ export default function PlayerStatsPage() {
                             }}
                         >
                             <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 13, mb: 0.75 }}>
-                                Teammates in this league
+                                {leagueId === 'all' ? 'Teammates across all leagues' : 'Teammates in this league'}
                             </Typography>
 
                             {(!searchTriggered && teammatesLoading) || teammatesLoading ? (
