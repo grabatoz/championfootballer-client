@@ -1678,7 +1678,7 @@ export default function GlobalTrophyRoom() {
       : baseTrophies.filter(t => t.leagueId === selectedLeagueId);
 
   const selectedLeague =
-    selectedLeagueId === 'all' ? null : leagues.find(l => l.id === selectedLeagueId);
+    selectedLeagueId === 'all' ? null : filteredLeagues.find(l => l.id === selectedLeagueId);
 
   // Add debug + flags for the standing label
   const selectedLeagueFlags = useMemo(() => {
@@ -1890,7 +1890,7 @@ export default function GlobalTrophyRoom() {
                   <Button
                     onClick={handleLeaguesDropdownOpen}
                     // onMouseEnter={handleLeaguesDropdownOpen}
-                    disabled={!leagues.length}
+                    disabled={!filteredLeagues.length}
                     sx={{
                       textTransform: 'uppercase',
                       fontSize: { xs: '1rem', sm: '1.1rem' },
@@ -1910,9 +1910,11 @@ export default function GlobalTrophyRoom() {
                     }}
                     endIcon={<ChevronDown size={20} />}
                   >
-                    {selectedLeague
-                      ? formatLeagueName(selectedLeague.name)
-                      : (leagues.length ? (leagues[0] ? formatLeagueName(leagues[0].name) : 'All Leagues') : 'League has not found')}
+                    {filteredLeagues.length === 0
+                      ? 'No leagues for selected year'
+                      : (selectedLeague
+                        ? formatLeagueName(selectedLeague.name)
+                        : (filteredLeagues[0] ? formatLeagueName(filteredLeagues[0].name) : 'Select League'))}
                   </Button>
                 </Box>
                 
@@ -1948,7 +1950,10 @@ export default function GlobalTrophyRoom() {
                       }}
                     >
                       <option value="all">All Years</option>
-                      {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                      {/* Static years + Dynamic years (merged and deduplicated) */}
+                      {Array.from(new Set(['2020', '2021', '2022', '2023', '2024', '2025', ...yearOptions]))
+                        .sort((a, b) => Number(b) - Number(a))
+                        .map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </Box>
                 )}
