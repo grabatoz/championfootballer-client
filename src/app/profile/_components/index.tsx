@@ -1,7 +1,7 @@
 "use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
-import { useState, useEffect, useRef, lazy, Suspense } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Person, Sports, AccountCircle } from "@mui/icons-material"
 import { Visibility, VisibilityOff, ArrowBack, ArrowForward } from "@mui/icons-material"
 import {
@@ -31,7 +31,12 @@ import {
   Container,
   Fade,
   Modal,
+  MenuItem,
 } from "@mui/material"
+// Lightweight country list (can be expanded or sourced externally later)
+const countryOptions = [
+  "United Kingdom","United States","Canada","Australia","Germany","France","Spain","Italy","Netherlands","Brazil","Argentina","Portugal","Belgium","Sweden","Norway","Denmark","Finland","Switzerland","Austria","Ireland","Turkey","Japan","South Korea","China","India","Pakistan","Saudi Arabia","United Arab Emirates","South Africa","Nigeria","Mexico"
+]
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
@@ -49,8 +54,7 @@ import imgicon from "@/Components/images/imgicon.png"
 import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
 
-// Lazy load heavy location libraries only when needed
-const CountryStateCitySelector = lazy(() => import('./CountryStateCitySelector'));
+// Removed CountryStateCitySelector; using simple text inputs for Country and City/State.
 
 
 // ===== THEME (brand palette reused) =====
@@ -227,21 +231,7 @@ const PlayerProfileCard = () => {
   const [country, setCountry] = useState(user?.country || "")
   const [stateProvince, setStateProvince] = useState(user?.state || "")
   const [city, setCity] = useState(user?.city || "")
-  
-  const handleLocationChange = {
-    country: (code: string, name: string) => {
-      setCountry(name);
-      setStateProvince('');
-      setCity('');
-    },
-    state: (code: string, name: string) => {
-      setStateProvince(name);
-      setCity('');
-    },
-    city: (name: string) => {
-      setCity(name);
-    }
-  };
+  // When editing location we mirror the City/State value into both city and stateProvince for backward compatibility.
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
@@ -814,18 +804,44 @@ const PlayerProfileCard = () => {
                     </Grid>
 
                     <Grid container spacing={1} mt={0.5} ml={0.2}>
-                      {/* Country / State / City selectors */}
+                      {/* Simplified Country & City/State inputs */}
                       <Grid item xs={12}>
-                        <Suspense fallback={<Box sx={{ p: 2, textAlign: 'center', color: themeColors.textDim }}>Loading locations...</Box>}>
-                          <CountryStateCitySelector
-                            country={country}
-                            stateProvince={stateProvince}
-                            city={city}
-                            onCountryChange={handleLocationChange.country}
-                            onStateChange={handleLocationChange.state}
-                            onCityChange={handleLocationChange.city}
-                          />
-                        </Suspense>
+                        <Grid container spacing={1}>
+                          <Grid item xs={12} sm={6}>
+                            <StyledTextField
+                              size="small"
+                              label="Country / Region"
+                              value={country}
+                              select
+                              onChange={e => {
+                                setCountry(e.target.value)
+                                setStateProvince("")
+                                setCity("")
+                              }}
+                              placeholder="Select country"
+                              fullWidth
+                            >
+                              {countryOptions.map(c => (
+                                <MenuItem key={c} value={c}>{c}</MenuItem>
+                              ))}
+                            </StyledTextField>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <StyledTextField
+                              size="small"
+                              label="City / State"
+                              value={city}
+                              onChange={e => {
+                                const v = e.target.value
+                                setCity(v)
+                                setStateProvince(v)
+                              }}
+                              helperText="Enter your city, town or region"
+                              placeholder="London"
+                              fullWidth
+                            />
+                          </Grid>
+                        </Grid>
                       </Grid>
                       <Grid item xs={12} sm={3} md={2}>
                         <StyledTextField size="small" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />

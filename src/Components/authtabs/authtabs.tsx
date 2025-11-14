@@ -176,10 +176,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegisterPassword, setShowRegisterPassword] = useState(false)
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState("")
+  const [confirmError, setConfirmError] = useState("")
 
   // Location selectors state (codes used to derive dependent lists)
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
-  const [selectedStateCode, setSelectedStateCode] = useState<string>("")
+  // State removed from UI; we keep it internally for compatibility but user enters a single City/State value
+  const [selectedStateCode] = useState<string>("")
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
@@ -229,31 +232,47 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value })
   }
 
+  const passwordPattern = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/
+  const getPasswordError = (pw: string): string => {
+    if (!pw) return "Password is required"
+    if (pw.length < 8) return "Minimum 8 characters required"
+    if (!/[A-Z]/.test(pw)) return "Include at least one uppercase letter"
+    if (!/[^A-Za-z0-9]/.test(pw)) return "Include at least one special character"
+    return ""
+  }
+
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRegisterData({ ...registerData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    const next = { ...registerData, [name]: value }
+    setRegisterData(next)
+
+    if (name === "password") {
+      setPasswordError(getPasswordError(value))
+      // also re-validate confirm when password changes
+      setConfirmError(next.confirmPassword && next.confirmPassword !== value ? "Passwords do not match" : "")
+    }
+    if (name === "confirmPassword") {
+      setConfirmError(value && value !== next.password ? "Passwords do not match" : "")
+    }
   }
 
   // Derived lists from country-state-city library
   const countries = Country.getAllCountries()
   const states = selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []
-  const cities = selectedCountryCode && selectedStateCode ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : []
+  // If we had a state selection we'd derive cities; now we allow free text entry so we don't need the cities list.
+  const cities: Array<never> = []
 
   // Handlers for Select components; store name in registerData, code in local state
   const handleCountrySelect = (code: string) => {
     setSelectedCountryCode(code)
     const c = countries.find(c => c.isoCode === code)
+    // Reset location fields when country changes
     setRegisterData(prev => ({ ...prev, country: c?.name || "", state: "", city: "" }))
-    setSelectedStateCode("")
   }
 
-  const handleStateSelect = (code: string) => {
-    setSelectedStateCode(code)
-    const s = states.find(s => s.isoCode === code)
-    setRegisterData(prev => ({ ...prev, state: s?.name || "", city: "" }))
-  }
-
-  const handleCitySelect = (name: string) => {
-    setRegisterData(prev => ({ ...prev, city: name }))
+  // Single location input handler: store the value in both state and city for backward compatibility.
+  const handleLocationInput = (value: string) => {
+    setRegisterData(prev => ({ ...prev, city: value, state: value }))
   }
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -322,12 +341,17 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       !registerData.gender ||
       !registerData.age ||
       !registerData.country ||
-      !registerData.state ||
       !registerData.city
     )
       msg = "Please fill in all fields"
-    else if (registerData.password !== registerData.confirmPassword) msg = "Passwords do not match"
-    else if (registerData.password.length < 6) msg = "Password must be at least 6 characters"
+    else if (!passwordPattern.test(registerData.password)) {
+      msg = "Password must be at least 8 characters and include 1 uppercase and 1 special character"
+      setPasswordError(getPasswordError(registerData.password))
+    }
+    else if (registerData.password !== registerData.confirmPassword) {
+      msg = "Passwords do not match"
+      setConfirmError("Passwords do not match")
+    }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) msg = "Invalid email"
     else if (isNaN(age) || age < 18 || age > 65) msg = "Age must be between 18 and 65"
     else if (!acceptTerms) msg = "Please accept the terms"
@@ -536,6 +560,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               onChange={handleRegisterChange}
               required
               sx={inputSx}
+              inputProps={{ minLength: 8, pattern: '(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}' }}
+              error={Boolean(passwordError)}
+              helperText={passwordError || "At least 8 chars, 1 uppercase, 1 special"}
               InputProps={{
                 endAdornment: (
                   <IconButton
@@ -559,6 +586,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               onChange={handleRegisterChange}
               required
               sx={inputSx}
+              inputProps={{ minLength: 8, pattern: '(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}' }}
+              error={Boolean(confirmError)}
+              helperText={confirmError || "Re-type your password"}
               InputProps={{
                 endAdornment: (
                   <IconButton
@@ -632,61 +662,16 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth disabled={!selectedCountryCode}>
-              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
-              <Select
-                id="state-select"
-                value={selectedStateCode}
-                onChange={(e) => handleStateSelect(e.target.value as string)}
-                displayEmpty
-                renderValue={(selected) => {
-                  if (!selected) return <span style={{ color: '#757575' }}>State</span>;
-                  const code = selected as string;
-                  const s = states.find(s => s.isoCode === code);
-                  return s?.name || '';
-                }}
-                input={<OutlinedInput notched={false} />}
-                sx={{
-                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
-                }}
-                required
-              >
-                <MenuItem value="" disabled>
-                  <em>State</em>
-                </MenuItem>
-                {states.map(s => (
-                  <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth disabled={!selectedCountryCode || !selectedStateCode}>
-              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
-              <Select
-                id="city-select"
-                value={registerData.city || ''}
-                onChange={(e) => handleCitySelect(e.target.value as string)}
-                displayEmpty
-                renderValue={(selected) => {
-                  if (!selected) return <span style={{ color: '#757575' }}>City</span>;
-                  return selected as string;
-                }}
-                input={<OutlinedInput notched={false} />}
-                sx={{
-                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
-                }}
-                required
-              >
-                <MenuItem value="" disabled>
-                  <em>City</em>
-                </MenuItem>
-                {cities.map(ci => (
-                  <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              placeholder="City / State"
+              name="location"
+              value={registerData.city}
+              onChange={(e) => handleLocationInput(e.target.value)}
+              required
+              sx={inputSx}
+              helperText="Enter your city, town or state"
+            />
 
             {/* Active (checked) color set to orange (#E56A16) */}
             <FormControl>
