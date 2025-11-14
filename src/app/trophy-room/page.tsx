@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
@@ -77,6 +77,8 @@ interface League {
   members: User[];
   matches: Match[];
   maxGames: number;
+  createdAt?: string; // for year filtering
+  updatedAt?: string; // optional
   computedStatus?: LeagueComputedStatus;
   isLocked?: boolean;
   isComplete?: boolean;
@@ -162,6 +164,8 @@ interface BackendLeague {
   config?: { maxGames?: number | string };
   options?: { maxGames?: number | string };
   schedule?: { maxGames?: number | string };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Server achievements response types
@@ -1231,6 +1235,8 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; admi
     members: (l?.members ?? []).map(toUser),
     matches: (l?.matches ?? []).map(toMatch),
     maxGames: extractLeagueMaxGames(l),
+    createdAt: l?.createdAt,
+    updatedAt: l?.updatedAt,
     isAdmin: adminIds.has(String(l?.id ?? '')),
   }));
   
@@ -1309,6 +1315,9 @@ export default function GlobalTrophyRoom() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -1522,6 +1531,60 @@ export default function GlobalTrophyRoom() {
       }
     })();
   }, [token, leagueIsCompleted]);
+
+  // Extract years dynamically from existing leagues only
+  const yearOptions = useMemo(() => {
+    const yearsSet = new Set<string>();
+    console.log('[Trophy Room] Extracting years from leagues:', leagues.length);
+    leagues.forEach((l, idx) => {
+      console.log(`[Trophy Room] League ${idx}: name=${l.name}, createdAt=${l.createdAt}`);
+      if (l.createdAt) {
+        const t = Date.parse(l.createdAt);
+        if (Number.isFinite(t)) {
+          const year = new Date(t).getFullYear();
+          console.log(`[Trophy Room] Added year: ${year}`);
+          yearsSet.add(String(year));
+        }
+      }
+    });
+    const years = Array.from(yearsSet).sort((a, b) => Number(b) - Number(a));
+    console.log('[Trophy Room] Final yearOptions:', years);
+    // Sort descending (newest first)
+    return years;
+  }, [leagues]);
+
+  // Completed logic similar to AllLeagues for filtering lists (maxGames reached)
+  const isLeagueCompletedTab = useCallback((l: League): boolean => {
+    const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
+    if (max <= 0) return false;
+    const completedCount = countCompletedMatches(l);
+    return completedCount >= max;
+  }, []);
+
+  // Filter leagues for dropdown by year only (ignore completion tab and search)
+  const filteredLeagues = useMemo(() => {
+    console.log('[Trophy Room] Filtering leagues. selectedYear:', selectedYear, 'total leagues:', leagues.length);
+    const byYear = selectedYear === 'all' ? leagues : leagues.filter(l => {
+      const t = Date.parse(l.createdAt || '');
+      if (!Number.isFinite(t)) {
+        console.log(`[Trophy Room] League ${l.name} has invalid createdAt:`, l.createdAt);
+        return false;
+      }
+      const year = String(new Date(t).getFullYear());
+      const matches = year === selectedYear;
+      console.log(`[Trophy Room] League ${l.name}: year=${year}, matches=${matches}`);
+      return matches;
+    });
+    console.log('[Trophy Room] Filtered leagues count:', byYear.length);
+    return byYear;
+  }, [leagues, selectedYear]);
+
+  // Ensure selectedLeagueId remains visible in filtered set; if not, choose first
+  useEffect(() => {
+    if (!filteredLeagues.length) return;
+    if (selectedLeagueId && selectedLeagueId !== 'all' && filteredLeagues.some(l => l.id === selectedLeagueId)) return;
+    setSelectedLeagueId(filteredLeagues[0].id);
+  }, [filteredLeagues, selectedLeagueId]);
 
   // Fetch ALL trophy winners ONCE (no league filter) - then filter client-side for instant switching
   useEffect(() => {
@@ -1883,10 +1946,10 @@ export default function GlobalTrophyRoom() {
                   }
                 }}
               >
-                {leagues.length === 0 ? (
-                  <MenuItem disabled sx={{ opacity: 0.7 }}>League has not found</MenuItem>
+                {filteredLeagues.length === 0 ? (
+                  <MenuItem disabled sx={{ opacity: 0.7 }}>No leagues found for selected year</MenuItem>
                 ) : (
-                  leagues.map(l => (
+                  filteredLeagues.map(l => (
                     <MenuItem 
                       key={l.id} 
                       onClick={() => handleLeagueSelect(String(l.id))}
@@ -1937,6 +2000,44 @@ export default function GlobalTrophyRoom() {
                   ))
                 )}
               </Menu>
+              
+              {/* Year Filter */}
+              {yearOptions.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      display: 'block',
+                      color: 'black',
+                      letterSpacing: 1,
+                      fontWeight: 700,
+                      mb: 0.5,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                    }}
+                  >
+                    Select Year
+                  </Typography>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      backgroundColor: '#2B2B2B',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="all">All Years</option>
+                    {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </Box>
+              )}
             </>
           )}
         </Box>
@@ -1952,7 +2053,7 @@ export default function GlobalTrophyRoom() {
           }}
         >
           <Chip
-            label="All Trophies"
+            label="Trophy Room"
             color={filter === 'all' ? 'success' : 'default'}
             onClick={() => setFilter('all')}
             sx={{
