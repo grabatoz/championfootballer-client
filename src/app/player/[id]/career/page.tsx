@@ -2120,7 +2120,6 @@ export default function CareerPage() {
                           <TableBody>
                             {(() => {
                               const { prev } = lastPrev10;
-                              const showRanked = filters.leagueId && filters.leagueId !== 'all';
                               
                               // Use yourStats for "Your Stats" column (all filtered matches)
                               const current = yourStats;
