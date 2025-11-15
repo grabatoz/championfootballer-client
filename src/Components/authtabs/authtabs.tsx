@@ -232,11 +232,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value })
   }
 
-  const passwordPattern = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/
+  const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}$/
   const getPasswordError = (pw: string): string => {
     if (!pw) return "Password is required"
-    if (pw.length < 8) return "Minimum 8 characters required"
+    if (pw.length < 6) return "Minimum 6 characters required"
+    if (pw.length > 16) return "Maximum 16 characters allowed"
     if (!/[A-Z]/.test(pw)) return "Include at least one uppercase letter"
+    if (!/[0-9]/.test(pw)) return "Include at least one number"
     if (!/[^A-Za-z0-9]/.test(pw)) return "Include at least one special character"
     return ""
   }
@@ -345,7 +347,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     )
       msg = "Please fill in all fields"
     else if (!passwordPattern.test(registerData.password)) {
-      msg = "Password must be at least 8 characters and include 1 uppercase and 1 special character"
+      msg = "Password must be 6-16 characters and include 1 uppercase, 1 number and 1 special character"
       setPasswordError(getPasswordError(registerData.password))
     }
     else if (registerData.password !== registerData.confirmPassword) {
@@ -560,9 +562,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               onChange={handleRegisterChange}
               required
               sx={inputSx}
-              inputProps={{ minLength: 8, pattern: '(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}' }}
+              inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
               error={Boolean(passwordError)}
-              helperText={passwordError || "At least 8 chars, 1 uppercase, 1 special"}
+              helperText={passwordError || "6-16 chars, 1 uppercase, 1 number, 1 special"}
               InputProps={{
                 endAdornment: (
                   <IconButton
@@ -586,7 +588,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               onChange={handleRegisterChange}
               required
               sx={inputSx}
-              inputProps={{ minLength: 8, pattern: '(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}' }}
+              inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
               error={Boolean(confirmError)}
               helperText={confirmError || "Re-type your password"}
               InputProps={{
