@@ -56,13 +56,23 @@ export default function FetchAuthMonitor() {
             const cookieToken = document.cookie
               .split(";")
               .map(c => c.trim())
-              .find(c => c.startsWith("token=") || c.startsWith("auth_token="));
-            if (cookieToken) token = cookieToken.split("=")[1];
+              .find(c => c.startsWith("token="));
+            if (cookieToken) {
+              const tokenValue = cookieToken.split("=")[1];
+              // Validate token format: must have 3 parts (JWT format)
+              if (tokenValue && tokenValue !== 'undefined' && tokenValue.split('.').length === 3) {
+                token = tokenValue;
+              } else if (debug()) {
+                console.warn("[FetchAuthMonitor] ⚠️ Invalid token format in cookie:", tokenValue?.substring(0, 20));
+              }
+            }
           } catch {/* ignore */}
           if (!token) {
             try {
               const stored = localStorage.getItem("auth_token") || localStorage.getItem("token") || localStorage.getItem("access_token");
-              if (stored) token = stored;
+              if (stored && stored !== 'undefined' && stored.split('.').length === 3) {
+                token = stored;
+              }
             } catch {/* ignore */}
           }
           // Fallback: parse user blob if it contains token
@@ -71,7 +81,10 @@ export default function FetchAuthMonitor() {
               const userData = localStorage.getItem("userData") || localStorage.getItem("user");
               if (userData) {
                 const parsed = JSON.parse(userData);
-                token = parsed?.token || parsed?.authToken || parsed?.accessToken;
+                const potentialToken = parsed?.token || parsed?.authToken || parsed?.accessToken;
+                if (potentialToken && potentialToken !== 'undefined' && potentialToken.split('.').length === 3) {
+                  token = potentialToken;
+                }
               }
             } catch {/* ignore */}
           }
@@ -80,7 +93,7 @@ export default function FetchAuthMonitor() {
             headers["Authorization"] = `Bearer ${token.trim()}`;
             if (debug()) console.info("[FetchAuthMonitor] ✅ Injected Authorization header for:", url);
           } else if (debug()) {
-            console.warn("[FetchAuthMonitor] ⚠️ Missing token; request sent WITHOUT Authorization:", url);
+            console.warn("[FetchAuthMonitor] ⚠️ Missing or invalid token; request sent WITHOUT Authorization:", url);
           }
         } else if (debug()) {
           console.info("[FetchAuthMonitor] (keep) Existing Authorization header for:", url);

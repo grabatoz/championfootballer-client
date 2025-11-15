@@ -4,7 +4,25 @@ import { User } from '@/types/user';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? Cookies.get('token') || null : null);
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cookieToken = Cookies.get('token') || null;
+      // Validate token format - must be valid JWT with 3 parts
+      if (cookieToken && cookieToken !== 'undefined' && cookieToken.split('.').length === 3) {
+        console.log('✅ Valid token from cookie:', {
+          length: cookieToken.length,
+          parts: cookieToken.split('.').length
+        });
+        return cookieToken;
+      } else if (cookieToken) {
+        console.warn('❌ Invalid token detected, clearing:', cookieToken);
+        Cookies.remove('token');
+        return null;
+      }
+      return null;
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
 
   // Fetch user info from backend using JWT
