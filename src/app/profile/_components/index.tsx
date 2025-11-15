@@ -235,6 +235,19 @@ const PlayerProfileCard = () => {
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
   const [showPassword, setShowPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState("")
+
+  // Password validation pattern: 6-16 chars, 1 uppercase, 1 number, 1 special char
+  const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}$/
+  const getPasswordError = (pw: string): string => {
+    if (!pw) return "" // Empty is OK (means no change)
+    if (pw.length < 6) return "Minimum 6 characters required"
+    if (pw.length > 16) return "Maximum 16 characters allowed"
+    if (!/[A-Z]/.test(pw)) return "Include at least one uppercase letter"
+    if (!/[0-9]/.test(pw)) return "Include at least one number"
+    if (!/[^A-Za-z0-9]/.test(pw)) return "Include at least one special character"
+    return ""
+  }
   const [, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fallbackImgSrc = (imgicon as StaticImageData).src
@@ -287,12 +300,26 @@ const PlayerProfileCard = () => {
   const handleNext = () => setStep(s => s + 1)
   const handlePrevious = () => setStep(s => s > 1 ? s - 1 : s)
 
+  const handlePasswordChange = (value: string) => {
+    setPassword(value)
+    setPasswordError(getPasswordError(value))
+  }
+
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     try {
       setIsUpdating(true)
       setError("")
       if (!isAuthenticated || !token) throw new Error("Not authenticated. Please login again.")
+
+      // Validate password if entered
+      if (password && !passwordPattern.test(password)) {
+        const errMsg = getPasswordError(password)
+        setPasswordError(errMsg)
+        toast.error(errMsg || "Password does not meet requirements")
+        setIsUpdating(false)
+        return
+      }
 
       // Helper to treat undefined/null/empty-string as blank
       const isBlank = (v: unknown) => v == null || (typeof v === 'string' && v.trim() === '')
@@ -790,9 +817,12 @@ const PlayerProfileCard = () => {
                         label="Change Password"
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
+                        onChange={e => handlePasswordChange(e.target.value)}
                         placeholder="Leave blank to keep current password"
                         fullWidth
+                        error={Boolean(passwordError)}
+                        helperText={passwordError || "6-16 chars, 1 uppercase, 1 number, 1 special"}
+                        inputProps={{ minLength: 6, maxLength: 16 }}
                         InputProps={{
                           endAdornment: (
                             <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
