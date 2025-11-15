@@ -153,6 +153,7 @@ const StyledTextField = styled(TextField)(() => ({
   },
   '& .MuiInputLabel-root': { color: themeColors.textDim },
   '& .MuiInputLabel-root.Mui-focused': { color: themeColors.primary },
+  '& .MuiFormHelperText-root': { color: '#fff !important' },
   '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
     WebkitBoxShadow: '0 0 0 1000px #202225 inset !important',
     boxShadow: '0 0 0 1000px #202225 inset !important',
