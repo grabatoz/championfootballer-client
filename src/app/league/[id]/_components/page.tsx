@@ -4319,50 +4319,51 @@ export default function LeagueDetailPage() {
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        flexDirection: { xs: 'column', md: 'row' },
-                                        justifyContent: { xs: 'center', md: 'space-between' },
+                                        flexDirection: 'row',
+                                        justifyContent: 'space-between',
                                         mb: 2,
-                                        gap: { xs: 2, md: 0 }
+                                        gap: 1
                                     }}
                                 >
+                                    {/* Left side - Trophy + League Name */}
                                     <Box sx={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 2,
+                                        gap: { xs: 0.8, sm: 1, md: 2 },
                                         flex: 1,
                                         minWidth: 0,
-                                        justifyContent: { xs: 'flex-start', md: 'flex-start' }
+                                        overflow: 'hidden'
                                     }}>
-                                        <Trophy size={32} />
+                                        <Trophy size={window.innerWidth >= 960 ? 32 : 24} />
                                         {league ? (
                                             <Button
                                                 onClick={handleLeaguesDropdownOpen}
                                                 sx={{
                                                     textTransform: 'uppercase',
-                                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+                                                    fontSize: { xs: '0.55rem', sm: '0.9rem', md: '1.4rem' },
                                                     fontWeight: 'bold',
-                                                    lineHeight: 1.2,
+                                                    lineHeight: 1.1,
                                                     wordBreak: 'break-word',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'wrap',
+                                                    overflow: 'visible',
+                                                    textOverflow: 'clip',
+                                                    whiteSpace: 'normal',
                                                     flexShrink: 1,
                                                     minWidth: 0,
-                                                    textAlign: { xs: 'left', md: 'left' },
+                                                    textAlign: 'left',
                                                     color: 'white',
                                                     backgroundColor: '#2B2B2B',
                                                     borderRadius: 2,
-                                                    px: 2,
-                                                    py: 1,
+                                                    px: { xs: 0.75, sm: 1.5, md: 2 },
+                                                    py: { xs: 0.4, sm: 0.8, md: 1 },
+                                                    height: { xs: '32px', sm: 'auto' },
                                                     '&:hover': {
                                                         backgroundColor: '#2B2B2B',
                                                     },
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: 1,
-                                                    // border: '1px solid rgba(255,255,255,0.3)',
+                                                    gap: 0.5,
                                                 }}
-                                                endIcon={<ChevronDown size={20} />}
+                                                endIcon={<ChevronDown size={16} />}
                                             >
                                                 {formatLeagueName(league.name)}
                                             </Button>
@@ -4370,7 +4371,7 @@ export default function LeagueDetailPage() {
                                             <Typography
                                                 sx={{
                                                     textTransform: 'uppercase',
-                                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '2rem' },
+                                                    fontSize: { xs: '0.6rem', sm: '1rem', md: '1.4rem' },
                                                     fontWeight: 'bold',
                                                     color: 'white',
                                                 }}
@@ -4446,23 +4447,6 @@ export default function LeagueDetailPage() {
                                                         }}
                                                     />
                                                     <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        {/* {leagueItem.id === leagueId && (
-                                                            <Box
-                                                                sx={{
-                                                                    px: 1,
-                                                                    py: 0.25,
-                                                                    bgcolor: '#0388E3',
-                                                                    color: 'white',
-                                                                    borderRadius: '9999px',
-                                                                    fontSize: 10,
-                                                                    fontWeight: 700,
-                                                                    letterSpacing: 0.3,
-                                                                    textTransform: 'uppercase',
-                                                                }}
-                                                            >
-                                                                Current
-                                                            </Box>
-                                                        )} */}
                                                         {leagueItem.userRole && (
                                                             <Box
                                                                 sx={{
@@ -4486,26 +4470,21 @@ export default function LeagueDetailPage() {
                                         </Menu>
                                     </Box>
 
-                                    {/* Right side controls */}
+                                    {/* Right side controls - Code & Settings */}
                                     <Box
                                         sx={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: 1,
+                                            gap: { xs: 0.5, sm: 1 },
                                             flexWrap: 'nowrap',
-                                            whiteSpace: 'nowrap',
                                             flexShrink: 0,
-                                            ml: { xs: 0, md: 'auto' },
-                                            mt: { xs: 1, md: 0 },
-                                            width: { xs: 'auto', md: 'auto' },
-                                            justifyContent: { xs: 'flex-end', md: 'flex-end' },
                                         }}
                                     >
                                         {isMember && (
                                             <Chip
                                                 label={
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap' }}>
-                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, whiteSpace: 'nowrap' }}>
+                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' } }}>
                                                             {`Code: ${league.inviteCode}`}
                                                         </Typography>
                                                         <Chip
@@ -4515,13 +4494,9 @@ export default function LeagueDetailPage() {
                                                                 backgroundColor: '#2B2B2B',
                                                                 '&:hover': { backgroundColor: '#2B2B2B' },
                                                                 minWidth: 'auto',
-                                                                height: '40px',
+                                                                height: { xs: '32px', sm: '40px' },
                                                                 display: 'inline-flex',
                                                                 '& .MuiChip-label': { px: 0.5 },
-
-
-
-                                                                //  borderRadius: '4px', 
                                                             }}
                                                         />
                                                     </Box>
@@ -4530,30 +4505,16 @@ export default function LeagueDetailPage() {
                                                     backgroundColor: '#2B2B2B',
                                                     '&:hover': { backgroundColor: '#2B2B2B' },
                                                     color: 'white',
-                                                    maxWidth: { xs: '160px', sm: '180px' },
+                                                    maxWidth: { xs: '140px', sm: '180px' },
                                                     width: 'auto',
                                                     minWidth: 'auto',
-                                                    height: 'auto',
+                                                    height: { xs: '32px', sm: 'auto' },
                                                     borderRadius: '7px',
                                                     whiteSpace: 'nowrap',
                                                     display: 'inline-flex'
                                                 }}
                                             />
                                         )}
-                                        {/* {isAdmin && (
-                                            <IconButton
-                                                onClick={() => setIsSettingsOpen(true)}
-                                                sx={{
-                                                    ml: 0.5,
-                                                    color: 'white',
-                                                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                                                    p: 1,
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                <Settings size={20} />
-                                            </IconButton>
-                                        )} */}
                                         <IconButton
                                             onClick={() => {
                                                 const isAdmin = (league?.adminId || league?.administrators?.[0]?.id) === (user?.id || '')
@@ -4561,15 +4522,13 @@ export default function LeagueDetailPage() {
                                                     setAdminSettingsLeague(league || null);
                                                     setIsSettingsOpen(true)
                                                 } else {
-                                                    // Non-admins: open the Players view (similar to members dialog)
                                                     if (league) handleOpenMembers(league!)
                                                 }
                                             }}
                                             sx={{
-                                                ml: 0.5,
                                                 color: 'white',
                                                 '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                                                p: 1,
+                                                p: { xs: 0.5, sm: 1 },
                                                 flexShrink: 0
                                             }}
                                         >
