@@ -6702,7 +6702,7 @@ export default function LeagueDetailPage() {
                 PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
             >
                 <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0, py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
-                    {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
+                    {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Playe
                     <Box sx={{ flexGrow: 1 }} />
                     <IconButton onClick={() => setOpenQuickView(false)} edge="end" size="small">
                         <CloseIcon />
@@ -6766,7 +6766,8 @@ export default function LeagueDetailPage() {
                                         gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
                                         gap: { xs: 1, sm: 1 },
                                         maxWidth: { xs: 170, sm: '100%' },
-                                        mx: { xs: 'auto', sm: 0 }
+                                        mx: { xs: 'auto', sm: 0 },
+                                        mt:2
                                     }}
                                 >
                                     {[
