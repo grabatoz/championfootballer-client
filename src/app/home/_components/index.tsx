@@ -580,7 +580,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      position: 'relative'
+      position: 'relative',
+      zIndex: 1000,
     }} ref={dropdownRef}>
       <Button
         variant="contained"
@@ -697,22 +698,26 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
           sx={{
             position: 'absolute',
             top: 'calc(100% - 2px)',
-            mb: 3,
+            left: 0,
             width: '100%',
             maxWidth: { xs: '280px', sm: '320px' },
             maxHeight: 300,
             overflowY: 'auto',
             p: 0.5,
-            mt: 0,
-            zIndex: 9999,
+            zIndex: 99999,
             bgcolor: '#00A77F',
             color: '#FFFFFF',
             borderRadius: 2,
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
             border: '2px solid #FFFFFF',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-            // mb: 2
+            boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(8px)',
+            '&::-webkit-scrollbar': {
+              display: 'none',
+            },
+            '-ms-overflow-style': 'none',
+            'scrollbarWidth': 'none',
           }}
           id="league-dropdown-list"
           role="listbox"
@@ -1268,7 +1273,7 @@ export default function PlayerDashboard() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           borderRadius: { xs: 0, md: 2 }, // No border radius on mobile
-          overflow: 'hidden',
+          overflow: 'visible', // Changed from 'hidden' to 'visible'
           p: { xs: 0, md: 3 }, // No padding on mobile
           mb: { xs: 0, md: 4 }, // No margin on mobile
           minHeight: { xs: '100vh', md: '100vh' }, // Full height on mobile
@@ -1277,6 +1282,8 @@ export default function PlayerDashboard() {
           justifyContent: 'center',
           mx: 'auto',
           alignItems: 'center',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <Box sx={{
@@ -1323,7 +1330,9 @@ export default function PlayerDashboard() {
               flexDirection: 'column',
               gap: 1.2,
               mt: { xs: 0, md: 7 },
-              ml: { md: -2 }
+              ml: { md: -2 },
+              position: 'relative',
+              zIndex: 2,
             }}
           >
             {/* White Box */}
