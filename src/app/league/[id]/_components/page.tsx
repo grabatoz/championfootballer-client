@@ -6732,10 +6732,12 @@ export default function LeagueDetailPage() {
                                     height: { xs: 255, sm: 360 },
                                     mx: { xs: 'auto', sm: 0 },
                                     // Scale down actual PlayerCard on mobile to avoid overflow into next column
-                                    '& > *': {
-                                        transform: { xs: 'scale(0.7)', sm: 'none' },
-                                        transformOrigin: 'top left'
-                                    }
+                                    // '& > *': {
+                                    //     transform: { xs: 'scale(0.7)', sm: 'none' },
+                                    //     transformOrigin: 'top left'
+                                    // }
+                                     transform: { xs: 'scale(0.72)', sm: 'scale(0.85)' },
+                    transformOrigin: 'top left',
                                 }}>
                                     {(() => {
                                         const p = quickView.player as User & PlayerProfileLike;
