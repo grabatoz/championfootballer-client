@@ -1263,7 +1263,7 @@
                       {/* Warn when fewer than 6 registered players are selected */}
                       {selectedRegistered > 0 && !hasMinPlayers && (
                         <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                          Only {selectedRegistered} registered players selected. On Save, players will be notified and teams won’t be saved yet.
+                          {`Minimum 6 required to save teams. Players will be notified (Team not saved)`}.
                         </Alert>
                       )}
 
