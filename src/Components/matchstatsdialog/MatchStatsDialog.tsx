@@ -2040,7 +2040,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const canPlayerSubmitStats = baseCanSubmit && (editWindow?.canPlayerSubmit ?? false);
 
     // Check if match is current or within previous 2 matches (0=current, 1=previous, 2=one before previous)
-    const isMatchWithinLastTwo = editWindow?.indexFromEnd !== null && editWindow?.indexFromEnd !== undefined && editWindow.indexFromEnd <= 2;
+    // Allow inline stats only for the most recent two matches (indexFromEnd 0 or 1)
+    const isMatchWithinLastTwo = editWindow?.indexFromEnd !== null && editWindow?.indexFromEnd !== undefined && editWindow.indexFromEnd <= 1;
 
     // Determine which team the user is on
     const userTeamName = playerOnHomeTeamSafe ? match?.homeTeamName : (playerOnAwayTeamSafe ? match?.awayTeamName : null);
@@ -2356,24 +2357,27 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             {!showAdminGoalsSection && (
                 <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3, display: selectedLeagueHasNoMatches ? 'none' : 'block' }}>
-                    {showInlineStats && isMatchWithinLastTwo && (isUserAssignedToTeam || isAdmin) && (
+                    {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) && (
                         <Box
                             sx={{
                                 mb: 1,
-                                p: { xs: 1, sm: 1.25 },
+                                p: { xs: 0.75, sm: 1, md: 1.25 },
                                 background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
                                 color: 'white',
                                 borderRadius: 2,
                                 border: '1px solid #4b4b4b',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                                width: '40%',
-                                justifyContent: 'center',
-                                mx: 'auto'
+                                width: { xs: '100%', sm: '60%', md: '40%' },
+                                maxWidth: { xs: '100%', sm: 420, md: 480 },
+                                mx: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.75
                             }}
                         >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>
-                                    {isAdmin && !isUserAssignedToTeam ? 'Admin Quick Stats' : 'Add YourStats'}
+                                    {isAdmin && !isUserAssignedToTeam ? 'Admin Quick Stats' : 'Add Your Stats'}
                                 </Typography>
                                 {(userTeamName || isAdmin) && (
                                     <Typography
