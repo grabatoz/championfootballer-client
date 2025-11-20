@@ -156,6 +156,18 @@ class APICache {
       this.pendingRequests.delete(key);
     }
   }
+
+  /**
+   * Peek at a valid cache entry without fetching
+   */
+  peek<T>(key: string): T | undefined {
+    const now = Date.now();
+    const cached = this.cache.get(key) as CacheEntry<T> | undefined;
+    if (cached && now < cached.expiresAt) {
+      return cached.data;
+    }
+    return undefined;
+  }
   
   /**
    * Fetch data and store in cache

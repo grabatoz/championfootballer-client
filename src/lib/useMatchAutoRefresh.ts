@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ensureRealtime } from './realtime';
 
 /**
  * Hook to auto-refresh matches periodically
@@ -35,9 +36,12 @@ export function useCombinedMatchRefresh(
 ) {
   // Event-driven refresh (immediate when match operations occur)
   useEffect(() => {
+    // Start realtime SSE and listen for server-driven updates
+    ensureRealtime();
+
     const handleMatchEvent = () => {
       console.log('🔄 Match event detected, refreshing...');
-      setTimeout(refreshCallback, 500);
+      setTimeout(refreshCallback, 200);
     };
 
     window.addEventListener('match-created', handleMatchEvent);
@@ -51,7 +55,7 @@ export function useCombinedMatchRefresh(
     };
   }, [refreshCallback]);
 
-  // Periodic auto-refresh (checks for completed matches)
+  // Periodic auto-refresh (checks for completed matches) as a fallback
   useEffect(() => {
     const intervalId = setInterval(() => {
       console.log('🔄 Auto-checking for completed matches...');

@@ -16,7 +16,7 @@ export function useMatchRefresh(onRefresh: () => void) {
       setTimeout(() => {
         console.log('🔄 Refreshing match list...');
         onRefresh();
-      }, 500);
+      }, 200);
     };
 
     // Listen for match-created event
@@ -39,7 +39,7 @@ export function useMatchUpdateRefresh(onRefresh: () => void) {
       setTimeout(() => {
         console.log('🔄 Refreshing match list...');
         onRefresh();
-      }, 500);
+      }, 200);
     };
 
     const handleMatchDeleted = () => {
@@ -47,7 +47,7 @@ export function useMatchUpdateRefresh(onRefresh: () => void) {
       setTimeout(() => {
         console.log('🔄 Refreshing match list...');
         onRefresh();
-      }, 500);
+      }, 200);
     };
 
     window.addEventListener('match-updated', handleMatchUpdated);
