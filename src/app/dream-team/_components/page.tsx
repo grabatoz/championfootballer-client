@@ -378,51 +378,16 @@ const DreamTeamPage = () => {
       <CloseButton fallbackRoute="/dashboard" />
       <Box
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" }, // Stack vertically on xs/sm, row on md+
-          alignItems: { xs: "stretch", md: "center" }, // Stretch on mobile, center on desktop
-          justifyContent: "space-between",
+          display: 'flex',
+          flexDirection: 'row', // always row even on mobile
+          alignItems: 'center',
+          justifyContent: 'space-between',
           mb: 4,
-          gap: { xs: 3, md: 2 }, // Larger gap on mobile for better separation
-          width: "100%",
+          gap: { xs: 2, md: 2 },
+          width: '100%',
+          flexWrap: 'nowrap'
         }}
       >
-        {/* Mobile: League selector button */}
-        <Box
-          sx={{
-            display: { xs: "flex", md: "none" },
-            justifyContent: "space-between",
-            alignItems: "center",
-            width: "100%",
-          }}
-        >
-          {/* Right: Form Control */}
-          <Button
-            onClick={handleLeaguesDropdownOpen}
-            endIcon={<ChevronDown size={18} />}
-            sx={{
-              textTransform: 'uppercase',
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              fontWeight: 'bold',
-              lineHeight: 1.2,
-              minWidth: 0,
-              textAlign: 'left',
-              color: 'white',
-              backgroundColor: '#2B2B2B',
-              borderRadius: 2,
-              px: 2,
-              py: 1,
-              '&:hover': { backgroundColor: '#2B2B2B' },
-            }}
-          >
-            {loading
-              ? 'Loading...'
-              : noLeagues
-              ? 'No leagues found'
-              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
-          </Button>
-        </Box>
-
         {/* Center: Dream Team Logo + Text */}
         <Box
           sx={{
@@ -430,9 +395,9 @@ const DreamTeamPage = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: 2,
-            width: { xs: "100%", md: "auto" },
-            mt: { xs: 2, md: 0 }, // Top margin on mobile
-            mb: { xs: 2, md: 0 }, // Bottom margin on mobile
+            width: 'auto',
+            ml: 0,
+            flexShrink: 1,
           }}
         >
           {/* <Image
@@ -464,46 +429,40 @@ const DreamTeamPage = () => {
           </Typography>
         </Box>
 
-        {/* Desktop: League selector button */}
-        <Box
+        {/* League selector (always visible right) */}
+        <Button
+          onClick={handleLeaguesDropdownOpen}
+          endIcon={<ChevronDown size={20} />}
           sx={{
-            display: { xs: "none", md: "flex" },
-            justifyContent: "flex-end",
+            textTransform: 'uppercase',
+            fontSize: { xs: '0.85rem', sm: '1rem', md: '1.2rem' },
+            fontWeight: 'bold',
+            lineHeight: 1.15,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minWidth: 0,
+            maxWidth: { xs: '42vw', sm: '50%', md: '340px' },
+            textAlign: 'right',
+            color: 'white',
+            backgroundColor: '#2B2B2B',
+            borderRadius: 2,
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 0.75, sm: 1 },
+            '&:hover': { backgroundColor: '#2B2B2B' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 0.75,
+            flexShrink: 0,
           }}
         >
-          <Button
-            onClick={handleLeaguesDropdownOpen}
-            endIcon={<ChevronDown size={20} />}
-            sx={{
-              textTransform: 'uppercase',
-              fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
-              fontWeight: 'bold',
-              lineHeight: 1.2,
-              wordBreak: 'break-word',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'wrap',
-              flexShrink: 1,
-              minWidth: 0,
-              textAlign: { xs: 'left', md: 'left' },
-              color: 'white',
-              backgroundColor: '#2B2B2B',
-              borderRadius: 2,
-              px: 2,
-              py: 1,
-              '&:hover': { backgroundColor: '#2B2B2B' },
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            {loading
-              ? 'Loading...'
-              : noLeagues
-              ? 'No leagues found'
-              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
-          </Button>
-        </Box>
+          {loading
+            ? 'Loading...'
+            : noLeagues
+            ? 'No leagues found'
+            : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+        </Button>
       </Box>
 
       {/* Shared dropdown menu */}
