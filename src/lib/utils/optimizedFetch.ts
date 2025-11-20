@@ -11,6 +11,34 @@ interface FetchOptions extends RequestInit {
   skipCache?: boolean;
 }
 
+// ETag store to support conditional requests across navigations
+const ETAG_STORAGE_KEY = 'cf_etags';
+const etagMap = new Map<string, string>();
+
+// Load ETags from storage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem(ETAG_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      Object.entries(parsed).forEach(([k, v]) => etagMap.set(k, v));
+    }
+  } catch {}
+}
+
+let etagSaveTimer: number | null = null;
+function saveEtagsThrottled() {
+  if (typeof window === 'undefined') return;
+  if (etagSaveTimer) window.clearTimeout(etagSaveTimer);
+  etagSaveTimer = window.setTimeout(() => {
+    try {
+      const obj: Record<string, string> = {};
+      etagMap.forEach((v, k) => (obj[k] = v));
+      localStorage.setItem(ETAG_STORAGE_KEY, JSON.stringify(obj));
+    } catch {}
+  }, 300);
+}
+
 /**
  * Optimized fetch with automatic caching and deduplication
  */
@@ -45,13 +73,42 @@ export async function optimizedFetch<T = unknown>(
   const cacheKey = createCacheKey(url, {
     auth: authHeader ? 'authed' : 'public',
   });
+
+  // Merge headers and attach If-None-Match when available
+  const reqHeaders: Record<string, string> = {};
+  if (fetchOptions.headers) {
+    Object.assign(reqHeaders, fetchOptions.headers as Record<string, string>);
+  }
+  const knownEtag = etagMap.get(cacheKey);
+  if (knownEtag) {
+    reqHeaders['If-None-Match'] = knownEtag;
+  }
+  const finalOptions: RequestInit = { ...fetchOptions, headers: reqHeaders };
   
   return apiCache.get(
     cacheKey,
     async () => {
-      const response = await fetch(url, fetchOptions);
+      let response = await fetch(url, finalOptions);
+      if (response.status === 304) {
+        // Use cached data when not modified
+        const cached = apiCache.peek<T>(cacheKey);
+        if (cached !== undefined) {
+          return cached;
+        }
+        // If somehow no cache, refetch without conditional header
+        const noCondHeaders = { ...(finalOptions.headers as Record<string, string>) };
+        delete noCondHeaders['If-None-Match'];
+        response = await fetch(url, { ...finalOptions, headers: noCondHeaders });
+      }
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`HTTP error! status: ${response.status} ${errorText}`);
+      }
+      // Capture ETag if present
+      const etag = response.headers.get('ETag');
+      if (etag) {
+        etagMap.set(cacheKey, etag);
+        saveEtagsThrottled();
       }
       return response.json();
     },

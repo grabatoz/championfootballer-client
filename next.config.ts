@@ -8,6 +8,10 @@ const enableParallel = process.env.NEXT_ENABLE_PARALLEL === '1';
 const nextConfig: NextConfig = {
   // Enable production optimizations
   reactStrictMode: true,
+  // Use a custom dist dir to avoid Windows EPERM issues on .next/trace
+  // Can be overridden via NEXT_DIST_DIR if needed
+  // Use default .next to avoid EPERM trace file in custom dir with spaces in path on Windows
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   
   // Optimize bundle splitting and minification
   compiler: {
@@ -55,7 +59,8 @@ const nextConfig: NextConfig = {
   },
   // Optionally allow production builds to succeed even if there are TypeScript errors
   typescript: {
-    ignoreBuildErrors: true,
+    // Root fix: do not ignore TS errors; surface them for real fixes
+    ignoreBuildErrors: false,
   },
   
   // Optimize loading speed
@@ -66,6 +71,7 @@ const nextConfig: NextConfig = {
   
   // Output optimization
   output: 'standalone', // Optimize for deployment
+  // Removed dynamic outputFileTracing override (unsupported key warning)
   
   // Optimize chunk loading with advanced webpack config
   webpack: (config, { isServer, dev }) => {

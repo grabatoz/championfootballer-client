@@ -1,3 +1,4 @@
+"use client";
 import React from 'react'
 import AllMatches from './_components/page'
 

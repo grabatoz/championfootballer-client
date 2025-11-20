@@ -125,10 +125,10 @@ export async function optimizedFetch(
     ...options,
     headers,
     credentials: 'include',
-    // Enable HTTP/2
+    // Enable HTTP/2 keepalive where supported
     keepalive: true,
-    // Production-specific optimizations
-    mode: IS_PRODUCTION ? 'cors' : 'same-origin',
+    // Always allow cross-origin requests to API base URL
+    mode: 'cors',
     // Signal for abort control
     signal: options.signal,
   }) as Promise<Response>;
