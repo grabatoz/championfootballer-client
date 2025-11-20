@@ -5760,59 +5760,59 @@ export default function LeagueDetailPage() {
                                                                         match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id))
                                                                     )
                                                                 )) && (
-                                                                    match.status === 'RESULT_UPLOADED' ? (
-                                                                        <Tooltip title="Awaiting captain confirmation">
-                                                                            <span>
-                                                                                <Button
-                                                                                    size="small"
-                                                                                    disabled
-                                                                                    sx={{
-                                                                                        backgroundColor: '#0388E3',
-                                                                                        color: 'white',
-                                                                                        fontSize: '0.65rem',
-                                                                                        textTransform: 'none',
-                                                                                        py: 0.3,
-                                                                                        px: 0.8,
-                                                                                        minHeight: 28,
-                                                                                        minWidth: 'fit-content',
-                                                                                        borderRadius: 1,
-                                                                                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                        transition: 'all 0.2s ease-in-out',
-                                                                                        '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
-                                                                                    }}
-                                                                                >
-                                                                                    Add Your Stats
-                                                                                </Button>
-                                                                            </span>
-                                                                        </Tooltip>
-                                                                    ) : (
-                                                                        <Button
-                                                                            size="small"
-                                                                            onClick={() => {
-                                                                                setSelectedMatchIdForDialog(match.id);
-                                                                                setShouldShowAdminGoals(false);
-                                                                                setMatchStatsOpen(true);
-                                                                            }}
-                                                                            sx={{
-                                                                                backgroundColor: '#0388E3',
-                                                                                color: 'white',
-                                                                                fontSize: '0.65rem',
-                                                                                textTransform: 'none',
-                                                                                py: 0.3,
-                                                                                px: 0.8,
-                                                                                minHeight: 28,
-                                                                                minWidth: 'fit-content',
-                                                                                borderRadius: 1,
-                                                                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
-                                                                                transition: 'all 0.2s ease-in-out',
-                                                                                '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
-                                                                            }}
-                                                                            disabled={!league?.active}
-                                                                        >
-                                                                            Add Your Stats
-                                                                        </Button>
-                                                                    )
-                                                                )}
+                                                                        match.status === 'RESULT_UPLOADED' ? (
+                                                                            <Tooltip title="Awaiting captain confirmation">
+                                                                                <span>
+                                                                                    <Button
+                                                                                        size="small"
+                                                                                        disabled
+                                                                                        sx={{
+                                                                                            backgroundColor: '#0388E3',
+                                                                                            color: 'white',
+                                                                                            fontSize: '0.65rem',
+                                                                                            textTransform: 'none',
+                                                                                            py: 0.3,
+                                                                                            px: 0.8,
+                                                                                            minHeight: 28,
+                                                                                            minWidth: 'fit-content',
+                                                                                            borderRadius: 1,
+                                                                                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                            transition: 'all 0.2s ease-in-out',
+                                                                                            '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                        }}
+                                                                                    >
+                                                                                        Add Your Stats
+                                                                                    </Button>
+                                                                                </span>
+                                                                            </Tooltip>
+                                                                        ) : (
+                                                                            <Button
+                                                                                size="small"
+                                                                                onClick={() => {
+                                                                                    setSelectedMatchIdForDialog(match.id);
+                                                                                    setShouldShowAdminGoals(false);
+                                                                                    setMatchStatsOpen(true);
+                                                                                }}
+                                                                                sx={{
+                                                                                    backgroundColor: '#0388E3',
+                                                                                    color: 'white',
+                                                                                    fontSize: '0.65rem',
+                                                                                    textTransform: 'none',
+                                                                                    py: 0.3,
+                                                                                    px: 0.8,
+                                                                                    minHeight: 28,
+                                                                                    minWidth: 'fit-content',
+                                                                                    borderRadius: 1,
+                                                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                                                                    transition: 'all 0.2s ease-in-out',
+                                                                                    '&:hover': { backgroundColor: '#0388E3', boxShadow: '0 4px 8px rgba(59, 130, 246, 0.4)', transform: 'translateY(-1px)' },
+                                                                                }}
+                                                                                disabled={!league?.active}
+                                                                            >
+                                                                                Add Your Stats
+                                                                            </Button>
+                                                                        )
+                                                                    )}
 
                                                                 {/* View Team button */}
                                                                 <Tooltip title={match.status === 'RESULT_UPLOADED' ? 'Awaiting captain confirmation' : ''}>
@@ -5950,93 +5950,93 @@ export default function LeagueDetailPage() {
                                                         }
                                                     })
                                                     .map((player, index) => {
-                                                    // const position = index + 1;
-                                                    // const badge = getBadgeForPosition(position);
-                                                    const points = player.wins * 3 + player.draws;
-                                                    const firstName = player.name.split(" ")[0] || player.name; // Ensure first name exists
-                                                    const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
+                                                        // const position = index + 1;
+                                                        // const badge = getBadgeForPosition(position);
+                                                        const points = player.wins * 3 + player.draws;
+                                                        const firstName = player.name.split(" ")[0] || player.name; // Ensure first name exists
+                                                        const lastName = player.name.split(" ").slice(1).join(" ") || ""; // Handle single-name cases
 
-                                                    // NEW: mark champion/runner-up from trophy room data
-                                                    // const isChampion = leagueWinners.champion === player.id;
-                                                    // const isRunnerUp = leagueWinners.runnerUp === player.id;
+                                                        // NEW: mark champion/runner-up from trophy room data
+                                                        // const isChampion = leagueWinners.champion === player.id;
+                                                        // const isRunnerUp = leagueWinners.runnerUp === player.id;
 
 
-                                                    return (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                if (league?.id) openQuickViewFromTable(String(league.id), String(player.id));
-                                                            }}
-                                                            key={player.id} className="block cursor-pointer">
-                                                            {/* ${getRowStyles(index)} */}
-                                                            <div style={{
-                                                                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)'
-                                                            }} className={`px-1 sm:px-2 py-1.5 min-h-[50px] sm:min-h-[70px] flex items-center`}>
+                                                        return (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    if (league?.id) openQuickViewFromTable(String(league.id), String(player.id));
+                                                                }}
+                                                                key={player.id} className="block cursor-pointer">
+                                                                {/* ${getRowStyles(index)} */}
+                                                                <div style={{
+                                                                    background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)'
+                                                                }} className={`px-1 sm:px-2 py-1.5 min-h-[50px] sm:min-h-[70px] flex items-center`}>
 
-                                                                <div className="flex items-center min-w-0 flex-1">
-                                                                    {/* <div className="w-7 sm:w-8 text-center text-white/90 font-extrabold text-[10px] sm:text-xs mr-1 sm:mr-2">
+                                                                    <div className="flex items-center min-w-0 flex-1">
+                                                                        {/* <div className="w-7 sm:w-8 text-center text-white/90 font-extrabold text-[10px] sm:text-xs mr-1 sm:mr-2">
                                                                         {(() => { const pos = index + 1; const s = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th'; return `${pos}${s}`; })()}
                                                                     </div> */}
-                                                                    <div className="hidden sm:block mr-2">
-                                                                        <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                                                                            <div className="relative w-full h-full">
-                                                                                <Image
-                                                                                    src={ShirtImg}
-                                                                                    alt="Shirt"
-                                                                                    fill
-                                                                                    style={{ objectFit: 'contain', pointerEvents: 'none' }}
-                                                                                />
+                                                                        <div className="hidden sm:block mr-2">
+                                                                            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                                                                                <div className="relative w-full h-full">
+                                                                                    <Image
+                                                                                        src={ShirtImg}
+                                                                                        alt="Shirt"
+                                                                                        fill
+                                                                                        style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                                                                                    />
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1 min-w-0">
-                                                                        <div className="text-white font-normal text-[10px] sm:text-xs md:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-none">
-                                                                            {formatMatchName(firstName)} {formatMatchName(lastName)}
+                                                                        <div className="flex items-center gap-1 min-w-0">
+                                                                            <div className="text-white font-normal text-[10px] sm:text-xs md:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-none">
+                                                                                {formatMatchName(firstName)} {formatMatchName(lastName)}
+                                                                            </div>
+                                                                            {player.isAdmin && <Shield className="text-blue-400 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />}
                                                                         </div>
-                                                                        {player.isAdmin && <Shield className="text-blue-400 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />}
                                                                     </div>
-                                                                </div>
 
-                                                                <div className="flex gap-1 sm:gap-2 md:gap-4 items-center">
-                                                                    {/* MOTM column value */}
-                                                                    <div className="min-w-8 sm:min-w-12 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
-                                                                            <span className="inline-flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap">
-                                                                                <span className="text-[10px] sm:text-sm font-bold">{player.motmCount}</span>
-                                                                                <Star sx={{ fontSize: { xs: 16, sm: 20, md: 26 }, color: '#F59E0B' }} />
-                                                                            </span>
+                                                                    <div className="flex gap-1 sm:gap-2 md:gap-4 items-center">
+                                                                        {/* MOTM column value */}
+                                                                        <div className="min-w-8 sm:min-w-12 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
+                                                                                <span className="inline-flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap">
+                                                                                    <span className="text-[10px] sm:text-sm font-bold">{player.motmCount}</span>
+                                                                                    <Star sx={{ fontSize: { xs: 16, sm: 20, md: 26 }, color: '#F59E0B' }} />
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="opacity-50">-</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {player.played}
+                                                                        </div>
+                                                                        <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {player.wins}
+                                                                        </div>
+                                                                        <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {player.draws}
+                                                                        </div>
+                                                                        <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {player.losses}
+                                                                        </div>
+                                                                        <div className="min-w-7 sm:min-w-10 text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                            {player.winPercentage}
+                                                                        </div>
+                                                                        {league?.showPoints === false ? (
+                                                                            <div className="min-w-7 sm:min-w-9 text-center text-white text-[9px] sm:text-xs md:text-sm">{points}</div>
                                                                         ) : (
-                                                                            <span className="opacity-50">-</span>
+                                                                            <div className="min-w-8 sm:min-w-[50px] text-center text-white text-[9px] sm:text-xs md:text-sm">
+                                                                                {player.xp}
+                                                                            </div>
                                                                         )}
                                                                     </div>
-                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {player.played}
-                                                                    </div>
-                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {player.wins}
-                                                                    </div>
-                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {player.draws}
-                                                                    </div>
-                                                                    <div className="min-w-5 sm:min-w-7 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {player.losses}
-                                                                    </div>
-                                                                    <div className="min-w-7 sm:min-w-10 text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                        {player.winPercentage}
-                                                                    </div>
-                                                                    {league?.showPoints === false ? (
-                                                                        <div className="min-w-7 sm:min-w-9 text-center text-white text-[9px] sm:text-xs md:text-sm">{points}</div>
-                                                                    ) : (
-                                                                        <div className="min-w-8 sm:min-w-[50px] text-center text-white text-[9px] sm:text-xs md:text-sm">
-                                                                            {player.xp}
-                                                                        </div>
-                                                                    )}
                                                                 </div>
+                                                                <div className="h-[1px] bg-white"></div>
                                                             </div>
-                                                            <div className="h-[1px] bg-white"></div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
                                             </div>
                                         </div>
                                     </Card>
@@ -6055,7 +6055,7 @@ export default function LeagueDetailPage() {
                                             >
                                                 <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                                     Statistics
-                                                 </Typography>
+                                                </Typography>
 
                                                 <Box
                                                     sx={{
@@ -6736,8 +6736,10 @@ export default function LeagueDetailPage() {
                                     //     transform: { xs: 'scale(0.7)', sm: 'none' },
                                     //     transformOrigin: 'top left'
                                     // }
-                                     transform: { xs: 'scale(0.72)', sm: 'scale(0.85)' },
-                    transformOrigin: 'top left',
+                                    '& > *': {
+                                        transform: { xs: 'scale(0.7)', sm: 'none' },
+                                        transformOrigin: 'top left'
+                                    }
                                 }}>
                                     {(() => {
                                         const p = quickView.player as User & PlayerProfileLike;
@@ -6769,7 +6771,7 @@ export default function LeagueDetailPage() {
                                         gap: { xs: 1, sm: 1 },
                                         maxWidth: { xs: 170, sm: '100%' },
                                         mx: { xs: 'auto', sm: 0 },
-                                        mt:2
+                                        mt: 2
                                     }}
                                 >
                                     {[
@@ -6821,7 +6823,7 @@ export default function LeagueDetailPage() {
                                 position: 'relative',
                                 // ml:5,
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 1, fontSize: { xs: '0.75rem', sm: '0.95rem' , md: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                                <Typography sx={{ fontWeight: 800, mb: 1, fontSize: { xs: '0.75rem', sm: '0.95rem', md: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
                                 <Stack direction="column" spacing={1}>
                                     {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
                                         <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
