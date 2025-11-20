@@ -4,7 +4,7 @@ import { Box, Paper, Typography, Button, Card, Modal, IconButton } from '@mui/ma
 import CloseIcon from '@mui/icons-material/Close';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import Layer from '@/Components/images/championfootballnewlogo.png';
+import Layer from '@/Components/images/championfootballnewlogo.webp';
 import NewImg from '@/Components/images/Done1.webp';
 import Newimg from '@/Components/images/Done2.webp';
 import mobile from '@/Components/images/mobile.webp';
