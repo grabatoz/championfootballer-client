@@ -2110,8 +2110,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 160, sm: 200, md: 260, lg: 320 },
-              height: { xs: 36, md: 40 },
+              width: { xs: 250, sm: 200, md: 260, lg: 320 },
+              height: { xs: 44, md: 40 },
               display: 'flex',
               alignItems: 'center'
             }}>
@@ -2121,7 +2121,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 width={320}
                 height={64}
                 priority
-                sizes="(max-width:600px) 160px, (max-width:900px) 200px, (max-width:1200px) 260px, 320px"
+                sizes="(max-width:600px) 250px, (max-width:900px) 200px, (max-width:1200px) 260px, 320px"
                 style={{
                   height: '100%',
                   width: 'auto',
