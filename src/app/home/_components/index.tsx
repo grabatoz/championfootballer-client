@@ -30,7 +30,7 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
 
 // import Link from 'next/link';
 // import dash from '@/Components/images/dash.webp'
-import dash from '@/Components/images/dashdd.png'
+import dash from '@/Components/images/dashdd.webp'
 import toast, { Toaster } from 'react-hot-toast';
 // import league from '@/Components/images/league.png'
 // import matches from '@/Components/images/matches.png'
@@ -49,7 +49,7 @@ import { leagueAPI } from '@/lib/api-ultra-fast';
 import { Trophy } from 'lucide-react';
 // import { Block } from '@mui/icons-material';
 // import { joinLeague } from '@/lib/features/leagueSlice';
-import Dashbg from '@/Components/images/dashbg.jpg'
+import Dashbg from '@/Components/images/dashbg.webp'
 import trophy from '@/Components/images/cup.png'
 import Image from 'next/image';
 import Link from 'next/link';
