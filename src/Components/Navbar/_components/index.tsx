@@ -23,7 +23,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
-import cflogo from '@/Components/images/champion football logo 3.png';
+import cflogo from '@/Components/images/champion football logo 3 (1).webp';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
