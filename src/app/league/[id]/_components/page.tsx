@@ -6708,6 +6708,7 @@ export default function LeagueDetailPage() {
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
+                
                 <Divider />
                 <DialogContent sx={{ p: { xs: 1, sm: 2 }, overflowX: 'hidden' }}>
                     {quickView.player && (
