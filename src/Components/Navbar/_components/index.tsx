@@ -2170,14 +2170,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     color="error" 
                     max={99}
                     sx={{
-                      '& .MuiBadge-badge': {
-                        animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
-                        '@keyframes pulse': {
-                          '0%': { transform: 'scale(1)' },
-                          '50%': { transform: 'scale(1.1)' },
-                          '100%': { transform: 'scale(1)' }
-                        }
-                      }
+                      // '& .MuiBadge-badge': {
+                      //   // animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+  
+                      // }
                     }}
                   >
                     <NotificationsIcon />
@@ -2253,9 +2249,9 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       color="error" 
                       max={99}
                       sx={{
-                        '& .MuiBadge-badge': {
-                          animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
-                        }
+                        // '& .MuiBadge-badge': {
+                        //   // animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
+                        // }
                       }}
                     >
                       <NotificationsIcon />

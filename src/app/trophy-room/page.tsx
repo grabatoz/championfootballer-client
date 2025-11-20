@@ -35,7 +35,7 @@ import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import StarKeeperImg from '@/Components/images/brown.svg';
-import PlayerCard from '@/Components/playercard/playercard';
+import PlayerCard from '@/Components/PlayerCardd';
 import CloseButton from '@/Components/CloseButton';
 // import { achievementsAPI } from '@/lib/api';
 
@@ -2219,164 +2219,169 @@ export default function GlobalTrophyRoom() {
         </>
       )}
 
-      {/* Player Quick View Modal */}
-      <Dialog
-        open={openQuickView}
-        onClose={() => setOpenQuickView(false)}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
-      >
-        <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-          {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
-          <Box sx={{ flexGrow: 1 }} />
-          <IconButton onClick={() => setOpenQuickView(false)} edge="end">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <Divider />
-        <DialogContent sx={{ p: 2.5 }}>
-          {quickView.player && (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                gap: 2,
-                alignItems: 'stretch',
-              }}
-            >
-              {/* Left: PlayerCard with exact props */}
-              <Box sx={{ p: { xs: 0, sm: 1 } }}>
-                {(() => {
-                  const p = quickView.player as User & PlayerProfileLike;
-                  const playerCardProps = {
-                    name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
-                    number: getShirtNumber(p),
-                    // Use backend XP only
-                    points: Number(quickView.xp ?? 0),
-                    stats: {
-                      DRI: String(quickView.skills?.dribbling ?? 0),
-                      SHO: String(quickView.skills?.shooting ?? 0),
-                      PAS: String(quickView.skills?.passing ?? 0),
-                      PAC: String(quickView.skills?.pace ?? 0),
-                      DEF: String(quickView.skills?.defending ?? 0),
-                      PHY: String(quickView.skills?.physical ?? 0),
-                    },
-                    foot: getPreferredFoot(p),
-                    profileImage: getProfileImage(p),
-                    shirtIcon: '',
-                    position: posToShort(p.position)
-                  } satisfies PlayerCardProps;
-
-                  return <PlayerCard {...playerCardProps} disableImagePopup />;
-                })()}
-                {/* Icons row under the player card */}
+      {/* Player Quick View Modal (Compact Version) */}
+    <Dialog
+            open={openQuickView}
+            onClose={() => setOpenQuickView(false)}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+          >
+            <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0, py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
+              {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
+              <Box sx={{ flexGrow: 1 }} />
+              <IconButton onClick={() => setOpenQuickView(false)} edge="end" size="small">
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <Divider />
+            <DialogContent sx={{ p: { xs: 1, sm: 2 }, overflowX: 'hidden' }}>
+              {quickView.player && (
                 <Box
                   sx={{
-                    mt: 1.75,
-                    px: 1,
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                    justifyItems: 'center',
-                    alignItems: 'center',
-                    gap: 1,
-                    textAlign: 'center',
-                    minWidth: 0,
+                    gridTemplateColumns: { xs: '170px 1fr', sm: '240px 1fr' },
+                    gap: { xs: 1.5, sm: 2 },
+                    alignItems: 'start'
                   }}
                 >
-                  {[
-                    { img: Goals,      label: 'Goals',        value: quickView.stats?.goals ?? 0 },
-                    { img: Assist,     label: 'Assists',      value: quickView.stats?.assists ?? 0 },
-                    { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                    { img: Momt,       label: 'MOTM',         value: quickView.motmCount ?? 0 },
-                  ].map((it, i) => (
+                  {/* Left: PlayerCard with stats */}
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    width: '100%'
+                  }}>
+                    <Box sx={{
+                      position: 'relative',
+                      width: { xs: 170, sm: 240 },
+                      height: { xs: 255, sm: 360 },
+                      mx: { xs: 'auto', sm: 0 },
+                      '& > *': {
+                        transform: { xs: 'scale(0.7)', sm: 'none' },
+                        transformOrigin: 'top left'
+                      }
+                    }}>
+                      {(() => {
+                        const p = quickView.player as User & PlayerProfileLike;
+                        const playerCardProps = {
+                          name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+                          number: getShirtNumber(p),
+                          points: Number(quickView.xp ?? 0),
+                          stats: {
+                            DRI: String(quickView.skills?.dribbling ?? 0),
+                            SHO: String(quickView.skills?.shooting ?? 0),
+                            PAS: String(quickView.skills?.passing ?? 0),
+                            PAC: String(quickView.skills?.pace ?? 0),
+                            DEF: String(quickView.skills?.defending ?? 0),
+                            PHY: String(quickView.skills?.physical ?? 0),
+                          },
+                          foot: getPreferredFoot(p),
+                          profileImage: getProfileImage(p),
+                          shirtIcon: '',
+                          position: posToShort(p.position),
+                        } as const;
+                        return <PlayerCard {...playerCardProps} disableImagePopup />;
+                      })()}
+                    </Box>
+                    {/* Icons grid under the player card - 2 columns on mobile */}
                     <Box
-                      key={i}
                       sx={{
                         display: 'grid',
-                        gridTemplateRows: '28px 16px', // fixed heights for perfect alignment
-                        justifyItems: 'center',
-                        alignItems: 'center',
-                        rowGap: 0.5,
-                        width: '100%',
-                        minWidth: 0,
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+                        gap: { xs: 1, sm: 1 },
+                        maxWidth: { xs: 170, sm: '100%' },
+                        mx: { xs: 'auto', sm: 0 },
+                        mt: 2
                       }}
                     >
-                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, height: 28, lineHeight: 1 }}>
-                        <Image
-                          src={it.img}
-                          alt={it.label}
-                          width={35}
-                          height={35}
-                          style={{ objectFit: 'contain', display: 'block' }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 500, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
+                      {[
+                        { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
+                        { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
+                        { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
+                        { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
+                      ].map((it, i) => (
+                        <Box
+                          key={i}
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 0.25,
+                            p: 0.5,
+                          }}
                         >
-                          {it.value}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        sx={ {
-                          color: '#64748b',
-                          lineHeight: 1,
-                          height: 16,                // lock label height to avoid shift
-                          whiteSpace: 'nowrap',      // prevent wrapping (e.g., "Clean Sheets")
-                          overflow: 'hidden',
-                          // textOverflow: 'ellipsis',
-                          width: '100%',
-                        }}
-                      >
-                        {it.label}
-                      </Typography>
-                      
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Image src={it.img} alt={it.label} width={24} height={24} style={{ objectFit: 'contain' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem' } }}>
+                              {it.value}
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: '#64748b',
+                              fontSize: { xs: it.label === 'Clean Sheets' ? '0.55rem' : '0.6rem', sm: '0.75rem' },
+                              textAlign: 'center',
+                              lineHeight: 1.1,
+                              whiteSpace: 'nowrap',
+                              letterSpacing: 0,
+                            }}
+                          >
+                            {it.label}
+                          </Typography>
+                        </Box>
+                      ))}
                     </Box>
-                  ))}
-                </Box>
-              </Box>
-
-              {/* Right: Last 10 Matches */}
-              <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2 }}>
-                <Typography sx={{ fontWeight: 800, mb: 1 }}>Last 10 games</Typography>
-                <Stack direction="column" spacing={1}>
-                  {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
-                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 28,
-                          borderRadius: 1,
-                          backgroundColor: resultColor(m.result),
-                          color: '#fff',
-                          fontWeight: 800,
-                          display: 'flex',
-                          alignItems: 'center',
-                                                   justifyContent: 'center',
-                          fontSize: '0.85rem',
-                        }}
-                      >
-                        {m.result}
-                      </Box>
-                      {idx === 0 && (
-                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                          Latest
+                  </Box>
+                  {/* Right: Last 10 Matches */}
+                  <Paper elevation={0} sx={{
+                    p: { xs: 1.25, sm: 2 },
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    height: { xs: 'auto', sm: '420px' },
+                    borderRadius: 2,
+                    overflowY: 'auto',
+                    position: 'relative'
+                  }}>
+                    <Typography sx={{ fontWeight: 800, mb: 1, fontSize: { xs: '0.75rem', sm: '0.95rem' , md: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                    <Stack direction="column" spacing={1}>
+                      {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
+                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: { xs: 26, sm: 32 },
+                              height: { xs: 22, sm: 28 },
+                              borderRadius: 1,
+                              backgroundColor: resultColor(m.result),
+                              color: '#fff',
+                              fontWeight: 800,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: { xs: '0.65rem', sm: '0.8rem' },
+                              lineHeight: 1,
+                            }}
+                          >
+                            {m.result}
+                          </Box>
+                          {idx === 0 && (
+                            <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                              Latest
+                            </Typography>
+                          )}
+                        </Box>
+                      ))}
+                      {(quickView.lastFive ?? []).length === 0 && (
+                        <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                          No recent matches.
                         </Typography>
                       )}
-                    </Box>
-                  ))}
-                  {(quickView.lastFive ?? []).length === 0 && (
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      No recent matches.
-                    </Typography>
-                  )}
-                </Stack>
-              </Paper>
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+                    </Stack>
+                  </Paper>
+                </Box>
+              )}
+            </DialogContent>
+          </Dialog>
 
     </Box>
   );

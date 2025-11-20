@@ -1415,11 +1415,17 @@ export default function CareerPage() {
                           <MenuItem value="" disabled>
                             <em>Select a League</em>
                           </MenuItem>
-                          {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
-                            <MenuItem key={league.id} value={league.id}>
-                              {league.name ?? `League ${league.id}`}
-                            </MenuItem>
-                          ))}
+                          {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>)
+                            .sort((a, b) => {
+                              const nameA = a.name ?? `League ${a.id}`;
+                              const nameB = b.name ?? `League ${b.id}`;
+                              return nameA.localeCompare(nameB);
+                            })
+                            .map((league) => (
+                              <MenuItem key={league.id} value={league.id}>
+                                {league.name ?? `League ${league.id}`}
+                              </MenuItem>
+                            ))}
                         </Select>
                       </FormControl>
                     </Box>
@@ -1491,11 +1497,17 @@ export default function CareerPage() {
                             <MenuItem value="" disabled>
                               <em>Select league</em>
                             </MenuItem>
-                            {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
-                              <MenuItem key={league.id} value={league.id}>
-                                {league.name ?? `League ${league.id}`}
-                              </MenuItem>
-                            ))}
+                            {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>)
+                              .sort((a, b) => {
+                                const nameA = a.name ?? `League ${a.id}`;
+                                const nameB = b.name ?? `League ${b.id}`;
+                                return nameA.localeCompare(nameB);
+                              })
+                              .map((league) => (
+                                <MenuItem key={league.id} value={league.id}>
+                                  {league.name ?? `League ${league.id}`}
+                                </MenuItem>
+                              ))}
                           </Select>
                         </FormControl>
                       </Box>
