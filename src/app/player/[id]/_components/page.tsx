@@ -706,7 +706,7 @@ export default function PlayerStatsPage() {
             maxWidth="lg"
             sx={{
                 py: 3,
-                minHeight: '100vh',
+                minHeight: '100%',
                 background: ORANGE_GRAD,
                 mt: 1,
                 mb: 5,
