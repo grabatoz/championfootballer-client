@@ -12,6 +12,7 @@ import type {
   MatchUser
 } from '@/types/api';
 import { saveAuthSession, decodeJwt } from './auth';
+import { getAuthToken } from './tokenManager';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -262,9 +263,9 @@ export const authAPI = {
 export const leagueAPI = {
   getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
-      const token = Cookies.get('token') || Cookies.get('auth_token');
+      const token = getAuthToken(); // Use TokenManager
       
-      if (!token || token === 'undefined' || token === 'null') {
+      if (!token) {
         console.error('❌ getLeagues: No valid token found');
         return {
           success: false,
