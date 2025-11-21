@@ -11,8 +11,35 @@ import type {
   CacheEntry,
   MatchUser
 } from '@/types/api';
+import { saveAuthSession, decodeJwt } from './auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+// Token refresh handler - checks for new token in response headers
+function handleTokenRefresh(response: Response): void {
+  const newToken = response.headers.get('X-New-Token');
+  const wasRefreshed = response.headers.get('X-Token-Refreshed');
+  
+  if (newToken && wasRefreshed === 'true') {
+    console.log('🔄 Token auto-refreshed by server');
+    
+    // Decode new token to get expiry
+    const decoded = decodeJwt(newToken);
+    
+    // Update localStorage and cookies
+    const existingUser = localStorage.getItem('user');
+    if (existingUser) {
+      try {
+        const user = JSON.parse(existingUser);
+        saveAuthSession(newToken, user, decoded.exp);
+        Cookies.set('token', newToken, { expires: 7 });
+        console.log('✅ New token saved automatically');
+      } catch (error) {
+        console.error('❌ Failed to save refreshed token:', error);
+      }
+    }
+  }
+}
 
 interface Player {
   id: string;
@@ -115,6 +142,9 @@ export const authAPI = {
         credentials: 'include',
       });
 
+      // Check for token refresh
+      handleTokenRefresh(response);
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -176,6 +206,9 @@ export const authAPI = {
         },
         credentials: 'include'
       });
+
+      // Check for token refresh
+      handleTokenRefresh(response);
 
       const data = await response.json();
       return {
