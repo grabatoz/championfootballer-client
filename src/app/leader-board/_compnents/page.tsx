@@ -7,7 +7,6 @@ import { useAuth } from '@/lib/hooks';
 import Goals from '@/Components/images/goal.png'
 import Imapct from '@/Components/images/imapct.png'
 import Assist from '@/Components/images/Assist.png'
-import Defence from '@/Components/images/defence.png'
 import MOTM from '@/Components/images/MOTM.png'
 import CleanSheet from '@/Components/images/cleansheet.png'
 import FirstBadge from '@/Components/images/1st.png';
@@ -65,7 +64,6 @@ interface League {
 const metrics = [
   { key: 'goals', label: 'Goals', icon: Goals },
   { key: 'assists', label: 'Assists', icon: Assist },
-  { key: 'defence', label: 'Defence', icon: Defence },
   { key: 'motm', label: 'MOTM', icon: MOTM },
   { key: 'impact', label: 'Impact', icon: Imapct },
   { key: 'cleanSheet', label: 'Clean Sheet', icon: CleanSheet },
@@ -229,17 +227,19 @@ export default function LeaderBoardPage() {
       {/* Close Button */}
       <CloseButton fallbackRoute="/dashboard" />
 
+      {/* Metrics Grid + League dropdown inside */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
-          gap: 2,
+          // Remove empty space left by removed Defence metric
+          gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' },
+          gap: 1.5,
           mb: 3,
-          // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
           background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
           borderRadius: 2,
           boxShadow: 1,
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
+          alignItems: 'stretch'
         }}
       >
         {metrics.map(m => (
@@ -248,53 +248,51 @@ export default function LeaderBoardPage() {
             onClick={() => setSelectedMetric(m.key)}
             variant={selectedMetric === m.key ? 'contained' : 'outlined'}
             sx={{
-              background: selectedMetric === m.key ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);' : 'rgba(255,255,255,0.1)',
-              color: selectedMetric === m.key ? 'white' : 'white',
+              background: selectedMetric === m.key ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);' : 'rgba(255,255,255,0.08)',
+              color: 'white',
               fontWeight: 'bold',
-              mt: 1,
               flexDirection: 'column',
               borderRadius: 2,
               boxShadow: selectedMetric === m.key ? 2 : 0,
-              minHeight: 80,
+              minHeight: { xs: 68, sm: 80 },
               border: '1px solid #e56a16',
+              p: { xs: 0.75, sm: 1 },
               transition: 'all 0.2s',
               '&:hover': {
                 background: selectedMetric === m.key
                   ? 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);'
-                  : 'rgba(255,255,255,0.1)',
+                  : 'rgba(255,255,255,0.12)',
                 border: '1px solid #e56a16',
-
               },
             }}
             disabled={!selectedLeague}
           >
-            <Image src={m.icon} alt={m.label} width={32} height={32} />
-            <Typography variant="caption" sx={{ mt: 1 }}>{m.label}</Typography>
+            <Image src={m.icon} alt={m.label} width={28} height={28} />
+            <Typography variant="caption" sx={{ mt: 0.6, fontSize: { xs: 10, sm: 11 } }}>{m.label}</Typography>
           </Button>
         ))}
 
-        {/* League dropdown (same style as All Leagues) */}
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+        {/* League dropdown left aligned */}
+        <Box sx={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-start', mt: { xs: 0.5, sm: 1 } }}>
           <Button
             onClick={handleLeaguesDropdownOpen}
             disabled={!leagues.length}
             endIcon={<ChevronDown size={18} />}
             sx={{
               textTransform: 'uppercase',
-              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              fontSize: { xs: '0.9rem', sm: '1.05rem' },
               fontWeight: 'bold',
               color: 'white',
               backgroundColor: '#2B2B2B',
               borderRadius: 2,
-              px: 2,
-              py: 1,
-              whiteSpace: 'nowrap', // keep text on one line
-              minWidth: { xs: 200, sm: 240 }, // prevent wrapping for "No leagues found"
+              px: { xs: 2, sm: 2.5 },
+              py: { xs: 0.75, sm: 1 },
+              minWidth: { xs: 190, sm: 240 },
               '&.Mui-disabled': {
-                color: '#FFFFFF', // force white text when disabled
-                opacity: 1, // remove dimming
-                backgroundColor: '#2B2B2B', // keep same background
-                WebkitTextFillColor: '#FFFFFF', // ensure on Safari
+                color: '#FFFFFF',
+                opacity: 1,
+                backgroundColor: '#2B2B2B',
+                WebkitTextFillColor: '#FFFFFF',
               },
               '&:hover': { backgroundColor: '#2B2B2B' },
             }}
@@ -311,12 +309,7 @@ export default function LeaderBoardPage() {
             onClose={handleLeaguesDropdownClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            MenuListProps={{
-              dense: false,
-              sx: {
-                p: 0,
-              }
-            }}
+            MenuListProps={{ dense: false, sx: { p: 0 } }}
             PaperProps={{
               sx: {
                 p: 0.5,
@@ -328,12 +321,10 @@ export default function LeaderBoardPage() {
                 border: '1px solid rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                // Fixed height with vertical scroll
                 maxHeight: 320,
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
-                // Improve scrollbar visibility (Firefox + WebKit)
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#374151 #111827',
                 '&::-webkit-scrollbar': { width: 8 },
@@ -389,7 +380,6 @@ export default function LeaderBoardPage() {
                     }}
                   />
                   <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {/* Role chip: Admin or Member */}
                     <Box
                       sx={{
                         px: 1,
