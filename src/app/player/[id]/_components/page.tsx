@@ -136,9 +136,6 @@ type StatTotals = {
     cleanSheets: number;
     motmVotes: number;
     impact: number;
-    defence: number;
-    freeKicks: number;
-    penalties: number;
 };
 
 const emptyTotals: StatTotals = {
@@ -147,9 +144,6 @@ const emptyTotals: StatTotals = {
     cleanSheets: 0,
     motmVotes: 0,
     impact: 0,
-    defence: 0,
-    freeKicks: 0,
-    penalties: 0,
 };
 
 function sumStatsFromMatches(matches: LeagueMatch[] = []): StatTotals {
@@ -160,9 +154,6 @@ function sumStatsFromMatches(matches: LeagueMatch[] = []): StatTotals {
         acc.cleanSheets += s?.cleanSheets ?? 0;
         acc.motmVotes += s?.motmVotes ?? 0;
         acc.impact += s?.impact ?? 0;
-        acc.defence += s?.defence ?? 0;
-        acc.freeKicks += s?.freeKicks ?? 0;
-        acc.penalties += s?.penalties ?? 0;
         return acc;
     }, { ...emptyTotals });
 }
@@ -174,10 +165,7 @@ function calculateXP(stats: StatTotals): number {
         stats.assists * 8 +
         stats.cleanSheets * 5 +
         stats.motmVotes * 15 +
-        stats.impact * 3 +
-        stats.defence * 2 +
-        stats.freeKicks * 4 +
-        stats.penalties * 6
+        stats.impact * 3
     );
 }
 
@@ -1120,9 +1108,6 @@ export default function PlayerStatsPage() {
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="Clean Sheet" value={currentLeagueTotals.cleanSheets} /></Grid>
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="MOTM Votes" value={currentLeagueTotals.motmVotes} /></Grid>
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="Impact" value={currentLeagueTotals.impact} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Defence" value={currentLeagueTotals.defence} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Free Kicks" value={currentLeagueTotals.freeKicks} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Penalties" value={currentLeagueTotals.penalties} /></Grid>
                                         </Grid>
                                     </Paper>
                                 </Grid>
@@ -1146,9 +1131,6 @@ export default function PlayerStatsPage() {
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="Clean Sheet" value={accumulativeTotals.cleanSheets} /></Grid>
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="MOTM Votes" value={accumulativeTotals.motmVotes} /></Grid>
                                             <Grid item xs={6} sm={3} md={3}><StatItem label="Impact" value={accumulativeTotals.impact} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Defence" value={accumulativeTotals.defence} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Free Kicks" value={accumulativeTotals.freeKicks} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Penalties" value={accumulativeTotals.penalties} /></Grid>
                                         </Grid>
                                     </Paper>
                                 </Grid>
