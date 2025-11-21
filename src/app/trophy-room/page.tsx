@@ -1872,9 +1872,21 @@ export default function GlobalTrophyRoom() {
           {filter === 'all' && (
            
             <>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 1.25, sm: 2 },
+                alignItems: { xs: 'stretch', sm: 'flex-start' },
+                flexWrap: 'nowrap',
+                width: '100%'
+              }}>
                 {yearOptions.length > 0 && (
-                  <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
+                  <Box sx={{
+                    width: { xs: '100%', sm: 'auto' },
+                    flex: { xs: 1, sm: 'unset' },
+                    minWidth: { sm: '200px' },
+                    maxWidth: { sm: '300px' }
+                  }}>
                     <Typography
                       variant="overline"
                       sx={{
@@ -1883,7 +1895,7 @@ export default function GlobalTrophyRoom() {
                         letterSpacing: 1,
                         fontWeight: 700,
                         mb: 0.5,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                        fontSize: { xs: '0.65rem', sm: '0.75rem', md: '0.875rem' },
                       }}
                     >
                       Select Year
@@ -1893,15 +1905,16 @@ export default function GlobalTrophyRoom() {
                       onChange={(e) => setSelectedYear(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '10px 16px',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
+                        padding: '8px 12px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
                         color: 'white',
                         backgroundColor: '#2B2B2B',
                         border: 'none',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         cursor: 'pointer',
                         outline: 'none',
+                        lineHeight: 1.2
                       }}
                     >
                       <option value="all">All Years</option>
@@ -1912,8 +1925,12 @@ export default function GlobalTrophyRoom() {
                     </select>
                   </Box>
                 )}
-                
-                <Box sx={{ minWidth: '200px', maxWidth: '300px' }}>
+                <Box sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  flex: { xs: 1, sm: 'unset' },
+                  minWidth: { sm: '200px' },
+                  maxWidth: { sm: '300px' }
+                }}>
                   <Typography
                     variant="overline"
                     sx={{
@@ -1922,7 +1939,7 @@ export default function GlobalTrophyRoom() {
                       letterSpacing: 1,
                       fontWeight: 700,
                       mb: 0.5,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' , md: '1rem'},
+                      fontSize: { xs: '0.65rem', sm: '0.75rem' , md: '0.875rem'},
                     }}
                   >
                     Select League
@@ -1933,14 +1950,14 @@ export default function GlobalTrophyRoom() {
                     disabled={!filteredLeagues.length}
                     sx={{
                       textTransform: 'uppercase',
-                      fontSize: { xs: '1rem', sm: '1.1rem' },
-                      fontWeight: 'bold',
+                      fontSize: { xs: '0.85rem', sm: '1rem' },
+                      fontWeight: 700,
                       lineHeight: 1.2,
                       color: 'white',
                       backgroundColor: '#2B2B2B',
                       borderRadius: 2,
-                      px: 2,
-                      py: 1,
+                      px: { xs: 1.5, sm: 2 },
+                      py: { xs: 0.85, sm: 1 },
                       '&:hover': { backgroundColor: '#2B2B2B' },
                       display: 'flex',
                       alignItems: 'center',
