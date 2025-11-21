@@ -262,7 +262,18 @@ export const authAPI = {
 export const leagueAPI = {
   getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
-      const token = Cookies.get('token');
+      const token = Cookies.get('token') || Cookies.get('auth_token');
+      
+      if (!token || token === 'undefined' || token === 'null') {
+        console.error('❌ getLeagues: No valid token found');
+        return {
+          success: false,
+          message: 'No authentication token',
+          error: 'No authentication token'
+        };
+      }
+
+      console.log('📤 Fetching leagues with token');
       const response = await fetch(`${API_BASE_URL}/leagues`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -314,7 +325,17 @@ export const leagueAPI = {
 export const matchAPI = {
   getMatches: async (): Promise<ApiResponse<Match[]>> => {
     try {
-      const token = Cookies.get('token');
+      const token = Cookies.get('token') || Cookies.get('auth_token');
+      
+      if (!token || token === 'undefined' || token === 'null') {
+        console.error('❌ getMatches: No valid token found');
+        return {
+          success: false,
+          message: 'No authentication token',
+          error: 'No authentication token'
+        };
+      }
+
       const response = await fetch(`${API_BASE_URL}/matches`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -486,7 +507,17 @@ type Statistics = {
 export const profileAPI = {
   getProfile: async (): Promise<ApiResponse<User>> => {
     try {
-      const token = Cookies.get('token');
+      const token = Cookies.get('token') || Cookies.get('auth_token');
+      
+      if (!token || token === 'undefined' || token === 'null') {
+        console.error('❌ getProfile: No valid token found');
+        return {
+          success: false,
+          message: 'No authentication token',
+          error: 'No authentication token'
+        };
+      }
+
       const response = await fetch(`${API_BASE_URL}/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`

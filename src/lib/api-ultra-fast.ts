@@ -234,6 +234,54 @@ async function fetchAndCache<T>(
 ): Promise<T> {
   const token = Cookies.get('token') || Cookies.get('auth_token');
   
+  // Check if endpoint requires auth and token is missing
+  const requiresAuth = !endpoint.includes('/auth/login') && 
+                       !endpoint.includes('/auth/register') && 
+                       !endpoint.includes('/health') &&
+                       !endpoint.includes('/events');
+  
+  if (requiresAuth && (!token || token === 'undefined' || token === 'null')) {
+    console.error('❌ fetchAndCache: No valid token for authenticated endpoint:', endpoint);
+    // Try to recover token from localStorage
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData);
+        if (parsed.token) {
+          console.log('✅ Recovered token from localStorage, restoring to cookies');
+          Cookies.set('token', parsed.token, { expires: 365, path: '/' });
+          // Use recovered token
+          const recoveredToken = parsed.token;
+          
+          const response = await optimizedFetch(API_BASE_URL + endpoint, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${recoveredToken}`,
+              ...options.headers,
+            },
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          
+          if (cacheKey && (!options.method || options.method === 'GET')) {
+            setCacheInstant(cacheKey, data);
+          }
+          
+          return data;
+        }
+      } catch (e) {
+        console.error('Failed to recover token:', e);
+      }
+    }
+    throw new Error('Authentication required - no valid token found');
+  }
+  
   const response = await optimizedFetch(API_BASE_URL + endpoint, {
     ...options,
     headers: {
