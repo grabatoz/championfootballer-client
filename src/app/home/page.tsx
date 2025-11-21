@@ -21,6 +21,7 @@ const PlayerCardSection: React.FC = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [authReady, setAuthReady] = useState(false);
+  const [tokenReady, setTokenReady] = useState(false);
 
   useEffect(() => {
     // Try to recover auth data from multiple sources
@@ -85,6 +86,18 @@ const PlayerCardSection: React.FC = () => {
             tokenLength: verifyToken?.length
           });
           
+          // ✨ Wait extra time for cookie to be fully accessible
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Double check token is now available
+          const finalToken = Cookies.get('token');
+          if (finalToken) {
+            console.log('[HOME] ✅ Token confirmed ready!');
+            setTokenReady(true);
+          } else {
+            console.error('[HOME] ❌ Token not accessible after wait!');
+          }
+          
           // Use the initializeFromStorage action instead of manual dispatch
           import('@/lib/features/authSlice').then(({ initializeFromStorage }) => {
             dispatch(initializeFromStorage());
@@ -113,8 +126,8 @@ const PlayerCardSection: React.FC = () => {
     });
   }, [dispatch, router]);
 
-  // ✨ Show loading while auth is being initialized
-  if (!authReady) {
+  // ✨ Show loading while auth OR token is not ready
+  if (!authReady || !tokenReady) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />

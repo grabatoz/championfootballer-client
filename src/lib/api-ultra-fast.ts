@@ -246,13 +246,27 @@ async function fetchAndCache<T>(
     throw new Error('Authentication required - no valid token found');
   }
   
+  // Build headers object
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers as Record<string, string>,
+  };
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  console.log(`📤 fetchAndCache: ${endpoint}`, {
+    hasToken: !!token,
+    tokenLength: token?.length,
+    headers: Object.keys(headers),
+    requiresAuth
+  });
+  
   const response = await optimizedFetch(API_BASE_URL + endpoint, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -324,6 +338,10 @@ export const authAPI = {
 
   getUserData: async (): Promise<ApiResponse<User>> => {
     try {
+      console.log('📤 getUserData: Fetching with token...');
+      const token = getAuthToken();
+      console.log('🔑 getUserData: Token available:', !!token, 'length:', token?.length);
+      
       const data = await ultraFastFetch<{ user: User }>('/auth/data', {}, 'user_data');
       return {
         success: true,
@@ -331,6 +349,7 @@ export const authAPI = {
         message: 'User data fetched'
       };
     } catch (error) {
+      console.error('❌ getUserData error:', error);
       return {
         success: false,
         message: 'Failed to fetch user data',
@@ -385,9 +404,20 @@ export const leagueAPI = {
   /**
    * Get all leagues INSTANTLY (synchronous)
    * Returns cached leagues array immediately without waiting
+   * If cache is empty, triggers background fetch
    */
   getAllInstant: (): League[] => {
     const cached = getCacheInstant<LeaguesResponse>('leagues_all');
+    
+    // If no cache, trigger background fetch (don't wait for it)
+    if (!cached) {
+      console.log('⚡ getAllInstant: No cache, triggering background fetch...');
+      leagueAPI.getAll().catch(err => 
+        console.error('❌ Background fetch failed:', err)
+      );
+      return []; // Return empty array temporarily
+    }
+    
     return (cached?.leagues || []) as League[];
   },
 
