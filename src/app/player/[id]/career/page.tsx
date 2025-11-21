@@ -1731,7 +1731,7 @@ export default function CareerPage() {
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 {/* Influence Radar Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ height: 220 }}>
+                  <GlassCard sx={{ height: 240 }}>
                     <CardContent sx={{ p: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
                         <Typography sx={{ 
@@ -1871,12 +1871,12 @@ export default function CareerPage() {
 
                 {/* Win/Loss Pie Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ height: 220 }}>
+                  <GlassCard sx={{ height: 240 }}>
                     <CardContent>
                       <SectionTitle>Win/Loss/Draw</SectionTitle>
                       
                       {/* Debug info - remove this later */}
-                      <Box sx={{ mb: 1, fontSize: 10, color: themeColors.textFaint }}>
+                      <Box sx={{ mt:-1, fontSize: 10, color: themeColors.textFaint }}>
                         Total Matches: {filteredMatches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
                       </Box>
 
