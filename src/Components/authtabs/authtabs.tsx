@@ -6,6 +6,7 @@ import { useAppDispatch, useAuth } from "@/lib/hooks"
 import { login, register } from "@/lib/features/authSlice"
 import type { LoginCredentials, RegisterCredentials } from "@/types/api"
 import { authAPI } from "@/lib/api"
+import Cookies from "js-cookie"
 import {
   Box,
   TextField,
@@ -316,10 +317,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           // Use the helper functions to normalize data
           const normalizedUser = normalizeUserForStorage(result.data)
           const userData = normalizeUserData(result.data)
-          authStorage.saveAuthExact(normalizedUser, userData, result.token)
+          
+          // Save auth data
+          const saved = authStorage.saveAuthExact(normalizedUser, userData, result.token)
+          console.log("[AuthTabs] Token saved:", saved)
+          
+          // ✨ Wait for cookies to be set properly
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Verify token was saved
+          const token = Cookies.get('token')
+          console.log("[AuthTabs] Token verification:", {
+            hasCookie: !!token,
+            tokenLength: token?.length
+          })
         }
         toast.success(result.message || "Login successful!")
-        window.location.href = "/home"
+        
+        // ✨ Small delay before redirect to ensure cookies are set
+        setTimeout(() => {
+          window.location.href = "/home"
+        }, 150)
       } else {
         toast.error(extractApiMessage(result))
       }
@@ -382,10 +400,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           // Use the helper functions to normalize data
           const normalizedUser = normalizeUserForStorage(result.data)
           const userData = normalizeUserData(result.data)
-          authStorage.saveAuthExact(normalizedUser, userData, result.token)
+          
+          // Save auth data
+          const saved = authStorage.saveAuthExact(normalizedUser, userData, result.token)
+          console.log("[AuthTabs] Token saved:", saved)
+          
+          // ✨ Wait for cookies to be set properly
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Verify token was saved
+          const token = Cookies.get('token')
+          console.log("[AuthTabs] Token verification:", {
+            hasCookie: !!token,
+            tokenLength: token?.length
+          })
         }
         toast.success(result.message || "Registration successful!")
-        window.location.href = "/home"
+        
+        // ✨ Small delay before redirect to ensure cookies are set
+        setTimeout(() => {
+          window.location.href = "/home"
+        }, 150)
       } else {
         toast.error(extractApiMessage(result))
       }
