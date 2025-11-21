@@ -2044,267 +2044,114 @@ function AllLeagues() {
           </Typography>
           {/* </Box> */}
           {/* Create/Join League Section */}
-          <Box sx={{
-            display: 'flex',
-            gap: { xs: 2, md: 3 },
-            mb: { xs: 3, md: 5 },
-            flexWrap: 'wrap',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'stretch', sm: 'center' }
-          }}>
-
-            <Box sx={{
-              display: 'flex',
-              gap: { xs: 1, md: 2 },
-              width: { xs: '100%', sm: '1' },
-              alignItems: 'center',
-              flexDirection: { xs: 'column', sm: 'row' }
-            }}>
-              <Button
-                variant="contained"
-                onClick={() => setIsDialogOpen(true)}
-                sx={{
-                  bgcolor: '#0388E3',
-                  color: 'white',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
-                  fontWeight: 'bold',
-                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  '&:hover': { bgcolor: '#0388E3' },
-                  width: { xs: '100%', sm: 'fit-content' },
-                  borderRadius: 2,
-                  py: { xs: 1.5, md: 1 },
-                  px: { xs: 1, md: 1 },
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  textTransform: 'none'
-                }}
-              >
-                Create New League
-              </Button>
-              {/* <TextField
-                label="Enter invite code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                sx={{
-                  flex: 1,
-                  width: { xs: '100%', sm: 'auto' },
-                  '& .MuiOutlinedInput-root': {
-                    color: 'black',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
-                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
-                  },
-                  '& .MuiInputLabel-root': { color: 'green' },
-                  
-                }}
-              /> */}
-              <TextField
-                label="Enter invite code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                size="medium"
-                autoComplete="off"
-                sx={{
-                  flex: 1,
-                  width: { xs: '100%', sm: 'auto' },
-                  '& .MuiOutlinedInput-root': {
-                    color: 'black',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    padding: '0',
-                    '& input': {
-                      padding: '13px 12px',
-                    },
-                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-
-                    /* Prevent Chrome autofill yellow background */
-                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-                      WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
-                      boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset',
-                      WebkitTextFillColor: 'black',
-                      caretColor: 'black',
-                      transition: 'background-color 9999s ease-out 0s',
-                      backgroundClip: 'content-box !important',
-                    },
-                  },
-                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleJoinLeague}
-                disabled={isJoining}
-                sx={{
-                  // backgroundColor: '#388e3c',
-                  background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                  color: 'white',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
-                  fontWeight: 'bold',
-                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
-                  '&:disabled': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
-                  borderRadius: 2,
-                  py: { xs: 1.5, md: 1 },
-                  px: { xs: 3, md: 3 },
-                  width: { xs: '100%', sm: 'fit-content' },
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  textTransform: 'none'
-                }}
-              >
-                {isJoining ? <CircularProgress size={20} /> : 'Join League'}
-              </Button>
-
-              {/* Filters Group: Year + Search + Clear */}
-              <Box sx={{
-                display: 'flex',
-                gap: { xs: 1, sm: 1.5 },
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                width: { xs: '100%', sm: 'auto' },
+          {/* Mobile layout (xs-only) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2, mb: { xs: 3 } }}>
+            {/* Row 1: Create */}
+            <Box sx={{ display: 'flex', width: '100%' }}>
+              <Button variant="contained" onClick={() => setIsDialogOpen(true)} sx={{
+                bgcolor: '#0388E3', color: 'white', fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 'bold',
+                fontSize: { xs: '14px' }, '&:hover': { bgcolor: '#0388E3' }, width: '100%', borderRadius: 2,
+                py: 1.5, px: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', textTransform: 'none'
+              }}>Create New League</Button>
+            </Box>
+            {/* Row 2: Invite + Join */}
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, width: '100%', alignItems: 'center' }}>
+              <TextField label="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} size="medium" autoComplete="off" sx={{
+                flex: 1,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, padding: '0',
+                  '& input': { padding: '13px 12px' }, '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
+                  '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' }, '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' }
+                }, '& .MuiInputLabel-root': { color: '#8C8C8C' }
+              }} />
+              <Button variant="contained" onClick={handleJoinLeague} disabled={isJoining} sx={{
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)', color: 'white', fontFamily: 'Arial, Helvetica, sans-serif',
+                fontWeight: 'bold', fontSize: '14px', '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' },
+                '&:disabled': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' }, borderRadius: 2, py: 1.5, px: 2.5,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', textTransform: 'none', whiteSpace: 'nowrap'
+              }}>{isJoining ? <CircularProgress size={20} /> : 'Join League'}</Button>
+            </Box>
+            {/* Row 3: Year + Search */}
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center', width: '100%' }}>
+              <TextField select label="Year" value={selectedYear} size="medium" onChange={(e) => setSelectedYear(e.target.value)} sx={{
+                minWidth: 100,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, height: 48,
+                  '& .MuiSelect-select': { color: 'black' }, '& fieldset': { borderColor: 'black' }, '&:hover fieldset': { borderColor: 'black' }, '&.Mui-focused fieldset': { borderColor: 'black' }
+                }, '& .MuiInputLabel-root': { color: 'black' }, '& .MuiSvgIcon-root': { color: 'black' }
               }}>
-                {/* Year Selector (to the right of Join) */}
-                <TextField
-                  select
-                  label="Year"
-                  value={selectedYear}
-                  size="medium"
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  sx={{
-                    minWidth: { xs: '100%', sm: 140 },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'black',
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      borderRadius: 2,
-                      height: 48,
-                      '& .MuiSelect-select': { color: 'black' },
-                      '& fieldset': { borderColor: 'black' },
-                      '&:hover fieldset': { borderColor: 'black' },
-                      '&.Mui-focused fieldset': { borderColor: 'black' },
-                    },
-                    '& .MuiInputLabel-root': { color: 'black' },
-                    '& .MuiSvgIcon-root': { color: 'black' },
-                  }}
-                >
-                  <MenuItem value="all">All Years</MenuItem>
-                  {yearOptions.map((y) => (
-                    <MenuItem key={y} value={y}>{y}</MenuItem>
-                  ))}
-                </TextField>
-
-                {/* Search League Name (filters within selected year) */}
-                <TextField
-                  label="Search league name"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  size="medium"
-                  autoComplete="off"
-                  sx={{
-                    flex: 1,
-                    minWidth: { xs: '100%', sm: 220 },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'black',
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                      borderRadius: 2,
-                      height: 48,
-                      '& input': { color: 'black' },
-                      '& fieldset': { borderColor: 'black' },
-                      '&:hover fieldset': { borderColor: 'black' },
-                      '&.Mui-focused fieldset': { borderColor: 'black' },
-                    },
-                    '& .MuiInputLabel-root': { color: 'black' },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search sx={{ color: 'black' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                />
-
-                {/* Clear Filters */}
-                <Button
-                  variant="outlined"
-                  onClick={() => { setSelectedYear('all'); setSearchTerm(''); }}
-                  sx={{
-                    color: '#fff',
-                    // border: '1.5px solid #444',
-                    borderRadius: 2,
-                    bgcolor: '#0388E3',
-                    px: 2,
-                    height: 48,
-                    fontWeight: 'bold',
-                    textTransform: 'none',
-                    '&:hover': { bgcolor: '#0388E3' },
-                  }}
-                >
-                  Clear
-                </Button>
-              </Box>
-
-              {/* Single toggle button: switches between Completed and Uncompleted views */}
-              {/* <Box sx={{ display:'flex', alignItems:'center' }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => setCompletionTab(prev => prev === 'uncompleted' ? 'completed' : 'uncompleted')}
-                  sx={{
-                    ml: 0,
-                    color: '#fff',
-                    borderRadius: 2,
-                    bgcolor: '#0388E3',
-                    px: 2,
-                    height: 48,
-                    fontWeight: 'bold',
-                    textTransform: 'none',
-                    '&:hover': { bgcolor: '#0388E3' },
-                  }}
-                >
-                  {completionTab === 'uncompleted' ? 'Completed' : 'Uncompleted'}
-                </Button>
-              </Box> */}
+                <MenuItem value="all">All Years</MenuItem>
+                {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+              </TextField>
+              <TextField label="Search league name" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} size="medium" autoComplete="off" sx={{
+                flex: 1, minWidth: 140,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, height: 48,
+                  '& input': { color: 'black' }, '& fieldset': { borderColor: 'black' }, '&:hover fieldset': { borderColor: 'black' }, '&.Mui-focused fieldset': { borderColor: 'black' }
+                }, '& .MuiInputLabel-root': { color: 'black' }
+              }} InputProps={{ startAdornment: (<InputAdornment position="start"><Search sx={{ color: 'black' }} /></InputAdornment>) }} />
+            </Box>
+            {/* Row 4: Completed / Incomplete / Clear */}
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', mt: 1 }}>
+              <Button variant={completionTab === 'completed' ? 'contained' : 'outlined'} onClick={() => setCompletionTab('completed')} sx={{
+                flex: 1, borderRadius: 2, bgcolor: completionTab === 'completed' ? '#0388E3' : 'transparent', borderColor: '#0388E3', px: 2.5, height: 44,
+                fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3', color: 'white' }, color: completionTab === 'completed' ? 'white' : 'black'
+              }}>Completed</Button>
+              <Button variant={completionTab === 'uncompleted' ? 'contained' : 'outlined'} onClick={() => setCompletionTab('uncompleted')} sx={{
+                flex: 1, color: completionTab === 'uncompleted' ? 'white' : 'black', borderRadius: 2, bgcolor: completionTab === 'uncompleted' ? '#0388E3' : 'transparent',
+                borderColor: '#0388E3', px: 2.5, height: 44, fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3', color: 'white' }
+              }}>Incomplete</Button>
+              <Button variant="outlined" onClick={() => { setSelectedYear('all'); setSearchTerm(''); }} sx={{
+                flex: 1, color: '#fff', borderRadius: 2, bgcolor: '#0388E3', px: 2, height: 44, fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3' }
+              }}>Clear</Button>
             </Box>
           </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, width: '100%', mt: { xs: 1, sm: 1.5, md: -2 }, mb: 3, flexWrap: 'wrap' }}>
-          <Button
-            variant={completionTab === 'completed' ? 'contained' : 'outlined'}
-            onClick={() => setCompletionTab('completed')}
-            sx={{
-              borderRadius: 2,
-              bgcolor: completionTab === 'completed' ? '#0388E3' : 'transparent',
-              borderColor: '#0388E3',
-              px: 2.5,
-              height: 44,
-              fontWeight: 'bold',
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#0388E3', color: 'white' },
-              color: completionTab === 'completed' ? 'white' : 'black',
-            }}
-          >
-            Completed Leagues
-          </Button>
-          <Button
-            variant={completionTab === 'uncompleted' ? 'contained' : 'outlined'}
-            onClick={() => setCompletionTab('uncompleted')}
-            sx={{
-              color: completionTab === 'uncompleted' ? 'white' : 'black',
-              borderRadius: 2,
-              bgcolor: completionTab === 'uncompleted' ? '#0388E3' : 'transparent',
-              borderColor: '#0388E3',
-              px: 2.5,
-              height: 44,
-              fontWeight: 'bold',
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#0388E3', color: 'white' },
-            }}
-          >
-            Incomplete Leagues
-          </Button>
+
+          {/* Desktop layout (md and up) - original grouping */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 2, mb: 5 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Button variant="contained" onClick={() => setIsDialogOpen(true)} sx={{
+                bgcolor: '#0388E3', color: 'white', fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 'bold', fontSize: { md: '18px' },
+                '&:hover': { bgcolor: '#0388E3' }, borderRadius: 2, py: 1, px: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', textTransform: 'none'
+              }}>Create New League</Button>
+              <TextField label="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} size="medium" autoComplete="off" sx={{
+                width: 220,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, padding: '0',
+                  '& input': { padding: '13px 12px' }, '& fieldset': { borderColor: '#404040', border: '1px solid #404040' }, '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' }, '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' }
+                }, '& .MuiInputLabel-root': { color: '#8C8C8C' }
+              }} />
+              <Button variant="contained" onClick={handleJoinLeague} disabled={isJoining} sx={{
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)', color: 'white', fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 'bold', fontSize: '18px',
+                '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' }, '&:disabled': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' }, borderRadius: 2, py: 1, px: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', textTransform: 'none'
+              }}>{isJoining ? <CircularProgress size={20} /> : 'Join League'}</Button>
+              <TextField select label="Year" value={selectedYear} size="medium" onChange={(e) => setSelectedYear(e.target.value)} sx={{
+                minWidth: 140,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, height: 48, '& .MuiSelect-select': { color: 'black' },
+                  '& fieldset': { borderColor: 'black' }, '&:hover fieldset': { borderColor: 'black' }, '&.Mui-focused fieldset': { borderColor: 'black' }
+                }, '& .MuiInputLabel-root': { color: 'black' }, '& .MuiSvgIcon-root': { color: 'black' }
+              }}>
+                <MenuItem value="all">All Years</MenuItem>
+                {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+              </TextField>
+              <TextField label="Search league name" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} size="medium" autoComplete="off" sx={{
+                minWidth: 260,
+                '& .MuiOutlinedInput-root': { color: 'black', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, height: 48,
+                  '& input': { color: 'black' }, '& fieldset': { borderColor: 'black' }, '&:hover fieldset': { borderColor: 'black' }, '&.Mui-focused fieldset': { borderColor: 'black' }
+                }, '& .MuiInputLabel-root': { color: 'black' }
+              }} InputProps={{ startAdornment: (<InputAdornment position="start"><Search sx={{ color: 'black' }} /></InputAdornment>) }} />
+              <Button variant="outlined" onClick={() => { setSelectedYear('all'); setSearchTerm(''); }} sx={{
+                color: '#fff', borderRadius: 2, bgcolor: '#0388E3', px: 2, height: 48, fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3' }
+              }}>Clear</Button>
+            </Box>
+            {/* Desktop: Completed / Incomplete toggle row (keep original separation) */}
+            <Box sx={{ display: 'flex', gap: 1.5, width: '100%', mt: 1, flexWrap: 'wrap' }}>
+              <Button variant={completionTab === 'completed' ? 'contained' : 'outlined'} onClick={() => setCompletionTab('completed')} sx={{
+                borderRadius: 2, bgcolor: completionTab === 'completed' ? '#0388E3' : 'transparent', borderColor: '#0388E3', px: 2.5, height: 44,
+                fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3', color: 'white' }, color: completionTab === 'completed' ? 'white' : 'black'
+              }}>Completed Leagues</Button>
+              <Button variant={completionTab === 'uncompleted' ? 'contained' : 'outlined'} onClick={() => setCompletionTab('uncompleted')} sx={{
+                color: completionTab === 'uncompleted' ? 'white' : 'black', borderRadius: 2, bgcolor: completionTab === 'uncompleted' ? '#0388E3' : 'transparent', borderColor: '#0388E3', px: 2.5, height: 44,
+                fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: '#0388E3', color: 'white' }
+              }}>Incomplete Leagues</Button>
+            </Box>
+          </Box>
         </Box>
 
         {/* Leagues List - Card Format */}

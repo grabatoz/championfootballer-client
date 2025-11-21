@@ -2299,55 +2299,64 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         <Box sx={{ p: { xs: 0.5, sm: 2, md: 2 }, minHeight: '100vh', color: 'black' }}>
             {/* --- NEW: League selector and show matches toolbar --- */}
             {!showAdminGoalsSection && (
-                <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
-                    {/* <Typography sx={{ fontWeight: 700, mr: 1 }}>Explore Matches by League</Typography> */}
-                    {/* Label + League selector */}
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem' }}>Select a League :</Typography>
-                    <Button
-                        onClick={openLeagueSelector}
-                        variant="contained"
-                        size="small"
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                    >
-                        {(() => {
-                            const name = (selectedLeagueNameForList || league?.name);
-                            if (!name) return 'Select League';
-                            return (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <span>{name}</span>
-                                </Box>
-                            );
-                        })()}
-                    </Button>
-                    {/* Label + Match selector */}
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.175rem', ml: 1 }}>Select a Match:</Typography>
-                    <Button
-                        onClick={openMatchesDialog}
-                        variant="contained"
-                        size="small"
-                        disabled={!selectedLeagueIdForList && !resolvedLeagueId && !league?.id}
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                    >
-                        {autoSelectMatchLoading
-                            ? 'Loading Matches…'
-                            : selectedLeagueHasNoMatches
-                                ? 'No Match Found'
-                                : selectedMatchForList?.homeTeamName && selectedMatchForList?.awayTeamName
-                                    ? `${selectedMatchForList.homeTeamName} vs ${selectedMatchForList.awayTeamName}`
-                                    : match?.homeTeamName && match?.awayTeamName
-                                        ? `${match.homeTeamName} vs ${match.awayTeamName}`
-                                        : 'Select a Match'}
-                    </Button>
+                <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 1, display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
+                    {/* League selector pair */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexBasis: { xs: '100%', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1rem', md: '1.175rem' }, whiteSpace: 'nowrap' }}>Select a League :</Typography>
+                        <Button
+                            onClick={openLeagueSelector}
+                            variant="contained"
+                            size="small"
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '1rem' },
+                                lineHeight: 1.2,
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                minWidth: { xs: 'auto', sm: 'unset' }
+                            }}
+                        >
+                            {(() => {
+                                const name = (selectedLeagueNameForList || league?.name);
+                                if (!name) return 'Select League';
+                                return (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>{name}</span>
+                                    </Box>
+                                );
+                            })()}
+                        </Button>
+                    </Box>
+                    {/* Match selector pair */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexBasis: { xs: '100%', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1rem', md: '1.175rem' }, whiteSpace: 'nowrap' }}>Select a Match:</Typography>
+                        <Button
+                            onClick={openMatchesDialog}
+                            variant="contained"
+                            size="small"
+                            disabled={!selectedLeagueIdForList && !resolvedLeagueId && !league?.id}
+                            sx={{
+                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                                lineHeight: 1.2,
+                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
+                                minWidth: { xs: 'auto', sm: 'unset' }
+                            }}
+                        >
+                            {autoSelectMatchLoading
+                                ? 'Loading Matches…'
+                                : selectedLeagueHasNoMatches
+                                    ? 'No Match Found'
+                                    : selectedMatchForList?.homeTeamName && selectedMatchForList?.awayTeamName
+                                        ? `${selectedMatchForList.homeTeamName} vs ${selectedMatchForList.awayTeamName}`
+                                        : match?.homeTeamName && match?.awayTeamName
+                                            ? `${match.homeTeamName} vs ${match.awayTeamName}`
+                                            : 'Select a Match'}
+                        </Button>
+                    </Box>
                 </Paper>
             )}
 
