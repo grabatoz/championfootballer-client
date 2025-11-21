@@ -814,7 +814,7 @@ export default function PlayerStatsPage() {
                 </FormControl>
 
                 {/* Search */}
-                <Box ref={searchWrapperRef} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box ref={searchWrapperRef} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1, gridColumn: { xs: '1 / -1', md: 'auto' }, width: '100%' }}>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <TextField
                             size="small"
