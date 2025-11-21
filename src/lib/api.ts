@@ -133,6 +133,18 @@ export const authAPI = {
 
   getUserData: async (token: string) => {
     try {
+      // Validate token before sending
+      if (!token || token === 'undefined' || token === 'null') {
+        console.error('❌ Invalid token provided to getUserData:', token);
+        return { success: false, error: 'Invalid token' };
+      }
+
+      console.log('📤 Sending getUserData request with token:', {
+        tokenLength: token.length,
+        tokenParts: token.split('.').length,
+        tokenStart: token.substring(0, 10)
+      });
+
       const response = await fetch(`${API_BASE_URL}/auth/data`, {
         headers: { 
           'Content-Type': 'application/json',
@@ -153,6 +165,7 @@ export const authAPI = {
 
       return { success: true, user: data.user };
     } catch (error: unknown) {
+      console.error('❌ getUserData error:', error);
       if (error instanceof Error) {
         return { success: false, error: error.message };
       }
@@ -189,14 +202,24 @@ export const authAPI = {
 
   checkAuth: async (): Promise<ApiResponse<User>> => {
     try {
-      const token = Cookies.get('token');
-      if (!token) {
+      const token = Cookies.get('token') || Cookies.get('auth_token');
+      
+      console.log('🔍 checkAuth called:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        cookieString: document.cookie.substring(0, 100)
+      });
+
+      if (!token || token === 'undefined' || token === 'null') {
+        console.error('❌ No valid token found in cookies');
         return {
           success: false,
           message:'No token found',
           error: 'No token found'
         };
       }
+
+      console.log('📤 Sending checkAuth request with token');
 
       const response = await fetch(`${API_BASE_URL}/auth/data`, {
         method: 'GET',
@@ -211,6 +234,13 @@ export const authAPI = {
       handleTokenRefresh(response);
 
       const data = await response.json();
+      
+      console.log('📥 checkAuth response:', {
+        status: response.status,
+        ok: response.ok,
+        hasUser: !!data.user
+      });
+
       return {
         success: response.ok,
         data: data.user,
@@ -218,6 +248,7 @@ export const authAPI = {
         message:data.message
       };
     } catch (error) {
+      console.error('❌ checkAuth error:', error);
       return {
         success: false,
         message:'Authentication check failed',
