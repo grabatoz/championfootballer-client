@@ -475,7 +475,7 @@ const AllPlayersPage = () => {
       py: 4
     }}>
       {/* Close Button - Top Left (design choice) */}
-      <Box sx={{ position: 'absolute', top: 16, left: 26, zIndex: 10 }}>
+      <Box sx={{ position: 'absolute', top: 16, left: 26, zIndex: 10}}>
         <CloseButton fallbackRoute="/dashboard" />
       </Box>
       <Container maxWidth="md" sx={{
@@ -485,7 +485,7 @@ const AllPlayersPage = () => {
         color: 'white',
         borderRadius: { xs: 2, sm: 5 },
         overflow: 'hidden',
-        mt: { xs: 1, sm: 3 },
+        mt: { xs: 4, sm: 3 },
         px: { xs: 0.5, sm: 2 },
         mb: { xs: 1, sm: 3 },
       }}>
@@ -500,7 +500,138 @@ const AllPlayersPage = () => {
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff', fontSize: { xs: 20, sm: 32 } }}>
           All Players
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'flex-start' }}>
+        {/* Mobile (xs) stacked filter layout */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2, px: { xs: 1, sm: 0 } }}>
+          {/* Row 1: Year + League side by side */}
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, width: '100%' }}>
+            {/* Year Filter (mobile) */}
+            <Box sx={{ flex: 1 }}>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '44px',
+                  padding: '0 12px',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  border: '1px solid #e56a16',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
+                {Array.from(new Set([
+                  '2020', '2021', '2022', '2023', '2024', '2025',
+                  ...yearOptions
+                ])).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
+                  <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
+                ))}
+              </select>
+            </Box>
+            {/* League Select (mobile) */}
+            <FormControl size="small" sx={{ flex: 1 }}>
+              <Select
+                id="league-select-mobile"
+                value={selectedLeague}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setSelectedLeague(newValue);
+                  try { if (typeof window !== 'undefined' && newValue !== 'all') localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue); } catch {}
+                }}
+                renderValue={(value) => {
+                  if (filteredLeagues.length === 0) return 'No leagues';
+                  if (noLeagues) return 'No leagues found';
+                  const v = String(value ?? '');
+                  if (v === 'all') return 'All Leagues';
+                  const found = filteredLeagues.find(l => l.id === v) || leagues.find(l => l.id === v);
+                  return found?.name || 'Select League';
+                }}
+                MenuProps={{
+                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                  PaperProps: {
+                    sx: {
+                      p: 0.5,
+                      mt: 1,
+                      minWidth: 200,
+                      bgcolor: 'rgba(15,15,15,0.92)',
+                      color: '#E5E7EB',
+                      borderRadius: 2.5,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                      maxHeight: 260,
+                      overflowY: 'auto',
+                      overflowX: 'hidden'
+                    }
+                  }
+                }}
+                input={<OutlinedInput notched={false} />}
+                sx={{
+                  color: '#fff',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' }
+                }}
+                disabled={noLeagues || filteredLeagues.length === 0}
+              >
+                <MenuItem value="all">All Leagues</MenuItem>
+                {filteredLeagues.map((l) => (
+                  <MenuItem key={l.id} value={l.id} sx={{
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 0.6,
+                    px: 0.75,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#E5E7EB',
+                    '&:hover': { background: 'rgba(255,255,255,0.06)' }
+                  }}>
+                    <Box component="span" sx={{ flex: 1, fontSize: 12 }}>{l.name}</Box>
+                    <Box sx={{ ml: 'auto' }}>
+                      <Box sx={{
+                        px: 0.6,
+                        py: 0.25,
+                        bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.12)',
+                        color: l.isAdmin ? '#111827' : '#E5E7EB',
+                        borderRadius: '9999px',
+                        fontSize: 8,
+                        fontWeight: 700,
+                        letterSpacing: 0.3,
+                        textTransform: 'uppercase'
+                      }}>{l.isAdmin ? 'Admin' : 'Member'}</Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          {/* Search (mobile) */}
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search player..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  height: 44,
+                  color: 'white',
+                  '& fieldset': { borderColor: '#e56a16' },
+                  '&:hover fieldset': { borderColor: '#e56a16' },
+                  '&.Mui-focused fieldset': { borderColor: '#e56a16' }
+                },
+                '& .MuiInputBase-input': { color: 'white', fontSize: 14 }
+              }}
+            />
+        </Box>
+        {/* Desktop (md+) original horizontal filter row */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2, mb: 1, alignItems: 'flex-start' }}>
           {/* Year Filter */}
           <Box sx={{ minWidth: 160, maxWidth: 200 }}>
             <select
