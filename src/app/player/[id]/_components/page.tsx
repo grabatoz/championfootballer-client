@@ -1102,12 +1102,12 @@ export default function PlayerStatsPage() {
                                             border: '1px solid rgba(255,255,255,0.12)',
                                         }}
                                     >
-                                        <Grid container spacing={2} columns={12} justifyContent="flex-start">
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Goals" value={currentLeagueTotals.goals} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Assist" value={currentLeagueTotals.assists} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Clean Sheet" value={currentLeagueTotals.cleanSheets} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="MOTM Votes" value={currentLeagueTotals.motmVotes} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Impact" value={currentLeagueTotals.impact} /></Grid>
+                                        <Grid container spacing={2} columns={{ xs:12, sm:12, md:12, lg:15 }} justifyContent="flex-start">
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Goals" value={currentLeagueTotals.goals} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Assist" value={currentLeagueTotals.assists} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Clean Sheet" value={currentLeagueTotals.cleanSheets} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="MOTM Votes" value={currentLeagueTotals.motmVotes} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Impact" value={currentLeagueTotals.impact} /></Grid>
                                         </Grid>
                                     </Paper>
                                 </Grid>
@@ -1125,12 +1125,12 @@ export default function PlayerStatsPage() {
                                             border: '1px solid rgba(255,255,255,0.12)',
                                         }}
                                     >
-                                        <Grid container spacing={2} columns={12} justifyContent="flex-start">
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Goals" value={accumulativeTotals.goals} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Assist" value={accumulativeTotals.assists} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Clean Sheet" value={accumulativeTotals.cleanSheets} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="MOTM Votes" value={accumulativeTotals.motmVotes} /></Grid>
-                                            <Grid item xs={6} sm={3} md={3}><StatItem label="Impact" value={accumulativeTotals.impact} /></Grid>
+                                        <Grid container spacing={2} columns={{ xs:12, sm:12, md:12, lg:15 }} justifyContent="flex-start">
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Goals" value={accumulativeTotals.goals} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Assist" value={accumulativeTotals.assists} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Clean Sheet" value={accumulativeTotals.cleanSheets} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="MOTM Votes" value={accumulativeTotals.motmVotes} /></Grid>
+                                            <Grid item xs={4} sm={3} md={3} lg={3}><StatItem label="Impact" value={accumulativeTotals.impact} /></Grid>
                                         </Grid>
                                     </Paper>
                                 </Grid>
