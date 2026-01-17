@@ -8,6 +8,15 @@ const enableParallel = process.env.NEXT_ENABLE_PARALLEL === '1';
 const nextConfig: NextConfig = {
   // Enable production optimizations
   reactStrictMode: true,
+  
+  // Disable caching in development for fresh changes on refresh
+  onDemandEntries: {
+    // Period (in ms) where the server will keep pages in the buffer
+    maxInactiveAge: process.env.NODE_ENV === 'production' ? 60 * 1000 : 25 * 1000,
+    // Number of pages that should be kept simultaneously without being disposed
+    pagesBufferLength: process.env.NODE_ENV === 'production' ? 5 : 2,
+  },
+  
   // Use a custom dist dir to avoid Windows EPERM issues on .next/trace
   // Can be overridden via NEXT_DIST_DIR if needed
   // Use default .next to avoid EPERM trace file in custom dir with spaces in path on Windows
@@ -150,6 +159,8 @@ const nextConfig: NextConfig = {
   
   // Headers for better performance and security
   async headers() {
+    const isDev = process.env.NODE_ENV !== 'production';
+    
     return [
       {
         source: '/:path*',
@@ -174,25 +185,34 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
+          // Disable caching in development for fresh changes
+          ...(isDev ? [{
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          }] : []),
         ],
       },
-      // Cache static assets aggressively
+      // Cache static assets - only in production
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isDev 
+              ? 'no-cache, no-store, must-revalidate' 
+              : 'public, max-age=31536000, immutable',
           },
         ],
       },
-      // Cache images
+      // Cache images - only in production
       {
         source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isDev 
+              ? 'no-cache, no-store, must-revalidate' 
+              : 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -202,7 +222,9 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=60, stale-while-revalidate=120',
+            value: isDev 
+              ? 'no-store, no-cache, must-revalidate' 
+              : 'public, max-age=60, stale-while-revalidate=120',
           },
         ],
       },
