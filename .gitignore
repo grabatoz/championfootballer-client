@@ -18,6 +18,7 @@
 /.next/
 /.next-build/
 /out/
+/championfootballerserver
 
 # production
 /build
