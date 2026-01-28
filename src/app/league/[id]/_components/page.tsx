@@ -2595,8 +2595,8 @@ export default function LeagueDetailPage() {
                                                             <CardContent sx={{ p: 0 }}>
                                                                 {/* Top Section - Teams & VS */}
                                                                 <Box sx={{
-                                                                    pl: 2,
-                                                                    pr: 2,
+                                                                    pl: 1,
+                                                                    pr: 1,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
@@ -2693,6 +2693,8 @@ export default function LeagueDetailPage() {
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'center',
                                                                         gap: 1.5,
+                                                                        // pl: 2,
+                                                                        // pr: 2
                                                                     }}>
                                                                         {/* Date Row */}
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
@@ -2805,7 +2807,7 @@ export default function LeagueDetailPage() {
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
                                                                         p: 1,
-                                                                        minHeight: '115px',
+                                                                        minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'flex-start',
@@ -2916,10 +2918,13 @@ export default function LeagueDetailPage() {
                                                                 borderRadius: 3,
                                                                 overflow: 'hidden',
                                                                 background: '#222',
-                                                                border: idx === 0 ? '2px solid #F97316' : '2px solid #C0C0C0',
-                                                                '& .MuiCardContent-root': {
-                                                                    pb: 0,
-                                                                    mb: '-13px'
+                                                                border: '2px solid #fff',
+                                                                // '& .MuiCardContent-root': {
+                                                                //     pb: 0,
+                                                                //     mb: '-13px'
+                                                                // },
+                                                                '& .css-1i9wt8r-MuiCardContent-root:last-child':{
+                                                                    pb:'0px !important',
                                                                 },
                                                                 '&:hover': {
                                                                     transform: 'translateY(-2px)',
@@ -2992,8 +2997,8 @@ export default function LeagueDetailPage() {
 
                                                                 {/* Top Section - Teams & Score */}
                                                                 <Box sx={{
-                                                                    pl: 2,
-                                                                    pr: 2,
+                                                                    pl: 1,
+                                                                    pr: 1,
                                                                     py: 1,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
@@ -3194,7 +3199,7 @@ export default function LeagueDetailPage() {
                                                                                         py: 0.5,
                                                                                         px: 1,
                                                                                         borderRadius: '50px',
-                                                                                        border: '1.4px solid #F97316',
+                                                                                        border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                         whiteSpace: 'nowrap',
                                                                                         '&:hover': { backgroundColor: '#444' },
                                                                                         '&.Mui-disabled': { color: 'white' },
@@ -3221,7 +3226,7 @@ export default function LeagueDetailPage() {
                                                                                     py: 0.5,
                                                                                     px: 1,
                                                                                     borderRadius: '50px',
-                                                                                    border: '1.4px solid #F97316',
+                                                                                    border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                     whiteSpace: 'nowrap',
                                                                                     '&:hover': { backgroundColor: '#444' },
                                                                                 }}
@@ -3243,7 +3248,7 @@ export default function LeagueDetailPage() {
                                                                                     py: 0.5,
                                                                                     px: 1,
                                                                                     borderRadius: '50px',
-                                                                                    border: '1.4px solid #F97316',
+                                                                                    border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                     whiteSpace: 'nowrap',
                                                                                     '&:hover': { backgroundColor: '#444' },
                                                                                     '&.Mui-disabled': { color: 'white' },
@@ -3259,7 +3264,7 @@ export default function LeagueDetailPage() {
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
                                                                         p: 1,
-                                                                        minHeight: '115px',
+                                                                        minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'flex-start',
