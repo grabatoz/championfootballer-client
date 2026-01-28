@@ -355,18 +355,24 @@
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
     const [userLeagueAvgXP, setUserLeagueAvgXP] = useState<Record<string, number>>({});
     const [xpLoading, setXpLoading] = useState(false);
+    const [xpFetchAttempted, setXpFetchAttempted] = useState(false);
     // Track balancing run to prevent repeated clicks and show progress
     const [isBalancing, setIsBalancing] = useState(false);
 
     const ensureXPMap = useCallback(async () => {
       if (!leagueId || !token) return {} as Record<string, number>;
-      // If we already have it, return
-      if (userLeagueXP && Object.keys(userLeagueXP).length > 0) return userLeagueXP;
+      // If we already fetched (success or failure), don't retry
+      if (xpFetchAttempted) return userLeagueXP;
       try {
         setXpLoading(true);
+        setXpFetchAttempted(true);
         const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/xp`, { headers });
-        if (!res.ok) throw new Error('Failed to fetch XP');
+        if (!res.ok) {
+          // Silently handle 404 - endpoint may not exist
+          console.warn(`XP endpoint returned ${res.status}, using empty map`);
+          return {} as Record<string, number>;
+        }
         const json = await res.json();
         // Support either { xp } or { data: { xp } }
         const xpMap = (json?.xp || json?.data?.xp || {}) as Record<string, number>;
@@ -375,18 +381,17 @@
         setUserLeagueAvgXP(avgMap);
         return xpMap;
       } catch {
-        setUserLeagueXP({});
-        setUserLeagueAvgXP({});
+        // Silent fail - XP is optional
         return {} as Record<string, number>;
       } finally {
         setXpLoading(false);
       }
-    }, [leagueId, token, userLeagueXP]);
+    }, [leagueId, token, xpFetchAttempted, userLeagueXP]);
 
     // Ensure XP maps are available for preview UI as soon as league loads
     useEffect(() => {
-      if (leagueId && token) { void ensureXPMap(); }
-    }, [leagueId, token, ensureXPMap]);
+      if (leagueId && token && !xpFetchAttempted) { void ensureXPMap(); }
+    }, [leagueId, token, xpFetchAttempted, ensureXPMap]);
 
     const fetchPrediction = useCallback(async () => {
       if (!matchId || !token) return;

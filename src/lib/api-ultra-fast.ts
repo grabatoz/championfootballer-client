@@ -269,12 +269,16 @@ async function fetchAndCache<T>(
     headers,
   });
 
+  // Clone response before reading to avoid "body already read" error
+  // (response can be shared due to request deduplication)
+  const responseClone = response.clone();
+
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await responseClone.text();
     throw new Error(`API Error ${response.status}: ${errorText}`);
   }
   
-  const data = await response.json();
+  const data = await responseClone.json();
   
   // Cache GET requests
   if (cacheKey && (!options.method || options.method === 'GET')) {

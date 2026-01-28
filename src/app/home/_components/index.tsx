@@ -43,7 +43,7 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
 import { League, User, Match } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
-import { ChevronRight, CloudUpload, X } from 'lucide-react';
+import { ChevronRight, CloudUpload, X, Plus } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import { leagueAPI } from '@/lib/api-ultra-fast';
 import { Trophy } from 'lucide-react';
@@ -110,6 +110,7 @@ type LeagueWithComputed = BasicLeague & {
   computedStatus?: LeagueComputedStatus;
   isLocked?: boolean;
   userRole?: 'ADMIN' | 'MEMBER';
+  seasonNumber?: number;
 };
 
 type ApiLeague = {
@@ -140,6 +141,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   const [, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [networkDone, setNetworkDone] = useState(false);
+  const [isCreatingSeason, setIsCreatingSeason] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
@@ -266,6 +268,53 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
     };
   }, []);
 
+  // Handler to create new season
+  const handleCreateNewSeason = async () => {
+    if (!selectedLeague || !token || isCreatingSeason) return;
+
+    try {
+      setIsCreatingSeason(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${selectedLeague.id}/seasons`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ copyPlayers: true })
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`${data.message || 'New season created successfully!'}`);
+        
+        // Note: Backend already sends notifications to all league members in createNewSeason
+
+        // Clear all caches before reload
+        try {
+          leagueAPI.invalidateCache();
+          localStorage.removeItem('leaguesCache');
+          localStorage.removeItem('lastLeaguesFetch');
+        } catch {}
+
+        // Refresh the league data by triggering a complete page reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        toast.error(data.message || 'Failed to create new season');
+      }
+    } catch (error) {
+      console.error('Error creating new season:', error);
+      toast.error('An error occurred while creating new season');
+    } finally {
+      setIsCreatingSeason(false);
+    }
+  };
+
   // Format league name function
   const formatLeagueName = (name: string | undefined | null) => {
     if (!name) return '';
@@ -273,8 +322,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
     const capitalizedWords = words.map(word =>
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     );
-    const firstChars = words.map(word => word.charAt(0).toUpperCase());
-    return `${capitalizedWords.join(' ')} (${firstChars.join('')})`;
+    return capitalizedWords.join(' ');
   };
 
   // Fetch user's leagues (now optimized for instant initial render, enrichment runs in background)
@@ -361,18 +409,51 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
         // Avoid blocking UI by not awaiting all; update each league as soon as its data arrives
         uniqueLeagues.forEach(async (l) => {
           try {
+            // Add timestamp to bypass any caching
+            const timestamp = Date.now();
             const [statusRes, detailsRes] = await Promise.all([
-              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit),
-              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit)
+              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status?_t=${timestamp}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit),
+              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}?_t=${timestamp}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit)
             ]);
 
             let matchesFromDetails: Match[] | undefined = undefined;
             let maxGamesFromDetails: number | undefined = undefined;
+            let seasonNumberFromDetails: number | undefined = undefined;
             if (detailsRes.ok) {
               const leagueData = await detailsRes.json();
               const rawMatches = leagueData?.league?.matches as unknown;
               if (Array.isArray(rawMatches)) matchesFromDetails = rawMatches as Match[];
               if (typeof leagueData?.league?.maxGames === 'number') maxGamesFromDetails = leagueData.league.maxGames as number;
+              
+              // Get active season number (where isActive === true)
+              const seasons = leagueData?.league?.seasons as unknown;
+              const currentSeason = leagueData?.league?.currentSeason as any;
+              console.log(`[League ${l.id}] All seasons from backend:`, seasons);
+              console.log(`[League ${l.id}] Current season from backend:`, currentSeason);
+              
+              // Use currentSeason from backend (which is the user's actual season)
+              if (currentSeason && typeof currentSeason.seasonNumber === 'number') {
+                seasonNumberFromDetails = currentSeason.seasonNumber;
+                console.log(`[League ${l.id}] Setting season number to user's season:`, seasonNumberFromDetails);
+              } else if (Array.isArray(seasons) && seasons.length > 0) {
+                console.log(`[League ${l.id}] Total seasons found:`, seasons.length);
+                seasons.forEach((s: any) => {
+                  console.log(`[League ${l.id}] Season ${s?.seasonNumber}: isActive=${s?.isActive}`);
+                });
+                
+                // Use the first season from filtered list (user's most recent season)
+                const userSeason = seasons[0];
+                console.log(`[League ${l.id}] User's season found:`, userSeason);
+                
+                if (userSeason && typeof userSeason.seasonNumber === 'number') {
+                  seasonNumberFromDetails = userSeason.seasonNumber;
+                  console.log(`[League ${l.id}] Setting season number to:`, seasonNumberFromDetails);
+                } else {
+                  console.log(`[League ${l.id}] No user season found!`);
+                }
+              } else {
+                console.log(`[League ${l.id}] No seasons array or empty`);
+              }
             }
 
             let computed: LeagueComputedStatus | undefined = undefined;
@@ -410,6 +491,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
                   isLocked: (computed?.locked === true) || item.isLocked,
                   maxGames: (computed?.maxGames ?? maxGamesFromDetails ?? item.maxGames),
                   matches: matchesFromDetails ?? item.matches,
+                  seasonNumber: seasonNumberFromDetails ?? item.seasonNumber,
                 };
                 // Normalize defaults
                 return {
@@ -420,9 +502,38 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
               });
               return arr;
             });
-          } catch {/* ignore enrichment failure */}
+            
+            // CRITICAL: Update selectedLeague if this is the currently selected league
+            setSelectedLeague((prev) => {
+              if (prev && String(prev.id) === String(l.id)) {
+                const updated: LeagueWithComputed = {
+                  ...prev,
+                  computedStatus: computed ?? prev.computedStatus,
+                  isLocked: (computed?.locked === true) || prev.isLocked,
+                  maxGames: (computed?.maxGames ?? maxGamesFromDetails ?? prev.maxGames),
+                  matches: matchesFromDetails ?? prev.matches,
+                  seasonNumber: seasonNumberFromDetails ?? prev.seasonNumber,
+                  status: typeof prev?.status === 'string' && prev.status!.trim() !== '' ? prev.status : 'active',
+                  active: typeof prev?.active === 'boolean' ? prev.active : true,
+                };
+                console.log(`[League ${l.id}] Updated selectedLeague seasonNumber to:`, updated.seasonNumber);
+                return updated;
+              }
+              return prev;
+            });
+          } catch (enrichError) {
+            // Ignore abort errors - they're expected when component unmounts
+            if (enrichError instanceof Error && enrichError.name === 'AbortError') {
+              return;
+            }
+            // Silently ignore other enrichment failures
+          }
         });
       } catch (error) {
+        // Ignore abort errors - they're expected when component unmounts
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching leagues:', error);
       } finally {
         setLoading(false);
@@ -586,7 +697,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
       <Button
         variant="contained"
         sx={{
-          bgcolor: '#00A77F',
+          bgcolor: '#00a77f',
           color: 'white',
           '&:hover': { bgcolor: '#00A77F' },
           minHeight: { xs: '60px', sm: '70px', md: '50px' },
@@ -619,16 +730,32 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             ) : (
               <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
             )}
-            <Typography
-              sx={{
-                fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-                fontWeight: 'semibold'
-              }}
-            >
-              {isFetching
-                ? 'Loading…'
-                : (selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Select a league')}
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+                  fontWeight: 'semibold',
+                  lineHeight: 1.2
+                }}
+              >
+                {isFetching
+                  ? 'Loading…'
+                  : (selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Select a league')}
+              </Typography>
+              {!isFetching && selectedLeague?.name && (
+                <Typography
+                  sx={{
+                    fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
+                    fontWeight: 'normal',
+                    opacity: 0.9,
+                    lineHeight: 1,
+                    marginLeft: 0
+                  }}
+                >
+                  (Season {selectedLeague?.seasonNumber || 1})
+                </Typography>
+              )}
+            </Box>
           </Box>
 
           {/* Role pill for the currently selected league */}
@@ -716,8 +843,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             '&::-webkit-scrollbar': {
               display: 'none',
             },
-            '-ms-overflow-style': 'none',
-            'scrollbarWidth': 'none',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
           id="league-dropdown-list"
           role="listbox"
@@ -763,16 +890,32 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                     <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
-                    <Typography
-                      sx={{
-                        fontSize: '0.95rem',
-                        fontWeight: isActive ? 700 : 500,
-                        letterSpacing: 0.2,
-                        color: '#FFFFFF',
-                      }}
-                    >
-                      {formatLeagueName(league.name)}
-                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
+                      <Typography
+                        sx={{
+                          fontSize: '0.95rem',
+                          fontWeight: isActive ? 700 : 500,
+                          letterSpacing: 0.2,
+                          color: '#FFFFFF',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        {formatLeagueName(league.name)}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: '0.7rem',
+                          fontWeight: 400,
+                          letterSpacing: 0.1,
+                          color: '#FFFFFF',
+                          opacity: 0.85,
+                          lineHeight: 1,
+                          marginLeft: 0
+                        }}
+                      >
+                        (Season {league.seasonNumber || 1})
+                      </Typography>
+                    </Box>
                   </Box>
                   {/* Role pill on the right */}
                   {league.userRole && (
@@ -801,6 +944,51 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             );
           })}
         </Box>
+      )}
+
+      {/* Add New Season Button */}
+      {selectedLeague && selectedLeague.userRole === 'ADMIN' && (
+        <Button
+          variant="contained"
+          disabled={isCreatingSeason || isFetching}
+          onClick={handleCreateNewSeason}
+          sx={{
+            bgcolor: '#7f7f7f',
+            color: '#fff',
+            '&:hover': { bgcolor: '#686868' },
+            minHeight: { xs: '50px', sm: '55px', md: '45px' },
+            minWidth: { xs: '280px', sm: '320px' },
+            fontSize: '20px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1.5,
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            mt: 2,
+            '&:disabled': {
+              bgcolor: '#E0E0E0',
+              color: '#999999',
+              border: '2px solid #CCCCCC'
+            }
+          }}
+        >
+          {/* {isCreatingSeason ? (
+            <CircularProgress size={20} sx={{ color: '#00A77F' }} />
+          ) : (
+            <Plus size={20} />
+          )} */}
+          <Typography
+            sx={{
+              fontSize: '20px',
+              fontWeight: 'bold'
+            }}
+          >
+            {isCreatingSeason ? 'Creating Season...' : '+ Add New Season'}
+          </Typography>
+        </Button>
       )}
     </Box>
   );
@@ -1389,7 +1577,8 @@ export default function PlayerDashboard() {
                     '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)' },
                     width: '320px',
                     mx: 'auto',
-                    display: { xs: 'none', sm: 'none', md: 'block' }
+                    display: { xs: 'none', sm: 'none', md: 'block' },
+                    fontSize: '20px',
                   }}
                 >
                   + Create New League

@@ -23,7 +23,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
-import cflogo from '@/Components/images/champion football logo 3 (1).webp';
+import cflogo from '@/Components/images/champion football logo 3 (1).png';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -49,6 +49,7 @@ import { useAuth } from '@/lib/hooks';
 import React from 'react';
 import TextField from '@mui/material/TextField';
 import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
+import { leagueAPI } from '@/lib/api-ultra-fast';
 // import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 type NotificationKind =
   | 'MATCH_CREATED'
@@ -61,6 +62,7 @@ type NotificationKind =
   | 'CAPTAIN_REVISION_SUGGESTED'
   | 'MATCH_ENDED'
   | 'MOTM_VOTE'
+  | 'NEW_SEASON'
   | 'GENERAL';
 interface NotificationMeta {
   matchId?: string;
@@ -904,6 +906,9 @@ export default function NavigationBar() {
   const [availabilitySelections, setAvailabilitySelections] = useState<Record<string,'YES'|'NO'>>({});
   const [savingAvailability, setSavingAvailability] = useState<Record<string, boolean>>({});
 
+  // Season action states
+  const [savingSeasonAction, setSavingSeasonAction] = useState<Record<string, boolean>>({});
+
   // ADD THIS (league name cache)
   const [leagueNames, setLeagueNames] = useState<Record<string,string>>({});
 
@@ -1480,6 +1485,83 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     setNotificationAnchor(null);
   };
 
+  // Handle season join/decline actions
+  const handleSeasonAction = async (notificationId: string, action: 'join' | 'decline') => {
+    if (!token) return;
+
+    setSavingSeasonAction(prev => ({ ...prev, [notificationId]: true }));
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}/season-action`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ action })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Season action ${action} successful:`, data.message);
+        
+        // Refresh notifications to update UI
+        await fetchNotifications(true);
+        
+        // Show success message
+        alert(data.message);
+        
+        // If user joined the season, reload page to show new season data
+        if (action === 'join') {
+          // Clear ALL cached data to force fresh fetch
+          try {
+            // Clear leagueAPI cache
+            leagueAPI.invalidateCache();
+            
+            // Clear all league-related cache
+            localStorage.removeItem('leaguesCache');
+            localStorage.removeItem('lastLeaguesFetch');
+            localStorage.removeItem('preferredLeagueId');
+            
+            // Clear sessionStorage too
+            sessionStorage.clear();
+            
+            // Clear any api cache
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && (key.includes('cache') || key.includes('Cache') || key.includes('league') || key.includes('League'))) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            console.log('🧹 Cleared all caches for season refresh');
+          } catch (e) {
+            console.error('Error clearing cache:', e);
+          }
+          
+          // Force hard reload to bypass browser cache
+          setTimeout(() => {
+            window.location.href = window.location.href.split('?')[0] + '?refresh=' + Date.now();
+          }, 300);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Season action failed:', errorData);
+        alert(errorData.message || 'Failed to process season action');
+      }
+    } catch (error) {
+      console.error('❌ Error handling season action:', error);
+      alert('Failed to process season action');
+    } finally {
+      setSavingSeasonAction(prev => ({ ...prev, [notificationId]: false }));
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     dispatch(initializeFromStorage());
@@ -1955,12 +2037,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   }
 
   const navItems: { label: string; href: string }[] = [
-    { label: 'Leagues', href: '/all-leagues' },
-    { label: 'Matches', href: '/all-matches' },
-    { label: 'Dream Team', href: '/dream-team' },
-    { label: 'Player', href: '/all-players' },
-    { label: 'Trophy Room', href: '/trophy-room' },
-    { label: 'Leaderboard', href: '/leader-board' },
+    { label: 'LEAGUES', href: '/all-leagues' },
+    { label: 'MATCHES', href: '/all-matches' },
+    { label: 'DREAM TEAM', href: '/dream-team' },
+    { label: 'PLAYER', href: '/all-players' },
+    { label: 'TROPHY ROOM', href: '/trophy-room' },
+    { label: 'LEADERBOARD', href: '/leader-board' },
   ];
 
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1992,42 +2074,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     <Box sx={{
       display: 'flex',
       alignItems: 'flex-end',
-      gap: { xs: 0.5, md: 1 },
+      // gap: { xs: 0.5, md: 1 },
       flexWrap: 'nowrap',
       overflow: 'hidden',
-      justifyContent: 'flex-end'      // ✅ push links to the right inside this box
+      justifyContent: 'flex-end' ,
+      mt: 0,     // ✅ push links to the right inside this box
     }}>
-      {/* Add Stats button opens popup via useState, no navigation */}
-      <Button
-        onClick={() => {
-          // Always open the embedded dialog; inside it, we show a sign-in hint if needed
-          setStatsOpen(true);
-        }}
-        disableRipple
-        sx={{
-          textTransform: 'none',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          fontWeight: 700,
-          color: '#fff',
-          fontSize: { xs: '12px', sm: '9px', md: '13px', lg: '13px' },
-          px: { xs: 0.5, sm: 0.50, md: 1, lg: 1 },
-          py: { xs: 1, md: 1.25 },
-          minWidth: 'auto',
-          position: 'relative',
-          transition: 'all 0.3s ease',
-          whiteSpace: 'nowrap',
-          borderRadius: 1,
-          '&:hover': {
-            color: '#fff',
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }
-        }}
-      >
-        Add Stats
-      </Button>
-
       {navItems.map(({ label, href }) => {
         const active = pathname?.startsWith(href);
         return (
@@ -2039,13 +2091,13 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             disableRipple
             sx={{
               textTransform: 'none',
-              fontFamily: 'Arial, Helvetica, sans-serif',
+              fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
               fontWeight: 700,
               color: '#fff',
-              fontSize: { xs: '12px', sm: '9px', md: '13px', lg: '13px' },
+              fontSize: { xs: '12px', sm: '9px', md: '10px', lg: '12px' },
               px: { xs: 0.5, sm: 0.50, md: 1, lg: 1 },
               py: { xs: 1, md: 1.25 },
-              minWidth: 'auto',
+              // minWidth: 'auto',
               position: 'relative',
               transition: 'all 0.3s ease',
               whiteSpace: 'nowrap',
@@ -2094,34 +2146,36 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         // position="static"
           position="sticky"
         sx={{
-          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+          background: '#0e0e0e',
           boxShadow: 3,
           // px: { xs: 1, sm: 2, md: 2 }
-           px: { xs: 1, sm: 2, md: 2 },
+          //  px: { xs: 1, sm: 2, md: 2 },
           top: 0,
-          zIndex: (theme) => theme.zIndex.drawer + 2
+          zIndex: (theme) => theme.zIndex.drawer + 2,
+          borderBottom: '3px solid #E56A16'
         }}
       >
-        <Toolbar sx={{ 
+        <Toolbar sx={{
           justifyContent: 'space-between', 
           minHeight: { xs: '60px', md: '70px' },
-          gap: { xs: 1, md: 2 }
+          gap: { xs: 1, md: 2.4 }
         }}>
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 250, sm: 200, md: 260, lg: 320 },
-              height: { xs: 44, md: 40 },
+              width: { xs: 300, sm: 260, md: 300, lg: 355 },
+              height: { xs: 64, md: 75 },
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              mt: -2,
             }}>
               <Image
                 src={cflogo}
                 alt="Champion Footballer Logo"
-                width={320}
+                width={370}
                 height={64}
                 priority
-                sizes="(max-width:600px) 250px, (max-width:900px) 200px, (max-width:1200px) 260px, 320px"
+                sizes="(max-width:600px) 300px, (max-width:900px) 260px, (max-width:1200px) 300px, 355px"
                 style={{
                   height: '100%',
                   width: 'auto',
@@ -2146,7 +2200,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center',
-            gap: { xs: 0.5, md: 1 },
+            // gap: { xs: 0.5, md: 1 },
             flexShrink: 0,
           }}>
             {isAuthenticated && (
@@ -2176,32 +2230,35 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       // }
                     }}
                   >
-                    <NotificationsIcon />
+                    <NotificationsIcon sx={{height:'25px'}} />
                   </Badge>
                 </IconButton>
 
                 {/* PROFILE BUTTON - DESKTOP */}
                 <Button
                   onClick={handleProfileMenuOpen}
-                  startIcon={<AccountCircleIcon />}
+                  startIcon={<Image src={player} alt="profile" width={18} height={18} style={{ filter: 'brightness(0) invert(1)' }} />}
                   sx={{
                     display: { xs: 'none', lg: 'flex' },
                     textTransform: 'none',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
-                    fontWeight: 'bold',
+                    fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                    fontWeight: 'semibold',
                     color: '#fff',
-                    bgcolor: '#2B2B2B',
-                    borderRadius: 2,
-                    px: 2.5,
-                    fontSize: '14px',
+                    bgcolor: '#00a77f',
+                    borderRadius: 1,
+                    px: 2,
+                    fontSize: '16px',
                     boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
                     transition: 'box-shadow 0.2s, transform 0.2s',
+                    '& .MuiButton-startIcon': { marginRight: 1 },
                     '&:hover': {
-                      bgcolor: '#2B2B2B',
+                      bgcolor: '#00a77f',
                       color: '#fff',
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
                     },
+                    // px: 1.5,
+                    py: 0.3,
                   }}
                 >
                   Profile
@@ -2311,7 +2368,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                        background: '#00a77f',
                         color: '#FFFFFF',
                       },
                     }}
@@ -2598,7 +2655,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   >
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Box sx={{ flex: 1, pr: 1 }}>
-                        {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && (
+                        {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && notification.type !== 'NEW_SEASON' && (
                           <Typography
                             variant="subtitle2"
                             sx={{
@@ -2612,7 +2669,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                           </Typography>
                         )}
 
-                        {!isMatchType && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && display.node}
+                        {!isMatchType && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && notification.type !== 'NEW_SEASON' && display.node}
 
                         {isAvailType && (
                           <Box>
@@ -2989,6 +3046,103 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             </Box>
                           </Box>
                         )}
+
+                        {/* NEW_SEASON notification - Show Join/Decline buttons */}
+                        {notification.type === 'NEW_SEASON' && (() => {
+                          const seasonMeta = notification.meta as { actionTaken?: string; leagueName?: string; seasonNumber?: number } | undefined;
+                          return (
+                          <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            {/* Season Details */}
+                            <Box sx={{ width: '100%' }}>
+                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1976d2', mb: 0.5 }}>
+                                🎉 {notification.title}
+                              </Typography>
+                              
+                              {/* Display notification body */}
+                              <Typography sx={{ fontSize: '12px', color: '#333', mb: 1, fontWeight: 500, lineHeight: 1.5 }}>
+                                {notification.body}
+                              </Typography>
+
+                              {/* Show if action was already taken */}
+                              {seasonMeta?.actionTaken && (
+                                <Typography 
+                                  sx={{ 
+                                    fontSize: '11px', 
+                                    color: seasonMeta.actionTaken === 'joined' ? '#0d7a33' : '#888', 
+                                    fontWeight: 600,
+                                    fontStyle: 'italic'
+                                  }}
+                                >
+                                  {seasonMeta.actionTaken === 'joined' 
+                                    ? '✓ You joined this season' 
+                                    : '✗ You declined this season'}
+                                </Typography>
+                              )}
+                            </Box>
+
+                            {/* Action Buttons - Only show if action not yet taken */}
+                            {!seasonMeta?.actionTaken && (
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSeasonAction(notification.id, 'join');
+                                  }}
+                                  size="small"
+                                  variant="contained"
+                                  disabled={savingSeasonAction[notification.id]}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    color: '#fff',
+                                    bgcolor: '#0d7a33',
+                                    fontSize: '12px',
+                                    px: 2,
+                                    py: 0.6,
+                                    '&:hover': {
+                                      color: '#fff',
+                                      bgcolor: '#0a5e28'
+                                    },
+                                    '&:disabled': {
+                                      bgcolor: '#ccc'
+                                    }
+                                  }}
+                                >
+                                  {savingSeasonAction[notification.id] ? 'Joining...' : '✓ Join Season'}
+                                </Button>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSeasonAction(notification.id, 'decline');
+                                  }}
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={savingSeasonAction[notification.id]}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    color: '#666',
+                                    borderColor: '#999',
+                                    fontSize: '12px',
+                                    px: 2,
+                                    py: 0.6,
+                                    '&:hover': {
+                                      borderColor: '#666',
+                                      bgcolor: 'rgba(0,0,0,0.04)'
+                                    },
+                                    '&:disabled': {
+                                      borderColor: '#ccc',
+                                      color: '#ccc'
+                                    }
+                                  }}
+                                >
+                                  {savingSeasonAction[notification.id] ? 'Processing...' : '✗ Decline'}
+                                </Button>
+                              </Box>
+                            )}
+                          </Box>
+                          );
+                        })()}
                         
                         <Typography
                           variant="caption"
@@ -3042,11 +3196,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               <ListItem disablePadding>
                 <Button
                   onClick={handleProfileMenuOpen}
-                  startIcon={<AccountCircleIcon />}
+                  startIcon={<Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />}
                   fullWidth
                   sx={{
                     textTransform: 'none',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
                     fontWeight: 'bold',
                     color: '#fff',
                     bgcolor: '#2B2B2B',
@@ -3071,35 +3225,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 </Button>
               </ListItem>
                        )}
-            {/* ADD STATS BUTTON IN MOBILE DRAWER */}
-            {isAuthenticated && (
-              <ListItem disablePadding>
-                <Button
-                  onClick={() => { 
-                    setSelectedMatchId(null);
-                    setSelectedLeagueId(null);
-                    setStatsOpen(true); 
-                    setDrawerOpen(false); 
-                  }}
-                  fullWidth
-                  disableRipple
-                  sx={{
-                    justifyContent: 'flex-start',
-                    px: 3,
-                    py: 1.25,
-                    color: '#fff',
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    mb: 0.5,
-                    background: 'rgba(255,255,255,0.06)',
-                    '&:hover': { background: 'rgba(255,255,255,0.12)' }
-                  }}
-                >
-                  Add Stats
-                </Button>
-              </ListItem>
-            )}
             
             {/* MOBILE NAVIGATION LINKS */}
             {isAuthenticated && (
