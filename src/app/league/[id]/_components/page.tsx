@@ -2919,7 +2919,7 @@ export default function LeagueDetailPage() {
                                                                 border: idx === 0 ? '2px solid #F97316' : '2px solid #C0C0C0',
                                                                 '& .MuiCardContent-root': {
                                                                     pb: 0,
-                                                                    mb: '-10px'
+                                                                    mb: '-13px'
                                                                 },
                                                                 '&:hover': {
                                                                     transform: 'translateY(-2px)',
