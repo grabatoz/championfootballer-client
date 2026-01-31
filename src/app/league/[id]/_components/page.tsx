@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect, useCallback, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
@@ -1990,8 +1989,8 @@ export default function LeagueDetailPage() {
                                             <Image
                                                 src={LeagueIcon}
                                                 alt="League Icon"
-                                                width={window.innerWidth >= 960 ? 42 : 56}
-                                                height={window.innerWidth >= 960 ? 47 : 56}
+                                                width={56}
+                                                height={56}
                                                 style={{ objectFit: 'contain', pointerEvents: 'none' }}
                                             />
                                             {league ? (
@@ -2982,14 +2981,14 @@ export default function LeagueDetailPage() {
                                                             <CardContent sx={{ p: 0 }}>
                                                                 {/* Result Text Banner */}
                                                                 <Box sx={{
-                                                                    background: match.status === 'RESULT_UPLOADED' ? '#F59E0B' : '#333',
+                                                                    // background: match.status === 'RESULT_UPLOADED' ? '#F59E0B' : '#333',
                                                                     py: 0.5,
                                                                     textAlign: 'center'
                                                                 }}>
                                                                     <Typography sx={{
-                                                                        color: match.status === 'RESULT_UPLOADED' ? 'black' : 'white',
+                                                                        color: 'white',
                                                                         fontSize: '0.75rem',
-                                                                        fontWeight: 600
+                                                                        fontWeight: 400
                                                                     }}>
                                                                         {match.status === 'RESULT_UPLOADED' ? 'Awaiting Confirmation' : resultText}
                                                                     </Typography>
@@ -3003,7 +3002,8 @@ export default function LeagueDetailPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
-                                                                    borderBottom: '2px solid #fff'
+                                                                    borderBottom: '2px solid #fff',
+                                                                    mt:-3.5
                                                                 }}>
                                                                     {/* Home Team */}
                                                                     <Box sx={{
@@ -3033,7 +3033,8 @@ export default function LeagueDetailPage() {
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
-                                                                        justifyContent: 'center'
+                                                                        justifyContent: 'center',
+                                                                        mt:1
                                                                     }}>
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 , mt:2}}>
                                                                             {/* Home Goals with label below */}
@@ -3049,7 +3050,7 @@ export default function LeagueDetailPage() {
                                                                                 <Typography sx={{
                                                                                     fontSize: '0.5rem',
                                                                                     color: '#aaa',
-                                                                                    mt: 0.3
+                                                                                    // mt: 0.3
                                                                                 }}>
                                                                                     Goal Score
                                                                                 </Typography>
@@ -3078,7 +3079,7 @@ export default function LeagueDetailPage() {
                                                                                 <Typography sx={{
                                                                                     fontSize: '0.5rem',
                                                                                     color: '#aaa',
-                                                                                    mt: 0.3
+                                                                                    // mt: 0.3
                                                                                 }}>
                                                                                     Goal Score
                                                                                 </Typography>
@@ -3186,7 +3187,7 @@ export default function LeagueDetailPage() {
                                                                                     size="small"
                                                                                     onClick={() => {
                                                                                         setSelectedMatchIdForDialog(match.id);
-                                                                                        setShouldShowAdminGoals(!!isAdmin);
+                                                                                        setShouldShowAdminGoals(false);
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
                                                                                     startIcon={<SignalCellularAltIcon sx={{ fontSize: 16 }} />}

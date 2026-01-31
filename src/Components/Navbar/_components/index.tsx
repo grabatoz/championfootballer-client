@@ -532,6 +532,35 @@ function matchHasEnded(
 // Safely normalize any match id (trim, remove all whitespace)
 function sanitizeMatchId(v: unknown): string | undefined {
   if (v === undefined || v === null) return undefined;
+  
+  // If v is already a string, check if it's a JSON string that needs parsing
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    // Check if it looks like a JSON object string
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        // If it's an object with matchId, extract that
+        if (typeof parsed === 'object' && parsed !== null) {
+          return sanitizeMatchId(parsed.matchId || parsed.match_id || parsed.id);
+        }
+      } catch {
+        // Not valid JSON, continue with normal string handling
+      }
+    }
+    const s = trimmed.replace(/\s+/g, '');
+    return s.length ? s : undefined;
+  }
+  
+  // If v is an object, try to extract matchId from it
+  if (typeof v === 'object' && v !== null) {
+    const obj = v as Record<string, unknown>;
+    const matchId = obj.matchId || obj.match_id || obj.id;
+    if (matchId) {
+      return sanitizeMatchId(matchId);
+    }
+  }
+  
   const s = String(v).trim().replace(/\s+/g, '');
   return s.length ? s : undefined;
 }
@@ -1948,9 +1977,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
     const urlCandidates = [
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
-     
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm-result`,
-     
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
     ];
 
@@ -1993,15 +2019,14 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
     if (!token || !user?.id) return;
     const mid = sanitizeMatchId(matchId)!;
-    debugId('POST confirm-result mid', mid);
+    debugId('POST confirm mid', mid);
 
     setResultSelections(prev => ({ ...prev, [mid]: value }));
     setSavingResult(prev => ({ ...prev, [mid]: true }));
 
     const urlCandidates = [
       `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm-result?action=confirm`,
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm?action=confirm`
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
     ];
 
     let ok = false;

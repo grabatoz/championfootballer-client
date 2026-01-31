@@ -19,12 +19,18 @@ import {
     Alert,
     SxProps,
     Theme,
+    MenuItem,
+    Avatar,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { Add, Remove } from '@mui/icons-material';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SecurityIcon from '@mui/icons-material/Security';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import toast from 'react-hot-toast';
 import { mutateWithRefresh, clearCacheByResource, dispatchRefreshEvent } from '@/lib/utils/cacheManager';
 import Goals from '@/Components/images/goal.png'
@@ -34,7 +40,14 @@ import Link from 'next/link';
 import { cacheManager } from "@/lib/cacheManager"
 import { LeaderboardPlayer } from '@/types/api';
 import Shirt from '@/Components/images/shirtimg.png'
+import HomeTeamShirt from '@/Components/images/hometeamshirt.png'
+import AwayTeamShirt from '@/Components/images/awayteamshirt.png'
+import MOMT from '@/Components/images/momt.png'
+import DEFIMP from '@/Components/images/defimp.png'
+import MENTALITY from '@/Components/images/metality.png'
+import PlayerImg from '@/Components/images/playerimg.png'
 import Image from 'next/image'
+
 type StatKey = 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact';
 type HandleStatChange = (stat: StatKey, increment: number, max: number) => void;
 
@@ -128,6 +141,7 @@ interface Match {
     start?: string;
     homeCaptainId?: string;
     awayCaptainId?: string;
+    matchNumber?: number; // Match index from database
     // Optional fields that may come from API to help recover league
     leagueId?: string;
     leagueName?: string;
@@ -156,6 +170,7 @@ interface League {
     active: boolean;
     createdAt?: string;
     updatedAt?: string;
+    matches?: Match[];
 }
 
 interface MotmButtonProps {
@@ -327,8 +342,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const [isPickDialogOpen, setIsPickDialogOpen] = useState(false);
     const [pickCategory, setPickCategory] = useState<CaptainPickCategory | null>(null);
     const [savingPick, setSavingPick] = useState(false);
-    // Capability flag – avoid POST if API is not available
-    const [captainApiAvailable, setCaptainApiAvailable] = useState(false);
+    // Capability flag – assume API is available unless we get 404/405 from POST
+    const [captainApiAvailable, setCaptainApiAvailable] = useState(true);
     // --- end captain picks state ---
 
     const { user, token } = useAuth();
@@ -424,7 +439,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)'
     } as const;
     const dialogTitleSx = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff', bgcolor: 'transparent' } as const;
-    const dialogContentSx = { color: '#E5E7EB', bgcolor: 'transparent' } as const;
+    const dialogContentSx = { color: '#E5E7EB', bgcolor: '#262626' } as const;
 
     // --- NEW: handlers to fetch leagues and matches ---
     const openLeagueSelector = useCallback(async () => {
@@ -1530,26 +1545,43 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         try {
             setSavingMatchDetails(true);
 
-            // 🚀 Use cache manager for automatic cache invalidation on mutation
-            const res = await mutateWithRefresh(
-                `${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/upload-result`,
+            // Update match goals
+            const goalsRes = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/goals`,
                 {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals, note }),
-                },
-                'match',
-                resolvedMatchId
+                    body: JSON.stringify({ homeTeamGoals: homeGoals, awayTeamGoals: awayGoals }),
+                }
             );
 
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to upload result');
+            if (!goalsRes.ok) {
+                const errorData = await goalsRes.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to update goals');
             }
 
-            // const data = await res.json();
+            // Update match note if provided
+            if (note && note.trim()) {
+                const noteRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/note`,
+                    {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ note }),
+                    }
+                );
+
+                if (!noteRes.ok) {
+                    const errorData = await noteRes.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to update note');
+                }
+            }
 
             toast.success('Match details saved successfully!');
+
+            // Trigger notification refresh for captains to see the confirmation request
+            console.log('🔔 Triggering notification refresh event');
+            window.dispatchEvent(new Event('refresh-notifications'));
 
             // �️ Clear cache FIRST to ensure fresh data on next fetch
             console.log('�️ Clearing cache for fresh data...');
@@ -1596,26 +1628,35 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // Fetch votes and set votedForId ONLY from backend
     const fetchVotes = useCallback(async () => {
         if (!token || !resolvedMatchId) return;
+        console.log('🔍 Fetching votes for match:', resolvedMatchId);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/votes`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
+            console.log('📡 Votes API Response Status:', response.status);
+
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, use default values
+                console.warn('⚠️ Votes endpoint not found (404/405)');
                 setPlayerVotes({});
                 setVotedForId(null);
                 return;
             }
 
             const data = await response.json();
+            console.log('📥 Votes API Response Data:', data);
             if (data.success) {
+                console.log('✅ Setting playerVotes:', data.votes);
+                console.log('✅ Setting votedForId:', data.userVote);
                 setPlayerVotes(data.votes || {});
                 setVotedForId(data.userVote || null); // <-- Always set from backend only!
+            } else {
+                console.warn('⚠️ API returned success: false');
             }
         } catch (error) {
-            console.error('Failed to fetch votes:', error);
+            console.error('❌ Failed to fetch votes:', error);
             // Use default values on error
             setPlayerVotes({});
             setVotedForId(null);
@@ -1680,6 +1721,39 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         ),
         [adminStats.goals, adminStats.assists, adminStats.cleanSheets, adminStats.defence, adminSelectedTeamGoals, computeImpactPercent]
     );
+
+    // Helper function to extract numeric match index from various field names
+    const getNumericIndex = (m: Match | null | undefined): number | undefined => {
+        if (!m) return undefined;
+        const keys = ['matchNumber', 'match_no', 'matchIndex', 'index', 'matchNo', 'no'] as const;
+        const rec = m as unknown as Record<string, unknown>;
+        for (const k of keys) {
+            const v = rec[k];
+            if (typeof v === 'number' && !Number.isNaN(v)) return v;
+            if (typeof v === 'string') {
+                const n = parseInt(v, 10);
+                if (!Number.isNaN(n)) return n;
+            }
+        }
+        return undefined;
+    };
+
+    // Compute match number - prefer backend value, fallback to position in league matches
+    const computedMatchNumber = React.useMemo(() => {
+        const backendNumber = getNumericIndex(match);
+        if (backendNumber !== undefined) return backendNumber;
+        
+        // Fallback: calculate from league matches array position
+        if (league?.matches && match?.id) {
+            const allMatches = Array.isArray(league.matches) ? league.matches : [];
+            const matchIndex = allMatches.findIndex((m: Match) => String(m?.id) === String(match.id));
+            if (matchIndex >= 0) {
+                return matchIndex + 1; // 1-based index
+            }
+        }
+        
+        return undefined;
+    }, [match, league?.matches]);
 
     // Prevent self-vote in UI too
     const handleVote = async (playerId: string) => {
@@ -1915,57 +1989,145 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         return p ? `${p.firstName} ${p.lastName}` : '';
     }, [myTeamPlayers]);
 
+    // NEW: Fetch existing stats for current user
+    const fetchUserStats = useCallback(async () => {
+        if (!token || !resolvedMatchId || !user) return;
+        
+        console.log('📊 Fetching existing stats for user:', user.id);
+        
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                console.warn('⚠️ Failed to fetch stats:', res.status);
+                return;
+            }
+
+            const data = await res.json();
+            console.log('📊 Stats response:', data);
+            
+            if (data.success && Array.isArray(data.stats)) {
+                // Find stats for current user
+                const userStat = data.stats.find((s: any) => String(s.userId) === String(user.id));
+                
+                if (userStat) {
+                    console.log('✅ Found existing stats for user:', userStat);
+                    setStats({
+                        goals: userStat.goals || 0,
+                        assists: userStat.assists || 0,
+                        cleanSheets: userStat.cleanSheets || 0,
+                        penalties: userStat.penalties || 0,
+                        freeKicks: userStat.freeKicks || 0,
+                        defence: userStat.defence || 0,
+                        impact: userStat.impact || 0,
+                    });
+                    // Only show toast if user has actually submitted stats before
+                    if (userStat.goals > 0 || userStat.assists > 0 || userStat.cleanSheets > 0) {
+                        toast.success('Your previous stats have been loaded!');
+                    }
+                } else {
+                    console.log('ℹ️ No existing stats found for user');
+                }
+            }
+        } catch (err) {
+            console.error('❌ Failed to fetch user stats:', err);
+        }
+    }, [token, resolvedMatchId, user]);
+
+    // Call fetchUserStats when match or user changes
+    useEffect(() => {
+        if (resolvedMatchId && token && user) {
+            fetchUserStats();
+        }
+    }, [resolvedMatchId, token, user, fetchUserStats]);
+
     useEffect(() => {
         const loadPicks = async () => {
-            if (!token || !matchId) return;
+            if (!token || !resolvedMatchId) {
+                console.log('⏭️ Skipping captain picks load - missing token or matchId');
+                return;
+            }
+
+            console.log('🔄 Loading captain picks for match:', resolvedMatchId);
+
+            // Determine which team the user is captain of
+            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            const storageKey = teamKey ? `captain_picks_${resolvedMatchId}_${teamKey}` : null;
 
             // 1) Try local storage first so UI shows something even if API is missing
-            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
-            const storageKey = teamKey ? `captain_picks_${matchId}_${teamKey}` : null;
             if (storageKey && typeof window !== 'undefined') {
                 const raw = localStorage.getItem(storageKey);
                 if (raw) {
                     try {
                         const ls = JSON.parse(raw) as CaptainPicks;
+                        console.log('💾 Loaded captain picks from localStorage:', ls);
                         setCaptainPicks({
                             defence: ls.defence || undefined,
                             influence: ls.influence || undefined,
                         });
-                    } catch { }
+                    } catch (err) {
+                        console.error('❌ Failed to parse localStorage picks:', err);
+                    }
                 }
             }
 
-            // 2) Probe API; if 404/405, mark unavailable and stop
+            // 2) Fetch from API (overrides localStorage if successful)
             try {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                if (res.status === 404 || res.status === 405) {
+                console.log('📡 Captain picks API response:', res.status);
+
+                // Only disable API if endpoint doesn't exist (405 Method Not Allowed)
+                // 404 might just mean no picks saved yet, which is normal
+                if (res.status === 405) {
+                    console.warn('⚠️ Captain picks endpoint not implemented');
                     setCaptainApiAvailable(false);
-                    return; // avoid further calls (prevents POST 404 spam)
+                    return;
                 }
 
-                if (!res.ok) return;
+                if (!res.ok) {
+                    console.warn('⚠️ Failed to load captain picks:', res.status);
+                    // Don't disable API, picks might just not exist yet
+                    return;
+                }
 
                 setCaptainApiAvailable(true);
                 const data = await res.json();
+                console.log('🎯 Captain picks loaded from backend:', data);
+                
                 // Expecting shape like { home: { defence, influence }, away: { defence, influence } }
-                const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
                 const picks = teamKey ? data?.[teamKey] : data?.picks;
+                
                 if (picks && typeof picks === 'object') {
+                    console.log('✅ Setting captain picks from backend:', picks);
                     setCaptainPicks({
                         defence: picks.defence || undefined,
                         influence: picks.influence || undefined,
                     });
+                    
+                    // Also update localStorage for offline capability
+                    if (storageKey && typeof window !== 'undefined') {
+                        localStorage.setItem(storageKey, JSON.stringify({
+                            defence: picks.defence || undefined,
+                            influence: picks.influence || undefined,
+                        }));
+                        console.log('💾 Synced captain picks to localStorage');
+                    }
+                } else {
+                    console.log('ℹ️ No captain picks found for team:', teamKey);
                 }
-            } catch {
+            } catch (err) {
+                console.error('❌ Failed to load captain picks:', err);
                 // keep local-only mode
                 setCaptainApiAvailable(false);
             }
         };
         loadPicks();
-    }, [token, matchId, isHomeCaptain, isAwayCaptain]);
+    }, [token, resolvedMatchId, isHomeCaptain, isAwayCaptain]);
 
     // --- NEW: open pick dialog handler ---
     const openPickDialog = (category: CaptainPickCategory) => {
@@ -1986,22 +2148,32 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     };
 
     // --- NEW: save selected player for a category ---
-    const handleSelectPick = async (playerId: string) => {
-        if (!pickCategory) return;
+    const handleSelectPick = async (playerId: string, categoryOverride?: CaptainPickCategory) => {
+        const category = categoryOverride ?? pickCategory;
+        if (!category) return;
+
+        console.log('🎯 Saving captain pick:', { category, playerId, resolvedMatchId });
 
         // Local update + localStorage persist
         const applyLocal = () => {
-            setCaptainPicks(prev => ({ ...prev, [pickCategory]: playerId }));
+            setCaptainPicks(prev => {
+                const updated = { ...prev, [category]: playerId };
+                console.log('📝 Updated captain picks state:', updated);
+                return updated;
+            });
+            
             const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
             if (teamKey && typeof window !== 'undefined') {
-                const key = `captain_picks_${matchId}_${teamKey}`;
-                const next = { ...captainPicks, [pickCategory]: playerId };
+                const key = `captain_picks_${resolvedMatchId}_${teamKey}`;
+                const next = { ...captainPicks, [category]: playerId };
                 localStorage.setItem(key, JSON.stringify(next));
+                console.log('💾 Saved to localStorage:', { key, pick: next });
             }
         };
 
-        // If API not available, avoid POST 404 entirely
+        // If API was previously marked unavailable, avoid POST 404 entirely
         if (!captainApiAvailable) {
+            console.log('⚠️ Captain picks API not available, saving locally only');
             applyLocal();
             toast.success('Saved locally (captain picks API not enabled).');
             setIsPickDialogOpen(false);
@@ -2011,24 +2183,42 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
         setSavingPick(true);
         try {
+            console.log('📡 Sending captain pick to backend:', { category, playerId });
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ category: pickCategory, playerId })
+                body: JSON.stringify({ category, playerId })
             });
 
-            if (!res.ok) throw new Error('Failed to save pick');
+            // If endpoint doesn't exist, mark as unavailable for future calls
+            if (res.status === 404 || res.status === 405) {
+                console.error('❌ Captain picks endpoint not found:', res.status);
+                setCaptainApiAvailable(false);
+                applyLocal();
+                toast.error('Captain picks API not available. Saved locally.');
+                return;
+            }
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                console.error('❌ Failed to save captain pick:', res.status, errorData);
+                throw new Error(errorData.message || 'Failed to save pick');
+            }
+
+            const responseData = await res.json();
+            console.log('✅ Captain pick saved to backend:', responseData);
 
             applyLocal();
-            toast.success('Captain pick saved.');
+            toast.success(`${category === 'defence' ? 'Defensive Impact' : '+ Mentality'} captain pick saved!`);
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message :
                     typeof err === 'string' ? err :
                         'Failed to save pick';
+            console.error('❌ Error saving captain pick:', err);
             toast.error(message);
         } finally {
             setSavingPick(false);
@@ -2144,7 +2334,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     PaperProps={{ sx: dialogPaperSx }}
                 >
                     <DialogTitle sx={dialogTitleSx}>
-                        Admin Can Add Goals Both Teams
+                        ADD MATCH SCORES
                         <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}>
                             <CloseIcon />
                         </IconButton>
@@ -2183,7 +2373,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             return (
                 <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" keepMounted PaperProps={{ sx: dialogPaperSx }}>
                     <DialogTitle sx={dialogTitleSx}>
-                        Admin Can Add Goals Both Teams
+                        ADD MATCH SCORES
                         <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent dividers sx={{ ...dialogContentSx }}>
@@ -2292,686 +2482,719 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     const homePlayersAll: (User & { isGuest?: boolean })[] = [...(match?.homeTeamUsers ?? []), ...guestUsersHome];
     const awayPlayersAll: (User & { isGuest?: boolean })[] = [...(match?.awayTeamUsers ?? []), ...guestUsersAway];
+
+    // Players eligible for voting / dropdowns (exclude guests)
+    const allPlayersForVoting: User[] = [...homePlayersAll, ...awayPlayersAll].filter(
+        (p): p is User => !Object.prototype.hasOwnProperty.call(p, 'isGuest')
+    );
+
+    // Summary row selections
+    const motmPlayer = votedForId ? allPlayersForVoting.find(p => p.id === votedForId) : undefined;
+    const defensivePlayer = captainPicks.defence ? allPlayersForVoting.find(p => p.id === captainPicks.defence) : undefined;
+    const mentalityPlayer = captainPicks.influence ? allPlayersForVoting.find(p => p.id === captainPicks.influence) : undefined;
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
+    console.log('🔍 All Players for Voting:', allPlayersForVoting.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, votes: playerVotes[p.id] || 0 })));
 
     const content = (
-        <Box sx={{ p: { xs: 0.5, sm: 2, md: 2 }, minHeight: '100vh', color: 'black' }}>
-            {/* --- NEW: League selector and show matches toolbar --- */}
-            {!showAdminGoalsSection && (
-                <Paper sx={{ p: { xs: 1, sm: 1.5 }, mb: 1, display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white' }}>
-                    {/* League selector pair */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexBasis: { xs: '100%', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1rem', md: '1.175rem' }, whiteSpace: 'nowrap' }}>Select a League :</Typography>
-                        <Button
-                            onClick={openLeagueSelector}
-                            variant="contained"
-                            size="small"
-                            sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '1rem' },
-                                lineHeight: 1.2,
-                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                minWidth: { xs: 'auto', sm: 'unset' }
-                            }}
-                        >
-                            {(() => {
-                                const name = (selectedLeagueNameForList || league?.name);
-                                if (!name) return 'Select League';
-                                return (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <span>{name}</span>
-                                    </Box>
-                                );
-                            })()}
-                        </Button>
-                    </Box>
-                    {/* Match selector pair */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexBasis: { xs: '100%', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1rem', md: '1.175rem' }, whiteSpace: 'nowrap' }}>Select a Match:</Typography>
-                        <Button
-                            onClick={openMatchesDialog}
-                            variant="contained"
-                            size="small"
-                            disabled={!selectedLeagueIdForList && !resolvedLeagueId && !league?.id}
-                            sx={{
-                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                                lineHeight: 1.2,
-                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                minWidth: { xs: 'auto', sm: 'unset' }
-                            }}
-                        >
-                            {autoSelectMatchLoading
-                                ? 'Loading Matches…'
-                                : selectedLeagueHasNoMatches
-                                    ? 'No Match Found'
-                                    : selectedMatchForList?.homeTeamName && selectedMatchForList?.awayTeamName
-                                        ? `${selectedMatchForList.homeTeamName} vs ${selectedMatchForList.awayTeamName}`
-                                        : match?.homeTeamName && match?.awayTeamName
-                                            ? `${match.homeTeamName} vs ${match.awayTeamName}`
-                                            : 'Select a Match'}
-                        </Button>
-                    </Box>
-                </Paper>
-            )}
-
+        <Box sx={{ minHeight: '100vh', color: 'black' }}>
             {!showAdminGoalsSection && !selectedLeagueHasNoMatches && !league.active && (
                 <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>
             )}
 
             {!showAdminGoalsSection && (
-                <Paper sx={{ p: { xs: 0.5, sm: 2, md: 3 }, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)', color: 'white', borderRadius: 3, boxShadow: 3, display: selectedLeagueHasNoMatches ? 'none' : 'block' }}>
-                    {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) && (
+                <Paper
+                    sx={{
+                        p: { xs: 1, sm: 2, md: 3 },
+                        backgroundColor: '#262626',
+                        color: 'white',
+                        // borderRadius: 3,
+                        // boxShadow: 3,
+                        // display: selectedLeagueHasNoMatches ? 'none' : 'block',
+                    }}
+                >
+                    {/* Header */}
+                    <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 3 } }}>
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: '1rem', sm: '1.25rem', md: '2rem' },
+                                textTransform: 'uppercase',
+                                letterSpacing: 1,
+                            }}
+                        >
+                            Add your stats and match votes
+                        </Typography>
+                    </Box>
+
+                    {/* Stats (left) + Votes (right) */}
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                            gap: { xs: 2, md: 3 },
+                            alignItems: 'stretch',
+                        }}
+                    >
+                        {/* Stats panel */}
                         <Box
                             sx={{
-                                mb: 1,
-                                p: { xs: 0.75, sm: 1, md: 1.25 },
-                                background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-                                color: 'white',
+                                p: { xs: 1, sm: 1.5, md: 3 },
+                                backgroundColor: '#262626',
                                 borderRadius: 2,
                                 border: '1px solid #4b4b4b',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                                width: { xs: '100%', sm: '60%', md: '40%' },
-                                maxWidth: { xs: '100%', sm: 420, md: 480 },
-                                mx: 'auto',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: 0.75
+                                gap: 1.25,
                             }}
                         >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>
-                                    {isAdmin && !isUserAssignedToTeam ? 'Admin Quick Stats' : 'Add Your Stats'}
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    fontWeight: 500,
+                                    // mb: 0.5,
+                                    fontSize: '2rem',
+                                    mt: -3
+                                }}
+                            >
+                                Stats
+                            </Typography>
+                            {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mb: 1 }} /> */}
+
+                            {/* {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) ? ( */}
+                                <>
+                                    {/* Goals Row */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <img src={Goals.src} alt="Goals" style={{ width: 48, height: 48 }} />
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                minWidth: 160,
+                                                py: 0.75,
+                                                px: 4,
+                                                border: '1px solid rgba(255,255,255,0.3)',
+                                                borderRadius: 1,
+                                                backgroundColor: 'transparent',
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() => handleStatChange('goals', 1, teamGoalsSafe)}
+                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('goals', -1, teamGoalsSafe); }}
+                                        >
+                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
+                                                {stats.goals}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                            Goals
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Assists Row */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <img src={Assist.src} alt="Assists" style={{ width: 48, height: 48 }} />
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                minWidth: 160,
+                                                py: 0.75,
+                                                px: 4,
+                                                border: '1px solid rgba(255,255,255,0.3)',
+                                                borderRadius: 1,
+                                                backgroundColor: 'transparent',
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() => handleStatChange('assists', 1, teamGoalsSafe)}
+                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('assists', -1, teamGoalsSafe); }}
+                                        >
+                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
+                                                {stats.assists}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                            Assists
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Clean Sheet Row */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 48, height: 48 }} />
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                minWidth: 160,
+                                                py: 0.75,
+                                                px: 4,
+                                                border: '1px solid rgba(255,255,255,0.3)',
+                                                borderRadius: 1,
+                                                backgroundColor: 'transparent',
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() => handleStatChange('cleanSheets', 1, 1)}
+                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('cleanSheets', -1, 1); }}
+                                        >
+                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
+                                                {stats.cleanSheets}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                            Clean Sheet
+                                        </Typography>
+                                    </Box>
+                                </>
+                            {/* ) : (
+                                <Typography variant="body2" sx={{ color: '#D1D5DB' }}>
+                                    Stats submission is not available for this match.
                                 </Typography>
-                                {(userTeamName || isAdmin) && (
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            fontWeight: 600,
-                                            color: '#E59616',
-                                            fontSize: '0.875rem'
-                                        }}
-                                    >
-                                        {userTeamName ? `You are in this team: ${userTeamName}` : 'League Admin'}
-                                    </Typography>
-                                )}
-                            </Box>
-                            <Divider sx={{ my: 0.75, borderColor: 'rgba(255,255,255,0.2)' }} />
+                            )} */}
+                        </Box>
 
-                            <StatCounter
-                                icon={<img src={Goals.src} alt="Goals" style={{ width: 20, height: 20 }} />}
-                                label="Goals"
-                                value={stats.goals}
-                                onIncrement={() => handleStatChange('goals', 1, teamGoalsSafe)}
-                                onDecrement={() => handleStatChange('goals', -1, teamGoalsSafe)}
-                                compact
-                            />
-                            <StatCounter
-                                icon={<img src={Assist.src} alt="Assists" style={{ width: 20, height: 20 }} />}
-                                label="Assists"
-                                value={stats.assists}
-                                onIncrement={() => handleStatChange('assists', 1, teamGoalsSafe)}
-                                onDecrement={() => handleStatChange('assists', -1, teamGoalsSafe)}
-                                compact
-                            />
-                            <StatCounter
-                                icon={<img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 20, height: 20 }} />}
-                                label="Clean Sheets"
-                                value={stats.cleanSheets}
-                                onIncrement={() => handleStatChange('cleanSheets', 1, 1)}
-                                onDecrement={() => handleStatChange('cleanSheets', -1, 1)}
-                                compact
-                            />
+                        {/* Votes panel */}
+                        <Box
+                            sx={{
+                                p: { xs: 1, sm: 1.5, md: 3 },
+                                backgroundColor: '#262626',
+                                borderRadius: 2,
+                                border: '1px solid #4b4b4b',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1.5,
+                            }}
+                        >
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    fontWeight: 500,
+                                    // mb: 0.5,
+                                    fontSize: '2rem',
+                                    mt: -3
+                                }}
+                            >
+                                Votes
+                            </Typography>
+                            {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} /> */}
 
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 0.5 }}>
-                                <Button
-                                    onClick={handleSaveStats}
-                                    variant="contained"
-                                    disabled={isSubmittingStats}
+                            {/* MOTM select */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <img src={MOMT.src} alt="MOTM" style={{ width: 35, height: 35 }} />
+                                <TextField
+                                    select
+                                    size="small"
+                                    value={votedForId || ''}
+                                    onChange={(e) => handleVote(e.target.value)}
+                                    disabled={
+                                        loadingVote ||
+                                        !baseCanSubmit ||
+                                        !league.active ||
+                                        !isUserAssignedToTeam
+                                    }
+                                    SelectProps={{
+                                        displayEmpty: true,
+                                        renderValue: (selected) => {
+                                            const selectedPlayer = allPlayersForVoting.find(p => p.id === selected);
+                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select Man Of The Match Player';
+                                        },
+                                        MenuProps: {
+                                            PaperProps: {
+                                                sx: {
+                                                    bgcolor: 'black',
+                                                    '& .MuiList-root': {
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                                        gap: 1,
+                                                        p: 1,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
                                     sx={{
-                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                        color: 'white',
-                                        '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' }
+                                        minWidth: 290,
+                                        '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'transparent',
+                                            color: '#fff',
+                                            borderRadius: 1,
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            py: 0.4,
+                                            px: 0,
+                                            fontSize: '0.85rem',
+                                        },
+                                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                                        '& .MuiSvgIcon-root': { color: '#fff' },
                                     }}
                                 >
-                                    {isSubmittingStats ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Save'}
-                                </Button>
-                            </Box>
-                        </Box>
-                    )}
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'row' }, gap: { xs: 0.5, sm: 1, md: 3 } }}>
-                        {/* Home Team Section */}
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                mb: { xs: 0.5, sm: 2 },
-                                flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                                gap: { xs: 0.5, sm: 1 }
-                            }}>
-                                <Typography variant="h5" color="white" sx={{
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '0.875rem', sm: '1.25rem', md: '1.5rem' },
-                                    lineHeight: { xs: 1.2, sm: 1.5 }
-                                }}>
-                                    {match.homeTeamName} ({typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0})
-                                </Typography>
-                            </Box>
-
-                            <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
-                                <CardContent sx={{
-                                    p: { xs: 0.5, sm: 2 },
-                                    maxHeight: { xs: 250, sm: 400 },
-                                    overflowY: 'auto',
-                                    scrollbarWidth: 'none',
-                                    '&::-webkit-scrollbar': { display: 'none' }
-                                }}>
-                                    {homePlayersAll.length > 0 ? (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                            {homePlayersAll.map((player, index) => {
-                                                return (
-                                                    <React.Fragment key={player.id}>
-                                                        <Box sx={{
-                                                            display: 'flex',
-                                                            flexDirection: 'row',
-                                                            alignItems: 'center',
-                                                            p: { xs: 0.5, sm: 1, md: 2 },
-                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                            borderRadius: 0,
-                                                            border: '1px solid #4b4b4b',
-                                                            borderBottom: index === homePlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
-                                                            minHeight: { xs: 40, sm: 60, md: 100 },
-                                                            position: 'relative',
-                                                            '&:hover': {
-                                                                background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
-                                                                transform: 'translateY(-1px)',
-                                                                transition: 'all 0.2s ease'
-                                                            }
-                                                        }}>
-
-
-                                                            {player.hasOwnProperty('isGuest') ? (
-                                                                <JerseyAvatar
-                                                                    sx={{
-                                                                        width: { xs: 25, sm: 35, md: 74 },
-                                                                        height: { xs: 25, sm: 35, md: 74 },
-                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                        flexShrink: 0,
-                                                                        opacity: 0.9
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <Link href={`/player/${player.id}`}>
-                                                                    <JerseyAvatar
-                                                                        sx={{
-                                                                            width: { xs: 25, sm: 35, md: 74 },
-                                                                            height: { xs: 25, sm: 35, md: 74 },
-                                                                            mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                            flexShrink: 0,
-                                                                        }}
-                                                                    />
-                                                                </Link>
-                                                            )}
-
-                                                            {/* Player Info */}
-                                                            <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                                                {player.hasOwnProperty('isGuest') ? (
-                                                                    <>
-                                                                        <Typography variant="h6" sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap',
-                                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                        }}>
-                                                                            {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
-                                                                        </Typography>
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: '#D1D5DB',
-                                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                        }}>
-                                                                            Guest Player
-                                                                        </Typography>
-                                                                    </>
-                                                                ) : (
-                                                                    <Link href={`/player/${player.id}`}>
-                                                                        <Typography variant="h6" sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap',
-                                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                        }}>
-                                                                            {player.firstName} {player.lastName}
-                                                                            {player.id === match.homeCaptainId ? ' (C)' : ''}
-                                                                        </Typography>
-
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: '#D1D5DB',
-                                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                        }}>
-                                                                            {player.positionType || 'Player'}
-                                                                        </Typography>
-                                                                    </Link>
-                                                                )}
-                                                                <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
-                                                                    {/* Edit Stats Button - Only for League Admin or Team Captain */}
-                                                                    {/* League Admin: can edit all players | Home Captain: can edit only home team players */}
-                                                                    {(canEditPlayerStats(true) && match.status === 'RESULT_PUBLISHED' && league.active) && (
-                                                                        <Button
-                                                                            onClick={() => handleOpenAdminStatsModal(player)}
-                                                                            startIcon={<Add />}
-                                                                            variant="contained"
-                                                                            size="small"
-                                                                            sx={{
-                                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                borderRadius: 1.5,
-                                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                                                fontSize: { xs: 5, sm: 7, md: 10 },
-                                                                                minWidth: { xs: 'auto', sm: 'auto' },
-                                                                                height: { xs: 16, sm: 20, md: 28 },
-                                                                                whiteSpace: 'nowrap',
-                                                                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                                                                mt: { xs: 0.25, sm: 0.5, md: 0.5 }
-                                                                            }}
-                                                                        >
-                                                                            Edit Stats
-                                                                        </Button>
-                                                                    )}
-                                                                    {/* MOTM Vote Button placed next to Edit Stats */}
-                                                                    {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
-                                                                        <MotmCoin
-                                                                            voted={votedForId === player.id}
-                                                                            onClick={() => handleVote(player.id)}
-                                                                            disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
-                                                                            sx={{ width: { xs: 20, sm: 20, md: 48 }, height: { xs: 16, sm: 20, md: 28 } }}
-                                                                        />
-                                                                    )}
-                                                                </Box>
-                                                            </Box>
+                                    {allPlayersForVoting.map((p) => {
+                                        const selected = votedForId === p.id;
+                                        console.log(`🎯 Player ${p.firstName} ${p.lastName} (${p.id}):`, { selected, votedForId, playerVotesForThisPlayer: playerVotes[p.id] });
+                                        return (
+                                            <MenuItem 
+                                                key={p.id} 
+                                                value={p.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    p: 1,
+                                                    position: 'relative',
+                                                    bgcolor: '#000',
+                                                    border: '1px solid',
+                                                    borderColor: selected ? '#00C48C' : 'rgba(255,255,255,0.15)',
+                                                    borderRadius: 1,
+                                                    transition: 'background-color .2s ease, border-color .2s ease, transform .08s ease',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgba(255,255,255,0.06)',
+                                                        borderColor: '#fff',
+                                                        transform: 'translateY(-1px)'
+                                                    },
+                                                    minHeight: 'auto',
+                                                }}
+                                            >
+                                                <Box sx={{ position: 'relative' }}>
+                                                    <Avatar
+                                                        src={p.profilePicture || PlayerImg.src}
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            mb: 0.5,
+                                                            border: '3px solid',
+                                                            borderColor: '#00C48C',
+                                                            bgcolor: '#000',
+                                                            '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                                        }}
+                                                    />
+                                                    {playerVotes[p.id] > 0 && (
+                                                        <Box sx={{ position: 'absolute', top: '50%', right: -4, transform: 'translateY(-50%)', width: 16, height: 16, borderRadius: '50%', bgcolor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}>
+                                                            <Check size={10} color="#00C48C" strokeWidth={3} />
                                                         </Box>
-                                                        {index < homePlayersAll.length - 1 && (
-                                                            <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
-                                                        )}
-                                                    </React.Fragment>
-                                                );
-                                            })}
-                                        </Box>
-                                    ) : (
-                                        <Typography color="white" sx={{ textAlign: 'center', fontStyle: 'italic', fontSize: { xs: 10, sm: 14 } }}>
-                                            No players assigned
-                                        </Typography>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Box>
-
-                        {/* Away Team Section */}
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                mb: { xs: 0.5, sm: 2 },
-                                flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                                gap: { xs: 0.5, sm: 1 }
-                            }}>
-                                <Typography variant="h5" color="white" sx={{
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '0.875rem', sm: '1.25rem', md: '1.5rem' },
-                                    lineHeight: { xs: 1.2, sm: 1.5 }
-                                }}>
-                                    {match.awayTeamName} ({typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0})
-                                </Typography>
+                                                    )}
+                                                </Box>
+                                                <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
+                                                    {p.firstName} {p.lastName}
+                                                </Typography>
+                                            </MenuItem>
+                                        );
+                                    })}
+                                </TextField>
                             </Box>
 
-                            <Card sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', borderRadius: 3, border: '2px solid #4b4b4b' }}>
-                                <CardContent sx={{
-                                    p: { xs: 0.5, sm: 2 },
-                                    maxHeight: { xs: 250, sm: 400 },
-                                    overflowY: 'auto',
-                                    scrollbarWidth: 'none',
-                                    '&::-webkit-scrollbar': { display: 'none' }
-                                }}>
-                                    {awayPlayersAll.length > 0 ? (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                            {awayPlayersAll.map((player, index) => {
-                                                return (
-                                                    <React.Fragment key={player.id}>
-                                                        <Box sx={{
-                                                            display: 'flex',
-                                                            flexDirection: 'row',
-                                                            alignItems: 'center',
-                                                            p: { xs: 0.5, sm: 1, md: 2 },
-                                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                            borderRadius: 0,
-                                                            border: '1px solid #4b4b4b',
-                                                            borderBottom: index === awayPlayersAll.length - 1 ? '1px solid #4b4b4b' : 'none',
-                                                            minHeight: { xs: 40, sm: 60, md: 100 },
-                                                            position: 'relative',
-                                                            '&:hover': {
-                                                                background: 'linear-gradient(90deg, #202020 0%, #2b2b2b 100%)',
-                                                                transform: 'translateY(-1px)',
-                                                                transition: 'all 0.2s ease'
-                                                            }
-                                                        }}>
-
-
-                                                            {player.hasOwnProperty('isGuest') ? (
-                                                                <JerseyAvatar
-                                                                    sx={{
-                                                                        width: { xs: 25, sm: 35, md: 74 },
-                                                                        height: { xs: 25, sm: 35, md: 74 },
-                                                                        mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                        flexShrink: 0,
-                                                                        opacity: 0.9
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <Link href={`/player/${player.id}`}>
-                                                                    <JerseyAvatar
-                                                                        sx={{
-                                                                            width: { xs: 25, sm: 35, md: 74 },
-                                                                            height: { xs: 25, sm: 35, md: 74 },
-                                                                            mr: { xs: 0.5, sm: 1, md: 2 },
-                                                                            flexShrink: 0,
-                                                                        }}
-                                                                    />
-                                                                </Link>
-                                                            )}
-                                                            {/* Player Info */}
-                                                            <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                                                {player.hasOwnProperty('isGuest') ? (
-                                                                    <>
-                                                                        <Typography variant="h6" sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap',
-                                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                        }}>
-                                                                            {player.firstName} {player.lastName} <Typography component="span" sx={{ fontSize: '0.6em', ml: 0.5, fontWeight: 'normal', color: '#FFD54F' }}>[Guest]</Typography>
-                                                                        </Typography>
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: '#D1D5DB',
-                                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                        }}>
-                                                                            Guest Player
-                                                                        </Typography>
-                                                                    </>
-                                                                ) : (
-                                                                    <Link href={`/player/${player.id}`}>
-                                                                        <Typography variant="h6" sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                            fontSize: { xs: 8, sm: 10, md: 16 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 0.5 },
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap',
-                                                                            lineHeight: { xs: 1.1, sm: 1.2, md: 1.4 }
-                                                                        }}>
-                                                                            {player.firstName} {player.lastName}
-                                                                            {player.id === match.awayCaptainId ? ' (C)' : ''}
-                                                                        </Typography>
-
-                                                                        <Typography variant="body2" sx={{
-                                                                            color: '#D1D5DB',
-                                                                            fontSize: { xs: 6, sm: 8, md: 14 },
-                                                                            mb: { xs: 0.25, sm: 0.5, md: 1 },
-                                                                            lineHeight: { xs: 1.0, sm: 1.1, md: 1.3 }
-                                                                        }}>
-                                                                            {player.positionType || 'Player'}
-                                                                        </Typography>
-                                                                    </Link>
-                                                                )}
-                                                                <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1, md: 1 }, alignItems: 'center' }}>
-                                                                    {/* Edit Stats Button - Only for League Admin or Team Captain */}
-                                                                    {/* League Admin: can edit all players | Away Captain: can edit only away team players */}
-                                                                    {(canEditPlayerStats(false) && match.status === 'RESULT_PUBLISHED' && league.active) && (
-                                                                        <Button
-                                                                            onClick={() => handleOpenAdminStatsModal(player)}
-                                                                            startIcon={<Add />}
-                                                                            variant="contained"
-                                                                            size="small"
-                                                                            sx={{
-                                                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                                                color: 'white',
-                                                                                fontWeight: 'bold',
-                                                                                borderRadius: 1.5,
-                                                                                px: { xs: 0.25, sm: 0.5, md: 1.5 },
-                                                                                py: { xs: 0.125, sm: 0.25, md: 0.5 },
-                                                                                fontSize: { xs: 5, sm: 7, md: 10 },
-                                                                                minWidth: { xs: 'auto', sm: 'auto' },
-                                                                                height: { xs: 16, sm: 20, md: 28 },
-                                                                                whiteSpace: 'nowrap',
-                                                                                '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                                                                mt: { xs: 0.25, sm: 0.5, md: 0.5 }
-                                                                            }}
-                                                                        >
-                                                                            Edit Stats
-                                                                        </Button>
-                                                                    )}
-                                                                    {/* MOTM Vote Button placed next to Edit Stats */}
-                                                                    {baseCanSubmit && league.active && isUserAssignedToTeam && !player.hasOwnProperty('isGuest') && user?.id !== player.id && (
-                                                                        <MotmCoin
-                                                                            voted={votedForId === player.id}
-                                                                            onClick={() => handleVote(player.id)}
-                                                                            disabled={loadingVote || player.id === user?.id || !isUserAssignedToTeam}
-                                                                            sx={{ width: { xs: 20, sm: 20, md: 48 }, height: { xs: 16, sm: 20, md: 28 } }}
-                                                                        />
-                                                                    )}
-                                                                </Box>
-                                                            </Box>
-                                                        </Box>
-                                                        {index < awayPlayersAll.length - 1 && (
-                                                            <Divider sx={{ borderColor: '#4b4b4b', borderWidth: 1 }} />
-                                                        )}
-                                                    </React.Fragment>
-                                                );
-                                            })}
-                                        </Box>
-                                    ) : (
-                                        <Typography color="white" sx={{ textAlign: 'center', fontStyle: 'italic', fontSize: { xs: 10, sm: 14 } }}>
-                                            No players assigned
-                                        </Typography>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Box>
-                    </Box>
-                </Paper>
-            )}
-
-            {/* Side-by-side layout for Match Note (left) and Captains Bonus Pick (right) */}
-            {!showAdminGoalsSection && (
-                <Box
-                    sx={{
-                        display: selectedLeagueHasNoMatches ? 'none' : 'grid',
-                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                        gap: 2,
-                        alignItems: 'stretch',
-                    }}
-                    className='rounded-lg '
-                >
-                    <Paper
-                        sx={{
-                            p: { xs: 1, sm: 2 },
-                            my: 2,
-                            background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                            borderLeft: '4px solid #4b4b4b',
-                            maxWidth: '100%',
-                            overflowWrap: 'break-word',
-                            wordBreak: 'break-word',
-                            display: selectedLeagueHasNoMatches ? 'none' : 'block',
-                        }}
-
-                    >
-                        <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', mb: 1, fontSize: 20 }}>
-                            Match Note :
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: '#fff', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                            {match.notes}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                            <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                                Start Time:
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#fff' }}>
-                                {match.start ? new Date(match.start).toLocaleString() : 'N/A'}
-                            </Typography>
-                        </Box>
-                    </Paper>
-
-                    <Paper
-                        sx={{
-                            p: { xs: 1.5, sm: 2 },
-                            my: 2,
-                            // background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-                            background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                            color: 'white',
-                            borderRadius: 3,
-                            border: '1px solid #3a3a3a',
-                            display: selectedLeagueHasNoMatches ? 'none' : 'block',
-                        }}
-                    >
-                        <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
-                            Captains Bonus Pick
-                        </Typography>
-                        <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
-
-                        <Box sx={{ display: 'grid', gap: 1.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Typography sx={{ fontWeight: 600 }}>Defensive Impact</Typography>
-                                {isCaptainUser ? (
-                                    <Button
-                                        onClick={() => openPickDialog('defence')}
-                                        variant="contained"
-                                        size="small"
-                                        disabled={!league?.active || !baseCanSubmit}
-                                        sx={{
-                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                            color: 'white',
-                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                        }}
-                                    >
-                                        {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Select Player'}
-                                    </Button>
-                                ) : (
-                                    <Typography sx={{ opacity: 0.9 }}>
-                                        {captainPicks.defence ? playerNameById(captainPicks.defence) : 'Not selected'}
-                                    </Typography>
-                                )}
+                            {/* Defensive Impact dropdown (like MOTM) */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <img src={DEFIMP.src} alt="Defensive" style={{ width: 35, height: 35 }} />
+                                <TextField
+                                    select
+                                    size="small"
+                                    value={captainPicks.defence || ''}
+                                    onChange={(e) => handleSelectPick(e.target.value, 'defence')}
+                                    disabled={
+                                        !isCaptainUser ||
+                                        !league?.active ||
+                                        !baseCanSubmit
+                                    }
+                                    SelectProps={{
+                                        displayEmpty: true,
+                                        renderValue: (selected) => {
+                                            const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
+                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select Defensive Impact Player';
+                                        },
+                                        MenuProps: {
+                                            PaperProps: {
+                                                sx: {
+                                                    bgcolor: '#1a1a1a',
+                                                    '& .MuiList-root': {
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                                        gap: 1,
+                                                        p: 1,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    sx={{
+                                        minWidth: 290,
+                                        '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'transparent',
+                                            color: '#fff',
+                                            borderRadius: 1,
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            py: 0.5,
+                                            px: 0,
+                                            fontSize: '0.85rem',
+                                        },
+                                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                                        '& .MuiSvgIcon-root': { color: '#fff' },
+                                    }}
+                                >
+                                    {myTeamPlayers.map((p) => {
+                                        const selected = captainPicks.defence === p.id;
+                                        return (
+                                            <MenuItem 
+                                                key={p.id} 
+                                                value={p.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    p: 1,
+                                                    position: 'relative',
+                                                    bgcolor: '#000',
+                                                    border: '1px solid',
+                                                    borderColor: selected ? '#00C48C' : 'rgba(255,255,255,0.15)',
+                                                    borderRadius: 1,
+                                                    transition: 'background-color .2s ease, border-color .2s ease, transform .08s ease',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgba(255,255,255,0.06)',
+                                                        borderColor: '#fff',
+                                                        transform: 'translateY(-1px)'
+                                                    },
+                                                    minHeight: 'auto',
+                                                }}
+                                            >
+                                                <Avatar
+                                                    src={p.profilePicture || PlayerImg.src}
+                                                    sx={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        mb: 0.5,
+                                                        border: '3px solid',
+                                                        borderColor: '#00C48C',
+                                                        bgcolor: '#000',
+                                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                                    }}
+                                                />
+                                                <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
+                                                    {p.firstName} {p.lastName}
+                                                </Typography>
+                                                {selected && (
+                                                    <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
+                                                        <Check size={12} />
+                                                    </Box>
+                                                )}
+                                            </MenuItem>
+                                        );
+                                    })}
+                                </TextField>
                             </Box>
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Typography sx={{ fontWeight: 600 }}>Influence</Typography>
-                                {isCaptainUser ? (
-                                    <Button
-                                        onClick={() => openPickDialog('influence')}
-                                        variant="contained"
-                                        size="small"
-                                        disabled={!league?.active || !baseCanSubmit}
-                                        sx={{
-                                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                            color: 'white',
-                                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                                        }}
-                                    >
-                                        {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Select Player'}
-                                    </Button>
-                                ) : (
-                                    <Typography sx={{ opacity: 0.9 }}>
-                                        {captainPicks.influence ? playerNameById(captainPicks.influence) : 'Not selected'}
-                                    </Typography>
-                                )}
+                            {/* + Mentality dropdown (like MOTM) */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <img src={MENTALITY.src} alt="Mentality" style={{ width: 35, height: 35 }} />
+                                <TextField
+                                    select
+                                    size="small"
+                                    value={captainPicks.influence || ''}
+                                    onChange={(e) => handleSelectPick(e.target.value, 'influence')}
+                                    disabled={
+                                        !isCaptainUser ||
+                                        !league?.active ||
+                                        !baseCanSubmit
+                                    }
+                                    SelectProps={{
+                                        displayEmpty: true,
+                                        renderValue: (selected) => {
+                                            const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
+                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select + Mentality Player';
+                                        },
+                                        MenuProps: {
+                                            PaperProps: {
+                                                sx: {
+                                                    bgcolor: '#1a1a1a',
+                                                    '& .MuiList-root': {
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                                        gap: 1,
+                                                        p: 1,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    sx={{
+                                        width: 290,
+                                        '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'transparent',
+                                            color: '#fff',
+                                            borderRadius: 1,
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            py: 0.5,
+                                            px: 0,
+                                            fontSize: '0.85rem',
+                                        },
+                                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                                        '& .MuiSvgIcon-root': { color: '#fff' },
+                                    }}
+                                >
+                                    {myTeamPlayers.map((p) => {
+                                        const selected = captainPicks.influence === p.id;
+                                        return (
+                                            <MenuItem 
+                                                key={p.id} 
+                                                value={p.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    p: 1,
+                                                    position: 'relative',
+                                                    bgcolor: '#000',
+                                                    border: '1px solid',
+                                                    borderColor: selected ? '#00C48C' : 'rgba(255,255,255,0.15)',
+                                                    borderRadius: 1,
+                                                    transition: 'background-color .2s ease, border-color .2s ease, transform .08s ease',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgba(255,255,255,0.06)',
+                                                        borderColor: '#fff',
+                                                        transform: 'translateY(-1px)'
+                                                    },
+                                                    minHeight: 'auto',
+                                                }}
+                                            >
+                                                <Avatar
+                                                    src={p.profilePicture || PlayerImg.src}
+                                                    sx={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        mb: 0.5,
+                                                        border: '3px solid',
+                                                        borderColor: '#00C48C',
+                                                        bgcolor: '#000',
+                                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+                                                    }}
+                                                />
+                                                <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
+                                                    {p.firstName} {p.lastName}
+                                                </Typography>
+                                                {selected && (
+                                                    <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
+                                                        <Check size={12} />
+                                                    </Box>
+                                                )}
+                                            </MenuItem>
+                                        );
+                                    })}
+                                </TextField>
                             </Box>
 
                             {!isCaptainUser && (
                                 <Typography variant="caption" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.7)' }}>
-                                    Only the captain from each team can select these options.
+                                    Only the captain from each team can select Defensive Impact and + Mentality players.
                                 </Typography>
                             )}
                         </Box>
-                    </Paper>
-                </Box>
-            )}
+                    </Box>
 
+                    {/* Voted summary row */}
+                    <Box
+                        sx={{
+                            mt: { xs: 3, md: 4 },
+                            p: { xs: 1.5, sm: 1 , md: 2  },
+                            borderRadius: 2,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#262626',
+                        }}
+                    >
+                        {/* Voted + Three columns in same row */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: { xs: 3, md: 10 },
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            {/* Voted title */}
+                            <Typography
+                                sx={{
+                                    fontWeight: 500,
+                                    color: '#00C48C',
+                                    // pt: 1,
+                                    fontSize: '2rem',
+                                    mt: -1.5,
+                                }}
+                            >
+                                Voted
+                            </Typography>
 
+                            {/* MOTM */}
+                            <Box sx={{ textAlign: 'center'}}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                                    Man Of The Match
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                    {motmPlayer?.profilePicture ? (
+                                        <Box
+                                            component="img"
+                                            src={motmPlayer.profilePicture}
+                                            alt={`${motmPlayer.firstName} ${motmPlayer.lastName}`}
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            component="img"
+                                            src={PlayerImg.src}
+                                            alt="Default Player"
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    )}
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                            maxWidth: 140,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {motmPlayer ? `${motmPlayer.firstName} ${motmPlayer.lastName}` : 'Not selected'}
+                                    </Typography>
+                                </Box>
+                            </Box>
 
-            {!showAdminGoalsSection && (
-                // <></>
-                <div className="p-6 mt-8 text-white rounded-lg" style={{ display: selectedLeagueHasNoMatches ? 'none' : undefined, background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
-                    <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
-                    <div className="w-full h-px bg-white mb-6"></div>
+                            {/* Defensive Impact */}
+                            <Box sx={{ textAlign: 'center'}}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                                    Defensive Impact
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                    {defensivePlayer?.profilePicture ? (
+                                        <Box
+                                            component="img"
+                                            src={defensivePlayer.profilePicture}
+                                            alt={`${defensivePlayer.firstName} ${defensivePlayer.lastName}`}
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            component="img"
+                                            src={PlayerImg.src}
+                                            alt="Default Player"
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    )}
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                            maxWidth: 140,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {defensivePlayer
+                                            ? `${defensivePlayer.firstName} ${defensivePlayer.lastName}`
+                                            : 'Not selected'}
+                                    </Typography>
+                                </Box>
+                            </Box>
 
-                    <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-                        {[...(match.homeTeamUsers ?? []), ...(match.awayTeamUsers ?? [])]
-                            .filter(player => playerVotes[player.id] > 0)
-                            .map((player) => (
-                                <Link key={player.id} href={`/player/${player.id}`}>
-                                    <div className="group">
-                                        <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
+                            {/* + Mentality */}
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                                    + Mentality
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                    {mentalityPlayer?.profilePicture ? (
+                                        <Box
+                                            component="img"
+                                            src={mentalityPlayer.profilePicture}
+                                            alt={`${mentalityPlayer.firstName} ${mentalityPlayer.lastName}`}
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            component="img"
+                                            src={PlayerImg.src}
+                                            alt="Default Player"
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                border: '2px solid #00C48C',
+                                                objectFit: 'cover',
+                                            }}
+                                        />
+                                    )}
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                            maxWidth: 140,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {mentalityPlayer
+                                            ? `${mentalityPlayer.firstName} ${mentalityPlayer.lastName}`
+                                            : 'Not selected'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </Box>
 
-                                            <JerseyAvatar
-                                                sx={{
-                                                    width: { xs: 25, sm: 35, md: 74 },
-                                                    height: { xs: 25, sm: 35, md: 74 },
-                                                    mr: { xs: 1, sm: 1.5 },
-                                                }}
-                                            />
-                                            <div className="flex-1 min-w-0 text-center sm:text-left">
-                                                <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
-                                                    {player.firstName} {player.lastName}
-                                                    {player.id === match.homeCaptainId ? " (C)" : ""}
-                                                </h3>
-
-                                                <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
-                                                    {player.positionType || "Player"}
-                                                </p>
-
-                                                <div className="flex justify-center sm:justify-start gap-2 items-center">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                                                    >
-                                                        {typeof playerVotes[player.id] === "number" &&
-                                                            playerVotes[player.id] > 0 &&
-                                                            `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                    </div>
-                </div>
+                    {/* Submit button */}
+                    <Box sx={{ mt: { xs: 3, md: 4 }, textAlign: 'center' }}>
+                        <Button
+                            onClick={handleSaveStats}
+                            variant="contained"
+                            disabled={isSubmittingStats}
+                            sx={{
+                                px: 6,
+                                py: 1.25,
+                                fontWeight: 700,
+                                letterSpacing: 1,
+                                borderRadius: 999,
+                                background: 'linear-gradient(90deg, #4A8DFF 0%, #0062FF 100%)',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, #0062FF 0%, #4A8DFF 100%)',
+                                },
+                            }}
+                        >
+                            {isSubmittingStats ? <CircularProgress size={22} sx={{ color: 'white' }} /> : 'Submit'}
+                        </Button>
+                    </Box>
+                </Paper>
             )}
 
             {/* --- NEW: Player selection dialog (team-restricted) --- */}
@@ -3278,27 +3501,220 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 open={open === true && showAdminGoalsSection === true}
                 onClose={handleAdminDialogClose}
                 fullWidth
-                maxWidth="sm"
-                PaperProps={{ sx: dialogPaperSx }}
+                maxWidth="lg"
+                PaperProps={{
+                    sx: {
+                        ...dialogPaperSx,
+                        maxWidth: 850,
+                    }
+                }}
             >
-                <DialogTitle sx={dialogTitleSx}>
-                    Admin Can Add Goals Both Teams
-                    <IconButton onClick={handleAdminDialogClose} size="small" sx={{ color: '#fff' }}>
-                        <CloseIcon />
-                    </IconButton>
+                {/* Top grey header bar like design screenshot */}
+                <DialogTitle
+                    sx={{
+                        p: 0,
+                        bgcolor: '#d9d9d9',
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 3,
+                            py: 1.5,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0,
+                                width: '100%',
+                            }}
+                        >
+                            <Box sx={{ 
+                                flex: 1, 
+                                textAlign: 'center',
+                                py: 1,
+                                borderRight: '2px solid #000',
+                            }}>
+                                <Typography sx={{ 
+                                    fontWeight: 700,
+                                    fontSize: 16,
+                                    color: '#000',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {league?.name
+                                        ? `${league.name}${
+                                            // Try to show season like: " - Season 1"
+                                            (() => {
+                                                const anyLeague = league as unknown as Record<string, any>;
+                                                const currentSeason = anyLeague?.currentSeason;
+                                                const seasons = anyLeague?.seasons;
+                                                let seasonNumber: number | undefined;
+
+                                                if (currentSeason && typeof currentSeason === 'object') {
+                                                    const sn = (currentSeason as any)?.seasonNumber;
+                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                                }
+
+                                                if (!seasonNumber && Array.isArray(seasons) && seasons.length > 0) {
+                                                    const first = seasons[0];
+                                                    const sn = (first as any)?.seasonNumber;
+                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                                }
+
+                                                if (!seasonNumber) {
+                                                    const sn = (anyLeague as any)?.seasonNumber ?? (anyLeague as any)?.season;
+                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                                }
+
+                                                return seasonNumber ? ` - SEASON ${seasonNumber}` : '';
+                                            })()
+                                        }`
+                                        : 'League'}
+                                </Typography>
+                            </Box>
+                            
+                            <Box sx={{ 
+                                flex: 1, 
+                                textAlign: 'center',
+                                py: 1,
+                                borderRight: '2px solid #000',
+                            }}>
+                                <Typography sx={{ 
+                                    fontWeight: 700,
+                                    fontSize: 16,
+                                    color: '#000',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    MATCH {computedMatchNumber ?? ''}
+                                </Typography>
+                            </Box>
+                            
+                            <Box sx={{ 
+                                flex: 1, 
+                                textAlign: 'center',
+                                py: 1,
+                            }}>
+                                <Typography sx={{ 
+                                    fontWeight: 600,
+                                    fontSize: 16,
+                                    color: '#000'
+                                }}>
+                                    {(() => {
+                                        const d = (match?.start || match?.date) as string | undefined;
+                                        if (!d) return '';
+                                        const dt = new Date(d);
+                                        if (Number.isNaN(dt.getTime())) return '';
+                                        // dd-MM-yyyy
+                                        const day = String(dt.getDate()).padStart(2, '0');
+                                        const month = String(dt.getMonth() + 1).padStart(2, '0');
+                                        const year = dt.getFullYear();
+                                        return `${day}-${month}-${year}`;
+                                    })()}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <IconButton 
+                            onClick={handleAdminDialogClose} 
+                            size="small" 
+                            sx={{ 
+                                color: 'black',
+                                position: 'absolute',
+                                right: 0,
+                                bgcolor: '#e6e6e6',
+                                borderRadius: 0,
+                                width: 63.5,
+                                height: 63.5,
+                                '&:hover': { 
+                                    bgcolor: '#e6e6e6' 
+                                }
+                            }}
+                        >
+                            <CloseIcon sx={{ fontSize: 24 }} />
+                        </IconButton>
+                    </Box>
                 </DialogTitle>
-                <DialogContent sx={{ ...dialogContentSx, pt: 3 }}>
-                    <Box sx={{ display: 'flex', color: 'white', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2, mt: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => {
-                                setHomeGoals(prev => {
-                                    const next = Math.max(0, prev - 1);
-                                    setHomeGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Remove /></IconButton>
+                <DialogContent
+                    sx={{
+                        ...dialogContentSx,
+                        pt: 3,
+                        pb: 3,
+                    }}
+                >
+                    {/* Title inside dark area */}
+                    <Typography
+                        sx={{
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            letterSpacing: 3,
+                            mt: 1,
+                            fontSize: 19,
+                        }}
+                    >
+                        ADD MATCH SCORES
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            alignItems: 'flex-end',
+                            justifyContent: 'space-between',
+                            gap: { xs: 3, sm: 4, md: 10 },
+                            color: 'white',
+                            px: { xs: 2, sm: 4, md: 6 },
+                            // mt: 4,
+                        }}
+                    >
+                        {/* Home side */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                // flex: 1,
+                                textAlign: 'center',
+                            }}
+                        >
+                            {/* Home team shirt image */}
+                            <Box
+                                sx={{
+                                    width: 150,
+                                    height: 150,
+                                    // mb: 1.5,
+                                    position: 'relative',
+                                }}
+                            >
+                                <Image
+                                    src={HomeTeamShirt}
+                                    alt="Home team shirt"
+                                    fill
+                                    sizes="150px"
+                                    style={{ objectFit: 'contain' }}
+                                />
+                            </Box>
+                            {/* <Typography
+                                sx={{
+                                    fontSize: 12,
+                                    letterSpacing: 2,
+                                    textTransform: 'uppercase',
+                                    opacity: 0.9,
+                                }}
+                            >
+                                Home 
+                            </Typography> */}
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: 18,
+                                    // mt: 0.5,
+                                }}
+                            >
+                                {match?.homeTeamName || 'Home'} Team
+                            </Typography>
                             <TextField
-                                label={`${match?.homeTeamName || 'Home'} Goals`}
                                 type="number"
                                 value={homeGoalsInput}
                                 onChange={e => {
@@ -3315,39 +3731,94 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 }}
                                 variant="outlined"
                                 sx={{
-                                    width: '150px',
-                                    input: { color: 'white' },
-                                    label: { color: 'white' },
+                                    mt: 0.5,
+                                    width: 80,
+                                    border : '1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
-                                        '& fieldset': { borderColor: 'white' },
-                                        '&:hover fieldset': { borderColor: 'white' },
-                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                        backgroundColor: '#262626',
+                                        color: '#fff',
+                                        textAlign: 'center',
+                                        '& fieldset': { borderColor: '#444' },
+                                        '&:hover fieldset': { borderColor: '#777' },
+                                        '&.Mui-focused fieldset': { borderColor: '#fff' },
                                     },
-                                    '& .MuiInputLabel-root': { color: 'white' },
-                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                    input: {
+                                        textAlign: 'center',
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        paddingY: 0.75,
+                                        MozAppearance: 'textfield',
+                                        '&::-webkit-outer-spin-button': {
+                                            WebkitAppearance: 'none',
+                                            margin: 0,
+                                        },
+                                        '&::-webkit-inner-spin-button': {
+                                            WebkitAppearance: 'none',
+                                            margin: 0,
+                                        },
+                                    },
                                 }}
-                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
-                                InputLabelProps={{ style: { color: 'white' } }}
+                                inputProps={{ min: 0 }}
                                 disabled={!league?.active}
                             />
-                            <IconButton onClick={() => {
-                                setHomeGoals(prev => {
-                                    const next = prev + 1;
-                                    setHomeGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Add /></IconButton>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton onClick={() => {
-                                setAwayGoals(prev => {
-                                    const next = Math.max(0, prev - 1);
-                                    setAwayGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Remove /></IconButton>
+
+                        {/* VS in centre */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                pb: 2,
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    fontSize: 40,
+                                    fontWeight: 800,
+                                    letterSpacing: 4,
+                                }}
+                            >
+                                V/S
+                            </Typography>
+                        </Box>
+
+                        {/* Away side */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                // flex: 1,
+                                textAlign: 'center',
+                            }}
+                        >
+                            {/* Away team shirt image */}
+                            <Box
+                                sx={{
+                                    width: 150,
+                                    height: 150,
+                                    // mb: 1.5,
+                                    position: 'relative',
+                                }}
+                            >
+                                <Image
+                                    src={AwayTeamShirt}
+                                    alt="Away team shirt"
+                                    fill
+                                    sizes="150px"
+                                    style={{ objectFit: 'contain' }}
+                                />
+                            </Box>
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: 18,
+                                    // mt: 0.5,
+                                }}
+                            >
+                                {match?.awayTeamName || 'Away'} Team
+                            </Typography>
                             <TextField
-                                label={`${match?.awayTeamName || 'Away'} Goals`}
                                 type="number"
                                 value={awayGoalsInput}
                                 onChange={e => {
@@ -3364,31 +3835,40 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 }}
                                 variant="outlined"
                                 sx={{
-                                    width: '150px',
-                                    input: { color: 'white' },
-                                    label: { color: 'white' },
+                                    mt: 0.5,
+                                    width: 80,
+                                    border :'1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
-                                        '& fieldset': { borderColor: 'white' },
-                                        '&:hover fieldset': { borderColor: 'white' },
-                                        '&.Mui-focused fieldset': { borderColor: 'white' },
+                                        backgroundColor: '#262626',
+                                        color: '#fff',
+                                        textAlign: 'center',
+                                        '& fieldset': { borderColor: '#444' },
+                                        '&:hover fieldset': { borderColor: '#777' },
+                                        '&.Mui-focused fieldset': { borderColor: '#fff' },
                                     },
-                                    '& .MuiInputLabel-root': { color: 'white' },
-                                    '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                    input: {
+                                        textAlign: 'center',
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        paddingY: 0.75,
+                                        MozAppearance: 'textfield',
+                                        '&::-webkit-outer-spin-button': {
+                                            WebkitAppearance: 'none',
+                                            margin: 0,
+                                        },
+                                        '&::-webkit-inner-spin-button': {
+                                            WebkitAppearance: 'none',
+                                            margin: 0,
+                                        },
+                                    },
                                 }}
-                                inputProps={{ style: { textAlign: 'center', color: 'white' } }}
-                                InputLabelProps={{ style: { color: 'white' } }}
+                                inputProps={{ min: 0 }}
                                 disabled={!league?.active}
                             />
-                            <IconButton onClick={() => {
-                                setAwayGoals(prev => {
-                                    const next = prev + 1;
-                                    setAwayGoalsInput(String(next));
-                                    return next;
-                                });
-                            }} size="small" sx={{ color: 'white' }} disabled={!league?.active}><Add /></IconButton>
                         </Box>
                     </Box>
-                    <Box sx={{ mb: 2 }}>
+
+                    <Box sx={{ mt: 4 }}>
                         <TextField
                             label="Match Note"
                             multiline
@@ -3399,37 +3879,38 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             variant="outlined"
                             disabled={!league?.active}
                             sx={{
-                                input: { color: 'white' },
-                                textarea: { color: 'white' },
-                                label: { color: 'white' },
+                                // border : '1px solid #fff',
                                 '& .MuiOutlinedInput-root': {
-                                    '& fieldset': { borderColor: 'white' },
-                                    '&:hover fieldset': { borderColor: 'white' },
-                                    '&.Mui-focused fieldset': { borderColor: 'white' },
+                                    backgroundColor: '#262626',
+                                    color: '#fff',
+                                    '& fieldset': { borderColor: '#fff' },
+                                    '&:hover fieldset': { borderColor: '#fff' },
+                                    '&.Mui-focused fieldset': { borderColor: '#fff' },
                                 },
-                                '& .MuiInputLabel-root': { color: 'white' },
-                                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                                '& .MuiInputLabel-root': { color: '#E5E7EB' },
                             }}
-                            InputLabelProps={{ style: { color: 'white' } }}
                         />
                     </Box>
+
+                    <Box sx={{ mt: 4, px: { xs: 2, sm: 4, md: 6 } }}>
+                        <Button
+                            onClick={handleSaveDetails}
+                            disabled={!league?.active || savingMatchDetails}
+                            variant="contained"
+                            fullWidth
+                            sx={{
+                                py: 1.5,
+                                borderRadius: '12px',
+                                fontWeight: 700,
+                                letterSpacing: 1,
+                                backgroundColor: '#2196f3',
+                                '&:hover': { backgroundColor: '#1e88e5' },
+                            }}
+                        >
+                            {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'SUBMIT'}
+                        </Button>
+                    </Box>
                 </DialogContent>
-                <DialogActions sx={{ background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)', p: 2 }}>
-                    <Button
-                        sx={{
-                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            '&:hover': { background: 'linear-gradient(90deg, #000000 0%, #767676 100%)' },
-                        }}
-                        variant="contained"
-                        onClick={handleSaveDetails}
-                        disabled={!league?.active || savingMatchDetails}
-                        fullWidth
-                    >
-                        {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save Match Details'}
-                    </Button>
-                </DialogActions>
             </Dialog>
         );
     }
@@ -3441,16 +3922,66 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         }
 
         return (
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" scroll="paper" keepMounted>
                 <DialogTitle sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
-                    color: 'white'
+                    backgroundColor: '#d9d9d9',
+                    color: '#1f1f1f',
+                    p: 0,
                 }}>
-                    Match Stats
-                    <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
+                                {league?.name || 'League'}{(() => {
+                                    const anyLeague = league as unknown as Record<string, any>;
+                                    const currentSeason = anyLeague?.currentSeason;
+                                    const seasons = anyLeague?.seasons;
+                                    let seasonNumber: number | undefined;
+
+                                    if (currentSeason && typeof currentSeason === 'object') {
+                                        const sn = (currentSeason as any)?.seasonNumber;
+                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                    }
+
+                                    if (!seasonNumber && Array.isArray(seasons) && seasons.length > 0) {
+                                        const first = seasons[0];
+                                        const sn = (first as any)?.seasonNumber;
+                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                    }
+
+                                    if (!seasonNumber) {
+                                        const sn = (anyLeague as any)?.seasonNumber ?? (anyLeague as any)?.season;
+                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+                                    }
+
+                                    return seasonNumber ? ` - Season ${seasonNumber}` : '';
+                                })()}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
+                                Match {computedMatchNumber || ''}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5 }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                {match?.date ? new Date(match.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton 
+                        onClick={onClose} 
+                        sx={{ 
+                            color: 'black',
+                            backgroundColor: '#e6e6e6',
+                            borderRadius: 0,
+                            width: 56,
+                            height: 56,
+                            '&:hover': { backgroundColor: '#e6e6e6' },
+                        }}
+                    >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
@@ -3458,7 +3989,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     dividers
                     sx={{
                         p: 0,
-                        background: 'linear-gradient(180deg, #1f1f1f 0%, #0e0e0e 100%)',
+                        background: '#262626',
+                        
                     }}
                 >
                     {content}
