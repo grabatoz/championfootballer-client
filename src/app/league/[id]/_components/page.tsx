@@ -1671,8 +1671,9 @@ export default function LeagueDetailPage() {
         try {
             if (hasScores) {
                 // Archive the match
+                console.log('🗑️ Archiving match:', m.id);
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
-                    method: 'PATCH',
+                    method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1682,12 +1683,13 @@ export default function LeagueDetailPage() {
 
                 if (!res.ok) {
                     const errorData = await res.text();
-                    console.error('Archive failed:', errorData);
+                    console.error('❌ Archive failed:', errorData);
                     throw new Error('Failed to archive match');
                 }
 
                 const data = await res.json();
-                console.log('Archive response:', data); // Debug log
+                console.log('✅ Archive response:', data);
+                console.log('📦 Archived status in response:', data?.match?.archived);
 
                 // Update local state
                 setLeague(prev => prev ? {
@@ -1697,11 +1699,14 @@ export default function LeagueDetailPage() {
                     )
                 } : prev);
 
+                console.log('💾 Local state updated with archived: true');
+
                 setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
                 setToastMessage('Match archived (Canceled by Admin)');
 
             } else {
                 // Hard delete
+                console.log('🗑️ Permanently deleting match:', m.id);
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1719,7 +1724,19 @@ export default function LeagueDetailPage() {
             }
 
             // Refresh league data to ensure sync
-            fetchLeagueDetails();
+            console.log('🔄 Refreshing league data...');
+            await fetchLeagueDetails();
+            console.log('✅ League data refreshed');
+            
+            // Log the updated match status after refresh
+            setTimeout(() => {
+                const updatedMatch = league?.matches?.find(match => match.id === m.id);
+                console.log('🔍 Match status after refresh:', {
+                    matchId: m.id,
+                    archived: updatedMatch?.archived,
+                    fullMatch: updatedMatch
+                });
+            }, 1000);
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
@@ -1736,8 +1753,9 @@ export default function LeagueDetailPage() {
         try {
             if (action === 'archive') {
                 // Restore archived match
+                console.log('♻️ Restoring archived match:', match.id);
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-                    method: 'PATCH',
+                    method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1746,11 +1764,13 @@ export default function LeagueDetailPage() {
                 });
 
                 if (!res.ok) {
+                    console.error('❌ Restore failed');
                     throw new Error('Failed to restore match');
                 }
 
                 const data = await res.json();
-                console.log('Restore response:', data);
+                console.log('✅ Restore response:', data);
+                console.log('📦 Archived status in response:', data?.match?.archived);
 
                 // Update local state
                 setLeague(prev => prev ? {
@@ -1759,6 +1779,8 @@ export default function LeagueDetailPage() {
                         mm.id === match.id ? { ...mm, archived: false } : mm
                     )
                 } : prev);
+
+                console.log('💾 Local state updated with archived: false');
 
                 setToastMessage('Match restored successfully.');
                 toast.success('Match restored successfully!');
@@ -1769,7 +1791,19 @@ export default function LeagueDetailPage() {
             }
 
             // Refresh data to ensure sync
+            console.log('🔄 Refreshing league data after restore...');
             fetchLeagueDetails();
+            console.log('✅ League data refreshed after restore');
+            
+            // Log the updated match status after refresh
+            setTimeout(() => {
+                const updatedMatch = league?.matches?.find(m => m.id === match.id);
+                console.log('🔍 Match status after restore refresh:', {
+                    matchId: match.id,
+                    archived: updatedMatch?.archived,
+                    fullMatch: updatedMatch
+                });
+            }, 1000);
 
         } catch (error) {
             console.error('Undo operation failed:', error);
@@ -1795,7 +1829,7 @@ export default function LeagueDetailPage() {
     const handleRestoreMatch = async (match: Match) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
-                method: 'PATCH',
+                method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -3234,7 +3268,7 @@ export default function LeagueDetailPage() {
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
                                                                                     startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
-                                                                                    disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
+                                                                                    disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived}
                                                                                     sx={{
                                                                                         // backgroundColor: '#333',
                                                                                         color: 'white',
@@ -3375,7 +3409,7 @@ export default function LeagueDetailPage() {
                                                                                     }}
                                                                                     startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
                                                                                     sx={{
-                                                                                        color: match.archived ? '#4CAF50' : '#fff',
+                                                                                        color: '#fff',
                                                                                         justifyContent: 'flex-start',
                                                                                         textTransform: 'none',
                                                                                         p: 0,
