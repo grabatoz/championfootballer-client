@@ -431,8 +431,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // Unified dialog paper styling to match app theme
     const dialogPaperSx = {
         p: 0,
-        bgcolor: 'rgba(15,15,15,0.95)',
-        color: '#E5E7EB',
+        bgcolor: '#d9d9d9',
+        color: 'black',
         borderRadius: 3,
         border: '1px solid rgba(255,255,255,0.1)',
         backdropFilter: 'blur(20px)',
@@ -2497,7 +2497,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     console.log('🔍 All Players for Voting:', allPlayersForVoting.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, votes: playerVotes[p.id] || 0 })));
 
     const content = (
-        <Box sx={{ minHeight: '100vh', color: 'black' }}>
+        <Box sx={{ 
+            minHeight: '100vh', 
+            color: 'black',
+            overflow: 'hidden',
+            '&::-webkit-scrollbar': {
+                display: 'none'
+            },
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
+        }}>
             {!showAdminGoalsSection && !selectedLeagueHasNoMatches && !league.active && (
                 <Alert severity="warning" sx={{ mb: 1 }}>This league is currently inactive. All actions are disabled.</Alert>
             )}
@@ -2508,9 +2517,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         p: { xs: 1, sm: 2, md: 3 },
                         backgroundColor: '#262626',
                         color: 'white',
-                        // borderRadius: 3,
+                        border: '5px solid #bfbfbf',
+                        borderRadius: 0,
                         // boxShadow: 3,
                         // display: selectedLeagueHasNoMatches ? 'none' : 'block',
+                        // mt:-0.1,
                     }}
                 >
                     {/* Header */}
@@ -2542,8 +2553,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             sx={{
                                 p: { xs: 1, sm: 1.5, md: 3 },
                                 backgroundColor: '#262626',
-                                borderRadius: 2,
-                                border: '1px solid #4b4b4b',
+                                borderRadius: 0,
+                                border: '1px solid #d9d9d9',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -2568,26 +2579,52 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     {/* Goals Row */}
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <img src={Goals.src} alt="Goals" style={{ width: 48, height: 48 }} />
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                minWidth: 160,
-                                                py: 0.75,
-                                                px: 4,
-                                                border: '1px solid rgba(255,255,255,0.3)',
-                                                borderRadius: 1,
-                                                backgroundColor: 'transparent',
-                                                cursor: 'pointer',
+                                        <TextField
+                                            type="text"
+                                            value={stats.goals}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '') {
+                                                    setStats(prev => ({ ...prev, goals: 0 }));
+                                                    return;
+                                                }
+                                                // Only allow numbers
+                                                if (!/^\d+$/.test(val)) return;
+                                                
+                                                const numVal = parseInt(val, 10);
+                                                if (!isNaN(numVal)) {
+                                                    const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                                    setStats(prev => ({ ...prev, goals: newVal }));
+                                                }
                                             }}
-                                            onClick={() => handleStatChange('goals', 1, teamGoalsSafe)}
-                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('goals', -1, teamGoalsSafe); }}
-                                        >
-                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
-                                                {stats.goals}
-                                            </Typography>
-                                        </Box>
+                                            onFocus={(e) => e.target.select()}
+                                            inputProps={{ style: { textAlign: 'center' } }}
+                                            sx={{
+                                                width: 180,
+                                                '& .MuiOutlinedInput-root': {
+                                                    color: '#fff',
+                                                    '& fieldset': { borderColor: '#d9d9d9' },
+                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                                },
+                                                '& .MuiInputBase-input': {
+                                                    fontSize: '1.25rem',
+                                                    fontWeight: 600,
+                                                    py: 0.75,
+                                                },
+                                                '& input[type=number]': {
+                                                    MozAppearance: 'textfield'
+                                                },
+                                                '& input[type=number]::-webkit-outer-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                },
+                                                '& input[type=number]::-webkit-inner-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                }
+                                            }}
+                                        />
                                         <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
                                             Goals
                                         </Typography>
@@ -2596,26 +2633,52 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     {/* Assists Row */}
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <img src={Assist.src} alt="Assists" style={{ width: 48, height: 48 }} />
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                minWidth: 160,
-                                                py: 0.75,
-                                                px: 4,
-                                                border: '1px solid rgba(255,255,255,0.3)',
-                                                borderRadius: 1,
-                                                backgroundColor: 'transparent',
-                                                cursor: 'pointer',
+                                        <TextField
+                                            type="text"
+                                            value={stats.assists}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '') {
+                                                    setStats(prev => ({ ...prev, assists: 0 }));
+                                                    return;
+                                                }
+                                                // Only allow numbers
+                                                if (!/^\d+$/.test(val)) return;
+                                                
+                                                const numVal = parseInt(val, 10);
+                                                if (!isNaN(numVal)) {
+                                                    const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                                    setStats(prev => ({ ...prev, assists: newVal }));
+                                                }
                                             }}
-                                            onClick={() => handleStatChange('assists', 1, teamGoalsSafe)}
-                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('assists', -1, teamGoalsSafe); }}
-                                        >
-                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
-                                                {stats.assists}
-                                            </Typography>
-                                        </Box>
+                                            onFocus={(e) => e.target.select()}
+                                            inputProps={{ style: { textAlign: 'center' } }}
+                                            sx={{
+                                                width: 180,
+                                                '& .MuiOutlinedInput-root': {
+                                                    color: '#fff',
+                                                    '& fieldset': { borderColor: '#d9d9d9' },
+                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                                },
+                                                '& .MuiInputBase-input': {
+                                                    fontSize: '1.25rem',
+                                                    fontWeight: 600,
+                                                    py: 0.75,
+                                                },
+                                                '& input[type=number]': {
+                                                    MozAppearance: 'textfield'
+                                                },
+                                                '& input[type=number]::-webkit-outer-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                },
+                                                '& input[type=number]::-webkit-inner-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                }
+                                            }}
+                                        />
                                         <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
                                             Assists
                                         </Typography>
@@ -2624,26 +2687,52 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     {/* Clean Sheet Row */}
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 48, height: 48 }} />
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                minWidth: 160,
-                                                py: 0.75,
-                                                px: 4,
-                                                border: '1px solid rgba(255,255,255,0.3)',
-                                                borderRadius: 1,
-                                                backgroundColor: 'transparent',
-                                                cursor: 'pointer',
+                                        <TextField
+                                            type="text"
+                                            value={stats.cleanSheets}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '') {
+                                                    setStats(prev => ({ ...prev, cleanSheets: 0 }));
+                                                    return;
+                                                }
+                                                // Only allow numbers
+                                                if (!/^\d+$/.test(val)) return;
+                                                
+                                                const numVal = parseInt(val, 10);
+                                                if (!isNaN(numVal)) {
+                                                    const newVal = Math.max(0, Math.min(1, numVal));
+                                                    setStats(prev => ({ ...prev, cleanSheets: newVal }));
+                                                }
                                             }}
-                                            onClick={() => handleStatChange('cleanSheets', 1, 1)}
-                                            onContextMenu={(e) => { e.preventDefault(); handleStatChange('cleanSheets', -1, 1); }}
-                                        >
-                                            <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff' }}>
-                                                {stats.cleanSheets}
-                                            </Typography>
-                                        </Box>
+                                            onFocus={(e) => e.target.select()}
+                                            inputProps={{ style: { textAlign: 'center' } }}
+                                            sx={{
+                                                width: 180,
+                                                '& .MuiOutlinedInput-root': {
+                                                    color: '#fff',
+                                                    '& fieldset': { borderColor: '#d9d9d9' },
+                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                                },
+                                                '& .MuiInputBase-input': {
+                                                    fontSize: '1.25rem',
+                                                    fontWeight: 600,
+                                                    py: 0.75,
+                                                },
+                                                '& input[type=number]': {
+                                                    MozAppearance: 'textfield'
+                                                },
+                                                '& input[type=number]::-webkit-outer-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                },
+                                                '& input[type=number]::-webkit-inner-spin-button': {
+                                                    WebkitAppearance: 'none',
+                                                    margin: 0
+                                                }
+                                            }}
+                                        />
                                         <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
                                             Clean Sheet
                                         </Typography>
@@ -2661,8 +2750,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             sx={{
                                 p: { xs: 1, sm: 1.5, md: 3 },
                                 backgroundColor: '#262626',
-                                borderRadius: 2,
-                                border: '1px solid #4b4b4b',
+                                borderRadius: 0,
+                                border: '1px solid #d9d9d9',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -2722,7 +2811,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             borderRadius: 1,
-                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            border: '1px solid #d9d9d9',
                                             py: 0.4,
                                             px: 0,
                                             fontSize: '0.85rem',
@@ -2746,7 +2835,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     position: 'relative',
                                                     bgcolor: '#000',
                                                     border: '1px solid',
-                                                    borderColor: selected ? '#00C48C' : 'rgba(255,255,255,0.15)',
+                                                    borderColor: selected ? '#00C48C' : '#d9d9d9',
                                                     borderRadius: 1,
                                                     transition: 'background-color .2s ease, border-color .2s ease, transform .08s ease',
                                                     '&:hover': {
@@ -2765,20 +2854,20 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                             height: 40,
                                                             mb: 0.5,
                                                             border: '3px solid',
-                                                            borderColor: '#00C48C',
+                                                            borderColor: selected ? '#00C48C' : '#fff',
                                                             bgcolor: '#000',
                                                             '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
                                                         }}
                                                     />
-                                                    {playerVotes[p.id] > 0 && (
-                                                        <Box sx={{ position: 'absolute', top: '50%', right: -4, transform: 'translateY(-50%)', width: 16, height: 16, borderRadius: '50%', bgcolor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}>
-                                                            <Check size={10} color="#00C48C" strokeWidth={3} />
-                                                        </Box>
-                                                    )}
                                                 </Box>
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {p.firstName} {p.lastName}
                                                 </Typography>
+                                                     {selected && (
+                                                    <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
+                                                        <Check size={12} />
+                                                    </Box>
+                                                )}
                                             </MenuItem>
                                         );
                                     })}
@@ -2807,7 +2896,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         MenuProps: {
                                             PaperProps: {
                                                 sx: {
-                                                    bgcolor: '#1a1a1a',
+                                                    bgcolor: '#000',
                                                     '& .MuiList-root': {
                                                         display: 'grid',
                                                         gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
@@ -2824,7 +2913,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             borderRadius: 1,
-                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            border: '1px solid #d9d9d9',
                                             py: 0.5,
                                             px: 0,
                                             fontSize: '0.85rem',
@@ -2847,7 +2936,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     position: 'relative',
                                                     bgcolor: '#000',
                                                     border: '1px solid',
-                                                    borderColor: selected ? '#00C48C' : 'rgba(255,255,255,0.15)',
+                                                    borderColor: selected ? '#00C48C' : '#fff',
                                                     borderRadius: 1,
                                                     transition: 'background-color .2s ease, border-color .2s ease, transform .08s ease',
                                                     '&:hover': {
@@ -2865,7 +2954,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                         height: 40,
                                                         mb: 0.5,
                                                         border: '3px solid',
-                                                        borderColor: '#00C48C',
+                                                         borderColor: selected ? '#00C48C' : '#fff',
                                                         bgcolor: '#000',
                                                         '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
                                                     }}
@@ -2906,7 +2995,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         MenuProps: {
                                             PaperProps: {
                                                 sx: {
-                                                    bgcolor: '#1a1a1a',
+                                                    bgcolor: '#000',
                                                     '& .MuiList-root': {
                                                         display: 'grid',
                                                         gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
@@ -2923,7 +3012,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             borderRadius: 1,
-                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            border: '1px solid #d9d9d9',
                                             py: 0.5,
                                             px: 0,
                                             fontSize: '0.85rem',
@@ -2996,8 +3085,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         sx={{
                             mt: { xs: 3, md: 4 },
                             p: { xs: 1.5, sm: 1 , md: 2  },
-                            borderRadius: 2,
-                            border: '1px solid rgba(255,255,255,0.25)',
+                            borderRadius: 0,
+                            border: '1px solid #d9d9d9',
                             backgroundColor: '#262626',
                         }}
                     >
@@ -3174,17 +3263,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     </Box>
 
                     {/* Submit button */}
-                    <Box sx={{ mt: { xs: 3, md: 4 }, textAlign: 'center' }}>
+                    <Box sx={{ mt: { xs: 3, md: 4 } }}>
                         <Button
                             onClick={handleSaveStats}
                             variant="contained"
                             disabled={isSubmittingStats}
+                            fullWidth
                             sx={{
-                                px: 6,
                                 py: 1.25,
                                 fontWeight: 700,
                                 letterSpacing: 1,
-                                borderRadius: 999,
+                                borderRadius: '11px',
                                 background: 'linear-gradient(90deg, #4A8DFF 0%, #0062FF 100%)',
                                 '&:hover': {
                                     background: 'linear-gradient(90deg, #0062FF 0%, #4A8DFF 100%)',
@@ -3506,6 +3595,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     sx: {
                         ...dialogPaperSx,
                         maxWidth: 850,
+                        borderRadius: 0,
                     }
                 }}
             >
@@ -3642,6 +3732,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         ...dialogContentSx,
                         pt: 3,
                         pb: 3,
+                        border: '5px solid #bfbfbf',
                     }}
                 >
                     {/* Title inside dark area */}
@@ -3654,7 +3745,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             fontSize: 19,
                         }}
                     >
-                        ADD MATCH SCORES
+                        ADD MATCH SCORE
                     </Typography>
                     <Box
                         sx={{
@@ -3868,7 +3959,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         </Box>
                     </Box>
 
-                    <Box sx={{ mt: 4 }}>
+                    {/* <Box sx={{ mt: 4 }}>
                         <TextField
                             label="Match Note"
                             multiline
@@ -3890,14 +3981,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 '& .MuiInputLabel-root': { color: '#E5E7EB' },
                             }}
                         />
-                    </Box>
+                    </Box> */}
 
-                    <Box sx={{ mt: 4, px: { xs: 2, sm: 4, md: 6 } }}>
+                    <Box sx={{ mt: 4, px: { xs: 2, sm: 4, md: 6 }, display: 'flex', justifyContent: 'center' }}>
                         <Button
                             onClick={handleSaveDetails}
                             disabled={!league?.active || savingMatchDetails}
                             variant="contained"
-                            fullWidth
                             sx={{
                                 py: 1.5,
                                 borderRadius: '12px',
@@ -3905,6 +3995,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 letterSpacing: 1,
                                 backgroundColor: '#2196f3',
                                 '&:hover': { backgroundColor: '#1e88e5' },
+                                minWidth: 630,
+                                maxWidth: 630,
                             }}
                         >
                             {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'SUBMIT'}
@@ -3986,11 +4078,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent
-                    dividers
                     sx={{
                         p: 0,
                         background: '#262626',
-                        
+                        overflow: 'auto',
+                        '&::-webkit-scrollbar': {
+                            display: 'none'
+                        },
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
                     }}
                 >
                     {content}

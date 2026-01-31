@@ -53,6 +53,7 @@ import PlayerImg from '@/Components/images/playerimg.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
 import FootBallIcon from '@/Components/images/cardfootball.png'
+import CardStar from '@/Components/images/cardstar.png'
 
 // Lazy load heavy components
 const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
@@ -93,6 +94,8 @@ import CalendarImg from '@/Components/images/cardcalendar.png'
 import ClockImg from '@/Components/images/cardclock.png'
 import LocationImg from '@/Components/images/cardlocation.png'
 import ViewTeamImg from '@/Components/images/cardviewteam.png'
+import RESULTS from '@/Components/images/cardresult.png'
+import ADDSTATS from '@/Components/images/cardstats.png'
 
 type Foot = 'L' | 'R';
 type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
@@ -2914,7 +2917,7 @@ export default function LeagueDetailPage() {
                                                             key={match.id}
                                                             sx={{
                                                                 position: 'relative',
-                                                                borderRadius: 3,
+                                                                borderRadius: 1,
                                                                 overflow: 'hidden',
                                                                 background: '#222',
                                                                 border: '2px solid #fff',
@@ -3129,40 +3132,80 @@ export default function LeagueDetailPage() {
                                                                         p: 1.5,
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
-                                                                        justifyContent: 'center',
-                                                                        gap: 1,
+                                                                        justifyContent: 'space-between',
+                                                                        minHeight: '105px',
                                                                     }}>
-                                                                        {/* Date Row */}
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
-                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
-                                                                                <Image src={CalendarImg} alt="Date" width={16} height={16} />
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
-                                                                                    {formatMatchDate(match.date)}
-                                                                                </Typography>
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                                            {/* Date Row */}
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
+                                                                                    <Image src={CalendarImg} alt="Date" width={16} height={16} />
+                                                                                    <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+                                                                                        {formatMatchDate(match.date)}
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
+                                                                                    <Image src={ClockImg} alt="Time" width={16} height={16} />
+                                                                                    <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+                                                                                        {formatMatchTime(match.date)}
+                                                                                    </Typography>
+                                                                                </Box>
                                                                             </Box>
-                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
-                                                                                <Image src={ClockImg} alt="Time" width={16} height={16} />
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
-                                                                                    {formatMatchTime(match.date)}
-                                                                                </Typography>
-                                                                            </Box>
+
+                                                                            {/* Location Row */}
+                                                                            {match.location ? (
+                                                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '160px' }}>
+                                                                                    <Box sx={{ mt: 0.3, flexShrink: 0 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
+                                                                                    <Typography sx={{ color: '#ccc', fontSize: '0.6rem', lineHeight: 1.3, wordBreak: 'break-word' }}>
+                                                                                        {match.location}
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                            ) : (
+                                                                                <Box sx={{ height: '20px' }} />
+                                                                            )}
                                                                         </Box>
 
-                                                                        {/* Location Row */}
-                                                                        {match.location && (
-                                                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                                                <Box sx={{ mt: 0.3 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                                                <Typography sx={{ color: '#ccc', fontSize: '0.75rem', lineHeight: 1.3 }}>
-                                                                                    {match.location}
-                                                                                </Typography>
-                                                                            </Box>
-                                                                        )}
-
-                                                                        {/* MOTM Section - placeholder for now */}
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -7 }}>
-                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                                                <Star sx={{ color: '#FFD700', fontSize: 28 }} />
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.5rem', fontWeight: 600, textAlign: 'center' }}>
+                                                                        {/* MOTM Section */}
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' , mt:-8 }}>
+                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+                                                                                <Image src={CardStar} alt="MOTM" width={28} height={28} />
+                                                                                {(() => {
+                                                                                    const votes = match.manOfTheMatchVotes || {};
+                                                                                    const voteCounts: Record<string, number> = {};
+                                                                                    
+                                                                                    if (typeof votes === 'object' && !Array.isArray(votes)) {
+                                                                                        Object.values(votes).forEach((playerId) => {
+                                                                                            if (playerId) {
+                                                                                                const playerIdStr = String(playerId);
+                                                                                                voteCounts[playerIdStr] = (voteCounts[playerIdStr] || 0) + 1;
+                                                                                            }
+                                                                                        });
+                                                                                    }
+                                                                                    
+                                                                                    let maxVotes = 0;
+                                                                                    let motmPlayerId = '';
+                                                                                    Object.entries(voteCounts).forEach(([playerId, count]) => {
+                                                                                        if (count > maxVotes) {
+                                                                                            maxVotes = count;
+                                                                                            motmPlayerId = playerId;
+                                                                                        }
+                                                                                    });
+                                                                                    
+                                                                                    if (motmPlayerId && maxVotes > 0) {
+                                                                                        const allPlayers = [...(match.homeTeamUsers || []), ...(match.awayTeamUsers || [])];
+                                                                                        const motmPlayer = allPlayers.find(p => String(p.id) === String(motmPlayerId));
+                                                                                        
+                                                                                        if (motmPlayer && motmPlayer.firstName && motmPlayer.lastName) {
+                                                                                            return (
+                                                                                                <Typography sx={{ color: '#FFD700', fontSize: '0.6rem', fontWeight: 700, textAlign: 'center' }}>
+                                                                                                    {motmPlayer.firstName} {motmPlayer.lastName}
+                                                                                                </Typography>
+                                                                                            );
+                                                                                        }
+                                                                                    }
+                                                                                    return null;
+                                                                                })()}
+                                                                           <Typography sx={{ color: 'white', fontSize: '0.4rem', fontWeight: 600, textAlign: 'center' }}>
                                                                                     Man Of The Match
                                                                                 </Typography>
                                                                             </Box>
@@ -3174,7 +3217,7 @@ export default function LeagueDetailPage() {
                                                                             justifyContent: 'center',
                                                                             alignItems: 'center',
                                                                             gap: 1,
-                                                                            mt: 1
+                                                                            // mt: 1.5
                                                                         }}>
                                                                             {/* Add Stats Button */}
                                                                             {(isAdmin || (
@@ -3190,7 +3233,7 @@ export default function LeagueDetailPage() {
                                                                                         setShouldShowAdminGoals(false);
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
-                                                                                    startIcon={<SignalCellularAltIcon sx={{ fontSize: 16 }} />}
+                                                                                    startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
                                                                                     disabled={!league?.active || match.status === 'RESULT_UPLOADED'}
                                                                                     sx={{
                                                                                         // backgroundColor: '#333',
@@ -3204,6 +3247,7 @@ export default function LeagueDetailPage() {
                                                                                         whiteSpace: 'nowrap',
                                                                                         '&:hover': { backgroundColor: '#444' },
                                                                                         '&.Mui-disabled': { color: 'white' },
+                                                                                        '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                     }}
                                                                                 >
                                                                                     Add Stats
@@ -3218,7 +3262,7 @@ export default function LeagueDetailPage() {
                                                                                     setViewTeamMatch({ leagueId, matchId: match.id });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
-                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={16} height={16} />}
+                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={34} height={34} />}
                                                                                 sx={{
                                                                                     // backgroundColor: '#333',
                                                                                     color: 'white',
@@ -3230,6 +3274,7 @@ export default function LeagueDetailPage() {
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                     whiteSpace: 'nowrap',
                                                                                     '&:hover': { backgroundColor: '#444' },
+                                                                                    '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                 }}
                                                                             >
                                                                                 View Team
@@ -3239,7 +3284,7 @@ export default function LeagueDetailPage() {
                                                                             <Button
                                                                                 size="small"
                                                                                 onClick={() => router.push(`/match/${match.id}`)}
-                                                                                startIcon={<Trophy size={14} />}
+                                                                                startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
                                                                                 disabled={match.status === 'RESULT_UPLOADED'}
                                                                                 sx={{
                                                                                     // backgroundColor: '#333',
@@ -3253,6 +3298,7 @@ export default function LeagueDetailPage() {
                                                                                     whiteSpace: 'nowrap',
                                                                                     '&:hover': { backgroundColor: '#444' },
                                                                                     '&.Mui-disabled': { color: 'white' },
+                                                                                    '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                 }}
                                                                             >
                                                                                 Results
@@ -3283,7 +3329,7 @@ export default function LeagueDetailPage() {
                                                                                         setShouldShowAdminGoals(true);
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
-                                                                                    startIcon={<Edit size={14} />}
+                                                                                    startIcon={<Edit size={14}  color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
                                                                                         justifyContent: 'flex-start',
@@ -3291,7 +3337,7 @@ export default function LeagueDetailPage() {
                                                                                         p: 0,
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
-                                                                                        '&:hover': { textDecoration: 'underline' },
+                                                                                        textDecoration: 'underline',
                                                                                         '& .MuiButton-startIcon': { mr: 0.5 }
                                                                                     }}
                                                                                 >
@@ -3303,7 +3349,7 @@ export default function LeagueDetailPage() {
                                                                                         router.push(`/league/${league?.id}/match/${match.id}/edit`);
                                                                                     }}
                                                                                     disabled={!league?.active}
-                                                                                    startIcon={<Edit size={14} />}
+                                                                                    startIcon={<Edit size={14} color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
                                                                                         justifyContent: 'flex-start',
@@ -3311,7 +3357,7 @@ export default function LeagueDetailPage() {
                                                                                         p: 0,
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
-                                                                                        '&:hover': { textDecoration: 'underline' },
+                                                                                        textDecoration: 'underline',
                                                                                         '& .MuiButton-startIcon': { mr: 0.5 }
                                                                                     }}
                                                                                 >
@@ -3335,7 +3381,7 @@ export default function LeagueDetailPage() {
                                                                                         p: 0,
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
-                                                                                        '&:hover': { textDecoration: 'underline' },
+                                                                                        textDecoration: 'underline',
                                                                                         '& .MuiButton-startIcon': { mr: 0.5 }
                                                                                     }}
                                                                                 >
