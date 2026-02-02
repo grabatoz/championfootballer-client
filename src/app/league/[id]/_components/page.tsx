@@ -44,16 +44,18 @@ import {
 } from '@mui/material';
 import { useAuth } from '@/lib/hooks';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame, Search, Table, Plus, Share2, MapPin, Crown } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, Copy, Edit, Settings, Shield, ChevronDown, Trash2, Undo2, Users, Flame, Search, Table, Plus, Share2, MapPin, Crown, Lock } from 'lucide-react';
 import { Tooltip, Slide } from '@mui/material';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import PlayerImg from '@/Components/images/playerimg.png'
+import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
 import FootBallIcon from '@/Components/images/cardfootball.png'
 import CardStar from '@/Components/images/cardstar.png'
+import DREATEAM from '@/Components/images/dreamteamicon.png'
 
 // Lazy load heavy components
 const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
@@ -86,7 +88,10 @@ import awayImg from '@/Components/images/2nd champion icon football.png'
 import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
+import CleanSheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
+import MOTM from "@/Components/images/MOTM.png"
+import Imapct from "@/Components/images/imapct.png"
 import Star from '@mui/icons-material/Star';
 import LeagueTable from '@/Components/images/leagutable.png'
 import LeagueIcon from '@/Components/images/league icon.png'
@@ -95,7 +100,13 @@ import ClockImg from '@/Components/images/cardclock.png'
 import LocationImg from '@/Components/images/cardlocation.png'
 import ViewTeamImg from '@/Components/images/cardviewteam.png'
 import RESULTS from '@/Components/images/cardresult.png'
+import MATCHRESULT from '@/Components/images/matchresults.png'
 import ADDSTATS from '@/Components/images/cardstats.png'
+import FIXTURES from '@/Components/images/fixtures.png'
+import LEADERBOARD from '@/Components/images/leaderboard.png'
+import FirstBadge from '@/Components/images/1st.png';
+import SecondBadge from '@/Components/images/2nd.png';
+import ThirdBadge from '@/Components/images/3rd.png';
 
 type Foot = 'L' | 'R';
 type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
@@ -247,7 +258,7 @@ export default function LeagueDetailPage() {
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [section, setSection] = useState<'members' | 'matches' | 'results' | 'table' | 'awards'>('table');
+    const [section, setSection] = useState<'members' | 'matches' | 'results' | 'table' | 'leaderboard'>('table');
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
@@ -277,6 +288,11 @@ export default function LeagueDetailPage() {
     const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
     const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
+    // Season dropdown state
+    const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+    const [seasonDropdownAnchor, setSeasonDropdownAnchor] = useState<null | HTMLElement>(null);
+    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+
     // Match detail modal state
     const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
     const [selectedMatchDetail, setSelectedMatchDetail] = useState<Match | null>(null);
@@ -291,6 +307,11 @@ export default function LeagueDetailPage() {
     const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
     const [archivedActionChecking, setArchivedActionChecking] = useState(false);
     const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
+
+    // Leaderboard state
+    const [selectedMetric, setSelectedMetric] = useState('goals');
+    const [leaderboardPlayers, setLeaderboardPlayers] = useState<Array<{ id: string; name: string; positionType: string; value: number }>>([]);
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
     const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
     const [motmCounts, setMotmCounts] = useState<Record<string, number>>({});
@@ -539,7 +560,7 @@ export default function LeagueDetailPage() {
     // Add this useEffect to sync tab param with section
     useEffect(() => {
         const tab = searchParams?.get('tab');
-        if (tab === 'table' || tab === 'awards' || tab === 'members' || tab === 'matches' || tab === 'results') {
+        if (tab === 'table' || tab === 'leaderboard' || tab === 'members' || tab === 'matches' || tab === 'results') {
             setSection(tab);
         }
     }, [searchParams]);
@@ -578,6 +599,18 @@ export default function LeagueDetailPage() {
             if (data.success) {
                 console.log('✅ Fresh League Data Received:', data.league);
                 console.log('✅ Total Matches:', data.league.matches?.length || 0);
+                console.log('✅ Total Members:', data.league.members?.length || 0);
+                console.log('✅ Members:', data.league.members?.map((m: User) => `${m.firstName} ${m.lastName}`));
+                console.log('✅ Seasons:', data.league.seasons);
+                if (Array.isArray(data.league.seasons)) {
+                    data.league.seasons.forEach((s: any, i: number) => {
+                        console.log(`  Season ${i + 1}:`, {
+                            id: s.id,
+                            seasonNumber: s.seasonNumber,
+                            members: Array.isArray(s.members) ? s.members.map((m: any) => `${m.firstName} ${m.lastName}`) : 'no members array'
+                        });
+                    });
+                }
                 if (data.league.matches) {
                     data.league.matches.forEach((match: Match, index: number) => {
                         console.log(`  Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | Status: ${match.status}`);
@@ -874,6 +907,24 @@ export default function LeagueDetailPage() {
         setLeaguesDropdownAnchor(null);
     };
 
+    // Handle season dropdown open/close
+    const handleSeasonDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setSeasonDropdownAnchor(event.currentTarget);
+        setSeasonDropdownOpen(true);
+    };
+
+    const handleSeasonDropdownClose = () => {
+        setSeasonDropdownOpen(false);
+        setSeasonDropdownAnchor(null);
+    };
+
+    // Handle season selection
+    const handleSeasonSelect = async (seasonId: string) => {
+        console.log('🎯 Season selected:', seasonId);
+        setSelectedSeasonId(seasonId);
+        handleSeasonDropdownClose();
+    };
+
     // Handle league selection
     const handleLeagueSelect = async (selectedLeagueId: string) => {
         if (selectedLeagueId !== leagueId) {
@@ -1010,11 +1061,225 @@ export default function LeagueDetailPage() {
         }
     };
 
-    const tableData: TableData[] = React.useMemo(() => {
-        if (!league) return [];
-        const playerStats = new Map<string, TableData>();
+    // Current season number resolver (no `any`; checks currentSeason, active `seasons`, computedStatus, and top-level fields)
+    const resolveSeasonNumber = (l?: League | null): number | undefined => {
+        const toNum = (v: unknown): number | undefined => {
+            const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+            return Number.isFinite(n) ? n : undefined;
+        };
+
+        if (!l) return undefined;
+
+        // Helper to safely read number-like field from an object by keys
+        const getNumberLike = (obj: unknown, keys: string[]): number | undefined => {
+            if (!obj || typeof obj !== 'object') return undefined;
+            const rec = obj as Record<string, unknown>;
+            for (const k of keys) {
+                const n = toNum(rec[k]);
+                if (typeof n === 'number') {
+                    if (n > 0) return n;
+                    if (n === 0) return 1; // zero-based index -> Season 1
+                }
+            }
+            return undefined;
+        };
+
+        // 0) First check currentSeason from backend (user's actual season they are member of)
+        const currentSeasonFromBackend = (l as unknown as Record<string, unknown>)?.currentSeason;
+        if (currentSeasonFromBackend && typeof currentSeasonFromBackend === 'object') {
+            const fromCurrent = getNumberLike(currentSeasonFromBackend, ['seasonNumber']);
+            if (typeof fromCurrent === 'number') return fromCurrent;
+        }
+
+        // 1) Check `l.seasons` - now only contains seasons user is member of
+        const seasonsUnknown = (l as unknown as Record<string, unknown>)?.seasons;
+        if (Array.isArray(seasonsUnknown) && seasonsUnknown.length > 0) {
+            // Use the first season from filtered list (user's most recent season)
+            const userSeason = seasonsUnknown[0];
+            const fromUserSeason = getNumberLike(userSeason, ['seasonNumber']);
+            if (typeof fromUserSeason === 'number') return fromUserSeason;
+        }
+
+        // 2) Check `computedStatus`
+        const comp = (l as unknown as Record<string, unknown>)?.computedStatus;
+        const fromComputed = getNumberLike(comp, ['currentSeasonNumber', 'seasonNumber', 'seasonIndex', 'season']);
+        if (typeof fromComputed === 'number') return fromComputed;
+
+        // 3) Check top-level fields
+        const fromTop = getNumberLike(l as unknown as Record<string, unknown>, ['currentSeasonNumber', 'seasonNumber', 'seasonIndex', 'season']);
+        if (typeof fromTop === 'number') return fromTop;
+
+        return undefined;
+    };
+
+    const currentSeasonNumber = React.useMemo(() => resolveSeasonNumber(league) ?? 1, [league]);
+    
+    // Get selected season number from selectedSeasonId
+    const selectedSeasonNumber = React.useMemo(() => {
+        if (!selectedSeasonId || !league) return currentSeasonNumber;
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        if (!Array.isArray(seasonsUnknown)) return currentSeasonNumber;
+        const season = seasonsUnknown.find((s: unknown) => {
+            const seasonObj = s as Record<string, unknown>;
+            return String(seasonObj?.id || '') === selectedSeasonId;
+        });
+        if (season) {
+            const seasonObj = season as Record<string, unknown>;
+            return Number(seasonObj?.seasonNumber || currentSeasonNumber);
+        }
+        return currentSeasonNumber;
+    }, [selectedSeasonId, league, currentSeasonNumber]);
+    
+    const seasonLabel = React.useMemo(() => (selectedSeasonNumber ? `(#Season ${selectedSeasonNumber})` : ''), [selectedSeasonNumber]);
+    
+    // Check if selected season is active
+    const isSelectedSeasonActive = React.useMemo(() => {
+        if (!selectedSeasonId || !league) return true; // Default to active if no season selected
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        if (!Array.isArray(seasonsUnknown)) return true;
+        const season = seasonsUnknown.find((s: unknown) => {
+            const seasonObj = s as Record<string, unknown>;
+            return String(seasonObj?.id || '') === selectedSeasonId;
+        });
+        if (season) {
+            const seasonObj = season as Record<string, unknown>;
+            return seasonObj?.isActive === true;
+        }
+        return true; // Default to active
+    }, [selectedSeasonId, league]);
+    
+    // Filter matches and members based on selected season
+    const filteredLeague = React.useMemo(() => {
+        console.log('🔄 filteredLeague useMemo triggered');
+        console.log('   - league exists:', !!league);
+        console.log('   - selectedSeasonId:', selectedSeasonId);
+        
+        if (!league) {
+            console.log('❌ No league, returning null');
+            return null;
+        }
+        
+        if (!selectedSeasonId) {
+            console.log('ℹ️ No season selected, returning full league');
+            return league; // Show current season by default
+        }
+        
+        console.log('🔍 Filtering league for season:', selectedSeasonId);
+        
+        // Filter matches by seasonId
+        console.log('🔍 All matches in league:', (league.matches || []).length);
+        (league.matches || []).forEach((match, index) => {
+            const matchSeasonId = (match as unknown as Record<string, unknown>)?.seasonId;
+            console.log(`   Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | seasonId: ${matchSeasonId} | status: ${match.status}`);
+        });
+        
+        const filteredMatches = (league.matches || []).filter(match => {
+            const matchSeasonId = (match as unknown as Record<string, unknown>)?.seasonId;
+            const matches = String(matchSeasonId || '') === selectedSeasonId;
+            if (!matches) {
+                console.log(`   ❌ Match ${match.homeTeamName} vs ${match.awayTeamName} excluded (seasonId: ${matchSeasonId} vs ${selectedSeasonId})`);
+            }
+            return matches;
+        });
+        
+        console.log('✅ Filtered matches:', filteredMatches.length);
+        if (filteredMatches.length > 0) {
+            filteredMatches.forEach(m => console.log(`   ✅ ${m.homeTeamName} vs ${m.awayTeamName}`));
+        }
+        
+        // Get season object and its members
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        let filteredMembers: User[] = [];
+        
+        console.log('🔍 All seasons:', seasonsUnknown);
+        
+        if (Array.isArray(seasonsUnknown)) {
+            const selectedSeason = seasonsUnknown.find((s: unknown) => {
+                const seasonObj = s as Record<string, unknown>;
+                return String(seasonObj?.id || '') === selectedSeasonId;
+            });
+            
+            console.log('🔍 Selected season object:', selectedSeason);
+            
+            if (selectedSeason) {
+                const seasonObj = selectedSeason as Record<string, unknown>;
+                const membersUnknown = seasonObj?.members;
+                
+                console.log('🔍 Selected season ID:', seasonObj?.id);
+                console.log('🔍 Selected season number:', seasonObj?.seasonNumber);
+                console.log('🔍 Season members from backend (raw):', membersUnknown);
+                console.log('🔍 Is array?', Array.isArray(membersUnknown));
+                console.log('🔍 Length:', Array.isArray(membersUnknown) ? membersUnknown.length : 0);
+                
+                if (Array.isArray(membersUnknown) && membersUnknown.length > 0) {
+                    // Use season members from backend
+                    console.log('🔍 Member IDs from season:', membersUnknown.map((m: any) => `${m.id}: ${m.firstName} ${m.lastName}`));
+                    const seasonMemberIds = new Set(membersUnknown.map((m: any) => m.id));
+                    console.log('🔍 All league members:', league.members.map(m => `${m.id}: ${m.firstName} ${m.lastName}`));
+                    filteredMembers = league.members.filter((member: User) => seasonMemberIds.has(member.id));
+                    console.log('✅ Using season members from backend:', filteredMembers.length);
+                    console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
+                }
+            }
+        }
+        
+        // If no season members found from backend, get players who played in matches
+        if (filteredMembers.length === 0) {
+            console.log('⚠️ No season members from backend, using match players');
+            const playersInSeasonSet = new Set<string>();
+            filteredMatches.forEach(match => {
+                match.homeTeamUsers?.forEach(user => playersInSeasonSet.add(user.id));
+                match.awayTeamUsers?.forEach(user => playersInSeasonSet.add(user.id));
+            });
+            
+            // If no one played in matches yet, show all league members for this season
+            if (playersInSeasonSet.size === 0) {
+                console.log('⚠️ No matches played yet, showing all league members');
+                filteredMembers = [...league.members];
+            } else {
+                filteredMembers = league.members.filter((member: User) => playersInSeasonSet.has(member.id));
+                console.log('✅ Players from matches:', filteredMembers.length);
+            }
+        }
+        
+        // Always include admin
         const adminId = league.administrators?.[0]?.id;
-        league.members.forEach((member: User & { xp?: number }) => {
+        if (adminId && !filteredMembers.find(m => m.id === adminId)) {
+            const admin = league.members.find((m: User) => m.id === adminId);
+            if (admin) {
+                filteredMembers.push(admin);
+                console.log('✅ Added admin to filtered members');
+            }
+        }
+        
+        console.log('✅ Final filtered members:', filteredMembers.length, filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
+        
+        return {
+            ...league,
+            matches: filteredMatches,
+            members: filteredMembers
+        };
+    }, [league, selectedSeasonId]);
+
+    const tableData: TableData[] = React.useMemo(() => {
+        console.log('🎯 TABLE DATA COMPUTATION START');
+        console.log('   filteredLeague exists:', !!filteredLeague);
+        console.log('   filteredLeague members:', filteredLeague?.members?.length);
+        console.log('   filteredLeague members names:', filteredLeague?.members?.map(m => `${m.firstName} ${m.lastName}`));
+        console.log('   filteredLeague matches:', filteredLeague?.matches?.length);
+        
+        if (!filteredLeague) {
+            console.log('❌ No filteredLeague, returning empty array');
+            return [];
+        }
+        
+        const playerStats = new Map<string, TableData>();
+        const adminId = filteredLeague.administrators?.[0]?.id;
+        
+        console.log('   Admin ID:', adminId);
+        
+        // Initialize ALL filtered members first (whether they played or not)
+        filteredLeague.members.forEach((member: User & { xp?: number }) => {
             playerStats.set(member.id, {
                 id: member.id,
                 name: `${member.firstName} ${member.lastName}`,
@@ -1025,12 +1290,15 @@ export default function LeagueDetailPage() {
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
-                // Prefer XP from league API map, fallback to member.xp if present
                 xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member?.xp ?? 0),
                 motmCount: typeof motmCounts[member.id] === 'number' ? motmCounts[member.id] : 0,
             });
         });
-        league.matches
+        
+        console.log('   Initialized players:', playerStats.size);
+        
+        // Process matches to build stats for players who played in this season
+        filteredLeague.matches
             .filter(m => !m.archived) // <-- exclude archived
             .filter(m => (m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_PUBLISHED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
@@ -1038,8 +1306,12 @@ export default function LeagueDetailPage() {
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
                 const isDraw = match.homeTeamGoals === match.awayTeamGoals;
                 const processPlayer = (p: User, isHome: boolean) => {
+                    // Player should already be in stats map, just update their stats
                     const stats = playerStats.get(p.id);
-                    if (!stats) return;
+                    if (!stats) {
+                        console.warn(`⚠️ Player ${p.firstName} ${p.lastName} played but not in filtered members!`);
+                        return;
+                    }
                     stats.played++;
                     if ((isHome && homeWon) || (!isHome && awayWon)) stats.wins++;
                     else if (isDraw) stats.draws++;
@@ -1048,6 +1320,12 @@ export default function LeagueDetailPage() {
                 match.homeTeamUsers.forEach(p => processPlayer(p, true));
                 match.awayTeamUsers.forEach(p => processPlayer(p, false));
             });
+
+        console.log('   Total players in stats map:', playerStats.size);
+        console.log('   Players:', Array.from(playerStats.keys()).map(id => {
+            const p = playerStats.get(id);
+            return `${p?.name} (played: ${p?.played})`;
+        }));
 
         const list = Array.from(playerStats.values()).map(s => ({
             ...s,
@@ -1062,9 +1340,13 @@ export default function LeagueDetailPage() {
             return a.losses - b.losses;
         });
 
+        console.log('   Final tableData length:', list.length);
+        console.log('   Final tableData:', list.map(p => `${p.name} (xp: ${p.xp}, played: ${p.played})`));
+        console.log('🎯 TABLE DATA COMPUTATION END');
+
         return list;
-        // Recompute when members/matches/admins change so UI updates instantly after removals/edits
-    }, [league?.id, league?.members, league?.matches, league?.administrators, leagueWinners, userLeagueXP, motmCounts]);
+        // Recompute when filtered league or stats change
+    }, [filteredLeague, filteredLeague?.id, filteredLeague?.members, filteredLeague?.matches, filteredLeague?.administrators, leagueWinners, userLeagueXP, motmCounts]);
 
     // Type for MOTM votes map: voterId -> votedForId
     type ManOfTheMatchVotes = Record<string, string | number>;
@@ -1075,9 +1357,13 @@ export default function LeagueDetailPage() {
     useEffect(() => {
         if (!league?.members?.length || !league?.id) return;
         const counts: Record<string, number> = {};
+        
+        // Use filteredLeague matches when season is selected, otherwise use all league matches
+        const matchesToCount = selectedSeasonId && filteredLeague ? filteredLeague.matches : (league.matches || []);
+        
         // Initialize all members with 0 to ensure everyone shows up
         league.members.forEach(m => { counts[m.id] = 0; });
-        (league.matches || []).forEach((match) => {
+        matchesToCount.forEach((match) => {
             const votes: ManOfTheMatchVotes = hasMotmVotes(match) && match.manOfTheMatchVotes
                 ? match.manOfTheMatchVotes
                 : {};
@@ -1089,7 +1375,7 @@ export default function LeagueDetailPage() {
         });
         setMotmCounts(counts);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [league?.id]);
+    }, [league?.id, selectedSeasonId, filteredLeague?.matches]);
 
     // Fetch MOTM votes per player via quick-view endpoint when league changes
     useEffect(() => {
@@ -1155,6 +1441,27 @@ export default function LeagueDetailPage() {
             }
         })();
     }, [league?.id, token]);
+
+    // Fetch leaderboard when metric or league changes
+    useEffect(() => {
+        if (!leagueId || !token) return;
+        setLeaderboardLoading(true);
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${leagueId}`, {
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                setLeaderboardPlayers(data.players || []);
+                setLeaderboardLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching leaderboard:', error);
+                setLeaderboardLoading(false);
+            });
+    }, [selectedMetric, leagueId, token]);
 
     const getAvailabilityCounts = (match: Match) => {
         // Find the league for this match
@@ -1257,60 +1564,6 @@ export default function LeagueDetailPage() {
         // fallback to date: latest first
         return getBestDateMs(b) - getBestDateMs(a);
     };
-
-    // Current season number resolver (no `any`; checks currentSeason, active `seasons`, computedStatus, and top-level fields)
-    const resolveSeasonNumber = (l?: League | null): number | undefined => {
-        const toNum = (v: unknown): number | undefined => {
-            const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-            return Number.isFinite(n) ? n : undefined;
-        };
-
-        if (!l) return undefined;
-
-        // Helper to safely read number-like field from an object by keys
-        const getNumberLike = (obj: unknown, keys: string[]): number | undefined => {
-            if (!obj || typeof obj !== 'object') return undefined;
-            const rec = obj as Record<string, unknown>;
-            for (const k of keys) {
-                const n = toNum(rec[k]);
-                if (typeof n === 'number') {
-                    if (n > 0) return n;
-                    if (n === 0) return 1; // zero-based index -> Season 1
-                }
-            }
-            return undefined;
-        };
-
-        // 0) First check currentSeason from backend (user's actual season they are member of)
-        const currentSeasonFromBackend = (l as unknown as Record<string, unknown>)?.currentSeason;
-        if (currentSeasonFromBackend && typeof currentSeasonFromBackend === 'object') {
-            const fromCurrent = getNumberLike(currentSeasonFromBackend, ['seasonNumber']);
-            if (typeof fromCurrent === 'number') return fromCurrent;
-        }
-
-        // 1) Check `l.seasons` - now only contains seasons user is member of
-        const seasonsUnknown = (l as unknown as Record<string, unknown>)?.seasons;
-        if (Array.isArray(seasonsUnknown) && seasonsUnknown.length > 0) {
-            // Use the first season from filtered list (user's most recent season)
-            const userSeason = seasonsUnknown[0];
-            const fromUserSeason = getNumberLike(userSeason, ['seasonNumber']);
-            if (typeof fromUserSeason === 'number') return fromUserSeason;
-        }
-
-        // 2) Check `computedStatus`
-        const comp = (l as unknown as Record<string, unknown>)?.computedStatus;
-        const fromComputed = getNumberLike(comp, ['currentSeasonNumber', 'seasonNumber', 'seasonIndex', 'season']);
-        if (typeof fromComputed === 'number') return fromComputed;
-
-        // 3) Check top-level fields
-        const fromTop = getNumberLike(l as unknown as Record<string, unknown>, ['currentSeasonNumber', 'seasonNumber', 'seasonIndex', 'season']);
-        if (typeof fromTop === 'number') return fromTop;
-
-        return undefined;
-    };
-
-    const currentSeasonNumber = React.useMemo(() => resolveSeasonNumber(league) ?? 1, [league]);
-    const seasonLabel = React.useMemo(() => (currentSeasonNumber ? `(#Season ${currentSeasonNumber})` : ''), [currentSeasonNumber]);
 
     if (error) {
         return (
@@ -2089,19 +2342,148 @@ export default function LeagueDetailPage() {
                                             )}
                                         </Box>
                                         {league && (
-                                            <Typography
+                                            <Button
+                                                onClick={handleSeasonDropdownOpen}
                                                 sx={{
                                                     mt: -1,
                                                     color: 'rgba(255,255,255,0.9)',
                                                     fontSize: { xs: '0.9rem', sm: '1rem', md: '1.15rem' },
                                                     fontWeight: 500,
                                                     letterSpacing: 0.25,
+                                                    textTransform: 'none',
+                                                    backgroundColor: 'transparent',
+                                                    borderRadius: 0,
+                                                    px: 1,
+                                                    py: 0,
+                                                    minHeight: 'auto',
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                                    },
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
                                                 }}
+                                                startIcon={!isSelectedSeasonActive ? <Lock size={16} color="rgba(255,255,255,0.6)" /> : null}
+                                                endIcon={
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            width: 0,
+                                                            height: 0,
+                                                            borderLeft: '6px solid transparent',
+                                                            borderRight: '6px solid transparent',
+                                                            borderTop: '10px solid rgba(255,255,255,0.9)',
+                                                            display: 'inline-block',
+                                                        }}
+                                                    />
+                                                }
                                             >
                                                 {seasonLabel}
-                                            </Typography>
+                                            </Button>
                                         )}
                                     </Box>
+
+                                    {/* Season Dropdown Menu */}
+                                    <Menu
+                                        anchorEl={seasonDropdownAnchor}
+                                        open={seasonDropdownOpen}
+                                        onClose={handleSeasonDropdownClose}
+                                        PaperProps={{
+                                            sx: {
+                                                p: 0.5,
+                                                mt: 1,
+                                                minWidth: 200,
+                                                bgcolor: 'rgba(15,15,15,0.92)',
+                                                color: '#E5E7EB',
+                                                borderRadius: 2.5,
+                                                border: '1px solid rgba(255,255,255,0.08)',
+                                                backdropFilter: 'blur(10px)',
+                                                boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                                overflow: 'hidden',
+                                            }
+                                        }}
+                                    >
+                                        {(() => {
+                                            const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+                                            let availableSeasons: Array<{id: string, seasonNumber: number}> = [];
+
+                                            // If user is admin, show all seasons
+                                            if (isAdmin && Array.isArray(seasonsUnknown)) {
+                                                availableSeasons = seasonsUnknown.map((s: unknown) => {
+                                                    const season = s as Record<string, unknown>;
+                                                    return {
+                                                        id: String(season?.id || ''),
+                                                        seasonNumber: Number(season?.seasonNumber || 0)
+                                                    };
+                                                }).filter(s => s.id && s.seasonNumber > 0);
+                                            }
+                                            // If user is member, show only seasons they joined
+                                            else if (Array.isArray(seasonsUnknown)) {
+                                                availableSeasons = seasonsUnknown.map((s: unknown) => {
+                                                    const season = s as Record<string, unknown>;
+                                                    return {
+                                                        id: String(season?.id || ''),
+                                                        seasonNumber: Number(season?.seasonNumber || 0)
+                                                    };
+                                                }).filter(s => s.id && s.seasonNumber > 0);
+                                            }
+
+                                            // Sort by season number descending (newest first)
+                                            availableSeasons.sort((a, b) => b.seasonNumber - a.seasonNumber);
+
+                                            if (availableSeasons.length === 0) {
+                                                return (
+                                                    <MenuItem disabled sx={{ color: '#9CA3AF', fontSize: '0.9rem', py: 1 }}>
+                                                        No seasons available
+                                                    </MenuItem>
+                                                );
+                                            }
+
+                                            return availableSeasons.map((season) => (
+                                                <MenuItem
+                                                    key={season.id}
+                                                    onClick={() => handleSeasonSelect(season.id)}
+                                                    sx={{
+                                                        borderRadius: 1.5,
+                                                        mx: 0.5,
+                                                        my: 0.25,
+                                                        py: 1.25,
+                                                        px: 1.5,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        color: '#E5E7EB',
+                                                        transition: 'all 0.2s ease',
+                                                        background: season.seasonNumber === currentSeasonNumber 
+                                                            ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' 
+                                                            : 'transparent',
+                                                        border: season.seasonNumber === currentSeasonNumber 
+                                                            ? '1px solid rgba(3,136,227,0.35)' 
+                                                            : 'none',
+                                                        '&:hover': {
+                                                            transform: 'translateY(-1px)',
+                                                            background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                                                        },
+                                                    }}
+                                                >
+                                                    <ListItemIcon sx={{ minWidth: 36 }}>
+                                                        <Calendar size={16} color={season.seasonNumber === currentSeasonNumber ? '#FFFFFF' : '#9CA3AF'} />
+                                                    </ListItemIcon>
+                                                    <ListItemText
+                                                        primary={`Season ${season.seasonNumber}`}
+                                                        sx={{
+                                                            '& .MuiListItemText-primary': {
+                                                                fontSize: '0.95rem',
+                                                                fontWeight: season.seasonNumber === currentSeasonNumber ? 700 : 500,
+                                                                letterSpacing: 0.2,
+                                                                color: season.seasonNumber === currentSeasonNumber ? '#FFFFFF' : '#E5E7EB'
+                                                            }
+                                                        }}
+                                                    />
+                                                </MenuItem>
+                                            ));
+                                        })()}
+                                    </Menu>
 
                                     {/* Leagues Dropdown Menu */}
                                     <Menu
@@ -2261,7 +2643,7 @@ export default function LeagueDetailPage() {
                                                 setSection('table');
                                                 router.replace(`/league/${leagueId}?tab=table`);
                                             }}
-                                            startIcon={<Table size={18} className={section === 'table' ? 'stroke-white' : ''} />}
+                                            startIcon={<Image src={LeagueTable} alt="League Table" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'table' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
                                         >
                                             League Table
                                         </Button>
@@ -2288,7 +2670,7 @@ export default function LeagueDetailPage() {
                                                 setSection('results');
                                                 router.replace(`/league/${leagueId}?tab=results`);
                                             }}
-                                            startIcon={<Search size={18} className={section === 'results' ? 'stroke-white' : ''} />}
+                                            startIcon={<Image src={MATCHRESULT} alt="Results" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'results' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
                                         >
                                             Match Results
                                         </Button>
@@ -2314,38 +2696,38 @@ export default function LeagueDetailPage() {
                                                 setSection('matches');
                                                 router.replace(`/league/${leagueId}?tab=matches`);
                                             }}
-                                            startIcon={<Calendar size={18} className={section === 'matches' ? 'stroke-white' : ''} />}
-                                        >
-                                            Fixtures
-                                        </Button>
+                            startIcon={<Image src={FIXTURES} alt="Fixtures" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'matches' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
+                        >
+                            Fixtures
+                        </Button>
 
-                                        <Button
+                        <Button
                                             variant="outlined"
                                             size="small"
                                             sx={{
-                                                color: section === 'awards' ? '#ffffff' : '#374151',
-                                                backgroundColor: section === 'awards' ? '#10B981' : 'rgba(255,255,255,0.92)',
+                                                color: section === 'leaderboard' ? '#ffffff' : '#374151',
+                                                backgroundColor: section === 'leaderboard' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                 fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
                                                 borderRadius: 0,
                                                 border: '3px solid #9CA3AF',
-                                                boxShadow: section === 'awards' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
+                                                boxShadow: section === 'leaderboard' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
                                                 transition: 'none',
                                                 '&:hover': {
-                                                    backgroundColor: section === 'awards' ? '#10B981' : 'rgba(255,255,255,0.92)',
+                                                    backgroundColor: section === 'leaderboard' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                     border: '3px solid #9CA3AF',
-                                                    boxShadow: section === 'awards' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none'
+                                                    boxShadow: section === 'leaderboard' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none'
                                                 }
                                             }}
                                             onClick={() => {
-                                                setSection('awards');
-                                                router.replace(`/league/${leagueId}?tab=awards`);
+                                                setSection('leaderboard');
+                                                router.replace(`/league/${leagueId}?tab=leaderboard`);
                                             }}
-                                            startIcon={<Trophy size={18} className={section === 'awards' ? 'stroke-white' : ''} />}
-                                        >
-                                            Leaderboard
-                                        </Button>
+                            startIcon={<Image src={LEADERBOARD} alt="Leaderboard" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'leaderboard' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
+                        >
+                            Leaderboard
+                        </Button>
 
-                                        <Button
+                        <Button
                                             variant="outlined"
                                             size="small"
                                             sx={{
@@ -2366,7 +2748,7 @@ export default function LeagueDetailPage() {
                                                 setSection('members');
                                                 router.replace(`/league/${leagueId}?tab=members`);
                                             }}
-                                            startIcon={<Users size={18} className={section === 'members' ? 'stroke-white' : ''} />}
+                                            startIcon={<Image src={PLAYERIMAGE} alt="Players" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'members' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
                                         >
                                             Players
                                         </Button>
@@ -2389,7 +2771,7 @@ export default function LeagueDetailPage() {
                                             onClick={() => {
                                                 router.push('/dream-team');
                                             }}
-                                            startIcon={<Star sx={{ fontSize: 18 }} />}
+                                            startIcon={<Image src={DREATEAM} alt="Dream Team" width={24} height={24} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
                                         >
                                             Dream Team
                                         </Button>
@@ -2538,36 +2920,43 @@ export default function LeagueDetailPage() {
                                     '&::-webkit-scrollbar': { display: 'none' },
                                     p: 2
                                 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                        {isAdmin && (
-                                            <Link href={`/league/${leagueId}/match`} passHref>
-                                                <Button
-                                                    size="small"
-                                                    sx={{
-                                                        background: 'linear-gradient(178deg,rgba(0, 0, 0, 1) 0%, rgba(58, 58, 58, 1) 91%);',
-                                                        color: 'white',
-                                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                                                        px: { xs: 1, sm: 1.5 },
-                                                        py: 0.5,
-                                                        minWidth: 'auto',
-                                                        mb: 3
-                                                    }}
-                                                    startIcon={<Calendar size={16} className='stroke-white' />}
-                                                    disabled={!league.active}
-                                                >
-                                                    Schedule Match
-                                                </Button>
-                                            </Link>
-                                        )}
-                                    </Box>
+                                {isAdmin && (
+                                        <Link href={`/league/${leagueId}/match`} passHref>
+                                            <Button
+                                                fullWidth
+                                                variant="contained"
+                                                sx={{
+                                                    background: '#dddddd',
+                                                    color: '#e1671e',
+                                                    fontSize: { xs: '0.9rem', sm: '1rem' ,md :'1.5rem'},
+                                                    fontWeight: 600,
+                                                    py: 0.5,
+                                                    mb: 3,
+                                                    borderRadius: 1,
+                                                    textTransform: 'none',
+                                                     '&:hover': {
+                                                        background: '#cbcaca',
+                                                    },
+                                                    '&.Mui-disabled': {
+                                                        background: 'rgba(255,255,255,0.12)',
+                                                        color: 'rgba(255,255,255,0.3)'
+                                                    }
+                                                }}
+                                               
+                                                disabled={!league.active}
+                                            >
+                                             <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                            </Button>
+                                        </Link>
+                                    )}
 
-                                    {league?.matches && league.matches.length > 0 ? (
+                                    {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
                                             gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)' },
                                             gap: 2
                                         }}>
-                                            {league.matches
+                                            {filteredLeague.matches
                                                 .filter(match => match.status === 'SCHEDULED')
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
@@ -2793,7 +3182,7 @@ export default function LeagueDetailPage() {
                                                                                         e.stopPropagation();
                                                                                         if (!isUserAvailable) handleToggleAvailability(match.id, false);
                                                                                     }}
-                                                                                    disabled={availabilityLoading[match.id] || !league?.active}
+                                                                                    disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
                                                                                         background: '#00af80',
                                                                                         color: 'white',
@@ -2817,7 +3206,7 @@ export default function LeagueDetailPage() {
                                                                                         e.stopPropagation();
                                                                                         if (isUserAvailable) handleToggleAvailability(match.id, true);
                                                                                     }}
-                                                                                    disabled={availabilityLoading[match.id] || !league?.active}
+                                                                                    disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
                                                                                         background: '#c62828',
                                                                                         color: 'white',
@@ -2921,15 +3310,45 @@ export default function LeagueDetailPage() {
                                     overflowY: 'visible',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
-                                    p: 2
+                                    // p: 2
                                 }}>
-                                    {league?.matches && league.matches.length > 0 ? (
+                                    {isAdmin && (
+                                        <Link href={`/league/${leagueId}/match`} passHref>
+                                            <Button
+                                                fullWidth
+                                                variant="contained"
+                                                sx={{
+                                                    background: '#dddddd',
+                                                    color: '#e1671e',
+                                                    fontSize: { xs: '0.9rem', sm: '1rem' ,md :'1.5rem'},
+                                                    fontWeight: 600,
+                                                    py: 0.5,
+                                                    mb: 3,
+                                                    borderRadius: 1,
+                                                    textTransform: 'none',
+                                                     '&:hover': {
+                                                        background: '#cbcaca',
+                                                    },
+                                                    '&.Mui-disabled': {
+                                                        background: 'rgba(255,255,255,0.12)',
+                                                        color: 'rgba(255,255,255,0.3)'
+                                                    }
+                                                }}
+                                               
+                                                disabled={!league.active}
+                                            >
+                                             <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                            </Button>
+                                        </Link>
+                                    )}
+
+                                    {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
                                             gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)' },
                                             gap: 2
                                         }}>
-                                            {league.matches
+                                            {filteredLeague.matches
                                                 .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED')
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
@@ -3268,7 +3687,7 @@ export default function LeagueDetailPage() {
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
                                                                                     startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
-                                                                                    disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived}
+                                                                                    disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived || !isSelectedSeasonActive}
                                                                                     sx={{
                                                                                         // backgroundColor: '#333',
                                                                                         color: 'white',
@@ -3601,7 +4020,7 @@ export default function LeagueDetailPage() {
                                                 }}
                                             >
                                                 <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold', mb: 1, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                                                    Statistics
+                                                    Statistics {selectedSeasonId ? seasonLabel : ''}
                                                 </Typography>
 
                                                 <Box
@@ -3619,10 +4038,13 @@ export default function LeagueDetailPage() {
                                                             // Compute season progress with correct Remaining logic
                                                             const maxGames = Number(league?.maxGames ?? 0);
 
+                                                            // Use filteredLeague matches when season is selected, otherwise use all league matches
+                                                            const matchesToUse = selectedSeasonId && filteredLeague ? filteredLeague.matches : league?.matches;
+
                                                             // Prefer backend-provided playedMatches; otherwise derive from matches
                                                             const derivedPlayed = (() => {
-                                                                if (typeof leagueStats?.playedMatches === 'number') return Number(leagueStats.playedMatches);
-                                                                const matches = Array.isArray(league?.matches) ? league.matches : [];
+                                                                if (!selectedSeasonId && typeof leagueStats?.playedMatches === 'number') return Number(leagueStats.playedMatches);
+                                                                const matches = Array.isArray(matchesToUse) ? matchesToUse : [];
                                                                 return matches.filter(m => m?.status === 'RESULT_PUBLISHED' || m?.status === 'RESULT_UPLOADED').length;
                                                             })();
 
@@ -3700,7 +4122,7 @@ export default function LeagueDetailPage() {
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                                             <Users size={16} color="#F59E0B" />
                                                                             <Typography variant="body2" sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                                                                {(leagueStats.players ?? league?.members?.length ?? 0)} Players
+                                                                                {selectedSeasonId && filteredLeague ? filteredLeague.members.length : (leagueStats.players ?? league?.members?.length ?? 0)} Players
                                                                             </Typography>
                                                                         </Box>
 
@@ -3786,10 +4208,174 @@ export default function LeagueDetailPage() {
                                 </div>
                             )}
 
-                            {section === 'awards' && (
-                                // Trophy Room Section
-                                <Box sx={{ maxHeight: 'none', p: 0 }}>
-                                    <TrophyRoom leagueId={leagueId} />
+                            {section === 'leaderboard' && (
+                                // Leaderboard Section - Grid Layout
+                                <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+                                            gap: 2,
+                                        }}
+                                    >
+                                        {[
+                                            { key: 'goals', label: 'GOALS', icon: Goals },
+                                            { key: 'assists', label: 'ASSISTS', icon: Assist },
+                                            { key: 'motm', label: 'MOTM VOTES', icon: MOTM },
+                                            { key: 'impact', label: 'DEFENSIVE HERO VOTES', icon: Imapct },
+                                            { key: 'cleanSheet', label: 'CLEAN SHEETS', icon: CleanSheet },
+                                            { key: 'contribution', label: 'CONTRIBUTION INDEX %', icon: Goals },
+                                        ].map((metric) => (
+                                            <Box
+                                                key={metric.key}
+                                                sx={{
+                                                    background: '#1a1a1a',
+                                                    borderRadius: 3,
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                {/* Card Header */}
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.5,
+                                                        p: 2,
+                                                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: 20,
+                                                            height: 20,
+                                                            borderRadius: '50%',
+                                                            border: '1px solid rgba(255,255,255,0.3)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: 12,
+                                                            color: 'rgba(255,255,255,0.5)',
+                                                        }}
+                                                    >
+                                                        i
+                                                    </Box>
+                                                    <Image src={metric.icon} alt={metric.label} width={28} height={28} />
+                                                    <Typography
+                                                        sx={{
+                                                            color: 'white',
+                                                            fontWeight: 700,
+                                                            fontSize: { xs: '0.9rem', sm: '1rem' },
+                                                            letterSpacing: 0.5,
+                                                        }}
+                                                    >
+                                                        {metric.label}
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Players List */}
+                                                <Box sx={{ p: 0 }}>
+                                                    {leaderboardLoading ? (
+                                                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                                            <CircularProgress size={24} />
+                                                        </Box>
+                                                    ) : (
+                                                        leaderboardPlayers.slice(0, 5).map((player, idx) => (
+                                                            <Link key={`${metric.key}-${player.id}`} href={`/player/${player.id}`} passHref>
+                                                                <Box
+                                                                    sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        px: 2,
+                                                                        py: 1.5,
+                                                                        borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'background 0.2s',
+                                                                        '&:hover': {
+                                                                            background: 'rgba(255,255,255,0.05)',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    {/* Rank Number */}
+                                                                    <Typography
+                                                                        sx={{
+                                                                            color: 'rgba(255,255,255,0.5)',
+                                                                            fontWeight: 500,
+                                                                            fontSize: '0.9rem',
+                                                                            width: 24,
+                                                                            textAlign: 'center',
+                                                                        }}
+                                                                    >
+                                                                        {idx + 1}
+                                                                    </Typography>
+
+                                                                    {/* Player Avatar */}
+                                                                    <Box
+                                                                        sx={{
+                                                                            width: 40,
+                                                                            height: 40,
+                                                                            borderRadius: '50%',
+                                                                            background: 'linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%)',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            mx: 1.5,
+                                                                            overflow: 'hidden',
+                                                                        }}
+                                                                    >
+                                                                        <Image src={PlayerImg} alt="Player" width={36} height={36} style={{ objectFit: 'cover' }} />
+                                                                    </Box>
+
+                                                                    {/* Player Info */}
+                                                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                                        <Typography
+                                                                            sx={{
+                                                                                color: 'white',
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.95rem',
+                                                                                whiteSpace: 'nowrap',
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis',
+                                                                            }}
+                                                                        >
+                                                                            {player.name}
+                                                                        </Typography>
+                                                                        <Typography
+                                                                            sx={{
+                                                                                color: 'rgba(255,255,255,0.4)',
+                                                                                fontSize: '0.75rem',
+                                                                            }}
+                                                                        >
+                                                                            {player.positionType || 'Player'}
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    {/* Value */}
+                                                                    <Typography
+                                                                        sx={{
+                                                                            color: 'white',
+                                                                            fontWeight: 700,
+                                                                            fontSize: '1.1rem',
+                                                                            ml: 1,
+                                                                        }}
+                                                                    >
+                                                                        {metric.key === 'contribution' ? `${player.value}%` : player.value}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Link>
+                                                        ))
+                                                    )}
+                                                    {!leaderboardLoading && leaderboardPlayers.length === 0 && (
+                                                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                                                            <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+                                                                No data available
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
                                 </Box>
                             )}
                         </Paper>
