@@ -55,6 +55,7 @@ export interface Match {
   description?: string;
   createdAt?: string;
   updatedAt?: string;
+  manOfTheMatchVotes?: Record<string, string>;
 }
 
 export interface User {

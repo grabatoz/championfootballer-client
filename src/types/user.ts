@@ -87,4 +87,5 @@ export interface Match {
   active: boolean;
   awayTeamImage : string;
   homeTeamImage : string;
+  manOfTheMatchVotes?: Record<string, string>;
 } 
