@@ -1818,8 +1818,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             return;
         }
         setIsSubmittingStats(true);
+        
+        const errors: string[] = [];
+        let statsSuccess = false;
+        let voteSuccess = false;
+        let captainPicksSuccess = false;
+
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
+            // 1. Save Stats
+            const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1833,35 +1840,94 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }),
             });
 
-            // Check if endpoint exists (not 404 or 405)
-            if (response.status === 404 || response.status === 405) {
-                // Endpoint doesn't exist, show error message
-                toast.error('Stats saving is not available yet. Please contact the administrator.');
-                setIsStatsModalOpen(false);
-                setShowInlineStats(false);
-                return;
+            if (statsResponse.status === 404 || statsResponse.status === 405) {
+                errors.push('Stats API not available');
+            } else {
+                const statsData = await statsResponse.json();
+                if (statsData.success) {
+                    statsSuccess = true;
+                    if (statsData.updatedStats) {
+                        Object.entries(statsData.updatedStats).forEach(([metric, value]) => {
+                            if (typeof value === 'number') {
+                                cacheManager.updateLeaderboardCache(statsData.playerId, value, metric as keyof LeaderboardPlayer);
+                            }
+                        });
+                    }
+                    clearCacheByResource('stats', `${resolvedMatchId}_${user?.id}`);
+                } else {
+                    errors.push(statsData.message || 'Failed to save stats');
+                }
             }
 
-            const data = await response.json();
-            if (data.success) {
-                // Update leaderboard cache with new stats
-                if (data.updatedStats) {
-                    Object.entries(data.updatedStats).forEach(([metric, value]) => {
-                        if (typeof value === 'number') {
-                            cacheManager.updateLeaderboardCache(data.playerId, value, metric as keyof LeaderboardPlayer);
-                        }
+            // 2. Save MOTM Vote (if user has voted)
+            if (votedForId && votedForId !== user?.id) {
+                try {
+                    const voteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/votes`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ votedForId }),
                     });
+                    const voteData = await voteResponse.json();
+                    if (voteData.success) {
+                        voteSuccess = true;
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('refresh-notifications'));
+                        }
+                    }
+                } catch {
+                    errors.push('Failed to save MOTM vote');
                 }
-                
-                // 🔄 Clear stats cache for this player to force fresh fetch
-                clearCacheByResource('stats', `${resolvedMatchId}_${user?.id}`);
-                
-                toast.success('Stats saved successfully!');
+            } else {
+                voteSuccess = true; // No vote to save
+            }
+
+            // 3. Save Captain Picks (if user is captain)
+            if ((isHomeCaptain || isAwayCaptain) && captainApiAvailable) {
+                try {
+                    // Save Defensive Impact pick
+                    if (captainPicks.defence) {
+                        const defResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ category: 'defence', playerId: captainPicks.defence }),
+                        });
+                        if (defResponse.status === 404 || defResponse.status === 405) {
+                            setCaptainApiAvailable(false);
+                        }
+                    }
+
+                    // Save Mentality pick
+                    if (captainPicks.influence) {
+                        const menResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ category: 'influence', playerId: captainPicks.influence }),
+                        });
+                        if (menResponse.status === 404 || menResponse.status === 405) {
+                            setCaptainApiAvailable(false);
+                        }
+                    }
+                    captainPicksSuccess = true;
+                } catch {
+                    errors.push('Failed to save captain picks');
+                }
+            } else {
+                captainPicksSuccess = true; // Not a captain or no picks
+            }
+
+            // Show result
+            if (statsSuccess) {
+                const successParts = ['Stats saved'];
+                if (votedForId && voteSuccess) successParts.push('Vote saved');
+                if ((isHomeCaptain || isAwayCaptain) && captainPicksSuccess && (captainPicks.defence || captainPicks.influence)) {
+                    successParts.push('Captain picks saved');
+                }
+                toast.success(successParts.join(', ') + '!');
                 setIsStatsModalOpen(false);
                 setShowInlineStats(false);
-                
-                // Refetch match details to update UI
                 await fetchLeagueAndMatchDetails(true);
+            } else if (errors.length > 0) {
+                toast.error(errors.join('. '));
             }
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : String(err));

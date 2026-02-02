@@ -2918,7 +2918,7 @@ export default function LeagueDetailPage() {
                                     overflowY: 'visible',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
-                                    p: 2
+                                    // p: 2
                                 }}>
                                 {isAdmin && (
                                         <Link href={`/league/${leagueId}/match`} passHref>
