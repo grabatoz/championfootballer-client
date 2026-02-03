@@ -168,6 +168,7 @@ interface User {
     email: string;
     profilePicture?: string | null;
     position?: string;
+    style?: string;
 }
 
 interface Match {
@@ -2807,126 +2808,94 @@ export default function LeagueDetailPage() {
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
-                                // Members Section
-                                <Box sx={{
-                                    mt: 3, p: 0, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
-                                    // background: 'linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)',
-                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                    backdropFilter: 'blur(10px)',
-                                    // border: '1px solid rgba(59, 130, 246, 0.3)',
-                                    borderRadius: 3,
+                                <div className="w-full mx-auto">
+                                    <Card sx={{
+                                        background: '#383838',
+                                        backdropFilter: 'blur(10px)',
+                                        borderRadius: { xs: 2, sm: 3 },
+                                        boxShadow: 'none',
+                                        mt: 1.2,
+                                        overflow: 'auto',
+                                        '&::-webkit-scrollbar': {
+                                            height: '6px',
+                                        },
+                                        '&::-webkit-scrollbar-track': {
+                                            background: '#383838',
+                                        },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            background: '#383838',
+                                            borderRadius: '3px',
+                                        },
+                                    }} className="text-white">
+                                        <div className="w-full rounded-lg overflow-hidden league-table">
+                                            {/* Table Header */}
+                                            <div className="grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-6 py-4 bg-[#2b2b2b] border-b border-[#444] text-white">
+                                                <div className="text-left flex items-center gap-2 font-semibold text-sm uppercase tracking-wide">ALL POSITIONS <ChevronDown size={14} /></div>
+                                                <div className="text-left font-semibold text-sm uppercase tracking-wide pl-8">PLAYING STYLE</div>
+                                                <div></div>
+                                                <div className="text-center font-semibold text-sm uppercase tracking-wide">VIEW STATS</div>
+                                                <div className="text-center font-semibold text-sm uppercase tracking-wide">xp POINTS</div>
+                                            </div>
 
-                                }}>
-                                    {league?.members && league.members.length > 0 && (
-                                        <Box sx={{
-                                            display: 'grid',
-                                            gap: 2
-                                        }}>
-                                            <Paper elevation={0} sx={{
-                                                p: { xs: 1, sm: 0 },
-                                                borderRadius: { xs: 2, sm: 3 },
-                                                background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                                                // backgroundColor: 'transparent',
-                                                minHeight: '100%',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                            }}>
-                                                {/* Header */}
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1, mt: 2 }}>
-                                                    <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
-                                                    <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
-                                                        {/* <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, mr: 10 }}>Position</Typography> */}
-                                                        <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Stats</Typography>
-                                                        <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Xp Points</Typography>
-                                                        {/* <Typography sx={{ color: ' #fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>shirtNumber</Typography> */}
-                                                    </Box>
-                                                </Box>
+                                            {/* Table Rows */}
+                                            <div>
+                                                {league?.members && [...league.members]
+                                                    .sort((a: User, b: User) => {
+                                                        const xpA = a?.xp ?? 0;
+                                                        const xpB = b?.xp ?? 0;
+                                                        if (xpB !== xpA) return xpB - xpA;
+                                                        const nameA = `${a?.firstName ?? ''} ${a?.lastName ?? ''}`.toLowerCase();
+                                                        const nameB = `${b?.firstName ?? ''} ${b?.lastName ?? ''}`.toLowerCase();
+                                                        return nameA.localeCompare(nameB);
+                                                    })
+                                                    .map((member, index, arr) => {
+                                                        const firstName = member.firstName || '';
+                                                        const lastName = member.lastName || '';
+                                                        const memberImageSrc = member?.profilePicture || PlayerImg;
+                                                        const isEven = index % 2 === 0;
+                                                        const isLast = index === arr.length - 1;
 
-                                                <Box sx={{
-                                                    flex: 1,
-                                                    overflow: 'auto',
-                                                    borderRadius: { xs: 2, sm: 3 },
-                                                    '&::-webkit-scrollbar': {
-                                                        display: 'none'
-                                                    },
-                                                    scrollbarWidth: 'none',
-                                                    msOverflowStyle: 'none',
-                                                    px: { xs: 0, sm: 1 },
-                                                    mt: 0.7
-                                                }}>
-                                                    <List>
-                                                        {[...league.members]
-                                                            .sort((a: User, b: User) => {
-                                                                const xpA = a?.xp ?? 0;
-                                                                const xpB = b?.xp ?? 0;
-                                                                if (xpB !== xpA) return xpB - xpA; // Desc by points
-                                                                // Stable tie-breaker by name to avoid flicker
-                                                                const nameA = `${a?.firstName ?? ''} ${a?.lastName ?? ''}`.toLowerCase();
-                                                                const nameB = `${b?.firstName ?? ''} ${b?.lastName ?? ''}`.toLowerCase();
-                                                                return nameA.localeCompare(nameB);
-                                                            })
-                                                            .map((member) => (
-                                                                <React.Fragment key={member.id}>
-                                                                    <ListItem
-                                                                        onClick={() => {
-                                                                            router.push(`/player/${member.id}`);
-                                                                        }}
-                                                                        sx={{
-                                                                            // boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                                                            cursor: 'pointer',
-                                                                            py: { xs: 1, sm: 2 },
-                                                                            px: { xs: 1, sm: 2 },
-                                                                            alignItems: 'center',
-                                                                            // backgroundColor: '#3B8271',
-                                                                            background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                                                                        }}
-                                                                    >
-                                                                        <ListItemAvatar>
-                                                                            <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
-                                                                                <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                                                                            </Box>
-                                                                        </ListItemAvatar>
-                                                                        <ListItemText className={'text-white'} primary={formatMatchName(member.firstName + ' ' + member.lastName)} />
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
-                                                                            <Box sx={{
-                                                                                display: 'flex',
-                                                                                flexDirection: 'column',
-                                                                                alignItems: 'flex-end', // Changed from 'center' to 'flex-start'
-                                                                                // alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
-                                                                                minWidth: { xs: 24, sm: 40 },
-                                                                                width: { xs: 100, sm: 150 }, // Added fixed width
-                                                                                color: 'white'
-                                                                            }}>
-                                                                                {/* #00C853 */}
-                                                                                <SignalCellularAltIcon sx={{ color: 'green', fontSize: { xs: 16, sm: 24 } }} />
+                                                        return (
+                                                            <div
+                                                                key={member.id}
+                                                                onClick={() => router.push(`/player/${member.id}`)}
+                                                                className={`grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-2 py-3 cursor-pointer transition-colors  ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset ${isLast ? 'mb-2' : 'mb-0'}`}
+                                                            >
+                                                                {/* Player Info - under ALL POSITIONS */}
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                                        <div className="relative w-full h-full">
+                                                                            <Image src={memberImageSrc as any} alt={firstName || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                                            <span className="text-foreground font-semibold truncate">{formatMatchName(firstName)} {formatMatchName(lastName)}</span>
+                                                                        </div>
+                                                                        <span className="text-muted-foreground font-normal text-xs">{member.position || 'Striker'}</span>
+                                                                    </div>
+                                                                </div>
 
-                                                                                {/* {member?.position} */}
-                                                                            </Box>
-                                                                            <Typography variant="h6" component="span" sx={{
-                                                                                fontWeight: 'bold',
-                                                                                minWidth: { xs: 36, sm: 60 },
-                                                                                textAlign: 'center',
-                                                                                fontSize: { xs: 13, sm: 20 },
-                                                                                color: 'white'
-                                                                            }}>
-                                                                                {/* {member.shirtNumber} */}
-                                                                                {member.xp}
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    </ListItem>
-                                                                    <div className="h-[2px] bg-white"></div>
+                                                                {/* Playing Style */}
+                                                                <div className="text-center text-foreground">{member.style}</div>
 
-                                                                    {/* <Divider className='h-[1px]' sx={{ backgroundColor: 'white', mb: 0, mt: 0 }} /> */}
+                                                                {/* Empty spacer */}
+                                                                <div></div>
 
-                                                                </React.Fragment>
-                                                            ))}
-                                                    </List>
-                                                </Box>
-                                                {/* )} */}
-                                            </Paper>
-                                        </Box>
-                                    )}
-                                </Box>
+                                                                {/* View Stats */}
+                                                                <div className="text-center">
+                                                                    <SignalCellularAltIcon sx={{ color: '#00C853', fontSize: 24 }} />
+                                                                </div>
+
+                                                                {/* XP Points */}
+                                                                <div className="text-center text-foreground font-bold">{member.xp ?? 0}</div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
                             )}
                             {section === 'matches' && (
                                 // Fixtures Section - Upcoming Matches
