@@ -170,6 +170,7 @@ interface User {
 }
 
 interface Match {
+    manOfTheMatchVotes: {};
     homeTeamImage: string;
     awayTeamImage: string;
     id: string;
