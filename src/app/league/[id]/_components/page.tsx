@@ -92,6 +92,7 @@ import CleanSheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import MOTM from "@/Components/images/MOTM.png"
 import Imapct from "@/Components/images/imapct.png"
+import InfoIcon from "@/Components/images/info.png"
 import Star from '@mui/icons-material/Star';
 import LeagueTable from '@/Components/images/leagutable.png'
 import LeagueIcon from '@/Components/images/league icon.png'
@@ -313,6 +314,7 @@ export default function LeagueDetailPage() {
     const [selectedMetric, setSelectedMetric] = useState('goals');
     const [leaderboardPlayers, setLeaderboardPlayers] = useState<Array<{ id: string; name: string; positionType: string; value: number }>>([]);
     const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [allLeaderboardData, setAllLeaderboardData] = useState<Record<string, Array<{ id: string; name: string; positionType: string; value: number }>>>({});
 
     const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
     const [motmCounts, setMotmCounts] = useState<Record<string, number>>({});
@@ -1443,26 +1445,40 @@ export default function LeagueDetailPage() {
         })();
     }, [league?.id, token]);
 
-    // Fetch leaderboard when metric or league changes
+    // Fetch leaderboard for ALL metrics when league or season changes
     useEffect(() => {
         if (!leagueId || !token) return;
         setLeaderboardLoading(true);
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${leagueId}`, {
-            credentials: 'include',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                setLeaderboardPlayers(data.players || []);
+        
+        const metrics = ['goals', 'assists', 'motm', 'impact', 'cleanSheet', 'contribution'];
+        const seasonParam = selectedSeasonId ? `&seasonId=${selectedSeasonId}` : '';
+        
+        Promise.all(
+            metrics.map(metric =>
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${metric}&leagueId=${leagueId}${seasonParam}`, {
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(res => res.json())
+                    .then(data => ({ metric, players: data.players || [] }))
+                    .catch(() => ({ metric, players: [] }))
+            )
+        )
+            .then(results => {
+                const dataByMetric: Record<string, Array<{ id: string; name: string; positionType: string; value: number }>> = {};
+                results.forEach(({ metric, players }) => {
+                    dataByMetric[metric] = players;
+                });
+                setAllLeaderboardData(dataByMetric);
                 setLeaderboardLoading(false);
             })
             .catch(error => {
                 console.error('Error fetching leaderboard:', error);
                 setLeaderboardLoading(false);
             });
-    }, [selectedMetric, leagueId, token]);
+    }, [leagueId, token, selectedSeasonId]);
 
     const getAvailabilityCounts = (match: Match) => {
         // Find the league for this match
@@ -3181,7 +3197,7 @@ export default function LeagueDetailPage() {
                                                                                     size="small"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        if (!isUserAvailable) handleToggleAvailability(match.id, false);
+                                                                                        handleToggleAvailability(match.id, false);
                                                                                     }}
                                                                                     disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
@@ -3194,6 +3210,8 @@ export default function LeagueDetailPage() {
                                                                                         px: 1.5,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
+                                                                                        boxShadow: isUserAvailable ? '0 0 12px 3px rgba(0, 175, 128, 0.7), 0 0 20px rgba(0, 255, 180, 0.4)' : 'none',
+                                                                                        border: isUserAvailable ? '2px solid #00ffaa' : 'none',
                                                                                         '&:hover': { background: '#008f6a' },
                                                                                         '&.Mui-disabled': { opacity: 0.5 }
                                                                                     }}
@@ -3205,7 +3223,7 @@ export default function LeagueDetailPage() {
                                                                                     size="small"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        if (isUserAvailable) handleToggleAvailability(match.id, true);
+                                                                                        handleToggleAvailability(match.id, true);
                                                                                     }}
                                                                                     disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
@@ -3218,6 +3236,8 @@ export default function LeagueDetailPage() {
                                                                                         px: 1.5,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
+                                                                                        boxShadow: !isUserAvailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
+                                                                                        border: !isUserAvailable ? '2px solid #ff6b6b' : 'none',
                                                                                         '&:hover': { background: '#b71c1c' },
                                                                                         '&.Mui-disabled': { opacity: 0.5 }
                                                                                     }}
@@ -4211,7 +4231,7 @@ export default function LeagueDetailPage() {
 
                             {section === 'leaderboard' && (
                                 // Leaderboard Section - Grid Layout
-                                <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                                <Box sx={{ p: { xs: 1, sm: 0 } }}>
                                     <Box
                                         sx={{
                                             display: 'grid',
@@ -4230,9 +4250,9 @@ export default function LeagueDetailPage() {
                                             <Box
                                                 key={metric.key}
                                                 sx={{
-                                                    background: '#1a1a1a',
-                                                    borderRadius: 3,
-                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    background: '#2b2b2b',
+                                                    borderRadius: 2,
+                                                    border: '1px solid #ffffff',
                                                     overflow: 'hidden',
                                                 }}
                                             >
@@ -4242,30 +4262,16 @@ export default function LeagueDetailPage() {
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 1.5,
-                                                        p: 2,
-                                                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                        p: 1.3,
+                                                        // borderBottom: '1px solid rgba(255,255,255,0.1)',
                                                     }}
                                                 >
-                                                    <Box
-                                                        sx={{
-                                                            width: 20,
-                                                            height: 20,
-                                                            borderRadius: '50%',
-                                                            border: '1px solid rgba(255,255,255,0.3)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            fontSize: 12,
-                                                            color: 'rgba(255,255,255,0.5)',
-                                                        }}
-                                                    >
-                                                        i
-                                                    </Box>
-                                                    <Image src={metric.icon} alt={metric.label} width={28} height={28} />
+                                                    <Image src={InfoIcon} alt="Info" width={15} height={15} />
+                                                    <Image src={metric.icon} alt={metric.label} width={38} height={38} />
                                                     <Typography
                                                         sx={{
                                                             color: 'white',
-                                                            fontWeight: 700,
+                                                            fontWeight: 500,
                                                             fontSize: { xs: '0.9rem', sm: '1rem' },
                                                             letterSpacing: 0.5,
                                                         }}
@@ -4275,76 +4281,83 @@ export default function LeagueDetailPage() {
                                                 </Box>
 
                                                 {/* Players List */}
-                                                <Box sx={{ p: 0 }}>
+                                                <Box sx={{ p: 0 , ml:-1.2 , mt:-0.5}}>
                                                     {leaderboardLoading ? (
                                                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                                                             <CircularProgress size={24} />
                                                         </Box>
                                                     ) : (
-                                                        leaderboardPlayers.slice(0, 5).map((player, idx) => (
+                                                        (allLeaderboardData[metric.key] || []).slice(0, 5).map((player, idx) => (
                                                             <Link key={`${metric.key}-${player.id}`} href={`/player/${player.id}`} passHref>
                                                                 <Box
                                                                     sx={{
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         px: 2,
-                                                                        py: 1.5,
+                                                                        py: 0.5,
                                                                         borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                                                                         cursor: 'pointer',
                                                                         transition: 'background 0.2s',
+                                                                        background: idx === 0 ? '#383838' : 'transparent',
                                                                         '&:hover': {
-                                                                            background: 'rgba(255,255,255,0.05)',
+                                                                            background: idx === 0 ? '#454545' : 'rgba(255,255,255,0.05)',
                                                                         },
                                                                     }}
                                                                 >
-                                                                    {/* Rank Number */}
+                                                                    {/* Rank Number - aligned with info icon */}
                                                                     <Typography
                                                                         sx={{
-                                                                            color: 'rgba(255,255,255,0.5)',
-                                                                            fontWeight: 500,
+                                                                            color: '#fff',
+                                                                            fontWeight: 600,
                                                                             fontSize: '0.9rem',
-                                                                            width: 24,
+                                                                            width: 20,
                                                                             textAlign: 'center',
                                                                         }}
                                                                     >
                                                                         {idx + 1}
                                                                     </Typography>
 
-                                                                    {/* Player Avatar */}
+                                                                    {/* Player Avatar - aligned with metric icon */}
                                                                     <Box
                                                                         sx={{
-                                                                            width: 40,
-                                                                            height: 40,
+                                                                            width: 33,
+                                                                            height: 33,
                                                                             borderRadius: '50%',
                                                                             background: 'linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%)',
                                                                             display: 'flex',
                                                                             alignItems: 'center',
                                                                             justifyContent: 'center',
-                                                                            mx: 1.5,
+                                                                            ml: 1.5,
+                                                                            mr: 1.5,
                                                                             overflow: 'hidden',
                                                                         }}
                                                                     >
-                                                                        <Image src={PlayerImg} alt="Player" width={36} height={36} style={{ objectFit: 'cover' }} />
+                                                                        <Image src={PlayerImg} alt="Player" width={33} height={33} style={{ objectFit: 'cover' }} />
                                                                     </Box>
 
                                                                     {/* Player Info */}
-                                                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, lineHeight: 1 }}>
                                                                         <Typography
                                                                             sx={{
                                                                                 color: 'white',
                                                                                 fontWeight: 600,
-                                                                                fontSize: '0.95rem',
+                                                                                fontSize: '0.8rem',
                                                                                 whiteSpace: 'nowrap',
                                                                                 overflow: 'hidden',
                                                                                 textOverflow: 'ellipsis',
+                                                                                lineHeight: 1.1,
+                                                                                mb: 0,
                                                                             }}
                                                                         >
                                                                             {player.name}
                                                                         </Typography>
                                                                         <Typography
                                                                             sx={{
-                                                                                color: 'rgba(255,255,255,0.4)',
-                                                                                fontSize: '0.75rem',
+                                                                                color: '#ffff',
+                                                                                fontSize: '0.65rem',
+                                                                                fontWeight: 300,
+                                                                                lineHeight: 1.1,
+                                                                                mt: 0,
                                                                             }}
                                                                         >
                                                                             {player.positionType || 'Player'}
@@ -4366,7 +4379,7 @@ export default function LeagueDetailPage() {
                                                             </Link>
                                                         ))
                                                     )}
-                                                    {!leaderboardLoading && leaderboardPlayers.length === 0 && (
+                                                    {!leaderboardLoading && (allLeaderboardData[metric.key] || []).length === 0 && (
                                                         <Box sx={{ p: 3, textAlign: 'center' }}>
                                                             <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
                                                                 No data available
