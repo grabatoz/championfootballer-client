@@ -108,6 +108,7 @@ import LEADERBOARD from '@/Components/images/leaderboard.png'
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
+import fieldImg from '@/Components/images/dreamteambgimg.png';
 
 type Foot = 'L' | 'R';
 type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
@@ -261,7 +262,7 @@ export default function LeagueDetailPage() {
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [section, setSection] = useState<'members' | 'matches' | 'results' | 'table' | 'leaderboard'>('table');
+    const [section, setSection] = useState<'members' | 'matches' | 'dream-team' | 'results' | 'table' | 'leaderboard'>('table');
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
@@ -343,6 +344,20 @@ export default function LeagueDetailPage() {
         xpRecentTotal?: number;
         profileXP?: number;
     }>({});
+
+    // Dream Team state
+    const [dreamTeam, setDreamTeam] = useState<{
+        goalkeeper: Array<{ id: string; firstName: string; lastName: string; position: string; profilePicture?: string; xp: number }>;
+        defenders: Array<{ id: string; firstName: string; lastName: string; position: string; profilePicture?: string; xp: number }>;
+        midfielders: Array<{ id: string; firstName: string; lastName: string; position: string; profilePicture?: string; xp: number }>;
+        forwards: Array<{ id: string; firstName: string; lastName: string; position: string; profilePicture?: string; xp: number }>;
+    }>({
+        goalkeeper: [],
+        defenders: [],
+        midfielders: [],
+        forwards: []
+    });
+    const [dreamTeamLoading, setDreamTeamLoading] = useState(false);
 
     useEffect(() => {
         if (!token || !leagueId) return;
@@ -631,6 +646,50 @@ export default function LeagueDetailPage() {
             setError('Failed to fetch league details');
         }
     }, [leagueId, token]);
+
+    // Fetch dream team data based on selected league and season
+    const fetchDreamTeam = useCallback(async () => {
+        if (!leagueId || !token) return;
+        
+        setDreamTeamLoading(true);
+        try {
+            const params = new URLSearchParams();
+            params.append('leagueId', leagueId);
+            if (selectedSeasonId) {
+                params.append('seasonId', selectedSeasonId);
+            }
+            
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/dream-team?${params.toString()}`, 
+                {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Dream Team API Response:', data);
+                if (data?.dreamTeam) {
+                    console.log('Dream Team Data:', data.dreamTeam);
+                    console.log('Forwards:', data.dreamTeam.forwards);
+                    console.log('Midfielders:', data.dreamTeam.midfielders);
+                    console.log('Defenders:', data.dreamTeam.defenders);
+                    setDreamTeam(data.dreamTeam);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching dream team:', error);
+        } finally {
+            setDreamTeamLoading(false);
+        }
+    }, [leagueId, token, selectedSeasonId]);
+
+    // Fetch dream team when section changes to 'dream-team' or when season changes
+    useEffect(() => {
+        if (section === 'dream-team') {
+            fetchDreamTeam();
+        }
+    }, [section, fetchDreamTeam]);
 
     useEffect(() => {
         // Wait for auth to finish loading, user to be authenticated, and token to be available
@@ -2775,21 +2834,24 @@ export default function LeagueDetailPage() {
                                             variant="outlined"
                                             size="small"
                                             sx={{
-                                                color: '#374151',
-                                                backgroundColor: 'rgba(255,255,255,0.92)',
+                                                color: section === 'dream-team' ? '#ffffff' : '#374151',
+                                                backgroundColor: section === 'dream-team' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                 fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
                                                 borderRadius: 0,
                                                 border: '3px solid #9CA3AF',
+                                                boxShadow: section === 'dream-team' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
                                                 transition: 'none',
                                                 '&:hover': {
-                                                    backgroundColor: 'rgba(255,255,255,0.92)',
-                                                    border: '3px solid #9CA3AF'
+                                                    backgroundColor: section === 'dream-team' ? '#10B981' : 'rgba(255,255,255,0.92)',
+                                                    border: '3px solid #9CA3AF',
+                                                    boxShadow: section === 'dream-team' ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none'
                                                 }
                                             }}
                                             onClick={() => {
-                                                router.push('/dream-team');
+                                                setSection('dream-team');
+                                                router.replace(`/league/${leagueId}?tab=dream-team`);
                                             }}
-                                            startIcon={<Image src={DREATEAM} alt="Dream Team" width={24} height={24} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
+                                            startIcon={<Image src={DREATEAM} alt="Dream Team" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'dream-team' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
                                         >
                                             Dream Team
                                         </Button>
@@ -2804,7 +2866,7 @@ export default function LeagueDetailPage() {
                             minHeight: 400,
                             borderRadius: 3,
                             boxShadow: 'none',
-                            mt: 1.2,
+                            mt: section === 'dream-team' ? 0 : 1.2,
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
@@ -3847,6 +3909,212 @@ export default function LeagueDetailPage() {
                                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                                             No completed matches yet
                                         </Typography>
+                                    )}
+                                </Box>
+                            )}
+
+                            {section === 'dream-team' && (
+                                <Box sx={{
+                                    height: 'auto',
+                                    overflowY: 'visible',
+                                    scrollbarWidth: 'none',
+                                    '&::-webkit-scrollbar': { display: 'none' },
+                                    width: '100vw',
+                                    position: 'relative',
+                                    left: '50%',
+                                    right: '50%',
+                                    marginLeft: '-50vw',
+                                    marginRight: '-50vw',
+                                }}>
+                                    {dreamTeamLoading ? (
+                                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                                            <CircularProgress />
+                                            <Typography variant="h6" sx={{ mt: 2, color: 'white' }}>Loading Dream Team...</Typography>
+                                        </Box>
+                                    ) : (
+                                        <>
+                                            {/* Field (image) - Full width without side spaces */}
+                                            <Box
+                                                sx={{
+                                                    position: 'relative',
+                                                    width: '100%',
+                                                    height: { xs: '450px', sm: '500px', md: '550px', lg: '600px' },
+                                                    overflow: 'hidden',
+                                                    mt: -1,
+                                                }}
+                                            >
+                                                <Image 
+                                                    fill 
+                                                    src={fieldImg} 
+                                                    alt="Football Field" 
+                                                    style={{ 
+                                                        width: '100%', 
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        objectPosition: 'center top'
+                                                    }} 
+                                                />
+                                                
+                                                {/* Dream Team Title Text Overlay */}
+                                                <Box
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: { xs: '8%', sm: '8%', md: '8%', lg: '25%', xl: '8%' },
+                                                        left: { xs: '5%', sm: '8%', md: '12%', lg: '20%', xl: '18%' },
+                                                        zIndex: 1,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        sx={{
+                                                            color: '#ffffff',
+                                                            fontWeight: 600,
+                                                            fontSize: { xs: '16px', sm: '20px', md: '22px', lg: '24px', xl: '26px' },
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '2px',
+                                                            // textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+                                                            lineHeight: 1.2,
+                                                            transform: 'rotate(7deg)',
+                                                            transformOrigin: 'left center',
+                                                        }}
+                                                    >
+                                                        5 ASIDE DREAM TEAM
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Overlay players */}
+                                                {(() => {
+                                                    // Collect all available players from all positions
+                                                    const allPlayers = [
+                                                        ...(dreamTeam.forwards || []),
+                                                        ...(dreamTeam.midfielders || []),
+                                                        ...(dreamTeam.defenders || []),
+                                                        ...(dreamTeam.goalkeeper || []),
+                                                    ].filter(p => p && p.id); // Filter out null/undefined players
+                                                    
+                                                    // Remove duplicates based on player id
+                                                    const uniquePlayers = allPlayers.filter((player, index, self) => 
+                                                        index === self.findIndex(p => p.id === player.id)
+                                                    );
+                                                    
+                                                    // Take up to 5 players
+                                                    const playersToShow = uniquePlayers.slice(0, 5);
+                                                    
+                                                    console.log('Dream Team Debug:', {
+                                                        forwards: dreamTeam.forwards?.length || 0,
+                                                        midfielders: dreamTeam.midfielders?.length || 0,
+                                                        defenders: dreamTeam.defenders?.length || 0,
+                                                        goalkeeper: dreamTeam.goalkeeper?.length || 0,
+                                                        allPlayers: allPlayers.length,
+                                                        uniquePlayers: uniquePlayers.length,
+                                                        playersToShow: playersToShow.length,
+                                                        playerNames: playersToShow.map(p => p?.lastName || p?.firstName || 'Unknown')
+                                                    });
+                                                    
+                                                    // Define positions based on number of players (adjusted to stay inside pitch boundaries)
+                                                    const getPositions = (count: number) => {
+                                                        if (count === 1) {
+                                                            return [{ left: '60%', top: '55%' }];
+                                                        } else if (count === 2) {
+                                                            return [
+                                                                { left: '55%', top: '52%' },
+                                                                { left: '70%', top: '52%' },
+                                                            ];
+                                                        } else if (count === 3) {
+                                                            return [
+                                                                { left: '50%', top: '52%' },
+                                                                { left: '62%', top: '48%' },
+                                                                { left: '74%', top: '52%' },
+                                                            ];
+                                                        } else if (count === 4) {
+                                                            return [
+                                                                { left: '52%', top: '48%' },
+                                                                { left: '72%', top: '48%' },
+                                                                { left: '55%', top: '62%' },
+                                                                { left: '70%', top: '62%' },
+                                                            ];
+                                                        } else {
+                                                            // 5 players - 3-1-1 formation (inside pitch boundaries)
+                                                            return [
+                                                                { left: '50%', top: '45%' },
+                                                                { left: '62%', top: '42%' },
+                                                                { left: '74%', top: '45%' },
+                                                                { left: '62%', top: '56%' },
+                                                                { left: '62%', top: '68%' },
+                                                            ];
+                                                        }
+                                                    };
+                                                    
+                                                    const positions = getPositions(playersToShow.length);
+                                                    
+                                                    return playersToShow.map((player, idx) => {
+                                                        const pos = positions[idx];
+                                                        if (!player || !pos) return null; 
+                                                    return (
+                                                        <Box
+                                                            key={`player-${idx}-${player.id}`}
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                left: pos.left,
+                                                                top: pos.top,
+                                                                transform: 'translate(-50%, -50%)',
+                                                                textAlign: 'center',
+                                                                zIndex: 2,
+                                                            }}
+                                                        >
+                                                            {/* Shirt */}
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'relative',
+                                                                    width: { xs: 40, sm: 50, md: 60, lg: 70 },
+                                                                    height: { xs: 40, sm: 50, md: 60, lg: 70 },
+                                                                    mb: 0.3,
+                                                                }}
+                                                            >
+                                                                <Link href={`/player/${player.id}`} prefetch={false}>
+                                                                    <Image
+                                                                        src={ShirtImg.src}
+                                                                        alt="Player Shirt"
+                                                                        width={70}
+                                                                        height={70}
+                                                                        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+                                                                    />
+                                                                </Link>
+                                                            </Box>
+                                                            
+                                                            {/* Player Name - Below Shirt */}
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'relative',
+                                                                    width: 'max-content',
+                                                                    mx: 'auto',
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    component="div"
+                                                                    sx={{
+                                                                        color: '#ffffff',
+                                                                        fontWeight: 700,
+                                                                        fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px' },
+                                                                        lineHeight: 1.2,
+                                                                        textAlign: 'center',
+                                                                        // textShadow: '3px 3px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8)',
+                                                                        whiteSpace: 'nowrap',
+                                                                        // backgroundColor: 'rgba(0,0,0,0.6)',
+                                                                        padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px' },
+                                                                        // borderRadius: '6px',
+                                                                        // border: '1px solid rgba(255,255,255,0.2)',
+                                                                    }}
+                                                                >
+                                                                    {player?.firstName} 
+                                                                    {/* {player?.lastName} */}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                    );
+                                                });
+                                                })()}
+                                            </Box>
+                                        </>
                                     )}
                                 </Box>
                             )}

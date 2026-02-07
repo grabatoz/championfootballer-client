@@ -2063,11 +2063,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
   const navItems: { label: string; href: string }[] = [
     { label: 'LEAGUES', href: '/all-leagues' },
+    { label: 'TABLE', href: '/dream-team' },
     { label: 'MATCHES', href: '/all-matches' },
-    { label: 'DREAM TEAM', href: '/dream-team' },
-    { label: 'PLAYER', href: '/all-players' },
+    { label: 'VIEW STATS', href: '/dream-team' },
     { label: 'TROPHY ROOM', href: '/trophy-room' },
-    { label: 'LEADERBOARD', href: '/leader-board' },
+    { label: 'REWARDS', href: '/leader-board' },
+    { label: 'PLAYERS', href: '/all-players' },
   ];
 
   const [statsOpen, setStatsOpen] = useState(false);

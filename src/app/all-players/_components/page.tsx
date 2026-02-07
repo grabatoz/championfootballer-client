@@ -27,6 +27,7 @@ import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
+import SearchIcon from '@/Components/images/searchicon.png';
 
 // Lazy load CloseButton
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -75,6 +76,7 @@ interface LeagueOption {
   maxGames?: number;
   active?: boolean;
   matches?: Match[];
+  seasons?: Array<{id: string, name: string, seasonNumber?: number, isActive?: boolean}>;
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
 }
@@ -108,11 +110,17 @@ const AllPlayersPage = () => {
   const { playedWithPlayers, leaguePlayers, loading, error } = useSelector((state: RootState) => state.user);
   const { token } = useSelector((state: RootState) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // Actual search term after hitting Enter
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState<boolean>(false);
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedSeason, setSelectedSeason] = useState<string>('all');
+  const [seasons, setSeasons] = useState<Array<{id: string, name: string}>>([]);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -248,6 +256,16 @@ const AllPlayersPage = () => {
                   isComplete,
                   missing,
                 };
+                // Extract seasons from league data
+                const seasonsFromLeague = Array.isArray((league as any).seasons) 
+                  ? (league as any).seasons.map((s: any) => ({
+                      id: String(s.id),
+                      name: s.name || `Season ${s.seasonNumber || s.id}`,
+                      seasonNumber: s.seasonNumber,
+                      isActive: s.isActive
+                    }))
+                  : [];
+                
                 return {
                   ...league,
                   id: String(leagueId),
@@ -258,22 +276,46 @@ const AllPlayersPage = () => {
                   matches: matchesFromDetails,
                   createdAt,
                   isAdmin,
+                  seasons: seasonsFromLeague,
                 } as LeagueOption;
               }
 
+              // Extract seasons from league data
+              const seasonsFromLeague = Array.isArray((league as any).seasons) 
+                ? (league as any).seasons.map((s: any) => ({
+                    id: String(s.id),
+                    name: s.name || `Season ${s.seasonNumber || s.id}`,
+                    seasonNumber: s.seasonNumber,
+                    isActive: s.isActive
+                  }))
+                : [];
+              
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
                 createdAt,
                 isAdmin,
+                seasons: seasonsFromLeague,
               } as LeagueOption;
             } catch (error) {
               console.error(`Error fetching details for league`, error);
               const leagueId = String((league as { id?: string | number }).id);
+              
+              // Extract seasons from league data even in error case
+              const seasonsFromLeague = Array.isArray((league as any).seasons) 
+                ? (league as any).seasons.map((s: any) => ({
+                    id: String(s.id),
+                    name: s.name || `Season ${s.seasonNumber || s.id}`,
+                    seasonNumber: s.seasonNumber,
+                    isActive: s.isActive
+                  }))
+                : [];
+              
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
                 isAdmin: adminIds.has(leagueId),
+                seasons: seasonsFromLeague,
               } as LeagueOption;
             }
           })
@@ -346,6 +388,7 @@ const AllPlayersPage = () => {
     if (filteredLeagues.length === 0) {
       // No leagues for this year - reset to 'all'
       setSelectedLeague('all');
+      setSelectedSeason('all'); // Also reset season
     } else {
       // When we have leagues, check if we should auto-select
       const currentLeagueExists = filteredLeagues.some(l => l.id === selectedLeague);
@@ -371,6 +414,29 @@ const AllPlayersPage = () => {
     }
   }, [filteredLeagues, selectedLeague]);
 
+  // Populate seasons from selected league data (no API call needed)
+  const populateSeasons = useCallback((leagueId: string) => {
+    if (leagueId === 'all') {
+      setSeasons([]);
+      setSelectedSeason('all');
+      return;
+    }
+    
+    console.log('[All Players] Populating seasons for league:', leagueId);
+    const selectedLeagueData = filteredLeagues.find(l => l.id === leagueId);
+    
+    if (selectedLeagueData && selectedLeagueData.seasons && selectedLeagueData.seasons.length > 0) {
+      console.log('[All Players] Found seasons:', selectedLeagueData.seasons);
+      setSeasons(selectedLeagueData.seasons);
+      // Auto-select first season if available
+      setSelectedSeason(selectedLeagueData.seasons[0].id);
+    } else {
+      console.log('[All Players] No seasons found for league');
+      setSeasons([]);
+      setSelectedSeason('all');
+    }
+  }, [filteredLeagues]);
+
   const fetchAllLeaguesPlayers = useCallback(async () => {
     if (!token) return;
     
@@ -385,12 +451,14 @@ const AllPlayersPage = () => {
       
       // Fetch players from ALL leagues in parallel (faster)
       const playerResponses = await Promise.all(
-        filteredLeagues.map(league =>
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          )
-        )
+        filteredLeagues.map(league => {
+          let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`;
+          // Add season filter if a specific season is selected
+          if (selectedSeason !== 'all') {
+            url += `&seasonId=${selectedSeason}`;
+          }
+          return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        })
       );
       
       // Process all responses
@@ -415,7 +483,17 @@ const AllPlayersPage = () => {
     } catch (error) {
       console.error('Error fetching all leagues players:', error);
     }
-  }, [token, filteredLeagues, dispatch]);
+  }, [token, filteredLeagues, selectedSeason, dispatch]);
+
+  // Populate seasons when league changes
+  useEffect(() => {
+    if (selectedLeague !== 'all') {
+      populateSeasons(selectedLeague);
+    } else {
+      setSeasons([]);
+      setSelectedSeason('all');
+    }
+  }, [selectedLeague, populateSeasons]);
 
   useEffect(() => {
     if (!token) return;
@@ -423,9 +501,22 @@ const AllPlayersPage = () => {
       // Fetch all players from all leagues the user is part of
       fetchAllLeaguesPlayers();
     } else {
-      dispatch(fetchLeaguePlayers(selectedLeague));
+      // Fetch players for specific league and season
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${selectedLeague}`;
+      if (selectedSeason !== 'all') {
+        url += `&seasonId=${selectedSeason}`;
+      }
+      
+      fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.success && data?.players) {
+            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: data.players });
+          }
+        })
+        .catch(err => console.error('Error fetching league players:', err));
     }
-  }, [dispatch, token, selectedLeague, fetchAllLeaguesPlayers]);
+  }, [dispatch, token, selectedLeague, selectedSeason, fetchAllLeaguesPlayers]);
 
   useEffect(() => {
     if (error) {
@@ -435,7 +526,7 @@ const AllPlayersPage = () => {
 
   const sourcePlayers = selectedLeague === 'all' ? playedWithPlayers : leaguePlayers;
   const filteredPlayers = sourcePlayers.filter((player: Player) =>
-    player.name.toLowerCase().includes(searchQuery.toLowerCase())
+    player.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   console.log('Filtered Players:', filteredPlayers);
 
@@ -466,435 +557,379 @@ const AllPlayersPage = () => {
   const noLeagues = !leaguesLoading && leagues.length === 0;
 
   return (
-    <Box sx={{
-      position: 'relative',
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-      py: 4
-    }}>
-      {/* Close Button - Top Left (design choice) */}
-      <Box sx={{ position: 'absolute', top: 16, left: 26, zIndex: 10}}>
-        <CloseButton fallbackRoute="/dashboard" />
-      </Box>
-      <Container maxWidth="md" sx={{
-        py: { xs: 2, sm: 4 },
-        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+    <>
+      <style jsx global>{`
+        .filter-select-wrapper {
+          position: relative;
+          display: inline-block;
+        }
+        .filter-select-wrapper::after {
+          content: '';
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid #fff;
+          transform: translateY(-50%);
+          pointer-events: none;
+          transition: transform 0.3s ease;
+        }
+        .filter-select-wrapper.open::after {
+          transform: translateY(-50%) rotate(180deg);
+        }
+        .filter-select {
+          transition: all 0.2s ease;
+        }
+      `}</style>
+      <Box sx={{
+        position: 'relative',
         minHeight: '100vh',
-        color: 'white',
-        borderRadius: { xs: 2, sm: 5 },
-        overflow: 'hidden',
-        mt: { xs: 4, sm: 3 },
-        px: { xs: 0.5, sm: 2 },
-        mb: { xs: 1, sm: 3 },
-      }}>
-        <Paper elevation={0} sx={{
-        p: { xs: 1, sm: 3 },
-        borderRadius: { xs: 2, sm: 3 },
-        backgroundColor: 'transparent',
-        minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
+        pl: 7.5,
+        pr: 7.5,
+        // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#fff', fontSize: { xs: 20, sm: 32 } }}>
-          All Players
-        </Typography>
-        {/* Mobile (xs) stacked filter layout */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2, px: { xs: 1, sm: 0 } }}>
-          {/* Row 1: Year + League side by side */}
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, width: '100%' }}>
-            {/* Year Filter (mobile) */}
-            <Box sx={{ flex: 1 }}>
+      {/* Full-width Header Section */}
+      <Box sx={{
+        mt: 0,
+        mb: 4,
+        width: '100vw',
+        position: 'relative',
+        // left: '50%',
+        // right: '50%',
+        marginLeft: '-50vw',
+        marginRight: '-48.5vw',
+        background: '#0e0e0e',
+      }}>
+        <Paper sx={{
+          px: 0,
+          py: { xs: 4, md: 3.1 },
+          background: '#0e0e0e',
+          color: 'white',
+          boxShadow: 'none',
+        }}>
+          {/* Centered Title */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pt: { xs: 2, md: 2 },
+            pb: 2,
+          }}>
+            <Typography 
+              variant="h2" 
+              component="h1" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#fff', 
+                fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' }, 
+                textTransform: 'uppercase',
+                letterSpacing: 4,
+                textAlign: 'center',
+              }}
+            >
+              PLAYERS
+            </Typography>
+          </Box>
+
+          {/* Orange divider under header */}
+          <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 4.5 }} />
+
+          {/* Search and Filters Section */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: { xs: 2, md: 3 },
+            px: { xs: 3, md: 8 },
+            py: { xs: 1.5, md: 1.3 },
+            maxWidth: '1200px',
+            mx: 'auto',
+         }}>
+            {/* Search Input */}
+            <TextField
+              variant="outlined"
+              placeholder="Search player name and hit enter..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchTerm(searchQuery);
+                }
+              }}
+              sx={{
+                width: { xs: '100%', md: '420px' },
+                ml: { xs: 0, md: 0.8 },
+                '& .MuiOutlinedInput-root': {
+                  height: 42,
+                  color: 'white',
+                  backgroundColor: 'transparent',
+                  borderRadius: '3px',
+                  '& fieldset': { borderColor: '#e56a16', borderWidth: 1.5 },
+                  '&:hover fieldset': { borderColor: '#e56a16' },
+                  '&.Mui-focused fieldset': { borderColor: '#e56a16' }
+                },
+                '& .MuiInputBase-input': { 
+                  color: 'white', 
+                  fontSize: 16.5,
+                  py: 0.5,
+                  '&::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 }
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <Box sx={{ mr: 3, ml:0.5, display: 'flex', alignItems: 'center' }}>
+                    <Image src={SearchIcon} alt="Search" width={25} height={25} />
+                  </Box>
+                ),
+              }}
+            />
+
+            {/* Filter Buttons */}
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {/* Year Filter */}
+              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`}>
               <select
+                className="filter-select"
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setYearDropdownOpen(false);
+                }}
+                onMouseDown={() => setYearDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
                 style={{
-                  width: '100%',
-                  height: '44px',
-                  padding: '0 12px',
+                  height: '39px',
+                  padding: '0 36px 0 12px',
+                  marginLeft: '4px',
                   backgroundColor: 'transparent',
                   color: '#fff',
-                  border: '1px solid #e56a16',
-                  borderRadius: '6px',
-                  fontSize: '14px',
+                  border: '1.5px solid #e56a16',
+                  borderRadius: '24px',
+                  fontSize: '17px',
                   cursor: 'pointer',
-                  outline: 'none'
+                  outline: 'none',
+                  minWidth: '100px',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  fontWeight: 600,
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
                 {Array.from(new Set([
-                  '2020', '2021', '2022', '2023', '2024', '2025',
+                  '2020', '2021', '2022', '2023', '2024', '2025', '2026',
                   ...yearOptions
                 ])).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
                   <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
                 ))}
               </select>
-            </Box>
-            {/* League Select (mobile) */}
-            <FormControl size="small" sx={{ flex: 1 }}>
-              <Select
-                id="league-select-mobile"
+              </div>
+
+              {/* League Filter */}
+              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`}>
+              <select
+                className="filter-select"
                 value={selectedLeague}
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setSelectedLeague(newValue);
+                  setLeagueDropdownOpen(false);
                   try { if (typeof window !== 'undefined' && newValue !== 'all') localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue); } catch {}
                 }}
-                renderValue={(value) => {
-                  if (filteredLeagues.length === 0) return 'No leagues';
-                  if (noLeagues) return 'No leagues found';
-                  const v = String(value ?? '');
-                  if (v === 'all') return 'All Leagues';
-                  const found = filteredLeagues.find(l => l.id === v) || leagues.find(l => l.id === v);
-                  return found?.name || 'Select League';
-                }}
-                MenuProps={{
-                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                  PaperProps: {
-                    sx: {
-                      p: 0.5,
-                      mt: 1,
-                      minWidth: 200,
-                      bgcolor: 'rgba(15,15,15,0.92)',
-                      color: '#E5E7EB',
-                      borderRadius: 2.5,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                      maxHeight: 260,
-                      overflowY: 'auto',
-                      overflowX: 'hidden'
-                    }
-                  }
-                }}
-                input={<OutlinedInput notched={false} />}
-                sx={{
-                  color: '#fff',
-                  '.MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' }
-                }}
+                onMouseDown={() => setLeagueDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
                 disabled={noLeagues || filteredLeagues.length === 0}
+                style={{
+                  height: '39px',
+                  padding: '0 36px 0 12px',
+                  marginLeft: '4px',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  border: '1.5px solid #e56a16',
+                  borderRadius: '24px',
+                  fontSize: '17px',
+                  cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                  minWidth: '110px',
+                  opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  fontWeight: 600,
+                }}
               >
-                <MenuItem value="all">All Leagues</MenuItem>
+                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
                 {filteredLeagues.map((l) => (
-                  <MenuItem key={l.id} value={l.id} sx={{
-                    borderRadius: 1.5,
-                    mx: 0.5,
-                    my: 0.25,
-                    py: 0.6,
-                    px: 0.75,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#E5E7EB',
-                    '&:hover': { background: 'rgba(255,255,255,0.06)' }
-                  }}>
-                    <Box component="span" sx={{ flex: 1, fontSize: 12 }}>{l.name}</Box>
-                    <Box sx={{ ml: 'auto' }}>
-                      <Box sx={{
-                        px: 0.6,
-                        py: 0.25,
-                        bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.12)',
-                        color: l.isAdmin ? '#111827' : '#E5E7EB',
-                        borderRadius: '9999px',
-                        fontSize: 8,
-                        fontWeight: 700,
-                        letterSpacing: 0.3,
-                        textTransform: 'uppercase'
-                      }}>{l.isAdmin ? 'Admin' : 'Member'}</Box>
-                    </Box>
-                  </MenuItem>
+                  <option key={l.id} value={l.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{l.name}</option>
                 ))}
-              </Select>
-            </FormControl>
-          </Box>
-          {/* Search (mobile) */}
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search player..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  height: 44,
-                  color: 'white',
-                  '& fieldset': { borderColor: '#e56a16' },
-                  '&:hover fieldset': { borderColor: '#e56a16' },
-                  '&.Mui-focused fieldset': { borderColor: '#e56a16' }
-                },
-                '& .MuiInputBase-input': { color: 'white', fontSize: 14 }
-              }}
-            />
-        </Box>
-        {/* Desktop (md+) original horizontal filter row */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2, mb: 1, alignItems: 'flex-start' }}>
-          {/* Year Filter */}
-          <Box sx={{ minWidth: 160, maxWidth: 200 }}>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              style={{
-                width: '100%',
-                height: '40px',
-                padding: '0 12px',
-                backgroundColor: 'transparent',
-                color: '#fff',
-                border: '1px solid #e56a16',
-                borderRadius: '4px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                All Years
-              </option>
-              {Array.from(new Set([
-                '2020', '2021', '2022', '2023', '2024', '2025',
-                ...yearOptions
-              ])).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
-                <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </Box>
+              </select>
+              </div>
 
-          <FormControl size="small" sx={{ minWidth: 240, maxWidth: 300 }}>
-            {/* InputLabel removed intentionally; provide OutlinedInput with notched={false} to avoid notch gap */}
-            <Select
-              id="league-select"
-              value={selectedLeague}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setSelectedLeague(newValue);
-                // Persist selection
-                try {
-                  if (typeof window !== 'undefined' && newValue !== 'all') {
-                    localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue);
+              {/* Season Filter */}
+              <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`}>
+              <select
+                className="filter-select"
+                value={selectedSeason}
+                onChange={(e) => {
+                  setSelectedSeason(e.target.value);
+                  setSeasonDropdownOpen(false);
+                }}
+                onMouseDown={() => {
+                  if (selectedLeague !== 'all') {
+                    setSeasonDropdownOpen(true);
                   }
-                } catch {}
-              }}
-              renderValue={(value) => {
-                if (filteredLeagues.length === 0) return 'No leagues for selected year';
-                if (noLeagues) return 'No leagues found';
-                const v = String(value ?? '');
-                if (v === 'all') return 'All Leagues';
-                // Search in filteredLeagues first, then fallback to all leagues
-                const found = filteredLeagues.find(l => l.id === v) || leagues.find(l => l.id === v);
-                return found?.name || 'Select League';
-              }}
-              MenuProps={{
-                anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                transformOrigin: { vertical: 'top', horizontal: 'left' },
-                PaperProps: {
-                  sx: {
-                    p: 0.5,
-                    mt: 1,
-                    minWidth: 240,
-                    bgcolor: 'rgba(15,15,15,0.92)',
-                    color: '#E5E7EB',
-                    borderRadius: 2.5,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                    // Cap height and enable vertical scrolling when items overflow
-                    maxHeight: 320,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    overscrollBehavior: 'contain',
-                    // Improve scrollbar visibility (Firefox + WebKit)
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: '#374151 #111827',
-                    '&::-webkit-scrollbar': { width: 8 },
-                    '&::-webkit-scrollbar-track': { background: '#111827' },
-                    '&::-webkit-scrollbar-thumb': {
-                      background: '#374151',
-                      borderRadius: 20,
-                      border: '2px solid #111827'
-                    },
-                    '&::-webkit-scrollbar-thumb:hover': { background: '#4b5563' },
-                  },
-                },
-              }}
-              input={<OutlinedInput notched={false} />}
-              sx={{
-                color: '#fff',
-                '.MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#e56a16' },
-                // Improve disabled look when no leagues
-                '& .MuiOutlinedInput-root.Mui-disabled': {
-                  opacity: 1,
-                  cursor: 'default',
-                  backgroundColor: 'rgba(229,106,22,0.18)',
-                  boxShadow: '0 0 0 1px rgba(229,106,22,0.5) inset',
-                  borderRadius: 6
-                },
-                '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e56a16'
-                },
-                '& .MuiOutlinedInput-input.Mui-disabled': {
-                  WebkitTextFillColor: '#E5E7EB',
-                  color: '#E5E7EB'
-                },
-                '& .MuiSelect-select': {
-                  whiteSpace: 'nowrap'
-                },
-                // Apply always-on hover highlight when there are no leagues
-                ...(noLeagues || filteredLeagues.length === 0 ? {
-                  // backgroundColor: 'rgba(229,106,22,0.15)',
-                  boxShadow: '0 0 0 1px rgba(229,106,22,0.6) inset',
-                  borderRadius: 1.5,
-                } : {})
-              }}
-              disabled={noLeagues || filteredLeagues.length === 0}
-            >
-              <MenuItem value="all">All Leagues</MenuItem>
-              {filteredLeagues.map((l) => (
-                <MenuItem key={l.id} value={l.id}
-                  sx={{
-                    borderRadius: 1.5,
-                    mx: 0.5,
-                    my: 0.25,
-                    py: 1,
-                    px: 1.25,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#E5E7EB',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                    },
-                  }}
-                >
-                  <Box component="span" sx={{ flex: 1 }}>{l.name}</Box>
-                  <Box
-                    sx={{
-                      ml: 'auto',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        px: 1,
-                        py: 0.25,
-                        bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.08)',
-                        color: l.isAdmin ? '#111827' : '#E5E7EB',
-                        borderRadius: '9999px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: 0.3,
-                        textTransform: 'uppercase',
-                        border: l.isAdmin ? '1px solid rgba(255,255,255,0.0)' : '1px solid rgba(255,255,255,0.12)'
-                      }}
-                    >
-                      {l.isAdmin ? 'Admin' : 'Member'}
-                    </Box>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                }}
+                onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
+                disabled={selectedLeague === 'all'}
+                style={{
+                  height: '39px',
+                  padding: '0 36px 0 12px',
+                  marginLeft: '4px',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  border: '1.5px solid #e56a16',
+                  borderRadius: '24px',
+                  fontSize: '17px',
+                  cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                  minWidth: '110px',
+                  opacity: selectedLeague === 'all' ? 0.6 : 1,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                {seasons.map((season) => (
+                  <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                    {season.name}
+                  </option>
+                ))}
+              </select>
+              </div>
 
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search for a player..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                // borderRadius: '25px',
-                // background: 'rgba(255,255,255,0.1)',
-                height: 40,
-                color: 'white',
-                '& fieldset': { borderColor: '#e56a16' },
-                '&:hover fieldset': { borderColor: '#e56a16' },
-                '&.Mui-focused fieldset': { borderColor: '#e56a16' },
-                '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-                  WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
-                  boxShadow: '0 0 0 1000px rgba(255,255,255,0.1) inset !important',
-                  WebkitTextFillColor: 'white',
-                  caretColor: 'white',
-                  backgroundClip: 'content-box !important',
-                  transition: 'background-color 9999s ease-out 0s',
-                },
-              },
-              '& .MuiInputBase-input': { color: 'white', fontSize: { xs: 14, sm: 16 } },
-              '& .MuiInputLabel-root': { color: 'white' },
-            }}
-          />
-        </Box>
-        {!noLeagues && (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, mb: 1 }}>
-          <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 }, flex: 1, ml: 3 }}>Name</Typography>
-          <Box sx={{ display: 'flex', gap: { xs: 2, sm: 5 } }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>Stats</Typography>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 16 } }}>XP Points</Typography>
+              {/* Clear Button */}
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchTerm('');
+                  setSelectedYear('all');
+                  setSelectedLeague('all');
+                  setSelectedSeason('all');
+                  setSeasons([]);
+                }}
+                style={{
+                  height: '39px',
+                  padding: '0 17px',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  border: '2px solid rgba(255,255,255,0.5)',
+                  borderRadius: '24px',
+                  fontSize: '17px',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                Clear
+              </button>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Table Section */}
+      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 }, pb: 4 }}>
+        {/* Table Header */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          py: 2, 
+          px: { xs: 2, sm: 3 },
+          backgroundColor: 'rgba(30, 30, 30, 0.95)',
+          borderRadius: '8px 8px 0 0',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          {/* All Positions */}
+          <Box sx={{ minWidth: { xs: 120, sm: 180 }, display: 'flex', alignItems: 'center' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+              ALL POSITIONS
+            </Typography>
+            <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10 }}>▼</Typography>
+          </Box>
+          
+          {/* Playing Style */}
+          <Box sx={{ flex: 1, minWidth: { xs: 100, sm: 150 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+              PLAYING STYLE
+            </Typography>
+          </Box>
+          
+          {/* Spacer */}
+          <Box sx={{ flex: 1 }} />
+          
+          {/* View Stats */}
+          <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+              VIEW STATS
+            </Typography>
+          </Box>
+          
+          {/* XP Points */}
+          <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 } }}>
+              <span style={{ textTransform: 'lowercase' }}>xp</span> POINTS
+            </Typography>
           </Box>
         </Box>
-        )}
-        {searchQuery && filteredPlayers.length === 0 && (
-          <Typography sx={{ color: 'white', borderRadius: 2, px: 2, py: 1, mt: 1, textAlign: 'center', fontWeight: 500 }}>
-            User not found
-          </Typography>
+
+        {/* Player List Content */}
+        {searchTerm && filteredPlayers.length === 0 && (
+          <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', py: 4, textAlign: 'center' }}>
+            <Typography sx={{ color: 'white', fontWeight: 500 }}>
+              User not found
+            </Typography>
+          </Box>
         )}
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
+            <CircularProgress sx={{ color: '#e56a16' }} />
           </Box>
         ) : noLeagues ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: { xs: '30vh', sm: '40vh' } }}>
-            <Paper elevation={0} sx={{ p: 3, textAlign: 'center', background: 'rgba(255,255,255,0.06)', borderRadius: 3, color: '#fff' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
+            <Box sx={{ p: 3, textAlign: 'center', color: '#fff' }}>
               <Typography variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
-              <Typography variant="body2">Create a new league or join an existing one to see players here.</Typography>
-            </Paper>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Create a new league or join an existing one to see players here.</Typography>
+            </Box>
           </Box>
         ) : error ? (
-          <Typography color="error" align="center">{error}</Typography>
+          <Typography color="error" align="center" sx={{ py: 4, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>{error}</Typography>
         ) : (
           <Box sx={{
             flex: 1,
             overflow: 'auto',
-            borderRadius: { xs: 2, sm: 3 },
-            '&::-webkit-scrollbar': {
-              display: 'none'
-            },
+            backgroundColor: 'rgba(40, 40, 40, 0.9)',
+            borderRadius: '0 0 8px 8px',
+            '&::-webkit-scrollbar': { display: 'none' },
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            px: { xs: 0, sm: 1 },
           }}>
-            <List>
+            <List sx={{ p: 0 }}>
               {sortedPlayers.map((player: Player, idx: number) => {
                 const isSelected = selectedPlayerId === player.id;
-                // Gold, silver, bronze backgrounds
-                // let rowBg = 'rgba(255,255,255,0.1)';
                 let textColor = '#fff';
                 let fontWeight = 500;
-                // let badgeImg = null;
-                // let rowGradient = null;
                 if (idx === 0) {
-                  // rowGradient = 'rgba(255,255,255,0.1)'; // gold/orange
                   textColor = '#fff';
                   fontWeight = 700;
-                  // badgeImg = FirstBadge;
-                } else if (idx === 1) {
-                  // rowBg = '#0a4822'; // silver
-                  // badgeImg = SecondBadge;
-                } else if (idx === 2) {
-                  // rowBg = '#094420'; // bronze
-                  // badgeImg = ThirdBadge;
-                } else {
-                  // rowBg = '#0a4822';
                 }
                 return (
                   <React.Fragment key={player.id}>
@@ -904,71 +939,116 @@ const AllPlayersPage = () => {
                         router.push(`/player/${player.id}`);
                       }}
                       sx={{
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                        // background: rowGradient ? rowGradient : rowBg,
-                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-
+                        display: 'flex',
+                        alignItems: 'center',
+                        py: { xs: 1.5, sm: 2 },
+                        px: { xs: 2, sm: 3 },
+                        backgroundColor: 'rgba(40, 40, 40, 0.95)',
+                        borderBottom: '1px solid rgba(255,255,255,0.08)',
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',
-                        py: { xs: 1, sm: 2 },
-                        px: { xs: 1, sm: 2 },
-                        alignItems: 'center',
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'rgba(60, 60, 60, 0.95)',
+                        }
                       }}
                     >
-                      {/* Ranking badge or number */}
-                      {/* <Box sx={{ width: { xs: 28, sm: 36 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: { xs: 1, sm: 2 } }}>
-                        {badgeImg ? (
-                          <img src={badgeImg.src} alt={`${idx + 1}st`} width={24} height={24} style={{ borderRadius: '50%' }} />
-                        ) : (
-                          <Box sx={{
-                            width: 20, height: 20, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 10,
-                            borderRadius: '50%', background: 'rgba(255,255,255,0.15)'
-                          }}>{`${idx + 1}th`}</Box>
-                        )}
-                      </Box> */}
-                      <ListItemAvatar>
-                        {/* Replaced Avatar with jersey + number */}
-                        <Box sx={{ position: 'relative', width: { xs: 28, sm: 40 }, height: { xs: 28, sm: 40 } }}>
-                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                          {/* <Box
-                            sx={{
-                              position: 'absolute',
-                              inset: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#000',
-                              fontWeight: 800,
-                              fontSize: { xs: 12, sm: 14 },
-                              lineHeight: 1,
-                            }}
-                          >
-                            {player.shirtNumber || '0'}
-                          </Box> */}
+                      {/* Player Avatar */}
+                      <ListItemAvatar sx={{ minWidth: { xs: 56, sm: 70 } }}>
+                        <Box sx={{ 
+                          position: 'relative', 
+                          width: { xs: 45, sm: 55 }, 
+                          height: { xs: 45, sm: 55 },
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          backgroundColor: 'rgba(255,255,255,0.1)'
+                        }}>
+                          {player.profilePicture ? (
+                            <Image 
+                              src={player.profilePicture} 
+                              alt={player.name} 
+                              fill 
+                              style={{ objectFit: 'cover' }} 
+                            />
+                          ) : (
+                            <Image src={ShirtImg} alt="Default" fill style={{ objectFit: 'contain' }} />
+                          )}
                         </Box>
                       </ListItemAvatar>
-                      <ListItemText primary={player.name} primaryTypographyProps={{ fontWeight: 'medium', fontSize: { xs: 13, sm: 16 } }} />
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 8 }, ml: 'auto' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: { xs: 24, sm: 40 } }}>
-                          <SignalCellularAltIcon sx={{ color: isSelected ? 'white' : 'green', fontSize: { xs: 16, sm: 24 } }} />
-                        </Box>
-                        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold', minWidth: { xs: 36, sm: 60 }, textAlign: 'center', fontSize: { xs: 13, sm: 20 } }}>
+                      
+                      {/* Name and Position Column */}
+                      <Box sx={{ minWidth: { xs: 100, sm: 150 } }}>
+                        <Typography sx={{ 
+                          fontWeight: 600, 
+                          fontSize: { xs: 14, sm: 16 },
+                          color: '#fff',
+                          lineHeight: 1.2
+                        }}>
+                          {player.name}
+                        </Typography>
+                        <Typography sx={{ 
+                          fontSize: { xs: 11, sm: 13 },
+                          color: 'rgba(255,255,255,0.6)',
+                          mt: 0.25
+                        }}>
+                          Striker
+                        </Typography>
+                      </Box>
+                      
+                      {/* Playing Style Column */}
+                      <Box sx={{ 
+                        flex: 1,
+                        minWidth: { xs: 60, sm: 120 }, 
+                        display: { xs: 'none', sm: 'block' }
+                      }}>
+                        <Typography sx={{ 
+                          fontSize: { xs: 12, sm: 14 },
+                          color: 'rgba(255,255,255,0.9)'
+                        }}>
+                          Shield
+                        </Typography>
+                      </Box>
+                      
+                      {/* Spacer */}
+                      <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
+                      
+                      {/* View Stats Icon */}
+                      <Box sx={{ 
+                        minWidth: { xs: 60, sm: 120 }, 
+                        display: 'flex', 
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        <SignalCellularAltIcon sx={{ 
+                          color: '#10b981', 
+                          fontSize: { xs: 24, sm: 30 } 
+                        }} />
+                      </Box>
+                      
+                      {/* XP Points */}
+                      <Box sx={{ 
+                        minWidth: { xs: 60, sm: 120 }, 
+                        textAlign: 'center'
+                      }}>
+                        <Typography sx={{ 
+                          fontWeight: 'bold', 
+                          fontSize: { xs: 15, sm: 18 },
+                          color: '#fff'
+                        }}>
                           {player.rating}
                         </Typography>
                       </Box>
                     </ListItem>
-                    <Divider sx={{ backgroundColor: '#fff', height: 2, mb: 0, mt: 0 }} />
                   </React.Fragment>
                 );
               })}
             </List>
           </Box>
         )}
-        </Paper>
       </Container>
-    </Box>
+      </Box>
+    </>
   );
 };
 
