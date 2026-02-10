@@ -13,18 +13,20 @@ export default function AuthSocialButtons() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '12px',
-    padding: '12px 20px',
-    border: '1px solid #e0e0e0',
-    borderRadius: '8px',
+    gap: '8px',
+    padding: '8px 16px',
+    border: '1px solid #404040',
+    borderRadius: '7px',
     backgroundColor: '#ffffff',
     color: '#333',
-    fontSize: '16px',
+    fontSize: '0.85rem',
     fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     textDecoration: 'none',
-    minHeight: '48px'
+    height: '40px',
+    width: '220px',
+    whiteSpace: 'nowrap' as const,
   };
 
   // const hoverStyle = {
@@ -37,27 +39,27 @@ export default function AuthSocialButtons() {
   // };
   
   return (
-    <div style={{ display: 'grid', gap: 8, width: '100%', maxWidth: '300px' , marginTop: '-30px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', alignItems: 'flex-end', marginTop: '-30px' }}>
       <button 
         onClick={() => go('google')} 
         style={{
           ...buttonStyle,
-          border: '1px solid #dadce0'
+          border: '1px solid #404040'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#f8f9fa';
-          e.currentTarget.style.borderColor = '#dadce0';
+          e.currentTarget.style.borderColor = '#404040';
           e.currentTarget.style.transform = 'translateY(-1px)';
           e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = '#ffffff';
-          e.currentTarget.style.borderColor = '#e0e0e0';
+          e.currentTarget.style.borderColor = '#404040';
           e.currentTarget.style.transform = 'translateY(0)';
           e.currentTarget.style.boxShadow = 'none';
         }}
       >
-        <FcGoogle size={20} />
+        <FcGoogle size={18} />
         Continue with Google
       </button>
       
@@ -82,7 +84,7 @@ export default function AuthSocialButtons() {
           e.currentTarget.style.boxShadow = 'none';
         }}
       >
-        <FaFacebook size={20} />
+        <FaFacebook size={18} />
         Continue with Facebook
       </button>
       
@@ -91,23 +93,23 @@ export default function AuthSocialButtons() {
         style={{
           ...buttonStyle,
           backgroundColor: '#000000',
-          border: '1px solid #000000',
+          border: '1px solid #ffffff',
           color: '#ffffff'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#333333';
-          e.currentTarget.style.borderColor = '#333333';
+          e.currentTarget.style.border = '1px solid #ffffff';
           e.currentTarget.style.transform = 'translateY(-1px)';
           e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = '#000000';
-          e.currentTarget.style.borderColor = '#000000';
+          e.currentTarget.style.border = '1px solid #ffffff';
           e.currentTarget.style.transform = 'translateY(0)';
           e.currentTarget.style.boxShadow = 'none';
         }}
       >
-        <FaApple size={20} />
+        <FaApple size={18} />
         Continue with Apple
       </button>
     </div>

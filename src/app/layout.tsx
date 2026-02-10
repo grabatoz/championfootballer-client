@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono } from "next/font/google";
+import { Anton, Inter, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
@@ -18,6 +18,13 @@ const anton = Anton({
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
   subsets: ['latin'],
   variable: '--font-geist-anton'
+});
+
+const inter = Inter({
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+  variable: '--font-inter'
 });
 
 const geistSans = Geist({
@@ -65,7 +72,7 @@ export default function RootLayout({
         )}
       </head>
       <body 
-        className={`${geistSans.variable} ${geistMono.variable} antialiased ${anton.variable}`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} antialiased`}
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}

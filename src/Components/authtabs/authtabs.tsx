@@ -25,11 +25,13 @@ import {
   MenuItem,
   // InputLabel,
   OutlinedInput,
+  InputAdornment,
+  useMediaQuery,
 } from "@mui/material"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import toast from "react-hot-toast"
-import { Visibility, VisibilityOff } from "@mui/icons-material"
+import { Visibility, VisibilityOff, Facebook, Apple } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import type { User } from "@/types/user"
@@ -142,6 +144,25 @@ const normalizeUserData = (data: User): UserDataShape => {
   };
 }
 
+const GoogleIcon = () => (
+<svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  <path fill="none" d="M0 0h48v48H0z"/>
+</svg>
+)
+
+const FacebookIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill="currentColor"
+      d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.15 5.96C15.21 5.96 16.12 6.04 16.38 6.08V8.7H14.85C13.67 8.7 13.44 9.23 13.44 9.99V12.06H16.34L15.88 14.96H13.44V21.96C18.21 21.21 22 17.06 22 12.06C22 6.53 17.5 2.04 12 2.04Z"
+    />
+  </svg>
+)
+
 const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -150,6 +171,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [serverStatus, setServerStatus] = useState<"checking" | "online" | "offline">("checking")
   const { isAuthenticated } = useSelector((state: RootState) => state.auth) as { isAuthenticated: boolean }
 
+  const isDesktop = useMediaQuery("(min-width:900px)")
+
   const [loginData, setLoginData] = useState<LoginCredentials>({ email: "", password: "" })
   const [loginError, setLoginError] = useState("")
   const [loginLoading, setLoginLoading] = useState(false)
@@ -157,6 +180,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [registerData, setRegisterData] = useState<RegisterCredentials>({
     email: "",
     password: "",
+    phone: "",
     confirmPassword: "",
     username: "",
     firstName: "",
@@ -182,28 +206,87 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   // Location selectors state (codes used to derive dependent lists)
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
-  // State removed from UI; we keep it internally for compatibility but user enters a single City/State value
-  const [selectedStateCode] = useState<string>("")
+
+  // Desktop: City/State dropdown (we map it to state/city strings for backend compatibility)
+  const [selectedStateCode, setSelectedStateCode] = useState<string>("")
+
+  // Phone country code selector (independent of profile country)
+  const [phoneCountryCode, setPhoneCountryCode] = useState<string>("AE")
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
+    width: { xs: '100%', md: '220px' },
     "& .MuiOutlinedInput-root": {
       backgroundColor: "#fff",
       color: "#000",
-      borderRadius: 1,
+      borderRadius: '7px',
+      height: { xs: 'auto', md: '40px' },
       boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-      "& fieldset": { borderColor: "transparent" },
-      "&:hover fieldset": { borderColor: "transparent" },
-      "&.Mui-focused fieldset": { borderColor: "transparent" },
-      "& input": { color: "#000", fontSize: "1rem" },
+      overflow: "hidden",
+      boxSizing: "border-box",
+      "& fieldset": { borderColor: "#404040", borderWidth: '1px' },
+      "&:hover fieldset": { borderColor: "#404040" },
+      "&.Mui-focused fieldset": { borderColor: "#404040" },
+      "& input": { 
+        color: "#000", 
+        fontSize: "0.95rem",
+        height: "100%",
+        boxSizing: "border-box",
+        padding: "0 14px",
+      },
     },
     "& input::placeholder": { color: "#757575", opacity: 1 },
     // disable autofill yellow
     "& input:-webkit-autofill": {
-      WebkitBoxShadow: "0 0 0 1000px #fff inset",
-      WebkitTextFillColor: "#000",
-      transition: "background-color 9999s ease-in-out 0s",
+      WebkitBoxShadow: "0 0 0 1000px #fff inset !important",
+      WebkitTextFillColor: "#000 !important",
+      transition: "background-color 5000s ease-in-out 0s",
+      borderRadius: '7px !important',
     },
+    "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
+      WebkitBoxShadow: "0 0 0 1000px #fff inset !important",
+      WebkitTextFillColor: "#000 !important",
+      borderRadius: '7px !important',
+    },
+  } as const
+
+  // Exact sizes from Figma (desktop)
+  const FIGMA_HALF_WIDTH = 466.1052551269531
+  const FIGMA_FULL_WIDTH = 948.3947143554688
+  // Visually matches the provided screenshot better than the raw measured height.
+  const FIGMA_HEIGHT = 40
+  const FIGMA_RADIUS = 5
+  const FIGMA_GAP = FIGMA_FULL_WIDTH - FIGMA_HALF_WIDTH * 2
+
+  // Register fields in the screenshots are taller and have radius 5.
+  const registerInputSx = {
+    ...inputSx,
+    width: '100%',
+    "& .MuiOutlinedInput-root": {
+      ...(inputSx as any)["& .MuiOutlinedInput-root"],
+      borderRadius: `${FIGMA_RADIUS}px`,
+      height: { xs: '56px', md: `${FIGMA_HEIGHT}px` },
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    },
+  } as const
+
+  const registerSelectSx = {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: `${FIGMA_RADIUS}px`,
+    height: { xs: '56px', md: `${FIGMA_HEIGHT}px` },
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#404040', borderWidth: '1px' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#404040' },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#404040' },
+    '& .MuiSelect-select': {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 14px',
+      height: '100%',
+      boxSizing: 'border-box',
+    },
+    '& .MuiSelect-icon': { color: '#404040' },
   } as const
 
   useEffect(() => {
@@ -265,12 +348,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   // If we had a state selection we'd derive cities; now we allow free text entry so we don't need the cities list.
   const cities: Array<never> = []
 
+  const isoToFlagEmoji = (isoCode: string): string => {
+    const code = (isoCode || "").toUpperCase()
+    if (!/^[A-Z]{2}$/.test(code)) return ""
+    return code.replace(/[A-Z]/g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+  }
+
   // Handlers for Select components; store name in registerData, code in local state
   const handleCountrySelect = (code: string) => {
     setSelectedCountryCode(code)
     const c = countries.find(c => c.isoCode === code)
     // Reset location fields when country changes
+    setSelectedStateCode("")
     setRegisterData(prev => ({ ...prev, country: c?.name || "", state: "", city: "" }))
+  }
+
+  const handleStateSelect = (code: string) => {
+    setSelectedStateCode(code)
+    const s = states.find(s => s.isoCode === code)
+    const name = s?.name || ""
+    // Store same value for city/state to align with existing backend compatibility.
+    setRegisterData(prev => ({ ...prev, state: name, city: name }))
   }
 
   // Single location input handler: store the value in both state and city for backward compatibility.
@@ -354,6 +452,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     let msg = ""
     if (
       !registerData.email ||
+      !registerData.phone ||
       !registerData.password ||
       !registerData.confirmPassword ||
       !registerData.firstName ||
@@ -463,7 +562,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         <Box
           component="form"
           onSubmit={handleLoginSubmit}
-          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 9.5 } }}
+          sx={{ width: { sx: "100%", sm: "60%", md: "70%" }, maxWidth: 33200, marginLeft: 'auto' }}
         >
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -471,7 +570,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ alignItems: 'flex-end' }}>
             <TextField
               fullWidth
               placeholder="Email address"
@@ -511,21 +610,21 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             <Button
               type="submit"
               variant="contained"
-              fullWidth
               disabled={loginLoading || serverStatus === "offline"}
               sx={{
-                background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
+                background: "#00a77f",
                 color: "white",
-                py: 1.5,
-                fontSize: "1.1rem",
+                width: { xs: '100%', md: '220px' },
+                height: { xs: 'auto', md: '40px' },
+                fontSize: "0.95rem",
                 fontWeight: "bold",
-                borderRadius: 2,
+                borderRadius: '7px',
                 textTransform: "none",
                 "&:hover": {
-                  background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
+                  background: "#00a77f",
                 },
                 "&:disabled": {
-                  background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
+                  background: "#00a77f",
                   color: "rgba(255, 255, 255, 0.5)",
                 },
               }}
@@ -533,23 +632,22 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               {loginLoading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
             </Button>
 
-            <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <Box sx={{ display: "flex", justifyContent: "center", width: "220px" }}>
               <Button
                 variant="text"
                 onClick={handleForgotPassword}
-                sx={{
+               sx={{
                   color: "white",
                   textTransform: "none",
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   width: "fit-content",
                   justifyContent: "center",
                   alignItems: "center",
-                  flexDirection: "column",
-                  gap: 1,
                   textAlign: "center",
                   textDecoration: "underline",
-                  mt: -1,
-                  mb: 1,
+                  mt: -0.5,
+                  mb: 2,
+                  padding: 0,
                 }}
               >
                 Forgot your password?
@@ -568,7 +666,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         <Box
           component="form"
           onSubmit={handleRegisterSubmit}
-          sx={{ width: { sx: "100%", sm: "60%", md: "80%" }, maxWidth: 360, ml: { sx: 0, sm: -3.5, md: 5 } , mb:7 }}
+          sx={{
+            width: { xs: '100%', sm: '100%', md: '100%' },
+            maxWidth: { md: '948.3947px' },
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            mb: 2,
+          }}
         >
           {registerError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -576,222 +680,442 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          <Stack spacing={1}>
-            <TextField
-              fullWidth
-              placeholder="Email address"
-              name="email"
-              type="email"
-              value={registerData.email}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-            />
-
-            <TextField
-              fullWidth
-              placeholder="Password"
-              name="password"
-              type={showRegisterPassword ? "text" : "password"}
-              value={registerData.password}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-              inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
-              error={Boolean(passwordError)}
-              helperText={passwordError || "6-16 chars, 1 uppercase, 1 number, 1 special"}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowRegisterPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: "#000" }}
-                  >
-                    {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
-            />
-
-            <TextField
-              fullWidth
-              placeholder="Confirm password"
-              name="confirmPassword"
-              type={showRegisterConfirmPassword ? "text" : "password"}
-              value={registerData.confirmPassword}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-              inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
-              error={Boolean(confirmError)}
-              helperText={confirmError || "Re-type your password"}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowRegisterConfirmPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: "#000" }}
-                  >
-                    {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
-            />
-
-            <TextField
-              fullWidth
-              placeholder="First name"
-              name="firstName"
-              value={registerData.firstName}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-            />
-            <TextField
-              fullWidth
-              placeholder="Last name"
-              name="lastName"
-              value={registerData.lastName}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-            />
-            <TextField
-              fullWidth
-              placeholder="Age"
-              name="age"
-              type="number"
-              inputProps={{ min: 18, max: 65 }}
-              value={registerData.age}
-              onChange={handleRegisterChange}
-              required
-              sx={inputSx}
-            />
-
-            <FormControl fullWidth>
-              {/* InputLabel removed; provide OutlinedInput notched={false} for full outline */}
-              <Select
-                id="country-select"
-                value={selectedCountryCode}
-                onChange={(e) => handleCountrySelect(e.target.value as string)}
-                displayEmpty
-                renderValue={(selected) => {
-                  if (!selected) return <span style={{ color: '#757575' }}>Country / Region</span>;
-                  const code = selected as string;
-                  const c = countries.find(c => c.isoCode === code);
-                  return c?.name || '';
-                }}
-                input={<OutlinedInput notched={false} />}
-                sx={{
-                  '& .MuiSelect-select': { backgroundColor: '#fff', color: '#000' },
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
-                }}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+              columnGap: { xs: 0, md: `${FIGMA_GAP}px` },
+              rowGap: { xs: 1.25, md: 2 },
+              alignItems: 'start',
+              justifyContent: { xs: 'stretch', md: 'start' },
+            }}
+          >
+            {/* NAME */}
+            <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 1' } }}>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Name</Typography>
+              <TextField
+                fullWidth
+                placeholder="First Name"
+                name="firstName"
+                value={registerData.firstName}
+                onChange={handleRegisterChange}
                 required
-              >
-                <MenuItem value="" disabled>
-                  <em>Country / Region</em>
-                </MenuItem>
-                {countries.map(c => (
-                  <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                sx={registerInputSx}
+              />
+            </Box>
 
-            <TextField
-              fullWidth
-              placeholder="City / State"
-              name="location"
-              value={registerData.city}
-              onChange={(e) => handleLocationInput(e.target.value)}
-              required
-              sx={inputSx}
-              helperText="Enter your city, town or state"
-            />
+            <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 1' } }}>
+              <Typography sx={{ mb: 0.75, color: 'transparent', fontSize: '0.9rem', display: { xs: 'none', md: 'block' }, userSelect: 'none' }}>Name</Typography>
+              <TextField
+                fullWidth
+                placeholder="Last Name"
+                name="lastName"
+                value={registerData.lastName}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+              />
+            </Box>
 
-            {/* Active (checked) color set to orange (#E56A16) */}
-            <FormControl>
-              <Typography sx={{ color: "black" }}>Gender</Typography>
-              <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
-                <FormControlLabel
-                  value="male"
-                  control={
-                    <Radio
-                      sx={{
-                        color: "black",
-                        "&.Mui-checked": { color: "#E56A16" },
-                      }}
+            {/* EMAIL */}
+            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Email</Typography>
+              <TextField
+                fullWidth
+                placeholder="Email Address"
+                name="email"
+                type="email"
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+              />
+            </Box>
+
+            {/* PHONE */}
+            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Enter Your Phone Number</Typography>
+              <TextField
+                fullWidth
+                placeholder="Enter Number"
+                name="phone"
+                value={registerData.phone || ''}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ height: '100%' }}>
+                      <Select
+                        value={phoneCountryCode}
+                        onChange={(e) => setPhoneCountryCode(e.target.value as string)}
+                        variant="standard"
+                        disableUnderline
+                        MenuProps={{
+                          disablePortal: true,
+                          anchorOrigin: {
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                          },
+                          transformOrigin: {
+                            vertical: 'top',
+                            horizontal: 'left',
+                          },
+                          PaperProps: {
+                            sx: {
+                              maxHeight: 300,
+                              maxWidth: '300px',
+                              marginLeft: '10px',
+                            },
+                          },
+                        }}
+                        sx={{
+                          minWidth: 80,
+                          mr: 1,
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          '& .MuiSelect-select': {
+                            color: '#000',
+                            fontSize: '0.95rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          },
+                        }}
+                        renderValue={(selected) => {
+                          const code = selected as string
+                          const c = countries.find(cc => cc.isoCode === code)
+                          const phone = c?.phonecode ? `+${c.phonecode}` : ''
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box component="span" sx={{ color: '#000' }}>
+                                {code} {phone}
+                              </Box>
+                            </Box>
+                          )
+                        }}
+                      >
+                        {countries.map(c => (
+                          <MenuItem key={c.isoCode} value={c.isoCode}>
+                            <Box component="span" sx={{ color: '#000' }}>{c.name}</Box>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            {/* PASSWORD */}
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Password</Typography>
+              <TextField
+                fullWidth
+                placeholder="Password"
+                name="password"
+                type={showRegisterPassword ? 'text' : 'password'}
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+                inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
+                error={Boolean(passwordError)}
+                helperText={passwordError || '6-16 chars, 1 uppercase, 1 number, 1 special'}
+                FormHelperTextProps={{ sx: { display: { xs: 'block', md: 'none' } } }}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() => setShowRegisterPassword((show) => !show)}
+                      edge="end"
+                      size="small"
+                      sx={{ color: '#000' }}
+                    >
+                      {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Re-Type Password</Typography>
+              <TextField
+                fullWidth
+                placeholder="Confirm Password"
+                name="confirmPassword"
+                type={showRegisterConfirmPassword ? 'text' : 'password'}
+                value={registerData.confirmPassword}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+                inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
+                error={Boolean(confirmError)}
+                helperText={confirmError || 'Re-type your password'}
+                FormHelperTextProps={{ sx: { display: { xs: 'block', md: 'none' } } }}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() => setShowRegisterConfirmPassword((show) => !show)}
+                      edge="end"
+                      size="small"
+                      sx={{ color: '#000' }}
+                    >
+                      {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+              />
+            </Box>
+
+            {/* AGE + GENDER */}
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Enter Age</Typography>
+              <TextField
+                fullWidth
+                placeholder="Age"
+                name="age"
+                type="number"
+                inputProps={{ min: 18, max: 65 }}
+                value={registerData.age}
+                onChange={handleRegisterChange}
+                required
+                sx={registerInputSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Select Gender</Typography>
+              {isDesktop ? (
+                <FormControl fullWidth>
+                  <Select
+                    value={registerData.gender}
+                    onChange={(e) =>
+                      setRegisterData((prev) => ({ ...prev, gender: e.target.value as string }))
+                    }
+                    displayEmpty
+                    input={<OutlinedInput notched={false} />}
+                    sx={registerSelectSx}
+                    renderValue={(selected) => {
+                      if (!selected) return <span style={{ color: '#757575' }}>Gender</span>
+                      return selected === 'male' ? 'Male' : 'Female'
+                    }}
+                    required
+                  >
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                  </Select>
+                </FormControl>
+              ) : (
+                <FormControl>
+                  <RadioGroup row name="gender" value={registerData.gender} onChange={handleRegisterChange}>
+                    <FormControlLabel
+                      value="male"
+                      control={<Radio sx={{ color: 'black', '&.Mui-checked': { color: '#E56A16' } }} />}
+                      label="Male"
+                      sx={{ color: 'black' }}
                     />
-                  }
-                  label="Male"
-                  sx={{ color: "black" }}
-                />
-                <FormControlLabel
-                  value="female"
-                  control={
-                    <Radio
-                      sx={{
-                        color: "black",
-                        "&.Mui-checked": { color: "#E56A16" },
-                      }}
+                    <FormControlLabel
+                      value="female"
+                      control={<Radio sx={{ color: 'black', '&.Mui-checked': { color: '#E56A16' } }} />}
+                      label="Female"
+                      sx={{ color: 'black' }}
                     />
-                  }
-                  label="Female"
-                  sx={{ color: "black" }}
-                />
-              </RadioGroup>
-            </FormControl>
+                  </RadioGroup>
+                </FormControl>
+              )}
+            </Box>
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  sx={{
-                    color: "black",
-                    "&.Mui-checked": { color: "#E56A16" },
+            {/* COUNTRY + CITY/STATE */}
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Select Country/Region</Typography>
+              <FormControl fullWidth>
+                <Select
+                  id="country-select"
+                  value={selectedCountryCode}
+                  onChange={(e) => handleCountrySelect(e.target.value as string)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) return <span style={{ color: '#757575' }}>Country/Region</span>
+                    const code = selected as string
+                    const c = countries.find(c => c.isoCode === code)
+                    return c?.name || ''
                   }}
-                />
-              }
-              // Label contains a link to the terms page
-              label={
-                <span className="text-black" >
-                  I accept the{" "}
-                  <Link href="/terms" style={{ color: "black", textDecoration: "underline" }}>
-                    terms and conditions
-                  </Link>
-                </span>
-              }
-              sx={{ color: "#fff" }}
-            />
+                  input={<OutlinedInput notched={false} />}
+                  sx={registerSelectSx}
+                  required
+                >
+                  <MenuItem value="" disabled>
+                    <em>Country/Region</em>
+                  </MenuItem>
+                  {countries.map(c => (
+                    <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
+            <Box>
+              <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Select City/State</Typography>
+              {isDesktop ? (
+                <FormControl fullWidth>
+                  <Select
+                    id="state-select"
+                    value={selectedStateCode}
+                    onChange={(e) => handleStateSelect(e.target.value as string)}
+                    displayEmpty
+                    renderValue={(selected) => {
+                      if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
+                      const code = selected as string
+                      const s = states.find(s => s.isoCode === code)
+                      return s?.name || ''
+                    }}
+                    input={<OutlinedInput notched={false} />}
+                    sx={registerSelectSx}
+                    required
+                    disabled={!selectedCountryCode}
+                  >
+                    <MenuItem value="" disabled>
+                      <em>City/State</em>
+                    </MenuItem>
+                    {states.map(s => (
+                      <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField
+                  fullWidth
+                  placeholder="City / State"
+                  name="location"
+                  value={registerData.city}
+                  onChange={(e) => handleLocationInput(e.target.value)}
+                  required
+                  sx={registerInputSx}
+                  helperText="Enter your city, town or state"
+                />
+              )}
+            </Box>
+
+            {/* TERMS */}
+            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, mt: { xs: 0.5, md: 0.25 } }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    sx={{
+                      color: 'black',
+                      '&.Mui-checked': { color: '#E56A16' },
+                    }}
+                  />
+                }
+                label={
+                  <span className="text-black">
+                    I accept the{' '}
+                    <Link href="/terms" style={{ color: 'black', textDecoration: 'underline' }}>
+                      terms and conditions
+                    </Link>
+                  </span>
+                }
+                sx={{ color: '#fff' }}
+              />
+            </Box>
+
+            {/* BUTTONS: Register + social (match screenshot grid) */}
             <Button
               type="submit"
               variant="contained"
-              fullWidth
               disabled={registerLoading}
               sx={{
-                background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
-                color: "white",
-                py: 1.5,
-                // mb:2,
-                fontSize: "1.1rem",
-                fontWeight: "bold",
-                borderRadius: 2,
-                textTransform: "none",
-                "&:hover": {
-                  background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
+                gridColumn: { xs: '1 / -1', md: 'span 1' },
+                height: { xs: '56px', md: `${FIGMA_HEIGHT}px` },
+                borderRadius: `${FIGMA_RADIUS}px`,
+                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                color: 'white',
+                fontSize: '1.05rem',
+                fontWeight: 'bold',
+                textTransform: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                 },
-                "&:disabled": {
-                  background: "linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);",
-                  color: "rgba(255, 255, 255, 0.5)",
+                '&:disabled': {
+                  background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                  color: 'rgba(255, 255, 255, 0.5)',
                 },
               }}
             >
-              {registerLoading ? <CircularProgress size={24} color="inherit" /> : "Register"}
+              {registerLoading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
             </Button>
-          </Stack>
+
+            {/* Social auth buttons (desktop: to the right of Register; next row: FB/Apple) */}
+            {(() => {
+              const API = process.env.NEXT_PUBLIC_API_URL
+              const go = (provider: string) => {
+                window.location.href = `${API}/auth/${provider}?next=/home`
+              }
+
+              const socialBase = {
+                height: { xs: '56px', md: `${FIGMA_HEIGHT}px` },
+                borderRadius: `${FIGMA_RADIUS}px`,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+              } as const
+
+              return (
+                <>
+                  <Button
+                    onClick={() => go('google')}
+                    variant="outlined"
+                    startIcon={<GoogleIcon />}
+                    sx={{
+                      ...socialBase,
+                      gridColumn: { xs: '1 / -1', md: 'span 1' },
+                      borderColor: '#404040',
+                      color: '#000',
+                      backgroundColor: '#fff',
+                      '&:hover': { borderColor: '#404040', backgroundColor: '#f8f9fa' },
+                    }}
+                  >
+                    Continue with Google
+                  </Button>
+
+                  <Button
+                    onClick={() => go('facebook')}
+                    variant="contained"
+                    startIcon={<FacebookIcon />}
+                    sx={{
+                      ...socialBase,
+                      gridColumn: { xs: '1 / -1', md: 'span 1' },
+                      backgroundColor: '#1877f2',
+                      color: '#fff',
+                      '&:hover': { backgroundColor: '#166fe5' },
+                    }}
+                  >
+                    Continue with Facebook
+                  </Button>
+
+                  <Button
+                    onClick={() => go('apple')}
+                    variant="contained"
+                    startIcon={<Apple sx={{ fontSize: '28px' }} />}
+                    sx={{
+                      ...socialBase,
+                      gridColumn: { xs: '1 / -1', md: 'span 1' },
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #000',
+                      '&:hover': { backgroundColor: '#333', border: '1px solid #000' },
+                    }}
+                  >
+                    Continue with Apple
+                  </Button>
+                </>
+              )
+            })()}
+          </Box>
         </Box>
       )}
     </>

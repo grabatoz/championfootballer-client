@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Paper, Typography, Button, Card, Modal, IconButton } from '@mui/material';
+import { Box, Paper, Typography, Button, Card, Modal, IconButton, Grid } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -8,10 +8,13 @@ import Layer from '@/Components/images/championfootballnewlogo.webp';
 import NewImg from '@/Components/images/Done1.webp';
 import Newimg from '@/Components/images/Done2.webp';
 import mobile from '@/Components/images/mobile.webp';
+import heroPlayers from '@/Components/images/22.png';
 import image9 from '@/Components/images/1stpic.png';
 import image10 from '@/Components/images/2ndpic.png';
 import image11 from '@/Components/images/3rdpic.png';
 import image12 from '@/Components/images/4thpic.png';
+import LogoNavbar from './logonavbar';
+
 
 import { useState } from 'react';
 
@@ -39,161 +42,153 @@ export default function LandingPage() {
   ];
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        minHeight: '100vh',
-        position: 'relative',
-        // Fallback color fills any area not covered by the background image
-        // backgroundColor: '#000000',
-        // ✅ Responsive background images with gradient underlay
-        backgroundImage: {
-          xs: `url(${mobile.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          sm: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          md: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          lg: `url(${NewImg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-          xl: `url(${Newimg.src}), linear-gradient(to bottom, rgb(37, 88, 142), rgb(37, 94, 145))`,
-        },
-        backgroundSize: 'contain, cover',
-        backgroundPosition: 'top center, top center',
-        backgroundRepeat: 'no-repeat, no-repeat',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        px: { xs: 2, md: 3 },
-        py: { xs: 3, md: 4 },
-        backgroundAttachment: 'scroll',
-        // width: '100%',
-        // minHeight: '100vh',
-        // position: 'relative',
-        // // ✅ Responsive background images
-        // backgroundImage: {
-        //   xs: `url(${mobile.src})`, // small screens par mobile bg
-        //   sm: `url(${NewImg.src})`, // tablet aur upar par desktop bg
-        // },
-        // backgroundSize: { xs: 'cover', md: 'cover' }, // full coverage
-        // backgroundPosition: { xs: 'center top', md: 'center center' }, // positioning
-        // backgroundRepeat: 'no-repeat',
-        // display: 'flex',
-        // flexDirection: 'column',
-        // justifyContent: 'space-between',
-        // px: { xs: 2, md: 3 },
-        // py: { xs: 3, md: 4 },
-        // backgroundAttachment:'fixed'
-        // width: '100%',
-        // minHeight: '100vh',
-        // position: 'relative',
-        // // background removed per previous request
-        // background: 'transparent',
-        // display: 'flex',
-        // flexDirection: 'column',
-        // justifyContent: 'space-between',
-        // px: { xs: 2, md: 3 },
-        // py: { xs: 3, md: 4 },
-      }}
-    >
-      {/* TOP GROUP: Logo + Tagline + Auth (kept together in a single box) */}
+    <>
+      <LogoNavbar />
+      
+      {/* Black Hero Section with Grid Layout */}
       <Box
         sx={{
           width: '100%',
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'space', md: 'flex-start' },
-          justifyContent: 'space-between',
-          // gap: 3,
+          backgroundColor: '#101010',
+          px: { xs: 2, md: 14 },
+          py: { xs: 4, md: 2},
         }}
       >
-        {/* Logo + Copy (left side inside top group) */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: { xs: 'center', md: 'flex-start' },
-            textAlign: { xs: 'center', md: 'left' },
-            maxWidth: { md: '48%' },
-          }}
-        >
-          <Image
-            src={Layer || '/placeholder.svg'}
-            alt="Champion Footballer Logo"
-            width={250}
-            height={80}
-            style={{ maxWidth: '100%', height: 'auto', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
-            priority
-          />
+        <Grid container spacing={{ xs: 3, md: 4 }}>
+          {/* Left Side - 8 columns */}
+          <Grid item xs={12} md={8}>
+            <Box sx={{ color: 'white' }}>
+              {/* Heading */}
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
+                  fontWeight: 400,
+                  fontSize: { xs: '1.5rem', md: '38px' },
+                  lineHeight: '100%',
+                  letterSpacing: '0%',
+                  color: '#FFFFFF',
+                  mb: -4,
+                  mt: 1,
+                  textTransform: 'uppercase',
+                  width: { xs: 'auto', md: '817px' },
+                  height: { xs: 'auto', md: '81px' },
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
+              >
+                YOUR RANKING. YOUR STATS. YOUR GLORY.
+              </Typography>
 
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 'bold',
-              mt: 3,
-              mb: 2,
-              fontSize: { xs: '1.2rem', md: '1.5rem' },
-              textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-              color: 'white',
-              display: { xs: 'none', md: 'block' }
-            }}
-          >
-            Your Game. Your Stats.<br />Your Glory
-          </Typography>
+              {/* Description */}
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-inter), Inter, sans-serif !important',
+                  fontWeight: '500 !important',
+                  fontSize: { xs: '0.95rem', md: '18px' },
+                  fontStyle: 'italic !important',
+                  lineHeight: { xs: '1.4', md: '23px' },  
+                  letterSpacing: '0% !important',
+                  color: '#FFFFFF',
+                  width: { xs: 'auto', md: '1152px' },
+                  height: { xs: 'auto', md: '49px' },
+                  mb: 2,
+                }}
+              >
+                Create your matches, track your stats, and rise through the rankings<br />
+                Champion Footballer is your ultimate hub for football, performance, and bragging rights!
+              </Typography>
 
-          <Typography
-            variant="body1"
-            sx={{
-              maxWidth: 360,
-              lineHeight: 1.6,
-              color: '#f0f0f0',
-              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-              fontSize: { xs: '1rem', md: '1.05rem' },
-              display: { xs: 'none', md: 'block' }
+              {/* Hero image with three football players */}
+              <Box
+                sx={{
+                  width: '100%',
+                  maxWidth: '650px',
+                  mb: 3,
+                }}
+              >
+                <Image
+                  src={heroPlayers}
+                  alt="Football Players"
+                  width={730}
+                  height={400}
+                  style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                  priority
+                />
+              </Box>
 
-            }}
-          >
-            Create your personalised matches, track your performance, and climb the ranks. Champion Footballer is your home for casual football made competitive!
-          </Typography>
-        </Box>
+              {/* Bottom Text */}
+              <Box sx={{ display: 'flex', alignItems: 'baseline', mt: -3.5, whiteSpace: 'nowrap', gap: 0, width: { xs: 'auto', md: '826px' }, height: { xs: 'auto', md: '90px' } }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
+                    fontWeight: '400 !important',
+                    fontSize: { xs: '1.5rem', md: '31px' },
+                    lineHeight: '100% !important',
+                    letterSpacing: '0% !important',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  I GOT 99 PROBLEMS
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
+                    fontWeight: '400 !important',
+                    fontSize: { xs: '1.5rem', md: '42px' },
+                    lineHeight: '100% !important',
+                    letterSpacing: '0% !important',
+                    textTransform: 'uppercase',
+                    ml: 1,
+                    mt:1,
+                  }}
+                >
+                  BUT WINNING AIN'T ONE!
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
 
-        {/* Auth area (right side inside top group) */}
-        <Box
-          sx={{
-            width: { xs: '100%', md: 380 },
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: 'transparent',
-            mt: { xs: '90%', sm: '20%', md: '13%' },              // md: ensure Paper itself is centered
-            // ml: { sm: '50%' }
-          }}
+          {/* Right Side - 4 columns (Auth Form) */}
+          <Grid item xs={12} md={4}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                height: '100%',
+                
+              }}
+            >
+              {/* Top Text */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter !important',
+                    fontWeight: '600 !important',
+                    fontSize: { xs: '1.2rem', md: '23px' },
+                    lineHeight: { xs: '1.4', md: '35px' },
+                    letterSpacing: '0% !important',
+                    color: 'white',
+                    textAlign: 'right',
+                    maxWidth: { xs: '100%', md: '355px' },
+                    width: '100%',
+                    mt: 1,
+                  }}
+                >
+                  The best football app<br />on the planet!
+                </Typography>
+              </Box>
 
-        >
-          <Paper
-            elevation={8}
-            // className='sm:ml-[50%] ml-0'
-            sx={{
-              width: '100%',
-              // p: { xs: 2, md: 3 },
-              borderRadius: 3,
-              // backgroundColor:'transparent'
-              bgcolor: 'transparent',
-              // ensure paper itself is transparent and doesn't force white backgrounds on children
-              boxShadow: 'none',
-              alignSelf: { md: 'center' },
-              '& .MuiPaper-root': { background: 'transparent' },
-              ml: { xs: '0%', sm: '30%', md: 0 }
-            }}
-          >
-
-            {/* force AuthTabs to take full width and allow overflow for mobile friendliness */}
-            <Box sx={{ width: '100%', overflow: 'visible', mb: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', sm: 'center', md: 'flex-end' }, mb: 2 }}>
+              {/* Join Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   onClick={() => {
                     if (showLogin) {
-                      // Join button clicked - open modal with register form
                       setIsJoinModalOpen(true);
                     } else {
-                      // Toggle back to Login
                       setShowLogin(true);
                     }
                   }}
@@ -201,27 +196,41 @@ export default function LandingPage() {
                     color: 'white',
                     textTransform: 'none',
                     fontSize: '1rem',
-                    fontWeight: 'bold',
-                    backgroundColor: '#000000',
-                    '&:hover': { backgroundColor: '#333333' },
-                    borderRadius: 2,
-                    px: 1,
-                    mt:{sm:0, xs:0 , md:-5}
+                    
+                    border: '1px solid #FFFFFF',
+                   
+                    '&:hover': { 
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      border: '1px solid #FFFFFF',
+                    },
+                    borderRadius: '7px',
+                    px: 4,
+                    
                   }}
                 >
                   {showLogin ? 'Join' : 'Login'}
                 </Button>
               </Box>
-              <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
-            </Box>
-            <Box sx={{ ml: { sx: 0, sm: -3.5, md: 9.5 } }}>
-              <AuthSocialButtons />
-            </Box>
 
-          </Paper>
-        </Box>
-
-        {/* Join Modal - Popup for registration */}
+              {/* Auth Form */}
+              <Paper
+                elevation={0}
+                sx={{
+                  bgcolor: 'transparent',
+                  boxShadow: 'none',
+                }}
+              >
+                <Box sx={{ width: '100%', overflow: 'visible', mb: 2 }}>
+                  <AuthTabs showLogin={showLogin} onToggleForm={() => setShowLogin(!showLogin)} />
+                </Box>
+                {showLogin ? (
+                  <Box>
+                    <AuthSocialButtons />
+                  </Box>
+                ) : null}
+              </Paper>
+            </Box>
+            {/* Join Modal - Popup for registration */}
         <Modal
           open={isJoinModalOpen}
           onClose={() => setIsJoinModalOpen(false)}
@@ -234,14 +243,19 @@ export default function LandingPage() {
           <Paper
             elevation={8}
             sx={{
-              width: { xs: '90%', sm: '500px', md: '450px' },
+              width: { xs: '92vw', sm: '600px', md: '730px' },
+              maxWidth: '92vw',
+              height: { xs: '90vh', md: '1129px' },
               maxHeight: '90vh',
               overflowY: 'auto',
-              borderRadius: 3,
-              bgcolor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: '15px',
+              bgcolor: '#f5f6f6',
               p: { xs: 3, md: 4 },
               position: 'relative',
               boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for Chrome/Safari/Opera
+              scrollbarWidth: 'none', // Hide scrollbar for Firefox
+              msOverflowStyle: 'none', // Hide scrollbar for IE/Edge
             }}
           >
             {/* Close button */}
@@ -262,15 +276,26 @@ export default function LandingPage() {
             <Box sx={{ width: '100%', overflow: 'visible' }}>
               <AuthTabs showLogin={false} onToggleForm={() => {}} />
             </Box>
-
-            {/* Social Buttons */}
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-              <AuthSocialButtons />
-            </Box>
           </Paper>
         </Modal>
+          </Grid>
+        </Grid>
       </Box>
 
+      {/* Rest of the page with background */}
+      <Box
+        sx={{
+          width: '100%',
+          
+          position: 'relative',
+          background: '#101010',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          px: { xs: 2, md: 3 },
+          
+      }}
+    >
       {/* BOTTOM GROUP: move images into a separate, centered box anchored to bottom on md+ */}
       {/* Separate images box — anchored bottom-center on md+, centered and stacked on small screens */}
       <Box
@@ -280,7 +305,7 @@ export default function LandingPage() {
           justifyContent: 'center',
           px: { xs: 2, md: 0 },
           pointerEvents: 'none',
-          mt: { sx: 0, sm: 0, md: 20 },
+          mt: { xs: 2, sm: 2, md: 10 },
           mb: 4,
         }}
       >
@@ -300,7 +325,7 @@ export default function LandingPage() {
               elevation={0}
               sx={{
                 width: '100%',
-                height: { xs: 260, sm: 280, md: 280 }, // consistent height
+                height: { xs: 180, sm: 200, md: 200 },
                 borderRadius: 2,
                 overflow: 'hidden',
                 display: 'flex',
@@ -316,7 +341,7 @@ export default function LandingPage() {
               {/* <Typography variant="overline" sx={{ color: '#000000', letterSpacing: 1, fontWeight: 700 }}>
                 {f.id}
               </Typography> */}
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', md: '1.5rem' }, color: '#000000', fontWeight: 700, mt: 0.5 }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.8rem', md: '1.1rem' }, color: '#000000', fontWeight: 700, mt: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {f.id}. {f.title}
               </Typography>
               <Box sx={{ mt: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -324,7 +349,7 @@ export default function LandingPage() {
                   sx={{
                     position: 'relative',
                     width: '100%',
-                    height: { xs: 140, sm: 150, md: 160 },
+                    height: { xs: 95, sm: 105, md: 110 },
                     maxWidth: 320,
                     mx: 'auto',
                   }}
@@ -345,5 +370,6 @@ export default function LandingPage() {
         </Box>
       </Box>
     </Box>
+    </>
   );
 }
