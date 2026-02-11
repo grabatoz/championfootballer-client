@@ -34,7 +34,8 @@ import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
-import StarKeeperImg from '@/Components/images/brown.svg';
+import Raisingstart from '@/Components/images/brown.svg';
+import StarKeeperImg from '@/Components/images/startkeeper.png';
 import PlayerCard from '@/Components/PlayerCardd';
 import CloseButton from '@/Components/CloseButton';
 // import { achievementsAPI } from '@/lib/api';
@@ -816,7 +817,7 @@ const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): 
     id: 'rising_xp',
     title: 'Rising Star',
     description: 'Your total XP across all matches and leagues.',
-    image: StarKeeperImg,
+    image: Raisingstart,
     color: BLUE_HEX,
     count: 0,
     xp: Math.max(0, totalProfileXP),
@@ -832,7 +833,7 @@ const BADGE_META: Record<string, { title: string; description: string; image: St
   rising_xp: {
     title: 'Rising Star',
     description: 'Your total XP across all matches and leagues.',
-    image: StarKeeperImg,
+    image: Raisingstart,
     color: BLUE_HEX,
   },
   hat_trick_3_matches: {

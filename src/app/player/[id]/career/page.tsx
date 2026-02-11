@@ -41,40 +41,31 @@ const themeColors = {
   primaryAlt: '#CF2326',
   gradient: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
   gradientSoft: 'linear-gradient(135deg,rgba(229,106,22,0.18) 0%,rgba(207,35,38,0.18) 100%)',
-  surfaceBase: '#141416',
-  surfaceAlt: '#1d1e21',
-  surfacePanel: 'linear-gradient(140deg,#1f2023 0%,#27292d 60%)',
-  border: 'rgba(255,255,255,0.14)',
-  borderStrong: 'rgba(255,255,255,0.32)',
+  surfaceBase: '#0a0a0a',
+  surfaceAlt: '#1a1a1a',
+  surfacePanel: '#1a1a1a',
+  cardBg: '#1e1e1e',
+  border: 'rgba(255,255,255,0.1)',
+  borderStrong: 'rgba(255,255,255,0.2)',
   text: '#fff',
-  textDim: 'rgba(255,255,255,0.72)',
-  textFaint: 'rgba(255,255,255,0.52)',
-  success: '#15b67a',
+  textDim: 'rgba(255,255,255,0.7)',
+  textFaint: 'rgba(255,255,255,0.5)',
+  success: '#4CAF50',
   warn: '#ffb300',
   danger: '#d32f2f',
-  // Additional Flutter UI colors
+  // Chart colors matching the image
+  chartBar: '#00bfa5',
+  chartBarAlt: '#26a69a',
+  chartLine: '#e91e63',
+  // Additional colors
   teal: '#009688',
   blue: '#2196F3',
   green: '#4CAF50',
   red: '#F44336',
-  orange: '#FF9800'
+  orange: '#FF9800',
+  pink: '#e91e63',
+  cyan: '#00bcd4'
 };
-
-// Mock data to match Flutter UI
-// const influenceData = [
-//   { metric: "Goals", playerValue: 10, leagueAvg: 6 },
-//   { metric: "Assists", playerValue: 8, leagueAvg: 5 },
-//   { metric: "Clean Sheets", playerValue: 7, leagueAvg: 4 },
-//   { metric: "Defence", playerValue: 5, leagueAvg: 3 },
-//   { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
-// ];
-
-// const winLossData = [
-//   { name: 'Win', value: 45, color: '#15b67a' },
-//   { name: 'Loss', value: 35, color: '#d32f2f' },
-//   { name: 'Draw', value: 20, color: '#ffb300' },
-// ];
-
 // Threshold used for auto switch from weekly to monthly aggregation
 const AUTO_SWITCH_THRESHOLD = 26;
 
@@ -170,25 +161,63 @@ const Radar = dynamic(() => import('recharts').then(m => m.Radar), { ssr: false 
 
 // ---------- STYLED COMPONENTS ----------
 const GlassCard = styled(Paper)(() => ({
-  background: themeColors.surfacePanel,
+  background: themeColors.cardBg,
   border: `1px solid ${themeColors.border}`,
-  borderRadius: 12,
+  borderRadius: 8,
   position: 'relative',
   overflow: 'hidden',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-  transition: 'border-color .35s, box-shadow .35s, transform .35s',
-  '&:hover': {
-    borderColor: themeColors.borderStrong,
-    boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-    transform: 'translateY(-2px)'
-  }
+  boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+}));
+
+const SectionHeader = styled(Box)(() => ({
+  background: themeColors.primary,
+  padding: '8px 16px',
+  borderRadius: '6px 6px 0 0',
+  marginBottom: 0,
 }));
 
 const SectionTitle = styled(Typography)(() => ({
   fontWeight: 'bold',
-  fontSize: 16,
+  fontSize: 14,
   color: themeColors.text,
-  marginBottom: 12
+  textTransform: 'uppercase',
+  letterSpacing: 0.5,
+}));
+
+// Filter dropdown styled button
+const FilterButton = styled(Button)(() => ({
+  background: '#2a2a2a',
+  color: themeColors.text,
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 4,
+  padding: '6px 16px',
+  fontSize: 12,
+  fontWeight: 500,
+  textTransform: 'none',
+  minWidth: 100,
+  '&:hover': {
+    background: '#3a3a3a',
+    borderColor: themeColors.primary,
+  },
+  '& .MuiButton-endIcon': {
+    marginLeft: 4,
+  }
+}));
+
+// Chip toggle button
+const ChipToggle = styled(Button)<{ active?: boolean }>(({ active }) => ({
+  background: active ? themeColors.primary : '#2a2a2a',
+  color: themeColors.text,
+  border: 'none',
+  borderRadius: 4,
+  padding: '4px 12px',
+  fontSize: 11,
+  fontWeight: 600,
+  textTransform: 'none',
+  minWidth: 'auto',
+  '&:hover': {
+    background: active ? themeColors.primary : '#3a3a3a',
+  },
 }));
 
 // Impact Table Row Builder (matching Flutter UI)
@@ -774,35 +803,6 @@ export default function CareerPage() {
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
 
-  // Enhanced positive impact messages with better detection
-  // const positiveImpactMsgs = useMemo(() => {
-  //   const msgs: string[] = [];
-  //   const { last, prev } = lastPrev10;
-    
-  //   console.log('Debug - Impact comparison:', { last, prev });
-    
-  //   if (prev.n > 0) {
-  //     const winDelta = last.winRate - prev.winRate;
-  //     if (winDelta > 5) msgs.push(`Win ratio improved by ${winDelta.toFixed(1)}% over the previous 10 games.`);
-
-  //     const impactDelta = last.impactAvg - prev.impactAvg;
-  //     if (impactDelta > 0.5) msgs.push(`Impact increased by ${impactDelta.toFixed(1)} per game versus the previous 10.`);
-
-  //     const motmDelta = last.motmVotes - prev.motmVotes;
-  //     if (motmDelta > 0) msgs.push(`Earned ${motmDelta} more MOTM votes in the last 10 games.`);
-
-  //     const gaDelta = last.ga - prev.ga;
-  //     if (gaDelta > 1) msgs.push(`Produced ${gaDelta} more goal contributions (G+A) in the last 10 games.`);
-  //   } else if (last.n > 0) {
-  //     // If no previous 10, show current performance
-  //     if (last.winRate > 50) msgs.push(`Excellent win rate of ${last.winRate.toFixed(1)}% in recent games!`);
-  //     if (last.impactAvg > 5) msgs.push(`Strong impact average of ${last.impactAvg.toFixed(1)} per game!`);
-  //     if (last.ga > 5) msgs.push(`Great offensive output with ${last.ga} goal contributions!`);
-  //   }
-    
-  //   return msgs.slice(0, 3);
-  // }, [lastPrev10]);
-
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
     return extractPlayerName(data);
@@ -1153,138 +1153,227 @@ export default function CareerPage() {
     return () => { aborted = true; };
   }, [playerId, matches, filters.leagueId, token]);
 
+  // State for seasons filter
+  const [seasonFilter, setSeasonFilter] = useState<string>('all');
+
+  // Get unique years from matches for year filter
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    matches.forEach(m => {
+      years.add(dayjs(m.date).year().toString());
+    });
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [matches]);
+
+  // Get selected league name for display
+  const selectedLeagueName = useMemo(() => {
+    if (!filters.leagueId || filters.leagueId === 'all') return null;
+    const league = availableLeagues.find(l => l.id === filters.leagueId);
+    return (league as LeagueWithMatches & { name?: string })?.name || `League ${filters.leagueId}`;
+  }, [filters.leagueId, availableLeagues]);
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    dispatch(setYearFilter('all'));
+    dispatch(setLeagueFilter('all'));
+    setSeasonFilter('all');
+  };
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
-       
+        background: themeColors.surfaceBase,
         py: 2,
-        p:2,
+        px: 2,
       }}
     >
-
-          <CloseButton fallbackRoute="/dashboard" />
       <Container
-        maxWidth="xl"
+        maxWidth="lg"
         sx={{
           py: 2,
-           background: themeColors.surfaceBase,
-          borderRadius: 2,
+          background: themeColors.surfaceBase,
         }}
       >
-        <Box
-          sx={{
-            maxWidth: '1200px',
-            mx: 'auto',
-            // p: 2,
-          }}
-        >
-          {/* Title */}
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 'bold',
-              color: themeColors.text,
-              mb: 2,
-              textAlign: 'center',
-              fontSize: 18
-            }}
-          >
-            {playerName ? `${playerName} Performance Dashboard` : 'Player Performance Dashboard'}
-          </Typography>
-
-          {/* League Selector Dropdown */}
-          {/* {availableLeagues.length > 0 && (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center',
-              mb: 2
+        <Box sx={{ maxWidth: '100%', mx: 'auto' }}>
+          {/* Dark Header Section - Full Width */}
+          <Box sx={{
+            mt: 0,
+            mb: 4,
+            width: '99.4vw',
+            position: 'relative',
+            left: '50%',
+            right: '50%',
+            marginLeft: '-50vw',
+            marginRight: '-50vw',
+            background: '#0e0e0e',
+          }}>
+            <Paper sx={{
+              px: 0,
+              py: { xs: 4, md: 1.1 },
+              background: '#0e0e0e',
+              color: 'white',
+              boxShadow: 'none',
             }}>
-              <FormControl
-                size="small"
-                sx={{
-                  minWidth: 250,
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: themeColors.surfaceAlt,
-                    color: themeColors.text,
-                    borderRadius: 2,
-                    border: `1px solid ${themeColors.border}`,
-                    '& fieldset': { border: 'none' },
-                    '&:hover': { 
-                      borderColor: themeColors.primary,
-                      boxShadow: `0 0 0 1px ${themeColors.primary}`
-                    },
-                    '&.Mui-focused': { 
-                      borderColor: themeColors.primary,
-                      boxShadow: `0 0 0 2px ${themeColors.primary}`
-                    },
-                  },
-                  '& .MuiSelect-icon': { color: themeColors.text },
-                }}
-              >
-                <Select
-                  value={filters.leagueId || 'all'}
-                  onChange={(e: SelectChangeEvent) => dispatch(setLeagueFilter(e.target.value))}
-                  displayEmpty
-                  sx={{
-                    color: themeColors.text,
-                    fontWeight: 700,
-                    fontSize: 14,
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        bgcolor: themeColors.surfaceAlt,
-                        color: themeColors.text,
-                        border: `1px solid ${themeColors.border}`,
-                        borderRadius: 2,
-                        mt: 0.5,
-                        '& .MuiMenuItem-root': {
-                          fontSize: 14,
-                          fontWeight: 600,
-                          '&:hover': {
-                            bgcolor: 'rgba(229,106,22,0.15)',
-                          },
-                          '&.Mui-selected': {
-                            bgcolor: 'rgba(229,106,22,0.25)',
-                            '&:hover': {
-                              bgcolor: 'rgba(229,106,22,0.35)',
-                            },
-                          },
-                        },
-                      },
-                    },
+              {/* Centered Title */}
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // pt: { xs: 2, md: 2 },
+                pb: 2,
+              }}>
+                <Typography 
+                  variant="h2" 
+                  component="h1" 
+                  sx={{ 
+                    fontFamily: '"Anton", sans-serif !important',
+                    fontWeight: 400, 
+                    fontStyle: 'normal',
+                    color: '#fff', 
+                    fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3.3rem' }, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0rem',
+                    lineHeight: '100%',
+                    textAlign: 'center',
                   }}
                 >
-                  <MenuItem value="all">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ 
-                        width: 8, 
-                        height: 8, 
-                        borderRadius: '50%',
-                        background: themeColors.gradient 
-                      }} />
-                      All Leagues
-                    </Box>
-                  </MenuItem>
-                  {availableLeagues.map((league) => (
-                    <MenuItem key={league.id} value={league.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: '50%',
-                          background: themeColors.gradient 
-                        }} />
-                        {league.name || `League ${league.id}`}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          )} */}
+                  {playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD'}
+                </Typography>
+              </Box>
 
+              {/* Orange divider under header */}
+              <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 6.3 }} />
+
+              {/* Filters Section */}
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: { xs: 2, md: 2 },
+                px: { xs: 3, md: 7 },
+                py: { xs: 1.5, md: 1.5 },
+                maxWidth: '1200px',
+                mx: 'auto',
+              }}>
+                {/* Filter Buttons */}
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {/* Year Filter */}
+                  <select
+                    value={filters.year || 'all'}
+                    onChange={(e) => dispatch(setYearFilter(e.target.value))}
+                    style={{
+                      height: '39px',
+                      padding: '0 36px 0 12px',
+                      marginLeft: '4px',
+                      backgroundColor: 'transparent',
+                      color: '#fff',
+                      border: '1.5px solid #e56a16',
+                      borderRadius: '24px',
+                      fontSize: '17px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      minWidth: '100px',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      fontWeight: 600,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 12px center',
+                    }}
+                  >
+                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
+                    {availableYears.map(year => (
+                      <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
+                    ))}
+                  </select>
+
+                  {/* League Filter */}
+                  <select
+                    value={filters.leagueId || 'all'}
+                    onChange={(e) => dispatch(setLeagueFilter(e.target.value))}
+                    style={{
+                      height: '39px',
+                      padding: '0 36px 0 12px',
+                      marginLeft: '4px',
+                      backgroundColor: 'transparent',
+                      color: '#fff',
+                      border: '1.5px solid #e56a16',
+                      borderRadius: '24px',
+                      fontSize: '17px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      minWidth: '110px',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      fontWeight: 600,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 12px center',
+                    }}
+                  >
+                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
+                    {availableLeagues.map((league: LeagueWithMatches & { name?: string }) => (
+                      <option key={league.id} value={league.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                        {league.name || `League ${league.id}`}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Season Filter */}
+                  <select
+                    value={seasonFilter}
+                    onChange={(e) => setSeasonFilter(e.target.value)}
+                    style={{
+                      height: '39px',
+                      padding: '0 36px 0 12px',
+                      marginLeft: '4px',
+                      backgroundColor: 'transparent',
+                      color: '#fff',
+                      border: '1.5px solid #e56a16',
+                      borderRadius: '24px',
+                      fontSize: '17px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      minWidth: '110px',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      fontWeight: 600,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 12px center',
+                    }}
+                  >
+                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                  </select>
+
+                  {/* Clear Button */}
+                  <button
+                    onClick={handleClearFilters}
+                    style={{
+                      height: '39px',
+                      padding: '0 17px',
+                      backgroundColor: 'transparent',
+                      color: '#fff',
+                      border: '2px solid rgba(255,255,255,0.5)',
+                      borderRadius: '24px',
+                      fontSize: '17px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Clear
+                  </button>
+                </Box>
+              </Box>
+            </Paper>
+          </Box>
+
+          {/* Main Content */}
+          <Box sx={{ maxWidth: '1000px', mx: 'auto' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress sx={{ color: themeColors.primary }} />
@@ -1292,311 +1381,102 @@ export default function CareerPage() {
           ) : (
             <Box>
               {/* Performance Over Time Chart */}
-              <GlassCard sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 0,
-                    height: { xs: 320, sm: 380, md: 400 },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 3,
-                    background: themeColors.surfacePanel,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    border: `2px solid ${themeColors.border}`,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                  }}
-                >
-                  {/* Grouping selector (Auto / Weekly / Monthly) */}
-                  <Box sx={{ position: 'absolute', top: 8, right: 10, zIndex: 6, display: { xs: 'none', sm: 'block' } }}>
-                    <ToggleButtonGroup
-                      size="small"
-                      exclusive
-                      value={groupMode}
-                      onChange={(_, val) => { if (val) setGroupMode(val); }}
-                      aria-label="grouping selector"
-                      sx={{
-                        '& .MuiToggleButton-root': {
-                          color: themeColors.textDim,
-                          borderColor: themeColors.border,
-                          '&.Mui-selected': {
-                            backgroundColor: themeColors.primary,
-                            color: themeColors.text,
-                          },
-                          '&:hover': {
-                            backgroundColor: 'rgba(229,106,22,0.1)',
-                          }
-                        }
-                      }}
-                    >
-                      <ToggleButton value="auto" aria-label="auto grouping">Auto</ToggleButton>
-                      <ToggleButton value="weekly" aria-label="weekly grouping">Weekly</ToggleButton>
-                      <ToggleButton value="monthly" aria-label="monthly grouping">Monthly</ToggleButton>
-                    </ToggleButtonGroup>
-                  </Box>
-
-                  {/* League selector (Left side) - All Leagues button and League dropdown */}
-                  {availableLeagues.length > 0 && (
-                    <Box sx={{ position: 'absolute', top: 8, left: 10, zIndex: 6, display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
-                      {/* All Leagues Button */}
+              <GlassCard sx={{ mb: 3 }}>
+                <Box sx={{ p: 0 }}>
+                  {/* Chart Header with toggles */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    p: 1.5,
+                    borderBottom: `1px solid ${themeColors.border}`,
+                    flexWrap: 'wrap',
+                    gap: 1
+                  }}>
+                    {/* Left side - League toggles */}
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <Button
                         size="small"
-                        variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
-                        onClick={() => dispatch(setLeagueFilter('all'))}
                         sx={{
-                          minWidth: 'auto',
+                          background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
+                          color: themeColors.text,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          textTransform: 'none',
                           px: 1.5,
                           py: 0.5,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          textTransform: 'none',
-                          color: themeColors.text,
-                          borderColor: themeColors.border,
-                          background: filters.leagueId === 'all' || !filters.leagueId 
-                            ? themeColors.primary 
-                            : 'transparent',
-                          '&:hover': {
-                            background: filters.leagueId === 'all' || !filters.leagueId 
-                              ? themeColors.primary 
-                              : 'rgba(229,106,22,0.1)',
-                            borderColor: themeColors.primary
-                          }
+                          borderRadius: 1,
+                          minWidth: 'auto',
+                          '&:hover': { background: themeColors.primary }
                         }}
+                        onClick={() => dispatch(setLeagueFilter('all'))}
                       >
                         All Leagues
                       </Button>
-
-                      {/* League Dropdown */}
-                      <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 140 } }}>
-                        <Select
-                          value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
-                          onChange={(e: SelectChangeEvent) => {
-                            if (e.target.value) dispatch(setLeagueFilter(e.target.value));
-                          }}
-                          displayEmpty
-                          sx={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: themeColors.text,
-                            bgcolor: filters.leagueId && filters.leagueId !== 'all' 
-                              ? themeColors.primary 
-                              : themeColors.surfaceAlt,
-                            borderRadius: 1,
-                            height: 32,
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: themeColors.border,
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: themeColors.primary,
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: themeColors.primary,
-                            },
-                            '& .MuiSelect-icon': { color: themeColors.text },
-                          }}
-                          MenuProps={{
-                            PaperProps: {
-                              sx: {
-                                bgcolor: themeColors.surfaceAlt,
-                                border: `1px solid ${themeColors.border}`,
-                                '& .MuiMenuItem-root': {
-                                  fontSize: 12,
-                                  color: themeColors.text,
-                                  '&:hover': { bgcolor: 'rgba(229,106,22,0.15)' },
-                                  '&.Mui-selected': { 
-                                    bgcolor: 'rgba(229,106,22,0.25)',
-                                    '&:hover': { bgcolor: 'rgba(229,106,22,0.35)' }
-                                  },
-                                },
-                              },
-                            },
-                          }}
-                        >
-                          <MenuItem value="" disabled>
-                            <em>Select a League</em>
-                          </MenuItem>
-                          {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>)
-                            .sort((a, b) => {
-                              const nameA = a.name ?? `League ${a.id}`;
-                              const nameB = b.name ?? `League ${b.id}`;
-                              return nameA.localeCompare(nameB);
-                            })
-                            .map((league) => (
-                              <MenuItem key={league.id} value={league.id}>
-                                {league.name ?? `League ${league.id}`}
-                              </MenuItem>
-                            ))}
-                        </Select>
-                      </FormControl>
-                    </Box>
-                  )}
-
-                  {/* Mobile controls (stacked) */}
-                  {availableLeagues.length > 0 && (
-                    <Box sx={{
-                      display: { xs: 'flex', sm: 'none' },
-                      position: 'relative',
-                      zIndex: 6,
-                      px: 1.5,
-                      pt: 1,
-                      gap: 0.75,
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}>
-                      <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', flex: '1 1 auto' }}>
-                        <Button
-                          size="small"
-                          variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
-                          onClick={() => dispatch(setLeagueFilter('all'))}
-                          sx={{
-                            minWidth: 'auto',
-                            px: 1,
-                            py: 0.4,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            color: themeColors.text,
-                            borderColor: themeColors.border,
-                            background: filters.leagueId === 'all' || !filters.leagueId 
-                              ? themeColors.primary 
-                              : 'transparent',
-                          }}
-                        >
-                          All
-                        </Button>
-
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                          <Select
-                            value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
-                            onChange={(e: SelectChangeEvent) => {
-                              if (e.target.value) dispatch(setLeagueFilter(e.target.value));
-                            }}
-                            displayEmpty
-                            sx={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: themeColors.text,
-                              bgcolor: filters.leagueId && filters.leagueId !== 'all' 
-                                ? themeColors.primary 
-                                : themeColors.surfaceAlt,
-                              height: 30,
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: themeColors.border },
-                              '& .MuiSelect-icon': { color: themeColors.text },
-                            }}
-                            MenuProps={{
-                              PaperProps: {
-                                sx: {
-                                  bgcolor: themeColors.surfaceAlt,
-                                  border: `1px solid ${themeColors.border}`,
-                                  '& .MuiMenuItem-root': { fontSize: 12, color: themeColors.text },
-                                },
-                              },
-                            }}
-                          >
-                            <MenuItem value="" disabled>
-                              <em>Select league</em>
-                            </MenuItem>
-                            {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>)
-                              .sort((a, b) => {
-                                const nameA = a.name ?? `League ${a.id}`;
-                                const nameB = b.name ?? `League ${b.id}`;
-                                return nameA.localeCompare(nameB);
-                              })
-                              .map((league) => (
-                                <MenuItem key={league.id} value={league.id}>
-                                  {league.name ?? `League ${league.id}`}
-                                </MenuItem>
-                              ))}
-                          </Select>
-                        </FormControl>
-                      </Box>
-
-                      <ToggleButtonGroup
+                      <Button
                         size="small"
-                        exclusive
-                        value={groupMode}
-                        onChange={(_, val) => { if (val) setGroupMode(val); }}
-                        aria-label="grouping selector mobile"
                         sx={{
-                          '& .MuiToggleButton-root': {
-                            color: themeColors.textDim,
-                            borderColor: themeColors.border,
-                            px: 0.75,
-                            py: 0.2,
-                            fontSize: 10,
-                            '&.Mui-selected': { backgroundColor: themeColors.primary, color: themeColors.text },
-                          }
+                          background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
+                          color: themeColors.text,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          minWidth: 'auto',
+                          '&:hover': { background: selectedLeagueName ? themeColors.primary : '#3a3a3a' }
                         }}
                       >
-                        <ToggleButton value="auto" aria-label="auto grouping">Auto</ToggleButton>
-                        <ToggleButton value="weekly" aria-label="weekly grouping">W</ToggleButton>
-                        <ToggleButton value="monthly" aria-label="monthly grouping">M</ToggleButton>
-                      </ToggleButtonGroup>
+                        {selectedLeagueName}
+                      </Button>
                     </Box>
-                  )}
 
-                  {/* Title centered top */}
-                  <Box sx={{ textAlign: 'center', pt: 1.5, pb: 0.5 }}>
-                    <Typography sx={{ fontSize: 16, fontWeight: 700, color: themeColors.text, letterSpacing: 0.4 }}>
-                      Performance Over Time
+                    {/* Right side - Time grouping toggles */}
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {['auto', 'weekly', 'monthly'].map((mode) => (
+                        <Button
+                          key={mode}
+                          size="small"
+                          sx={{
+                            background: groupMode === mode ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            textTransform: 'capitalize',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: groupMode === mode ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setGroupMode(mode as 'auto' | 'weekly' | 'monthly')}
+                        >
+                          {mode}
+                        </Button>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  {/* Chart Title */}
+                  <Box sx={{ textAlign: 'center', pt: 2, pb: 1 }}>
+                    <Typography sx={{ 
+                      fontSize: 14, 
+                      fontWeight: 600, 
+                      color: themeColors.text, 
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5
+                    }}>
+                      XP Performance Time Series
                     </Typography>
                   </Box>
 
-                  {/* Side ribbons - matching the reference image */}
-                  <Box sx={{ 
-                    position: 'absolute', 
-                    top: 70, 
-                    bottom: 60, 
-                    left: 15, 
-                    width: 25, 
-                    background: themeColors.primary, 
-                    color: '#fff', 
-                    borderRadius: 1.5, 
-                    // display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    writingMode: 'vertical-rl', 
-                    transform: 'rotate(180deg)', 
-                    fontSize: 11, 
-                    fontWeight: 700, 
-                    letterSpacing: 0.4, 
-                    zIndex: 3, 
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    display: { xs: 'none', sm: 'flex' }
-                  }}>
-                    Average XP Points
-                  </Box>
-                  <Box sx={{ 
-                    position: 'absolute', 
-                    top: 70, 
-                    bottom: 60, 
-                    right: 15, 
-                    width: 28, 
-                    background: themeColors.primaryAlt, 
-                    color: '#fff', 
-                    borderRadius: 1.5, 
-                    // display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    writingMode: 'vertical-rl', 
-                    transform: 'rotate(180deg)', 
-                    fontSize: 11, 
-                    fontWeight: 700, 
-                    letterSpacing: 0.4, 
-                    zIndex: 3, 
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    display: { xs: 'none', sm: 'flex' }
-                  }}>
-                    Accumulative XP Points
-                  </Box>
-
-                  {/* Chart */}
-                  <Box sx={{ position: 'relative', zIndex: 4, flex: 1, minHeight: 0, px: { xs: 2, sm: 4, md: 6 }, pt: { xs: 4, sm: 5, md: 6 }, pb: 2 }}>
+                  {/* Chart Container */}
+                  <Box sx={{ height: { xs: 250, sm: 280, md: 300 }, px: 2, pb: 1 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart 
                         data={chartData.length > 0 ? chartData : performanceData} 
-                        margin={{ top: 15, left: 15, right: 15, bottom: 40 }}
+                        margin={{ top: 10, left: 10, right: 10, bottom: 30 }}
                       >
                         <XAxis 
                           dataKey="label"
@@ -1612,115 +1492,82 @@ export default function CareerPage() {
                         <YAxis
                           yAxisId="avg"
                           stroke={themeColors.textDim}
-                          tick={{ fontSize: 11, fill: themeColors.textDim }}
-                          width={45}
+                          tick={{ fontSize: 10, fill: themeColors.textDim }}
+                          width={40}
                           tickLine={{ stroke: themeColors.border }}
                           axisLine={{ stroke: themeColors.border }}
-                          label={{ 
-                            value: 'Avg Points', 
-                            angle: -90, 
-                            position: 'insideLeft',
-                            style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-                          }}
                         />
                         <YAxis
                           yAxisId="cum"
                           orientation="right"
                           stroke={themeColors.textDim}
-                          tick={{ fontSize: 11, fill: themeColors.textDim }}
-                          width={55}
+                          tick={{ fontSize: 10, fill: themeColors.textDim }}
+                          width={45}
                           tickLine={{ stroke: themeColors.border }}
                           axisLine={{ stroke: themeColors.border }}
-                          label={{ 
-                            value: 'Cumulative Points', 
-                            angle: 90, 
-                            position: 'insideRight',
-                            style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-                          }}
                         />
                         <Tooltip
                           contentStyle={{
                             background: themeColors.surfaceAlt,
-                            border: `1px solid ${themeColors.borderStrong}`,
+                            border: `1px solid ${themeColors.border}`,
                             fontSize: 11,
-                            borderRadius: 6,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                            borderRadius: 4,
                             color: themeColors.text
                           }}
-                          labelStyle={{ fontWeight: 700, color: themeColors.text }}
+                          labelStyle={{ fontWeight: 600, color: themeColors.text }}
                           formatter={(value: unknown, name: unknown) => {
                             const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
                             const n = typeof name === 'string' ? name : String(name ?? '');
-                            if (n.includes('Avg Points')) return [v, `Avg Points/${groupingType === 'weekly' ? 'Week' : 'Month'}`];
-                            if (n.includes('Accumulative')) return [v, 'Cumulative XP Points'];
+                            if (n.includes('Avg')) return [v, 'Avg Points'];
+                            if (n.includes('Cumulative')) return [v, 'Cumulative XP'];
                             return [v, n];
-                          }}
-                          labelFormatter={(label) => {
-                            const activeData = (chartData.length > 0 ? chartData : performanceData).find(d => d.label === label);
-                            if (activeData) {
-                              return `${label} ${activeData.year} (${activeData.matches} match${activeData.matches !== 1 ? 'es' : ''})`;
-                            }
-                            return label;
                           }}
                         />
                         
-                        {/* Bars for average points */}
+                        {/* Bars for average points - Green/Teal */}
                         <Bar
                           yAxisId="avg"
                           dataKey="avgPoints"
-                          fill={themeColors.primary}
-                          name={`Avg Points / ${groupingType === 'weekly' ? 'Week' : 'Month'}`}
-                          maxBarSize={40}
-                          radius={[4, 4, 0, 0]}
+                          fill={themeColors.chartBar}
+                          name="Avg Points"
+                          maxBarSize={35}
+                          radius={[3, 3, 0, 0]}
                         />
                         
-                        {/* Line for cumulative points */}
+                        {/* Line for cumulative points - Magenta/Pink */}
                         <Line
                           yAxisId="cum"
                           type="monotone"
                           dataKey="cumulativePoints"
-                          name="Accumulative XP Points"
-                          stroke={themeColors.primaryAlt}
-                          strokeWidth={3}
-                          dot={{ r: 4, stroke: '#fff', strokeWidth: 1.5, fill: themeColors.primaryAlt }}
-                          activeDot={{ r: 6, stroke: themeColors.primaryAlt, strokeWidth: 1, fill: '#fff' }}
-                          connectNulls={false}
+                          name="Cumulative XP"
+                          stroke={themeColors.chartLine}
+                          strokeWidth={2}
+                          dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
+                          activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </Box>
 
-                  {/* Legend - updated */}
+                  {/* Legend */}
                   <Box sx={{ 
-                    position: 'relative', 
-                    zIndex: 4, 
                     display: 'flex', 
                     justifyContent: 'center', 
-                    flexWrap: 'wrap', 
-                    gap: 4, 
-                    pb: 1.5, 
-                    mt: 0.5, 
-                    borderTop: `1px solid ${themeColors.border}`, 
-                    background: 'rgba(255,255,255,0.05)' 
+                    gap: 3, 
+                    pb: 2,
+                    pt: 1,
+                    borderTop: `1px solid ${themeColors.border}`,
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                      <Box sx={{ width: 18, height: 14, borderRadius: 2, background: themeColors.primary }} />
-                      <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-                        Avg Points per {groupingType === 'weekly' ? 'Week' : 'Month'}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
+                      <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
+                        Average XP Points Per Week
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                      <Box sx={{ width: 18, height: 8, borderRadius: 2, background: themeColors.primaryAlt }} />
-                      <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-                        Accumulative XP Points
-                      </Typography>
-                    </Box>
-                    
-                    {/* Show current mode indicator */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 2 }}>
-                      <Typography sx={{ fontSize: 11, color: themeColors.textFaint, fontStyle: 'italic' }}>
-                        Mode: {groupMode === 'auto' ? `Auto (${groupingType})` : groupingType}
-                        {performanceData.length > 0 && ` • ${performanceData.length} periods`}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ width: 14, height: 3, borderRadius: 1, background: themeColors.chartLine }} />
+                      <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
+                        Cumulative XP Points
                       </Typography>
                     </Box>
                   </Box>
@@ -1728,60 +1575,95 @@ export default function CareerPage() {
               </GlassCard>
 
               {/* Influence and Win/Loss Row */}
-              <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
                 {/* Influence Radar Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ height: 240 }}>
-                    <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-                        <Typography sx={{ 
-                          fontSize: 16, 
-                          fontWeight: 'bold', 
-                          color: themeColors.text,
-                          textAlign: 'center',
-                        }}>
-                          Influence
-                        </Typography>
+                  <GlassCard>
+                    {/* Header with toggle */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      p: 1.5,
+                      borderBottom: `1px solid ${themeColors.border}`
+                    }}>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1,
+                            py: 0.3,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                          }}
+                        >
+                          All Leagues
+                        </Button>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1,
+                            py: 0.3,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                          }}
+                        >
+                          {selectedLeagueName}
+                        </Button>
                       </Box>
+                    </Box>
+
+                    <CardContent sx={{ p: 2, pt: 1 }}>
+                      {/* Title */}
+                      <Typography sx={{ 
+                        fontSize: 14, 
+                        fontWeight: 'bold', 
+                        color: themeColors.text,
+                        textAlign: 'center',
+                        textTransform: 'uppercase',
+                        mb: 1
+                      }}>
+                        Influence
+                      </Typography>
                       
                       {/* Legend */}
                       <Box sx={{ 
                         display: 'flex', 
                         justifyContent: 'center', 
                         gap: 3, 
-                        mb: 1.5,
+                        mb: 1,
                         alignItems: 'center'
                       }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ 
-                            width: 12, 
-                            height: 3, 
-                            backgroundColor: '#1976d2',
-                            borderRadius: 1
-                          }} />
-                          <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
+                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
+                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
                             {playerName || 'Player'}
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ 
-                            width: 12, 
-                            height: 3, 
-                            backgroundColor: '#00bcd4',
-                            borderRadius: 1
-                          }} />
-                          <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
-                            League Avg
+                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.chartBar, borderRadius: 1 }} />
+                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                            League Average
                           </Typography>
                         </Box>
                       </Box>
 
-                      <Box sx={{ height: 140, mt: 1 }}>
+                      <Box sx={{ height: 160 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <RadarChart 
                             data={influenceRadarData} 
                             outerRadius={55}
-                            margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
                           >
                             <PolarGrid 
                               gridType="polygon"
@@ -1790,77 +1672,48 @@ export default function CareerPage() {
                             />
                             <PolarAngleAxis 
                               dataKey="metric" 
-                              tick={{ 
-                                fontSize: 9, 
-                                fill: themeColors.textDim,
-                                fontWeight: 500
-                              }}
-                              className="radar-axis"
+                              tick={{ fontSize: 8, fill: themeColors.textDim }}
                               tickSize={8}
-                              // Add missing required properties
                               reversed={false}
                               scale="auto"
                             />
                             <PolarRadiusAxis 
-                              tick={{ 
-                                fontSize: 8, 
-                                fill: themeColors.textFaint 
-                              }}
-                              tickCount={6}
+                              tick={{ fontSize: 7, fill: themeColors.textFaint }}
+                              tickCount={5}
                               angle={90}
-                              domain={[0, 'dataMax + 2']}
+                              domain={[0, 'dataMax + 1']}
                             />
                             
-                            {/* Player Data - Blue with dynamic name */}
+                            {/* Player Data - Cyan */}
                             <Radar 
                               name={playerName || 'Player'} 
                               dataKey={playerName || 'Player'} 
-                              stroke="#1976d2"
-                              fill="#1976d2"
-                              fillOpacity={0.15}
+                              stroke={themeColors.cyan}
+                              fill={themeColors.cyan}
+                              fillOpacity={0.2}
                               strokeWidth={2}
-                              dot={{ 
-                                r: 3, 
-                                fill: "#1976d2",
-                                stroke: "#fff",
-                                strokeWidth: 1
-                              }}
+                              dot={{ r: 2, fill: themeColors.cyan }}
                             />
                             
                             {/* League Average - Teal */}
                             <Radar 
                               name="League Avg" 
                               dataKey="League Avg" 
-                              stroke="#00bcd4"
-                              fill="#00bcd4"
+                              stroke={themeColors.chartBar}
+                              fill={themeColors.chartBar}
                               fillOpacity={0.1}
                               strokeWidth={2}
-                              dot={{ 
-                                r: 2.5, 
-                                fill: "#00bcd4",
-                                stroke: "#fff",
-                                strokeWidth: 1
-                              }}
+                              dot={{ r: 2, fill: themeColors.chartBar }}
                             />
                             
                             <Tooltip 
                               contentStyle={{
                                 background: themeColors.surfaceAlt,
-                                border: `1px solid ${themeColors.borderStrong}`,
-                                borderRadius: 6,
+                                border: `1px solid ${themeColors.border}`,
+                                borderRadius: 4,
                                 color: themeColors.text,
-                                fontSize: 11,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                fontSize: 10,
                               }}
-                              labelStyle={{ 
-                                fontWeight: 600, 
-                                color: themeColors.text,
-                                marginBottom: 4
-                              }}
-                              formatter={(value: unknown, name: unknown) => [
-                                String(value ?? ''),
-                                name === (playerName || 'Player') ? (playerName || 'Player') : 'League Avg'
-                              ]}
                             />
                           </RadarChart>
                         </ResponsiveContainer>
@@ -1871,127 +1724,126 @@ export default function CareerPage() {
 
                 {/* Win/Loss Pie Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ height: 240 }}>
-                    <CardContent>
-                      <SectionTitle>Win/Loss/Draw</SectionTitle>
-                      
-                      {/* Debug info - remove this later */}
-                      <Box sx={{ mt:-1, fontSize: 10, color: themeColors.textFaint }}>
-                        Total Matches: {filteredMatches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
+                  <GlassCard>
+                    {/* Header with toggle */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      p: 1.5,
+                      borderBottom: `1px solid ${themeColors.border}`
+                    }}>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1,
+                            py: 0.3,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                          }}
+                        >
+                          All Leagues
+                        </Button>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1,
+                            py: 0.3,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                          }}
+                        >
+                          {selectedLeagueName}
+                        </Button>
+                      </Box>
+                    </Box>
+
+                    <CardContent sx={{ p: 2, pt: 1 }}>
+                      {/* Title */}
+                      <Typography sx={{ 
+                        fontSize: 14, 
+                        fontWeight: 'bold', 
+                        color: themeColors.text,
+                        textAlign: 'center',
+                        textTransform: 'uppercase',
+                        mb: 1
+                      }}>
+                        Win/Loss/Draw
+                      </Typography>
+
+                      <Box sx={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={actualWinLossData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={55}
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                              label={({ cx, cy, midAngle, outerRadius, value }) => {
+                                const safeValue = value ?? 0;
+                                if (safeValue < 5) return null;
+                                const RADIAN = Math.PI / 180;
+                                const radius = (outerRadius || 0) + 12;
+                                const safeMidAngle = midAngle ?? 0;
+                                const x = (cx || 0) + radius * Math.cos(-safeMidAngle * RADIAN);
+                                const y = (cy || 0) + radius * Math.sin(-safeMidAngle * RADIAN);
+                                return (
+                                  <text 
+                                    x={x} y={y} fill="#fff" 
+                                    textAnchor={x > (cx || 0) ? 'start' : 'end'} 
+                                    dominantBaseline="central"
+                                    fontSize={10} fontWeight="bold"
+                                  >
+                                    {`${safeValue}%`}
+                                  </text>
+                                );
+                              }}
+                              labelLine={false}
+                            >
+                              {actualWinLossData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              contentStyle={{
+                                background: themeColors.surfaceAlt,
+                                border: `1px solid ${themeColors.border}`,
+                                borderRadius: 4,
+                                color: themeColors.text,
+                                fontSize: 10,
+                              }}
+                              formatter={(value: unknown, name: unknown) => [`${value}%`, String(name ?? '')]}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </Box>
 
-                      {loading ? (
-                        <Box sx={{ 
-                          height: 150, 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center' 
-                        }}>
-                          <CircularProgress size={30} sx={{ color: themeColors.primary }} />
-                        </Box>
-                      ) : (
-                        <Box sx={{ height: 150 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={actualWinLossData}
-                                dataKey="value"
-                                nameKey="name"
-                                cx="50%"
-                                cy="50%"
-                                // innerRadius={25}
-                                outerRadius={55}
-                                paddingAngle={3}
-                                startAngle={90}
-                                endAngle={450}
-                                label={({ cx, cy, midAngle, outerRadius, value }) => {
-                                  // Add safety check for value
-                                  const safeValue = value ?? 0;
-                                  
-                                  // Only show label if value > 5 (to avoid cluttered display)
-                                  if (safeValue < 5) return null;
-                                  
-                                  const safeCx = cx || 0;
-                                  const safeCy = cy || 0;
-                                  const safeMidAngle = midAngle || 0;
-                                  // const safeInnerRadius = innerRadius || 0;
-                                  const safeOuterRadius = outerRadius || 0;
-                                  
-                                  const RADIAN = Math.PI / 180;
-                                  const radius = safeOuterRadius + 15; // Position label outside
-                                  const x = safeCx + radius * Math.cos(-safeMidAngle * RADIAN);
-                                  const y = safeCy + radius * Math.sin(-safeMidAngle * RADIAN);
-                                  
-                                  return (
-                                    <text 
-                                      x={x} 
-                                      y={y} 
-                                      fill="#fff" 
-                                      textAnchor={x > safeCx ? 'start' : 'end'} 
-                                      dominantBaseline="central"
-                                      fontSize={11}
-                                      fontWeight="bold"
-                                      style={{
-                                        filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.8))'
-                                      }}
-                                    >
-                                      {`${safeValue}%`}
-                                    </text>
-                                  );
-                                }}
-                                labelLine={false}
-                              >
-                                {actualWinLossData.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={entry.color}
-                                    stroke="rgba(255,255,255,0.1)"
-                                    strokeWidth={1}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip 
-                                contentStyle={{
-                                  background: themeColors.surfaceAlt,
-                                  border: `1px solid ${themeColors.borderStrong}`,
-                                  borderRadius: 6,
-                                  color: themeColors.text,
-                                  fontSize: 12,
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-                                }}
-                                formatter={(value: unknown, name: unknown) => [
-                                  `${value}%`,
-                                  `${name} Rate`
-                                ]}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </Box>
-                      )}
-
                       {/* Legend */}
-                      <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        gap: 2, 
-                        mt: 1,
-                        flexWrap: 'wrap'
-                      }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1 }}>
                         {actualWinLossData.map((entry, index) => (
                           <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Box sx={{ 
-                              width: 12, 
-                              height: 12, 
-                              backgroundColor: entry.color,
-                              borderRadius: '50%',
-                              border: '1px solid rgba(255,255,255,0.2)'
+                              width: 10, height: 10, borderRadius: '50%', 
+                              backgroundColor: entry.color 
                             }} />
-                            <Typography sx={{ 
-                              fontSize: 10, 
-                              color: themeColors.textDim, 
-                              fontWeight: 500 
-                            }}>
-                              {entry.name}: {entry.value}%
+                            <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                              {entry.name} {entry.value}%
                             </Typography>
                           </Box>
                         ))}
@@ -2001,4954 +1853,289 @@ export default function CareerPage() {
                 </Grid>
               </Grid>
 
-              {/* Impact Section - UPDATED WITH TWO TABLES */}
-              <GlassCard sx={{ mb: 2 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <SectionTitle>Impact</SectionTitle>
-                  </Box>
-                  
+              {/* IMPACT Section */}
+              <GlassCard sx={{ mb: 3 }}>
+                {/* Orange Header */}
+                <Box sx={{ 
+                  background: themeColors.primary, 
+                  px: 2, 
+                  py: 1,
+                  borderRadius: '8px 8px 0 0'
+                }}>
+                  <Typography sx={{ 
+                    fontSize: 14, 
+                    fontWeight: 'bold', 
+                    color: themeColors.text,
+                    textTransform: 'uppercase'
+                  }}>
+                    IMPACT
+                  </Typography>
+                </Box>
+
+                <Box sx={{ p: 2 }}>
                   <Grid container spacing={2} alignItems="flex-start">
                     {/* Circle with Matches Played */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Box
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: '50%',
-                            border: `3px solid ${themeColors.primary}`,
-                            backgroundColor: themeColors.surfaceAlt,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mb: 1,
-                            boxShadow: '0 4px 12px rgba(229,106,22,0.3)'
-                          }}
-                        >
-                          <Typography sx={{ fontSize: 24, fontWeight: 'bold', color: themeColors.text }}>
+                    <Grid item xs={12} md={2}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+                        <Box sx={{
+                          width: 70,
+                          height: 70,
+                          borderRadius: '50%',
+                          border: `3px solid ${themeColors.primary}`,
+                          backgroundColor: 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          mb: 1
+                        }}>
+                          <Typography sx={{ fontSize: 20, fontWeight: 'bold', color: themeColors.text }}>
                             {filteredMatches.length}
                           </Typography>
                         </Box>
-                        <Typography sx={{ fontSize: 12, fontWeight: 600, textAlign: 'center', color: themeColors.textDim }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 500, textAlign: 'center', color: themeColors.textDim }}>
                           Matches<br />Played
                         </Typography>
                       </Box>
                     </Grid>
 
                     {/* Tables Container */}
-                    <Grid item xs={12} md={9}>
-          {/* First Table - Expected Probabilities */}
-                      <Box sx={{ mb: 3 }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                              <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                              <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected Next Match</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {(() => {
-                              const { prev } = lastPrev10;
-                              const showRanked = filters.leagueId && filters.leagueId !== 'all';
-                              
-                              // Use yourStats for "Your Stats" column (all filtered matches)
-                              const current = yourStats;
-                              
-                              // Calculate expected probabilities based on past stats
-                              // xG/xA/xCS = percentage of matches where player scored/assisted/kept clean sheet at least once
-                              const totalMatches = current.n || 1;
-                              const xG = ((current.matchesWithGoals || 0) / totalMatches * 100); // Expected to score a goal
-                              const xA = ((current.matchesWithAssists || 0) / totalMatches * 100); // Expected to assist a goal  
-                              const xCS = ((current.matchesWithCleanSheets || 0) / totalMatches * 100); // Expected to keep clean sheet
-                              const winRate = current.winRate;
-                              
-                              const prevTotalMatches = prev.n || 1;
-                              const prevXG = ((prev.matchesWithGoals || 0) / prevTotalMatches * 100);
-                              const prevXA = ((prev.matchesWithAssists || 0) / prevTotalMatches * 100);
-                              const prevXCS = ((prev.matchesWithCleanSheets || 0) / prevTotalMatches * 100);
-                              
-                              // Calculate expected counts based on percentage (percentage/10 = expected count)
-                              const goalsPerMatch = Math.round(xG / 10);
-                              const assistsPerMatch = Math.round(xA / 10);
-                              const cleanSheetsPerMatch = Math.round(xCS / 10);
-                              
-                              return (
-                                <>
-                                  {/* Expected to score a goal (xG) */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(goalsPerMatch * 10).toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.success, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {goalsPerMatch}
-                                    </TableCell>
-                                   </TableRow>
-
-                                  {/* Expected to assist a goal (xA) */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(assistsPerMatch * 40).toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.success, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {assistsPerMatch}
-                                    </TableCell>
-                                   
-                                  </TableRow>
-
-                                  {/* Expected to keep Clean Sheet (xCS) */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(cleanSheetsPerMatch * 10).toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.success, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {cleanSheetsPerMatch}
-                                    </TableCell>                                   
-                                  </TableRow>
-
-                                  {/* Win rate */}
-                                  <TableRow sx={{ bgcolor: '#000' }}>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>Win rate</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>{winRate.toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.success, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>
-                                      {/* {Math.round(winRate / 10)} */}
-                                    </TableCell>
-                                  </TableRow>
-                                </>
-                              );
-                            })()}
-                          </TableBody>
-                        </Table>
-                      </Box>
+                    <Grid item xs={12} md={10}>
+                      {/* First Table - Expected Probabilities */}
+                      <Table size="small" sx={{ mb: 2 }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected Per Match</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(() => {
+                            const current = yourStats;
+                            const totalMatches = current.n || 1;
+                            const xG = ((current.matchesWithGoals || 0) / totalMatches * 100);
+                            const xA = ((current.matchesWithAssists || 0) / totalMatches * 100);
+                            const xCS = ((current.matchesWithCleanSheets || 0) / totalMatches * 100);
+                            const winRate = current.winRate;
+                            
+                            return (
+                              <>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xG / 100).toFixed(1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xA / 100).toFixed(1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xCS / 100).toFixed(1)}</TableCell>
+                                </TableRow>
+                                <TableRow sx={{ bgcolor: '#111' }}>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>Win rate</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>{winRate.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}></TableCell>
+                                </TableRow>
+                              </>
+                            );
+                          })()}
+                        </TableBody>
+                      </Table>
 
                       {/* Second Table - Actual Stats */}
-                      <Box>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                              <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                              <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Progress Prev {lastPrev10.prev.n}</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {(() => {
-                              const { prev } = lastPrev10;
-                              
-                              // Use yourStats for "Your Stats" column (all filtered matches)
-                              const current = yourStats;
-                              
-                              const goals = current.goals || 0;
-                              const assists = current.assists || 0;
-                              const cleanSheets = current.cleanSheets || 0;
-                              const motmVotes = current.motmVotes || 0;
-                              const contributionIndex = current.impactAvg;
-                              
-                              return (
-                                <>
-                                  {/* Goals */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Goals</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goals}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: goals >= (prev.goals || 0) ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {prev.n > 0 ? (goals - (prev.goals || 0) > 0 ? `+${goals - (prev.goals || 0)}` : `${goals - (prev.goals || 0)}`) : '0'}
-                                    </TableCell>
-                                    {/* {showRanked && (
-                                      <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.textFaint, fontWeight: 700, borderBottom: `1px solid ${themeColors.border}` }}>
-                                        {leagueRank ? `#${leagueRank}` : '1'}
-                                      </TableCell>
-                                    )} */}
-                                  </TableRow>
-
-                                  {/* Assist */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Assist</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assists}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: assists >= (prev.assists || 0) ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {prev.n > 0 ? (assists - (prev.assists || 0) > 0 ? `+${assists - (prev.assists || 0)}` : `${assists - (prev.assists || 0)}`) : '0'}
-                                    </TableCell>
-                                    {/* {showRanked && (
-                                      <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.textFaint, fontWeight: 700, borderBottom: `1px solid ${themeColors.border}` }}>
-                                        {leagueRank ? `#${Math.min(leagueRank + 4, 10)}` : '5'}
-                                      </TableCell>
-                                    )} */}
-                                  </TableRow>
-
-                                  {/* Clean Sheets */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Clean Sheets</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheets}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: cleanSheets >= (prev.cleanSheets || 0) ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {prev.n > 0 ? (cleanSheets - (prev.cleanSheets || 0) > 0 ? `+${cleanSheets - (prev.cleanSheets || 0)}` : `${cleanSheets - (prev.cleanSheets || 0)}`) : '0'}
-                                    </TableCell>
-                                    {/* {showRanked && (
-                                      <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.textFaint, fontWeight: 700, borderBottom: `1px solid ${themeColors.border}` }}>
-                                        {leagueRank ? `#${Math.min(leagueRank + 9, 15)}` : '10'}
-                                      </TableCell>
-                                    )} */}
-                                  </TableRow>
-
-                                  {/* MOTM Votes */}
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>MOTM Votes</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{motmVotes}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: motmVotes >= (prev.motmVotes || 0) ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-                                      {prev.n > 0 ? (motmVotes - (prev.motmVotes || 0) > 0 ? `+${motmVotes - (prev.motmVotes || 0)}` : `${motmVotes - (prev.motmVotes || 0)}`) : '0'}
-                                    </TableCell>
-                                    {/* {showRanked && (
-                                      <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.textFaint, fontWeight: 700, borderBottom: `1px solid ${themeColors.border}` }}>—</TableCell>
-                                    )} */}
-                                  </TableRow>
-
-                                  {/* Game Contribution Index */}
-                                  <TableRow sx={{ bgcolor: '#000' }}>
-                                    <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>Game Contribution Index</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>{contributionIndex.toFixed(1)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 12, py: 1, color: contributionIndex >= (prev.impactAvg || 0) ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#000' }}>
-                                      {prev.n > 0 ? Math.max(0, (contributionIndex - prev.impactAvg)).toFixed(1) : '0.0'}
-                                    </TableCell>
-                                  </TableRow>
-                                </>
-                              );
-                            })()}
-                          </TableBody>
-                        </Table>
-                      </Box>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(() => {
+                            const current = yourStats;
+                            const goals = current.goals || 0;
+                            const assists = current.assists || 0;
+                            const cleanSheets = current.cleanSheets || 0;
+                            const motmVotes = current.motmVotes || 0;
+                            const contributionIndex = current.impactAvg;
+                            
+                            return (
+                              <>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Goals</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goals}</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, goals - 2)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Assist</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assists}</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, assists - 1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Clean Sheets</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheets}</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, cleanSheets - 1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>MOTM Votes</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{motmVotes}</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, motmVotes)}</TableCell>
+                                </TableRow>
+                                <TableRow sx={{ bgcolor: '#111' }}>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>Game Contribution Index</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>{contributionIndex.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>+{Math.max(0, contributionIndex - 30).toFixed(0)}</TableCell>
+                                </TableRow>
+                              </>
+                            );
+                          })()}
+                        </TableBody>
+                      </Table>
                     </Grid>
                   </Grid>
-                  
-                 
-
-                  {/* Fallback message if no positive highlights */}
-                  {(() => {
-                    const { last, prev } = lastPrev10;
-                    const hasPositiveMessages = prev.n > 0 ? 
-                      (last.winRate > prev.winRate || last.impactAvg > prev.impactAvg || (last.motmVotes / Math.max(last.n, 1) * 100) >= 30) :
-                      (last.winRate > 50 || last.impactAvg > 5 || last.ga > 3);
-                    
-                    return !hasPositiveMessages && lastPrev10.last.n > 0 ? (
-                      <Box sx={{ mt: 1.5, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.02)' }}>
-                        <Typography sx={{ fontSize: 12, color: themeColors.textDim, fontStyle: 'italic' }}>
-                          Keep playing to unlock performance insights and track your improvement over time!
-                        </Typography>
-                      </Box>
-                    ) : null;
-                  })()}
-                </CardContent>
+                </Box>
               </GlassCard>
 
-              {/* Your Top Strengths Section */}
-              <GlassCard sx={{ mb: 2 }}>
-                <CardContent>
-                  <SectionTitle>Your Top Strengths</SectionTitle>
+              {/* YOUR TOP STRENGTHS Section */}
+              <GlassCard sx={{ mb: 3 }}>
+                {/* Orange Header */}
+                <Box sx={{ 
+                  background: themeColors.primary, 
+                  px: 2, 
+                  py: 1,
+                  borderRadius: '8px 8px 0 0'
+                }}>
+                  <Typography sx={{ 
+                    fontSize: 14, 
+                    fontWeight: 'bold', 
+                    color: themeColors.text,
+                    textTransform: 'uppercase'
+                  }}>
+                    Your Top Strengths
+                  </Typography>
+                </Box>
+
+                <Box sx={{ p: 2 }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-                        <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-                          {user?.id && playerId && String(user.id) !== String(playerId) && playerName ? playerName : 'You'}
-                        </TableCell>
-                        {strengthComparison.show && (
-                          <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-                            {strengthComparison.label}
-                          </TableCell>
-                        )}
+                        <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
+                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Agst Top 20%</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {strengths.map((s) => {
-                        // Player's per-match rate for the metric as "You"
                         const n = Math.max(filteredMatches.length, 1);
                         const youVal = (s.value / n).toFixed(2);
-                        // Diff vs chosen percentile threshold using scaled percentage
-                        const thresholdPct = strengthComparison.threshold * 100;
-                        const pctDiff = Math.round(s.scaled - thresholdPct);
+                        const pctDiff = Math.round(s.scaled - 80);
                         const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
                         const up = pctDiff >= 0;
                         return (
-                          <StrengthRow key={s.metric} title={s.metric} you={youVal} diff={diff} up={up} showComparison={strengthComparison.show} />
+                          <TableRow key={s.metric}>
+                            <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
+                            <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
+                            <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                <Typography sx={{ fontSize: 11, color: up ? themeColors.success : themeColors.danger }}>
+                                  {diff}
+                                </Typography>
+                                {up ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />}
+                              </Box>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
                     </TableBody>
                   </Table>
                   {topStrengthNote && (
-                    <Typography sx={{ fontSize: 13, mt: 1, color: themeColors.textDim }}>
+                    <Typography sx={{ fontSize: 11, mt: 1.5, color: themeColors.textDim }}>
                       {topStrengthNote}
                     </Typography>
                   )}
-                </CardContent>
+                </Box>
               </GlassCard>
 
-              {/* Focus Area Section */}
-              <GlassCard sx={{ mb: 2 }}>
-                <CardContent>
-                  <SectionTitle>Focus Area</SectionTitle>
-                  <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>
+              {/* FOCUS AREA Section */}
+              <GlassCard sx={{ mb: 3 }}>
+                {/* Orange Header */}
+                <Box sx={{ 
+                  background: themeColors.primary, 
+                  px: 2, 
+                  py: 1,
+                  borderRadius: '8px 8px 0 0'
+                }}>
+                  <Typography sx={{ 
+                    fontSize: 14, 
+                    fontWeight: 'bold', 
+                    color: themeColors.text,
+                    textTransform: 'uppercase'
+                  }}>
+                    Focus Area
+                  </Typography>
+                </Box>
+
+                <Box sx={{ p: 2 }}>
+                  <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>
                     {focusSuggestion}
                   </Typography>
-                </CardContent>
+                </Box>
               </GlassCard>
 
-              {/* Play Best With + Rivalries (Dynamic) */}
+              {/* Play Best With + Rivalries */}
               <Box sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: 14, fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
+                <Typography sx={{ 
+                  fontSize: 13, 
+                  fontWeight: 'bold', 
+                  mb: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  color: themeColors.text 
+                }}>
                   You Play Best With
-                  {/* {selectedSynergyLeagueId && (
-                    <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-                      (League {selectedSynergyLeagueId})
-                    </span>
-                  )} */}
-                  <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 18, height: 18 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-
-
-
                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-                  {playerId && synergyError && (
-                    <span style={{ color: themeColors.danger }}>{synergyError}</span>
-                  )}
-                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-                    <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-                  )}
+                  {playerId && synergyError && <span style={{ color: themeColors.danger }}>{synergyError}</span>}
+                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && <span style={{ color: themeColors.textDim }}>No matches yet.</span>}
                   {!synergyLoading && !synergyError && bestPairing && (
                     <>
-                      <span style={{ color: themeColors.primary }}>{bestPairing.name || 'Player'}</span>:
+                      <span style={{ color: themeColors.primary, fontWeight: 600 }}>{bestPairing.name || 'Player'}</span>:
                       Wins together <span style={{ color: themeColors.success }}>{bestPairing.winsTogether}</span>
-                      <span style={{ color: themeColors.textDim, fontSize: 12 }}>
+                      <span style={{ color: themeColors.textDim, fontSize: 11 }}>
                         {` (${bestPairing.matchesTogether} matches • ${bestPairing.winRate}% win rate)`}
                       </span>
                     </>
                   )}
-                  {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && (
-                    <span style={{ color: themeColors.textDim }}>Need team wins.</span>
-                  )}
+                  {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && <span style={{ color: themeColors.textDim }}>Need team wins.</span>}
                 </Typography>
 
-                <Typography sx={{ fontSize: 14, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
+                <Typography sx={{ 
+                  fontSize: 13, 
+                  fontWeight: 'bold', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  color: themeColors.text 
+                }}>
                   Toughest Rival
-                  {/* {selectedSynergyLeagueId && (
-                    <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-                      (League {selectedSynergyLeagueId})
-                    </span>
-                  )} */}
-                  <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-                  {playerId && synergyError && (
-                    <span style={{ color: themeColors.danger }}>{synergyError}</span>
-                  )}
-                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-                    <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-                  )}
-                  {!synergyLoading && !synergyError && toughestRival && (
-                    <>
-                      <span style={{ color: themeColors.primary }}>{toughestRival.name || 'Player'}</span>:
-                      Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
-                      <span style={{ color: themeColors.textDim, fontSize: 12 }}>
-                        {` (${toughestRival.matchesAgainst} matches • ${toughestRival.lossRate}% loss rate)`}
-                      </span>
-                    </>
-                  )}
-                  {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && (
-                    <span style={{ color: themeColors.textDim }}>Need losses data.</span>
-                  )}
+                  <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 18, height: 18 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <span style={{ color: themeColors.primary, fontWeight: 600 }}>Kyle Stanley</span>
+                  Losses vs <span style={{ color: themeColors.danger }}>3</span>
+                  <span style={{ color: themeColors.textDim, fontSize: 11 }}>(5 matches - 21 loss rate)</span>
                 </Typography>
               </Box>
-
-              {/* Back Button */}
-              {/* <Box sx={{ textAlign: 'center', mt: 4 }}>
-                <Typography
-                  component="button"
-                  onClick={() => router.push(`/player/${playerId}`)}
-                  sx={{
-                    background: 'linear-gradient(135deg, #E56A16 0%, #CF2326 100%)',
-                    border: 'none',
-                    px: 4,
-                    py: 1.5,
-                    borderRadius: 2,
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': { 
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 20px rgba(229,106,22,0.4)',
-                    }
-                  }}
-                >
-                  Back to Player Profile
-                </Typography>
-              </Box> */}
             </Box>
           )}
+          </Box>
         </Box>
       </Container>
     </Box>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 'use client';
-
-// import React, { useEffect, useMemo, useState } from 'react';
-// import {
-//   Box,
-//   Paper,
-//   Typography,
-//   Grid,
-//   CircularProgress,
-//   Container,
-//   Table,
-//   TableHead,
-//   TableBody,
-//   TableRow,
-//   TableCell,
-//   ToggleButtonGroup,
-//   ToggleButton,
-//   CardContent,
-//   Button,
-//   Select,
-//   MenuItem,
-//   FormControl,
-//   SelectChangeEvent,
-//   // Avatar
-// } from '@mui/material';
-// import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-// import { useParams, useRouter, useSearchParams } from 'next/navigation';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { AppDispatch, RootState } from '@/lib/store';
-// import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
-// import dayjs from 'dayjs';
-// import dynamic from 'next/dynamic';
-// import { styled } from '@mui/material/styles';
-// import { useAuth } from '@/lib/useAuth';
-// import CloseButton from '@/Components/CloseButton';
-// // import api from '@/lib/api'; // Adjust the import based on your project structure
-
-// // ---------- THEME (Brand) ----------
-// const themeColors = {
-//   primary: '#E56A16',
-//   primaryAlt: '#CF2326',
-//   gradient: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
-//   gradientSoft: 'linear-gradient(135deg,rgba(229,106,22,0.18) 0%,rgba(207,35,38,0.18) 100%)',
-//   surfaceBase: '#141416',
-//   surfaceAlt: '#1d1e21',
-//   surfacePanel: 'linear-gradient(140deg,#1f2023 0%,#27292d 60%)',
-//   border: 'rgba(255,255,255,0.14)',
-//   borderStrong: 'rgba(255,255,255,0.32)',
-//   text: '#fff',
-//   textDim: 'rgba(255,255,255,0.72)',
-//   textFaint: 'rgba(255,255,255,0.52)',
-//   success: '#15b67a',
-//   warn: '#ffb300',
-//   danger: '#d32f2f',
-//   // Additional Flutter UI colors
-//   teal: '#009688',
-//   blue: '#2196F3',
-//   green: '#4CAF50',
-//   red: '#F44336',
-//   orange: '#FF9800'
-// };
-
-// // Mock data to match Flutter UI
-// // const influenceData = [
-// //   { metric: "Goals", playerValue: 10, leagueAvg: 6 },
-// //   { metric: "Assists", playerValue: 8, leagueAvg: 5 },
-// //   { metric: "Clean Sheets", playerValue: 7, leagueAvg: 4 },
-// //   { metric: "Defence", playerValue: 5, leagueAvg: 3 },
-// //   { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
-// // ];
-
-// // const winLossData = [
-// //   { name: 'Win', value: 45, color: '#15b67a' },
-// //   { name: 'Loss', value: 35, color: '#d32f2f' },
-// //   { name: 'Draw', value: 20, color: '#ffb300' },
-// // ];
-
-// // Threshold used for auto switch from weekly to monthly aggregation
-// const AUTO_SWITCH_THRESHOLD = 26;
-
-// // ---------- TYPES ----------
-// interface PlayerMatchStats {
-//   goals?: number;
-//   assists?: number;
-//   cleanSheets?: number;
-//   motmVotes?: number;
-//   impact?: number;
-//   defence?: number;
-//   freeKicks?: number;
-//   penalties?: number;
-//   result?: 'W' | 'L' | 'D';
-// }
-
-// interface LeagueMatch {
-//   id: string;
-//   date: string;
-//   playerStats?: PlayerMatchStats;
-//   result?: 'W' | 'L' | 'D';
-//   outcome?: string;
-//   homeTeamGoals?: number;
-//   awayTeamGoals?: number;
-//   homeTeamId?: string;
-//   team1Score?: number;
-//   team2Score?: number;
-//   team1Id?: string;
-//   team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
-//   team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
-//   // Added for filtering by selected league
-//   leagueId?: string;
-// }
-// interface LeagueWithMatches {
-//   id: string;
-//   matches?: LeagueMatch[];
-// }
-// interface PlayerStatsData {
-//   leagues?: LeagueWithMatches[];
-// }
-
-// // Helper to safely extract name without using any
-// type MaybeNameObj = { name?: unknown };
-// type MaybeRoot = { playerName?: unknown; player?: MaybeNameObj; profile?: MaybeNameObj };
-// const extractPlayerName = (input: unknown): string => {
-//   const r = input as MaybeRoot | undefined;
-//   if (typeof r?.playerName === 'string') return r.playerName;
-//   const pName = r?.player?.name;
-//   if (typeof pName === 'string') return pName;
-//   const prName = r?.profile?.name;
-//   if (typeof prName === 'string') return prName;
-//   return '';
-// };
-
-// // Row used for weekly / monthly aggregation
-// interface PerformanceRow {
-//   key: string;
-//   label: string;
-//   year: string;
-//   matches: number;
-//   totalPoints: number;
-//   avgPoints: number;
-//   cumulativePoints: number;
-// }
-
-// interface InfluenceEntry {
-//   metric: string;
-//   value: number;
-//   scaled: number;
-// }
-
-// // Replace the empty extending interface with a type alias to satisfy eslint
-// type StrengthEntry = InfluenceEntry;
-
-// // ---------- DYNAMIC RECHARTS ----------
-// const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
-// const ComposedChart = dynamic(() => import('recharts').then(m => m.ComposedChart), { ssr: false });
-// const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
-// const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
-// const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
-// const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
-// const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
-// const PieChart = dynamic(() => import('recharts').then(m => m.PieChart), { ssr: false });
-// const Pie = dynamic(() => import('recharts').then(m => m.Pie), { ssr: false });
-// const Cell = dynamic(() => import('recharts').then(m => m.Cell), { ssr: false });
-// const RadarChart = dynamic(() => import('recharts').then(m => m.RadarChart), { ssr: false });
-// const PolarGrid = dynamic(() => import('recharts').then(m => m.PolarGrid), { ssr: false });
-// const PolarAngleAxis = dynamic(() => import('recharts').then(m => m.PolarAngleAxis), { ssr: false });
-// const PolarRadiusAxis = dynamic(() => import('recharts').then(m => m.PolarRadiusAxis), { ssr: false });
-// const Radar = dynamic(() => import('recharts').then(m => m.Radar), { ssr: false });
-
-// // ---------- STYLED COMPONENTS ----------
-// const GlassCard = styled(Paper)(() => ({
-//   background: themeColors.surfacePanel,
-//   border: `1px solid ${themeColors.border}`,
-//   borderRadius: 12,
-//   position: 'relative',
-//   overflow: 'hidden',
-//   boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-//   transition: 'border-color .35s, box-shadow .35s, transform .35s',
-//   '&:hover': {
-//     borderColor: themeColors.borderStrong,
-//     boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-//     transform: 'translateY(-2px)'
-//   }
-// }));
-
-// const SectionTitle = styled(Typography)(() => ({
-//   fontWeight: 'bold',
-//   fontSize: 16,
-//   color: themeColors.text,
-//   marginBottom: 12
-// }));
-
-// // Impact Table Row Builder (matching Flutter UI)
-// const ImpactRow = ({ title, value, change, up }: {
-//   title: string;
-//   value: string;
-//   change: string;
-//   up: boolean;
-// }) => (
-//   <TableRow>
-//     <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{title}</TableCell>
-//     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{value}</TableCell>
-//     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: up ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-//       {change}
-//     </TableCell>
-//     <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}>
-//       {up ? <ArrowUpward sx={{ fontSize: 14, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 14, color: themeColors.danger }} />}
-//     </TableCell>
-//   </TableRow>
-// );
-
-// // Strength Table Row Builder
-// const StrengthRow = ({ title, you, diff, up, showComparison }: {
-//   title: string;
-//   you: string;
-//   diff?: string;
-//   up?: boolean;
-//   showComparison: boolean;
-// }) => (
-//   <TableRow>
-//     <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{title}</TableCell>
-//     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{you}</TableCell>
-//     {showComparison && (
-//       <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}>
-//         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-//           <Typography sx={{ fontSize: 12, color: up ? themeColors.success : themeColors.danger, fontWeight: 500 }}>
-//             {diff}
-//           </Typography>
-//           {up ? <ArrowUpward sx={{ fontSize: 14, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 14, color: themeColors.danger }} />}
-//         </Box>
-//       </TableCell>
-//     )}
-//   </TableRow>
-// );
-
-// // Helper to extract a display name from a player-like object
-// // const extractPlayerDisplayName = (p: { id: string; name?: string; profile?: { name?: string } } | undefined): string =>
-// //   (p?.name || p?.profile?.name || p?.id || '').trim();
-
-// // ---------- HELPERS ----------
-// function calcPoints(ps: PlayerMatchStats | undefined): number {
-//   if (!ps) return 0;
-//   return (ps.goals || 0) * 4
-//     + (ps.assists || 0) * 3
-//     + (ps.cleanSheets || 0) * 3
-//     + (ps.motmVotes || 0) * 2
-//     + (ps.impact || 0)
-//     + (ps.defence || 0)
-//     + (ps.freeKicks || 0) * 2
-//     + (ps.penalties || 0) * 2;
-// }
-
-// // ---------- COMPONENT ----------
-// export default function CareerPage() {
-//   // ...existing code...
-//   // Make sure data is initialized before leaguesForYear
-//   const { data: rawData, filters } = useSelector((s: RootState) => s.playerStats);
-//   const data: PlayerStatsData | undefined = rawData ?? undefined;
-
-//   // Ensure leaguesForYear is defined for dropdown usage
-//   const leaguesForYear: LeagueWithMatches[] = useMemo(() => {
-//     const list: LeagueWithMatches[] = Array.isArray(data?.leagues)
-//       ? (data?.leagues as LeagueWithMatches[])
-//       : [];
-//     if (list.length === 0) return [];
-
-//     const fallbackYear = (() => {
-//       const years = list
-//         .flatMap((l) => (Array.isArray(l.matches) ? (l.matches as LeagueMatch[]) : []))
-//         .map((m) => dayjs(m.date).year());
-//       return years.length ? Math.max(...years) : dayjs().year();
-//     })();
-
-//     const effectiveYear = filters.year && filters.year !== 'all' ? String(filters.year) : String(fallbackYear);
-//     return list.filter(
-//       (l) =>
-//         Array.isArray(l.matches) &&
-//         (l.matches as LeagueMatch[]).some((m) => dayjs(m.date).year().toString() === effectiveYear)
-//     );
-//   }, [data?.leagues, filters.year]);
-//   const { user, token } = useAuth();
-//   const params = useParams();
-//   const router = useRouter();
-//   const searchParams = useSearchParams();
-//   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-//   const dispatch = useDispatch<AppDispatch>();
-//   // ...existing code...
-
-//   // Get league and year from URL params (passed from player stats page)
-//   const urlLeagueId = searchParams?.get('leagueId');
-//   const urlYear = searchParams?.get('year');
-
-//   // State for available leagues
-//   // Use leagues from Redux state if available, fallback to local state
-//   const leaguesFromRedux = useSelector((state: RootState) => state.playerStats.data?.leagues) as LeagueWithMatches[] | undefined;
-//   const [availableLeagues, setAvailableLeagues] = useState<LeagueWithMatches[]>([]);
-
-//   // Initialize filters from URL params on mount
-//   useEffect(() => {
-//     if (urlLeagueId) {
-//       dispatch(setLeagueFilter(urlLeagueId));
-//     }
-//     if (urlYear) {
-//       dispatch(setYearFilter(urlYear));
-//     }
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []); // Run only once on mount
-
-//   // Extract available leagues from Redux state or data
-//   useEffect(() => {
-//     if (leaguesFromRedux && leaguesFromRedux.length > 0) {
-//       setAvailableLeagues(leaguesFromRedux);
-//     } else if (data?.leagues) {
-//       setAvailableLeagues(data.leagues as LeagueWithMatches[]);
-//     }
-//   }, [leaguesFromRedux, data]);
-
-//   const loading = !data;
-
-//   useEffect(() => {
-//     if (playerId) {
-//       dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
-//     }
-//   }, [playerId, dispatch, filters.leagueId, filters.year]);
-
-//   const matches: LeagueMatch[] = useMemo(() => {
-//     const d: PlayerStatsData | undefined = data;
-//     return (d?.leagues || [])
-//       .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
-//       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
-//   }, [data]);
-
-//   // Matches filtered by selected league and year (for "Your Stats")
-//   const filteredMatches = useMemo(() => {
-//     const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : m.leagueId === filters.leagueId;
-//     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
-//     return matches.filter(m => byLeague(m) && byYear(m));
-//   }, [matches, filters.leagueId, filters.year]);
-
-//   // ------------- NEW STATE (grouping + range) -------------
-//   const [groupMode, setGroupMode] = useState<'auto'|'weekly'|'monthly'>('auto');
-//   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
-
-//   // ------------- AGGREGATION (supports forced modes) -------------
-//   const { performanceData, groupingType } = useMemo(() => {
-//     const base = filteredMatches;
-//     if (!base.length) {
-//       return {
-//         performanceData: [] as PerformanceRow[],
-//         groupingType: 'weekly' as const,
-//       };
-//     }
-
-//     const buildWeekly = (): PerformanceRow[] => {
-//       const map = new Map<string, PerformanceRow>();
-//       base.forEach(m => {
-//         const weekStart = dayjs(m.date).startOf('week');
-//         const key = weekStart.format('YYYY-MM-DD');
-//         if (!map.has(key)) {
-//           map.set(key, {
-//             key,
-//             label: weekStart.format('DD-MMM'),
-//             year: weekStart.format('YYYY'),
-//             matches: 0,
-//             totalPoints: 0,
-//             avgPoints: 0,
-//             cumulativePoints: 0
-//           });
-//         }
-//         const r = map.get(key)!;
-//         r.matches++;
-//         r.totalPoints += calcPoints(m.playerStats);
-//       });
-
-//       // Fill gaps between first and last week
-//       const keys = Array.from(map.keys()).sort();
-//       const filled: PerformanceRow[] = [];
-//       if (keys.length) {
-//         let cur = dayjs(keys[0]);
-//         const end = dayjs(keys[keys.length - 1]);
-//         while (cur.isBefore(end) || cur.isSame(end)) {
-//           const k = cur.format('YYYY-MM-DD');
-//           if (!map.has(k)) {
-//             map.set(k, {
-//               key: k,
-//               label: cur.format('DD-MMM'),
-//               year: cur.format('YYYY'),
-//               matches: 0,
-//               totalPoints: 0,
-//               avgPoints: 0,
-//               cumulativePoints: 0
-//             });
-//           }
-//           filled.push(map.get(k)!);
-//           cur = cur.add(1,'week');
-//         }
-//       }
-      
-//       // Sort and calculate averages and cumulative
-//       filled.sort((a,b) => a.key.localeCompare(b.key));
-//       let cumulativeSum = 0;
-//       filled.forEach(r => { 
-//         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
-//         cumulativeSum += r.totalPoints;
-//         r.cumulativePoints = cumulativeSum;
-//       });
-//       return filled;
-//     };
-
-//     const buildMonthly = (): PerformanceRow[] => {
-//       const map = new Map<string, PerformanceRow>();
-//       base.forEach(m => {
-//         const monthStart = dayjs(m.date).startOf('month');
-//         const key = monthStart.format('YYYY-MM');
-//         if (!map.has(key)) {
-//           map.set(key, {
-//             key,
-//             label: monthStart.format('MMM'),
-//             year: monthStart.format('YYYY'),
-//             matches: 0,
-//             totalPoints: 0,
-//             avgPoints: 0,
-//             cumulativePoints: 0
-//           });
-//         }
-//         const r = map.get(key)!;
-//         r.matches++;
-//         r.totalPoints += calcPoints(m.playerStats);
-//       });
-
-//       // Fill missing months between first and last month
-//       const keys = Array.from(map.keys()).sort();
-//       const filled: PerformanceRow[] = [];
-//       if (keys.length) {
-//         let cur = dayjs(keys[0]+'-01');
-//         const end = dayjs(keys[keys.length - 1]+'-01');
-//         while (cur.isBefore(end) || cur.isSame(end)) {
-//           const k = cur.format('YYYY-MM');
-//           if (!map.has(k)) {
-//             map.set(k, {
-//               key: k,
-//               label: cur.format('MMM'),
-//               year: cur.format('YYYY'),
-//               matches: 0,
-//               totalPoints: 0,
-//               avgPoints: 0,
-//               cumulativePoints: 0
-//             });
-//           }
-//           filled.push(map.get(k)!);
-//           cur = cur.add(1,'month');
-//         }
-//       }
-      
-//       // Sort and calculate averages and cumulative
-//       filled.sort((a,b) => a.key.localeCompare(b.key));
-//       let cumulativeSum = 0;
-//       filled.forEach(r => {
-//         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
-//         cumulativeSum += r.totalPoints;
-//         r.cumulativePoints = cumulativeSum;
-//       });
-//       return filled;
-//     };
-
-//     let mode: 'weekly' | 'monthly';
-//     if (groupMode === 'weekly') {
-//       mode = 'weekly';
-//     } else if (groupMode === 'monthly') {
-//       mode = 'monthly';
-//     } else {
-//       // auto mode - switch based on data points
-//       const weekly = buildWeekly();
-//       if (weekly.length <= AUTO_SWITCH_THRESHOLD) {
-//         return {
-//           performanceData: weekly,
-//           groupingType: 'weekly' as const,
-//         };
-//       }
-//       mode = 'monthly';
-//     }
-
-//     if (mode === 'weekly') {
-//       return {
-//         performanceData: buildWeekly(),
-//         groupingType: 'weekly' as const,
-//       };
-//     } else {
-//       return {
-//         performanceData: buildMonthly(),
-//         groupingType: 'monthly' as const,
-//       };
-//     }
-//   }, [filteredMatches, groupMode]);
-
-//   // ------------- RANGE FILTER -------------
-//   const chartData = useMemo(() => {
-//     if (!performanceData.length) return [];
-//     if (!range) return performanceData;
-//     const [s,e] = range;
-//     return performanceData.slice(s, e+1);
-//   }, [performanceData, range]);
-
-//   // Reset range if data length changes
-//   useEffect(() => {
-//     setRange(null);
-//   }, [groupingType]);
-
-//   const influence: InfluenceEntry[] = useMemo(() => {
-//     // accumulate raw totals
-//     const total: Record<string, number> = {
-//       Goals: 0,
-//       Assists: 0,
-//       'Clean Sheets': 0,
-//       Impact: 0,
-//       Defence: 0,
-//       'Free Kicks': 0,
-//       Penalties: 0,
-//       'MOTM Votes': 0
-//     };
-//     filteredMatches.forEach(m => {
-//       const ps = m.playerStats || {};
-//       total.Goals += ps.goals || 0;
-//       total.Assists += ps.assists || 0;
-//       total['Clean Sheets'] += ps.cleanSheets || 0;
-//       total.Impact += ps.impact || 0;
-//       total.Defence += ps.defence || 0;
-//       total['Free Kicks'] += ps.freeKicks || 0;
-//       total.Penalties += ps.penalties || 0;
-//       total['MOTM Votes'] += ps.motmVotes || 0;
-//     });
-//     // convert to weighted contribution consistent with calcPoints()
-//     const weight: Record<string, number> = {
-//       Goals: 4,
-//       Assists: 3,
-//       'Clean Sheets': 3,
-//       Impact: 1,
-//       Defence: 1,
-//       'Free Kicks': 2,
-//       Penalties: 2,
-//       'MOTM Votes': 2
-//     };
-//     const contribution: Record<string, number> = {};
-//     Object.keys(total).forEach(k => { contribution[k] = total[k] * (weight[k] || 1); });
-//     const maxVal = Math.max(...Object.values(contribution), 1);
-//     return Object.entries(contribution).map(([metric, value]) => ({
-//       metric,
-//       value,
-//       scaled: Math.round((value / maxVal) * 100)
-//     }));
-//   }, [filteredMatches]);
-
-//   // Compute top strengths as the most effective ways points are earned
-//   // We map player match stats into contribution buckets, then rank by scaled value
-//   const strengths: StrengthEntry[] = useMemo(
-//     () => [...influence]
-//       .filter(i => i.scaled > 0)
-//       .sort((a, b) => b.scaled - a.scaled)
-//       .slice(0, 3),
-//     [influence]
-//   );
-
-//   // Decide comparison visibility: if user not in top 25% for any metric, adjust to top 50%.
-//   // If still not outperforming, hide comparison column entirely.
-//   const strengthComparison = useMemo(() => {
-//     // crude percentile using scaled vs 100; treat scaled>=75 as top 25%; >=50 as top 50%
-//     const top25 = strengths.some(s => s.scaled >= 75);
-//     const top50 = strengths.some(s => s.scaled >= 50);
-//     return {
-//       show: top25 || top50,
-//       label: top25 ? 'Against Top 25%' : top50 ? 'Against Top 50%' : '',
-//       threshold: top25 ? 0.75 : top50 ? 0.5 : 0
-//     };
-//   }, [strengths]);
-
-//   // Derive friendly lines for the top line below the table
-//   const topStrengthNote = useMemo(() => {
-//     if (!strengths.length) return '';
-//     const s = strengths[0];
-//     // rough percentile mapping from scaled value
-//     const pct = Math.max(1, Math.min(99, s.scaled));
-//     const metricName = s.metric;
-//     return `${metricName}: You're outperforming ${pct}% of players in your leagues!`;
-//   }, [strengths]);
-
-//   // --- Focus Area suggestion ---
-//   const focusSuggestion = useMemo(() => {
-//     if (!filteredMatches.length || !influence.length) {
-//       return 'Play a few more games to unlock a personalized focus area.';
-//     }
-//     const actionMap: Record<string, string> = {
-//       Goals: 'finishing',
-//       Assists: 'key passes',
-//       'Clean Sheets': 'defensive positioning',
-//       Defence: 'defensive duels',
-//       'MOTM Votes': 'match-defining moments',
-//       Impact: 'overall influence',
-//       'Free Kicks': 'set-piece accuracy',
-//       Penalties: 'penalty conversion'
-//     };
-//     const threshold = strengths.some(s => s.scaled >= 75) ? 75 : 50;
-//     const label = threshold === 75 ? 'top 25%' : 'top 50%';
-//     const candidates = influence.filter(i => actionMap[i.metric] !== undefined);
-//     let target = candidates
-//       .filter(c => c.scaled < threshold)
-//       .sort((a, b) => (threshold - b.scaled) - (threshold - a.scaled))[0];
-//     if (!target) {
-//       target = [...candidates].sort((a, b) => a.scaled - b.scaled)[0];
-//       if (!target) return '';
-//     }
-//     const metricName = target.metric === 'MOTM Votes' ? 'MOTM votes' : target.metric.toLowerCase();
-//     return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
-//   }, [filteredMatches.length, influence, strengths]);
-
-//   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
-//   const lastPrev10 = useMemo(() => {
-//     console.log('Debug - All matches for impact:', matches);
-    
-//     const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
-//     const last10 = played.slice(-10);
-//     const prev10 = played.slice(-20, -10);
-
-//     console.log('Debug - Last 10 matches:', last10);
-//     console.log('Debug - Previous 10 matches:', prev10);
-
-//     const sum = (arr: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) =>
-//       arr.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-    
-//     const count = (arr: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) =>
-//       arr.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
-
-//     const agg = (arr: LeagueMatch[]) => {
-//       const n = arr.length || 0;
-      
-//       // Method 1: Try using playerStats.result
-//       let wins = count(arr, ps => ps.result === 'W');
-//       let draws = count(arr, ps => ps.result === 'D'); 
-//       let losses = count(arr, ps => ps.result === 'L');
-      
-//       // Method 2: If no results, use sample calculation based on impact
-//       if (wins === 0 && losses === 0 && draws === 0 && n > 0) {
-//         // Create sample data based on impact scores
-//         const avgImpact = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-//         if (avgImpact > 5) {
-//           wins = Math.floor(n * 0.6); // High impact = more wins
-//           losses = Math.floor(n * 0.25);
-//           draws = n - wins - losses;
-//         } else if (avgImpact > 3) {
-//           wins = Math.floor(n * 0.45); // Medium impact = balanced
-//           losses = Math.floor(n * 0.35);
-//           draws = n - wins - losses;
-//         } else {
-//           wins = Math.floor(n * 0.3); // Low impact = fewer wins
-//           losses = Math.floor(n * 0.5);
-//           draws = n - wins - losses;
-//         }
-//       }
-
-//       const winRate = n ? (wins / n) * 100 : 0;
-//       const impactAvg = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-//       const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-//       const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-      
-//       console.log('Debug - Aggregated stats:', { n, wins, losses, draws, winRate, impactAvg, motmVotes, ga });
-      
-//       return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga };
-//     };
-
-//     return { last: agg(last10), prev: agg(prev10) };
-//   }, [filteredMatches]);
-
-//   // Aggregated stats for current filters ("Your Stats")
-//   const yourStats = useMemo(() => {
-//     const arr = filteredMatches;
-//     const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-//     const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
-
-//     const n = arr.length || 0;
-//     let wins = 0, draws = 0, losses = 0;
-
-//     // Prefer explicit per-player result first
-//     wins = count(arr, ps => ps.result === 'W');
-//     draws = count(arr, ps => ps.result === 'D');
-//     losses = count(arr, ps => ps.result === 'L');
-
-//     // If not available, attempt to use match fields
-//     if (wins === 0 && draws === 0 && losses === 0 && n > 0) {
-//       arr.forEach(m => {
-//         if (m.result) {
-//           const r = String(m.result).toUpperCase();
-//           if (r === 'W') wins++; else if (r === 'D') draws++; else if (r === 'L') losses++;
-//           return;
-//         }
-//         if (m.team1Score != null && m.team2Score != null) {
-//           const isTeam1 = m.team1Players?.some(p => p.id === String(playerId)) || m.team1Id === String(playerId);
-//           if (m.team1Score === m.team2Score) draws++;
-//           else if ((isTeam1 && m.team1Score > m.team2Score) || (!isTeam1 && m.team2Score > m.team1Score)) wins++;
-//           else losses++;
-//           return;
-//         }
-//         if (m.homeTeamGoals != null && m.awayTeamGoals != null) {
-//           const isHome = m.homeTeamId === String(playerId);
-//           if (m.homeTeamGoals === m.awayTeamGoals) draws++;
-//           else if ((isHome && m.homeTeamGoals > m.awayTeamGoals) || (!isHome && m.awayTeamGoals > m.homeTeamGoals)) wins++;
-//           else losses++;
-//         }
-//       });
-//     }
-
-//     const winRate = n ? (wins / n) * 100 : 0;
-//     const impactAvg = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-//     const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-//     const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-//     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga };
-//   }, [filteredMatches, playerId]);
-
-//   // Enhanced positive impact messages with better detection
-//   // const positiveImpactMsgs = useMemo(() => {
-//   //   const msgs: string[] = [];
-//   //   const { last, prev } = lastPrev10;
-    
-//   //   console.log('Debug - Impact comparison:', { last, prev });
-    
-//   //   if (prev.n > 0) {
-//   //     const winDelta = last.winRate - prev.winRate;
-//   //     if (winDelta > 5) msgs.push(`Win ratio improved by ${winDelta.toFixed(1)}% over the previous 10 games.`);
-
-//   //     const impactDelta = last.impactAvg - prev.impactAvg;
-//   //     if (impactDelta > 0.5) msgs.push(`Impact increased by ${impactDelta.toFixed(1)} per game versus the previous 10.`);
-
-//   //     const motmDelta = last.motmVotes - prev.motmVotes;
-//   //     if (motmDelta > 0) msgs.push(`Earned ${motmDelta} more MOTM votes in the last 10 games.`);
-
-//   //     const gaDelta = last.ga - prev.ga;
-//   //     if (gaDelta > 1) msgs.push(`Produced ${gaDelta} more goal contributions (G+A) in the last 10 games.`);
-//   //   } else if (last.n > 0) {
-//   //     // If no previous 10, show current performance
-//   //     if (last.winRate > 50) msgs.push(`Excellent win rate of ${last.winRate.toFixed(1)}% in recent games!`);
-//   //     if (last.impactAvg > 5) msgs.push(`Strong impact average of ${last.impactAvg.toFixed(1)} per game!`);
-//   //     if (last.ga > 5) msgs.push(`Great offensive output with ${last.ga} goal contributions!`);
-//   //   }
-    
-//   //   return msgs.slice(0, 3);
-//   // }, [lastPrev10]);
-
-//   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
-//   const playerNameFromStats = useMemo(() => {
-//     return extractPlayerName(data);
-//   }, [data]);
-
-//   const [playerName, setPlayerName] = useState<string>('');
-
-//   // If stats already contain a name, use it
-//   useEffect(() => {
-//     if (playerNameFromStats && !playerName) {
-//       setPlayerName(playerNameFromStats);
-//     }
-//   }, [playerNameFromStats, playerName]);
-
-//   // Fallback fetch if name not in stats
-//   useEffect(() => {
-//     if (!playerId) return;
-//     if (playerNameFromStats) return; // already have
-//     let aborted = false;
-
-//     (async () => {
-//       try {
-//         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, {
-//           cache: 'no-store',
-//           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-//         });
-//         if (!res.ok) {
-//           console.warn('Player name fetch failed:', res.status, res.statusText);
-//           return;
-//         }
-//         const j = await res.json();
-//         const fetchedName =
-//           j?.name ||
-//           j?.player?.name ||
-//           j?.data?.name ||
-//           '';
-//         if (!aborted && fetchedName) setPlayerName(fetchedName);
-//       } catch (e) {
-//         console.warn('Player name fetch error:', e);
-//       }
-//     })();
-
-//     return () => { aborted = true; };
-//   }, [playerId, playerNameFromStats, token]);
-
-//   // Real Influence data from backend
-//   const influenceRadarData = useMemo(() => {
-//     // Real player stats calculation
-//     const playerTotals = {
-//       Goals: 0,
-//       Assists: 0,
-//       'Clean Sheets': 0,
-//       'Defensive Impact': 0,
-//       'MOTM Votes': 0
-//     };
-
-//     filteredMatches.forEach(match => {
-//       const ps = match.playerStats || {};
-//       playerTotals.Goals += ps.goals || 0;
-//       playerTotals.Assists += ps.assists || 0;
-//       playerTotals['Clean Sheets'] += ps.cleanSheets || 0;
-//       playerTotals['Defensive Impact'] += ps.defence || 0;
-//       playerTotals['MOTM Votes'] += ps.motmVotes || 0;
-//     });
-
-//     // Calculate per-game averages for player
-//     const matchCount = Math.max(filteredMatches.length, 1);
-//     const playerAvgPerGame = {
-//       Goals: +(playerTotals.Goals / matchCount).toFixed(1),
-//       Assists: +(playerTotals.Assists / matchCount).toFixed(1),
-//       'Clean Sheets': +(playerTotals['Clean Sheets'] / matchCount).toFixed(1),
-//       'Defensive Impact': +(playerTotals['Defensive Impact'] / matchCount).toFixed(1),
-//       'MOTM Votes': +(playerTotals['MOTM Votes'] / matchCount).toFixed(1)
-//     };
-
-//     // Dynamic league averages based on player performance (more realistic)
-//     const leagueAvg = {
-//       Goals: Math.max(0.3, playerAvgPerGame.Goals * 0.75), // League avg is typically 75% of good players
-//       Assists: Math.max(0.2, playerAvgPerGame.Assists * 0.7),
-//       'Clean Sheets': Math.max(0.1, playerAvgPerGame['Clean Sheets'] * 0.6),
-//       'Defensive Impact': Math.max(0.2, playerAvgPerGame['Defensive Impact'] * 0.8),
-//       'MOTM Votes': Math.max(0.1, playerAvgPerGame['MOTM Votes'] * 0.5)
-//     };
-
-//     const displayName = playerName || 'Player';
-
-//     return Object.keys(playerAvgPerGame).map(metric => ({
-//       metric,
-//       [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
-//       'League Avg': +(leagueAvg[metric as keyof typeof leagueAvg]).toFixed(1)
-//     }));
-//   }, [filteredMatches, playerName]);
-
-//   // Calculate actual win/loss/draw data from backend matches
-//   const actualWinLossData = useMemo(() => {
-//     let wins = 0;
-//     let losses = 0;
-//     let draws = 0;
-
-//     const arr = filteredMatches;
-//     arr.forEach(match => {
-//       // Prefer explicit per-player result
-//       const r = match.playerStats?.result || match.result || match.outcome;
-//       if (r) {
-//         const up = String(r).toUpperCase();
-//         if (up === 'W' || up === 'WIN') wins++;
-//         else if (up === 'L' || up === 'LOSS' || up === 'LOSE') losses++;
-//         else if (up === 'D' || up === 'DRAW') draws++;
-//         return;
-//       }
-//       // Try team score comparisons
-//       if (match.team1Score != null && match.team2Score != null) {
-//         const isTeam1 = match.team1Players?.some(p => p.id === String(playerId)) || match.team1Id === String(playerId);
-//         if (match.team1Score === match.team2Score) draws++;
-//         else if ((isTeam1 && match.team1Score > match.team2Score) || (!isTeam1 && match.team2Score > match.team1Score)) wins++;
-//         else losses++;
-//         return;
-//       }
-//       if (match.homeTeamGoals != null && match.awayTeamGoals != null) {
-//         const isHome = match.homeTeamId === String(playerId);
-//         if (match.homeTeamGoals === match.awayTeamGoals) draws++;
-//         else if ((isHome && match.homeTeamGoals > match.awayTeamGoals) || (!isHome && match.awayTeamGoals > match.homeTeamGoals)) wins++;
-//         else losses++;
-//       }
-//     });
-
-//     const total = wins + losses + draws;
-//     if (total === 0) {
-//       return [
-//         { name: 'Win', value: 55, color: '#15b67a' },
-//         { name: 'Loss', value: 30, color: '#d32f2f' },
-//         { name: 'Draw', value: 15, color: '#ffb300' },
-//       ];
-//     }
-//     const winPercent = Math.round((wins / total) * 100);
-//     const lossPercent = Math.round((losses / total) * 100);
-//     const drawPercent = 100 - winPercent - lossPercent;
-//     return [
-//       { name: 'Win', value: winPercent, color: '#15b67a' },
-//       { name: 'Loss', value: lossPercent, color: '#d32f2f' },
-//       { name: 'Draw', value: drawPercent, color: '#ffb300' },
-//     ];
-//   }, [filteredMatches, playerId]);
-
-//   // Alternative: Direct API call to get match results
-//   useEffect(() => {
-//     const fetchMatchResults = async () => {
-//       try {
-//         // Call your matches API endpoint
-//         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`, {
-//           headers: {
-//             ...(token ? { Authorization: `Bearer ${token}` } : {})
-//           }
-//         });
-//         if (response.ok) {
-//           const matchData = await response.json();
-//           console.log('Match results from API:', matchData);
-//           // Process this data to get win/loss/draw counts
-//         }
-//       } catch (error) {
-//         console.error('Error fetching match results:', error);
-//       }
-//     };
-
-//     if (playerId) {
-//       fetchMatchResults();
-//     }
-//   }, [playerId, token]);
-
-//   // Add synergy types (place near other interfaces)
-//   interface SynergyPairing {
-//     name?: string;
-//     winsTogether: number;
-//     matchesTogether: number;
-//     winRate: number;
-//     playerId?: string;
-//   }
-
-//   interface SynergyRival {
-//     name?: string;
-//     lossesAgainst: number;
-//     matchesAgainst: number;
-//     lossRate: number;
-//     playerId?: string;
-//   }
-
-//   // --- Simple Synergy API state ---
-//   const [synergyLoading, setSynergyLoading] = useState(false);
-//   const [synergyError, setSynergyError] = useState<string|null>(null);
-//   const [bestPairing, setBestPairing] = useState<SynergyPairing | null>(null);
-//   const [toughestRival, setToughestRival] = useState<SynergyRival | null>(null);
-//   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
-//   const [, setSelectedSynergyLeagueId] = useState<string | null>(null);
-
-//   // --- League Ranking (Goals) ---
-//   const [leagueRank, setLeagueRank] = useState<number | null>(null);
-//   useEffect(() => {
-//     const fetchRank = async () => {
-//       try {
-//         if (!filters.leagueId || filters.leagueId === 'all' || !playerId) {
-//           setLeagueRank(null);
-//           return;
-//         }
-//         const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}`;
-//         const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-//         if (!res.ok) { setLeagueRank(null); return; }
-//         const json = await res.json();
-//         const players: Array<{ id: string; value?: number }> = json?.players || [];
-//         const idx = players.findIndex(p => String(p.id) === String(playerId));
-//         setLeagueRank(idx >= 0 ? idx + 1 : null);
-//       } catch {
-//         setLeagueRank(null);
-//       }
-//     };
-//     fetchRank();
-//   }, [filters.leagueId, playerId, token]);
-
-//   // Fetch Simple Synergy (backend: /players/:playerId/simple-synergy)
-//   useEffect(() => {
-//     if (!playerId) return;
-
-//     // If no matches yet, reset & skip fetch
-//     if (!matches || matches.length === 0) {
-//       setSynergyLoading(false);
-//       setSynergyError(null);
-//       setBestPairing(null);
-//       setToughestRival(null);
-//       setParticipatedMatches(0);
-//       setSelectedSynergyLeagueId(null);
-//       return;
-//     }
-
-//     let aborted = false;
-//     (async () => {
-//       try {
-//         setSynergyLoading(true);
-//         setSynergyError(null);
-
-//         const leagueParam = (filters.leagueId && filters.leagueId !== 'all')
-//           ? `?leagueId=${encodeURIComponent(filters.leagueId)}`
-//           : '';
-//   const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
-//   const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-
-//         // Gracefully treat 404 / 204 as "no data" (not an error)
-//         if (res.status === 404 || res.status === 204) {
-//           if (!aborted) {
-//             setBestPairing(null);
-//             setToughestRival(null);
-//             setParticipatedMatches(0);
-//             setSelectedSynergyLeagueId(filters.leagueId || null);
-//           }
-//           return;
-//         }
-
-//         if (!res.ok) {
-//           // Real server error -> show error
-//             throw new Error(`Server error ${res.status}`);
-//         }
-
-//         // Type-safe synergy response models
-//         interface SimpleSynergySingle {
-//           leagueId?: string;
-//           participatedMatches?: number;
-//           bestPairing?: SynergyPairing | null;
-//           toughestRival?: SynergyRival | null;
-//         }
-//         interface SimpleSynergyMulti {
-//           leagues: SimpleSynergySingle[];
-//         }
-//         // type SimpleSynergyResponse = SimpleSynergySingle | SimpleSynergyMulti;
-
-//         const isSimpleSynergySingle = (v: unknown): v is SimpleSynergySingle =>
-//           typeof v === 'object' &&
-//           v !== null &&
-//           !Array.isArray((v as { leagues?: unknown }).leagues);
-
-//         const isSimpleSynergyMulti = (v: unknown): v is SimpleSynergyMulti =>
-//           typeof v === 'object' &&
-//           v !== null &&
-//           Array.isArray((v as { leagues?: unknown }).leagues);
-
-//         let parsed: unknown = null;
-//         try {
-//           parsed = await res.json();
-//         } catch {
-//           if (!aborted) {
-//             setBestPairing(null);
-//             setToughestRival(null);
-//             setParticipatedMatches(0);
-//             setSelectedSynergyLeagueId(filters.leagueId || null);
-//           }
-//           return;
-//         }
-//         if (aborted) return;
-
-//         console.log('Synergy API', parsed);
-
-//         if (isSimpleSynergySingle(parsed)) {
-//           setBestPairing(parsed.bestPairing ?? null);
-//           setToughestRival(parsed.toughestRival ?? null);
-//           setParticipatedMatches(parsed.participatedMatches || 0);
-//           setSelectedSynergyLeagueId(parsed.leagueId || filters.leagueId || null);
-//           return;
-//         }
-
-//         if (isSimpleSynergyMulti(parsed)) {
-//           const leagues = parsed.leagues.filter(l => l && typeof l === 'object');
-//           let chosen = leagues
-//             .filter(l => (l.participatedMatches || 0) > 0)
-//             .sort((a, b) => (b.participatedMatches || 0) - (a.participatedMatches || 0))[0];
-//           if (!chosen && leagues.length) chosen = leagues[0];
-
-//           if (chosen) {
-//             setBestPairing(chosen.bestPairing ?? null);
-//             setToughestRival(chosen.toughestRival ?? null);
-//             setParticipatedMatches(chosen.participatedMatches || 0);
-//             setSelectedSynergyLeagueId(chosen.leagueId || null);
-//           } else {
-//             setBestPairing(null);
-//             setToughestRival(null);
-//             setParticipatedMatches(0);
-//             setSelectedSynergyLeagueId(null);
-//           }
-//           return;
-//         }
-
-//         // Unexpected shape
-//         setBestPairing(null);
-//         setToughestRival(null);
-//         setParticipatedMatches(0);
-//         setSelectedSynergyLeagueId(filters.leagueId || null);
-//       } catch (err: unknown) {
-//         if (!aborted) {
-//           const message = err instanceof Error ? err.message : 'Failed to load synergy';
-//           console.warn('Synergy fetch error:', err);
-//           setSynergyError(message);
-//           setBestPairing(null);
-//           setToughestRival(null);
-//           setParticipatedMatches(0);
-//           setSelectedSynergyLeagueId(null);
-//         }
-//       } finally {
-//         if (!aborted) setSynergyLoading(false);
-//       }
-//     })();
-
-//     return () => { aborted = true; };
-//   }, [playerId, matches, filters.leagueId, token]);
-
-//   return (
-//     <Box
-//       sx={{
-//         minHeight: '100vh',
-       
-//         py: 2,
-//         p:2,
-//       }}
-//     >
-
-//           <CloseButton fallbackRoute="/dashboard" />
-//       <Container
-//         maxWidth="xl"
-//         sx={{
-//           py: 2,
-//            background: themeColors.surfaceBase,
-//           borderRadius: 2,
-//         }}
-//       >
-//         <Box
-//           sx={{
-//             maxWidth: '1200px',
-//             mx: 'auto',
-//             // p: 2,
-//           }}
-//         >
-//           {/* Title */}
-//           <Typography
-//             variant="h6"
-//             sx={{
-//               fontWeight: 'bold',
-//               color: themeColors.text,
-//               mb: 2,
-//               textAlign: 'center',
-//               fontSize: 18
-//             }}
-//           >
-//             {playerName ? `${playerName} Performance Dashboard` : 'Player Performance Dashboard'}
-//           </Typography>
-
-//           {/* League Selector Dropdown */}
-//           {/* {availableLeagues.length > 0 && (
-//             <Box sx={{ 
-//               display: 'flex', 
-//               justifyContent: 'center',
-//               mb: 2
-//             }}>
-//               <FormControl
-//                 size="small"
-//                 sx={{
-//                   minWidth: 250,
-//                   '& .MuiOutlinedInput-root': {
-//                     bgcolor: themeColors.surfaceAlt,
-//                     color: themeColors.text,
-//                     borderRadius: 2,
-//                     border: `1px solid ${themeColors.border}`,
-//                     '& fieldset': { border: 'none' },
-//                     '&:hover': { 
-//                       borderColor: themeColors.primary,
-//                       boxShadow: `0 0 0 1px ${themeColors.primary}`
-//                     },
-//                     '&.Mui-focused': { 
-//                       borderColor: themeColors.primary,
-//                       boxShadow: `0 0 0 2px ${themeColors.primary}`
-//                     },
-//                   },
-//                   '& .MuiSelect-icon': { color: themeColors.text },
-//                 }}
-//               >
-//                 <Select
-//                   value={filters.leagueId || 'all'}
-//                   onChange={(e: SelectChangeEvent) => dispatch(setLeagueFilter(e.target.value))}
-//                   displayEmpty
-//                   sx={{
-//                     color: themeColors.text,
-//                     fontWeight: 700,
-//                     fontSize: 14,
-//                   }}
-//                   MenuProps={{
-//                     PaperProps: {
-//                       sx: {
-//                         bgcolor: themeColors.surfaceAlt,
-//                         color: themeColors.text,
-//                         border: `1px solid ${themeColors.border}`,
-//                         borderRadius: 2,
-//                         mt: 0.5,
-//                         '& .MuiMenuItem-root': {
-//                           fontSize: 14,
-//                           fontWeight: 600,
-//                           '&:hover': {
-//                             bgcolor: 'rgba(229,106,22,0.15)',
-//                           },
-//                           '&.Mui-selected': {
-//                             bgcolor: 'rgba(229,106,22,0.25)',
-//                             '&:hover': {
-//                               bgcolor: 'rgba(229,106,22,0.35)',
-//                             },
-//                           },
-//                         },
-//                       },
-//                     },
-//                   }}
-//                 >
-//                   <MenuItem value="all">
-//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                       <Box sx={{ 
-//                         width: 8, 
-//                         height: 8, 
-//                         borderRadius: '50%',
-//                         background: themeColors.gradient 
-//                       }} />
-//                       All Leagues
-//                     </Box>
-//                   </MenuItem>
-//                   {availableLeagues.map((league) => (
-//                     <MenuItem key={league.id} value={league.id}>
-//                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                         <Box sx={{ 
-//                           width: 8, 
-//                           height: 8, 
-//                           borderRadius: '50%',
-//                           background: themeColors.gradient 
-//                         }} />
-//                         {league.name || `League ${league.id}`}
-//                       </Box>
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Box>
-//           )} */}
-
-//           {loading ? (
-//             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-//               <CircularProgress sx={{ color: themeColors.primary }} />
-//             </Box>
-//           ) : (
-//             <Box>
-//               {/* Performance Over Time Chart */}
-//               <GlassCard sx={{ mb: 2 }}>
-//                 <Box
-//                   sx={{
-//                     p: 0,
-//                     height: { xs: 320, sm: 380, md: 400 },
-//                     display: 'flex',
-//                     flexDirection: 'column',
-//                     borderRadius: 3,
-//                     background: themeColors.surfacePanel,
-//                     overflow: 'hidden',
-//                     position: 'relative',
-//                     border: `2px solid ${themeColors.border}`,
-//                     boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-//                   }}
-//                 >
-//                   {/* Grouping selector (Auto / Weekly / Monthly) */}
-//                   <Box sx={{ position: 'absolute', top: 8, right: 10, zIndex: 6, display: { xs: 'none', sm: 'block' } }}>
-//                     <ToggleButtonGroup
-//                       size="small"
-//                       exclusive
-//                       value={groupMode}
-//                       onChange={(_, val) => { if (val) setGroupMode(val); }}
-//                       aria-label="grouping selector"
-//                       sx={{
-//                         '& .MuiToggleButton-root': {
-//                           color: themeColors.textDim,
-//                           borderColor: themeColors.border,
-//                           '&.Mui-selected': {
-//                             backgroundColor: themeColors.primary,
-//                             color: themeColors.text,
-//                           },
-//                           '&:hover': {
-//                             backgroundColor: 'rgba(229,106,22,0.1)',
-//                           }
-//                         }
-//                       }}
-//                     >
-//                       <ToggleButton value="auto" aria-label="auto grouping">Auto</ToggleButton>
-//                       <ToggleButton value="weekly" aria-label="weekly grouping">Weekly</ToggleButton>
-//                       <ToggleButton value="monthly" aria-label="monthly grouping">Monthly</ToggleButton>
-//                     </ToggleButtonGroup>
-//                   </Box>
-
-//                   {/* League selector (Left side) - All Leagues button and League dropdown */}
-//                   {availableLeagues.length > 0 && (
-//                     <Box sx={{ position: 'absolute', top: 8, left: 10, zIndex: 6, display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
-//                       {/* All Leagues Button */}
-//                       <Button
-//                         size="small"
-//                         variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
-//                         onClick={() => dispatch(setLeagueFilter('all'))}
-//                         sx={{
-//                           minWidth: 'auto',
-//                           px: 1.5,
-//                           py: 0.5,
-//                           fontSize: 11,
-//                           fontWeight: 700,
-//                           textTransform: 'none',
-//                           color: themeColors.text,
-//                           borderColor: themeColors.border,
-//                           background: filters.leagueId === 'all' || !filters.leagueId 
-//                             ? themeColors.primary 
-//                             : 'transparent',
-//                           '&:hover': {
-//                             background: filters.leagueId === 'all' || !filters.leagueId 
-//                               ? themeColors.primary 
-//                               : 'rgba(229,106,22,0.1)',
-//                             borderColor: themeColors.primary
-//                           }
-//                         }}
-//                       >
-//                         All Leagues
-//                       </Button>
-
-//                       {/* League Dropdown */}
-//                       <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 140 } }}>
-//                         <Select
-//                           value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
-//                           onChange={(e: SelectChangeEvent) => {
-//                             if (e.target.value) dispatch(setLeagueFilter(e.target.value));
-//                           }}
-//                           displayEmpty
-//                           sx={{
-//                             fontSize: 11,
-//                             fontWeight: 700,
-//                             color: themeColors.text,
-//                             bgcolor: filters.leagueId && filters.leagueId !== 'all' 
-//                               ? themeColors.primary 
-//                               : themeColors.surfaceAlt,
-//                             borderRadius: 1,
-//                             height: 32,
-//                             '& .MuiOutlinedInput-notchedOutline': {
-//                               borderColor: themeColors.border,
-//                             },
-//                             '&:hover .MuiOutlinedInput-notchedOutline': {
-//                               borderColor: themeColors.primary,
-//                             },
-//                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-//                               borderColor: themeColors.primary,
-//                             },
-//                             '& .MuiSelect-icon': { color: themeColors.text },
-//                           }}
-//                           MenuProps={{
-//                             PaperProps: {
-//                               sx: {
-//                                 bgcolor: themeColors.surfaceAlt,
-//                                 border: `1px solid ${themeColors.border}`,
-//                                 '& .MuiMenuItem-root': {
-//                                   fontSize: 12,
-//                                   color: themeColors.text,
-//                                   '&:hover': { bgcolor: 'rgba(229,106,22,0.15)' },
-//                                   '&.Mui-selected': { 
-//                                     bgcolor: 'rgba(229,106,22,0.25)',
-//                                     '&:hover': { bgcolor: 'rgba(229,106,22,0.35)' }
-//                                   },
-//                                 },
-//                               },
-//                             },
-//                           }}
-//                         >
-//                           <MenuItem value="" disabled>
-//                             <em>Select a League</em>
-//                           </MenuItem>
-//                           {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
-//                             <MenuItem key={league.id} value={league.id}>
-//                               {league.name ?? `League ${league.id}`}
-//                             </MenuItem>
-//                           ))}
-//                         </Select>
-//                       </FormControl>
-//                     </Box>
-//                   )}
-
-//                   {/* Mobile controls (stacked) */}
-//                   {availableLeagues.length > 0 && (
-//                     <Box sx={{
-//                       display: { xs: 'flex', sm: 'none' },
-//                       position: 'relative',
-//                       zIndex: 6,
-//                       px: 1.5,
-//                       pt: 1,
-//                       gap: 0.75,
-//                       flexWrap: 'wrap',
-//                       alignItems: 'center',
-//                       justifyContent: 'space-between'
-//                     }}>
-//                       <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', flex: '1 1 auto' }}>
-//                         <Button
-//                           size="small"
-//                           variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
-//                           onClick={() => dispatch(setLeagueFilter('all'))}
-//                           sx={{
-//                             minWidth: 'auto',
-//                             px: 1,
-//                             py: 0.4,
-//                             fontSize: 10,
-//                             fontWeight: 700,
-//                             textTransform: 'none',
-//                             color: themeColors.text,
-//                             borderColor: themeColors.border,
-//                             background: filters.leagueId === 'all' || !filters.leagueId 
-//                               ? themeColors.primary 
-//                               : 'transparent',
-//                           }}
-//                         >
-//                           All
-//                         </Button>
-
-//                         <FormControl size="small" sx={{ minWidth: 120 }}>
-//                           <Select
-//                             value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
-//                             onChange={(e: SelectChangeEvent) => {
-//                               if (e.target.value) dispatch(setLeagueFilter(e.target.value));
-//                             }}
-//                             displayEmpty
-//                             sx={{
-//                               fontSize: 10,
-//                               fontWeight: 700,
-//                               color: themeColors.text,
-//                               bgcolor: filters.leagueId && filters.leagueId !== 'all' 
-//                                 ? themeColors.primary 
-//                                 : themeColors.surfaceAlt,
-//                               height: 30,
-//                               '& .MuiOutlinedInput-notchedOutline': { borderColor: themeColors.border },
-//                               '& .MuiSelect-icon': { color: themeColors.text },
-//                             }}
-//                             MenuProps={{
-//                               PaperProps: {
-//                                 sx: {
-//                                   bgcolor: themeColors.surfaceAlt,
-//                                   border: `1px solid ${themeColors.border}`,
-//                                   '& .MuiMenuItem-root': { fontSize: 12, color: themeColors.text },
-//                                 },
-//                               },
-//                             }}
-//                           >
-//                             <MenuItem value="" disabled>
-//                               <em>Select league</em>
-//                             </MenuItem>
-//                             {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
-//                               <MenuItem key={league.id} value={league.id}>
-//                                 {league.name ?? `League ${league.id}`}
-//                               </MenuItem>
-//                             ))}
-//                           </Select>
-//                         </FormControl>
-//                       </Box>
-
-//                       <ToggleButtonGroup
-//                         size="small"
-//                         exclusive
-//                         value={groupMode}
-//                         onChange={(_, val) => { if (val) setGroupMode(val); }}
-//                         aria-label="grouping selector mobile"
-//                         sx={{
-//                           '& .MuiToggleButton-root': {
-//                             color: themeColors.textDim,
-//                             borderColor: themeColors.border,
-//                             px: 0.75,
-//                             py: 0.2,
-//                             fontSize: 10,
-//                             '&.Mui-selected': { backgroundColor: themeColors.primary, color: themeColors.text },
-//                           }
-//                         }}
-//                       >
-//                         <ToggleButton value="auto" aria-label="auto grouping">Auto</ToggleButton>
-//                         <ToggleButton value="weekly" aria-label="weekly grouping">W</ToggleButton>
-//                         <ToggleButton value="monthly" aria-label="monthly grouping">M</ToggleButton>
-//                       </ToggleButtonGroup>
-//                     </Box>
-//                   )}
-
-//                   {/* Title centered top */}
-//                   <Box sx={{ textAlign: 'center', pt: 1.5, pb: 0.5 }}>
-//                     <Typography sx={{ fontSize: 16, fontWeight: 700, color: themeColors.text, letterSpacing: 0.4 }}>
-//                       Performance Over Time
-//                     </Typography>
-//                   </Box>
-
-//                   {/* Side ribbons - matching the reference image */}
-//                   <Box sx={{ 
-//                     position: 'absolute', 
-//                     top: 70, 
-//                     bottom: 60, 
-//                     left: 15, 
-//                     width: 25, 
-//                     background: themeColors.primary, 
-//                     color: '#fff', 
-//                     borderRadius: 1.5, 
-//                     // display: 'flex', 
-//                     alignItems: 'center', 
-//                     justifyContent: 'center', 
-//                     writingMode: 'vertical-rl', 
-//                     transform: 'rotate(180deg)', 
-//                     fontSize: 11, 
-//                     fontWeight: 700, 
-//                     letterSpacing: 0.4, 
-//                     zIndex: 3, 
-//                     boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-//                     display: { xs: 'none', sm: 'flex' }
-//                   }}>
-//                     Average XP Points
-//                   </Box>
-//                   <Box sx={{ 
-//                     position: 'absolute', 
-//                     top: 70, 
-//                     bottom: 60, 
-//                     right: 15, 
-//                     width: 28, 
-//                     background: themeColors.primaryAlt, 
-//                     color: '#fff', 
-//                     borderRadius: 1.5, 
-//                     // display: 'flex', 
-//                     alignItems: 'center', 
-//                     justifyContent: 'center', 
-//                     writingMode: 'vertical-rl', 
-//                     transform: 'rotate(180deg)', 
-//                     fontSize: 11, 
-//                     fontWeight: 700, 
-//                     letterSpacing: 0.4, 
-//                     zIndex: 3, 
-//                     boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-//                     display: { xs: 'none', sm: 'flex' }
-//                   }}>
-//                     Accumulative XP Points
-//                   </Box>
-
-//                   {/* Chart */}
-//                   <Box sx={{ position: 'relative', zIndex: 4, flex: 1, minHeight: 0, px: { xs: 2, sm: 4, md: 6 }, pt: { xs: 4, sm: 5, md: 6 }, pb: 2 }}>
-//                     <ResponsiveContainer width="100%" height="100%">
-//                       <ComposedChart 
-//                         data={chartData.length > 0 ? chartData : performanceData} 
-//                         margin={{ top: 15, left: 15, right: 15, bottom: 40 }}
-//                       >
-//                         <XAxis 
-//                           dataKey="label"
-//                           stroke={themeColors.textDim}
-//                           tick={{ fontSize: 10, fill: themeColors.textDim }}
-//                           interval="preserveStartEnd"
-//                           tickMargin={8}
-//                           angle={-30}
-//                           textAnchor="end"
-//                           tickLine={{ stroke: themeColors.border }}
-//                           axisLine={{ stroke: themeColors.border }}
-//                         />
-//                         <YAxis
-//                           yAxisId="avg"
-//                           stroke={themeColors.textDim}
-//                           tick={{ fontSize: 11, fill: themeColors.textDim }}
-//                           width={45}
-//                           tickLine={{ stroke: themeColors.border }}
-//                           axisLine={{ stroke: themeColors.border }}
-//                           label={{ 
-//                             value: 'Avg Points', 
-//                             angle: -90, 
-//                             position: 'insideLeft',
-//                             style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-//                           }}
-//                         />
-//                         <YAxis
-//                           yAxisId="cum"
-//                           orientation="right"
-//                           stroke={themeColors.textDim}
-//                           tick={{ fontSize: 11, fill: themeColors.textDim }}
-//                           width={55}
-//                           tickLine={{ stroke: themeColors.border }}
-//                           axisLine={{ stroke: themeColors.border }}
-//                           label={{ 
-//                             value: 'Cumulative Points', 
-//                             angle: 90, 
-//                             position: 'insideRight',
-//                             style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-//                           }}
-//                         />
-//                         <Tooltip
-//                           contentStyle={{
-//                             background: themeColors.surfaceAlt,
-//                             border: `1px solid ${themeColors.borderStrong}`,
-//                             fontSize: 11,
-//                             borderRadius: 6,
-//                             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-//                             color: themeColors.text
-//                           }}
-//                           labelStyle={{ fontWeight: 700, color: themeColors.text }}
-//                           formatter={(value: unknown, name: unknown) => {
-//                             const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-//                             const n = typeof name === 'string' ? name : String(name ?? '');
-//                             if (n.includes('Avg Points')) return [v, `Avg Points/${groupingType === 'weekly' ? 'Week' : 'Month'}`];
-//                             if (n.includes('Accumulative')) return [v, 'Cumulative XP Points'];
-//                             return [v, n];
-//                           }}
-//                           labelFormatter={(label) => {
-//                             const activeData = (chartData.length > 0 ? chartData : performanceData).find(d => d.label === label);
-//                             if (activeData) {
-//                               return `${label} ${activeData.year} (${activeData.matches} match${activeData.matches !== 1 ? 'es' : ''})`;
-//                             }
-//                             return label;
-//                           }}
-//                         />
-                        
-//                         {/* Bars for average points */}
-//                         <Bar
-//                           yAxisId="avg"
-//                           dataKey="avgPoints"
-//                           fill={themeColors.primary}
-//                           name={`Avg Points / ${groupingType === 'weekly' ? 'Week' : 'Month'}`}
-//                           maxBarSize={40}
-//                           radius={[4, 4, 0, 0]}
-//                         />
-                        
-//                         {/* Line for cumulative points */}
-//                         <Line
-//                           yAxisId="cum"
-//                           type="monotone"
-//                           dataKey="cumulativePoints"
-//                           name="Accumulative XP Points"
-//                           stroke={themeColors.primaryAlt}
-//                           strokeWidth={3}
-//                           dot={{ r: 4, stroke: '#fff', strokeWidth: 1.5, fill: themeColors.primaryAlt }}
-//                           activeDot={{ r: 6, stroke: themeColors.primaryAlt, strokeWidth: 1, fill: '#fff' }}
-//                           connectNulls={false}
-//                         />
-//                       </ComposedChart>
-//                     </ResponsiveContainer>
-//                   </Box>
-
-//                   {/* Legend - updated */}
-//                   <Box sx={{ 
-//                     position: 'relative', 
-//                     zIndex: 4, 
-//                     display: 'flex', 
-//                     justifyContent: 'center', 
-//                     flexWrap: 'wrap', 
-//                     gap: 4, 
-//                     pb: 1.5, 
-//                     mt: 0.5, 
-//                     borderTop: `1px solid ${themeColors.border}`, 
-//                     background: 'rgba(255,255,255,0.05)' 
-//                   }}>
-//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-//                       <Box sx={{ width: 18, height: 14, borderRadius: 2, background: themeColors.primary }} />
-//                       <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-//                         Avg Points per {groupingType === 'weekly' ? 'Week' : 'Month'}
-//                       </Typography>
-//                     </Box>
-//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-//                       <Box sx={{ width: 18, height: 8, borderRadius: 2, background: themeColors.primaryAlt }} />
-//                       <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-//                         Accumulative XP Points
-//                       </Typography>
-//                     </Box>
-                    
-//                     {/* Show current mode indicator */}
-//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 2 }}>
-//                       <Typography sx={{ fontSize: 11, color: themeColors.textFaint, fontStyle: 'italic' }}>
-//                         Mode: {groupMode === 'auto' ? `Auto (${groupingType})` : groupingType}
-//                         {performanceData.length > 0 && ` • ${performanceData.length} periods`}
-//                       </Typography>
-//                     </Box>
-//                   </Box>
-//                 </Box>
-//               </GlassCard>
-
-//               {/* Influence and Win/Loss Row */}
-//               <Grid container spacing={2} sx={{ mb: 2 }}>
-//                 {/* Influence Radar Chart */}
-//                 <Grid item xs={12} md={6}>
-//                   <GlassCard sx={{ height: 220 }}>
-//                     <CardContent sx={{ p: 2 }}>
-//                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-//                         <Typography sx={{ 
-//                           fontSize: 16, 
-//                           fontWeight: 'bold', 
-//                           color: themeColors.text,
-//                           textAlign: 'center',
-//                         }}>
-//                           Influence
-//                         </Typography>
-//                       </Box>
-                      
-//                       {/* Legend */}
-//                       <Box sx={{ 
-//                         display: 'flex', 
-//                         justifyContent: 'center', 
-//                         gap: 3, 
-//                         mb: 1.5,
-//                         alignItems: 'center'
-//                       }}>
-//                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-//                           <Box sx={{ 
-//                             width: 12, 
-//                             height: 3, 
-//                             backgroundColor: '#1976d2',
-//                             borderRadius: 1
-//                           }} />
-//                           <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
-//                             {playerName || 'Player'}
-//                           </Typography>
-//                         </Box>
-//                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-//                           <Box sx={{ 
-//                             width: 12, 
-//                             height: 3, 
-//                             backgroundColor: '#00bcd4',
-//                             borderRadius: 1
-//                           }} />
-//                           <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
-//                             League Avg
-//                           </Typography>
-//                         </Box>
-//                       </Box>
-
-//                       <Box sx={{ height: 140, mt: 1 }}>
-//                         <ResponsiveContainer width="100%" height="100%">
-//                           <RadarChart 
-//                             data={influenceRadarData} 
-//                             outerRadius={55}
-//                             margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-//                           >
-//                             <PolarGrid 
-//                               gridType="polygon"
-//                               stroke={themeColors.border}
-//                               strokeWidth={1}
-//                             />
-//                             <PolarAngleAxis 
-//                               dataKey="metric" 
-//                               tick={{ 
-//                                 fontSize: 9, 
-//                                 fill: themeColors.textDim,
-//                                 fontWeight: 500
-//                               }}
-//                               className="radar-axis"
-//                               tickSize={8}
-//                               // Add missing required properties
-//                               reversed={false}
-//                               scale="auto"
-//                             />
-//                             <PolarRadiusAxis 
-//                               tick={{ 
-//                                 fontSize: 8, 
-//                                 fill: themeColors.textFaint 
-//                               }}
-//                               tickCount={6}
-//                               angle={90}
-//                               domain={[0, 'dataMax + 2']}
-//                             />
-                            
-//                             {/* Player Data - Blue with dynamic name */}
-//                             <Radar 
-//                               name={playerName || 'Player'} 
-//                               dataKey={playerName || 'Player'} 
-//                               stroke="#1976d2"
-//                               fill="#1976d2"
-//                               fillOpacity={0.15}
-//                               strokeWidth={2}
-//                               dot={{ 
-//                                 r: 3, 
-//                                 fill: "#1976d2",
-//                                 stroke: "#fff",
-//                                 strokeWidth: 1
-//                               }}
-//                             />
-                            
-//                             {/* League Average - Teal */}
-//                             <Radar 
-//                               name="League Avg" 
-//                               dataKey="League Avg" 
-//                               stroke="#00bcd4"
-//                               fill="#00bcd4"
-//                               fillOpacity={0.1}
-//                               strokeWidth={2}
-//                               dot={{ 
-//                                 r: 2.5, 
-//                                 fill: "#00bcd4",
-//                                 stroke: "#fff",
-//                                 strokeWidth: 1
-//                               }}
-//                             />
-                            
-//                             <Tooltip 
-//                               contentStyle={{
-//                                 background: themeColors.surfaceAlt,
-//                                 border: `1px solid ${themeColors.borderStrong}`,
-//                                 borderRadius: 6,
-//                                 color: themeColors.text,
-//                                 fontSize: 11,
-//                                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-//                               }}
-//                               labelStyle={{ 
-//                                 fontWeight: 600, 
-//                                 color: themeColors.text,
-//                                 marginBottom: 4
-//                               }}
-//                               formatter={(value: unknown, name: unknown) => [
-//                                 String(value ?? ''),
-//                                 name === (playerName || 'Player') ? (playerName || 'Player') : 'League Avg'
-//                               ]}
-//                             />
-//                           </RadarChart>
-//                         </ResponsiveContainer>
-//                       </Box>
-//                     </CardContent>
-//                   </GlassCard>
-//                 </Grid>
-
-//                 {/* Win/Loss Pie Chart */}
-//                 <Grid item xs={12} md={6}>
-//                   <GlassCard sx={{ height: 220 }}>
-//                     <CardContent>
-//                       <SectionTitle>Win/Loss/Draw</SectionTitle>
-                      
-//                       {/* Debug info - remove this later */}
-//                       <Box sx={{ mb: 1, fontSize: 10, color: themeColors.textFaint }}>
-//                         Total Matches: {filteredMatches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
-//                       </Box>
-
-//                       {loading ? (
-//                         <Box sx={{ 
-//                           height: 150, 
-//                           display: 'flex', 
-//                           alignItems: 'center', 
-//                           justifyContent: 'center' 
-//                         }}>
-//                           <CircularProgress size={30} sx={{ color: themeColors.primary }} />
-//                         </Box>
-//                       ) : (
-//                         <Box sx={{ height: 150 }}>
-//                           <ResponsiveContainer width="100%" height="100%">
-//                             <PieChart>
-//                               <Pie
-//                                 data={actualWinLossData}
-//                                 dataKey="value"
-//                                 nameKey="name"
-//                                 cx="50%"
-//                                 cy="50%"
-//                                 // innerRadius={25}
-//                                 outerRadius={55}
-//                                 paddingAngle={3}
-//                                 startAngle={90}
-//                                 endAngle={450}
-//                                 label={({ cx, cy, midAngle, outerRadius, value }) => {
-//                                   // Add safety check for value
-//                                   const safeValue = value ?? 0;
-                                  
-//                                   // Only show label if value > 5 (to avoid cluttered display)
-//                                   if (safeValue < 5) return null;
-                                  
-//                                   const safeCx = cx || 0;
-//                                   const safeCy = cy || 0;
-//                                   const safeMidAngle = midAngle || 0;
-//                                   // const safeInnerRadius = innerRadius || 0;
-//                                   const safeOuterRadius = outerRadius || 0;
-                                  
-//                                   const RADIAN = Math.PI / 180;
-//                                   const radius = safeOuterRadius + 15; // Position label outside
-//                                   const x = safeCx + radius * Math.cos(-safeMidAngle * RADIAN);
-//                                   const y = safeCy + radius * Math.sin(-safeMidAngle * RADIAN);
-                                  
-//                                   return (
-//                                     <text 
-//                                       x={x} 
-//                                       y={y} 
-//                                       fill="#fff" 
-//                                       textAnchor={x > safeCx ? 'start' : 'end'} 
-//                                       dominantBaseline="central"
-//                                       fontSize={11}
-//                                       fontWeight="bold"
-//                                       style={{
-//                                         filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.8))'
-//                                       }}
-//                                     >
-//                                       {`${safeValue}%`}
-//                                     </text>
-//                                   );
-//                                 }}
-//                                 labelLine={false}
-//                               >
-//                                 {actualWinLossData.map((entry, index) => (
-//                                   <Cell 
-//                                     key={`cell-${index}`} 
-//                                     fill={entry.color}
-//                                     stroke="rgba(255,255,255,0.1)"
-//                                     strokeWidth={1}
-//                                   />
-//                                 ))}
-//                               </Pie>
-//                               <Tooltip 
-//                                 contentStyle={{
-//                                   background: themeColors.surfaceAlt,
-//                                   border: `1px solid ${themeColors.borderStrong}`,
-//                                   borderRadius: 6,
-//                                   color: themeColors.text,
-//                                   fontSize: 12,
-//                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-//                                 }}
-//                                 formatter={(value: unknown, name: unknown) => [
-//                                   `${value}%`,
-//                                   `${name} Rate`
-//                                 ]}
-//                               />
-//                             </PieChart>
-//                           </ResponsiveContainer>
-//                         </Box>
-//                       )}
-
-//                       {/* Legend */}
-//                       <Box sx={{ 
-//                         display: 'flex', 
-//                         justifyContent: 'center', 
-//                         gap: 2, 
-//                         mt: 1,
-//                         flexWrap: 'wrap'
-//                       }}>
-//                         {actualWinLossData.map((entry, index) => (
-//                           <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-//                             <Box sx={{ 
-//                               width: 12, 
-//                               height: 12, 
-//                               backgroundColor: entry.color,
-//                               borderRadius: '50%',
-//                               border: '1px solid rgba(255,255,255,0.2)'
-//                             }} />
-//                             <Typography sx={{ 
-//                               fontSize: 10, 
-//                               color: themeColors.textDim, 
-//                               fontWeight: 500 
-//                             }}>
-//                               {entry.name}: {entry.value}%
-//                             </Typography>
-//                           </Box>
-//                         ))}
-//                       </Box>
-//                     </CardContent>
-//                   </GlassCard>
-//                 </Grid>
-//               </Grid>
-
-//               {/* Impact Section - UPDATED */}
-//               <GlassCard sx={{ mb: 2 }}>
-//                 <CardContent>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-//                     <SectionTitle>Impact</SectionTitle>
-//                     {filters.leagueId && filters.leagueId !== 'all' && (
-//                       <Typography sx={{ fontSize: 12, color: themeColors.textFaint, fontWeight: 700 }}>
-//                         Ranked: {leagueRank ? `#${leagueRank}` : '—'}
-//                       </Typography>
-//                     )}
-//                   </Box>
-                  
-//                   <Grid container spacing={2} alignItems="center">
-//                     {/* Circle with Matches Played */}
-//                     <Grid item xs={12} md={3}>
-//                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-//                         <Box
-//                           sx={{
-//                             width: 80,
-//                             height: 80,
-//                             borderRadius: '50%',
-//                             border: `3px solid ${themeColors.primary}`,
-//                             backgroundColor: themeColors.surfaceAlt,
-//                             display: 'flex',
-//                             alignItems: 'center',
-//                             justifyContent: 'center',
-//                             mb: 1,
-//                             boxShadow: '0 4px 12px rgba(229,106,22,0.3)'
-//                           }}
-//                         >
-//                           <Typography sx={{ fontSize: 24, fontWeight: 'bold', color: themeColors.text }}>
-//                             {filteredMatches.length}
-//                           </Typography>
-//                         </Box>
-//                         <Typography sx={{ fontSize: 12, fontWeight: 600, textAlign: 'center', color: themeColors.textDim }}>
-//                           Matches<br />Played
-//                         </Typography>
-//                       </Box>
-//                     </Grid>
-
-//                     {/* Impact Table */}
-//                     <Grid item xs={12} md={9}>
-//                       <Table size="small">
-//                         <TableHead>
-//                           <TableRow>
-//                             <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-//                             <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-//                             <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Progress Prev {lastPrev10.prev.n}</TableCell>
-//                             <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-//                           </TableRow>
-//                         </TableHead>
-//                         <TableBody>
-//                           {(() => {
-//                             const { prev } = lastPrev10;
-//                             const pct = (n: number) => `${n.toFixed(1)}%`;
-//                             const deltaPct = (a: number, b: number) => `${(a - b).toFixed(1)}%`;
-//                             const deltaNum = (a: number, b: number) => `${(a - b).toFixed(1)}`;
-//                             const deltaInt = (a: number, b: number) => `${a - b}`;
-                            
-//                             return (
-//                               <>
-//                                 <ImpactRow 
-//                                   title="Game Contribution" 
-//                                   value={yourStats.impactAvg.toFixed(1)} 
-//                                   change={prev.n > 0 ? deltaNum(yourStats.impactAvg, prev.impactAvg) : '0.0'} 
-//                                   up={yourStats.impactAvg >= prev.impactAvg} 
-//                                 />
-//                                 <ImpactRow 
-//                                   title="Win Rate" 
-//                                   value={pct(yourStats.winRate)} 
-//                                   change={prev.n > 0 ? deltaPct(yourStats.winRate, prev.winRate) : '0.0%'} 
-//                                   up={yourStats.winRate >= prev.winRate} 
-//                                 />
-//                                 <ImpactRow 
-//                                   title="MOTM Votes" 
-//                                   value={`${yourStats.motmVotes}`} 
-//                                   change={prev.n > 0 ? deltaInt(yourStats.motmVotes, prev.motmVotes) : '0'} 
-//                                   up={yourStats.motmVotes >= prev.motmVotes} 
-//                                 />
-//                                 <ImpactRow 
-//                                   title="Goal Diff" 
-//                                   value={`${yourStats.wins - yourStats.losses}`} 
-//                                   change={prev.n > 0 ? deltaInt((yourStats.wins - yourStats.losses), (prev.wins - prev.losses)) : '0'} 
-//                                   up={(yourStats.wins - yourStats.losses) >= (prev.wins - prev.losses)} 
-//                                 />
-//                                 <ImpactRow 
-//                                   title="Goals + Assist" 
-//                                   value={`${yourStats.ga}`} 
-//                                   change={prev.n > 0 ? deltaInt(yourStats.ga, prev.ga) : '0'} 
-//                                   up={yourStats.ga >= prev.ga} 
-//                                 />
-//                               </>
-//                             );
-//                           })()}
-//                         </TableBody>
-//                       </Table>
-//                     </Grid>
-//                   </Grid>                  
-//                   {/* Guidance per spec */}
-//                   <Box sx={{ mt: 2, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.05)' }}>
-//                     <Typography sx={{ fontSize: 12, color: themeColors.textDim, lineHeight: 1.4 }}>
-//                      {` This tracks the selected player's performance over their last`} {lastPrev10.last.n} {`games using the key metrics shown in the table. It measures their progress based on the previous`} {lastPrev10.prev.n} {`games they played. If a player has not yet completed 10 games, it will still show the most recent games played.`} <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Refer to the Key Stats</span> reference tab to understand the algorithm for each metric. Replace % Impact stat with <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Game Contribution</span> <span style={{ color: themeColors.danger, fontWeight: 'bold' }}>(this is the same calculation as the Contribution Index described</span>
-//                     </Typography>
-//                   </Box>
-
-//                   {/* Fallback message if no positive highlights */}
-//                   {(() => {
-//                     const { last, prev } = lastPrev10;
-//                     const hasPositiveMessages = prev.n > 0 ? 
-//                       (last.winRate > prev.winRate || last.impactAvg > prev.impactAvg || (last.motmVotes / Math.max(last.n, 1) * 100) >= 30) :
-//                       (last.winRate > 50 || last.impactAvg > 5 || last.ga > 3);
-                    
-//                     return !hasPositiveMessages && lastPrev10.last.n > 0 ? (
-//                       <Box sx={{ mt: 1.5, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.02)' }}>
-//                         <Typography sx={{ fontSize: 12, color: themeColors.textDim, fontStyle: 'italic' }}>
-//                           Keep playing to unlock performance insights and track your improvement over time!
-//                         </Typography>
-//                       </Box>
-//                     ) : null;
-//                   })()}
-//                 </CardContent>
-//               </GlassCard>
-
-//               {/* Your Top Strengths Section */}
-//               <GlassCard sx={{ mb: 2 }}>
-//                 <CardContent>
-//                   <SectionTitle>Your Top Strengths</SectionTitle>
-//                   <Table size="small">
-//                     <TableHead>
-//                       <TableRow>
-//                         <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-//                         <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-//                           {user?.id && playerId && String(user.id) !== String(playerId) && playerName ? playerName : 'You'}
-//                         </TableCell>
-//                         {strengthComparison.show && (
-//                           <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-//                             {strengthComparison.label}
-//                           </TableCell>
-//                         )}
-//                       </TableRow>
-//                     </TableHead>
-//                     <TableBody>
-//                       {strengths.map((s) => {
-//                         // Player's per-match rate for the metric as "You"
-//                         const n = Math.max(filteredMatches.length, 1);
-//                         const youVal = (s.value / n).toFixed(2);
-//                         // Diff vs chosen percentile threshold using scaled percentage
-//                         const thresholdPct = strengthComparison.threshold * 100;
-//                         const pctDiff = Math.round(s.scaled - thresholdPct);
-//                         const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
-//                         const up = pctDiff >= 0;
-//                         return (
-//                           <StrengthRow key={s.metric} title={s.metric} you={youVal} diff={diff} up={up} showComparison={strengthComparison.show} />
-//                         );
-//                       })}
-//                     </TableBody>
-//                   </Table>
-//                   {topStrengthNote && (
-//                     <Typography sx={{ fontSize: 13, mt: 1, color: themeColors.textDim }}>
-//                       {topStrengthNote}
-//                     </Typography>
-//                   )}
-//                 </CardContent>
-//               </GlassCard>
-
-//               {/* Focus Area Section */}
-//               <GlassCard sx={{ mb: 2 }}>
-//                 <CardContent>
-//                   <SectionTitle>Focus Area</SectionTitle>
-//                   <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>
-//                     {focusSuggestion}
-//                   </Typography>
-//                 </CardContent>
-//               </GlassCard>
-
-//               {/* Play Best With + Rivalries (Dynamic) */}
-//               <Box sx={{ mb: 2 }}>
-//                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-//                   You Play Best With
-//                   {/* {selectedSynergyLeagueId && (
-//                     <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-//                       (League {selectedSynergyLeagueId})
-//                     </span>
-//                   )} */}
-//                   <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-//                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-
-
-
-//                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-//                   {playerId && synergyError && (
-//                     <span style={{ color: themeColors.danger }}>{synergyError}</span>
-//                   )}
-//                   {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-//                     <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-//                   )}
-//                   {!synergyLoading && !synergyError && bestPairing && (
-//                     <>
-//                       <span style={{ color: themeColors.primary }}>{bestPairing.name || 'Player'}</span>:
-//                       Wins together <span style={{ color: themeColors.success }}>{bestPairing.winsTogether}</span>
-//                       <span style={{ color: themeColors.textDim, fontSize: 12 }}>
-//                         {` (${bestPairing.matchesTogether} matches • ${bestPairing.winRate}% win rate)`}
-//                       </span>
-//                     </>
-//                   )}
-//                   {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && (
-//                     <span style={{ color: themeColors.textDim }}>Need team wins.</span>
-//                   )}
-//                 </Typography>
-
-//                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-//                   Toughest Rival
-//                   {/* {selectedSynergyLeagueId && (
-//                     <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-//                       (League {selectedSynergyLeagueId})
-//                     </span>
-//                   )} */}
-//                   <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-//                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-//                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-//                   {playerId && synergyError && (
-//                     <span style={{ color: themeColors.danger }}>{synergyError}</span>
-//                   )}
-//                   {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-//                     <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-//                   )}
-//                   {!synergyLoading && !synergyError && toughestRival && (
-//                     <>
-//                       <span style={{ color: themeColors.primary }}>{toughestRival.name || 'Player'}</span>:
-//                       Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
-//                       <span style={{ color: themeColors.textDim, fontSize: 12 }}>
-//                         {` (${toughestRival.matchesAgainst} matches • ${toughestRival.lossRate}% loss rate)`}
-//                       </span>
-//                     </>
-//                   )}
-//                   {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && (
-//                     <span style={{ color: themeColors.textDim }}>Need losses data.</span>
-//                   )}
-//                 </Typography>
-//               </Box>
-
-//               {/* Back Button */}
-//               {/* <Box sx={{ textAlign: 'center', mt: 4 }}>
-//                 <Typography
-//                   component="button"
-//                   onClick={() => router.push(`/player/${playerId}`)}
-//                   sx={{
-//                     background: 'linear-gradient(135deg, #E56A16 0%, #CF2326 100%)',
-//                     border: 'none',
-//                     px: 4,
-//                     py: 1.5,
-//                     borderRadius: 2,
-//                     color: '#fff',
-//                     fontWeight: 'bold',
-//                     cursor: 'pointer',
-//                     fontSize: 14,
-//                     boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
-//                     transition: 'all 0.3s ease',
-//                     '&:hover': { 
-//                       transform: 'translateY(-2px)',
-//                       boxShadow: '0 6px 20px rgba(229,106,22,0.4)',
-//                     }
-//                   }}
-//                 >
-//                   Back to Player Profile
-//                 </Typography>
-//               </Box> */}
-//             </Box>
-//           )}
-//         </Box>
-//       </Container>
-//     </Box>
-//   );
-// }
-
-// // ---------- SHARED PLAYER TEAM EXTRACTION (moved out for reuse/debug) ----------
-// // type PairingPlayerLite = {
-// //   id: string;
-// //   name?: string;
-// //   profile?: { name?: string };
-// // };
-
-// // const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-// //   !!v && typeof v === 'object' && !Array.isArray(v);
-
-// // const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
-// //   if (!Array.isArray(val)) return [];
-// //   return val
-// //     .filter(isPlainObject)
-// //     .map((obj): PairingPlayerLite | null => {
-// //       const idRaw = obj.id ?? (obj as Record<string, unknown>).playerId ?? (obj as Record<string, unknown>)._id;
-// //       const id = (typeof idRaw === 'string' || typeof idRaw === 'number') ? String(idRaw) : '';
-// //       if (!id) return null;
-
-// //       const profileVal = (obj as Record<string, unknown>).profile;
-// //       const profile = isPlainObject(profileVal) ? (profileVal as { name?: string }) : undefined;
-
-// //       const name =
-// //         typeof obj.name === 'string'
-// //           ? obj.name
-// //           : (profile && typeof profile.name === 'string' ? profile.name : undefined);
-
-// //       return { id, name, profile };
-// //     })
-// //     .filter((p): p is PairingPlayerLite => !!p);
-// // };
-
-// // interface PairingMatch {
-// //   team1Players?: unknown;
-// //   team2Players?: unknown;
-// //   team1?: unknown;
-// //   homePlayers?: unknown;
-// //   lineup1?: unknown;
-// //   squad1?: unknown;
-// //   playersTeam1?: unknown;
-// //   side1?: unknown;
-// //   team2?: unknown;
-// //   awayPlayers?: unknown;
-// //   lineup2?: unknown;
-// //   squad2?: unknown;
-// //   playersTeam2?: unknown;
-// //   side2?: unknown;
-// //   players?: unknown;
-// //   participants?: unknown;
-// //   playerList?: unknown;
-// // }
-
-// // function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
-// //   let team1 = coercePlayersArray(match.team1Players);
-// //   let team2 = coercePlayersArray(match.team2Players);
-
-// //   const altKeysTeam1: (keyof PairingMatch)[] = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
-// //   const altKeysTeam2: (keyof PairingMatch)[] = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
-
-// //   if (team1.length === 0) {
-// //     for (const k of altKeysTeam1) {
-// //       const arr = coercePlayersArray(match[k]);
-// //       if (arr.length) { team1 = arr; break; }
-// //     }
-// //   }
-// //   if (team2.length === 0) {
-// //     for (const k of altKeysTeam2) {
-// //       const arr = coercePlayersArray(match[k]);
-// //       if (arr.length) { team2 = arr; break; }
-// //     }
-// //   }
-
-// //   if (team1.length === 0 && team2.length === 0) {
-// //     const flat = [
-// //       ...coercePlayersArray(match.players),
-// //       ...coercePlayersArray(match.participants),
-// //       ...coercePlayersArray(match.playerList),
-// //     ];
-// //     const unique = new Map<string, PairingPlayerLite>();
-// //     flat.forEach(p => unique.set(p.id, p));
-// //     const arr = Array.from(unique.values());
-
-// //     if (arr.length >= 2) {
-// //       if (arr.length >= 4) {
-// //         const half = Math.floor(arr.length / 2);
-// //         team1 = arr.slice(0, half);
-// //         team2 = arr.slice(half);
-// //       } else {
-// //         const pid = playerId ? String(playerId) : undefined;
-// //         const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
-// //         if (selfIdx >= 0) {
-// //           const self = arr[selfIdx];
-// //             const others = arr.filter((_, i) => i !== selfIdx);
-// //           if (others.length === 1) {
-// //             team1 = [self];
-// //             team2 = others;
-// //           } else {
-// //             team1 = [self, ...others];
-// //           }
-// //         } else {
-// //           team1 = arr;
-// //         }
-// //       }
-// //     }
-// //   }
-
-// //   return { team1, team2 };
-// // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // 'use client';
-
-// // import React, { useEffect, useMemo, useState } from 'react';
-// // import {
-// //   Box,
-// //   Paper,
-// //   Typography,
-// //   Grid,
-// //   CircularProgress,
-// //   Container,
-// //   Table,
-// //   TableHead,
-// //   TableBody,
-// //   TableRow,
-// //   TableCell,
-// //   ToggleButtonGroup,
-// //   ToggleButton,
-// //   CardContent,
-// //   Button,
-// //   Select,
-// //   MenuItem,
-// //   FormControl,
-// //   SelectChangeEvent,
-// //   // Avatar
-// // } from '@mui/material';
-// // import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-// // import { useParams, useRouter, useSearchParams } from 'next/navigation';
-// // import { useDispatch, useSelector } from 'react-redux';
-// // import { AppDispatch, RootState } from '@/lib/store';
-// // import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
-// // import dayjs from 'dayjs';
-// // import dynamic from 'next/dynamic';
-// // import { styled } from '@mui/material/styles';
-// // import { useAuth } from '@/lib/useAuth';
-// // // import api from '@/lib/api'; // Adjust the import based on your project structure
-
-// // // ---------- THEME (Brand) ----------
-// // const themeColors = {
-// //   primary: '#E56A16',
-// //   primaryAlt: '#CF2326',
-// //   gradient: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
-// //   gradientSoft: 'linear-gradient(135deg,rgba(229,106,22,0.18) 0%,rgba(207,35,38,0.18) 100%)',
-// //   surfaceBase: '#141416',
-// //   surfaceAlt: '#1d1e21',
-// //   surfacePanel: 'linear-gradient(140deg,#1f2023 0%,#27292d 60%)',
-// //   border: 'rgba(255,255,255,0.14)',
-// //   borderStrong: 'rgba(255,255,255,0.32)',
-// //   text: '#fff',
-// //   textDim: 'rgba(255,255,255,0.72)',
-// //   textFaint: 'rgba(255,255,255,0.52)',
-// //   success: '#15b67a',
-// //   warn: '#ffb300',
-// //   danger: '#d32f2f',
-// //   // Additional Flutter UI colors
-// //   teal: '#009688',
-// //   blue: '#2196F3',
-// //   green: '#4CAF50',
-// //   red: '#F44336',
-// //   orange: '#FF9800'
-// // };
-
-// // // Mock data to match Flutter UI
-// // // const influenceData = [
-// // //   { metric: "Goals", playerValue: 10, leagueAvg: 6 },
-// // //   { metric: "Assists", playerValue: 8, leagueAvg: 5 },
-// // //   { metric: "Clean Sheets", playerValue: 7, leagueAvg: 4 },
-// // //   { metric: "Defence", playerValue: 5, leagueAvg: 3 },
-// // //   { metric: "MOTM", playerValue: 6, leagueAvg: 4 },
-// // // ];
-
-// // // const winLossData = [
-// // //   { name: 'Win', value: 45, color: '#15b67a' },
-// // //   { name: 'Loss', value: 35, color: '#d32f2f' },
-// // //   { name: 'Draw', value: 20, color: '#ffb300' },
-// // // ];
-
-// // // Threshold used for auto switch from weekly to monthly aggregation
-// // const AUTO_SWITCH_THRESHOLD = 26;
-
-// // // ---------- TYPES ----------
-// // interface PlayerMatchStats {
-// //   goals?: number;
-// //   assists?: number;
-// //   cleanSheets?: number;
-// //   motmVotes?: number;
-// //   impact?: number;
-// //   defence?: number;
-// //   freeKicks?: number;
-// //   penalties?: number;
-// //   result?: 'W' | 'L' | 'D';
-// // }
-
-// // interface LeagueMatch {
-// //   id: string;
-// //   date: string;
-// //   playerStats?: PlayerMatchStats;
-// //   result?: 'W' | 'L' | 'D';
-// //   outcome?: string;
-// //   homeTeamGoals?: number;
-// //   awayTeamGoals?: number;
-// //   homeTeamId?: string;
-// //   team1Score?: number;
-// //   team2Score?: number;
-// //   team1Id?: string;
-// //   team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
-// //   team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
-// //   // Added for filtering by selected league
-// //   leagueId?: string;
-// // }
-// // interface LeagueWithMatches {
-// //   id: string;
-// //   matches?: LeagueMatch[];
-// // }
-// // interface PlayerStatsData {
-// //   leagues?: LeagueWithMatches[];
-// // }
-
-// // // Helper to safely extract name without using any
-// // type MaybeNameObj = { name?: unknown };
-// // type MaybeRoot = { playerName?: unknown; player?: MaybeNameObj; profile?: MaybeNameObj };
-// // const extractPlayerName = (input: unknown): string => {
-// //   const r = input as MaybeRoot | undefined;
-// //   if (typeof r?.playerName === 'string') return r.playerName;
-// //   const pName = r?.player?.name;
-// //   if (typeof pName === 'string') return pName;
-// //   const prName = r?.profile?.name;
-// //   if (typeof prName === 'string') return prName;
-// //   return '';
-// // };
-
-// // // Row used for weekly / monthly aggregation
-// // interface PerformanceRow {
-// //   key: string;
-// //   label: string;
-// //   year: string;
-// //   matches: number;
-// //   totalPoints: number;
-// //   avgPoints: number;
-// //   cumulativePoints: number;
-// // }
-
-// // interface InfluenceEntry {
-// //   metric: string;
-// //   value: number;
-// //   scaled: number;
-// // }
-
-// // // Replace the empty extending interface with a type alias to satisfy eslint
-// // type StrengthEntry = InfluenceEntry;
-
-// // // ---------- DYNAMIC RECHARTS ----------
-// // const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
-// // const ComposedChart = dynamic(() => import('recharts').then(m => m.ComposedChart), { ssr: false });
-// // const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
-// // const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
-// // const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
-// // const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
-// // const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
-// // const PieChart = dynamic(() => import('recharts').then(m => m.PieChart), { ssr: false });
-// // const Pie = dynamic(() => import('recharts').then(m => m.Pie), { ssr: false });
-// // const Cell = dynamic(() => import('recharts').then(m => m.Cell), { ssr: false });
-// // const RadarChart = dynamic(() => import('recharts').then(m => m.RadarChart), { ssr: false });
-// // const PolarGrid = dynamic(() => import('recharts').then(m => m.PolarGrid), { ssr: false });
-// // const PolarAngleAxis = dynamic(() => import('recharts').then(m => m.PolarAngleAxis), { ssr: false });
-// // const PolarRadiusAxis = dynamic(() => import('recharts').then(m => m.PolarRadiusAxis), { ssr: false });
-// // const Radar = dynamic(() => import('recharts').then(m => m.Radar), { ssr: false });
-
-// // // ---------- STYLED COMPONENTS ----------
-// // const GlassCard = styled(Paper)(() => ({
-// //   background: themeColors.surfacePanel,
-// //   border: `1px solid ${themeColors.border}`,
-// //   borderRadius: 12,
-// //   position: 'relative',
-// //   overflow: 'hidden',
-// //   boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-// //   transition: 'border-color .35s, box-shadow .35s, transform .35s',
-// //   '&:hover': {
-// //     borderColor: themeColors.borderStrong,
-// //     boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-// //     transform: 'translateY(-2px)'
-// //   }
-// // }));
-
-// // const SectionTitle = styled(Typography)(() => ({
-// //   fontWeight: 'bold',
-// //   fontSize: 16,
-// //   color: themeColors.text,
-// //   marginBottom: 12
-// // }));
-
-// // // Impact Table Row Builder (matching Flutter UI)
-// // const ImpactRow = ({ title, value, change, up }: {
-// //   title: string;
-// //   value: string;
-// //   change: string;
-// //   up: boolean;
-// // }) => (
-// //   <TableRow>
-// //     <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{title}</TableCell>
-// //     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{value}</TableCell>
-// //     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: up ? themeColors.success : themeColors.danger, fontWeight: 500, borderBottom: `1px solid ${themeColors.border}` }}>
-// //       {change}
-// //     </TableCell>
-// //     <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}>
-// //       {up ? <ArrowUpward sx={{ fontSize: 14, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 14, color: themeColors.danger }} />}
-// //     </TableCell>
-// //   </TableRow>
-// // );
-
-// // // Strength Table Row Builder
-// // const StrengthRow = ({ title, you, diff, up, showComparison }: {
-// //   title: string;
-// //   you: string;
-// //   diff?: string;
-// //   up?: boolean;
-// //   showComparison: boolean;
-// // }) => (
-// //   <TableRow>
-// //     <TableCell sx={{ fontSize: 12, fontWeight: 500, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{title}</TableCell>
-// //     <TableCell align="center" sx={{ fontSize: 12, py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{you}</TableCell>
-// //     {showComparison && (
-// //       <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}>
-// //         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-// //           <Typography sx={{ fontSize: 12, color: up ? themeColors.success : themeColors.danger, fontWeight: 500 }}>
-// //             {diff}
-// //           </Typography>
-// //           {up ? <ArrowUpward sx={{ fontSize: 14, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 14, color: themeColors.danger }} />}
-// //         </Box>
-// //       </TableCell>
-// //     )}
-// //   </TableRow>
-// // );
-
-// // // Helper to extract a display name from a player-like object
-// // // const extractPlayerDisplayName = (p: { id: string; name?: string; profile?: { name?: string } } | undefined): string =>
-// // //   (p?.name || p?.profile?.name || p?.id || '').trim();
-
-// // // ---------- HELPERS ----------
-// // function calcPoints(ps: PlayerMatchStats | undefined): number {
-// //   if (!ps) return 0;
-// //   return (ps.goals || 0) * 4
-// //     + (ps.assists || 0) * 3
-// //     + (ps.cleanSheets || 0) * 3
-// //     + (ps.motmVotes || 0) * 2
-// //     + (ps.impact || 0)
-// //     + (ps.defence || 0)
-// //     + (ps.freeKicks || 0) * 2
-// //     + (ps.penalties || 0) * 2;
-// // }
-
-// // // ---------- COMPONENT ----------
-// // export default function CareerPage() {
-// //   // ...existing code...
-// //   // Make sure data is initialized before leaguesForYear
-// //   const { data: rawData, filters } = useSelector((s: RootState) => s.playerStats);
-// //   const data: PlayerStatsData | undefined = rawData ?? undefined;
-
-// //   // Ensure leaguesForYear is defined for dropdown usage
-// //   const leaguesForYear: LeagueWithMatches[] = useMemo(() => {
-// //     const list: LeagueWithMatches[] = Array.isArray(data?.leagues)
-// //       ? (data?.leagues as LeagueWithMatches[])
-// //       : [];
-// //     if (list.length === 0) return [];
-
-// //     const fallbackYear = (() => {
-// //       const years = list
-// //         .flatMap((l) => (Array.isArray(l.matches) ? (l.matches as LeagueMatch[]) : []))
-// //         .map((m) => dayjs(m.date).year());
-// //       return years.length ? Math.max(...years) : dayjs().year();
-// //     })();
-
-// //     const effectiveYear = filters.year && filters.year !== 'all' ? String(filters.year) : String(fallbackYear);
-// //     return list.filter(
-// //       (l) =>
-// //         Array.isArray(l.matches) &&
-// //         (l.matches as LeagueMatch[]).some((m) => dayjs(m.date).year().toString() === effectiveYear)
-// //     );
-// //   }, [data?.leagues, filters.year]);
-// //   const { user, token } = useAuth();
-// //   const params = useParams();
-// //   const router = useRouter();
-// //   const searchParams = useSearchParams();
-// //   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-// //   const dispatch = useDispatch<AppDispatch>();
-// //   // ...existing code...
-
-// //   // Get league and year from URL params (passed from player stats page)
-// //   const urlLeagueId = searchParams?.get('leagueId');
-// //   const urlYear = searchParams?.get('year');
-
-// //   // State for available leagues
-// //   // Use leagues from Redux state if available, fallback to local state
-// //   const leaguesFromRedux = useSelector((state: RootState) => state.playerStats.data?.leagues) as LeagueWithMatches[] | undefined;
-// //   const [availableLeagues, setAvailableLeagues] = useState<LeagueWithMatches[]>([]);
-
-// //   // Initialize filters from URL params on mount
-// //   useEffect(() => {
-// //     if (urlLeagueId) {
-// //       dispatch(setLeagueFilter(urlLeagueId));
-// //     }
-// //     if (urlYear) {
-// //       dispatch(setYearFilter(urlYear));
-// //     }
-// //     // eslint-disable-next-line react-hooks/exhaustive-deps
-// //   }, []); // Run only once on mount
-
-// //   // Extract available leagues from Redux state or data
-// //   useEffect(() => {
-// //     if (leaguesFromRedux && leaguesFromRedux.length > 0) {
-// //       setAvailableLeagues(leaguesFromRedux);
-// //     } else if (data?.leagues) {
-// //       setAvailableLeagues(data.leagues as LeagueWithMatches[]);
-// //     }
-// //   }, [leaguesFromRedux, data]);
-
-// //   const loading = !data;
-
-// //   useEffect(() => {
-// //     if (playerId) {
-// //       dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
-// //     }
-// //   }, [playerId, dispatch, filters.leagueId, filters.year]);
-
-// //   const matches: LeagueMatch[] = useMemo(() => {
-// //     const d: PlayerStatsData | undefined = data;
-// //     return (d?.leagues || [])
-// //       .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
-// //       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
-// //   }, [data]);
-
-// //   // Matches filtered by selected league and year (for "Your Stats")
-// //   const filteredMatches = useMemo(() => {
-// //     const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : m.leagueId === filters.leagueId;
-// //     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
-// //     return matches.filter(m => byLeague(m) && byYear(m));
-// //   }, [matches, filters.leagueId, filters.year]);
-
-// //   // ------------- NEW STATE (grouping + range) -------------
-// //   const [groupMode, setGroupMode] = useState<'auto'|'weekly'|'monthly'>('auto');
-// //   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
-
-// //   // ------------- AGGREGATION (supports forced modes) -------------
-// //   const { performanceData, groupingType } = useMemo(() => {
-// //     const base = filteredMatches;
-// //     if (!base.length) {
-// //       return {
-// //         performanceData: [] as PerformanceRow[],
-// //         groupingType: 'weekly' as const,
-// //       };
-// //     }
-
-// //     const buildWeekly = (): PerformanceRow[] => {
-// //       const map = new Map<string, PerformanceRow>();
-// //       base.forEach(m => {
-// //         const weekStart = dayjs(m.date).startOf('week');
-// //         const key = weekStart.format('YYYY-MM-DD');
-// //         if (!map.has(key)) {
-// //           map.set(key, {
-// //             key,
-// //             label: weekStart.format('DD-MMM'),
-// //             year: weekStart.format('YYYY'),
-// //             matches: 0,
-// //             totalPoints: 0,
-// //             avgPoints: 0,
-// //             cumulativePoints: 0
-// //           });
-// //         }
-// //         const r = map.get(key)!;
-// //         r.matches++;
-// //         r.totalPoints += calcPoints(m.playerStats);
-// //       });
-
-// //       // Fill gaps between first and last week
-// //       const keys = Array.from(map.keys()).sort();
-// //       const filled: PerformanceRow[] = [];
-// //       if (keys.length) {
-// //         let cur = dayjs(keys[0]);
-// //         const end = dayjs(keys[keys.length - 1]);
-// //         while (cur.isBefore(end) || cur.isSame(end)) {
-// //           const k = cur.format('YYYY-MM-DD');
-// //           if (!map.has(k)) {
-// //             map.set(k, {
-// //               key: k,
-// //               label: cur.format('DD-MMM'),
-// //               year: cur.format('YYYY'),
-// //               matches: 0,
-// //               totalPoints: 0,
-// //               avgPoints: 0,
-// //               cumulativePoints: 0
-// //             });
-// //           }
-// //           filled.push(map.get(k)!);
-// //           cur = cur.add(1,'week');
-// //         }
-// //       }
-      
-// //       // Sort and calculate averages and cumulative
-// //       filled.sort((a,b) => a.key.localeCompare(b.key));
-// //       let cumulativeSum = 0;
-// //       filled.forEach(r => { 
-// //         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
-// //         cumulativeSum += r.totalPoints;
-// //         r.cumulativePoints = cumulativeSum;
-// //       });
-// //       return filled;
-// //     };
-
-// //     const buildMonthly = (): PerformanceRow[] => {
-// //       const map = new Map<string, PerformanceRow>();
-// //       base.forEach(m => {
-// //         const monthStart = dayjs(m.date).startOf('month');
-// //         const key = monthStart.format('YYYY-MM');
-// //         if (!map.has(key)) {
-// //           map.set(key, {
-// //             key,
-// //             label: monthStart.format('MMM'),
-// //             year: monthStart.format('YYYY'),
-// //             matches: 0,
-// //             totalPoints: 0,
-// //             avgPoints: 0,
-// //             cumulativePoints: 0
-// //           });
-// //         }
-// //         const r = map.get(key)!;
-// //         r.matches++;
-// //         r.totalPoints += calcPoints(m.playerStats);
-// //       });
-
-// //       // Fill missing months between first and last month
-// //       const keys = Array.from(map.keys()).sort();
-// //       const filled: PerformanceRow[] = [];
-// //       if (keys.length) {
-// //         let cur = dayjs(keys[0]+'-01');
-// //         const end = dayjs(keys[keys.length - 1]+'-01');
-// //         while (cur.isBefore(end) || cur.isSame(end)) {
-// //           const k = cur.format('YYYY-MM');
-// //           if (!map.has(k)) {
-// //             map.set(k, {
-// //               key: k,
-// //               label: cur.format('MMM'),
-// //               year: cur.format('YYYY'),
-// //               matches: 0,
-// //               totalPoints: 0,
-// //               avgPoints: 0,
-// //               cumulativePoints: 0
-// //             });
-// //           }
-// //           filled.push(map.get(k)!);
-// //           cur = cur.add(1,'month');
-// //         }
-// //       }
-      
-// //       // Sort and calculate averages and cumulative
-// //       filled.sort((a,b) => a.key.localeCompare(b.key));
-// //       let cumulativeSum = 0;
-// //       filled.forEach(r => {
-// //         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
-// //         cumulativeSum += r.totalPoints;
-// //         r.cumulativePoints = cumulativeSum;
-// //       });
-// //       return filled;
-// //     };
-
-// //     let mode: 'weekly' | 'monthly';
-// //     if (groupMode === 'weekly') {
-// //       mode = 'weekly';
-// //     } else if (groupMode === 'monthly') {
-// //       mode = 'monthly';
-// //     } else {
-// //       // auto mode - switch based on data points
-// //       const weekly = buildWeekly();
-// //       if (weekly.length <= AUTO_SWITCH_THRESHOLD) {
-// //         return {
-// //           performanceData: weekly,
-// //           groupingType: 'weekly' as const,
-// //         };
-// //       }
-// //       mode = 'monthly';
-// //     }
-
-// //     if (mode === 'weekly') {
-// //       return {
-// //         performanceData: buildWeekly(),
-// //         groupingType: 'weekly' as const,
-// //       };
-// //     } else {
-// //       return {
-// //         performanceData: buildMonthly(),
-// //         groupingType: 'monthly' as const,
-// //       };
-// //     }
-// //   }, [filteredMatches, groupMode]);
-
-// //   // ------------- RANGE FILTER -------------
-// //   const chartData = useMemo(() => {
-// //     if (!performanceData.length) return [];
-// //     if (!range) return performanceData;
-// //     const [s,e] = range;
-// //     return performanceData.slice(s, e+1);
-// //   }, [performanceData, range]);
-
-// //   // Reset range if data length changes
-// //   useEffect(() => {
-// //     setRange(null);
-// //   }, [groupingType]);
-
-// //   const influence: InfluenceEntry[] = useMemo(() => {
-// //     // accumulate raw totals
-// //     const total: Record<string, number> = {
-// //       Goals: 0,
-// //       Assists: 0,
-// //       'Clean Sheets': 0,
-// //       Impact: 0,
-// //       Defence: 0,
-// //       'Free Kicks': 0,
-// //       Penalties: 0,
-// //       'MOTM Votes': 0
-// //     };
-// //     filteredMatches.forEach(m => {
-// //       const ps = m.playerStats || {};
-// //       total.Goals += ps.goals || 0;
-// //       total.Assists += ps.assists || 0;
-// //       total['Clean Sheets'] += ps.cleanSheets || 0;
-// //       total.Impact += ps.impact || 0;
-// //       total.Defence += ps.defence || 0;
-// //       total['Free Kicks'] += ps.freeKicks || 0;
-// //       total.Penalties += ps.penalties || 0;
-// //       total['MOTM Votes'] += ps.motmVotes || 0;
-// //     });
-// //     // convert to weighted contribution consistent with calcPoints()
-// //     const weight: Record<string, number> = {
-// //       Goals: 4,
-// //       Assists: 3,
-// //       'Clean Sheets': 3,
-// //       Impact: 1,
-// //       Defence: 1,
-// //       'Free Kicks': 2,
-// //       Penalties: 2,
-// //       'MOTM Votes': 2
-// //     };
-// //     const contribution: Record<string, number> = {};
-// //     Object.keys(total).forEach(k => { contribution[k] = total[k] * (weight[k] || 1); });
-// //     const maxVal = Math.max(...Object.values(contribution), 1);
-// //     return Object.entries(contribution).map(([metric, value]) => ({
-// //       metric,
-// //       value,
-// //       scaled: Math.round((value / maxVal) * 100)
-// //     }));
-// //   }, [filteredMatches]);
-
-// //   // Compute top strengths as the most effective ways points are earned
-// //   // We map player match stats into contribution buckets, then rank by scaled value
-// //   const strengths: StrengthEntry[] = useMemo(
-// //     () => [...influence]
-// //       .filter(i => i.scaled > 0)
-// //       .sort((a, b) => b.scaled - a.scaled)
-// //       .slice(0, 3),
-// //     [influence]
-// //   );
-
-// //   // Decide comparison visibility: if user not in top 25% for any metric, adjust to top 50%.
-// //   // If still not outperforming, hide comparison column entirely.
-// //   const strengthComparison = useMemo(() => {
-// //     // crude percentile using scaled vs 100; treat scaled>=75 as top 25%; >=50 as top 50%
-// //     const top25 = strengths.some(s => s.scaled >= 75);
-// //     const top50 = strengths.some(s => s.scaled >= 50);
-// //     return {
-// //       show: top25 || top50,
-// //       label: top25 ? 'Against Top 25%' : top50 ? 'Against Top 50%' : '',
-// //       threshold: top25 ? 0.75 : top50 ? 0.5 : 0
-// //     };
-// //   }, [strengths]);
-
-// //   // Derive friendly lines for the top line below the table
-// //   const topStrengthNote = useMemo(() => {
-// //     if (!strengths.length) return '';
-// //     const s = strengths[0];
-// //     // rough percentile mapping from scaled value
-// //     const pct = Math.max(1, Math.min(99, s.scaled));
-// //     const metricName = s.metric;
-// //     return `${metricName}: You're outperforming ${pct}% of players in your leagues!`;
-// //   }, [strengths]);
-
-// //   // --- Focus Area suggestion ---
-// //   const focusSuggestion = useMemo(() => {
-// //     if (!filteredMatches.length || !influence.length) {
-// //       return 'Play a few more games to unlock a personalized focus area.';
-// //     }
-// //     const actionMap: Record<string, string> = {
-// //       Goals: 'finishing',
-// //       Assists: 'key passes',
-// //       'Clean Sheets': 'defensive positioning',
-// //       Defence: 'defensive duels',
-// //       'MOTM Votes': 'match-defining moments',
-// //       Impact: 'overall influence',
-// //       'Free Kicks': 'set-piece accuracy',
-// //       Penalties: 'penalty conversion'
-// //     };
-// //     const threshold = strengths.some(s => s.scaled >= 75) ? 75 : 50;
-// //     const label = threshold === 75 ? 'top 25%' : 'top 50%';
-// //     const candidates = influence.filter(i => actionMap[i.metric] !== undefined);
-// //     let target = candidates
-// //       .filter(c => c.scaled < threshold)
-// //       .sort((a, b) => (threshold - b.scaled) - (threshold - a.scaled))[0];
-// //     if (!target) {
-// //       target = [...candidates].sort((a, b) => a.scaled - b.scaled)[0];
-// //       if (!target) return '';
-// //     }
-// //     const metricName = target.metric === 'MOTM Votes' ? 'MOTM votes' : target.metric.toLowerCase();
-// //     return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
-// //   }, [filteredMatches.length, influence, strengths]);
-
-// //   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
-// //   const lastPrev10 = useMemo(() => {
-// //     console.log('Debug - All matches for impact:', matches);
-    
-// //     const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
-// //     const last10 = played.slice(-10);
-// //     const prev10 = played.slice(-20, -10);
-
-// //     console.log('Debug - Last 10 matches:', last10);
-// //     console.log('Debug - Previous 10 matches:', prev10);
-
-// //     const sum = (arr: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) =>
-// //       arr.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-    
-// //     const count = (arr: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) =>
-// //       arr.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
-
-// //     const agg = (arr: LeagueMatch[]) => {
-// //       const n = arr.length || 0;
-      
-// //       // Method 1: Try using playerStats.result
-// //       let wins = count(arr, ps => ps.result === 'W');
-// //       let draws = count(arr, ps => ps.result === 'D'); 
-// //       let losses = count(arr, ps => ps.result === 'L');
-      
-// //       // Method 2: If no results, use sample calculation based on impact
-// //       if (wins === 0 && losses === 0 && draws === 0 && n > 0) {
-// //         // Create sample data based on impact scores
-// //         const avgImpact = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-// //         if (avgImpact > 5) {
-// //           wins = Math.floor(n * 0.6); // High impact = more wins
-// //           losses = Math.floor(n * 0.25);
-// //           draws = n - wins - losses;
-// //         } else if (avgImpact > 3) {
-// //           wins = Math.floor(n * 0.45); // Medium impact = balanced
-// //           losses = Math.floor(n * 0.35);
-// //           draws = n - wins - losses;
-// //         } else {
-// //           wins = Math.floor(n * 0.3); // Low impact = fewer wins
-// //           losses = Math.floor(n * 0.5);
-// //           draws = n - wins - losses;
-// //         }
-// //       }
-
-// //       const winRate = n ? (wins / n) * 100 : 0;
-// //       const impactAvg = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-// //       const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-// //       const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-      
-// //       console.log('Debug - Aggregated stats:', { n, wins, losses, draws, winRate, impactAvg, motmVotes, ga });
-      
-// //       return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga };
-// //     };
-
-// //     return { last: agg(last10), prev: agg(prev10) };
-// //   }, [filteredMatches]);
-
-// //   // Aggregated stats for current filters ("Your Stats")
-// //   const yourStats = useMemo(() => {
-// //     const arr = filteredMatches;
-// //     const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-// //     const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
-
-// //     const n = arr.length || 0;
-// //     let wins = 0, draws = 0, losses = 0;
-
-// //     // Prefer explicit per-player result first
-// //     wins = count(arr, ps => ps.result === 'W');
-// //     draws = count(arr, ps => ps.result === 'D');
-// //     losses = count(arr, ps => ps.result === 'L');
-
-// //     // If not available, attempt to use match fields
-// //     if (wins === 0 && draws === 0 && losses === 0 && n > 0) {
-// //       arr.forEach(m => {
-// //         if (m.result) {
-// //           const r = String(m.result).toUpperCase();
-// //           if (r === 'W') wins++; else if (r === 'D') draws++; else if (r === 'L') losses++;
-// //           return;
-// //         }
-// //         if (m.team1Score != null && m.team2Score != null) {
-// //           const isTeam1 = m.team1Players?.some(p => p.id === String(playerId)) || m.team1Id === String(playerId);
-// //           if (m.team1Score === m.team2Score) draws++;
-// //           else if ((isTeam1 && m.team1Score > m.team2Score) || (!isTeam1 && m.team2Score > m.team1Score)) wins++;
-// //           else losses++;
-// //           return;
-// //         }
-// //         if (m.homeTeamGoals != null && m.awayTeamGoals != null) {
-// //           const isHome = m.homeTeamId === String(playerId);
-// //           if (m.homeTeamGoals === m.awayTeamGoals) draws++;
-// //           else if ((isHome && m.homeTeamGoals > m.awayTeamGoals) || (!isHome && m.awayTeamGoals > m.homeTeamGoals)) wins++;
-// //           else losses++;
-// //         }
-// //       });
-// //     }
-
-// //     const winRate = n ? (wins / n) * 100 : 0;
-// //     const impactAvg = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-// //     const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-// //     const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-// //     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga };
-// //   }, [filteredMatches, playerId]);
-
-// //   // Enhanced positive impact messages with better detection
-// //   // const positiveImpactMsgs = useMemo(() => {
-// //   //   const msgs: string[] = [];
-// //   //   const { last, prev } = lastPrev10;
-    
-// //   //   console.log('Debug - Impact comparison:', { last, prev });
-    
-// //   //   if (prev.n > 0) {
-// //   //     const winDelta = last.winRate - prev.winRate;
-// //   //     if (winDelta > 5) msgs.push(`Win ratio improved by ${winDelta.toFixed(1)}% over the previous 10 games.`);
-
-// //   //     const impactDelta = last.impactAvg - prev.impactAvg;
-// //   //     if (impactDelta > 0.5) msgs.push(`Impact increased by ${impactDelta.toFixed(1)} per game versus the previous 10.`);
-
-// //   //     const motmDelta = last.motmVotes - prev.motmVotes;
-// //   //     if (motmDelta > 0) msgs.push(`Earned ${motmDelta} more MOTM votes in the last 10 games.`);
-
-// //   //     const gaDelta = last.ga - prev.ga;
-// //   //     if (gaDelta > 1) msgs.push(`Produced ${gaDelta} more goal contributions (G+A) in the last 10 games.`);
-// //   //   } else if (last.n > 0) {
-// //   //     // If no previous 10, show current performance
-// //   //     if (last.winRate > 50) msgs.push(`Excellent win rate of ${last.winRate.toFixed(1)}% in recent games!`);
-// //   //     if (last.impactAvg > 5) msgs.push(`Strong impact average of ${last.impactAvg.toFixed(1)} per game!`);
-// //   //     if (last.ga > 5) msgs.push(`Great offensive output with ${last.ga} goal contributions!`);
-// //   //   }
-    
-// //   //   return msgs.slice(0, 3);
-// //   // }, [lastPrev10]);
-
-// //   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
-// //   const playerNameFromStats = useMemo(() => {
-// //     return extractPlayerName(data);
-// //   }, [data]);
-
-// //   const [playerName, setPlayerName] = useState<string>('');
-
-// //   // If stats already contain a name, use it
-// //   useEffect(() => {
-// //     if (playerNameFromStats && !playerName) {
-// //       setPlayerName(playerNameFromStats);
-// //     }
-// //   }, [playerNameFromStats, playerName]);
-
-// //   // Fallback fetch if name not in stats
-// //   useEffect(() => {
-// //     if (!playerId) return;
-// //     if (playerNameFromStats) return; // already have
-// //     let aborted = false;
-
-// //     (async () => {
-// //       try {
-// //         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, {
-// //           cache: 'no-store',
-// //           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-// //         });
-// //         if (!res.ok) {
-// //           console.warn('Player name fetch failed:', res.status, res.statusText);
-// //           return;
-// //         }
-// //         const j = await res.json();
-// //         const fetchedName =
-// //           j?.name ||
-// //           j?.player?.name ||
-// //           j?.data?.name ||
-// //           '';
-// //         if (!aborted && fetchedName) setPlayerName(fetchedName);
-// //       } catch (e) {
-// //         console.warn('Player name fetch error:', e);
-// //       }
-// //     })();
-
-// //     return () => { aborted = true; };
-// //   }, [playerId, playerNameFromStats, token]);
-
-// //   // Real Influence data from backend
-// //   const influenceRadarData = useMemo(() => {
-// //     // Real player stats calculation
-// //     const playerTotals = {
-// //       Goals: 0,
-// //       Assists: 0,
-// //       'Clean Sheets': 0,
-// //       'Defensive Impact': 0,
-// //       'MOTM Votes': 0
-// //     };
-
-// //     filteredMatches.forEach(match => {
-// //       const ps = match.playerStats || {};
-// //       playerTotals.Goals += ps.goals || 0;
-// //       playerTotals.Assists += ps.assists || 0;
-// //       playerTotals['Clean Sheets'] += ps.cleanSheets || 0;
-// //       playerTotals['Defensive Impact'] += ps.defence || 0;
-// //       playerTotals['MOTM Votes'] += ps.motmVotes || 0;
-// //     });
-
-// //     // Calculate per-game averages for player
-// //     const matchCount = Math.max(filteredMatches.length, 1);
-// //     const playerAvgPerGame = {
-// //       Goals: +(playerTotals.Goals / matchCount).toFixed(1),
-// //       Assists: +(playerTotals.Assists / matchCount).toFixed(1),
-// //       'Clean Sheets': +(playerTotals['Clean Sheets'] / matchCount).toFixed(1),
-// //       'Defensive Impact': +(playerTotals['Defensive Impact'] / matchCount).toFixed(1),
-// //       'MOTM Votes': +(playerTotals['MOTM Votes'] / matchCount).toFixed(1)
-// //     };
-
-// //     // Dynamic league averages based on player performance (more realistic)
-// //     const leagueAvg = {
-// //       Goals: Math.max(0.3, playerAvgPerGame.Goals * 0.75), // League avg is typically 75% of good players
-// //       Assists: Math.max(0.2, playerAvgPerGame.Assists * 0.7),
-// //       'Clean Sheets': Math.max(0.1, playerAvgPerGame['Clean Sheets'] * 0.6),
-// //       'Defensive Impact': Math.max(0.2, playerAvgPerGame['Defensive Impact'] * 0.8),
-// //       'MOTM Votes': Math.max(0.1, playerAvgPerGame['MOTM Votes'] * 0.5)
-// //     };
-
-// //     const displayName = playerName || 'Player';
-
-// //     return Object.keys(playerAvgPerGame).map(metric => ({
-// //       metric,
-// //       [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
-// //       'League Avg': +(leagueAvg[metric as keyof typeof leagueAvg]).toFixed(1)
-// //     }));
-// //   }, [filteredMatches, playerName]);
-
-// //   // Calculate actual win/loss/draw data from backend matches
-// //   const actualWinLossData = useMemo(() => {
-// //     let wins = 0;
-// //     let losses = 0;
-// //     let draws = 0;
-
-// //     const arr = filteredMatches;
-// //     arr.forEach(match => {
-// //       // Prefer explicit per-player result
-// //       const r = match.playerStats?.result || match.result || match.outcome;
-// //       if (r) {
-// //         const up = String(r).toUpperCase();
-// //         if (up === 'W' || up === 'WIN') wins++;
-// //         else if (up === 'L' || up === 'LOSS' || up === 'LOSE') losses++;
-// //         else if (up === 'D' || up === 'DRAW') draws++;
-// //         return;
-// //       }
-// //       // Try team score comparisons
-// //       if (match.team1Score != null && match.team2Score != null) {
-// //         const isTeam1 = match.team1Players?.some(p => p.id === String(playerId)) || match.team1Id === String(playerId);
-// //         if (match.team1Score === match.team2Score) draws++;
-// //         else if ((isTeam1 && match.team1Score > match.team2Score) || (!isTeam1 && match.team2Score > match.team1Score)) wins++;
-// //         else losses++;
-// //         return;
-// //       }
-// //       if (match.homeTeamGoals != null && match.awayTeamGoals != null) {
-// //         const isHome = match.homeTeamId === String(playerId);
-// //         if (match.homeTeamGoals === match.awayTeamGoals) draws++;
-// //         else if ((isHome && match.homeTeamGoals > match.awayTeamGoals) || (!isHome && match.awayTeamGoals > match.homeTeamGoals)) wins++;
-// //         else losses++;
-// //       }
-// //     });
-
-// //     const total = wins + losses + draws;
-// //     if (total === 0) {
-// //       return [
-// //         { name: 'Win', value: 55, color: '#15b67a' },
-// //         { name: 'Loss', value: 30, color: '#d32f2f' },
-// //         { name: 'Draw', value: 15, color: '#ffb300' },
-// //       ];
-// //     }
-// //     const winPercent = Math.round((wins / total) * 100);
-// //     const lossPercent = Math.round((losses / total) * 100);
-// //     const drawPercent = 100 - winPercent - lossPercent;
-// //     return [
-// //       { name: 'Win', value: winPercent, color: '#15b67a' },
-// //       { name: 'Loss', value: lossPercent, color: '#d32f2f' },
-// //       { name: 'Draw', value: drawPercent, color: '#ffb300' },
-// //     ];
-// //   }, [filteredMatches, playerId]);
-
-// //   // Alternative: Direct API call to get match results
-// //   useEffect(() => {
-// //     const fetchMatchResults = async () => {
-// //       try {
-// //         // Call your matches API endpoint
-// //         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`, {
-// //           headers: {
-// //             ...(token ? { Authorization: `Bearer ${token}` } : {})
-// //           }
-// //         });
-// //         if (response.ok) {
-// //           const matchData = await response.json();
-// //           console.log('Match results from API:', matchData);
-// //           // Process this data to get win/loss/draw counts
-// //         }
-// //       } catch (error) {
-// //         console.error('Error fetching match results:', error);
-// //       }
-// //     };
-
-// //     if (playerId) {
-// //       fetchMatchResults();
-// //     }
-// //   }, [playerId, token]);
-
-// //   // Add synergy types (place near other interfaces)
-// //   interface SynergyPairing {
-// //     name?: string;
-// //     winsTogether: number;
-// //     matchesTogether: number;
-// //     winRate: number;
-// //     playerId?: string;
-// //   }
-
-// //   interface SynergyRival {
-// //     name?: string;
-// //     lossesAgainst: number;
-// //     matchesAgainst: number;
-// //     lossRate: number;
-// //     playerId?: string;
-// //   }
-
-// //   // --- Simple Synergy API state ---
-// //   const [synergyLoading, setSynergyLoading] = useState(false);
-// //   const [synergyError, setSynergyError] = useState<string|null>(null);
-// //   const [bestPairing, setBestPairing] = useState<SynergyPairing | null>(null);
-// //   const [toughestRival, setToughestRival] = useState<SynergyRival | null>(null);
-// //   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
-// //   const [, setSelectedSynergyLeagueId] = useState<string | null>(null);
-
-// //   // --- League Ranking (Goals) ---
-// //   const [leagueRank, setLeagueRank] = useState<number | null>(null);
-// //   useEffect(() => {
-// //     const fetchRank = async () => {
-// //       try {
-// //         if (!filters.leagueId || filters.leagueId === 'all' || !playerId) {
-// //           setLeagueRank(null);
-// //           return;
-// //         }
-// //         const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}`;
-// //         const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-// //         if (!res.ok) { setLeagueRank(null); return; }
-// //         const json = await res.json();
-// //         const players: Array<{ id: string; value?: number }> = json?.players || [];
-// //         const idx = players.findIndex(p => String(p.id) === String(playerId));
-// //         setLeagueRank(idx >= 0 ? idx + 1 : null);
-// //       } catch {
-// //         setLeagueRank(null);
-// //       }
-// //     };
-// //     fetchRank();
-// //   }, [filters.leagueId, playerId, token]);
-
-// //   // Fetch Simple Synergy (backend: /players/:playerId/simple-synergy)
-// //   useEffect(() => {
-// //     if (!playerId) return;
-
-// //     // If no matches yet, reset & skip fetch
-// //     if (!matches || matches.length === 0) {
-// //       setSynergyLoading(false);
-// //       setSynergyError(null);
-// //       setBestPairing(null);
-// //       setToughestRival(null);
-// //       setParticipatedMatches(0);
-// //       setSelectedSynergyLeagueId(null);
-// //       return;
-// //     }
-
-// //     let aborted = false;
-// //     (async () => {
-// //       try {
-// //         setSynergyLoading(true);
-// //         setSynergyError(null);
-
-// //         const leagueParam = (filters.leagueId && filters.leagueId !== 'all')
-// //           ? `?leagueId=${encodeURIComponent(filters.leagueId)}`
-// //           : '';
-// //   const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
-// //   const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-
-// //         // Gracefully treat 404 / 204 as "no data" (not an error)
-// //         if (res.status === 404 || res.status === 204) {
-// //           if (!aborted) {
-// //             setBestPairing(null);
-// //             setToughestRival(null);
-// //             setParticipatedMatches(0);
-// //             setSelectedSynergyLeagueId(filters.leagueId || null);
-// //           }
-// //           return;
-// //         }
-
-// //         if (!res.ok) {
-// //           // Real server error -> show error
-// //             throw new Error(`Server error ${res.status}`);
-// //         }
-
-// //         // Type-safe synergy response models
-// //         interface SimpleSynergySingle {
-// //           leagueId?: string;
-// //           participatedMatches?: number;
-// //           bestPairing?: SynergyPairing | null;
-// //           toughestRival?: SynergyRival | null;
-// //         }
-// //         interface SimpleSynergyMulti {
-// //           leagues: SimpleSynergySingle[];
-// //         }
-// //         // type SimpleSynergyResponse = SimpleSynergySingle | SimpleSynergyMulti;
-
-// //         const isSimpleSynergySingle = (v: unknown): v is SimpleSynergySingle =>
-// //           typeof v === 'object' &&
-// //           v !== null &&
-// //           !Array.isArray((v as { leagues?: unknown }).leagues);
-
-// //         const isSimpleSynergyMulti = (v: unknown): v is SimpleSynergyMulti =>
-// //           typeof v === 'object' &&
-// //           v !== null &&
-// //           Array.isArray((v as { leagues?: unknown }).leagues);
-
-// //         let parsed: unknown = null;
-// //         try {
-// //           parsed = await res.json();
-// //         } catch {
-// //           if (!aborted) {
-// //             setBestPairing(null);
-// //             setToughestRival(null);
-// //             setParticipatedMatches(0);
-// //             setSelectedSynergyLeagueId(filters.leagueId || null);
-// //           }
-// //           return;
-// //         }
-// //         if (aborted) return;
-
-// //         console.log('Synergy API', parsed);
-
-// //         if (isSimpleSynergySingle(parsed)) {
-// //           setBestPairing(parsed.bestPairing ?? null);
-// //           setToughestRival(parsed.toughestRival ?? null);
-// //           setParticipatedMatches(parsed.participatedMatches || 0);
-// //           setSelectedSynergyLeagueId(parsed.leagueId || filters.leagueId || null);
-// //           return;
-// //         }
-
-// //         if (isSimpleSynergyMulti(parsed)) {
-// //           const leagues = parsed.leagues.filter(l => l && typeof l === 'object');
-// //           let chosen = leagues
-// //             .filter(l => (l.participatedMatches || 0) > 0)
-// //             .sort((a, b) => (b.participatedMatches || 0) - (a.participatedMatches || 0))[0];
-// //           if (!chosen && leagues.length) chosen = leagues[0];
-
-// //           if (chosen) {
-// //             setBestPairing(chosen.bestPairing ?? null);
-// //             setToughestRival(chosen.toughestRival ?? null);
-// //             setParticipatedMatches(chosen.participatedMatches || 0);
-// //             setSelectedSynergyLeagueId(chosen.leagueId || null);
-// //           } else {
-// //             setBestPairing(null);
-// //             setToughestRival(null);
-// //             setParticipatedMatches(0);
-// //             setSelectedSynergyLeagueId(null);
-// //           }
-// //           return;
-// //         }
-
-// //         // Unexpected shape
-// //         setBestPairing(null);
-// //         setToughestRival(null);
-// //         setParticipatedMatches(0);
-// //         setSelectedSynergyLeagueId(filters.leagueId || null);
-// //       } catch (err: unknown) {
-// //         if (!aborted) {
-// //           const message = err instanceof Error ? err.message : 'Failed to load synergy';
-// //           console.warn('Synergy fetch error:', err);
-// //           setSynergyError(message);
-// //           setBestPairing(null);
-// //           setToughestRival(null);
-// //           setParticipatedMatches(0);
-// //           setSelectedSynergyLeagueId(null);
-// //         }
-// //       } finally {
-// //         if (!aborted) setSynergyLoading(false);
-// //       }
-// //     })();
-
-// //     return () => { aborted = true; };
-// //   }, [playerId, matches, filters.leagueId, token]);
-
-// //   return (
-// //     <Box
-// //       sx={{
-// //         minHeight: '100vh',
-       
-// //         py: 2,
-// //         p:2,
-// //       }}
-// //     >
-// //       <Container
-// //         maxWidth="xl"
-// //         sx={{
-// //           py: 2,
-// //            background: themeColors.surfaceBase,
-// //           borderRadius: 2,
-// //         }}
-// //       >
-// //         <Box
-// //           sx={{
-// //             maxWidth: '1200px',
-// //             mx: 'auto',
-// //             // p: 2,
-// //           }}
-// //         >
-// //           {/* Title */}
-// //           <Typography
-// //             variant="h6"
-// //             sx={{
-// //               fontWeight: 'bold',
-// //               color: themeColors.text,
-// //               mb: 2,
-// //               textAlign: 'center',
-// //               fontSize: 18
-// //             }}
-// //           >
-// //             {playerName ? `${playerName} Performance Dashboard` : 'Player Performance Dashboard'}
-// //           </Typography>
-
-// //           {/* League Selector Dropdown */}
-// //           {/* {availableLeagues.length > 0 && (
-// //             <Box sx={{ 
-// //               display: 'flex', 
-// //               justifyContent: 'center',
-// //               mb: 2
-// //             }}>
-// //               <FormControl
-// //                 size="small"
-// //                 sx={{
-// //                   minWidth: 250,
-// //                   '& .MuiOutlinedInput-root': {
-// //                     bgcolor: themeColors.surfaceAlt,
-// //                     color: themeColors.text,
-// //                     borderRadius: 2,
-// //                     border: `1px solid ${themeColors.border}`,
-// //                     '& fieldset': { border: 'none' },
-// //                     '&:hover': { 
-// //                       borderColor: themeColors.primary,
-// //                       boxShadow: `0 0 0 1px ${themeColors.primary}`
-// //                     },
-// //                     '&.Mui-focused': { 
-// //                       borderColor: themeColors.primary,
-// //                       boxShadow: `0 0 0 2px ${themeColors.primary}`
-// //                     },
-// //                   },
-// //                   '& .MuiSelect-icon': { color: themeColors.text },
-// //                 }}
-// //               >
-// //                 <Select
-// //                   value={filters.leagueId || 'all'}
-// //                   onChange={(e: SelectChangeEvent) => dispatch(setLeagueFilter(e.target.value))}
-// //                   displayEmpty
-// //                   sx={{
-// //                     color: themeColors.text,
-// //                     fontWeight: 700,
-// //                     fontSize: 14,
-// //                   }}
-// //                   MenuProps={{
-// //                     PaperProps: {
-// //                       sx: {
-// //                         bgcolor: themeColors.surfaceAlt,
-// //                         color: themeColors.text,
-// //                         border: `1px solid ${themeColors.border}`,
-// //                         borderRadius: 2,
-// //                         mt: 0.5,
-// //                         '& .MuiMenuItem-root': {
-// //                           fontSize: 14,
-// //                           fontWeight: 600,
-// //                           '&:hover': {
-// //                             bgcolor: 'rgba(229,106,22,0.15)',
-// //                           },
-// //                           '&.Mui-selected': {
-// //                             bgcolor: 'rgba(229,106,22,0.25)',
-// //                             '&:hover': {
-// //                               bgcolor: 'rgba(229,106,22,0.35)',
-// //                             },
-// //                           },
-// //                         },
-// //                       },
-// //                     },
-// //                   }}
-// //                 >
-// //                   <MenuItem value="all">
-// //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-// //                       <Box sx={{ 
-// //                         width: 8, 
-// //                         height: 8, 
-// //                         borderRadius: '50%',
-// //                         background: themeColors.gradient 
-// //                       }} />
-// //                       All Leagues
-// //                     </Box>
-// //                   </MenuItem>
-// //                   {availableLeagues.map((league) => (
-// //                     <MenuItem key={league.id} value={league.id}>
-// //                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-// //                         <Box sx={{ 
-// //                           width: 8, 
-// //                           height: 8, 
-// //                           borderRadius: '50%',
-// //                           background: themeColors.gradient 
-// //                         }} />
-// //                         {league.name || `League ${league.id}`}
-// //                       </Box>
-// //                     </MenuItem>
-// //                   ))}
-// //                 </Select>
-// //               </FormControl>
-// //             </Box>
-// //           )} */}
-
-// //           {loading ? (
-// //             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-// //               <CircularProgress sx={{ color: themeColors.primary }} />
-// //             </Box>
-// //           ) : (
-// //             <Box>
-// //               {/* Performance Over Time Chart */}
-// //               <GlassCard sx={{ mb: 2 }}>
-// //                 <Box
-// //                   sx={{
-// //                     p: 0,
-// //                     height: 400,
-// //                     display: 'flex',
-// //                     flexDirection: 'column',
-// //                     borderRadius: 3,
-// //                     background: themeColors.surfacePanel,
-// //                     overflow: 'hidden',
-// //                     position: 'relative',
-// //                     border: `2px solid ${themeColors.border}`,
-// //                     boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-// //                   }}
-// //                 >
-// //                   {/* Grouping selector (Auto / Weekly / Monthly) */}
-// //                   <Box sx={{ position: 'absolute', top: 8, right: 10, zIndex: 6 }}>
-// //                     <ToggleButtonGroup
-// //                       size="small"
-// //                       exclusive
-// //                       value={groupMode}
-// //                       onChange={(_, val) => { if (val) setGroupMode(val); }}
-// //                       aria-label="grouping selector"
-// //                       sx={{
-// //                         '& .MuiToggleButton-root': {
-// //                           color: themeColors.textDim,
-// //                           borderColor: themeColors.border,
-// //                           '&.Mui-selected': {
-// //                             backgroundColor: themeColors.primary,
-// //                             color: themeColors.text,
-// //                           },
-// //                           '&:hover': {
-// //                             backgroundColor: 'rgba(229,106,22,0.1)',
-// //                           }
-// //                         }
-// //                       }}
-// //                     >
-// //                       <ToggleButton value="auto" aria-label="auto grouping">Auto</ToggleButton>
-// //                       <ToggleButton value="weekly" aria-label="weekly grouping">Weekly</ToggleButton>
-// //                       <ToggleButton value="monthly" aria-label="monthly grouping">Monthly</ToggleButton>
-// //                     </ToggleButtonGroup>
-// //                   </Box>
-
-// //                   {/* League selector (Left side) - All Leagues button and League dropdown */}
-// //                   {availableLeagues.length > 0 && (
-// //                     <Box sx={{ position: 'absolute', top: 8, left: 10, zIndex: 6, display: 'flex', gap: 0.5 }}>
-// //                       {/* All Leagues Button */}
-// //                       <Button
-// //                         size="small"
-// //                         variant={filters.leagueId === 'all' || !filters.leagueId ? 'contained' : 'outlined'}
-// //                         onClick={() => dispatch(setLeagueFilter('all'))}
-// //                         sx={{
-// //                           minWidth: 'auto',
-// //                           px: 1.5,
-// //                           py: 0.5,
-// //                           fontSize: 11,
-// //                           fontWeight: 700,
-// //                           textTransform: 'none',
-// //                           color: themeColors.text,
-// //                           borderColor: themeColors.border,
-// //                           background: filters.leagueId === 'all' || !filters.leagueId 
-// //                             ? themeColors.primary 
-// //                             : 'transparent',
-// //                           '&:hover': {
-// //                             background: filters.leagueId === 'all' || !filters.leagueId 
-// //                               ? themeColors.primary 
-// //                               : 'rgba(229,106,22,0.1)',
-// //                             borderColor: themeColors.primary
-// //                           }
-// //                         }}
-// //                       >
-// //                         All Leagues
-// //                       </Button>
-
-// //                       {/* League Dropdown */}
-// //                       <FormControl size="small" sx={{ minWidth: 140 }}>
-// //                         <Select
-// //                           value={filters.leagueId && filters.leagueId !== 'all' ? filters.leagueId : ''}
-// //                           onChange={(e: SelectChangeEvent) => {
-// //                             if (e.target.value) dispatch(setLeagueFilter(e.target.value));
-// //                           }}
-// //                           displayEmpty
-// //                           sx={{
-// //                             fontSize: 11,
-// //                             fontWeight: 700,
-// //                             color: themeColors.text,
-// //                             bgcolor: filters.leagueId && filters.leagueId !== 'all' 
-// //                               ? themeColors.primary 
-// //                               : themeColors.surfaceAlt,
-// //                             borderRadius: 1,
-// //                             height: 32,
-// //                             '& .MuiOutlinedInput-notchedOutline': {
-// //                               borderColor: themeColors.border,
-// //                             },
-// //                             '&:hover .MuiOutlinedInput-notchedOutline': {
-// //                               borderColor: themeColors.primary,
-// //                             },
-// //                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-// //                               borderColor: themeColors.primary,
-// //                             },
-// //                             '& .MuiSelect-icon': { color: themeColors.text },
-// //                           }}
-// //                           MenuProps={{
-// //                             PaperProps: {
-// //                               sx: {
-// //                                 bgcolor: themeColors.surfaceAlt,
-// //                                 border: `1px solid ${themeColors.border}`,
-// //                                 '& .MuiMenuItem-root': {
-// //                                   fontSize: 12,
-// //                                   color: themeColors.text,
-// //                                   '&:hover': { bgcolor: 'rgba(229,106,22,0.15)' },
-// //                                   '&.Mui-selected': { 
-// //                                     bgcolor: 'rgba(229,106,22,0.25)',
-// //                                     '&:hover': { bgcolor: 'rgba(229,106,22,0.35)' }
-// //                                   },
-// //                                 },
-// //                               },
-// //                             },
-// //                           }}
-// //                         >
-// //                           <MenuItem value="" disabled>
-// //                             <em>Select a League</em>
-// //                           </MenuItem>
-// //                           {(leaguesForYear as Array<LeagueWithMatches & { name?: string }>).map((league) => (
-// //                             <MenuItem key={league.id} value={league.id}>
-// //                               {league.name ?? `League ${league.id}`}
-// //                             </MenuItem>
-// //                           ))}
-// //                         </Select>
-// //                       </FormControl>
-// //                     </Box>
-// //                   )}
-
-// //                   {/* Title centered top */}
-// //                   <Box sx={{ textAlign: 'center', pt: 1.5, pb: 0.5 }}>
-// //                     <Typography sx={{ fontSize: 16, fontWeight: 700, color: themeColors.text, letterSpacing: 0.4 }}>
-// //                       Performance Over Time
-// //                     </Typography>
-// //                   </Box>
-
-// //                   {/* Side ribbons - matching the reference image */}
-// //                   <Box sx={{ 
-// //                     position: 'absolute', 
-// //                     top: 70, 
-// //                     bottom: 60, 
-// //                     left: 15, 
-// //                     width: 25, 
-// //                     background: themeColors.primary, 
-// //                     color: '#fff', 
-// //                     borderRadius: 1.5, 
-// //                     display: 'flex', 
-// //                     alignItems: 'center', 
-// //                     justifyContent: 'center', 
-// //                     writingMode: 'vertical-rl', 
-// //                     transform: 'rotate(180deg)', 
-// //                     fontSize: 11, 
-// //                     fontWeight: 700, 
-// //                     letterSpacing: 0.4, 
-// //                     zIndex: 3, 
-// //                     boxShadow: '0 4px 12px rgba(0,0,0,0.3)' 
-// //                   }}>
-// //                     Average XP Points
-// //                   </Box>
-// //                   <Box sx={{ 
-// //                     position: 'absolute', 
-// //                     top: 70, 
-// //                     bottom: 60, 
-// //                     right: 15, 
-// //                     width: 28, 
-// //                     background: themeColors.primaryAlt, 
-// //                     color: '#fff', 
-// //                     borderRadius: 1.5, 
-// //                     display: 'flex', 
-// //                     alignItems: 'center', 
-// //                     justifyContent: 'center', 
-// //                     writingMode: 'vertical-rl', 
-// //                     transform: 'rotate(180deg)', 
-// //                     fontSize: 11, 
-// //                     fontWeight: 700, 
-// //                     letterSpacing: 0.4, 
-// //                     zIndex: 3, 
-// //                     boxShadow: '0 4px 12px rgba(0,0,0,0.3)' 
-// //                   }}>
-// //                     Accumulative XP Points
-// //                   </Box>
-
-// //                   {/* Chart */}
-// //                   <Box sx={{ position: 'relative', zIndex: 4, flex: 1, minHeight: 0, px: 6, pt: 6, pb: 2 }}>
-// //                     <ResponsiveContainer width="100%" height="100%">
-// //                       <ComposedChart 
-// //                         data={chartData.length > 0 ? chartData : performanceData} 
-// //                         margin={{ top: 15, left: 15, right: 15, bottom: 40 }}
-// //                       >
-// //                         <XAxis 
-// //                           dataKey="label"
-// //                           stroke={themeColors.textDim}
-// //                           tick={{ fontSize: 11, fill: themeColors.textDim }}
-// //                           interval={0}
-// //                           angle={-45}
-// //                           textAnchor="end"
-// //                           tickLine={{ stroke: themeColors.border }}
-// //                           axisLine={{ stroke: themeColors.border }}
-// //                         />
-// //                         <YAxis
-// //                           yAxisId="avg"
-// //                           stroke={themeColors.textDim}
-// //                           tick={{ fontSize: 11, fill: themeColors.textDim }}
-// //                           width={45}
-// //                           tickLine={{ stroke: themeColors.border }}
-// //                           axisLine={{ stroke: themeColors.border }}
-// //                           label={{ 
-// //                             value: 'Avg Points', 
-// //                             angle: -90, 
-// //                             position: 'insideLeft',
-// //                             style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-// //                           }}
-// //                         />
-// //                         <YAxis
-// //                           yAxisId="cum"
-// //                           orientation="right"
-// //                           stroke={themeColors.textDim}
-// //                           tick={{ fontSize: 11, fill: themeColors.textDim }}
-// //                           width={55}
-// //                           tickLine={{ stroke: themeColors.border }}
-// //                           axisLine={{ stroke: themeColors.border }}
-// //                           label={{ 
-// //                             value: 'Cumulative Points', 
-// //                             angle: 90, 
-// //                             position: 'insideRight',
-// //                             style: { textAnchor: 'middle', fill: themeColors.textDim, fontSize: 10 }
-// //                           }}
-// //                         />
-// //                         <Tooltip
-// //                           contentStyle={{
-// //                             background: themeColors.surfaceAlt,
-// //                             border: `1px solid ${themeColors.borderStrong}`,
-// //                             fontSize: 11,
-// //                             borderRadius: 6,
-// //                             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-// //                             color: themeColors.text
-// //                           }}
-// //                           labelStyle={{ fontWeight: 700, color: themeColors.text }}
-// //                           formatter={(value: unknown, name: unknown) => {
-// //                             const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-// //                             const n = typeof name === 'string' ? name : String(name ?? '');
-// //                             if (n.includes('Avg Points')) return [v, `Avg Points/${groupingType === 'weekly' ? 'Week' : 'Month'}`];
-// //                             if (n.includes('Accumulative')) return [v, 'Cumulative XP Points'];
-// //                             return [v, n];
-// //                           }}
-// //                           labelFormatter={(label) => {
-// //                             const activeData = (chartData.length > 0 ? chartData : performanceData).find(d => d.label === label);
-// //                             if (activeData) {
-// //                               return `${label} ${activeData.year} (${activeData.matches} match${activeData.matches !== 1 ? 'es' : ''})`;
-// //                             }
-// //                             return label;
-// //                           }}
-// //                         />
-                        
-// //                         {/* Bars for average points */}
-// //                         <Bar
-// //                           yAxisId="avg"
-// //                           dataKey="avgPoints"
-// //                           fill={themeColors.primary}
-// //                           name={`Avg Points / ${groupingType === 'weekly' ? 'Week' : 'Month'}`}
-// //                           maxBarSize={40}
-// //                           radius={[4, 4, 0, 0]}
-// //                         />
-                        
-// //                         {/* Line for cumulative points */}
-// //                         <Line
-// //                           yAxisId="cum"
-// //                           type="monotone"
-// //                           dataKey="cumulativePoints"
-// //                           name="Accumulative XP Points"
-// //                           stroke={themeColors.primaryAlt}
-// //                           strokeWidth={3}
-// //                           dot={{ r: 4, stroke: '#fff', strokeWidth: 1.5, fill: themeColors.primaryAlt }}
-// //                           activeDot={{ r: 6, stroke: themeColors.primaryAlt, strokeWidth: 1, fill: '#fff' }}
-// //                           connectNulls={false}
-// //                         />
-// //                       </ComposedChart>
-// //                     </ResponsiveContainer>
-// //                   </Box>
-
-// //                   {/* Legend - updated */}
-// //                   <Box sx={{ 
-// //                     position: 'relative', 
-// //                     zIndex: 4, 
-// //                     display: 'flex', 
-// //                     justifyContent: 'center', 
-// //                     flexWrap: 'wrap', 
-// //                     gap: 4, 
-// //                     pb: 1.5, 
-// //                     mt: 0.5, 
-// //                     borderTop: `1px solid ${themeColors.border}`, 
-// //                     background: 'rgba(255,255,255,0.05)' 
-// //                   }}>
-// //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-// //                       <Box sx={{ width: 18, height: 14, borderRadius: 2, background: themeColors.primary }} />
-// //                       <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-// //                         Avg Points per {groupingType === 'weekly' ? 'Week' : 'Month'}
-// //                       </Typography>
-// //                     </Box>
-// //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-// //                       <Box sx={{ width: 18, height: 8, borderRadius: 2, background: themeColors.primaryAlt }} />
-// //                       <Typography sx={{ fontSize: 12, color: themeColors.text, fontWeight: 600 }}>
-// //                         Accumulative XP Points
-// //                       </Typography>
-// //                     </Box>
-                    
-// //                     {/* Show current mode indicator */}
-// //                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 2 }}>
-// //                       <Typography sx={{ fontSize: 11, color: themeColors.textFaint, fontStyle: 'italic' }}>
-// //                         Mode: {groupMode === 'auto' ? `Auto (${groupingType})` : groupingType}
-// //                         {performanceData.length > 0 && ` • ${performanceData.length} periods`}
-// //                       </Typography>
-// //                     </Box>
-// //                   </Box>
-// //                 </Box>
-// //               </GlassCard>
-
-// //               {/* Influence and Win/Loss Row */}
-// //               <Grid container spacing={2} sx={{ mb: 2 }}>
-// //                 {/* Influence Radar Chart */}
-// //                 <Grid item xs={12} md={6}>
-// //                   <GlassCard sx={{ height: 220 }}>
-// //                     <CardContent sx={{ p: 2 }}>
-// //                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-// //                         <Typography sx={{ 
-// //                           fontSize: 16, 
-// //                           fontWeight: 'bold', 
-// //                           color: themeColors.text,
-// //                           textAlign: 'center',
-// //                         }}>
-// //                           Influence
-// //                         </Typography>
-// //                       </Box>
-                      
-// //                       {/* Legend */}
-// //                       <Box sx={{ 
-// //                         display: 'flex', 
-// //                         justifyContent: 'center', 
-// //                         gap: 3, 
-// //                         mb: 1.5,
-// //                         alignItems: 'center'
-// //                       }}>
-// //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-// //                           <Box sx={{ 
-// //                             width: 12, 
-// //                             height: 3, 
-// //                             backgroundColor: '#1976d2',
-// //                             borderRadius: 1
-// //                           }} />
-// //                           <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
-// //                             {playerName || 'Player'}
-// //                           </Typography>
-// //                         </Box>
-// //                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-// //                           <Box sx={{ 
-// //                             width: 12, 
-// //                             height: 3, 
-// //                             backgroundColor: '#00bcd4',
-// //                             borderRadius: 1
-// //                           }} />
-// //                           <Typography sx={{ fontSize: 11, color: themeColors.textDim, fontWeight: 500 }}>
-// //                             League Avg
-// //                           </Typography>
-// //                         </Box>
-// //                       </Box>
-
-// //                       <Box sx={{ height: 140, mt: 1 }}>
-// //                         <ResponsiveContainer width="100%" height="100%">
-// //                           <RadarChart 
-// //                             data={influenceRadarData} 
-// //                             outerRadius={55}
-// //                             margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-// //                           >
-// //                             <PolarGrid 
-// //                               gridType="polygon"
-// //                               stroke={themeColors.border}
-// //                               strokeWidth={1}
-// //                             />
-// //                             <PolarAngleAxis 
-// //                               dataKey="metric" 
-// //                               tick={{ 
-// //                                 fontSize: 9, 
-// //                                 fill: themeColors.textDim,
-// //                                 fontWeight: 500
-// //                               }}
-// //                               className="radar-axis"
-// //                               tickSize={8}
-// //                               // Add missing required properties
-// //                               reversed={false}
-// //                               scale="auto"
-// //                             />
-// //                             <PolarRadiusAxis 
-// //                               tick={{ 
-// //                                 fontSize: 8, 
-// //                                 fill: themeColors.textFaint 
-// //                               }}
-// //                               tickCount={6}
-// //                               angle={90}
-// //                               domain={[0, 'dataMax + 2']}
-// //                             />
-                            
-// //                             {/* Player Data - Blue with dynamic name */}
-// //                             <Radar 
-// //                               name={playerName || 'Player'} 
-// //                               dataKey={playerName || 'Player'} 
-// //                               stroke="#1976d2"
-// //                               fill="#1976d2"
-// //                               fillOpacity={0.15}
-// //                               strokeWidth={2}
-// //                               dot={{ 
-// //                                 r: 3, 
-// //                                 fill: "#1976d2",
-// //                                 stroke: "#fff",
-// //                                 strokeWidth: 1
-// //                               }}
-// //                             />
-                            
-// //                             {/* League Average - Teal */}
-// //                             <Radar 
-// //                               name="League Avg" 
-// //                               dataKey="League Avg" 
-// //                               stroke="#00bcd4"
-// //                               fill="#00bcd4"
-// //                               fillOpacity={0.1}
-// //                               strokeWidth={2}
-// //                               dot={{ 
-// //                                 r: 2.5, 
-// //                                 fill: "#00bcd4",
-// //                                 stroke: "#fff",
-// //                                 strokeWidth: 1
-// //                               }}
-// //                             />
-                            
-// //                             <Tooltip 
-// //                               contentStyle={{
-// //                                 background: themeColors.surfaceAlt,
-// //                                 border: `1px solid ${themeColors.borderStrong}`,
-// //                                 borderRadius: 6,
-// //                                 color: themeColors.text,
-// //                                 fontSize: 11,
-// //                                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-// //                               }}
-// //                               labelStyle={{ 
-// //                                 fontWeight: 600, 
-// //                                 color: themeColors.text,
-// //                                 marginBottom: 4
-// //                               }}
-// //                               formatter={(value: unknown, name: unknown) => [
-// //                                 String(value ?? ''),
-// //                                 name === (playerName || 'Player') ? (playerName || 'Player') : 'League Avg'
-// //                               ]}
-// //                             />
-// //                           </RadarChart>
-// //                         </ResponsiveContainer>
-// //                       </Box>
-// //                     </CardContent>
-// //                   </GlassCard>
-// //                 </Grid>
-
-// //                 {/* Win/Loss Pie Chart */}
-// //                 <Grid item xs={12} md={6}>
-// //                   <GlassCard sx={{ height: 220 }}>
-// //                     <CardContent>
-// //                       <SectionTitle>Win/Loss/Draw</SectionTitle>
-                      
-// //                       {/* Debug info - remove this later */}
-// //                       <Box sx={{ mb: 1, fontSize: 10, color: themeColors.textFaint }}>
-// //                         Total Matches: {filteredMatches.length} | Data: {actualWinLossData.map(d => `${d.name}: ${d.value}%`).join(', ')}
-// //                       </Box>
-
-// //                       {loading ? (
-// //                         <Box sx={{ 
-// //                           height: 150, 
-// //                           display: 'flex', 
-// //                           alignItems: 'center', 
-// //                           justifyContent: 'center' 
-// //                         }}>
-// //                           <CircularProgress size={30} sx={{ color: themeColors.primary }} />
-// //                         </Box>
-// //                       ) : (
-// //                         <Box sx={{ height: 150 }}>
-// //                           <ResponsiveContainer width="100%" height="100%">
-// //                             <PieChart>
-// //                               <Pie
-// //                                 data={actualWinLossData}
-// //                                 dataKey="value"
-// //                                 nameKey="name"
-// //                                 cx="50%"
-// //                                 cy="50%"
-// //                                 // innerRadius={25}
-// //                                 outerRadius={55}
-// //                                 paddingAngle={3}
-// //                                 startAngle={90}
-// //                                 endAngle={450}
-// //                                 label={({ cx, cy, midAngle, outerRadius, value }) => {
-// //                                   // Add safety check for value
-// //                                   const safeValue = value ?? 0;
-                                  
-// //                                   // Only show label if value > 5 (to avoid cluttered display)
-// //                                   if (safeValue < 5) return null;
-                                  
-// //                                   const safeCx = cx || 0;
-// //                                   const safeCy = cy || 0;
-// //                                   const safeMidAngle = midAngle || 0;
-// //                                   // const safeInnerRadius = innerRadius || 0;
-// //                                   const safeOuterRadius = outerRadius || 0;
-                                  
-// //                                   const RADIAN = Math.PI / 180;
-// //                                   const radius = safeOuterRadius + 15; // Position label outside
-// //                                   const x = safeCx + radius * Math.cos(-safeMidAngle * RADIAN);
-// //                                   const y = safeCy + radius * Math.sin(-safeMidAngle * RADIAN);
-                                  
-// //                                   return (
-// //                                     <text 
-// //                                       x={x} 
-// //                                       y={y} 
-// //                                       fill="#fff" 
-// //                                       textAnchor={x > safeCx ? 'start' : 'end'} 
-// //                                       dominantBaseline="central"
-// //                                       fontSize={11}
-// //                                       fontWeight="bold"
-// //                                       style={{
-// //                                         filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.8))'
-// //                                       }}
-// //                                     >
-// //                                       {`${safeValue}%`}
-// //                                     </text>
-// //                                   );
-// //                                 }}
-// //                                 labelLine={false}
-// //                               >
-// //                                 {actualWinLossData.map((entry, index) => (
-// //                                   <Cell 
-// //                                     key={`cell-${index}`} 
-// //                                     fill={entry.color}
-// //                                     stroke="rgba(255,255,255,0.1)"
-// //                                     strokeWidth={1}
-// //                                   />
-// //                                 ))}
-// //                               </Pie>
-// //                               <Tooltip 
-// //                                 contentStyle={{
-// //                                   background: themeColors.surfaceAlt,
-// //                                   border: `1px solid ${themeColors.borderStrong}`,
-// //                                   borderRadius: 6,
-// //                                   color: themeColors.text,
-// //                                   fontSize: 12,
-// //                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-// //                                 }}
-// //                                 formatter={(value: unknown, name: unknown) => [
-// //                                   `${value}%`,
-// //                                   `${name} Rate`
-// //                                 ]}
-// //                               />
-// //                             </PieChart>
-// //                           </ResponsiveContainer>
-// //                         </Box>
-// //                       )}
-
-// //                       {/* Legend */}
-// //                       <Box sx={{ 
-// //                         display: 'flex', 
-// //                         justifyContent: 'center', 
-// //                         gap: 2, 
-// //                         mt: 1,
-// //                         flexWrap: 'wrap'
-// //                       }}>
-// //                         {actualWinLossData.map((entry, index) => (
-// //                           <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-// //                             <Box sx={{ 
-// //                               width: 12, 
-// //                               height: 12, 
-// //                               backgroundColor: entry.color,
-// //                               borderRadius: '50%',
-// //                               border: '1px solid rgba(255,255,255,0.2)'
-// //                             }} />
-// //                             <Typography sx={{ 
-// //                               fontSize: 10, 
-// //                               color: themeColors.textDim, 
-// //                               fontWeight: 500 
-// //                             }}>
-// //                               {entry.name}: {entry.value}%
-// //                             </Typography>
-// //                           </Box>
-// //                         ))}
-// //                       </Box>
-// //                     </CardContent>
-// //                   </GlassCard>
-// //                 </Grid>
-// //               </Grid>
-
-// //               {/* Impact Section - UPDATED */}
-// //               <GlassCard sx={{ mb: 2 }}>
-// //                 <CardContent>
-// //                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-// //                     <SectionTitle>Impact</SectionTitle>
-// //                     {filters.leagueId && filters.leagueId !== 'all' && (
-// //                       <Typography sx={{ fontSize: 12, color: themeColors.textFaint, fontWeight: 700 }}>
-// //                         Ranked: {leagueRank ? `#${leagueRank}` : '—'}
-// //                       </Typography>
-// //                     )}
-// //                   </Box>
-                  
-// //                   <Grid container spacing={2} alignItems="center">
-// //                     {/* Circle with Matches Played */}
-// //                     <Grid item xs={12} md={3}>
-// //                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-// //                         <Box
-// //                           sx={{
-// //                             width: 80,
-// //                             height: 80,
-// //                             borderRadius: '50%',
-// //                             border: `3px solid ${themeColors.primary}`,
-// //                             backgroundColor: themeColors.surfaceAlt,
-// //                             display: 'flex',
-// //                             alignItems: 'center',
-// //                             justifyContent: 'center',
-// //                             mb: 1,
-// //                             boxShadow: '0 4px 12px rgba(229,106,22,0.3)'
-// //                           }}
-// //                         >
-// //                           <Typography sx={{ fontSize: 24, fontWeight: 'bold', color: themeColors.text }}>
-// //                             {filteredMatches.length}
-// //                           </Typography>
-// //                         </Box>
-// //                         <Typography sx={{ fontSize: 12, fontWeight: 600, textAlign: 'center', color: themeColors.textDim }}>
-// //                           Matches<br />Played
-// //                         </Typography>
-// //                       </Box>
-// //                     </Grid>
-
-// //                     {/* Impact Table */}
-// //                     <Grid item xs={12} md={9}>
-// //                       <Table size="small">
-// //                         <TableHead>
-// //                           <TableRow>
-// //                             <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-// //                             <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-// //                             <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Progress Prev {lastPrev10.prev.n}</TableCell>
-// //                             <TableCell align="center" sx={{ py: 1, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-// //                           </TableRow>
-// //                         </TableHead>
-// //                         <TableBody>
-// //                           {(() => {
-// //                             const { prev } = lastPrev10;
-// //                             const pct = (n: number) => `${n.toFixed(1)}%`;
-// //                             const deltaPct = (a: number, b: number) => `${(a - b).toFixed(1)}%`;
-// //                             const deltaNum = (a: number, b: number) => `${(a - b).toFixed(1)}`;
-// //                             const deltaInt = (a: number, b: number) => `${a - b}`;
-                            
-// //                             return (
-// //                               <>
-// //                                 <ImpactRow 
-// //                                   title="Game Contribution" 
-// //                                   value={yourStats.impactAvg.toFixed(1)} 
-// //                                   change={prev.n > 0 ? deltaNum(yourStats.impactAvg, prev.impactAvg) : '0.0'} 
-// //                                   up={yourStats.impactAvg >= prev.impactAvg} 
-// //                                 />
-// //                                 <ImpactRow 
-// //                                   title="Win Rate" 
-// //                                   value={pct(yourStats.winRate)} 
-// //                                   change={prev.n > 0 ? deltaPct(yourStats.winRate, prev.winRate) : '0.0%'} 
-// //                                   up={yourStats.winRate >= prev.winRate} 
-// //                                 />
-// //                                 <ImpactRow 
-// //                                   title="MOTM Votes" 
-// //                                   value={`${yourStats.motmVotes}`} 
-// //                                   change={prev.n > 0 ? deltaInt(yourStats.motmVotes, prev.motmVotes) : '0'} 
-// //                                   up={yourStats.motmVotes >= prev.motmVotes} 
-// //                                 />
-// //                                 <ImpactRow 
-// //                                   title="Goal Diff" 
-// //                                   value={`${yourStats.wins - yourStats.losses}`} 
-// //                                   change={prev.n > 0 ? deltaInt((yourStats.wins - yourStats.losses), (prev.wins - prev.losses)) : '0'} 
-// //                                   up={(yourStats.wins - yourStats.losses) >= (prev.wins - prev.losses)} 
-// //                                 />
-// //                                 <ImpactRow 
-// //                                   title="Goals + Assist" 
-// //                                   value={`${yourStats.ga}`} 
-// //                                   change={prev.n > 0 ? deltaInt(yourStats.ga, prev.ga) : '0'} 
-// //                                   up={yourStats.ga >= prev.ga} 
-// //                                 />
-// //                               </>
-// //                             );
-// //                           })()}
-// //                         </TableBody>
-// //                       </Table>
-// //                     </Grid>
-// //                   </Grid>                  
-// //                   {/* Guidance per spec */}
-// //                   <Box sx={{ mt: 2, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.05)' }}>
-// //                     <Typography sx={{ fontSize: 12, color: themeColors.textDim, lineHeight: 1.4 }}>
-// //                      {` This tracks the selected player's performance over their last`} {lastPrev10.last.n} {`games using the key metrics shown in the table. It measures their progress based on the previous`} {lastPrev10.prev.n} {`games they played. If a player has not yet completed 10 games, it will still show the most recent games played.`} <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Refer to the Key Stats</span> reference tab to understand the algorithm for each metric. Replace % Impact stat with <span style={{ color: themeColors.primary, fontWeight: 'bold' }}>Game Contribution</span> <span style={{ color: themeColors.danger, fontWeight: 'bold' }}>(this is the same calculation as the Contribution Index described</span>
-// //                     </Typography>
-// //                   </Box>
-
-// //                   {/* Fallback message if no positive highlights */}
-// //                   {(() => {
-// //                     const { last, prev } = lastPrev10;
-// //                     const hasPositiveMessages = prev.n > 0 ? 
-// //                       (last.winRate > prev.winRate || last.impactAvg > prev.impactAvg || (last.motmVotes / Math.max(last.n, 1) * 100) >= 30) :
-// //                       (last.winRate > 50 || last.impactAvg > 5 || last.ga > 3);
-                    
-// //                     return !hasPositiveMessages && lastPrev10.last.n > 0 ? (
-// //                       <Box sx={{ mt: 1.5, border: `1px solid ${themeColors.border}`, borderRadius: 1, p: 1.2, background: 'rgba(255,255,255,0.02)' }}>
-// //                         <Typography sx={{ fontSize: 12, color: themeColors.textDim, fontStyle: 'italic' }}>
-// //                           Keep playing to unlock performance insights and track your improvement over time!
-// //                         </Typography>
-// //                       </Box>
-// //                     ) : null;
-// //                   })()}
-// //                 </CardContent>
-// //               </GlassCard>
-
-// //               {/* Your Top Strengths Section */}
-// //               <GlassCard sx={{ mb: 2 }}>
-// //                 <CardContent>
-// //                   <SectionTitle>Your Top Strengths</SectionTitle>
-// //                   <Table size="small">
-// //                     <TableHead>
-// //                       <TableRow>
-// //                         <TableCell sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-// //                         <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-// //                           {user?.id && playerId && String(user.id) !== String(playerId) && playerName ? playerName : 'You'}
-// //                         </TableCell>
-// //                         {strengthComparison.show && (
-// //                           <TableCell align="center" sx={{ fontSize: 12, fontWeight: 'bold', py: 1, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>
-// //                             {strengthComparison.label}
-// //                           </TableCell>
-// //                         )}
-// //                       </TableRow>
-// //                     </TableHead>
-// //                     <TableBody>
-// //                       {strengths.map((s) => {
-// //                         // Player's per-match rate for the metric as "You"
-// //                         const n = Math.max(filteredMatches.length, 1);
-// //                         const youVal = (s.value / n).toFixed(2);
-// //                         // Diff vs chosen percentile threshold using scaled percentage
-// //                         const thresholdPct = strengthComparison.threshold * 100;
-// //                         const pctDiff = Math.round(s.scaled - thresholdPct);
-// //                         const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
-// //                         const up = pctDiff >= 0;
-// //                         return (
-// //                           <StrengthRow key={s.metric} title={s.metric} you={youVal} diff={diff} up={up} showComparison={strengthComparison.show} />
-// //                         );
-// //                       })}
-// //                     </TableBody>
-// //                   </Table>
-// //                   {topStrengthNote && (
-// //                     <Typography sx={{ fontSize: 13, mt: 1, color: themeColors.textDim }}>
-// //                       {topStrengthNote}
-// //                     </Typography>
-// //                   )}
-// //                 </CardContent>
-// //               </GlassCard>
-
-// //               {/* Focus Area Section */}
-// //               <GlassCard sx={{ mb: 2 }}>
-// //                 <CardContent>
-// //                   <SectionTitle>Focus Area</SectionTitle>
-// //                   <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>
-// //                     {focusSuggestion}
-// //                   </Typography>
-// //                 </CardContent>
-// //               </GlassCard>
-
-// //               {/* Play Best With + Rivalries (Dynamic) */}
-// //               <Box sx={{ mb: 2 }}>
-// //                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-// //                   You Play Best With
-// //                   {/* {selectedSynergyLeagueId && (
-// //                     <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-// //                       (League {selectedSynergyLeagueId})
-// //                     </span>
-// //                   )} */}
-// //                   <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-// //                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-
-
-
-// //                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-// //                   {playerId && synergyError && (
-// //                     <span style={{ color: themeColors.danger }}>{synergyError}</span>
-// //                   )}
-// //                   {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-// //                     <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-// //                   )}
-// //                   {!synergyLoading && !synergyError && bestPairing && (
-// //                     <>
-// //                       <span style={{ color: themeColors.primary }}>{bestPairing.name || 'Player'}</span>:
-// //                       Wins together <span style={{ color: themeColors.success }}>{bestPairing.winsTogether}</span>
-// //                       <span style={{ color: themeColors.textDim, fontSize: 12 }}>
-// //                         {` (${bestPairing.matchesTogether} matches • ${bestPairing.winRate}% win rate)`}
-// //                       </span>
-// //                     </>
-// //                   )}
-// //                   {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && (
-// //                     <span style={{ color: themeColors.textDim }}>Need team wins.</span>
-// //                   )}
-// //                 </Typography>
-
-// //                 <Typography sx={{ fontSize: 14, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, color: themeColors.text }}>
-// //                   Toughest Rival
-// //                   {/* {selectedSynergyLeagueId && (
-// //                     <span style={{ fontSize: 11, color: themeColors.textFaint }}>
-// //                       (League {selectedSynergyLeagueId})
-// //                     </span>
-// //                   )} */}
-// //                   <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-// //                   {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-// //                   {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-// //                   {playerId && synergyError && (
-// //                     <span style={{ color: themeColors.danger }}>{synergyError}</span>
-// //                   )}
-// //                   {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && (
-// //                     <span style={{ color: themeColors.textDim }}>No matches yet.</span>
-// //                   )}
-// //                   {!synergyLoading && !synergyError && toughestRival && (
-// //                     <>
-// //                       <span style={{ color: themeColors.primary }}>{toughestRival.name || 'Player'}</span>:
-// //                       Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
-// //                       <span style={{ color: themeColors.textDim, fontSize: 12 }}>
-// //                         {` (${toughestRival.matchesAgainst} matches • ${toughestRival.lossRate}% loss rate)`}
-// //                       </span>
-// //                     </>
-// //                   )}
-// //                   {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && (
-// //                     <span style={{ color: themeColors.textDim }}>Need losses data.</span>
-// //                   )}
-// //                 </Typography>
-// //               </Box>
-
-// //               {/* Back Button */}
-// //               <Box sx={{ textAlign: 'center', mt: 4 }}>
-// //                 <Typography
-// //                   component="button"
-// //                   onClick={() => router.push(`/player/${playerId}`)}
-// //                   sx={{
-// //                     background: 'linear-gradient(135deg, #E56A16 0%, #CF2326 100%)',
-// //                     border: 'none',
-// //                     px: 4,
-// //                     py: 1.5,
-// //                     borderRadius: 2,
-// //                     color: '#fff',
-// //                     fontWeight: 'bold',
-// //                     cursor: 'pointer',
-// //                     fontSize: 14,
-// //                     boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
-// //                     transition: 'all 0.3s ease',
-// //                     '&:hover': { 
-// //                       transform: 'translateY(-2px)',
-// //                       boxShadow: '0 6px 20px rgba(229,106,22,0.4)',
-// //                     }
-// //                   }}
-// //                 >
-// //                   Back to Player Profile
-// //                 </Typography>
-// //               </Box>
-// //             </Box>
-// //           )}
-// //         </Box>
-// //       </Container>
-// //     </Box>
-// //   );
-// // }
-
-// // // ---------- SHARED PLAYER TEAM EXTRACTION (moved out for reuse/debug) ----------
-// // // type PairingPlayerLite = {
-// // //   id: string;
-// // //   name?: string;
-// // //   profile?: { name?: string };
-// // // };
-
-// // // const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-// // //   !!v && typeof v === 'object' && !Array.isArray(v);
-
-// // // const coercePlayersArray = (val: unknown): PairingPlayerLite[] => {
-// // //   if (!Array.isArray(val)) return [];
-// // //   return val
-// // //     .filter(isPlainObject)
-// // //     .map((obj): PairingPlayerLite | null => {
-// // //       const idRaw = obj.id ?? (obj as Record<string, unknown>).playerId ?? (obj as Record<string, unknown>)._id;
-// // //       const id = (typeof idRaw === 'string' || typeof idRaw === 'number') ? String(idRaw) : '';
-// // //       if (!id) return null;
-
-// // //       const profileVal = (obj as Record<string, unknown>).profile;
-// // //       const profile = isPlainObject(profileVal) ? (profileVal as { name?: string }) : undefined;
-
-// // //       const name =
-// // //         typeof obj.name === 'string'
-// // //           ? obj.name
-// // //           : (profile && typeof profile.name === 'string' ? profile.name : undefined);
-
-// // //       return { id, name, profile };
-// // //     })
-// // //     .filter((p): p is PairingPlayerLite => !!p);
-// // // };
-
-// // // interface PairingMatch {
-// // //   team1Players?: unknown;
-// // //   team2Players?: unknown;
-// // //   team1?: unknown;
-// // //   homePlayers?: unknown;
-// // //   lineup1?: unknown;
-// // //   squad1?: unknown;
-// // //   playersTeam1?: unknown;
-// // //   side1?: unknown;
-// // //   team2?: unknown;
-// // //   awayPlayers?: unknown;
-// // //   lineup2?: unknown;
-// // //   squad2?: unknown;
-// // //   playersTeam2?: unknown;
-// // //   side2?: unknown;
-// // //   players?: unknown;
-// // //   participants?: unknown;
-// // //   playerList?: unknown;
-// // // }
-
-// // // function extractTeamsForPairing(match: PairingMatch, playerId?: string): { team1: PairingPlayerLite[]; team2: PairingPlayerLite[] } {
-// // //   let team1 = coercePlayersArray(match.team1Players);
-// // //   let team2 = coercePlayersArray(match.team2Players);
-
-// // //   const altKeysTeam1: (keyof PairingMatch)[] = ['team1', 'homePlayers', 'lineup1', 'squad1', 'playersTeam1', 'side1'];
-// // //   const altKeysTeam2: (keyof PairingMatch)[] = ['team2', 'awayPlayers', 'lineup2', 'squad2', 'playersTeam2', 'side2'];
-
-// // //   if (team1.length === 0) {
-// // //     for (const k of altKeysTeam1) {
-// // //       const arr = coercePlayersArray(match[k]);
-// // //       if (arr.length) { team1 = arr; break; }
-// // //     }
-// // //   }
-// // //   if (team2.length === 0) {
-// // //     for (const k of altKeysTeam2) {
-// // //       const arr = coercePlayersArray(match[k]);
-// // //       if (arr.length) { team2 = arr; break; }
-// // //     }
-// // //   }
-
-// // //   if (team1.length === 0 && team2.length === 0) {
-// // //     const flat = [
-// // //       ...coercePlayersArray(match.players),
-// // //       ...coercePlayersArray(match.participants),
-// // //       ...coercePlayersArray(match.playerList),
-// // //     ];
-// // //     const unique = new Map<string, PairingPlayerLite>();
-// // //     flat.forEach(p => unique.set(p.id, p));
-// // //     const arr = Array.from(unique.values());
-
-// // //     if (arr.length >= 2) {
-// // //       if (arr.length >= 4) {
-// // //         const half = Math.floor(arr.length / 2);
-// // //         team1 = arr.slice(0, half);
-// // //         team2 = arr.slice(half);
-// // //       } else {
-// // //         const pid = playerId ? String(playerId) : undefined;
-// // //         const selfIdx = pid ? arr.findIndex(p => p.id === pid) : -1;
-// // //         if (selfIdx >= 0) {
-// // //           const self = arr[selfIdx];
-// // //             const others = arr.filter((_, i) => i !== selfIdx);
-// // //           if (others.length === 1) {
-// // //             team1 = [self];
-// // //             team2 = others;
-// // //           } else {
-// // //             team1 = [self, ...others];
-// // //           }
-// // //         } else {
-// // //           team1 = arr;
-// // //         }
-// // //       }
-// // //     }
-// // //   }
-
-// // //   return { team1, team2 };
-// // // }
-

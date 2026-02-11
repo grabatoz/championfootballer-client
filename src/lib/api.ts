@@ -853,7 +853,8 @@ export const playerAPI = {
   getPlayerStats: async (playerId: string, leagueId: string, year: string): Promise<ApiResponse<PlayerStatsData>> => {
     try {
         const token = Cookies.get('token');
-        const response = await fetch(`${API_BASE_URL}/players/${playerId}/stats?leagueId=${leagueId}&year=${year}`, {
+        // Use the new comprehensive profile endpoint
+        const response = await fetch(`${API_BASE_URL}/players/${playerId}/profile?leagueId=${leagueId}&year=${year}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
