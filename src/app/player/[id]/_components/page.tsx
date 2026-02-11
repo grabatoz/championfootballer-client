@@ -557,7 +557,13 @@ export default function PlayerStatsPage() {
     }, [data]);
 
     const allMatches = useMemo<LeagueMatch[]>(() => {
-        return (data?.leagues || []).flatMap((l) => (hasMatches(l) ? l.matches ?? [] : []));
+        const matches = (data?.leagues || []).flatMap((l) => (hasMatches(l) ? l.matches ?? [] : []));
+        console.log('📊 All matches data:', {
+            totalMatches: matches.length,
+            sampleMatch: matches[0],
+            leaguesCount: data?.leagues?.length || 0
+        });
+        return matches;
     }, [data]);
 
     const currentLeagueMatches = useMemo<LeagueMatch[]>(() => {
@@ -575,6 +581,47 @@ export default function PlayerStatsPage() {
 
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
+
+    // Count MOTM votes from votes array
+    const motmVotesCount = useMemo(() => {
+        const count = currentLeagueMatches.reduce((acc, match) => {
+            const votes = (match as any).votes || [];
+            console.log('🗳️ Match votes:', {
+                matchId: match.id,
+                votes,
+                playerId,
+                votesForPlayer: votes.filter((vote: any) => 
+                    String(vote.votedForId) === String(playerId)
+                ).length
+            });
+            // Count how many votes this player received (votedForId is the player who received the vote)
+            const votesForPlayer = votes.filter((vote: any) => 
+                String(vote.votedForId) === String(playerId)
+            ).length;
+            return acc + votesForPlayer;
+        }, 0);
+        console.log('✅ Total MOTM votes for player:', count);
+        return count;
+    }, [currentLeagueMatches, playerId]);
+
+    // Count defensive impact votes from captain picks
+    const defensiveImpactCount = useMemo(() => {
+        const count = currentLeagueMatches.filter(match => {
+            const m = match as any;
+            const isDefensive = m.homeDefensiveImpactId === playerId || 
+                   m.awayDefensiveImpactId === playerId;
+            console.log('🛡️ Match defensive impact:', {
+                matchId: match.id,
+                homeDefensiveImpactId: m.homeDefensiveImpactId,
+                awayDefensiveImpactId: m.awayDefensiveImpactId,
+                playerId,
+                isDefensive
+            });
+            return isDefensive;
+        }).length;
+        console.log('✅ Total defensive impact count:', count);
+        return count;
+    }, [currentLeagueMatches, playerId]);
 
     // Backend-driven XP (totalXP) with safe fallback
     const [xp, setXp] = useState<number>(0);
@@ -710,6 +757,17 @@ export default function PlayerStatsPage() {
     const [trophyCounts, setTrophyCounts] = useState<Record<string, number>>({});
     const [trophiesLoading, setTrophiesLoading] = useState(false);
 
+    // Player Badges/Rewards State
+    type PlayerBadge = {
+        id: string;
+        title: string;
+        count: number;
+        xp: number;
+        unlocked: boolean;
+    };
+    const [playerBadges, setPlayerBadges] = useState<PlayerBadge[]>([]);
+    const [badgesLoading, setBadgesLoading] = useState(false);
+
     // Local fallback counting
     const localCounts = useMemo(() => {
         const map: Record<string, number> = {};
@@ -734,6 +792,105 @@ export default function PlayerStatsPage() {
             .finally(() => { if (!cancelled) setTrophiesLoading(false); });
         return () => { cancelled = true; };
     }, [playerId, localCounts]);
+
+    // Fetch player badges/achievements
+    useEffect(() => {
+        console.log('🔥 [BADGES] useEffect triggered!', { playerId, hasToken: !!token });
+        
+        if (!playerId) {
+            console.warn('⚠️ [BADGES] No playerId - skipping');
+            return;
+        }
+        
+        if (!token) {
+            console.warn('⚠️ [BADGES] No token - skipping');
+            return;
+        }
+        
+        let cancelled = false;
+        setBadgesLoading(true);
+        console.log('🔄 [BADGES] Starting badge fetch...');
+        
+        // Try multiple endpoints
+        const endpoints = [
+            `${process.env.NEXT_PUBLIC_API_URL}/users/${playerId}/achievements`,
+            `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/achievements`,
+        ];
+        
+        console.log('📋 [BADGES] Will try endpoints:', endpoints);
+        
+        const tryFetch = async () => {
+            for (let i = 0; i < endpoints.length; i++) {
+                const endpoint = endpoints[i];
+                try {
+                    console.log(`🌐 [BADGES ${i + 1}/${endpoints.length}] Fetching from:`, endpoint);
+                    
+                    const res = await fetch(`${endpoint}?_=${Date.now()}`, {
+                        credentials: 'include',
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    
+                    console.log(`📡 [BADGES ${i + 1}] Response status:`, res.status, res.statusText);
+                    
+                    const data = await res.json();
+                    console.log(`📦 [BADGES ${i + 1}] Response data:`, data);
+                    
+                    if (cancelled) {
+                        console.log('🚫 [BADGES] Cancelled - exiting');
+                        return;
+                    }
+                    
+                    if (res.ok && data?.success && Array.isArray(data.badges)) {
+                        console.log(`✅ [BADGES ${i + 1}] Success! Raw badges:`, data.badges);
+                        
+                        // Filter only unlocked badges with count > 0
+                        const earnedBadges = data.badges
+                            .filter((b: PlayerBadge) => {
+                                const pass = b.unlocked && b.count > 0 && b.id !== 'rising_xp';
+                                console.log(`  🔍 Badge ${b.id}: unlocked=${b.unlocked}, count=${b.count}, pass=${pass}`);
+                                return pass;
+                            })
+                            .map((b: PlayerBadge) => ({
+                                id: b.id,
+                                title: b.title || b.id,
+                                count: Number(b.count || 0),
+                                xp: Number(b.xp || 0),
+                                unlocked: Boolean(b.unlocked)
+                            }));
+                        
+                        console.log('🎖️ [BADGES] Final earned badges:', earnedBadges);
+                        setPlayerBadges(earnedBadges);
+                        setBadgesLoading(false);
+                        return; // Success, exit
+                    } else {
+                        console.warn(`⚠️ [BADGES ${i + 1}] Invalid response:`, {
+                            ok: res.ok,
+                            success: data?.success,
+                            hasBadges: Array.isArray(data?.badges),
+                            badgesLength: data?.badges?.length
+                        });
+                    }
+                } catch (err) {
+                    console.error(`❌ [BADGES ${i + 1}] Error:`, err);
+                    continue; // Try next endpoint
+                }
+            }
+            
+            // All endpoints failed
+            if (!cancelled) {
+                console.error('💥 [BADGES] All endpoints failed!');
+                setPlayerBadges([]);
+                setBadgesLoading(false);
+            }
+        };
+        
+        tryFetch();
+        
+        return () => { 
+            console.log('🧹 [BADGES] Cleanup');
+            cancelled = true; 
+        };
+    }, [playerId, token]);
 
     const earnedTrophies = useMemo(() => {
         // Aggregate counts for duplicate keys (e.g., 'Champion Footballer' + 'League Champion')
@@ -1260,10 +1417,10 @@ export default function PlayerStatsPage() {
                             <StatItem label="Assists" value={currentLeagueTotals.assists} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="MOTM" value={currentLeagueTotals.motmVotes} />
+                            <StatItem label="MOTM" value={motmVotesCount} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Defensive" value={currentLeagueTotals.impact} />
+                            <StatItem label="Defensive" value={defensiveImpactCount} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
                             <StatItem label="Clean Sheet" value={currentLeagueTotals.cleanSheets} />
@@ -1299,7 +1456,7 @@ export default function PlayerStatsPage() {
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #444'
+                                border: '1px solid #fff'
                             }}>
                                 <Box sx={{ textAlign: 'center', mb: 2 }}>
                                     <Typography sx={{ 
@@ -1382,7 +1539,7 @@ export default function PlayerStatsPage() {
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #444'
+                                border: '1px solid #fff'
                             }}>
                                 <Typography sx={{ 
                                     color: '#fff', 
@@ -1395,24 +1552,28 @@ export default function PlayerStatsPage() {
                                 }}>
                                     Rewards XP
                                 </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>1x Goal Rush</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>100xp</Typography>
+                                {badgesLoading ? (
+                                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                                        <CircularProgress size={24} sx={{ color: TEAL_PRIMARY }} />
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>3x Pure Magic</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>300xp</Typography>
+                                ) : playerBadges.length === 0 ? (
+                                    <Typography sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
+                                        No rewards earned yet
+                                    </Typography>
+                                ) : (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                        {playerBadges.slice(0, 5).map((badge) => (
+                                            <Box key={badge.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Typography sx={{ color: '#ccc', fontSize: 13 }}>
+                                                    {badge.count}x {badge.title}
+                                                </Typography>
+                                                <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                    {(badge.count * badge.xp).toLocaleString()}xp
+                                                </Typography>
+                                            </Box>
+                                        ))}
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>2x Leader Of Legends</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>400xp</Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>2x Finder Keepers</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>600xp</Typography>
-                                    </Box>
-                                </Box>
+                                )}
                             </Paper>
                         </Grid>
 
@@ -1422,7 +1583,7 @@ export default function PlayerStatsPage() {
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #444'
+                                border: '1px solid #fff'
                             }}>
                                 <Typography sx={{ 
                                    color: '#fff', 
