@@ -29,115 +29,59 @@ export default function Footer() {
 
   return (
     <Box component="footer" sx={{
-      py: { xs: 5, md: 7 },
-      // mt: 10,
-      // background: '#00A77F',
-      // background: 'linear-gradient(90deg, #E56A16 0%, #CF2326 100%)', // <-- updated to linear gradient
-      // background: 'linear-gradient(90deg, #E56A16 0%, #CF2326 100%)',
-      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+      py: { xs: 3, md: 5 },
+      background: 'linear-gradient(90deg, #727272 0%, #3b3b3b 50%, #020202 100%)',
       color: 'white',
-      // borderTopLeftRadius: { xs: 24, md: 32 },
-      // borderTopRightRadius: { xs: 24, md: 32 },
       boxShadow: '0 -2px 24px 0 rgba(30, 58, 138, 0.12)',
     }}>
-       <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={{ xs: 2, md: 3 }}
-            sx={{
-              width: '100%',
-              alignItems: { xs: 'left', md: 'left' },
-              justifyContent: 'space-between',
-              // bgcolor: 'rgba(255,255,255,0.06)',
-              // border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 2,
-              p: { xs: 2, md: 3 },
-              mt: { sm: 0, xs: 0, md: '-60px' },
-              mb: { sm: '70px', xs: 10, md: 0 }
-            }}
-          >
-            <Stack spacing={1} sx={{ textAlign: { xs: 'center', md: 'left' } , mt:'-15' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.2 }}>
-                Get the Champion Footballer app
-              </Typography>
-              {/* <Typography variant="body2" sx={{ opacity: 0.95 }}>
-                Scan the QR code or use the badges to download.
-              </Typography> */}
-
-              <Stack direction="row" spacing={1.5} flexWrap="wrap" justifyContent={{ xs: 'center', md: 'flex-start' }} mt={1.5}>
-                <Box
-                  component="a"
-                  href={APP_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ display: 'inline-flex', alignItems: 'center' }}
-                >
-                  <Box
-                    component="img"
-                    alt="Download on the App Store"
-                    src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
-                    sx={{ height: 40, width: 'auto', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))' }}
-                  />
-                </Box>
-                <Box
-                  component="a"
-                  href={PLAY_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ display: 'inline-flex', alignItems: 'center' }}
-                >
-                  <Box
-                    component="img"
-                    alt="Get it on Google Play"
-                    src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                    sx={{ height: 55, width: 'auto', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))' }}
-                  />
-                </Box>
-              </Stack>
-            </Stack>
-          </Stack>
-      <Container maxWidth="md" className='mt-[-50]'>
-        <Stack spacing={4} alignItems="center" justifyContent="center">
+       {/* Deleted App Download Section */}
+      <Container maxWidth="md">
+        <Stack spacing={3} alignItems="center" justifyContent="center">
           {/* App download section */}
          
 
           {/* Social Icons */}
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={4}>
             <IconButton
               component="a"
               href="https://x.com/champf2baller"
               target="_blank"
               rel="noopener noreferrer"
+              size="small"
               sx={{
                 color: 'white',
-                bgcolor: 'black',
-                // border: '2px solid #43a047',
+                bgcolor: '#00A77F',
+                width: 36,
+                height: 36,
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'black', color: '#fff' },
+                '&:hover': { bgcolor: '#008f6d', color: '#fff' },
               }}
             >
-              <FaXTwitter />
+              <FaXTwitter size={18} />
             </IconButton>
             <IconButton
               component="a"
               href="https://www.instagram.com/champf2baller/"
               target="_blank"
               rel="noopener noreferrer"
+              size="small"
               sx={{
                 color: '#fff',
-                bgcolor: 'black',
-                // border: '2px solid #E1306C',
+                bgcolor: '#00A77F',
+                width: 36,
+                height: 36,
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'black', color: '#fff' },
+                '&:hover': { bgcolor: '#008f6d', color: '#fff' },
               }}
             >
-              <FaInstagram />
+              <FaInstagram size={20} />
             </IconButton>
           </Stack>
 
-          <Divider sx={{ width: '100%', borderColor: 'black' }} />
+          <Divider sx={{ width: '60%', borderColor: '#00A77F', borderBottomWidth: 2 }} />
 
           {/* Footer Links */}
-          <Stack direction="row" spacing={2} flexWrap="wrap" justifyContent="center" useFlexGap>
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" justifyContent="center" useFlexGap>
             <Button
               component={Link}
               href="/terms"
@@ -145,7 +89,8 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 16,
+                fontSize: 18,
+                
                 px: 2,
                 '&:hover': { color: 'white', textDecoration: 'underline' },
               }}
@@ -159,7 +104,7 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 16,
+                fontSize: 18,
                 px: 2,
                 '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
@@ -173,7 +118,7 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 16,
+                fontSize: 18,
                 px: 2,
                 '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
@@ -187,35 +132,35 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 16,
+                fontSize: 18,
                 px: 2,
                 '&:hover': { color: ' white', textDecoration: 'underline' },
               }}
             >
               About Us
             </Button>
-            {isAuthenticated && (
-              <Button
-                onClick={handleSignOut}
-                sx={{
-                  textTransform: 'none',
-                  color: '#fff',
-                  fontWeight: 500,
-                  fontSize: 16,
-                  px: 2,
-                  bgcolor: '#2B2B2B',
-                  borderRadius: 2,
-                  ml: 2,
-                  '&:hover': { bgcolor: '#2B2B2B', color: '#fff' },
-                }}
-              >
-                Sign Out
-              </Button>
-            )}
+            <Button
+              onClick={handleSignOut}
+              sx={{
+                textTransform: 'none',
+                color: '#fff',
+                fontWeight: 500,
+                fontSize: 16,
+                p: 0,
+                width: '100px',
+                height: '35px',
+                bgcolor: '#00A77F',
+                borderRadius: 1.5,
+                ml: 2,
+                '&:hover': { bgcolor: '#008f6d', color: '#fff' },
+              }}
+            >
+              Sign Out
+            </Button>
           </Stack>
 
-          <Typography variant="body2" sx={{ color: 'white', mt: 2, fontWeight: 400, letterSpacing: 1, textAlign: 'center' }}>
-            &copy; {new Date().getFullYear()} Champion Footballer. All rights reserved.
+          <Typography variant="body2" sx={{ color: 'white', mt: 3, fontSize: '15px', fontWeight: 450, letterSpacing: 1, textAlign: 'center' }}>
+             {new Date().getFullYear()} Champion Footballer. All rights reserved.
           </Typography>
         </Stack>
       </Container>
