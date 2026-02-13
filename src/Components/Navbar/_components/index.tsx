@@ -2067,7 +2067,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     { label: 'MATCHES', href: '/all-matches' },
     { label: 'VIEW STATS', href: '/profile' },
     { label: 'TROPHY ROOM', href: '/trophy-room' },
-    { label: 'REWARDS', href: '/leader-board' },
+    { label: 'REWARDS', href: '/rewards' },
     { label: 'PLAYERS', href: '/all-players' },
   ];
 

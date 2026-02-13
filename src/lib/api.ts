@@ -893,12 +893,13 @@ export const playerAPI = {
   },
 
   // Fetch player trophies (accumulative) with optional filters
-  getPlayerTrophies: async (playerId: string, leagueId?: string, year?: string): Promise<ApiResponse<{ trophies: Record<string, { leagueId: string; leagueName: string }[]>; counts: Record<string, number> }>> => {
+  getPlayerTrophies: async (playerId: string, leagueId?: string, year?: string, seasonId?: string): Promise<ApiResponse<{ trophies: Record<string, { leagueId: string; leagueName: string }[]>; counts: Record<string, number> }>> => {
     try {
       const token = Cookies.get('token');
       const params = new URLSearchParams();
-      if (leagueId) params.append('leagueId', leagueId);
-      if (year) params.append('year', year);
+      if (leagueId && leagueId !== 'all') params.append('leagueId', leagueId);
+      if (year && year !== 'all') params.append('year', year);
+      if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
       const url = `${API_BASE_URL}/players/${playerId}/trophies?${params.toString()}`;
       const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
       const json = await res.json();
@@ -908,6 +909,26 @@ export const playerAPI = {
       return { success: true, message: 'OK', data: json.data };
     } catch (e) {
       return { success: false, message: 'Failed to fetch trophies', error: e instanceof Error ? e.message : 'Failed to fetch trophies' };
+    }
+  },
+
+  // Fetch player history records (win streak, most goals, etc.)
+  getPlayerHistoryRecords: async (playerId: string, leagueId?: string, year?: string, seasonId?: string): Promise<ApiResponse<{ longestWinStreak: number; mostGoalsInLeague: number; mostMotmInLeague: number; longestWinMargin: string; highestXpInLeague: number }>> => {
+    try {
+      const token = Cookies.get('token');
+      const params = new URLSearchParams();
+      if (leagueId && leagueId !== 'all') params.append('leagueId', leagueId);
+      if (year && year !== 'all') params.append('year', year);
+      if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
+      const url = `${API_BASE_URL}/players/${playerId}/history-records?${params.toString()}`;
+      const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        return { success: false, message: 'Failed to fetch history records', error: json?.message || 'Failed to fetch history records' };
+      }
+      return { success: true, message: 'OK', data: json.data };
+    } catch (e) {
+      return { success: false, message: 'Failed to fetch history records', error: e instanceof Error ? e.message : 'Failed to fetch history records' };
     }
   }
 }

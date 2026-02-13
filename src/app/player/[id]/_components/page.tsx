@@ -168,14 +168,21 @@ function sumStatsFromMatches(matches: LeagueMatch[] = []): StatTotals {
     }, { ...emptyTotals });
 }
 
-// Calculate XP from stats (sample calculation - adjust as needed)
+// Calculate XP from stats (fallback approximation - assumes average win rate)
+// Note: This is only used if the backend API fails. The actual calculation uses match-by-match data.
 function calculateXP(stats: StatTotals): number {
+    // Rough approximation: assume 50% win rate for averaged multipliers
+    // Team bonus: ~18 per match (average of 30 win, 15 draw, 10 lose)
+    // Goals: 2.5 avg (between 3 win, 2 lose)
+    // Assists: 1.5 avg (between 2 win, 1 lose)
+    // Clean Sheets: 5 (flat)
+    // MOTM: 1.5 avg (between 2 win, 1 lose)
+    // Impact: Removed from new system
     return (
-        stats.goals * 10 +
-        stats.assists * 8 +
+        stats.goals * 2.5 +
+        stats.assists * 1.5 +
         stats.cleanSheets * 5 +
-        stats.motmVotes * 15 +
-        stats.impact * 3
+        stats.motmVotes * 1.5
     );
 }
 
@@ -211,6 +218,27 @@ export default function PlayerStatsPage() {
     const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
     const filtersInitialized = useRef(false);
+    
+    // Tab navigation state
+    const [activeTab, setActiveTab] = useState('current');
+
+    // Compute effective filters for each card based on active tab
+    // Each card only uses 'all' when its specific tab is active (NOT on career tab)
+    
+    // Trophies card filters - only show all when trophies tab is active
+    const effectiveTrophiesLeagueId = (activeTab === 'trophies') ? 'all' : (leagueId || 'all');
+    const effectiveTrophiesYear = (activeTab === 'trophies') ? 'all' : (year || 'all');
+    const effectiveTrophiesSeasonId = (activeTab === 'trophies') ? 'all' : (selectedSeason || 'all');
+    
+    // Rewards card filters - only show all when rewards tab is active
+    const effectiveRewardsLeagueId = (activeTab === 'rewards') ? 'all' : (leagueId || 'all');
+    const effectiveRewardsYear = (activeTab === 'rewards') ? 'all' : (year || 'all');
+    const effectiveRewardsSeasonId = (activeTab === 'rewards') ? 'all' : (selectedSeason || 'all');
+    
+    // History card filters - only show all when history tab is active
+    const effectiveHistoryLeagueId = (activeTab === 'history') ? 'all' : (leagueId || 'all');
+    const effectiveHistoryYear = (activeTab === 'history') ? 'all' : (year || 'all');
+    const effectiveHistorySeasonId = (activeTab === 'history') ? 'all' : (selectedSeason || 'all');
 
     // Latest year present in data (fallback: current year)
     const latestYearInData = useMemo(() => {
@@ -572,17 +600,25 @@ export default function PlayerStatsPage() {
 
         if (leagueId && leagueId !== 'all') {
             const l = leaguesList.find((x: LeagueWithMatchesTyped) => x.id === leagueId);
-            return hasMatches(l) ? l.matches ?? [] : [];
+            let matches = hasMatches(l) ? l.matches ?? [] : [];
+            
+            // Apply season filter if selected
+            if (selectedSeason && selectedSeason !== 'all') {
+                matches = matches.filter(m => (m as any).seasonId === selectedSeason);
+                console.log('⚽ [Stats] Filtered by season:', selectedSeason, '| Matches:', matches.length);
+            }
+            
+            return matches;
         }
 
         const first = leaguesList[0];
         return hasMatches(first) ? first.matches ?? [] : [];
-    }, [data, leagueId]);
+    }, [data, leagueId, selectedSeason]);
 
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
 
-    // Count MOTM votes from votes array
+    // Count MOTM votes from votes array - Current League
     const motmVotesCount = useMemo(() => {
         const count = currentLeagueMatches.reduce((acc, match) => {
             const votes = (match as any).votes || [];
@@ -604,7 +640,20 @@ export default function PlayerStatsPage() {
         return count;
     }, [currentLeagueMatches, playerId]);
 
-    // Count defensive impact votes from captain picks
+    // Count MOTM votes from votes array - Career (All Matches)
+    const careerMotmVotesCount = useMemo(() => {
+        const count = allMatches.reduce((acc, match) => {
+            const votes = (match as any).votes || [];
+            const votesForPlayer = votes.filter((vote: any) => 
+                String(vote.votedForId) === String(playerId)
+            ).length;
+            return acc + votesForPlayer;
+        }, 0);
+        console.log('✅ Total Career MOTM votes for player:', count);
+        return count;
+    }, [allMatches, playerId]);
+
+    // Count defensive impact votes from captain picks - Current League
     const defensiveImpactCount = useMemo(() => {
         const count = currentLeagueMatches.filter(match => {
             const m = match as any;
@@ -622,6 +671,38 @@ export default function PlayerStatsPage() {
         console.log('✅ Total defensive impact count:', count);
         return count;
     }, [currentLeagueMatches, playerId]);
+
+    // Count defensive impact votes from captain picks - Career (All Matches)
+    const careerDefensiveImpactCount = useMemo(() => {
+        const count = allMatches.filter(match => {
+            const m = match as any;
+            return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
+        }).length;
+        console.log('✅ Total Career defensive impact count:', count);
+        return count;
+    }, [allMatches, playerId]);
+
+    // Calculate Win Ratio - Current League
+    const currentWinRatio = useMemo(() => {
+        if (currentLeagueMatches.length === 0) return 0;
+        const wins = currentLeagueMatches.filter(match => {
+            const m = match as any;
+            const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
+            return playerTeam === 'home' ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
+        }).length;
+        return Math.round((wins / currentLeagueMatches.length) * 100);
+    }, [currentLeagueMatches, playerId]);
+
+    // Calculate Win Ratio - Career (All Matches)
+    const careerWinRatio = useMemo(() => {
+        if (allMatches.length === 0) return 0;
+        const wins = allMatches.filter(match => {
+            const m = match as any;
+            const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
+            return playerTeam === 'home' ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
+        }).length;
+        return Math.round((wins / allMatches.length) * 100);
+    }, [allMatches, playerId]);
 
     // Backend-driven XP (totalXP) with safe fallback
     const [xp, setXp] = useState<number>(0);
@@ -768,6 +849,16 @@ export default function PlayerStatsPage() {
     const [playerBadges, setPlayerBadges] = useState<PlayerBadge[]>([]);
     const [badgesLoading, setBadgesLoading] = useState(false);
 
+    // History & Records State (fetched from backend)
+    const [historyRecords, setHistoryRecords] = useState({
+        longestWinStreak: 0,
+        mostGoalsInLeague: 0,
+        mostMotmInLeague: 0,
+        longestWinMargin: '0-0',
+        highestXpInLeague: 0
+    });
+    const [historyRecordsLoading, setHistoryRecordsLoading] = useState(false);
+
     // Local fallback counting
     const localCounts = useMemo(() => {
         const map: Record<string, number> = {};
@@ -778,25 +869,40 @@ export default function PlayerStatsPage() {
     }, [allTrophyAwards]);
 
     useEffect(() => {
+        // Fetch trophies whenever effective filters change or tab changes
         if (!playerId) return;
         let cancelled = false;
         setTrophiesLoading(true);
-        // Accumulative: fetch all-time trophies (no league/year filters)
-        playerAPI.getPlayerTrophies(String(playerId))
+        
+        console.log('🏆 [Trophies] Fetching with filters:', { 
+            playerId, 
+            leagueId: effectiveTrophiesLeagueId, 
+            year: effectiveTrophiesYear,
+            selectedSeason: effectiveTrophiesSeasonId,
+            activeTab
+        });
+        
+        // Fetch trophies with filters
+        playerAPI.getPlayerTrophies(String(playerId), effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId)
             .then(res => {
                 if (cancelled) return;
+                console.log('✅ [Trophies] Response:', res);
                 if (res.success && res.data?.counts) setTrophyCounts(res.data.counts);
                 else setTrophyCounts(localCounts);
             })
-            .catch(() => { if (!cancelled) setTrophyCounts(localCounts); })
+            .catch((err) => { 
+                console.error('❌ [Trophies] Error:', err);
+                if (!cancelled) setTrophyCounts(localCounts); 
+            })
             .finally(() => { if (!cancelled) setTrophiesLoading(false); });
         return () => { cancelled = true; };
-    }, [playerId, localCounts]);
+    }, [playerId, effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId, localCounts, activeTab]);
 
     // Fetch player badges/achievements
     useEffect(() => {
-        console.log('🔥 [BADGES] useEffect triggered!', { playerId, hasToken: !!token });
+        console.log('🔥 [BADGES] useEffect triggered!', { playerId, hasToken: !!token, leagueId, year, selectedSeason });
         
+        // Fetch badges whenever effective filters change or tab changes
         if (!playerId) {
             console.warn('⚠️ [BADGES] No playerId - skipping');
             return;
@@ -809,12 +915,19 @@ export default function PlayerStatsPage() {
         
         let cancelled = false;
         setBadgesLoading(true);
-        console.log('🔄 [BADGES] Starting badge fetch...');
+        console.log('🔄 [BADGES] Starting badge fetch with filters:', { leagueId: effectiveRewardsLeagueId, year: effectiveRewardsYear, selectedSeason: effectiveRewardsSeasonId, activeTab });
+        
+        // Build query params for effective filters
+        const params = new URLSearchParams();
+        if (effectiveRewardsLeagueId && effectiveRewardsLeagueId !== 'all') params.append('leagueId', effectiveRewardsLeagueId);
+        if (effectiveRewardsYear && effectiveRewardsYear !== 'all') params.append('year', effectiveRewardsYear);
+        if (effectiveRewardsSeasonId && effectiveRewardsSeasonId !== 'all') params.append('seasonId', effectiveRewardsSeasonId);
+        const queryString = params.toString() ? `?${params.toString()}` : '';
         
         // Try multiple endpoints
         const endpoints = [
-            `${process.env.NEXT_PUBLIC_API_URL}/users/${playerId}/achievements`,
-            `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/achievements`,
+            `${process.env.NEXT_PUBLIC_API_URL}/users/${playerId}/achievements${queryString}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/achievements${queryString}`,
         ];
         
         console.log('📋 [BADGES] Will try endpoints:', endpoints);
@@ -825,7 +938,9 @@ export default function PlayerStatsPage() {
                 try {
                     console.log(`🌐 [BADGES ${i + 1}/${endpoints.length}] Fetching from:`, endpoint);
                     
-                    const res = await fetch(`${endpoint}?_=${Date.now()}`, {
+                    // Use & if queryString exists, otherwise use ?
+                    const cacheBuster = queryString ? `&_=${Date.now()}` : `?_=${Date.now()}`;
+                    const res = await fetch(`${endpoint}${cacheBuster}`, {
                         credentials: 'include',
                         headers: { Authorization: `Bearer ${token}` },
                     });
@@ -890,7 +1005,40 @@ export default function PlayerStatsPage() {
             console.log('🧹 [BADGES] Cleanup');
             cancelled = true; 
         };
-    }, [playerId, token]);
+    }, [playerId, token, effectiveRewardsLeagueId, effectiveRewardsYear, effectiveRewardsSeasonId, activeTab]);
+
+    // Fetch history records from backend with filters
+    useEffect(() => {
+        // Fetch history whenever effective filters change or tab changes
+        if (!playerId) return;
+        let cancelled = false;
+        setHistoryRecordsLoading(true);
+        
+        console.log('🔍 [History Records] Fetching with filters:', { 
+            playerId, 
+            leagueId: effectiveHistoryLeagueId, 
+            year: effectiveHistoryYear, 
+            selectedSeason: effectiveHistorySeasonId,
+            activeTab
+        });
+        
+        playerAPI.getPlayerHistoryRecords(String(playerId), effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId)
+            .then(res => {
+                if (cancelled) return;
+                console.log('✅ [History Records] Response:', res);
+                if (res.success && res.data) {
+                    setHistoryRecords(res.data);
+                }
+            })
+            .catch((err) => {
+                console.error('❌ [History Records] Error:', err);
+            })
+            .finally(() => {
+                if (!cancelled) setHistoryRecordsLoading(false);
+            });
+
+        return () => { cancelled = true; };
+    }, [playerId, effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId, activeTab]);
 
     const earnedTrophies = useMemo(() => {
         // Aggregate counts for duplicate keys (e.g., 'Champion Footballer' + 'League Champion')
@@ -939,8 +1087,6 @@ export default function PlayerStatsPage() {
             </Typography>
         </Box>
     );
-
-    const [activeTab, setActiveTab] = useState('current');
 
     const loading = reduxLoading || !data;
 
@@ -1408,22 +1554,22 @@ export default function PlayerStatsPage() {
                     {/* Stats Row */}
                     <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'flex-start' }}>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Matches" value={currentLeagueMatches.length} />
+                            <StatItem label="Matches" value={activeTab === 'career' ? allMatches.length : currentLeagueMatches.length} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Goals" value={currentLeagueTotals.goals} />
+                            <StatItem label="Goals" value={activeTab === 'career' ? accumulativeTotals.goals : currentLeagueTotals.goals} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Assists" value={currentLeagueTotals.assists} />
+                            <StatItem label="Assists" value={activeTab === 'career' ? accumulativeTotals.assists : currentLeagueTotals.assists} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="MOTM" value={motmVotesCount} />
+                            <StatItem label="MOTM" value={activeTab === 'career' ? careerMotmVotesCount : motmVotesCount} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Defensive" value={defensiveImpactCount} />
+                            <StatItem label="Defensive" value={activeTab === 'career' ? careerDefensiveImpactCount : defensiveImpactCount} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
-                            <StatItem label="Clean Sheet" value={currentLeagueTotals.cleanSheets} />
+                            <StatItem label="Clean Sheet" value={activeTab === 'career' ? accumulativeTotals.cleanSheets : currentLeagueTotals.cleanSheets} />
                         </Grid>
                         <Grid item xs={6} sm={4} md>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
@@ -1441,7 +1587,7 @@ export default function PlayerStatsPage() {
                                     <Box sx={{ 
                                         height: '100%', 
                                         bgcolor: TEAL_PRIMARY, 
-                                        width: '75%' 
+                                        width: `${activeTab === 'career' ? careerWinRatio : currentWinRatio}%` 
                                     }} />
                                 </Box>
                             </Box>
@@ -1449,14 +1595,19 @@ export default function PlayerStatsPage() {
                     </Grid>
 
                     {/* Three Cards Section */}
-                    <Grid container spacing={3}>
+                    <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
                         {/* Card 1: Trophies & Awards */}
-                        <Grid item xs={12} md={4}>
+                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #fff'
+                                border: activeTab === 'trophies' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
+                                transition: 'border 0.3s ease',
+                                height: '100%',
+                                width: '100%',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
                                 <Box sx={{ textAlign: 'center', mb: 2 }}>
                                     <Typography sx={{ 
@@ -1534,12 +1685,17 @@ export default function PlayerStatsPage() {
                         </Grid>
 
                         {/* Card 2: Rewards XP */}
-                        <Grid item xs={12} md={4}>
+                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #fff'
+                                border: activeTab === 'rewards' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
+                                transition: 'border 0.3s ease',
+                                height: '100%',
+                                width: '100%',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
                                 <Typography sx={{ 
                                     color: '#fff', 
@@ -1578,12 +1734,17 @@ export default function PlayerStatsPage() {
                         </Grid>
 
                         {/* Card 3: History & Records */}
-                        <Grid item xs={12} md={4}>
+                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
                                 borderRadius: 2,
-                                border: '1px solid #fff'
+                                border: activeTab === 'history' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
+                                transition: 'border 0.3s ease',
+                                height: '100%',
+                                width: '100%',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
                                 <Typography sx={{ 
                                    color: '#fff', 
@@ -1596,26 +1757,51 @@ export default function PlayerStatsPage() {
                                 }}>
                                     History & Records
                                 </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, position: 'relative', pl: 2.5 }}>
+                                    {/* Vertical line */}
+                                    <Box sx={{ 
+                                        position: 'absolute', 
+                                        left: 4, 
+                                        top: 8, 
+                                        bottom: 8, 
+                                        width: 2, 
+                                        bgcolor: '#444',
+                                        borderRadius: 1,
+                                    }} />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: TEAL_PRIMARY }} />
                                         <Typography sx={{ color: '#ccc', fontSize: 13 }}>Longest Win Streak</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>5</Typography>
+                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                            {historyRecords.longestWinStreak}
+                                        </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: TEAL_PRIMARY }} />
                                         <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most Goals In A League</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>40</Typography>
+                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                            {historyRecords.mostGoalsInLeague}
+                                        </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: TEAL_PRIMARY }} />
                                         <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most MOTM In A League</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>20</Typography>
+                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                            {historyRecords.mostMotmInLeague}
+                                        </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Longest Win Margin</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>10-2</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: TEAL_PRIMARY }} />
+                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Largest Win Margin</Typography>
+                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                            {historyRecords.longestWinMargin}
+                                        </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: TEAL_PRIMARY }} />
                                         <Typography sx={{ color: '#ccc', fontSize: 13 }}>Highest XP In A League</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>583</Typography>
+                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                            {historyRecords.highestXpInLeague.toLocaleString()}
+                                        </Typography>
                                     </Box>
                                 </Box>
                             </Paper>
