@@ -10,11 +10,13 @@ import {
 } from '@mui/material';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
+import Star from '@/Components/images/star.png'
 // import EditIcon from '@mui/icons-material/Edit';
 // import IconButton from '@mui/material/IconButton';
 import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
+import cardPattern from '@/Components/images/cardimg.png';
 
 // const fallback = '/assets/cflogo2.png';
 
@@ -396,6 +398,8 @@ const PlayerCard = ({
     ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
     : imgicon;
 
+  const hasUserImage = Boolean(imgUrl);
+
   const avgSkill = calculateAverageSkill(stats);
 
   return (
@@ -406,172 +410,183 @@ const PlayerCard = ({
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
+        p: 0.5,
+        boxSizing: 'border-box',
       }}
     >
-      {/* Background Image */}
-      <Image
-        src={vectorImg}
-        alt="Card Background"
-        layout="fill"
-        objectFit="contain"
-        className="z-0"
-      />
+      {/* Inner wrapper keeps fill-images constrained even with padding */}
+      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+        {/* Background Image */}
+        <Image
+          src={vectorImg}
+          alt="Card Background"
+          layout="fill"
+          objectFit="cover"
+          objectPosition="top center"
+          className="z-0"
+        />
 
-      {/* Overlay Content */}
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 10,
-          px: 2,
-          py: 2,
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          color: '#fff',
-          // mt:{md:0}
-        }}
-      >
-        {/* Top: Shirt Number */}
-        <Box sx={{ mt: 1 }}>
-          <Typography fontWeight={'bold'} fontSize="18px" color={'#fff'}>
-            <span className='font-bold text-[22px]'> {points} xp </span>
+        {/* Top texture overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 5,
+            pointerEvents: 'none',
+            opacity: 1,
+            backgroundColor: '#fff',
+            // Only show on the top portion (shirt area-ish)
+            clipPath: { xs: 'inset(0 0 44% 0)', md: 'inset(0 0 42% 0)' },
+            // Clip to the card silhouette so the pattern doesn't leak outside
+            WebkitMaskImage: `url(${vectorImg.src})`,
+            WebkitMaskRepeat: 'no-repeat',
+            WebkitMaskPosition: 'top center',
+            WebkitMaskSize: '100% 100%',
+            maskImage: `url(${vectorImg.src})`,
+            maskRepeat: 'no-repeat',
+            maskPosition: 'top center',
+            maskSize: '100% 100%',
+          }}
+        >
+          <Image
+            src={cardPattern}
+            alt="Card Top Texture"
+            fill
+            sizes="260px"
+            style={{ objectFit: 'cover', objectPosition: 'top center' }}
+          />
+        </Box>
+
+        {/* Overlay Content */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 10,
+            px: 2,
+            py: 2,
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: '#fff',
+            // mt:{md:0}
+          }}
+        >
+        {/* Top: XP Points */}
+        <Box sx={{ mt: 0.5 }}>
+          <Typography fontWeight={'bold'} fontSize="18px" color={'#000'}>
+            <span className='font-bold text-[16px]'> {points} xp </span>
           </Typography>
         </Box>
 
+        {/* Centered Profile Avatar (circular) */}
         <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          px={2}
-         sx={{mt:{xs:2,sm:2,md:2}}} 
+          sx={{
+            mt: { xs: 0.5, md: 0.5 },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          {/* Left: Number, XXX, Foot */}
-          <Box sx={{ mt: 0.5, mb: 1 }} textAlign="left">
-            <Image
-              src={Title}
-              alt="Shoe"
-              width={22}
-              height={10}
-              style={{ marginLeft: '7px' }}
-            />
-            <Divider sx={{ bgcolor: '#fff'}}/>
-            <Typography fontSize="15px" fontWeight={'bold'} justifyContent={'center'} textAlign={'center'} color={'#fff'}>
-              {getPositionShortForm(position)}
-            </Typography>
-            <Divider sx={{ bgcolor: '#fff'}}/>
-            <Box
-              display="flex"
-              alignItems="center"
-              gap={0.5}
-              mt={0.5}
-            >
-              <Box sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                <Image
-                  src={Foot}
-                  alt="Shoe"
-                  width={22}
-                  height={10}
-                />
-              </Box>
-              <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{foot}</Typography>
-            </Box>
-          </Box>
-
-          {/* Right: Avatar with edit icon */}
           <Box
             sx={{
               position: 'relative',
-              width: 100,
-              height: 100,
+              width: 110,
+              height: 110,
               border: `2px solid #fff`,
-              borderRadius: '10px',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: disableImagePopup ? 'default' : 'pointer', // respect prop
+              cursor: disableImagePopup ? 'default' : 'pointer',
+              overflow: 'hidden',
             }}
-            onClick={disableImagePopup ? undefined : handleAvatarClick} // respect prop
+            onClick={disableImagePopup ? undefined : handleAvatarClick}
           >
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              {/* FIX: unified image (no blur) using Next Image with fill instead of width/height 0 */}
-              <Avatar
-                key={`avatar-${imgVersion}`}   // ensure rerender without undefined
-                variant="square"
-                sx={{
-                  width: 85,
-                  height: 85,
-                  borderRadius: 0,
-                  // overflow: 'hidden',
-                  p: 0
-                }}
-                data-testid="profile-avatar"
-              >
-                <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-                  <Image
-                    src={displaySrc}
-                    alt="Profile"
-                    fill
-                    sizes="85px"
-                    unoptimized // NEW: bypass Next image cache for avatars
-                    priority={!imgUrl}
-                    style={{ objectFit: 'cover', imageRendering: 'auto' }}
-                  />
-                </Box>
-              </Avatar>
-
-              {/* Show edit icon only if not hidden */}
-              {/* {!hideEditIcon && (
-                <IconButton
-                  size="small"
-                  onClick={handleEditIconClick}
-                  style={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: -8,
-                    background: '#fff',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                    top: -13,
-                    height: 20,
-                    width: 20
-                  }}
-                  aria-label="edit profile image"
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              )} */}
-            </div>
+            <Avatar
+              key={`avatar-${imgVersion}`}
+              variant="circular"
+              sx={{
+                width: 105,
+                height: 105,
+                p: 0
+              }}
+              data-testid="profile-avatar"
+            >
+              <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                <Image
+                  src={displaySrc}
+                  alt="Profile"
+                  fill
+                  sizes="105px"
+                  unoptimized
+                  priority={!imgUrl}
+                  style={{ objectFit: hasUserImage ? 'cover' : 'contain', imageRendering: 'auto' }}
+                />
+              </Box>
+            </Avatar>
           </Box>
-          
+        </Box>
+
+        {/* Position + Foot info inline below avatar, above name */}
+        <Box
+          sx={{
+            mt: 1,
+            display: 'flex',
+            alignItems: 'center',
+            px: 1.5,
+            width: '100%',
+            maxWidth: 250
+          }}
+        >
+          {/* Star - LEFT */}
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 0.5 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#009371">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            </svg>
+          </Box>
+
+          {/* Position - CENTER */}
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.3 }}>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>
+              {getPositionShortForm(position)}
+            </Typography>
+          </Box>
+
+          {/* Foot - RIGHT */}
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.3 }}>
+            <Image
+              src={Foot}
+              alt="Foot"
+              width={29}
+              height={12}
+              style={{ filter: 'brightness(0) saturate(100%)' }}
+            />
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>{foot}</Typography>
+          </Box>
         </Box>
 
         {/* Name and Title (from static logic) */}
-        <Box sx={{ mt: {xs:0,sm:0,md:2 }}}>
+        <Box sx={{ mt: 2,mb:1 }}>
           <Typography
-            fontSize="18px"
+            fontSize="14px"
             fontWeight="bold"
             sx={{ textTransform: 'uppercase' }}
-            color='#fff'
+            color="#000"
           >
-              {avgSkill < 60 && (
-                <>
-                {avgSkill}
-              </>
-            )} {name}
+            {name}
           </Typography>
-          <Typography fontSize="12px" fontWeight={'bold'} color={'#fff'}>{title}</Typography>
+          {/* <Typography fontSize="12px" fontWeight={'bold'} color="#000">{title}</Typography> */}
         </Box>
 
-        {/* Divider */}
-        <Divider
-          sx={{
-            bgcolor: '#fff',
-            width: '50%',
-            mx: 'auto',
-            my: 1,
-            height: '1px',
-          }}
-        />
+        <Typography
+          fontSize="16px"
+          fontWeight="semi-bold"
+          color="#fff"
+          sx={{ my: 0.5, lineHeight: 1 }}
+        >
+          {avgSkill}
+        </Typography>
 
         {/* Stats */}
         <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
@@ -610,19 +625,13 @@ const PlayerCard = ({
             height: '1px',
           }}
         />
-        <span className='text-[20px] mt-1' style={{ color: '#fff' }}>
-       {avgSkill >= 60 && (
-      <>
-            {avgSkill}
-      </>
-      )}
-        </span>
         {/* Render children (e.g. vote button) at the bottom */}
         {children && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
             {children}
           </Box>
         )}
+        </Box>
       </Box>
 
       {/* Edit Options Modal */}
