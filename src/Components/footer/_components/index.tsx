@@ -85,14 +85,14 @@ export default function Footer() {
             <Button
               component={Link}
               href="/terms"
+              disableRipple
               sx={{
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
                 fontSize: 18,
-                
                 px: 2,
-                '&:hover': { color: 'white', textDecoration: 'underline' },
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
               Terms & Conditions
@@ -100,13 +100,14 @@ export default function Footer() {
             <Button
               component={Link}
               href="/privacy"
+              disableRipple
               sx={{
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
                 fontSize: 18,
                 px: 2,
-                '&:hover': { color: ' white', textDecoration: 'underline' },
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
               Privacy Policy
@@ -114,13 +115,14 @@ export default function Footer() {
             <Button
               component={Link}
               href="/contact"
+              disableRipple
               sx={{
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
                 fontSize: 18,
                 px: 2,
-                '&:hover': { color: ' white', textDecoration: 'underline' },
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
               Contact Us
@@ -128,13 +130,14 @@ export default function Footer() {
             <Button
               component={Link}
               href="/about"
+              disableRipple
               sx={{
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
                 fontSize: 18,
                 px: 2,
-                '&:hover': { color: ' white', textDecoration: 'underline' },
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
               About Us

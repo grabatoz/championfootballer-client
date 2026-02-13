@@ -251,7 +251,7 @@ body {
 
 
 .all-leagues-heading {
-  font-family: 'Anton', sans-serif;
+  font-family: 'Bebas Neue', sans-serif !important;
   font-size: 58px; /* Adjust as needed */
   /* color: #000000;  Match your blue color */
   text-transform: uppercase;
