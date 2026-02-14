@@ -2201,17 +2201,12 @@ export default function GlobalTrophyRoom() {
   return (
     <Box sx={{ 
       minHeight: '100vh',
+      overflow: 'hidden',
     }}>
       {/* Full-Width Header Section */}
       <Box sx={{
         mt: 0,
         mb: 4,
-        width: '100vw',
-        position: 'relative',
-        left: '50%',
-        right: '50%',
-        marginLeft: '-50vw',
-        marginRight: '-50vw',
       }}>
         {/* Orange top border */}
         {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}
@@ -2222,6 +2217,12 @@ export default function GlobalTrophyRoom() {
           background: '#0e0e0e',
           color: 'white',
           borderRadius: 0,
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          right: '50%',
+          marginLeft: '-50vw',
+          marginRight: '-50vw',
         }}>
           {/* Centered League Name with Trophy Icon */}
           <Box sx={{ 
@@ -2476,7 +2477,25 @@ export default function GlobalTrophyRoom() {
           </Menu>
 
           {/* Orange divider */}
-          <Box sx={{ height: '3.5px', bgcolor: '#E56A16', width: '100%', mb: 0.8, mt: filter === 'my' ? 8 : 3.2 }} />
+          <Box sx={{ 
+            height: '3.5px', 
+            bgcolor: '#E56A16', 
+            width: 'calc(100% + 32px)',
+            marginLeft: '-16px',
+            marginRight: '-16px',
+            '@media (min-width: 600px)': {
+              width: 'calc(100% + 48px)',
+              marginLeft: '-24px',
+              marginRight: '-24px',
+            },
+            '@media (min-width: 900px)': {
+              width: 'calc(100% + 64px)',
+              marginLeft: '-32px',
+              marginRight: '-32px',
+            },
+            mb: 0.8, 
+            mt: filter === 'my' ? 8 : 3.2 
+          }} />
 
           {/* Standings info and Navigation Tabs */}
           <Box
