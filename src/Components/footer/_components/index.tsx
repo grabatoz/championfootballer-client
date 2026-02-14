@@ -33,6 +33,7 @@ export default function Footer() {
       background: 'linear-gradient(90deg, #727272 0%, #3b3b3b 50%, #020202 100%)',
       color: 'white',
       boxShadow: '0 -2px 24px 0 rgba(30, 58, 138, 0.12)',
+      mt: 7 ,
     }}>
        {/* Deleted App Download Section */}
       <Container maxWidth="md">

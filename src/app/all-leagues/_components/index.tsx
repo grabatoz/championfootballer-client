@@ -9,6 +9,15 @@ import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
+import trofy from '@/Components/images/trofy.png';
+import faceicon from '@/Components/images/faceicon.png';
+import schedule from '@/Components/images/schedule.png';
+import inviteicon from '@/Components/images/inviteicon.png';
+import fotbal from '@/Components/images/fotbal.png';
+import playerfull from '@/Components/images/playerfull.png';
+import share from '@/Components/images/share.png';
+import play from '@/Components/images/play .png';
+import setting from '@/Components/images/setting.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import { User, League, Match } from '@/types/user';
 import { useDispatch } from 'react-redux';
@@ -2007,10 +2016,10 @@ function AllLeagues() {
         minHeight: '100vh',
         // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
         fontFamily: '"League Spartan", sans-serif',
-        
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth={false} disableGutters sx={{ px: { xs: 2, sm: 3, md: 3 } }}>
 
         {/* <Button
           startIcon={<ArrowLeft />}
@@ -2025,7 +2034,7 @@ function AllLeagues() {
           Back to Dashboard
         </Button> */}
         {/* Close Button */}
-        <Box sx={{ mb: { xs: 3, md: 5 }, bgcolor: 'black', p: { xs: 2, md: 3 } }}>
+        <Box sx={{ mb: { xs: 3, md: 5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2, sm: -3, md: -3 } }}>
           {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
           <Typography variant="h3" sx={{
             color: 'white',
@@ -2062,7 +2071,7 @@ function AllLeagues() {
           {/* </Box> */}
           {/* Create/Join League Section */}
           {/* Single unified inline layout */}
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', px: 10 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', px: 14 }}>
             {/* Left side: Create + Invite + Join */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
               <Button variant="contained" onClick={() => setIsDialogOpen(true)} sx={{
@@ -2267,7 +2276,7 @@ function AllLeagues() {
         </Box>
 
         {/* Leagues List - Card Format */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 4, md: 13 } }}>
           {loading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <CircularProgress sx={{ color: 'rgba(96, 165, 250, 0.8)' }} />
@@ -2297,7 +2306,7 @@ function AllLeagues() {
                   key={league.id}
                   onClick={() => router.push(`/league/${league.id}`)}
                   sx={{
-                    p: { xs: 3, md: 2 },
+                    p: { xs: 3, md: 3 },
                     borderRadius: 3,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
@@ -2306,6 +2315,7 @@ function AllLeagues() {
                       ? '#d4d4d4' // light grey for completed
                       : 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                     position: 'relative',
+                    minHeight: { xs: '140px', md: '160px' },
                     '&:hover': {
                       backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
                       transform: isCompleted ? 'none' : 'translateY(-3px)',
@@ -2319,12 +2329,12 @@ function AllLeagues() {
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: 12,
-                        right: 12,
+                        top: 14,
+                        right: 14,
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
-                        zIndex: 2,
+                        zIndex: 4,
                         color: '#16a34a',
                       }}
                     >
@@ -2335,12 +2345,13 @@ function AllLeagues() {
                     <IconButton
                       sx={{
                         position: 'absolute',
-                        top: 12,
-                        right: 12,
+                        top: 18,
+                        right: 18,
                         color: 'white',
-                        background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                        '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
-                        zIndex: 2
+                        // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+                        // '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
+                        zIndex: 4,
+                        pr: 3
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -2354,248 +2365,218 @@ function AllLeagues() {
                         }
                       }}
                     >
-                      <SettingsIcon
-                        aria-label={`Open settings for ${formatLeagueName(league.name)}`}
-                        size={20} />
+                      <Image 
+                        src={setting} 
+                        alt="Settings" 
+                        width={24} 
+                        height={24} 
+                        style={{ flexShrink: 0 }} 
+                      />
                     </IconButton>
                   )}
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 3, md: 4 } }}>
-                    {/* League Logo - Green Shield */}
-                    <Box sx={{
-                      width: { xs: 60, sm: 80, md: 80 },
-                      height: { xs: 60, sm: 80, md: 80 },
-                      // borderRadius: 2,
-                      // overflow: 'hidden',
-                      // backgroundColor: '#43a047',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      // border: '2px solid rgba(255,255,255,0.2)',
-                      // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                      position: 'relative'
-                    }}>
-                      <Image src={league?.image || leagueIcon} alt={`${league.name} icon`} width={80} height={80} priority />
-                    </Box>
-
-                    {/* League Info */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      {/* League Title */}
-                      {/* <Typography sx={{
-                      color: 'white',
-                      fontFamily: '"League Spartan", sans-serif',
-                      // fontWeight: 'bold',
-                      fontSize: { xs: '18px', sm: '20px', md: '16px' },
-                      mb: 2,
-                      background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                      textOverflow: 'ellipsis',
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      fontWeight:'bold'
-                    }}>
-                      {formatLeagueName(league.name)}
-                    </Typography> */}
-
-                      <Typography sx={{
-                        color: isCompleted ? '#111827' : 'white',
-                        fontFamily: '"League Spartan", sans-serif',
-                        fontSize: { xs: '18px', sm: '20px', md: '20px' },
-                        mb: 2,
-                        background: isCompleted ? 'transparent' : 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                        display: 'inline-block', // Only background behind text
-                        px: 2, // Horizontal padding for extra background
-                        borderRadius: 0.8, // Rounded corners
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        fontWeight: 'bold'
-                      }}>
-                        {formatLeagueName(league.name)}
-                      </Typography>
-
-                      {/* League Details - Two Column Layout */}
-                      <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start',
-                        flexDirection: 'row',
-                        gap: { xs: 4, sm: 15 }
-                      }}>
-                        {/* Left Column */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 }, justifyContent: 'space-between' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                            <Box sx={{
-                              width: { xs: 12, sm: 16 },
-                              height: { xs: 12, sm: 16 },
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              border: '1px solid rgba(255, 255, 255, 0.4)',
-                              flexShrink: 0,
-                              position: 'relative'
-                            }}>
-                              <Box sx={{
-                                width: { xs: 8, sm: 10 },
-                                height: { xs: 8, sm: 10 },
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                borderRadius: '50%',
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)'
-                              }} />
-                            </Box>
-                            <Typography sx={{
-                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                              fontFamily: '"League Spartan", sans-serif',
-                              fontWeight: 200,
-                              fontSize: { xs: '10px', sm: '13px' }
-                            }}>
-                              Players {league.members?.length || 0}
-                            </Typography>
+                  {/* Grid Layout - 6/6 Split */}
+                  <Grid container spacing={2}>
+                    {/* Left Column - Trophy, Title, Players, Created */}
+                    <Grid item xs={12} md={6}>
+                      <Grid container spacing={2}>
+                        {/* Trophy Icon - 4 */}
+                        <Grid item xs={12} md={3}>
+                          <Box sx={{
+                            width: { xs: 60, sm: 80, md: 100 },
+                            height: { xs: 60, sm: 80, md: 100 },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            position: 'relative',
+                            bgcolor: 'white',
+                            borderRadius: '50%',
+                          
+                          }}>
+                            <Image src={league?.image || trofy} alt={`${league.name} icon`} width={60} height={60} priority style={{ objectFit: 'contain' }} />
                           </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                            <Box sx={{
-                              width: { xs: 12, sm: 16 },
-                              height: { xs: 12, sm: 16 },
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              border: '1px solid rgba(255, 255, 255, 0.4)',
-                              flexShrink: 0,
-                              position: 'relative'
-                            }}>
-                              <Box sx={{
-                                width: { xs: 8, sm: 10 },
-                                height: { xs: 8, sm: 10 },
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                borderRadius: '50%',
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)'
-                              }} />
-                            </Box>
-                            <Typography sx={{
-                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                              fontFamily: '"League Spartan", sans-serif',
-                              fontWeight: 200,
-                              fontSize: { xs: '9px', sm: '12px' }
-                            }}>
-                              Created {new Date(league.createdAt).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        </Box>
+                        </Grid>
 
-                        {/* Right Column */}
-                        <Box sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: { xs: 1, sm: 1.5 },
-                          alignItems: 'flex-start'
-                        }}>
-                          {!isCompleted && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                              <Box sx={{
-                                width: { xs: 12, sm: 16 },
-                                height: { xs: 12, sm: 16 },
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                border: '1px solid rgba(255, 255, 255, 0.4)',
-                                flexShrink: 0,
-                                position: 'relative'
-                              }}>
-                                <Box sx={{
-                                  width: { xs: 8, sm: 10 },
-                                  height: { xs: 8, sm: 10 },
-                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                  borderRadius: '50%',
-                                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                                  position: 'absolute',
-                                  top: '50%',
-                                  left: '50%',
-                                  transform: 'translate(-50%, -50%)'
-                                }} />
-                              </Box>
+                        {/* Title and Details - 8 */}
+                        <Grid item xs={12} md={9}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {/* League Title */}
+                            <Typography sx={{
+                              color: isCompleted ? '#111827' : 'white',
+                              fontFamily: '"Anton", sans-serif !important',
+                              fontSize: { xs: '28px', sm: '32px', md: '36px' },
+                              
+                              textOverflow: 'ellipsis',
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap',
+                              fontWeight: 'semi-bold',
+                              lineHeight: 1.3,
+                              letterSpacing: '1px',
+                              textTransform: 'uppercase'
+                            }}>
+                              {formatLeagueName(league.name)}
+                            </Typography>
+
+                            {/* Players */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{
-                                color: 'rgba(255,255,255,0.9)',
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                                 fontFamily: '"League Spartan", sans-serif',
-                                fontWeight: 200,
-                                fontSize: { xs: '9px', sm: '12px' }
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Code: {league.inviteCode}
+                                Players {league.members?.length || 0}
                               </Typography>
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: 'white',
-                                  p: { xs: 0.2, sm: 0.5 },
-                                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            </Box>
+
+                            {/* Created */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Typography sx={{
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
+                              }}>
+                                Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+
+                    {/* Right Column - Code, Matches, Share, View */}
+                    <Grid item xs={12} md={6}>
+                      <Grid container spacing={0}>
+                        {/* Code and Matches - 8 */}
+                        <Grid item xs={12} md={8}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: 1.5,
+                            mt: { xs: 1, md: 6 },
+                            height: '100%'
+                          }}>
+                            {/* Invite Code with Copy and Share */}
+                            {!isCompleted && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Image src={inviteicon} alt="Invite Code" width={18} height={18} style={{ flexShrink: 0 }} />
+                                <Typography sx={{
+                                  color: 'rgba(255,255,255,0.9)',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 300,
+                                  fontSize: { xs: '10px', sm: '16px' }
+                                }}>
+                                  Invite Code:  {league.inviteCode}
+                                </Typography>
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    color: 'white',
+                                    p: { xs: 0.2, sm: 0.5 },
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(league.inviteCode);
+                                    toast.success('Invite code copied!');
+                                  }}
+                                >
+                                  <svg width="19" height="21" viewBox="0 0 24 24" fill="white">
+                                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                                  </svg>
+                                </IconButton>
+                                <Box sx={{ width: '1px', height: '20px', bgcolor: 'white', mx: 0.5 }} />
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    color: 'white',
+                                    p: { xs: 0.2, sm: 0.5 },
+                                    // background: 'linear-gradient(to right, #747474, #525252, #262626, #000000)',
+                                    // borderRadius: 1,
+                                    // '&:hover': { opacity: 0.8 }
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const shareData = {
+                                      title: `Join ${league.name}`,
+                                      text: `Join my league with code: ${league.inviteCode}`,
+                                    };
+                                    if (navigator.share) {
+                                      navigator.share(shareData).catch(() => {});
+                                    } else {
+                                      navigator.clipboard.writeText(`Join ${league.name} with code: ${league.inviteCode}`);
+                                      toast.success('League info copied!');
+                                    }
+                                  }}
+                                >
+                                  <Image src={share} alt="Share" width={17} height={17} style={{ filter: 'brightness(0) invert(1)' }} />
+                                </IconButton>
+                              </Box>
+                            )}
+
+                            {/* Matches */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                              <Typography sx={{
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
+                              }}>
+                                Matches: {league.matches?.length || 0}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+
+                        {/* View Button - 4 */}
+                        <Grid item xs={12} md={4}>
+                          <Grid container spacing={2} mt={2} >
+                            {/* Image - 6 */}
+                            <Grid item xs={6} md={6}>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'start', height: '100%', ml: -5 }}>
+                                <Image src={playerfull} alt="View" width={70} height={70} style={{ flexShrink: 0 }} />
+                              </Box>
+                            </Grid>
+
+                            {/* View Text - 6 */}
+                            <Grid item xs={6} md={6}>
+                              <Box 
+                                sx={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'flex-start', 
+                                  alignItems: 'center', 
+                                  height: '100%',
+                                  cursor: 'pointer',
+                                  mt: 3
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigator.clipboard.writeText(league.inviteCode);
-                                  toast.success('Invite code copied!');
+                                  router.push(`/league/${league.id}`);
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-                                </svg>
-                              </IconButton>
-                            </Box>
-                          )}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                            <Box sx={{
-                              width: { xs: 12, sm: 16 },
-                              height: { xs: 12, sm: 16 },
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              border: '1px solid rgba(255, 255, 255, 0.4)',
-                              flexShrink: 0,
-                              position: 'relative'
-                            }}>
-                              <Box sx={{
-                                width: { xs: 8, sm: 10 },
-                                height: { xs: 8, sm: 10 },
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                borderRadius: '50%',
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)'
-                              }} />
-                            </Box>
-                            <Typography sx={{
-                              color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                              fontFamily: '"League Spartan", sans-serif',
-                              fontWeight: 200,
-                              fontSize: { xs: '10px', sm: '13px' }
-                            }}>
-                              Matches: {league.matches?.length || 0}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{
+                                    color: isCompleted ? '#111827' : 'white',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 'semi-bold',
+                                    fontSize: { xs: '22px', md: '22px' }
+                                  }}>
+                                    View
+                                  </Typography>
+                                  <Image src={play} alt="Play" width={15} height={15} style={{ flexShrink: 0 }} />
+                                </Box>
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </Grid>
                 </Box>
               )
             })
