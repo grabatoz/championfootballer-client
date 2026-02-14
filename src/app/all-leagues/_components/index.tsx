@@ -1858,7 +1858,7 @@ function AllLeagues() {
         </Box>
 
         {/* Leagues List - Card Format */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 4, md: 13 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 4, md: 13 } , mb :7}}>
           {loading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <CircularProgress sx={{ color: 'rgba(96, 165, 250, 0.8)' }} />
