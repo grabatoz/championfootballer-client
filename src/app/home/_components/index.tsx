@@ -962,45 +962,36 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
       {/* Add New Season Button */}
       {selectedLeague && selectedLeague.userRole === 'ADMIN' && (
         <Button
-          variant="contained"
-          disabled={isCreatingSeason || isFetching}
-          onClick={handleCreateNewSeason}
-          sx={{
-            bgcolor: '#7f7f7f',
-            color: '#fff',
-            '&:hover': { bgcolor: '#686868' },
-            minHeight: { xs: '50px', sm: '55px', md: '45px' },
-            minWidth: { xs: '280px', sm: '320px' },
-            fontSize: '20px',
-            fontWeight: 'bold',
-            textTransform: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1.5,
-            borderRadius: 2,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            mt: 2,
-            '&:disabled': {
-              bgcolor: '#E0E0E0',
-              color: '#999999',
-              border: '2px solid #CCCCCC'
-            }
-          }}
+        disabled={isCreatingSeason || isFetching}
+        onClick={handleCreateNewSeason}
+           variant="contained"
+                  fullWidth
+                  startIcon={<span style={{ fontSize: '22px'}}>+</span>}
+                  sx={{
+                    bgcolor: '#7f7f7f',
+                    color: 'white',
+                    fontWeight: 600,
+                    mb: 1,
+                    mt: 1,
+                    
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#686868' },
+                    width: '100%',
+                    maxWidth: 290,
+                    mx: 'auto',
+                    display: { xs: 'none', sm: 'none', md: 'flex' },
+                    justifyContent: 'space-between',
+                    px: 3,
+                    pr: 10,
+                    fontSize: '19px',
+                    minHeight: 48,
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    lineHeight: '100%',
+                    letterSpacing: '0%',
+                    textTransform: 'capitalize',
+                  }}
         >
-          {/* {isCreatingSeason ? (
-            <CircularProgress size={20} sx={{ color: '#00A77F' }} />
-          ) : (
-            <Plus size={20} />
-          )} */}
-          <Typography
-            sx={{
-              fontSize: '20px',
-              fontWeight: 'bold'
-            }}
-          >
-            {isCreatingSeason ? 'Creating Season...' : '+ Add New Season'}
-          </Typography>
+            {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
         </Button>
       )}
     </Box>
@@ -1670,7 +1661,7 @@ export default function PlayerDashboard() {
                 />
 
                 {/* Add New Season Button */}
-                <Button
+                {/* <Button
                   variant="contained"
                   fullWidth
                   startIcon={<span style={{ fontSize: '22px'}}>+</span>}
@@ -1699,7 +1690,7 @@ export default function PlayerDashboard() {
                   }}
                 >
                   Add New Season
-                </Button>
+                </Button> */}
 
                 {/* Add New League Button */}
                 <Button
