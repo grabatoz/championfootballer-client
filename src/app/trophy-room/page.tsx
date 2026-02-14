@@ -242,9 +242,9 @@ const CARD_DIMENSIONS = {
 
 // Larger card dimensions for top trophies
 const TOP_CARD_DIMENSIONS = {
-  minHeight: { xs: 280, sm: 340, md: 380 },
-  maxWidth: { xs: 200, sm: 280, md: 320 },
-  image: { xs: 80, sm: 100, md: 120 },
+  minHeight: { xs: 280, sm: 340, md: 420 },
+  maxWidth: { xs: 200, sm: 280, md: 370 },
+  image: { xs: 80, sm: 100, md: 170 },
 } as const;
 
 // Smaller card dimensions for bottom trophies
@@ -340,9 +340,9 @@ const TrophyCard = ({
         maxWidth: dims.maxWidth,
         margin: '0 auto',
         textAlign: 'center',
-        borderRadius: '16px',
+        borderRadius: '6px',
         backgroundColor: '#2a2a2a',
-        border: `4px solid ${color}`,
+        border: `2px solid ${color}`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -365,7 +365,7 @@ const TrophyCard = ({
             color: '#FFFFFF',
             fontWeight: 800,
             fontSize: isLarge 
-              ? { xs: '1rem', sm: '1.2rem', md: '1.4rem' }
+              ? { xs: '1rem', sm: '1.2rem', md: '1.6rem' }
               : { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
             letterSpacing: 1,
             textTransform: 'uppercase',
@@ -381,7 +381,7 @@ const TrophyCard = ({
           sx={{
             color: 'rgba(255,255,255,0.8)',
             fontSize: isLarge 
-              ? { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' }
+              ? { xs: '0.75rem', sm: '0.85rem', md: '1.05rem' }
               : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
             lineHeight: 1.4,
             display: '-webkit-box',
@@ -437,7 +437,7 @@ const TrophyCard = ({
             color: '#FFFFFF',
             fontWeight: 900,
             fontSize: isLarge 
-              ? { xs: '1rem', sm: '1.1rem', md: '1.3rem' }
+              ? { xs: '1rem', sm: '1.1rem', md: '1.5rem' }
               : { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
             py: isLarge ? { xs: 1.2, sm: 1.5 } : { xs: 0.9, sm: 1.1 },
             borderRadius: '8px',
@@ -2244,7 +2244,7 @@ export default function GlobalTrophyRoom() {
                 <Image
                   src={LeagueIcon}
                   alt="League Icon"
-                  width={42}
+                  width={49}
                   height={49}
                   style={{ objectFit: 'contain', pointerEvents: 'none' }}
                 />
@@ -2387,7 +2387,7 @@ export default function GlobalTrophyRoom() {
                 key={season.id}
                 onClick={() => handleSeasonSelect(season.id)}
                 sx={{
-                  py: 1.2,
+                  py: 3,
                   px: 2,
                   fontSize: '0.95rem',
                   borderRadius: 1.5,
@@ -2498,6 +2498,7 @@ export default function GlobalTrophyRoom() {
               position: 'relative',
               flexWrap: 'wrap',
               gap: 2,
+              mt: 1,
               px: { xs: 2, sm: 3, md: 9.3 },
               // mt:-1
             }}
@@ -2515,8 +2516,8 @@ export default function GlobalTrophyRoom() {
                   </Typography>
                    {selectedLeague && (
              <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    fontWeight: 400,
+                    fontSize: { xs: '1rem', sm: '1rem' },
+                    fontWeight: 300,
                     color: 'white'
                   }}>
                  {selectedLeagueFlags?.final ? 'FINAL' : 'LIVE'}
@@ -2526,8 +2527,8 @@ export default function GlobalTrophyRoom() {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                   <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    fontWeight: 400,
+                    fontSize: { xs: '1rem', sm: '1rem' },
+                    fontWeight: 300,
                     color: 'white'
                   }}>
                     Last Updated:
@@ -2547,6 +2548,7 @@ export default function GlobalTrophyRoom() {
             <Box sx={{ 
               display: 'flex', 
               gap: 2,
+              mt:2,
               position: filter === 'my' ? 'relative' : 'absolute',
               left: filter === 'my' ? 'auto' : '50%',
               transform: filter === 'my' ? 'none' : 'translateX(-50%)',
@@ -2556,15 +2558,15 @@ export default function GlobalTrophyRoom() {
               <Button
                 onClick={() => setFilter('all')}
                 sx={{
-                  px: { xs: 2.5, sm: 3.5, md: 5 },
-                  py: 0.7,
-                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                  px: { xs: 3, sm: 6, md: 7 },
+                  // py: 0.5,
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.6rem' },
                   fontWeight: 600,
                   textTransform: 'none',
-                  backgroundColor: filter === 'all' ? '#14B8A6' : 'transparent',
+                  backgroundColor: filter === 'all' ? '#00a77f' : 'transparent',
                   color: 'white',
                   border: filter === 'all' ? 'none' : '2px solid white',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   '&:hover': {
                     backgroundColor: filter === 'all' ? '#0d9488' : 'rgba(255,255,255,0.1)',
                   }
@@ -2575,15 +2577,15 @@ export default function GlobalTrophyRoom() {
               <Button
                 onClick={() => setFilter('my')}
                 sx={{
-                  px: { xs: 2.5, sm: 3.5, md: 5 },
-                  py: 0.7,
-                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                  px: { xs: 2.5, sm: 3.5, md: 3 },
+                  // py: 0.7,
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.8rem' },
                   fontWeight: 600,
                   textTransform: 'none',
                   backgroundColor: filter === 'my' ? '#14B8A6' : 'transparent',
                   color: 'white',
-                  border: filter === 'my' ? 'none' : '2px solid white',
-                  borderRadius: 2,
+                  border: filter === 'my' ? 'none' : '1px solid white',
+                  borderRadius: 1,
                   '&:hover': {
                     backgroundColor: filter === 'my' ? '#0d9488' : 'rgba(255,255,255,0.1)',
                   }
@@ -3004,12 +3006,12 @@ export default function GlobalTrophyRoom() {
           </Dialog>
         </Box>
       ) : (
-        <Box sx={{ px: { xs: 2, sm: 3, md: 10.7 } }}>
+        <Box sx={{ px: { xs: 2, sm: 3, md: 11 } }}>
           {/* Top Row - 3 Large Trophies */}
           <Box sx={{ 
             display: 'grid', 
             gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, 
-            gap: { xs: 1.5, sm: 2, md: 3 }, 
+            gap: { xs: 1.5, sm: 2, md: 1.5 }, 
             justifyContent: 'center', 
             alignItems: 'stretch',
             mb: { xs: 2, sm: 3 },
@@ -3051,7 +3053,7 @@ export default function GlobalTrophyRoom() {
           <Box sx={{ 
             display: 'grid', 
             gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' }, 
-            gap: { xs: 1, sm: 1.5, md: 2 }, 
+            gap: { xs: 1, sm: 1.5, md: 0 }, 
             justifyContent: 'center', 
             alignItems: 'stretch',
           }}>
