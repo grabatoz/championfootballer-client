@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
 import BaloonDImg from '@/Components/images/baloond.png';
@@ -11,7 +11,7 @@ import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Trophy, Star } from 'lucide-react';
 import HatTrickBadge from '@/Components/images/brown.svg'
 import AssistMaestroBadge from '@/Components/images/brown.svg'
 import StarPerformerBadge from '@/Components/images/brown.svg'
@@ -37,7 +37,8 @@ import Momt from "@/Components/images/MOTM.png"
 import Raisingstart from '@/Components/images/brown.svg';
 import StarKeeperImg from '@/Components/images/startkeeper.png';
 import PlayerCard from '@/Components/PlayerCardd';
-import CloseButton from '@/Components/CloseButton';
+import LeagueIcon from '@/Components/images/league icon.png'
+
 // import { achievementsAPI } from '@/lib/api';
 
 // --- Interfaces ---
@@ -57,6 +58,7 @@ interface User {
   lastName?: string;  // Make optional to match UserProfile
   position?: string;
   xp?: number;
+  profilePicture?: string | null;
 } 
 
 interface Match {
@@ -70,6 +72,17 @@ interface Match {
   status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
   active?: boolean;
   end?: string | Date;
+  seasonId?: string;
+}
+
+interface Season {
+  id: string;
+  leagueId: string;
+  seasonNumber: number;
+  name: string;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface League {
@@ -88,6 +101,9 @@ interface League {
   status?: string;
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
+  // Season information
+  seasons?: Season[];
+  activeSeasonId?: string;
 }
 
 interface PlayerStats {
@@ -102,6 +118,7 @@ interface PlayerStats {
 }
 
 interface TrophyType {
+  id?: string | number;
   title: string;
   description: string;
   image: StaticImageData;
@@ -110,6 +127,8 @@ interface TrophyType {
   winnerId?: string | null;
   leagueId?: string;
   leagueName?: string;
+  seasonId?: string;
+  seasonName?: string;
 }
 
 // Backend API response types
@@ -192,18 +211,26 @@ interface ServerAchievementsResponse {
 // }
 
 // --- Static Trophy Data ---
-const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
-  // Renamed per spec: League Champion
+// Top row trophies (displayed larger)
+const topTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
   { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
+  { title: "Ballon D'or", description: 'Player With The Most MOTM Votes', image: BaloonDImg, color: '#FFC107' },
   { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
-  { title: 'Ballon D\'or', description: 'Player With The Most MOTM Awards', image: BaloonDImg, color: '#FFC107' },
-  { title: 'GOAT', description: 'Player With The Highest Win Ratio & Total MOTM Votes', image: GoatImg, color: '#F44336' },
+];
+
+// Bottom row trophies (displayed smaller)
+const bottomTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
   { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
   { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
-  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
-  { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' },
-  // NEW
-  { title: 'Star Keeper', description: 'Goalkeeper with the most clean sheets (or fewest goals conceded)', image: StarKeeperImg, color: '#3B82F6' },
+  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number ....', image: ShieldImg, color: '#2196F3' },
+  { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The ....', image: DarkHorseImg, color: '#ec4899' },
+  { title: 'Star Keeper', description: 'Player With The Highest Number Of Goals Scored', image: StarKeeperImg, color: '#3B82F6' },
+];
+
+// Combined trophies array for backwards compatibility
+const trophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
+  ...topTrophies,
+  ...bottomTrophies,
 ];
 
 // Unified card dimensions (used by both TrophyCard and BadgeCard)
@@ -211,6 +238,20 @@ const CARD_DIMENSIONS = {
   minHeight: { xs: 260, sm: 300, md: 300 },
   maxWidth: { xs: 170, sm: 240, md: 280 },
   image: { xs: 60, sm: 72, md: 84 },
+} as const;
+
+// Larger card dimensions for top trophies
+const TOP_CARD_DIMENSIONS = {
+  minHeight: { xs: 280, sm: 340, md: 380 },
+  maxWidth: { xs: 200, sm: 280, md: 320 },
+  image: { xs: 80, sm: 100, md: 120 },
+} as const;
+
+// Smaller card dimensions for bottom trophies
+const BOTTOM_CARD_DIMENSIONS = {
+  minHeight: { xs: 220, sm: 260, md: 280 },
+  maxWidth: { xs: 150, sm: 180, md: 200 },
+  image: { xs: 50, sm: 60, md: 70 },
 } as const;
 
 // Blue helpers (hex + CSS filter to tint brown.svg to blue)
@@ -277,93 +318,152 @@ const isBackendUser = (v: unknown): v is BackendUser => {
   return 'id' in o || 'leagues' in o || 'administeredLeagues' in o || 'adminLeagues' in o;
 };
 
-// --- Reusable Trophy Card Component ---
-const TrophyCard = ({ title, description, image, color, winner, onButtonClick }: TrophyType & { onButtonClick?: () => void }) => (
-  <Paper
-    elevation={4}
-    sx={{
-      width: '100%',
-      height: '100%',
-      minHeight: CARD_DIMENSIONS.minHeight,
-      maxWidth: CARD_DIMENSIONS.maxWidth,
-      margin: '0 auto',
-      textAlign: 'center',
-      borderRadius: '16px',
-      border: `2px solid ${color}`,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      px: { xs: 1, sm: 1.5, md: 2 },
-      py: { xs: 1.5, sm: 2, md: 3 },
-    }}
-  >
-    <Box>
-      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333', mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.15rem' } }}>
-        {title}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{
-          color: '#666',
-          mb: { xs: 1, sm: 1.5, md: 2 },
-          fontSize: { xs: '0.72rem', sm: '0.85rem' },
-          lineHeight: 1.35,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        {description}
-      </Typography>
+// --- Reusable Trophy Card Component (Dark Theme) ---
+const TrophyCard = ({ 
+  title, 
+  description, 
+  image, 
+  color, 
+  winner, 
+  onButtonClick,
+  isLarge = false 
+}: TrophyType & { onButtonClick?: () => void; isLarge?: boolean }) => {
+  const dims = isLarge ? TOP_CARD_DIMENSIONS : BOTTOM_CARD_DIMENSIONS;
+  
+  return (
+    <Paper
+      elevation={4}
+      sx={{
+        width: '100%',
+        height: '100%',
+        minHeight: dims.minHeight,
+        maxWidth: dims.maxWidth,
+        margin: '0 auto',
+        textAlign: 'center',
+        borderRadius: '16px',
+        backgroundColor: '#2a2a2a',
+        border: `4px solid ${color}`,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: onButtonClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          transform: onButtonClick ? 'translateY(-4px)' : 'none',
+          boxShadow: onButtonClick ? `0 8px 24px ${color}30` : 'none',
+        },
+      }}
+      onClick={onButtonClick}
+    >
+      {/* Top Section - Title */}
+      <Box sx={{ pt: { xs: 2.5, sm: 3 }, px: { xs: 1.5, sm: 2 } }}>
+        <Typography
+          variant="h6"
+          sx={{
+            color: '#FFFFFF',
+            fontWeight: 800,
+            fontSize: isLarge 
+              ? { xs: '1rem', sm: '1.2rem', md: '1.4rem' }
+              : { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            mb: { xs: 1, sm: 1.5 },
+          }}
+        >
+          {title}
+        </Typography>
+
+        {/* Description */}
+        <Typography
+          variant="body2"
+          sx={{
+            color: 'rgba(255,255,255,0.8)',
+            fontSize: isLarge 
+              ? { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' }
+              : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            mb: { xs: 1.5, sm: 2 },
+          }}
+        >
+          {description}
+        </Typography>
+      </Box>
+
+      {/* Middle Section - Trophy Image */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: CARD_DIMENSIONS.image,
-          width: CARD_DIMENSIONS.image,
+          height: dims.image,
+          width: dims.image,
           margin: '0 auto',
+          mb: { xs: 2, sm: 2.5 },
         }}
       >
         <Image
           src={image}
           alt={title}
-          height={CARD_DIMENSIONS.image.md}
-          width={CARD_DIMENSIONS.image.md}
+          height={dims.image.md}
+          width={dims.image.md}
           style={{
             height: '100%',
             width: '100%',
             objectFit: 'contain',
-            objectPosition: 'center center',
-            // Make only the Star Keeper trophy icon blue (source is brown.svg)
-            filter: title === 'Star Keeper' ? BLUE_FILTER : 'none',
+            objectPosition: 'center',
           }}
         />
       </Box>
-    </Box>
 
-    <Button
-      variant="contained"
-      sx={{
-        backgroundColor: color,
-        color: '#ffffff',
-        fontWeight: 'bold',
-        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-        py: { xs: 0.5, sm: 0.75, md: 1 },
-        px: { xs: 1, sm: 1.5, md: 2 },
-        boxShadow: 'none',
-        '&:hover': { backgroundColor: color, boxShadow: 'none', filter: 'brightness(0.95)' },
-        '&:active': { backgroundColor: color, boxShadow: 'none', filter: 'brightness(0.9)' },
-        '&.Mui-disabled': { backgroundColor: `${color} !important`, boxShadow: 'none' },
-      }}
-      onClick={onButtonClick}
-      disabled={!onButtonClick}
-    >
-      {winner || 'TBC'}
-    </Button>
-  </Paper>
-);
+      {/* Bottom Section - Winner Button */}
+      <Box
+        sx={{
+          mt: 'auto',
+          pb: { xs: 2, sm: 2.5 },
+          px: { xs: 1.5, sm: 2 },
+        }}
+      >
+        <Button
+          variant="contained"
+          fullWidth
+          sx={{
+            backgroundColor: '#FFD700',
+            color: '#FFFFFF',
+            fontWeight: 900,
+            fontSize: isLarge 
+              ? { xs: '1rem', sm: '1.1rem', md: '1.3rem' }
+              : { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
+            py: isLarge ? { xs: 1.2, sm: 1.5 } : { xs: 0.9, sm: 1.1 },
+            borderRadius: '8px',
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            boxShadow: 'none',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5)',
+            '&:hover': {
+              backgroundColor: '#FFD700',
+              boxShadow: 'none',
+              filter: 'brightness(1.1)',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: '#FFD700',
+              color: '#FFFFFF',
+              textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5)',
+            },
+          }}
+          disabled={!onButtonClick}
+        >
+          {winner || 'TBC'}
+        </Button>
+      </Box>
+    </Paper>
+  );
+};
 
 // --- Helper function to calculate player stats for a single league ---
 const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
@@ -533,8 +633,13 @@ const isFinalLeagueStanding = (league: League): boolean => {
 };
 
 // ADD: quick counter for completed matches
-const countCompletedMatches = (league: League) =>
-  (league.matches ?? []).filter(m => m.status === 'RESULT_PUBLISHED').length;
+const countCompletedMatches = (league: League, seasonId?: string) => {
+  const matches = league.matches ?? [];
+  const filtered = seasonId
+    ? matches.filter(m => m.seasonId === seasonId && m.status === 'RESULT_PUBLISHED')
+    : matches.filter(m => m.status === 'RESULT_PUBLISHED');
+  return filtered.length;
+};
 
 // Audit helper: check missing player stats in completed matches
 // const auditLeagueData = (league: League) => {
@@ -1393,6 +1498,11 @@ export default function GlobalTrophyRoom() {
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
 
+  // Season filter dropdown
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | undefined>(undefined);
+  const [seasonsDropdownOpen, setSeasonsDropdownOpen] = useState(false);
+  const [seasonsDropdownAnchor, setSeasonsDropdownAnchor] = useState<null | HTMLElement>(null);
+
   // Add missing handlers
   const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
     setLeaguesDropdownAnchor(event.currentTarget);
@@ -1412,7 +1522,23 @@ export default function GlobalTrophyRoom() {
         console.error('[Trophy Room] Failed to save preferred league:', err);
       }
     }
+    // Reset season selection when league changes
+    setSelectedSeasonId(undefined);
     handleLeaguesDropdownClose();
+  };
+
+  // Season dropdown handlers
+  const handleSeasonsDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSeasonsDropdownAnchor(event.currentTarget);
+    setSeasonsDropdownOpen(true);
+  };
+  const handleSeasonsDropdownClose = () => {
+    setSeasonsDropdownOpen(false);
+    setSeasonsDropdownAnchor(null);
+  };
+  const handleSeasonSelect = (seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+    handleSeasonsDropdownClose();
   };
 
   // Helper to format the league button label
@@ -1422,7 +1548,7 @@ export default function GlobalTrophyRoom() {
     const words = trimmed.split(/\s+/);
     const initials = words.map(w => (w[0] || '').toUpperCase()).join('');
     const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-    return `${capitalized} (${initials})`;
+    return `${capitalized}`;
   };
 
   // Badge detail modal state
@@ -1432,10 +1558,19 @@ export default function GlobalTrophyRoom() {
   const closeBadgeDetail = () => { setOpenBadgeDlg(false); setSelectedBadge(null); };
 
   const [apiAllWinners, setApiAllWinners] = useState<TrophyType[] | null>(null);
+  const [myAllTrophies, setMyAllTrophies] = useState<TrophyType[] | null>(null);
 
 
   // Helper to attach local meta (image/color/description) by title
-  const attachTrophyMeta = (items: Array<{ title: string; winnerId: string | number | null; winner: string | null; leagueId?: string | number; leagueName?: string; }>): TrophyType[] => {
+  const attachTrophyMeta = (items: Array<{ 
+    title: string; 
+    winnerId: string | number | null; 
+    winner: string | null; 
+    leagueId?: string | number; 
+    leagueName?: string;
+    seasonId?: string | number;
+    seasonName?: string;
+  }>): TrophyType[] => {
     return items.map(it => {
       const meta = trophies.find(t => t.title === it.title);
       return {
@@ -1447,6 +1582,8 @@ export default function GlobalTrophyRoom() {
         winnerId: it.winnerId != null ? String(it.winnerId) : null,
         leagueId: it.leagueId != null ? String(it.leagueId) : undefined,
         leagueName: it.leagueName,
+        seasonId: it.seasonId != null ? String(it.seasonId) : undefined,
+        seasonName: it.seasonName,
       };
     });
   };
@@ -1587,21 +1724,134 @@ export default function GlobalTrophyRoom() {
     setSelectedLeagueId(filteredLeagues[0].id);
   }, [filteredLeagues, selectedLeagueId]);
 
-  // Fetch ALL trophy winners ONCE (no league filter) - then filter client-side for instant switching
+  // Get currently selected league
+  const selectedLeague = selectedLeagueId && selectedLeagueId !== 'all' 
+    ? leagues.find(l => l.id === selectedLeagueId) 
+    : null;
+
+  // Fetch seasons for the selected league
+  useEffect(() => {
+    if (!selectedLeague || !token) {
+      console.log('[Trophy Room] Skipping season fetch - no league or token');
+      return;
+    }
+    
+    const fetchSeasons = async () => {
+      console.log('[Trophy Room] Fetching seasons for league:', selectedLeague.name, selectedLeague.id);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/seasons?_=${Date.now()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        
+        console.log('[Trophy Room] Seasons API response:', { status: res.status, data });
+        
+        if (res.ok && data?.success && Array.isArray(data.seasons)) {
+          // Update the league with seasons data
+          setLeagues(prevLeagues => 
+            prevLeagues.map(l => 
+              l.id === selectedLeague.id 
+                ? { ...l, seasons: data.seasons }
+                : l
+            )
+          );
+          console.log('[Trophy Room] ✅ Successfully fetched seasons for league:', selectedLeague.name, data.seasons);
+        } else {
+          console.error('[Trophy Room] ❌ Failed to fetch seasons:', data);
+        }
+      } catch (err) {
+        console.error('[Trophy Room] ❌ Error fetching seasons:', err);
+      }
+    };
+    
+    // Only fetch if seasons not already loaded
+    if (!selectedLeague.seasons || selectedLeague.seasons.length === 0) {
+      console.log('[Trophy Room] League has no seasons data, fetching...');
+      fetchSeasons();
+    } else {
+      console.log('[Trophy Room] League already has seasons:', selectedLeague.seasons.length);
+    }
+  }, [selectedLeague?.id, token]);
+
+  // Extract available seasons from the selected league
+  const availableSeasons = useMemo(() => {
+    console.log('[Trophy Room] availableSeasons calculation:', {
+      selectedLeague: selectedLeague?.name,
+      hasSeasons: !!selectedLeague?.seasons,
+      seasonsLength: selectedLeague?.seasons?.length || 0,
+      seasons: selectedLeague?.seasons,
+    });
+    
+    if (!selectedLeague || !selectedLeague.seasons || selectedLeague.seasons.length === 0) {
+      console.log('[Trophy Room] No seasons available for league:', selectedLeague?.name);
+      return [];
+    }
+    // Sort by season number descending (newest first)
+    const sorted = [...selectedLeague.seasons].sort((a, b) => b.seasonNumber - a.seasonNumber);
+    console.log('[Trophy Room] Available seasons:', sorted);
+    return sorted;
+  }, [selectedLeague]);
+
+  // Get current active season
+  const currentSeason = useMemo(() => {
+    if (!selectedLeague || !selectedLeague.seasons || selectedLeague.seasons.length === 0) {
+      console.log('[Trophy Room] No current season - no seasons data');
+      return null;
+    }
+    const active = selectedLeague.seasons.find(s => s.isActive);
+    const current = active || selectedLeague.seasons[0];
+    console.log('[Trophy Room] Current season:', current);
+    return current;
+  }, [selectedLeague]);
+
+  // Auto-select active season when league changes
+  useEffect(() => {
+    if (currentSeason && !selectedSeasonId) {
+      setSelectedSeasonId(currentSeason.id);
+    }
+  }, [currentSeason, selectedSeasonId]);
+
+  // Get the season to display (selected season or current season as fallback)
+  const displaySeason = useMemo(() => {
+    if (!selectedSeasonId) return currentSeason;
+    return availableSeasons.find(s => s.id === selectedSeasonId) || currentSeason;
+  }, [selectedSeasonId, availableSeasons, currentSeason]);
+
+  // Fetch trophy winners with league and season filters
   useEffect(() => {
     const fetchWinners = async () => {
       if (!token) return;
       setLoading(true);
       try {
-        // Fetch ALL trophies at once (no leagueId parameter)
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?_=${Date.now()}`, {
+        // Build query parameters for league and season filters
+        const params = new URLSearchParams({ _: Date.now().toString() });
+        
+        if (selectedLeagueId && selectedLeagueId !== 'all') {
+          params.append('leagueId', selectedLeagueId);
+        }
+        
+        if (selectedSeasonId && selectedSeasonId !== 'all') {
+          params.append('seasonId', selectedSeasonId);
+        }
+        
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?${params.toString()}`;
+        console.log('[Trophy Room] Fetching trophies with filters:', { 
+          url, 
+          leagueId: selectedLeagueId, 
+          seasonId: selectedSeasonId 
+        });
+        
+        const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
 
         if (res.ok && data?.success) {
-          // Store ALL winners - filtering by league happens client-side for instant switching
-          setApiAllWinners(Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : []);
+          // Store winners with season information
+          const trophiesWithMeta = Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : [];
+          console.log('[Trophy Room] ✅ Fetched trophies:', trophiesWithMeta.length, trophiesWithMeta);
+          setApiAllWinners(trophiesWithMeta);
           setBackendTotalXP(typeof data.backendTotalXP === 'number' ? data.backendTotalXP : undefined);
           setError(null);
         } else {
@@ -1618,7 +1868,7 @@ export default function GlobalTrophyRoom() {
       }
     };
     fetchWinners();
-  }, [token]); // Only fetch once when token is available - no selectedLeagueId dependency!
+  }, [token, selectedLeagueId, selectedSeasonId]); // Re-fetch when league or season changes
 
   // Persist and fetch achievements for the current user (saves XP to DB, then loads badges)
   useEffect(() => {
@@ -1657,6 +1907,58 @@ export default function GlobalTrophyRoom() {
     })();
   }, [token]);
 
+  // Fetch ALL trophies won by current user across all leagues and seasons (for My Achievements)
+  useEffect(() => {
+    if (!token || !user || !leagues || leagues.length === 0) return;
+    
+    (async () => {
+      try {
+        const allUserTrophies: TrophyType[] = [];
+        
+        // Iterate through all leagues where user is a member
+        for (const league of leagues) {
+          // Get all seasons for this league from league.seasons
+          const leagueSeasons = league.seasons || [];
+          
+          if (leagueSeasons.length === 0) {
+            // No seasons, try fetching trophies for league without season filter
+            const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&_=${Date.now()}`;
+            const res = await fetch(url, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            
+            if (res.ok && data?.success && Array.isArray(data.trophyWinners)) {
+              const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
+              const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
+              allUserTrophies.push(...userTrophies);
+            }
+          } else {
+            // Fetch trophies for each season in this league
+            for (const season of leagueSeasons) {
+              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&_=${Date.now()}`;
+              const res = await fetch(url, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const data = await res.json();
+              
+              if (res.ok && data?.success && Array.isArray(data.trophyWinners)) {
+                const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
+                const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
+                allUserTrophies.push(...userTrophies);
+              }
+            }
+          }
+        }
+        
+        setMyAllTrophies(allUserTrophies);
+      } catch (e) {
+        console.error('[My Achievements] Error fetching all trophies:', e);
+        setMyAllTrophies([]);
+      }
+    })();
+  }, [token, user?.id, leagues]); // Re-fetch when user or leagues change
+
   // Auto-select a default league (prefer a completed league, else first) - REMOVED to prevent double refresh
   // Initial selection is now done in the first useEffect after leagues are fetched
   // useEffect(() => {
@@ -1667,24 +1969,51 @@ export default function GlobalTrophyRoom() {
   //   setSelectedLeagueId(String(defaultId));
   // }, [leagues, selectedLeagueId, leagueIsCompleted]);
 
-  // Use API-provided winners directly (already filtered by selectedLeagueId on the server)
+  // Use API-provided winners directly (already filtered by selectedLeagueId and seasonId on the server)
   const baseTrophies: TrophyType[] =
     filter === 'all'
       ? (apiAllWinners ?? [])
       : [];
 
+  console.log('[Trophy Room] Base trophies:', {
+    filter,
+    apiAllWinners: apiAllWinners?.length || 0,
+    baseTrophies: baseTrophies.length,
+    selectedLeagueId,
+    selectedSeasonId,
+  });
+
   const trophiesToDisplayBase: TrophyType[] =
     selectedLeagueId === 'all'
       ? baseTrophies
-      : baseTrophies.filter(t => t.leagueId === selectedLeagueId);
+      : baseTrophies.filter(t => {
+          const matchesLeague = t.leagueId === selectedLeagueId;
+          const matchesSeason = !selectedSeasonId || !t.seasonId || t.seasonId === selectedSeasonId;
+          const matches = matchesLeague && matchesSeason;
+          
+          console.log('[Trophy Room] Trophy filter:', {
+            title: t.title,
+            trophyLeagueId: t.leagueId,
+            trophySeasonId: t.seasonId,
+            selectedLeagueId,
+            selectedSeasonId,
+            matchesLeague,
+            matchesSeason,
+            matches,
+          });
+          
+          return matches;
+        });
 
-  const selectedLeague =
-    selectedLeagueId === 'all' ? null : filteredLeagues.find(l => l.id === selectedLeagueId);
+  console.log('[Trophy Room] Trophies to display base:', {
+    count: trophiesToDisplayBase.length,
+    trophies: trophiesToDisplayBase.map(t => ({ title: t.title, winner: t.winner, seasonId: t.seasonId })),
+  });
 
   // Add debug + flags for the standing label
   const selectedLeagueFlags = useMemo(() => {
     if (!selectedLeague) return null;
-    const completedCount = countCompletedMatches(selectedLeague);
+    const completedCount = countCompletedMatches(selectedLeague, selectedSeasonId);
     const max = Number(selectedLeague.maxGames ?? 0);
     const final = isFinalLeagueStanding(selectedLeague);
     const statuses = Array.from(new Set((selectedLeague.matches ?? []).map(m => m.status)));
@@ -1692,6 +2021,7 @@ export default function GlobalTrophyRoom() {
     console.debug('[Standing Label]', {
       leagueId: selectedLeague.id,
       name: selectedLeague.name,
+      seasonId: selectedSeasonId,
       maxGames: max,
       completedCount,
       statuses,
@@ -1703,7 +2033,7 @@ export default function GlobalTrophyRoom() {
       });
     }
     return { final, completedCount, max, statuses };
-  }, [selectedLeague]);
+  }, [selectedLeague, selectedSeasonId]);
 
   // Helper to build placeholder trophies for a league (winners TBC)
   const buildPlaceholders = (league: League): TrophyType[] =>
@@ -1713,6 +2043,8 @@ export default function GlobalTrophyRoom() {
       winnerId: null,
       leagueId: league.id,
       leagueName: league.name,
+      seasonId: displaySeason?.id,
+      seasonName: displaySeason?.name,
     }));
 
   // If a specific league is selected but there are no trophies (e.g., league not completed), show placeholders.
@@ -1720,6 +2052,18 @@ export default function GlobalTrophyRoom() {
     selectedLeague && trophiesToDisplayBase.length === 0
       ? buildPlaceholders(selectedLeague)
       : trophiesToDisplayBase;
+
+  console.log('[Trophy Room] Final trophies to display:', {
+    count: trophiesToDisplay.length,
+    selectedLeague: selectedLeague?.name,
+    selectedSeason: displaySeason?.name,
+    trophies: trophiesToDisplay.map(t => ({ 
+      title: t.title, 
+      winner: t.winner, 
+      seasonId: t.seasonId,
+      seasonName: t.seasonName 
+    })),
+  });
 
   // Build My Achievements (badges) for the current user (use backend XP if provided)
   const clientBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
@@ -1855,295 +2199,745 @@ export default function GlobalTrophyRoom() {
 
   // UI
   return (
-    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
-       {/* Close Button */}
-            <CloseButton fallbackRoute="/dashboard" />
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gridTemplateRows: 'auto auto',
-          gridTemplateAreas: '"center" "left"',
-          alignItems: 'center',
-          rowGap: 2, // spacing between chips and dropdown
-          mb: 4,
-        }}
-      >
-        <Box sx={{ gridArea: 'left', justifySelf: 'start', ml: 2 }}>
-          {filter === 'all' && (
-           
-            <>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 1.25, sm: 2 },
-                alignItems: { xs: 'stretch', sm: 'flex-start' },
-                flexWrap: 'nowrap',
-                width: '100%'
-              }}>
-                {yearOptions.length > 0 && (
-                  <Box sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    flex: { xs: 1, sm: 'unset' },
-                    minWidth: { sm: '200px' },
-                    maxWidth: { sm: '300px' }
-                  }}>
-                    <Typography
-                      variant="overline"
-                      sx={{
-                        display: 'block',
-                        color: 'black',
-                        letterSpacing: 1,
-                        fontWeight: 700,
-                        mb: 0.5,
-                        fontSize: { xs: '0.65rem', sm: '0.75rem', md: '0.875rem' },
-                      }}
-                    >
-                      Select Year
-                    </Typography>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: 'white',
-                        backgroundColor: '#2B2B2B',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        outline: 'none',
-                        lineHeight: 1.2
-                      }}
-                    >
-                      <option value="all">All Years</option>
-                      {/* Static years + Dynamic years (merged and deduplicated) */}
-                      {Array.from(new Set(['2020', '2021', '2022', '2023', '2024', '2025', ...yearOptions]))
-                        .sort((a, b) => Number(b) - Number(a))
-                        .map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </Box>
-                )}
-                <Box sx={{
-                  width: { xs: '100%', sm: 'auto' },
-                  flex: { xs: 1, sm: 'unset' },
-                  minWidth: { sm: '200px' },
-                  maxWidth: { sm: '300px' }
-                }}>
-                  <Typography
-                    variant="overline"
-                    sx={{
-                      display: 'block',
-                      color: 'black',
-                      letterSpacing: 1,
-                      fontWeight: 700,
-                      mb: 0.5,
-                      fontSize: { xs: '0.65rem', sm: '0.75rem' , md: '0.875rem'},
-                    }}
-                  >
-                    Select League
-                  </Typography>
-                  <Button
-                    onClick={handleLeaguesDropdownOpen}
-                    // onMouseEnter={handleLeaguesDropdownOpen}
-                    disabled={!filteredLeagues.length}
-                    sx={{
-                      textTransform: 'uppercase',
-                      fontSize: { xs: '0.85rem', sm: '1rem' },
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      color: 'white',
-                      backgroundColor: '#2B2B2B',
-                      borderRadius: 2,
-                      px: { xs: 1.5, sm: 2 },
-                      py: { xs: 0.85, sm: 1 },
-                      '&:hover': { backgroundColor: '#2B2B2B' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      width: '100%',
-                      justifyContent: 'space-between',
-                    }}
-                    endIcon={<ChevronDown size={20} />}
-                  >
-                    {filteredLeagues.length === 0
-                      ? 'No leagues for selected year'
-                      : (selectedLeague
-                        ? formatLeagueName(selectedLeague.name)
-                        : (filteredLeagues[0] ? formatLeagueName(filteredLeagues[0].name) : 'Select League'))}
-                  </Button>
-                </Box>
-              </Box>
-              <Menu
-                anchorEl={leaguesDropdownAnchor}
-                open={leaguesDropdownOpen}
-                onClose={handleLeaguesDropdownClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                PaperProps={{
-                  sx: {
-                    p: 0.5,
-                    mt: 1, 
-                    minWidth: 240,
-                    bgcolor: 'rgba(15,15,15,0.92)',
-                    color: '#E5E7EB',
-                    borderRadius: 2.5,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                    // Cap height and enable vertical scrolling when items overflow
-                    maxHeight: 320,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    overscrollBehavior: 'contain',
-                    // Improve scrollbar visibility (Firefox + WebKit)
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: '#374151 #111827',
-                    '&::-webkit-scrollbar': { width: 8 },
-                    '&::-webkit-scrollbar-track': { background: '#111827' },
-                    '&::-webkit-scrollbar-thumb': {
-                      background: '#374151',
-                      borderRadius: 20,
-                      border: '2px solid #111827'
-                    },
-                    '&::-webkit-scrollbar-thumb:hover': { background: '#4b5563' },
+    <Box sx={{ 
+      minHeight: '100vh',
+    }}>
+      {/* Full-Width Header Section */}
+      <Box sx={{
+        mt: 0,
+        mb: 4,
+        width: '100vw',
+        position: 'relative',
+        left: '50%',
+        right: '50%',
+        marginLeft: '-50vw',
+        marginRight: '-50vw',
+      }}>
+        {/* Orange top border */}
+        {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}
+        
+        <Paper sx={{
+          px: { xs: 2, sm: 3, md: 4 },
+          py: 3,
+          background: '#0e0e0e',
+          color: 'white',
+          borderRadius: 0,
+        }}>
+          {/* Centered League Name with Trophy Icon */}
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 2,
+            gap: 0.5
+          }}>
+            {/* Trophy Icon + League Name / User Name + Dropdown */}
+            <Box sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              mt: 4,
+            }}>
+              {filter !== 'my' && (
+                <Image
+                  src={LeagueIcon}
+                  alt="League Icon"
+                  width={42}
+                  height={49}
+                  style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                />
+              )}
+              {filter === 'my' ? (
+                <Typography
+                  sx={{
+                    fontFamily: '"Anton" , sens-serif !important',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    lineHeight: '100%',
+                    letterSpacing: '0%',
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    fontSize: '55px',
+                    wordBreak: 'break-word',
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    whiteSpace: 'normal',
+                    flexShrink: 1,
+                    minWidth: 0,
+                    color: 'white',
+                    mt: -1,
+                  }}
+                >
+                  {user?.firstName || ''} {user?.lastName || ''}
+                </Typography>
+              ) : selectedLeague ? (
+                <Button
+                  onClick={handleLeaguesDropdownOpen}
+                  sx={{
+                    fontFamily: '"Woodford Bourne Pro" , sans-serif !important',
+                                                                         textTransform: 'uppercase',
+                                                                         fontSize: '50px',
+                                                                         fontWeight: 'bold',
+                                                                         lineHeight: 1.1,
+                                                                         wordBreak: 'break-word',
+                                                                         overflow: 'visible',
+                                                                         textOverflow: 'clip',
+                                                                         whiteSpace: 'normal',
+                                                                         flexShrink: 1,
+                                                                         minWidth: 0,
+                                                                         textAlign: 'center',
+                                                                         color: 'white',
+                                                                         backgroundColor: 'transparent',
+                                                                         borderRadius: 0,
+                                                                         px: 0,
+                                                                         py: 0,
+                                                                         height: { xs: '32px', sm: 'auto' },
+                                                                         '&:hover': {
+                                                                             backgroundColor: 'transparent',
+                                                                         },
+                                                                         display: 'flex',
+                                                                         alignItems: 'center',
+                                                                         gap: 0.5,
+                                                                     }}
+                                                                     endIcon={
+                                                                         <Box
+                                                                             component="span"
+                                                                             sx={{
+                                                                                 width: 0,
+                                                                                 height: 0,
+                                                                                 borderLeft: '10px solid transparent',
+                                                                                 borderRight: '10px solid transparent',
+                                                                                 borderTop: '16px solid #FFFFFF',
+                                                                                 display: 'inline-block',
+                                                                                 ml: 0.5
+                                                                             }}
+                                                                             />
+                                                                            }
+                >
+                  {formatLeagueName(selectedLeague.name)}
+                </Button>
+              ) : (
+                <Typography
+                  sx={{
+                    textTransform: 'uppercase',
+                    fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.8rem' },
+                    fontWeight: 'bold',
+                    color: 'white',
+                    lineHeight: 1,
+                  }}
+                >
+                  Trophy Room
+                </Typography>
+              )}
+            </Box>
+            
+            {/* Season indicator with dropdown */}
+            {filter !== 'my' && displaySeason && (
+              <Button
+                onClick={handleSeasonsDropdownOpen}
+                sx={{
+                  fontSize: { xs: '0.95rem', sm: '1.1rem' },
+                  color: 'rgba(255,255,255,0.6)',
+                  fontWeight: 400,
+                  mt: -1,
+                  textTransform: 'none',
+                  px: 0,
+                  py: 0,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: 'rgba(255,255,255,0.8)',
+                  },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+                endIcon={availableSeasons.length > 1 ? <ChevronDown size={16} /> : null}
+              >
+                (#{displaySeason.name})
+              </Button>
+            )}
+          </Box>
+
+          {/* Seasons Dropdown Menu */}
+          <Menu
+            anchorEl={seasonsDropdownAnchor}
+            open={seasonsDropdownOpen}
+            onClose={handleSeasonsDropdownClose}
+            PaperProps={{
+              sx: {
+                p: 0.5,
+                mt: 1,
+                minWidth: 200,
+                maxHeight: 320,
+                overflowY: 'auto',
+                bgcolor: 'rgba(15,15,15,0.92)',
+                color: '#E5E7EB',
+                borderRadius: 2.5,
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+              }
+            }}
+          >
+            {availableSeasons.map((season) => (
+              <MenuItem
+                key={season.id}
+                onClick={() => handleSeasonSelect(season.id)}
+                sx={{
+                  py: 1.2,
+                  px: 2,
+                  fontSize: '0.95rem',
+                  borderRadius: 1.5,
+                  mb: 0.5,
+                  fontWeight: selectedSeasonId === season.id ? 600 : 400,
+                  bgcolor: selectedSeasonId === season.id ? 'rgba(229,103,22,0.12)' : 'transparent',
+                  color: selectedSeasonId === season.id ? '#E56A16' : '#E5E7EB',
+                  '&:hover': {
+                    bgcolor: selectedSeasonId === season.id ? 'rgba(229,103,22,0.18)' : 'rgba(255,255,255,0.05)',
                   }
                 }}
               >
-                {filteredLeagues.length === 0 ? (
-                  <MenuItem disabled sx={{ opacity: 0.7 }}>No leagues found for selected year</MenuItem>
-                ) : (
-                  filteredLeagues.map(l => (
-                    <MenuItem 
-                      key={l.id} 
-                      onClick={() => handleLeagueSelect(String(l.id))}
+                {season.name} {season.isActive && '(Active)'}
+              </MenuItem>
+            ))}
+          </Menu>
+
+          {/* Leagues Dropdown Menu */}
+          <Menu
+            anchorEl={leaguesDropdownAnchor}
+            open={leaguesDropdownOpen}
+            onClose={handleLeaguesDropdownClose}
+            PaperProps={{
+              sx: {
+                p: 0.5,
+                mt: 1,
+                minWidth: 240,
+                maxHeight: 320,
+                overflowY: 'auto',
+                bgcolor: 'rgba(15,15,15,0.92)',
+                color: '#E5E7EB',
+                borderRadius: 2.5,
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+              }
+            }}
+          >
+            {filteredLeagues.length === 0 ? (
+              <MenuItem disabled sx={{ opacity: 0.7 }}>No leagues found</MenuItem>
+            ) : (
+              filteredLeagues.map((leagueItem) => (
+                <MenuItem
+                  key={leagueItem.id}
+                  onClick={() => handleLeagueSelect(leagueItem.id)}
+                  sx={{
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 1.25,
+                    px: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#E5E7EB',
+                    transition: 'all 0.2s ease',
+                    background: leagueItem.id === selectedLeagueId ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                    },
+                  }}
+                >
+                  <Trophy size={16} color={leagueItem.id === selectedLeagueId ? '#FFFFFF' : '#9CA3AF'} />
+                  <Box sx={{ flex: 1 }}>
+                    {leagueItem.name}
+                  </Box>
+                  {leagueItem.isAdmin && (
+                    <Box
                       sx={{
-                        borderRadius: 1.5,
-                        mx: 0.5,
-                        my: 0.25,
-                        py: 1,
-                        px: 1.25,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        color: '#E5E7EB',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-1px)',
-                          background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                        },
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: 'rgba(255, 255, 255, 0.95)',
+                        color: '#1F2937',
+                        borderRadius: '9999px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: 0.3,
+                        textTransform: 'uppercase',
                       }}
                     >
-                      <Box component="span" sx={{ flex: 1 }}>{l.name}</Box>
-                      <Box
-                        sx={{
-                          ml: 'auto',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            px: 1,
-                            py: 0.25,
-                            bgcolor: l.isAdmin ? '#fff' : 'rgba(255,255,255,0.08)',
-                            color: l.isAdmin ? '#111827' : '#E5E7EB',
-                            borderRadius: '9999px',
-                            fontSize: 10,
-                            fontWeight: 700,
-                            letterSpacing: 0.3,
-                            textTransform: 'uppercase',
-                            border: l.isAdmin ? '1px solid rgba(255,255,255,0.0)' : '1px solid rgba(255,255,255,0.12)'
-                          }}
-                        >
-                          {l.isAdmin ? 'Admin' : 'Member'}
-                        </Box>
-                      </Box>
-                    </MenuItem>
-                  ))
-                )}
-              </Menu>
-            </>
-          )}
-        </Box>
-        <Box
-          sx={{
-            gridArea: 'center',
-            justifySelf: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'nowrap',
-            columnGap: { xs: 1, sm: 2 },
-            minWidth: 0, // allow children to shrink
-          }}
-        >
-          <Chip
-            label="Trophy Room"
-            color={filter === 'all' ? 'success' : 'default'}
-            onClick={() => setFilter('all')}
+                      Admin
+                    </Box>
+                  )}
+                </MenuItem>
+              ))
+            )}
+          </Menu>
+
+          {/* Orange divider */}
+          <Box sx={{ height: '3.5px', bgcolor: '#E56A16', width: '100%', mb: 0.8, mt: filter === 'my' ? 8 : 3.2 }} />
+
+          {/* Standings info and Navigation Tabs */}
+          <Box
             sx={{
-              fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
-              py: { xs: 1, sm: 1.5, md: 2 },
-              // keep on one line and shrink with ellipsis on small screens
-              whiteSpace: 'nowrap',
-              maxWidth: { xs: '42vw', sm: 'unset' },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              '& .MuiChip-label': {
-                px: { xs: 1.25, sm: 1.75, md: 2.5 },
-              },
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              ...(filter === 'all' && { backgroundColor: '#00A77F', color: 'white' }),
+              display: 'flex',
+              alignItems: 'center',
+              position: 'relative',
+              flexWrap: 'wrap',
+              gap: 2,
+              px: { xs: 2, sm: 3, md: 9.3 },
+              // mt:-1
             }}
-          />
-          <Chip
-            label="My Achievements"
-            color={filter === 'my' ? 'success' : 'default'}
-            variant="outlined"
-            onClick={() => setFilter('my')}
-            sx={{
-              fontSize: { xs: '0.78rem', sm: '0.9rem', md: '1rem' },
-              py: { xs: 1, sm: 1.5, md: 2 },
-              whiteSpace: 'nowrap',
-              maxWidth: { xs: '42vw', sm: 'unset' },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              '& .MuiChip-label': {
-                px: { xs: 1.25, sm: 1.75, md: 2.5 },
-              },
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              ...(filter === 'my' && { backgroundColor: '#00A77F', color: 'white' }),
-            }}
-          />
-        </Box>
+          >
+            {/* Left side: Standings info - Hidden in My Achievements */}
+            {filter !== 'my' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0}}>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                  <Typography sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    fontWeight: 600,
+                    color: 'white'
+                  }}>
+                    Standings:
+                  </Typography>
+                   {selectedLeague && (
+             <Typography sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    fontWeight: 400,
+                    color: 'white'
+                  }}>
+                 {selectedLeagueFlags?.final ? 'FINAL' : 'LIVE'}
+
+                  </Typography>
+            )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                  <Typography sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    fontWeight: 400,
+                    color: 'white'
+                  }}>
+                    Last Updated:
+                  </Typography>
+                  <Typography sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    fontWeight: 400,
+                    color: 'white'
+                  }}>
+                    {selectedLeague ? countCompletedMatches(selectedLeague, selectedSeasonId) : 0}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Center: Navigation buttons */}
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 2,
+              position: filter === 'my' ? 'relative' : 'absolute',
+              left: filter === 'my' ? 'auto' : '50%',
+              transform: filter === 'my' ? 'none' : 'translateX(-50%)',
+              justifyContent: 'center',
+              width: filter === 'my' ? '100%' : 'auto',
+            }}>
+              <Button
+                onClick={() => setFilter('all')}
+                sx={{
+                  px: { xs: 2.5, sm: 3.5, md: 5 },
+                  py: 0.7,
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  backgroundColor: filter === 'all' ? '#14B8A6' : 'transparent',
+                  color: 'white',
+                  border: filter === 'all' ? 'none' : '2px solid white',
+                  borderRadius: 2,
+                  '&:hover': {
+                    backgroundColor: filter === 'all' ? '#0d9488' : 'rgba(255,255,255,0.1)',
+                  }
+                }}
+              >
+                Trophy Room
+              </Button>
+              <Button
+                onClick={() => setFilter('my')}
+                sx={{
+                  px: { xs: 2.5, sm: 3.5, md: 5 },
+                  py: 0.7,
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  backgroundColor: filter === 'my' ? '#14B8A6' : 'transparent',
+                  color: 'white',
+                  border: filter === 'my' ? 'none' : '2px solid white',
+                  borderRadius: 2,
+                  '&:hover': {
+                    backgroundColor: filter === 'my' ? '#0d9488' : 'rgba(255,255,255,0.1)',
+                  }
+                }}
+              >
+                My Achievements
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
       </Box>
 
-      {filter === 'my' ? (
-        <>
-          {/* XP from badges summary */}
-          {/* <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-            <Paper elevation={0} sx={{ px: 2, py: 1, borderRadius: 999, border: '1px solid #E2E8F0', background: '#F8FAFC', fontWeight: 700 }}>
-              XP from badges: {new Intl.NumberFormat().format(Number.isFinite(totalBadgeXP) ? totalBadgeXP : 0)}
-            </Paper>
-          </Box> */}
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
-            {myBadges.length > 0 ? myBadges.map(b => (
-              <Box key={b.id} sx={{ height: '100%' }}>
-                {/* Do not open modal for Total XP card */}
-                <BadgeCard {...b} onOpen={b.id === 'rising_xp' ? undefined : () => openBadgeDetail(b)} />
-              </Box>
-            )) : (
-              <Typography sx={{ mt: 4, gridColumn: '1 / -1', textAlign: 'center' }}>
-                No badge progress yet.
+
+      {filter === 'my' ? (
+        <Box sx={{ 
+          maxWidth: '783px', 
+          mx: 'auto',
+          px: { xs: 2, sm: 3 },
+        }}>
+          {(() => {
+            // Get ALL trophies won by current user across all leagues and seasons
+            const myTrophies = myAllTrophies || [];
+            
+            // Helper to get league date by ID
+            const getLeagueDate = (leagueId?: string) => {
+              if (!leagueId) return null;
+              const league = leagues.find(l => String(l.id) === String(leagueId));
+              return league?.createdAt ? new Date(league.createdAt) : null;
+            };
+
+            // Helper to format date as MMM YYYY
+            const formatTrophyDate = (leagueId?: string) => {
+              const date = getLeagueDate(leagueId);
+              if (!date) return 'N/A';
+              return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            };
+
+            // Categorize and sort trophies by priority and date
+            // Each trophy instance is shown separately (not grouped)
+            
+            // League Awards (in order: Champion, Runner-Up)
+            const leagueChampions = myTrophies
+              .filter(t => t.title === 'League Champion')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA; // Descending (most recent first)
+              });
+
+            const runnersUp = myTrophies
+              .filter(t => t.title === 'Runner-Up')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            // Individual Awards (in order: Ballon D'or, Golden Boot, King Playmaker, Star Keeper, Shield, Others)
+            const ballonDor = myTrophies
+              .filter(t => t.title === "Ballon D'or")
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            const goldenBoot = myTrophies
+              .filter(t => t.title === 'Golden Boot')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            const kingPlaymaker = myTrophies
+              .filter(t => t.title === 'King Playmaker')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            const starKeeper = myTrophies
+              .filter(t => t.title === 'Star Keeper')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            const legendaryShield = myTrophies
+              .filter(t => t.title === 'Legendary Shield')
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            const otherIndividual = myTrophies
+              .filter(t => !['League Champion', 'Runner-Up', "Ballon D'or", 'Golden Boot', 'King Playmaker', 'Star Keeper', 'Legendary Shield'].includes(t.title))
+              .sort((a, b) => {
+                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
+                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                return dateB - dateA;
+              });
+
+            // Build rows for League Awards - showing each trophy instance separately
+            const allLeague = [...leagueChampions, ...runnersUp];
+            const leagueRows: TrophyType[][] = [];
+            for (let i = 0; i < allLeague.length; i += 3) {
+              leagueRows.push(allLeague.slice(i, i + 3));
+            }
+
+            // Build rows for Individual Awards - showing each trophy instance separately (in priority order)
+            const allIndividual = [...ballonDor, ...goldenBoot, ...kingPlaymaker, ...starKeeper, ...legendaryShield, ...otherIndividual];
+            const individualRows: TrophyType[][] = [];
+            for (let i = 0; i < allIndividual.length; i += 3) {
+              individualRows.push(allIndividual.slice(i, i + 3));
+            }
+
+            const hasAnyTrophies = myTrophies.length > 0;
+            
+            return hasAnyTrophies ? (
+              <>
+                {/* Profile Card with Stars */}
+                <Paper sx={{
+                  background: '#1f1f1f',
+                  borderRadius: 4,
+                  p: 0,
+                  mb: 3,
+                  border: '2px solid rgba(255,255,255,0.8)',
+                  overflow: 'hidden',
+                }}>
+                  {/* Profile Picture with Stars */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    gap: 3,
+                    py: 2,
+                    background: '#1f1f1f',
+                  }}>
+                    <Star fill="#3B82F6" color="#3B82F6" size={32} />
+                    <Avatar
+                      src={getProfileImage(user as any) || undefined}
+                      alt={`${user?.firstName || ''} ${user?.lastName || ''}`}
+                      sx={{
+                        width: 110,
+                        height: 110,
+                        fontSize: '2.5rem',
+                        fontWeight: 700,
+                        bgcolor: '#fff',
+                        color: '#fff',
+                      }}
+                    >
+                      {!getProfileImage(user as any) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
+                    </Avatar>
+                    <Star fill="#3B82F6" color="#3B82F6" size={32} />
+                  </Box>
+
+                  {/* Two Column Layout */}
+                  <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 0,
+                    mt: 1,
+                  }}>
+                    {/* League Awards Section */}
+                    <Box>
+                      {/* Grey Header */}
+                      <Box sx={{
+                        bgcolor: '#9c9a9a',
+                        py: 2,
+                        px: 3,
+                      }}>
+                        <Typography sx={{
+                          fontSize: { xs: '1.1rem', sm: '1.3rem' },
+                          fontWeight: 600,
+                          color: '#fff',
+                          textAlign: 'center',
+                          letterSpacing: 1,
+                          textTransform: 'uppercase',
+                        }}>
+                          LEAGUE REWARDS
+                        </Typography>
+                      </Box>
+
+                      {/* Dark Background with Trophies */}
+                      <Box sx={{
+                        bgcolor: '#1a1a1a',
+                        p: 3,
+                        minHeight: '400px',
+                      }}>
+                        {leagueRows.length === 0 ? (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
+                            No league awards yet
+                          </Typography>
+                        ) : (
+                          leagueRows.map((row, rowIdx) => (
+                            <Box key={`league-row-${rowIdx}`}>
+                              <Box sx={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: 2,
+                                pb: 3,
+                                borderBottom: rowIdx < leagueRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                                mb: rowIdx < leagueRows.length - 1 ? 3 : 0,
+                              }}>
+                                {row.map((trophy, trophyIdx) => (
+                                  <Box
+                                    key={`league-${trophy.id || rowIdx}-${trophyIdx}`}
+                                    sx={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      cursor: 'pointer',
+                                      transition: 'transform 0.2s',
+                                      '&:hover': {
+                                        transform: 'scale(1.05)',
+                                      },
+                                    }}
+                                    // onClick={() => openPlayerQuickView(trophy)}
+                                  >
+                                    <Box sx={{ 
+                                      position: 'relative', 
+                                      width: 50, 
+                                      height: 50, 
+                                      mb: 1.5,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}>
+                                      <Image
+                                        src={trophy.image}
+                                        alt={trophy.title}
+                                        width={50}
+                                        height={50}
+                                        style={{ 
+                                          objectFit: 'contain',
+                                          maxWidth: '100%',
+                                          maxHeight: '100%',
+                                        }}
+                                      />
+                                    </Box>
+                                    <Typography sx={{
+                                      fontSize: '0.7rem',
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      textAlign: 'center',
+                                    }}>
+                                      {formatTrophyDate(trophy.leagueId)}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Individual Awards Section */}
+                    <Box sx={{
+                      borderLeft: { xs: 'none', md: '1px solid rgba(255,255,255,0.3)' }
+                    }}>
+                      {/* Grey Header */}
+                      <Box sx={{
+                        bgcolor: '#9c9a9a',
+                        py: 2,
+                        px: 3,
+                      }}>
+                        <Typography sx={{
+                          fontSize: { xs: '1.1rem', sm: '1.3rem' },
+                          fontWeight: 600,
+                          color: '#fff',
+                          textAlign: 'center',
+                          letterSpacing: 1,
+                          textTransform: 'uppercase',
+                        }}>
+                          INDIVIDUAL REWARDS
+                        </Typography>
+                      </Box>
+
+                      {/* Dark Background with Trophies */}
+                      <Box sx={{
+                        bgcolor: '#1a1a1a',
+                        p: 3,
+                        minHeight: '400px',
+                      }}>
+                        {individualRows.length === 0 ? (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
+                            No individual awards yet
+                          </Typography>
+                        ) : (
+                          individualRows.map((row, rowIdx) => (
+                            <Box key={`individual-row-${rowIdx}`}>
+                              <Box sx={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: 2,
+                                pb: 3,
+                                borderBottom: rowIdx < individualRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                                mb: rowIdx < individualRows.length - 1 ? 3 : 0,
+                              }}>
+                                {row.map((trophy, trophyIdx) => (
+                                  <Box
+                                    key={`individual-${trophy.id || rowIdx}-${trophyIdx}`}
+                                    sx={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      cursor: 'pointer',
+                                      transition: 'transform 0.2s',
+                                      '&:hover': {
+                                        transform: 'scale(1.05)',
+                                      },
+                                    }}
+                                    // onClick={() => openPlayerQuickView(trophy)}
+                                  >
+                                    <Box sx={{ 
+                                      position: 'relative', 
+                                      width: 50, 
+                                      height: 50, 
+                                      mb: 1.5,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}>
+                                      <Image
+                                        src={trophy.image}
+                                        alt={trophy.title}
+                                        width={50}
+                                        height={50}
+                                        style={{ 
+                                          objectFit: 'contain',
+                                          maxWidth: '100%',
+                                          maxHeight: '100%',
+                                        }}
+                                      />
+                                    </Box>
+                                    <Typography sx={{
+                                      fontSize: '0.7rem',
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      textAlign: 'center',
+                                    }}>
+                                      {formatTrophyDate(trophy.leagueId)}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Paper>
+              </>
+            ) : (
+              <Typography sx={{ mt: 4, textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem' }}>
+                No achievements yet. Play more matches to unlock trophies!
               </Typography>
-            )}
-          </Box>
+            );
+          })()}
 
           {/* Badge detail modal (tap card) */}
           <Dialog open={openBadgeDlg} onClose={closeBadgeDetail} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
@@ -2161,14 +2955,12 @@ export default function GlobalTrophyRoom() {
                     <Box sx={{ position: 'absolute', top: -6, right: -6, background: selectedBadge.unlocked ? selectedBadge.color : medalMuted, color: '#fff', borderRadius: '12px', px: 0.75, py: 0.2, fontSize: '0.7rem', fontWeight: 700 }}>
                       x{selectedBadge.count}
                     </Box>
-                    {/* Centered XP coin at bottom */}
                     <Box
                       sx={{
                         position: 'absolute',
                         bottom: 0,
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        // background: '#FFD700',
                         color: '#fff',
                         borderRadius: '50%',
                         width: 30,
@@ -2198,28 +2990,90 @@ export default function GlobalTrophyRoom() {
               )}
             </DialogContent>
           </Dialog>
-        </>
+        </Box>
       ) : (
-        <>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
-            {(
-              trophiesToDisplay.length > 0
-                ? trophiesToDisplay
-                : trophies.map(t => ({
+        <Box sx={{ px: { xs: 2, sm: 3, md: 10.7 } }}>
+          {/* Top Row - 3 Large Trophies */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, 
+            gap: { xs: 1.5, sm: 2, md: 3 }, 
+            justifyContent: 'center', 
+            alignItems: 'stretch',
+            mb: { xs: 2, sm: 3 },
+          }}>
+            {(() => {
+              const topTrophyTitles = ['League Champion', "Ballon D'or", 'Runner-Up'];
+              const displayTrophies = trophiesToDisplay.length > 0 
+                ? trophiesToDisplay.filter(t => topTrophyTitles.includes(t.title))
+                : topTrophies.map(t => ({
                     ...t,
                     winner: 'TBC',
                     winnerId: null,
                     leagueId: selectedLeague ? selectedLeague.id : undefined,
                     leagueName: selectedLeague ? selectedLeague.name : undefined,
-                  }))
-            ).map((trophy, index) => (
-              <Box key={`${trophy.title}-${trophy.leagueId || 'global'}-${index}`} sx={{ height: '100%' }}>
-                <TrophyCard
-                  {...trophy}
-                  onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
-                />
-              </Box>
-            ))}
+                  }));
+              // Ensure proper order
+              return topTrophyTitles.map((title, index) => {
+                const trophy = displayTrophies.find(t => t.title === title) || {
+                  ...topTrophies.find(t => t.title === title)!,
+                  winner: 'TBC',
+                  winnerId: null,
+                  leagueId: selectedLeague ? selectedLeague.id : undefined,
+                  leagueName: selectedLeague ? selectedLeague.name : undefined,
+                };
+                return (
+                  <Box key={`top-${trophy.title}-${index}`} sx={{ height: '100%' }}>
+                    <TrophyCard
+                      {...trophy}
+                      isLarge={true}
+                      onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                    />
+                  </Box>
+                );
+              });
+            })()}
+          </Box>
+
+          {/* Bottom Row - 5 Smaller Trophies */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' }, 
+            gap: { xs: 1, sm: 1.5, md: 2 }, 
+            justifyContent: 'center', 
+            alignItems: 'stretch',
+          }}>
+            {(() => {
+              const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
+              const displayTrophies = trophiesToDisplay.length > 0 
+                ? trophiesToDisplay.filter(t => bottomTrophyTitles.includes(t.title))
+                : bottomTrophies.map(t => ({
+                    ...t,
+                    winner: 'TBC',
+                    winnerId: null,
+                    leagueId: selectedLeague ? selectedLeague.id : undefined,
+                    leagueName: selectedLeague ? selectedLeague.name : undefined,
+                  }));
+              // Ensure proper order
+              return bottomTrophyTitles.map((title, index) => {
+                const trophy = displayTrophies.find(t => t.title === title) || {
+                  ...bottomTrophies.find(t => t.title === title)!,
+                  winner: 'TBC',
+                  winnerId: null,
+                  leagueId: selectedLeague ? selectedLeague.id : undefined,
+                  leagueName: selectedLeague ? selectedLeague.name : undefined,
+                };
+                return (
+                  <Box key={`bottom-${trophy.title}-${index}`} sx={{ height: '100%' }}>
+                    <TrophyCard
+                      {...trophy}
+                      isLarge={false}
+                      onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                    />
+                  </Box>
+                );
+              });
+            })()}
           </Box>
 
 
@@ -2228,13 +3082,13 @@ export default function GlobalTrophyRoom() {
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 700, color: selectedLeagueFlags?.final ? '#16a34a' : '#334155' }}
+                sx={{ fontWeight: 700, color: selectedLeagueFlags?.final ? '#16a34a' : '#fff' }}
               >
                 {selectedLeagueFlags?.final ? 'Final League Standing' : 'Current League Standing'}
               </Typography>
             </Box>
           )}
-        </>
+        </Box>
       )}
 
       {/* Player Quick View Modal (Compact Version) */}
@@ -2400,7 +3254,7 @@ export default function GlobalTrophyRoom() {
               )}
             </DialogContent>
           </Dialog>
-
-    </Box>
+      </Box>
+    // </Box>
   );
 }
