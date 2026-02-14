@@ -30,7 +30,8 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
 
 // import Link from 'next/link';
 // import dash from '@/Components/images/dash.webp'
-import dash from '@/Components/images/dashdd.webp'
+import dash from '@/Components/images/bgpage.png'
+import wordImg from '@/Components/images/word.png'
 import toast, { Toaster } from 'react-hot-toast';
 // import league from '@/Components/images/league.png'
 // import matches from '@/Components/images/matches.png'
@@ -687,6 +688,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   return (
     <Box sx={{
       width: '100%',
+      maxWidth: { xs: '100%', sm: '100%', md: 290 },
+      mx: 'auto',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -701,7 +704,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
           color: 'white',
           '&:hover': { bgcolor: '#00A77F' },
           minHeight: { xs: '60px', sm: '70px', md: '50px' },
-          minWidth: { xs: '280px', sm: '320px' },
+          width: '100%',
+          minWidth: 0,
+          maxWidth: '100%',
+          boxSizing: 'border-box',
           fontSize: { xs: '1rem', sm: '1.1rem', md: '15px' },
           fontWeight: 'normal',
           textTransform: 'none',
@@ -723,19 +729,26 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
               setShowDropdown(true);
             }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, minWidth: 0 }}>
             {isFetching ? (
               <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
             ) : (
               <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
             )}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-                  fontWeight: 'semibold',
-                  lineHeight: 1.2
+                  fontSize: '19px',
+                  fontWeight: 600,
+                  lineHeight: '100%',
+                  letterSpacing: '0%',
+                  textTransform: 'capitalize',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
                 {isFetching
@@ -827,7 +840,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
             top: 'calc(100% - 2px)',
             left: 0,
             width: '100%',
-            maxWidth: { xs: '280px', sm: '320px' },
+            maxWidth: '100%',
             maxHeight: 300,
             overflowY: 'auto',
             p: 0.5,
@@ -1452,47 +1465,134 @@ export default function PlayerDashboard() {
   // ];
 
   return (
-    <Box sx={{ px: { xs: 1, md: 3 }, py: { xs: 1, md: 4 }, minHeight: '100vh' }}>
+    <Box sx={{ px: 0, py: 0, minHeight: '100vh', width: '100%' }}>
       <Toaster position="top-center" reverseOrder={false} />
       <Paper
-        elevation={3}
+        elevation={0}
         sx={{
           backgroundImage: `url(${dash.src})`,
-          backgroundSize: 'cover',
+          backgroundSize: '100% 100%',
           backgroundPosition: 'center',
-          borderRadius: { xs: 0, md: 2 }, // No border radius on mobile
-          overflow: 'visible', // Changed from 'hidden' to 'visible'
-          p: { xs: 0, md: 3 }, // No padding on mobile
-          mb: { xs: 0, md: 4 }, // No margin on mobile
-          minHeight: { xs: '100vh', md: '100vh' }, // Full height on mobile
+          borderRadius: 0,
+          overflow: 'visible',
+          p: { xs: 0, md: 3 },
+          pt: { xs: 2, md: 4 },
+          mb: 0,
+          minHeight: '143vh',
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           mx: 'auto',
           alignItems: 'center',
           position: 'relative',
           zIndex: 1,
         }}
       >
+        {/* User Live Stats Section */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          mb: { xs: 2.5, md: 3 },
+          textAlign: 'center',
+          color: 'white',
+          zIndex: 10,
+          width: '100%',
+          maxWidth: '650px',
+          height: 'auto',
+          opacity: 1,
+        }}>
+          <Box component="div" sx={{ 
+            fontFamily: '"Oswald", sans-serif', 
+            fontSize: '28px', 
+            fontWeight: 300, 
+            lineHeight: '100%', 
+            letterSpacing: '0%',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            mb: { xs: 0.5, md: 0.3 },
+          }}>
+            your LIVE stats
+          </Box>
+          
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: { xs: 0.2, md: 0.4 },
+            alignItems: 'center'
+          }}>
+            {/* Row 1 */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexWrap: 'nowrap', 
+              justifyContent: 'center', 
+              columnGap: { xs: 2, md: 3 },
+              rowGap: 0,
+              fontFamily: '"Oswald", sans-serif',
+              fontSize: '28px',
+              fontWeight: 300,
+              textTransform: 'uppercase',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}>
+              <Box component="span" sx={{ color: '#ffff99' }}>100 MATCH PLAYED</Box>
+              <Box component="span" sx={{ color: '#ff9933' }}>50 MOTM VOTES</Box>
+              <Box component="span" sx={{ color: '#ffff99' }}>30 GOALS</Box>
+            </Box>
+            
+            {/* Row 2 */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexWrap: 'nowrap', 
+              justifyContent: 'center', 
+              columnGap: { xs: 2, md: 3 },
+              rowGap: 0,
+              fontFamily: '"Oswald", sans-serif',
+              fontSize: '28px',
+              fontWeight: 300,
+              textTransform: 'uppercase',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}>
+              <Box component="span" sx={{ color: '#ff9933' }}>20 ASSISTS</Box>
+              <Box component="span" sx={{ color: '#ffff99' }}>2 CLEAN SHEETS</Box>
+              <Box component="span" sx={{ color: '#ff9933' }}>5 DEFENSIVE IMPACT</Box>
+            </Box>
+          </Box>
+        </Box>
+
         <Box sx={{
           display: 'flex',
-          alignItems: { xs: 'stretch', md: 'center' },
-          gap: { xs: 2, md: 4 },
-          flexDirection: { xs: 'column', md: 'row' }
+          alignItems: { xs: 'stretch', md: 'stretch' },
+          // gap: { xs: 2, md: 1 },
+          flexDirection: { xs: 'column', md: 'row' },
+          // backgroundColor: 'black',
+          width: { xs: '100%', md: '620px' },
+          height: { xs: 'auto', md: '416px' },
+          overflow: 'hidden',
+          position: 'relative',
         }}>
-          {/* Player Card - Top on mobile, left on desktop */}
+          {/* Left Div - Player Card */}
           <Box sx={{
             flex: { xs: 'none', md: '0 0 300px' },
-            width: { xs: '100%', md: '90%' },
+            width: { xs: '100%', md: '300px' },
             display: 'flex',
             justifyContent: { xs: 'center', md: 'center' },
-            mb: { xs: 2, md: 0 }, // Add margin bottom on mobile
-            mt: { xs: 1 }
+            mb: { xs: 2, md: 0 },
+             mt: { xs: 1 },
+            alignSelf: { md: 'stretch' },
+            // backgroundColor: 'red',
           }}>
             <PlayerCard 
               name={user?.firstName || ''}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
+              height="100%"
               stats={{
                 DRI: user?.skills?.dribbling?.toString() || '',
                 SHO: user?.skills?.shooting?.toString() || '',
@@ -1508,18 +1608,20 @@ export default function PlayerDashboard() {
             />
           </Box>
 
-          {/* WRAPPER: White box + World Ranking button stacked */}
+          {/* Right Div - White Card */}
           <Box
             sx={{
-              flex: 1,
-              maxWidth: { xs: '100%', md: '65%', lg: '65%' },
-              width: { xs: '96%', sm: '100%', md: '100%', lg: '33%' },
+              flex: { xs: 1, md: '0 0 310px' },
+              maxWidth: { xs: '100%', md: '310px' },
+              width: { xs: '96%', sm: '100%', md: '310px' },
               display: 'flex',
               flexDirection: 'column',
-              gap: 1.2,
-              mt: { xs: 0, md: 7 },
-              ml: { md: -2 },
+              gap: 1,
+              mt: { xs: 0, md: 0 },
+              ml: { md: 0 },
+          
               position: 'relative',
+              // backgroundColor: 'green',
               zIndex: 2,
             }}
           >
@@ -1527,30 +1629,35 @@ export default function PlayerDashboard() {
             <Box
               sx={{
                 backgroundColor: '#fff',
-                p: { xs: 3, sm: 2, md: 1.5 },
-                borderRadius: { xs: '20px', md: 2 },
+                p: { xs: 3, sm: 2, md: 1.6 },
+                mt: { xs: 0, md: 3 },
+                borderRadius: { xs: '20px', md: '12px' },
                 width: '100%',
                 minHeight: 'auto'
               }}
             >
               <Box sx={{ display: 'inline-flex', gap: 1 }}>
                 <Typography variant="h5" gutterBottom sx={{
-                  fontWeight: 'bold',
+                  fontWeight: '550',
                   fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' },
-                  color: 'black'
+                  color: 'black',
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}>Welcome,</Typography>
-                <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 600 }}>
+                <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 550, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
                   {user?.firstName}
                 </Typography>
               </Box>
 
-              <Divider sx={{ mb: 1.5, width: '100%', height: 2, bgcolor: 'green' }} />
+              <Divider sx={{ mb: 1, width: '100%', height: 2, bgcolor: '#00A77F' }} />
 
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ textAlign: 'start' }}>
                 <Typography variant="body2" sx={{
                   color: 'black',
-                  mb: 1.5,
-                  fontSize: { xs: '0.9rem', sm: '1rem' }
+                  mb: 0.5,
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  fontWeight: 400,
+                  whiteSpace: 'nowrap',
                 }}>
                   Your Current League In Which You Stand
                 </Typography>
@@ -1562,6 +1669,38 @@ export default function PlayerDashboard() {
                   currentUserId={user?.id}
                 />
 
+                {/* Add New Season Button */}
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<span style={{ fontSize: '22px'}}>+</span>}
+                  sx={{
+                    bgcolor: '#7f7f7f',
+                    color: 'white',
+                    fontWeight: 600,
+                    mb: 1,
+                    mt: 1,
+                    
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#686868' },
+                    width: '100%',
+                    maxWidth: 290,
+                    mx: 'auto',
+                    display: { xs: 'none', sm: 'none', md: 'flex' },
+                    justifyContent: 'space-between',
+                    px: 3,
+                    pr: 10,
+                    fontSize: '19px',
+                    minHeight: 48,
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    lineHeight: '100%',
+                    letterSpacing: '0%',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  Add New Season
+                </Button>
+
                 {/* Add New League Button */}
                 <Button
                   variant="contained"
@@ -1570,27 +1709,39 @@ export default function PlayerDashboard() {
                   sx={{
                     bgcolor: '#0388E3',
                     color: 'white',
-                    fontWeight: 'bold',
-                    mb: 2,
-                    mt: 3,
+                    fontWeight: 600,
+                    mb: 1,
+                    mt: 0,
                     borderRadius: 2,
                     '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)' },
-                    width: '320px',
+                    width: '100%',
+                    maxWidth: 290,
                     mx: 'auto',
-                    display: { xs: 'none', sm: 'none', md: 'block' },
-                    fontSize: '20px',
+                    display: { xs: 'none', sm: 'none', md: 'flex' },
+                    justifyContent: 'space-center',
+                    px: 3,
+                    fontSize: '19px',
+                    minHeight: 48,
+                    position: 'relative',
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    lineHeight: '100%',
+                    letterSpacing: '0%',
+                    textTransform: 'capitalize',
                   }}
                 >
-                  + Create New League
+                  <span style={{ position: 'absolute', left: '22px', fontSize: '24px' }}>+</span>
+                  Create New League
                 </Button>
 
                 {/* Invite Code Join Section */}
                 <Box sx={{
                   mx: 'auto',
+                  display: { xs: 'none', sm: 'none', md: 'flex' },
                   alignItems: 'center',
                   justifyContent: 'center',
-                  display: { xs: 'none', sm: 'none', md: 'block' },
-                  maxWidth: '320px'
+                  width: '100%',
+                  maxWidth: 290,
+                  overflow: 'hidden'
                 }}>
                   <TextField
                     placeholder="Enter invite code"
@@ -1600,19 +1751,38 @@ export default function PlayerDashboard() {
                     variant="outlined"
                     sx={{
                       backgroundColor: '#DEDCDC',
-                      borderRadius: 3,
+                      borderRadius: '12px 0 0 12px',
                       flex: 1,
-                      maxWidth: 190,
+                      minWidth: 0,
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': { border: 'none' },
                         '&:hover fieldset': { border: 'none' },
                         '&.Mui-focused fieldset': { border: 'none' }
+                      },
+                      '& .MuiInputBase-input': {
+                        height: '42px',
+                        padding: '0 12px',
+                        fontSize: '14px'
                       }
                     }}
                   />
                   <Button
                     variant="contained"
-                    sx={{ background: '#00A77F', borderRadius: 2, '&:hover': { background: '#00A77F' }, ml: -3, py: 1 }}
+                    sx={{ 
+                      background: '#00A77F', 
+                      borderRadius: '0 12px 12px 0', 
+                      '&:hover': { background: '#00A77F' }, 
+                      py: 0, 
+                      minWidth: 120, 
+                      height: 42, 
+                      fontSize: '14px', 
+                      flexShrink: 0,
+                      fontFamily: '"Woodford Bourne Pro", sans-serif',
+                      fontWeight: 600,
+                      lineHeight: '100%',
+                      letterSpacing: '0%',
+                      textTransform: 'capitalize',
+                    }}
                     onClick={handleJoinLeague}
                     startIcon={
                       <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
@@ -1633,19 +1803,25 @@ export default function PlayerDashboard() {
               fullWidth
               sx={{
                 position: 'relative',
-                textTransform: 'none',
+                textTransform: 'capitalize',
                 background: 'linear-gradient(135deg,#004e5f,#007a95)',
                 color: '#fff',
-                py: 1.6,
-                borderRadius: 2,
-                fontWeight: 700,
-                letterSpacing: 0.4,
+                py: 0,
+                borderRadius: '12px',
+                fontWeight: 600,
+                letterSpacing: '0%',
+                lineHeight: '100%',
+                fontSize: '19px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.2,
+                gap: 1,
                 justifyContent: 'center',
                 boxShadow: '0 8px 24px -6px rgba(0,78,95,0.55)',
                 overflow: 'hidden',
+                maxWidth: 310,
+                height: 45,
+                mx: 'auto',
+                fontFamily: '"Woodford Bourne Pro", sans-serif',
                 '&:before': {
                   content: '""',
                   position: 'absolute',
@@ -1680,10 +1856,7 @@ export default function PlayerDashboard() {
                 }
               }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10l1 5-6 2-6-2 1-5Z" /><path d="M4 9c.6 2.1 2.5 3 4 3" /><path d="M20 9c-.6 2.1-2.5 3-4 3" />
-              </svg>
+              <img src={wordImg.src} alt="World Ranking" width="18" height="18" />
               World Ranking
             </Button>
           </Box>
@@ -1925,17 +2098,17 @@ export default function PlayerDashboard() {
 
       </Paper> */}
       <Paper
-        elevation={3}
+        elevation={0}
         sx={{
           backgroundImage: `url(${Dashbg.src})`,
-          backgroundSize: 'cover',
+          backgroundSize: '100% 100%',
           backgroundPosition: 'center',
-          borderRadius: 2,
+          borderRadius: 0,
           overflow: 'hidden',
-          p: { xs: 0.5, sm: 3 },
-          width: '98%',
-          boxShadow: { xs: 0, sm: 3 },
-          mt: { xs: 2, md: 0 },
+          p: 0,
+          width: '100%',
+          boxShadow: 'none',
+          mt: 0,
           display: {
             xs: 'flex',
             sm: 'flex',
@@ -1976,10 +2149,11 @@ export default function PlayerDashboard() {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
+            gap: 0,
             mb: 3,
             width: { xs: '100%', sm: '380px' },
             justifyContent: 'center',
+            overflow: 'hidden'
           }}
         >
           <TextField
@@ -1990,9 +2164,9 @@ export default function PlayerDashboard() {
             variant="outlined"
             sx={{
               backgroundColor: '#fff',
-              borderRadius: 3,
+              borderRadius: '12px 0 0 12px',
               flex: 1,
-              maxWidth: 190,
+              minWidth: 0,
               '& .MuiOutlinedInput-root': {
                 '& fieldset': { border: 'none' },
                 '&:hover fieldset': { border: 'none' },
@@ -2009,13 +2183,18 @@ export default function PlayerDashboard() {
             variant="contained"
             sx={{
               background: '#00a77f',
-              borderRadius: 2,
+              borderRadius: '0 12px 12px 0',
               '&:hover': { background: '#00a77f' },
-              ml: -5,
               py: 1,
-              height: '40px', // Fixed height
-              minWidth: '120px', // Minimum width
-              fontSize: '0.875rem'
+              height: '40px',
+              minWidth: '120px',
+              fontSize: '0.875rem',
+              flexShrink: 0,
+              fontFamily: '"Woodford Bourne Pro", sans-serif',
+              fontWeight: 600,
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              textTransform: 'capitalize',
             }}
             onClick={handleJoinLeague}
             startIcon={

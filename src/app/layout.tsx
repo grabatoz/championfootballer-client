@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Inter, Geist, Geist_Mono } from "next/font/google";
+import { Anton, Inter, Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
@@ -13,6 +13,12 @@ import ProductionOptimizer from '@/Components/ProductionOptimizer';
 import FetchAuthMonitor from '@/Components/FetchAuthMonitor';
 import RealtimeClient from '@/Components/RealtimeClient';
 import RealtimeLatency from '@/Components/RealtimeLatency';
+
+const bebasNeue = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-bebas-neue'
+});
 
 const anton = Anton({ 
   weight: '400', // Anton font में केवल एक ही weight (400/regular) होता है
@@ -72,7 +78,7 @@ export default function RootLayout({
         )}
       </head>
       <body 
-        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} ${bebasNeue.variable} antialiased`}
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}
