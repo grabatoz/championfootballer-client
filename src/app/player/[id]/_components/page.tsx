@@ -272,19 +272,20 @@ export default function PlayerStatsPage() {
     const [statsModalTab, setStatsModalTab] = useState<'goals' | 'assists' | 'motm' | 'defensive' | 'totalXP'>('goals');
 
     // Compute effective filters for each card based on active tab
-    // Each card only uses 'all' when its specific tab is active (NOT on career tab)
+    // When a card's own tab is active → show ALL data (no filters)
+    // When other tabs are active → respect user-selected filters
     
-    // Trophies card filters - only show all when trophies tab is active
+    // Trophies card filters
     const effectiveTrophiesLeagueId = (activeTab === 'trophies') ? 'all' : (leagueId || 'all');
     const effectiveTrophiesYear = (activeTab === 'trophies') ? 'all' : (year || 'all');
     const effectiveTrophiesSeasonId = (activeTab === 'trophies') ? 'all' : (selectedSeason || 'all');
     
-    // Rewards card filters - only show all when rewards tab is active
+    // Rewards card filters
     const effectiveRewardsLeagueId = (activeTab === 'rewards') ? 'all' : (leagueId || 'all');
     const effectiveRewardsYear = (activeTab === 'rewards') ? 'all' : (year || 'all');
     const effectiveRewardsSeasonId = (activeTab === 'rewards') ? 'all' : (selectedSeason || 'all');
     
-    // History card filters - only show all when history tab is active
+    // History card filters
     const effectiveHistoryLeagueId = (activeTab === 'history') ? 'all' : (leagueId || 'all');
     const effectiveHistoryYear = (activeTab === 'history') ? 'all' : (year || 'all');
     const effectiveHistorySeasonId = (activeTab === 'history') ? 'all' : (selectedSeason || 'all');
@@ -770,7 +771,9 @@ export default function PlayerStatsPage() {
         const wins = currentLeagueMatches.filter(match => {
             const m = match as any;
             const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
-            return playerTeam === 'home' ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
+            const homeGoals = Number(m.homeTeamGoals || 0);
+            const awayGoals = Number(m.awayTeamGoals || 0);
+            return playerTeam === 'home' ? (homeGoals > awayGoals) : (awayGoals > homeGoals);
         }).length;
         return Math.round((wins / currentLeagueMatches.length) * 100);
     }, [currentLeagueMatches, playerId]);
@@ -781,7 +784,9 @@ export default function PlayerStatsPage() {
         const wins = allMatches.filter(match => {
             const m = match as any;
             const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
-            return playerTeam === 'home' ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
+            const homeGoals = Number(m.homeTeamGoals || 0);
+            const awayGoals = Number(m.awayTeamGoals || 0);
+            return playerTeam === 'home' ? (homeGoals > awayGoals) : (awayGoals > homeGoals);
         }).length;
         return Math.round((wins / allMatches.length) * 100);
     }, [allMatches, playerId]);
@@ -1278,10 +1283,11 @@ export default function PlayerStatsPage() {
         if (effectiveRewardsSeasonId && effectiveRewardsSeasonId !== 'all') params.append('seasonId', effectiveRewardsSeasonId);
         const queryString = params.toString() ? `?${params.toString()}` : '';
         
-        // Try multiple endpoints
+        // Try player-specific endpoint first (supports leagueId/year/seasonId filters)
+        // Fall back to /users/me/achievements only if that fails
         const endpoints = [
-            `${process.env.NEXT_PUBLIC_API_URL}/users/${playerId}/achievements${queryString}`,
             `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/achievements${queryString}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements${queryString}`,
         ];
         
         console.log('📋 [BADGES] Will try endpoints:', endpoints);
@@ -1422,6 +1428,7 @@ export default function PlayerStatsPage() {
             'King Playmaker': 'King Playmaker',
             'Legendary Shield': 'Legendary Shield',
             'The Dark Horse': 'The Dark Horse',
+            'Dark Horse': 'The Dark Horse',
             'Star Keeper': 'Star Keeper',
         };
         
@@ -1954,18 +1961,22 @@ export default function PlayerStatsPage() {
                                 <Typography sx={{ color: '#c8c8c8', fontSize: 19, fontWeight: 500 }}>
                                     Win Ratio
                                 </Typography>
+                                <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>
+                                    {/* {activeTab === 'career' ? careerWinRatio : currentWinRatio}% */}
+                                </Typography>
                                 <Box sx={{ 
                                     width: '100%',
                                     height: 8, 
                                     bgcolor: '#444', 
                                     borderRadius: 1,
                                     overflow: 'hidden',
-                                    mt: 1
+                                    mt: 0.5
                                 }}>
                                     <Box sx={{ 
                                         height: '100%', 
                                         bgcolor: TEAL_PRIMARY, 
-                                        width: `${activeTab === 'career' ? careerWinRatio : currentWinRatio}%` 
+                                        width: `${activeTab === 'career' ? careerWinRatio : currentWinRatio}%`,
+                                        transition: 'width 0.4s ease'
                                     }} />
                                 </Box>
                             </Box>
