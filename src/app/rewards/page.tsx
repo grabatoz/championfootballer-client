@@ -24,6 +24,10 @@ import CaptainsTriumphsBadge from '@/Components/images/brown.png';
 import TripleImpactBadge from '@/Components/images/brown.png';
 import ChartTopperBadge from '@/Components/images/brown.png';
 
+// Decorative images
+import LeftStar from '@/Components/images/leftstart.png';
+import RightStar from '@/Components/images/rightstar.png';
+
 // --- Interfaces ---
 interface User {
   id: string;
@@ -420,46 +424,92 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             height: CARD_DIMENSIONS.image,
-            width: CARD_DIMENSIONS.image,
+            width: '100%',
+            gap: 0,
+            mt: -1,
           }}
         >
-          <Image
-            src={image}
-            alt={title}
-            height={CARD_DIMENSIONS.image.md}
-            width={CARD_DIMENSIONS.image.md}
-            style={{
-              height: '100%',
-              width: '100%',
-              objectFit: 'contain',
-              objectPosition: 'center center',
-              filter: unlocked ? 'none' : 'grayscale(1)',
-              marginTop: 17
-            }}
-          />
-          {/* XP value on medal */}
+          {/* Left Star - Only show when unlocked */}
+          {unlocked && (
+            <Image
+              src={LeftStar}
+              alt="Left Star"
+              width={25}
+              height={25}
+              style={{
+                objectFit: 'contain',
+                filter: 'none',
+                marginTop: '23px',
+                marginRight: '-10px',
+              }}
+            />
+          )}
+          
+          {/* Main Badge */}
           <Box
             sx={{
-              position: 'absolute',
-              bottom: 8,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'transparent',
-              color: unlocked ? '#B41E1E' : '#747474',
-              borderRadius: '50%',
-              width: 30,
-              height: 30,
+              position: 'relative',
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.8rem',
-              fontWeight: 700,
+              alignItems: 'center',
+              height: CARD_DIMENSIONS.image,
+              width: CARD_DIMENSIONS.image,
             }}
           >
-            {xp}
+            <Image
+              src={image}
+              alt={title}
+              height={CARD_DIMENSIONS.image.md}
+              width={CARD_DIMENSIONS.image.md}
+              style={{
+                height: '100%',
+                width: '100%',
+                objectFit: 'contain',
+                objectPosition: 'center center',
+                filter: unlocked ? 'none' : 'grayscale(1)',
+                marginTop: 17
+              }}
+            />
+            {/* XP value on medal */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'transparent',
+                color: unlocked ? '#B41E1E' : '#747474',
+                borderRadius: '50%',
+                width: 30,
+                height: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+              }}
+            >
+              {xp}
+            </Box>
           </Box>
+          
+          {/* Right Star - Only show when unlocked */}
+          {unlocked && (
+            <Image
+              src={RightStar}
+              alt="Right Star"
+              width={25}
+              height={25}
+              style={{
+                objectFit: 'contain',
+                filter: 'none',
+                marginTop: '23px',
+                marginLeft: '-10px',
+              }}
+            />
+          )}
         </Box>
       </Box>
 
