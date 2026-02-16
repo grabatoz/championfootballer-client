@@ -12,7 +12,13 @@ import {
     CircularProgress,
     TextField,
     Grid,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
@@ -186,6 +192,45 @@ function calculateXP(stats: StatTotals): number {
     );
 }
 
+// XP Milestone calculation
+type XPMilestone = {
+    title: string;
+    minXP: number;
+    maxXP: number;
+    color: string;
+    bgColor: string;
+};
+
+const XP_MILESTONES: XPMilestone[] = [
+    { title: 'Rookie', minXP: 0, maxXP: 500, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Rising Star', minXP: 500, maxXP: 2500, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Baller', minXP: 2500, maxXP: 5000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Specialist', minXP: 5000, maxXP: 8000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Elite', minXP: 8000, maxXP: 11000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Champion Footballer', minXP: 11000, maxXP: 15000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'GOAT', minXP: 15000, maxXP: Infinity, color: '#000000', bgColor: '#FFFFFF' },
+];
+
+function getXPMilestone(xp: number): { current: XPMilestone; next: XPMilestone | null; progress: number } {
+    let currentMilestone = XP_MILESTONES[0];
+    let nextMilestone: XPMilestone | null = XP_MILESTONES[1];
+    
+    for (let i = 0; i < XP_MILESTONES.length; i++) {
+        if (xp >= XP_MILESTONES[i].minXP && xp < XP_MILESTONES[i].maxXP) {
+            currentMilestone = XP_MILESTONES[i];
+            nextMilestone = i < XP_MILESTONES.length - 1 ? XP_MILESTONES[i + 1] : null;
+            break;
+        }
+    }
+    
+    // Calculate progress percentage to next milestone
+    const progressInCurrentLevel = xp - currentMilestone.minXP;
+    const totalLevelRange = currentMilestone.maxXP - currentMilestone.minXP;
+    const progress = Math.min(100, Math.round((progressInCurrentLevel / totalLevelRange) * 100));
+    
+    return { current: currentMilestone, next: nextMilestone, progress };
+}
+
 export default function PlayerStatsPage() {
     const params = useParams();
     const router = useRouter();
@@ -213,7 +258,7 @@ export default function PlayerStatsPage() {
     const [search, setSearch] = useState('');
     const [, setLeagues] = useState<League[]>([]);
     const [selectedSeason, setSelectedSeason] = useState<string>('all');
-    const [seasons, setSeasons] = useState<Array<{id: string, name: string}>>([]);
+    const [seasons, setSeasons] = useState<Array<{id: string, name: string, seasonNumber?: number, startDate?: string, endDate?: string, isMember?: boolean}>>([]);
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
     const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
@@ -221,6 +266,10 @@ export default function PlayerStatsPage() {
     
     // Tab navigation state
     const [activeTab, setActiveTab] = useState('current');
+    
+    // Stats Over Season Modal state
+    const [statsModalOpen, setStatsModalOpen] = useState(false);
+    const [statsModalTab, setStatsModalTab] = useState<'goals' | 'assists' | 'motm' | 'defensive' | 'totalXP'>('goals');
 
     // Compute effective filters for each card based on active tab
     // Each card only uses 'all' when its specific tab is active (NOT on career tab)
@@ -265,7 +314,7 @@ export default function PlayerStatsPage() {
         );
     }, [data, year]);
 
-    // Populate seasons when league changes
+    // Populate seasons when league changes - fetch from dedicated seasons API
     useEffect(() => {
         if (!leagueId || leagueId === 'all' || !token) {
             setSeasons([]);
@@ -273,38 +322,37 @@ export default function PlayerStatsPage() {
             return;
         }
         
-        // First check if seasons are already in data
-        const selectedLeagueData = leaguesForYear.find(l => l.id === leagueId);
-        if (selectedLeagueData && (selectedLeagueData as any).seasons && (selectedLeagueData as any).seasons.length > 0) {
-            setSeasons((selectedLeagueData as any).seasons);
-            setSelectedSeason((selectedLeagueData as any).seasons[0].id);
-            return;
-        }
-        
-        // If not in data, fetch from backend
         const fetchSeasons = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+                // Use the dedicated seasons endpoint which returns seasonNumber, startDate, endDate
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`, {
                     credentials: 'include',
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
                 if (response.ok) {
-                    const leagueData = await response.json();
-                    const seasonsData = leagueData?.league?.seasons || leagueData?.seasons || [];
+                    const result = await response.json();
+                    // API returns { success: true, seasons: [...] }
+                    const seasonsData = result?.seasons || result?.data || [];
                     
                     if (Array.isArray(seasonsData) && seasonsData.length > 0) {
                         const formattedSeasons = seasonsData.map((s: any) => ({
                             id: s.id || s._id,
-                            name: s.name || `Season ${s.seasonNumber || ''}`
+                            name: s.name || `Season ${s.seasonNumber !== undefined ? s.seasonNumber : ''}`,
+                            seasonNumber: s.seasonNumber !== undefined ? s.seasonNumber : null,
+                            startDate: s.startDate || null,
+                            endDate: s.endDate || null,
+                            isMember: s.isMember !== undefined ? s.isMember : true
                         }));
                         setSeasons(formattedSeasons);
-                        setSelectedSeason(formattedSeasons[0].id);
+                        console.log('📋 Fetched seasons from /leagues/:id/seasons API:', formattedSeasons);
+                        setSelectedSeason('all');
                     } else {
                         setSeasons([]);
                         setSelectedSeason('all');
                     }
                 } else {
+                    console.warn('Seasons API returned non-OK status:', response.status);
                     setSeasons([]);
                     setSelectedSeason('all');
                 }
@@ -316,7 +364,7 @@ export default function PlayerStatsPage() {
         };
         
         fetchSeasons();
-    }, [leagueId, leaguesForYear, token]);
+    }, [leagueId, token]);
 
     // --- Teammate (co-players) search state ---
     type LeaguePlayer = {
@@ -409,6 +457,8 @@ export default function PlayerStatsPage() {
                         });
 
                         if (res.ok) {
+                            const contentType = res.headers.get('content-type');
+                            if (!contentType || !contentType.includes('application/json')) continue;
                             const json: TeammateAPIResponse = await res.json();
                             let leagueList: RawPlayer[] = [];
                             
@@ -444,13 +494,16 @@ export default function PlayerStatsPage() {
                 });
 
                 if (res.ok) {
-                    const json: TeammateAPIResponse = await res.json();
+                    const contentType = res.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const json: TeammateAPIResponse = await res.json();
                     if (Array.isArray(json)) {
                         list = json;
                     } else if (json?.data && Array.isArray(json.data)) {
                         list = json.data;
                     } else if (json?.players && Array.isArray(json.players)) {
                         list = json.players;
+                    }
                     }
                 }
 
@@ -462,9 +515,12 @@ export default function PlayerStatsPage() {
                         signal: controller.signal
                     });
                     if (fbRes.ok) {
-                        const fb = await fbRes.json();
-                        const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
-                        list = raw as RawPlayer[];
+                        const contentType = fbRes.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const fb = await fbRes.json();
+                            const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
+                            list = raw as RawPlayer[];
+                        }
                     }
                 }
             }
@@ -535,7 +591,12 @@ export default function PlayerStatsPage() {
             credentials: 'include',
             headers: { Authorization: `Bearer ${token}` },
         })
-            .then(res => res.json())
+            .then(async res => {
+                if (!res.ok) return null;
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) return null;
+                return res.json();
+            })
             .then(d => {
                 if (d?.success && d?.user) {
                     const userLeagues = [
@@ -602,9 +663,30 @@ export default function PlayerStatsPage() {
             const l = leaguesList.find((x: LeagueWithMatchesTyped) => x.id === leagueId);
             let matches = hasMatches(l) ? l.matches ?? [] : [];
             
-            // Apply season filter if selected
+            // Apply season filter if selected - use date range from seasons API
             if (selectedSeason && selectedSeason !== 'all') {
-                matches = matches.filter(m => (m as any).seasonId === selectedSeason);
+                const selectedSeasonData = seasons.find(s => s.id === selectedSeason);
+                if (selectedSeasonData && selectedSeasonData.startDate) {
+                    const seasonStart = dayjs(selectedSeasonData.startDate);
+                    const seasonEnd = selectedSeasonData.endDate ? dayjs(selectedSeasonData.endDate) : null;
+                    
+                    matches = matches.filter(m => {
+                        // First check if match has seasonId directly
+                        if ((m as any).seasonId) {
+                            return (m as any).seasonId === selectedSeason;
+                        }
+                        // Otherwise filter by date range
+                        const matchDate = dayjs(m.date);
+                        if (seasonEnd) {
+                            return matchDate.valueOf() >= seasonStart.valueOf() && matchDate.valueOf() <= seasonEnd.valueOf();
+                        }
+                        // Active season (no end date) - match is after start
+                        return matchDate.valueOf() >= seasonStart.valueOf();
+                    });
+                } else {
+                    // Fallback to direct seasonId check
+                    matches = matches.filter(m => (m as any).seasonId === selectedSeason);
+                }
                 console.log('⚽ [Stats] Filtered by season:', selectedSeason, '| Matches:', matches.length);
             }
             
@@ -613,7 +695,7 @@ export default function PlayerStatsPage() {
 
         const first = leaguesList[0];
         return hasMatches(first) ? first.matches ?? [] : [];
-    }, [data, leagueId, selectedSeason]);
+    }, [data, leagueId, selectedSeason, seasons]);
 
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
@@ -740,6 +822,278 @@ export default function PlayerStatsPage() {
             cancelled = true;
         };
     }, [playerId, leagueId, year, fallbackXP]);
+
+    // Calculate current XP milestone
+    const xpMilestone = useMemo(() => getXPMilestone(xp), [xp]);
+
+    // Compute season-wise stats for modal
+    type SeasonStats = {
+        seasonId: string;
+        seasonName: string;
+        seasonNumber: number;
+        goals: number;
+        assists: number;
+        motmVotes: number;
+        defensiveImpact: number;
+        cleanSheets: number;
+        totalXP: number;
+        matches: number;
+        isFinished: boolean;
+        endDateFormatted: string;
+    };
+
+    const seasonWiseStats = useMemo<SeasonStats[]>(() => {
+        const leaguesList: LeagueWithMatchesTyped[] = (data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [];
+        if (!leaguesList.length || !leagueId || leagueId === 'all') return [];
+
+        const selectedLeague = leaguesList.find(l => l.id === leagueId);
+        // Allow league even with no matches - user may be a member in seasons with 0 matches
+        if (!selectedLeague) return [];
+        // If no matches AND no seasons fetched, nothing to show
+        if (!hasMatches(selectedLeague) && seasons.length === 0) return [];
+
+        console.log('🔍 Selected League Data:', {
+            leagueId,
+            leagueName: selectedLeague.name,
+            totalMatches: (selectedLeague.matches || []).length,
+            seasonsFromAPI: seasons,
+        });
+
+        const allLeagueMatches = selectedLeague.matches || [];
+        
+        // Filter matches where this player was added/participated
+        const playerMatches = allLeagueMatches.filter(match => {
+            const m = match as any;
+            
+            // Check if player is in either team's roster
+            const inHomeTeam = m.homeTeam?.players?.some((p: any) => String(p.id || p._id) === String(playerId));
+            const inAwayTeam = m.awayTeam?.players?.some((p: any) => String(p.id || p._id) === String(playerId));
+            
+            // Player participated if they are in the team roster
+            if (inHomeTeam || inAwayTeam) {
+                return true;
+            }
+            
+            // Also include if they have any stats recorded
+            const stats = match.playerStats;
+            if (stats && (
+                (stats.goals && stats.goals > 0) ||
+                (stats.assists && stats.assists > 0) ||
+                (stats.cleanSheets && stats.cleanSheets > 0) ||
+                (stats.motmVotes && stats.motmVotes > 0) ||
+                (stats.defence && stats.defence > 0) ||
+                (stats.impact && stats.impact > 0) ||
+                (stats.freeKicks && stats.freeKicks > 0) ||
+                (stats.penalties && stats.penalties > 0)
+            )) {
+                return true;
+            }
+            
+            // Also check if player received any votes or captain picks
+            if (m.votes && m.votes.some((v: any) => String(v.votedForId) === String(playerId))) {
+                return true;
+            }
+            
+            if (m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId) {
+                return true;
+            }
+            
+            return false;
+        });
+
+        console.log('🎯 Player participated in matches:', {
+            totalLeagueMatches: allLeagueMatches.length,
+            playerMatches: playerMatches.length,
+            playerId,
+            selectedSeason,
+            isAllSeasons: selectedSeason === 'all',
+        });
+
+        // Use seasons from state (fetched from /leagues/:id/seasons API)
+        // These have proper seasonNumber, startDate, endDate from database
+        const apiSeasons = seasons;
+        
+        // Create season ID to season number mapping
+        const seasonIdToNumberMap: Record<string, number> = {};
+        apiSeasons.forEach((season) => {
+            if (season.id && season.seasonNumber !== undefined && season.seasonNumber !== null) {
+                seasonIdToNumberMap[season.id] = season.seasonNumber;
+            }
+        });
+        
+        console.log('📋 Seasons from API (with dates):', apiSeasons);
+        console.log('🗺️ Season ID → Number mapping:', seasonIdToNumberMap);
+
+        // Group player's matches by season using date ranges
+        const seasonMap = new Map<string, LeagueMatch[]>();
+        
+        if (apiSeasons.length > 0) {
+            // Sort seasons by startDate ascending for proper date matching
+            const sortedSeasons = [...apiSeasons].sort((a, b) => {
+                const dateA = a.startDate ? dayjs(a.startDate).valueOf() : 0;
+                const dateB = b.startDate ? dayjs(b.startDate).valueOf() : 0;
+                return dateA - dateB;
+            });
+            
+            playerMatches.forEach(match => {
+                const matchDate = dayjs(match.date);
+                let matchSeasonId: string | null = (match as any).seasonId || null;
+                
+                // If match doesn't have seasonId, find season by date range
+                if (!matchSeasonId) {
+                    for (const season of sortedSeasons) {
+                        const seasonStart = season.startDate ? dayjs(season.startDate) : null;
+                        const seasonEnd = season.endDate ? dayjs(season.endDate) : null;
+                        
+                        if (seasonStart && seasonEnd) {
+                            if (matchDate.valueOf() >= seasonStart.valueOf() && matchDate.valueOf() <= seasonEnd.valueOf()) {
+                                matchSeasonId = season.id;
+                                break;
+                            }
+                        } else if (seasonStart && !seasonEnd) {
+                            // Active season (no end date) - match is after start
+                            if (matchDate.valueOf() >= seasonStart.valueOf()) {
+                                matchSeasonId = season.id;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If still no match, assign to nearest season before match date
+                    if (!matchSeasonId) {
+                        const reverseSorted = [...sortedSeasons].reverse();
+                        for (const season of reverseSorted) {
+                            const seasonStart = season.startDate ? dayjs(season.startDate) : null;
+                            if (seasonStart && matchDate.valueOf() >= seasonStart.valueOf()) {
+                                matchSeasonId = season.id;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Last resort - assign to first season
+                    if (!matchSeasonId && sortedSeasons.length > 0) {
+                        matchSeasonId = sortedSeasons[0].id;
+                    }
+                }
+                
+                const finalSeasonId = matchSeasonId || 'unknown';
+                
+                // If a specific season is selected, only include matches from that season
+                if (selectedSeason && selectedSeason !== 'all' && finalSeasonId !== selectedSeason) {
+                    return;
+                }
+                
+                if (!seasonMap.has(finalSeasonId)) {
+                    seasonMap.set(finalSeasonId, []);
+                }
+                seasonMap.get(finalSeasonId)!.push(match);
+            });
+        } else {
+            // No seasons available - put all matches under a single group
+            console.log('⚠️ No seasons found, showing all matches as one group');
+            if (playerMatches.length > 0) {
+                seasonMap.set('all-matches', playerMatches);
+                seasonIdToNumberMap['all-matches'] = 1;
+            }
+        }
+
+        // Ensure ALL seasons where user is a member appear, even with 0 matches
+        if (apiSeasons.length > 0) {
+            apiSeasons.forEach(season => {
+                // Include season if user is a member (or isMember not specified = include all)
+                const isMember = season.isMember !== false;
+                if (isMember && !seasonMap.has(season.id)) {
+                    // If filtering by specific season, only add that one
+                    if (selectedSeason && selectedSeason !== 'all' && season.id !== selectedSeason) {
+                        return;
+                    }
+                    seasonMap.set(season.id, []);
+                    console.log(`📌 Added member season with 0 matches: Season ${season.seasonNumber} (${season.name})`);
+                }
+            });
+        }
+
+        console.log('📊 Seasons to display in popup:', {
+            selectedSeasonFilter: selectedSeason,
+            seasonsFound: Array.from(seasonMap.keys()),
+            seasonCount: seasonMap.size,
+            matchesPerSeason: Array.from(seasonMap.entries()).map(([id, matches]) => ({ 
+                seasonId: id,
+                seasonNumber: seasonIdToNumberMap[id] !== undefined ? seasonIdToNumberMap[id] : 'N/A',
+                matchCount: matches.length,
+                firstMatchDate: matches[0] ? dayjs(matches[0].date).format('MMM YYYY') : 'N/A'
+            }))
+        });
+
+        // Calculate stats for each season where player participated
+        const stats: SeasonStats[] = [];
+        
+        seasonMap.forEach((matches, seasonId) => {
+            const totals = sumStatsFromMatches(matches);
+            
+            // Count MOTM votes
+            const motmVotes = matches.reduce((acc, match) => {
+                const votes = (match as any).votes || [];
+                const votesForPlayer = votes.filter((vote: any) => 
+                    String(vote.votedForId) === String(playerId)
+                ).length;
+                return acc + votesForPlayer;
+            }, 0);
+
+            // Count defensive impact
+            const defensiveImpact = matches.filter(match => {
+                const m = match as any;
+                return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
+            }).length;
+
+            // Calculate total XP for the season
+            const totalXP = calculateXP(totals) + (motmVotes * 50) + (defensiveImpact * 30);
+
+            // Get season info from state (fetched from API)
+            const seasonInfo = seasons.find(s => s.id === seasonId);
+            
+            // Determine season number from mapping (built from API data)
+            let seasonNumber: number;
+            if (seasonIdToNumberMap[seasonId] !== undefined) {
+                seasonNumber = seasonIdToNumberMap[seasonId];
+            } else if (seasonInfo?.seasonNumber !== undefined && seasonInfo.seasonNumber !== null) {
+                seasonNumber = seasonInfo.seasonNumber;
+            } else {
+                // Fallback
+                seasonNumber = stats.length + 1;
+            }
+            
+            const seasonName = seasonInfo?.name || `Season ${seasonNumber}`;
+            
+            // Determine if season is finished: has endDate and endDate is in the past
+            const seasonEndDate = seasonInfo?.endDate ? dayjs(seasonInfo.endDate) : null;
+            const isFinished = seasonEndDate ? seasonEndDate.valueOf() < dayjs().valueOf() : false;
+            const endDateFormatted = isFinished && seasonEndDate ? seasonEndDate.format('MMM YYYY') : '';
+
+            stats.push({
+                seasonId,
+                seasonName,
+                seasonNumber,
+                goals: totals.goals,
+                assists: totals.assists,
+                motmVotes,
+                defensiveImpact,
+                cleanSheets: totals.cleanSheets,
+                totalXP,
+                matches: matches.length,
+                isFinished,
+                endDateFormatted
+            });
+        });
+
+        // Sort by season number descending (latest first)
+        const sortedStats = stats.sort((a, b) => b.seasonNumber - a.seasonNumber);
+        
+        console.log('✅ Final season stats for popup:', sortedStats);
+        
+        return sortedStats;
+    }, [data, leagueId, playerId, seasons, selectedSeason]);
 
     const yearsOptions = useMemo(() => {
         const nowYear = dayjs().year();
@@ -947,6 +1301,18 @@ export default function PlayerStatsPage() {
                     
                     console.log(`📡 [BADGES ${i + 1}] Response status:`, res.status, res.statusText);
                     
+                    // Check if response is JSON before parsing
+                    if (!res.ok) {
+                        console.warn(`⚠️ [BADGES ${i + 1}] API returned error:`, res.status, res.statusText);
+                        continue; // Try next endpoint
+                    }
+                    
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        console.warn(`⚠️ [BADGES ${i + 1}] Response is not JSON:`, contentType);
+                        continue; // Try next endpoint
+                    }
+                    
                     const data = await res.json();
                     console.log(`📦 [BADGES ${i + 1}] Response data:`, data);
                     
@@ -1150,12 +1516,14 @@ export default function PlayerStatsPage() {
                             variant="h2" 
                             component="h1" 
                             sx={{ 
-                                fontWeight: 'bold', 
+                                fontWeight: 400, 
                                 color: '#fff', 
                                 fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' }, 
                                 textTransform: 'uppercase',
-                                letterSpacing: 4,
+                                letterSpacing: 0,
                                 textAlign: 'center',
+                                fontFamily: '"Anton" , sans-serif !important ',
+                                lineHeight: '100%',
                             }}
                         >
                             PLAYER STATS
@@ -1419,7 +1787,7 @@ export default function PlayerStatsPage() {
 
                         {/* Right: XP + Badges */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-                            {/* Top row: XP + Rising Star */}
+                            {/* Top row: XP + Milestone Title */}
                             <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
                                 <Paper sx={{ 
                                     bgcolor: '#383838', 
@@ -1438,25 +1806,41 @@ export default function PlayerStatsPage() {
                                     {xpLoading ? '…' : xp.toLocaleString()}
                                 </Paper>
                                 <Paper sx={{ 
-                                    bgcolor: '#ffffff', 
-                                    color: '#000000', 
+                                    bgcolor: xpMilestone.current.bgColor, 
+                                    color: xpMilestone.current.color, 
                                     pl: 1.5,
                                     pr: 10,
                                     py: 0.9,
                                     borderRadius: 0,
                                     fontWeight: 400,
                                     fontSize: 16,
-                                    // border: '2px solid #555',
-                                    minWidth: 140
+                                    minWidth: 140,
+                                    transition: 'all 0.3s ease'
                                 }}>
-                                    Rising Star
+                                    {xpMilestone.current.title}
                                 </Paper>
                             </Box>
                             {/* Progress bar */}
                             <Box sx={{ width: '100%', display: 'flex', height: 6, borderRadius: 0, overflow: 'hidden' , mt:1}}>
-                                <Box sx={{ bgcolor: ORANGE_ACCENT, width: '30%', height: '100%' }} />
-                                <Box sx={{ bgcolor: '#555', width: '70%', height: '100%' }} />
+                                <Box sx={{ 
+                                    bgcolor: xpMilestone.current.bgColor, 
+                                    width: `${xpMilestone.progress}%`, 
+                                    height: '100%',
+                                    transition: 'width 0.3s ease'
+                                }} />
+                                <Box sx={{ bgcolor: '#555', width: `${100 - xpMilestone.progress}%`, height: '100%' }} />
                             </Box>
+                            {/* Next milestone info */}
+                            {xpMilestone.next && (
+                                <Typography sx={{ 
+                                    color: '#999', 
+                                    fontSize: 11, 
+                                    mt: 0.5,
+                                    fontWeight: 400 
+                                }}>
+                                    {xpMilestone.next.minXP - xp} XP to {xpMilestone.next.title}
+                                </Typography>
+                            )}
                             {/* Stats Over Season button */}
                             <Box
                                 sx={{
@@ -1470,13 +1854,7 @@ export default function PlayerStatsPage() {
                                     '&:hover .text-box': { bgcolor: '#333' },
                                     border: '1.5px solid #fff',
                                 }}
-                                onClick={() => {
-                                    const params = new URLSearchParams();
-                                    if (leagueId && leagueId !== 'all') params.set('leagueId', leagueId);
-                                    if (year && year !== 'all') params.set('year', year);
-                                    const query = params.toString();
-                                    router.push(`/player/${playerId}/career${query ? `?${query}` : ''}`);
-                                }}
+                                onClick={() => setStatsModalOpen(true)}
                             >
                                 <Box className="icon-box" sx={{ 
                                     bgcolor: TEAL_PRIMARY, 
@@ -1807,6 +2185,241 @@ export default function PlayerStatsPage() {
                             </Paper>
                         </Grid>
                     </Grid>
+
+                    {/* Stats Over Season Modal */}
+                    <Dialog 
+                        open={statsModalOpen} 
+                        onClose={() => setStatsModalOpen(false)}
+                        maxWidth={false}
+                        PaperProps={{
+                            sx: {
+                                bgcolor: '#e8e4e0',
+                                borderRadius: '6px',
+                                border: '2px solid #3a3a3a',
+                                overflow: 'hidden',
+                                width: '100%',
+                                maxWidth: '960px',
+                                // m: 2,
+                            }
+                        }}
+                    >
+                        {/* Header bar */}
+                        <DialogTitle sx={{ 
+                            bgcolor: '#3a3a3a', 
+                            color: '#fff', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between',
+                            py: 1.5,
+                            px: 3,
+                            minHeight: 'auto',
+                        }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <EmojiEventsOutlinedIcon sx={{ fontSize: 19, color: '#d0d0d0' }} />
+                                <Typography sx={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff' }}>
+                                    {currentLeagueName}
+                                </Typography>
+                                <Typography sx={{ color: '#777', fontSize: 13, mx: 0.5 }}>|</Typography>
+                                <Typography sx={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff' }}>
+                                    {selectedSeason && selectedSeason !== 'all' 
+                                        ? 'SEASON STATS'
+                                        : 'STATS OVER SEASONS'
+                                    }
+                                </Typography>
+                                <Typography sx={{ color: '#777', fontSize: 13, mx: 0.5 }}>|</Typography>
+                                <Typography sx={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff' }}>
+                                    {playerName.toUpperCase()}
+                                </Typography>
+                            </Box>
+                            <IconButton 
+                                onClick={() => setStatsModalOpen(false)}
+                                sx={{ color: '#ccc', p: 0.5, '&:hover': { color: '#fff', bgcolor: 'transparent' } }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ 
+                            bgcolor: '#e8e4e0', 
+                            px: 5, 
+                            py: 4,
+                            maxHeight: '60vh',
+                            overflowY: 'auto',
+                            '&::-webkit-scrollbar': {
+                                width: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                bgcolor: '#d5d0cb',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                bgcolor: '#999',
+                                borderRadius: '3px',
+                                '&:hover': {
+                                    bgcolor: '#777',
+                                }
+                            }
+                        }}>
+                            {leagueId === 'all' ? (
+                                <Box sx={{ textAlign: 'center', py: 6 }}>
+                                    <Typography sx={{ color: '#777', fontSize: 14, mb: 1 }}>
+                                        Please select a specific league to view season-wise stats.
+                                    </Typography>
+                                </Box>
+                            ) : seasonWiseStats.length === 0 ? (
+                                <Box sx={{ textAlign: 'center', py: 6 }}>
+                                    <Typography sx={{ color: '#555', fontSize: 16, mb: 1 }}>
+                                        No season to compare.
+                                    </Typography>
+                                    <Typography sx={{ color: '#888', fontSize: 13 }}>
+                                        Please return to player stats.
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <>
+                                    {/* Tabs */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        gap: 3.5, 
+                                        mb: 4, 
+                                        borderBottom: '1px solid #c0bbb5',
+                                        pt: 0
+                                    }}>
+                                        {[
+                                            { key: 'goals', label: 'Goals' },
+                                            { key: 'assists', label: 'Assists' },
+                                            { key: 'motm', label: 'MOTM Votes' },
+                                            { key: 'defensive', label: 'Cln Sht / Def' },
+                                            { key: 'totalXP', label: 'Win Ratio' }
+                                        ].map(tab => (
+                                            <Box
+                                                key={tab.key}
+                                                onClick={() => setStatsModalTab(tab.key as any)}
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    pb: 1.8,
+                                                    borderBottom: statsModalTab === tab.key ? `3px solid ${TEAL_PRIMARY}` : '3px solid transparent',
+                                                    transition: 'all 0.2s ease',
+                                                    '&:hover': { borderBottomColor: statsModalTab === tab.key ? TEAL_PRIMARY : '#999' }
+                                                }}
+                                            >
+                                                <Typography sx={{ 
+                                                    color: statsModalTab === tab.key ? '#2d2d2d' : '#888',
+                                                    fontWeight: statsModalTab === tab.key ? 700 : 400,
+                                                    fontSize: 14,
+                                                    whiteSpace: 'nowrap',
+                                                    transition: 'color 0.2s ease'
+                                                }}>
+                                                    {tab.label}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+
+                                    {/* Stats Bars - auto-scaled with left border */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        gap: 2,
+                                        borderLeft: '3px solid #999',
+                                        borderBottom: '3px solid #999',
+                                        pl: 0,
+                                        pb: 2,
+                                    }}>
+                                        {(() => {
+                                            const getStatValue = (s: typeof seasonWiseStats[0]) => {
+                                                switch(statsModalTab) {
+                                                    case 'goals': return s.goals;
+                                                    case 'assists': return s.assists;
+                                                    case 'motm': return s.motmVotes;
+                                                    case 'defensive': return s.defensiveImpact + s.cleanSheets;
+                                                    case 'totalXP': return s.totalXP;
+                                                    default: return 0;
+                                                }
+                                            };
+                                            const maxValue = Math.max(...seasonWiseStats.map(getStatValue), 1);
+
+                                            return seasonWiseStats.map((season) => {
+                                                const value = getStatValue(season);
+                                                const percentage = (value / maxValue) * 100;
+
+                                                return (
+                                                    <Box key={season.seasonId} sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                        {/* Bar */}
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Box sx={{ 
+                                                                bgcolor: '#d5d0cb', 
+                                                                height: 42, 
+                                                                position: 'relative',
+                                                                overflow: 'hidden'
+                                                            }}>
+                                                                <Box sx={{ 
+                                                                    bgcolor: value > 0 ? '#2d2d2d' : 'transparent', 
+                                                                    height: '100%', 
+                                                                    width: value > 0 ? `${Math.max(percentage, 10)}%` : '0%',
+                                                                    transition: 'width 0.5s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'flex-end',
+                                                                    pr: 2.5
+                                                                }}>
+                                                                    {value > 0 && (
+                                                                        <Typography sx={{ 
+                                                                            color: '#fff', 
+                                                                            fontWeight: 700, 
+                                                                            fontSize: 16 
+                                                                        }}>
+                                                                            {statsModalTab === 'totalXP' ? value.toLocaleString() : value}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
+                                                                {value === 0 && (
+                                                                    <Typography sx={{ 
+                                                                        color: '#999', 
+                                                                        fontWeight: 600, 
+                                                                        fontSize: 14,
+                                                                        position: 'absolute',
+                                                                        left: 14,
+                                                                        top: '50%',
+                                                                        transform: 'translateY(-50%)'
+                                                                    }}>
+                                                                        0
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+                                                        
+                                                        {/* Season Label */}
+                                                        <Box sx={{ minWidth: 145, textAlign: 'right' }}>
+                                                            <Typography sx={{ 
+                                                                color: '#2d2d2d', 
+                                                                fontWeight: 700, 
+                                                                fontSize: 14,
+                                                                textTransform: 'uppercase',
+                                                                lineHeight: 1.3,
+                                                                letterSpacing: '0.5px'
+                                                            }}>
+                                                                SEASON {season.seasonNumber}
+                                                            </Typography>
+                                                            <Typography sx={{ 
+                                                                color: '#666', 
+                                                                fontSize: 12,
+                                                                lineHeight: 1.3
+                                                            }}>
+                                                                {season.isFinished 
+                                                                    ? `(${season.endDateFormatted})`
+                                                                    : <span style={{ fontSize: 10 }}>(Not Finished)</span>
+                                                                }
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                );
+                                            });
+                                        })()}
+                                    </Box>
+                                </>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </>
             )}
         </Container>

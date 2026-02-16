@@ -881,13 +881,27 @@ export const playerAPI = {
       if (year) params.append('year', year);
       const url = `${API_BASE_URL}/players/${playerId}/xp?${params.toString()}`;
       const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      
+      // Check if response is JSON before parsing
+      if (!res.ok) {
+        console.warn('[getPlayerXP] API returned error:', res.status, res.statusText);
+        return { success: false, message: 'Failed to fetch XP', error: `API Error: ${res.status}` };
+      }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('[getPlayerXP] Response is not JSON:', contentType);
+        return { success: false, message: 'Failed to fetch XP', error: 'Invalid response format' };
+      }
+      
       const json = await res.json();
-      if (!res.ok || !json?.success) {
+      if (!json?.success) {
         return { success: false, message: 'Failed to fetch XP', error: json?.message || 'Failed to fetch XP' };
       }
       const { totalXP, avgXP, matches } = json.data || {};
       return { success: true, message: 'OK', data: { totalXP: Number(totalXP)||0, avgXP: Number(avgXP)||0, matches: Number(matches)||0 } };
     } catch (e) {
+      console.error('[getPlayerXP] Error:', e);
       return { success: false, message: 'Failed to fetch XP', error: e instanceof Error ? e.message : 'Failed to fetch XP' };
     }
   },
@@ -902,12 +916,25 @@ export const playerAPI = {
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
       const url = `${API_BASE_URL}/players/${playerId}/trophies?${params.toString()}`;
       const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      
+      if (!res.ok) {
+        console.warn('[getPlayerTrophies] API returned error:', res.status, res.statusText);
+        return { success: false, message: 'Failed to fetch trophies', error: `API Error: ${res.status}` };
+      }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('[getPlayerTrophies] Response is not JSON:', contentType);
+        return { success: false, message: 'Failed to fetch trophies', error: 'Invalid response format' };
+      }
+      
       const json = await res.json();
-      if (!res.ok || !json?.success) {
+      if (!json?.success) {
         return { success: false, message: 'Failed to fetch trophies', error: json?.message || 'Failed to fetch trophies' };
       }
       return { success: true, message: 'OK', data: json.data };
     } catch (e) {
+      console.error('[getPlayerTrophies] Error:', e);
       return { success: false, message: 'Failed to fetch trophies', error: e instanceof Error ? e.message : 'Failed to fetch trophies' };
     }
   },
@@ -922,12 +949,25 @@ export const playerAPI = {
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
       const url = `${API_BASE_URL}/players/${playerId}/history-records?${params.toString()}`;
       const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      
+      if (!res.ok) {
+        console.warn('[getPlayerHistoryRecords] API returned error:', res.status, res.statusText);
+        return { success: false, message: 'Failed to fetch history records', error: `API Error: ${res.status}` };
+      }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('[getPlayerHistoryRecords] Response is not JSON:', contentType);
+        return { success: false, message: 'Failed to fetch history records', error: 'Invalid response format' };
+      }
+      
       const json = await res.json();
-      if (!res.ok || !json?.success) {
+      if (!json?.success) {
         return { success: false, message: 'Failed to fetch history records', error: json?.message || 'Failed to fetch history records' };
       }
       return { success: true, message: 'OK', data: json.data };
     } catch (e) {
+      console.error('[getPlayerHistoryRecords] Error:', e);
       return { success: false, message: 'Failed to fetch history records', error: e instanceof Error ? e.message : 'Failed to fetch history records' };
     }
   }
