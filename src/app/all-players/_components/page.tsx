@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import SearchIcon from '@/Components/images/searchicon.png';
+import TableGraphIcon from '@/Components/images/tablegrapicon.png';
 
 // Lazy load CloseButton
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -645,7 +646,7 @@ const AllPlayersPage = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: { xs: 2, md: 3 },
-            px: { xs: 3, md: 8 },
+            px: { xs: 3, md: 3 },
             py: { xs: 1.5, md: 1.3 },
             maxWidth: '1200px',
             mx: 'auto',
@@ -677,6 +678,7 @@ const AllPlayersPage = () => {
                   color: 'white', 
                   fontSize: 16.5,
                   py: 0.5,
+                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
                   '&::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 }
                 }
               }}
@@ -718,6 +720,7 @@ const AllPlayersPage = () => {
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   fontWeight: 600,
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
@@ -761,6 +764,7 @@ const AllPlayersPage = () => {
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   fontWeight: 600,
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
@@ -803,6 +807,7 @@ const AllPlayersPage = () => {
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   fontWeight: 600,
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
@@ -834,6 +839,8 @@ const AllPlayersPage = () => {
                   fontSize: '17px',
                   cursor: 'pointer',
                   outline: 'none',
+                  fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  fontWeight: 600,
                 }}
               >
                 Clear
@@ -844,12 +851,12 @@ const AllPlayersPage = () => {
       </Box>
 
       {/* Table Section */}
-      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 }, pb: 4 }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 }, pb: 4 }}>
         {/* Table Header */}
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          py: 2, 
+          py: 2.5, 
           px: { xs: 2, sm: 3 },
           backgroundColor: 'rgba(30, 30, 30, 0.95)',
           borderRadius: '8px 8px 0 0',
@@ -857,7 +864,7 @@ const AllPlayersPage = () => {
         }}>
           {/* All Positions */}
           <Box sx={{ minWidth: { xs: 120, sm: 180 }, display: 'flex', alignItems: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               ALL POSITIONS
             </Typography>
             <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10 }}>▼</Typography>
@@ -865,7 +872,7 @@ const AllPlayersPage = () => {
           
           {/* Playing Style */}
           <Box sx={{ flex: 1, minWidth: { xs: 100, sm: 150 } }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               PLAYING STYLE
             </Typography>
           </Box>
@@ -875,14 +882,14 @@ const AllPlayersPage = () => {
           
           {/* View Stats */}
           <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 }, textTransform: 'uppercase' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               VIEW STATS
             </Typography>
           </Box>
           
           {/* XP Points */}
           <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 14 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               <span style={{ textTransform: 'lowercase' }}>xp</span> POINTS
             </Typography>
           </Box>
@@ -928,6 +935,10 @@ const AllPlayersPage = () => {
                   textColor = '#fff';
                   fontWeight = 700;
                 }
+                // Alternating row colors
+                const rowBgColor = idx % 2 === 0 ? '#383838' : '#2b2b2b';
+                const rowBgColorHover = idx % 2 === 0 ? '#464646' : '#3a3a3a';
+                
                 return (
                   <React.Fragment key={player.id}>
                     <ListItem
@@ -938,25 +949,25 @@ const AllPlayersPage = () => {
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        py: { xs: 1.5, sm: 2 },
+                        py: { xs: 1, sm: 1 },
                         px: { xs: 2, sm: 3 },
-                        backgroundColor: 'rgba(40, 40, 40, 0.95)',
+                        backgroundColor: rowBgColor,
                         borderBottom: '1px solid rgba(255,255,255,0.08)',
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',
                         transition: 'background-color 0.2s',
                         '&:hover': {
-                          backgroundColor: 'rgba(60, 60, 60, 0.95)',
+                          backgroundColor: rowBgColorHover,
                         }
                       }}
                     >
                       {/* Player Avatar */}
-                      <ListItemAvatar sx={{ minWidth: { xs: 56, sm: 70 } }}>
+                      <ListItemAvatar sx={{ minWidth: { xs: 48, sm: 60 } }}>
                         <Box sx={{ 
                           position: 'relative', 
-                          width: { xs: 45, sm: 55 }, 
-                          height: { xs: 45, sm: 55 },
+                          width: { xs: 38, sm: 48 }, 
+                          height: { xs: 38, sm: 48 },
                           borderRadius: '50%',
                           overflow: 'hidden',
                           backgroundColor: 'rgba(255,255,255,0.1)'
@@ -978,16 +989,18 @@ const AllPlayersPage = () => {
                       <Box sx={{ minWidth: { xs: 100, sm: 150 } }}>
                         <Typography sx={{ 
                           fontWeight: 600, 
-                          fontSize: { xs: 14, sm: 16 },
+                          fontSize: { xs: 13, sm: 15 },
                           color: '#fff',
-                          lineHeight: 1.2
+                          lineHeight: 1.4,
+                          fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
                           {player.name}
                         </Typography>
                         <Typography sx={{ 
-                          fontSize: { xs: 11, sm: 13 },
+                          fontSize: { xs: 10, sm: 12 },
                           color: 'rgba(255,255,255,0.6)',
-                          mt: 0.25
+                          mt: 0.25,
+                          fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
                           Striker
                         </Typography>
@@ -1000,8 +1013,9 @@ const AllPlayersPage = () => {
                         display: { xs: 'none', sm: 'block' }
                       }}>
                         <Typography sx={{ 
-                          fontSize: { xs: 12, sm: 14 },
-                          color: 'rgba(255,255,255,0.9)'
+                          fontSize: { xs: 11, sm: 13 },
+                          color: 'rgba(255,255,255,0.9)',
+                          fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
                           Shield
                         </Typography>
@@ -1017,10 +1031,13 @@ const AllPlayersPage = () => {
                         justifyContent: 'center',
                         alignItems: 'center'
                       }}>
-                        <SignalCellularAltIcon sx={{ 
-                          color: '#10b981', 
-                          fontSize: { xs: 24, sm: 30 } 
-                        }} />
+                        <Image 
+                          src={TableGraphIcon} 
+                          alt="View Stats" 
+                          width={30} 
+                          height={30} 
+                          style={{ objectFit: 'contain' }}
+                        />
                       </Box>
                       
                       {/* XP Points */}
@@ -1030,8 +1047,9 @@ const AllPlayersPage = () => {
                       }}>
                         <Typography sx={{ 
                           fontWeight: 'bold', 
-                          fontSize: { xs: 15, sm: 18 },
-                          color: '#fff'
+                          fontSize: { xs: 15, sm: 16 },
+                          color: '#fff',
+                          fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
                           {player.rating}
                         </Typography>
