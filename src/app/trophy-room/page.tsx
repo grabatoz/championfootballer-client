@@ -129,6 +129,7 @@ interface TrophyType {
   leagueName?: string;
   seasonId?: string;
   seasonName?: string;
+  imageSize?: { xs: number; sm: number; md: number };
 }
 
 // Backend API response types
@@ -213,18 +214,18 @@ interface ServerAchievementsResponse {
 // --- Static Trophy Data ---
 // Top row trophies (displayed larger)
 const topTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
-  { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
-  { title: "Ballon D'or", description: 'Player With The Most MOTM Votes', image: BaloonDImg, color: '#FFC107' },
-  { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
+  { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#ffd700', imageSize: { xs: 80, sm: 100, md: 170 } },
+  { title: "Ballon D'or", description: 'Player With The Most MOTM Votes', image: BaloonDImg, color: '#ff8c00', imageSize: { xs: 80, sm: 100, md: 170 } },
+  { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#cccccc', imageSize: { xs: 80, sm: 100, md: 170 } },
 ];
 
 // Bottom row trophies (displayed smaller)
 const bottomTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
-  { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
-  { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
-  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number ....', image: ShieldImg, color: '#2196F3' },
-  { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The ....', image: DarkHorseImg, color: '#ec4899' },
-  { title: 'Star Keeper', description: 'Player With The Highest Number Of Goals Scored', image: StarKeeperImg, color: '#3B82F6' },
+  { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#cccccc' },
+  { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#7b3fe4' },
+  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number ....', image: ShieldImg, color: '#00b3ff' },
+  { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The ....', image: DarkHorseImg, color: '#e10600' },
+  { title: 'Star Keeper', description: 'Player With The Highest Number Of Goals Scored', image: StarKeeperImg, color: '#00d1c1' },
 ];
 
 // Combined trophies array for backwards compatibility
@@ -249,9 +250,9 @@ const TOP_CARD_DIMENSIONS = {
 
 // Smaller card dimensions for bottom trophies
 const BOTTOM_CARD_DIMENSIONS = {
-  minHeight: { xs: 220, sm: 260, md: 280 },
-  maxWidth: { xs: 150, sm: 180, md: 200 },
-  image: { xs: 50, sm: 60, md: 70 },
+  minHeight: { xs: 180, sm: 220, md: 240 },
+  maxWidth: { xs: 180, sm: 220, md: 260 },
+  image: { xs: 50, sm: 70, md: 90 },
 } as const;
 
 // Blue helpers (hex + CSS filter to tint brown.svg to blue)
@@ -326,9 +327,11 @@ const TrophyCard = ({
   color, 
   winner, 
   onButtonClick,
-  isLarge = false 
+  isLarge = false,
+  imageSize
 }: TrophyType & { onButtonClick?: () => void; isLarge?: boolean }) => {
   const dims = isLarge ? TOP_CARD_DIMENSIONS : BOTTOM_CARD_DIMENSIONS;
+  const imgSize = imageSize || dims.image;
   
   return (
     <Paper
@@ -388,7 +391,7 @@ const TrophyCard = ({
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            mb: { xs: 1.5, sm: 2 },
+            mb: isLarge ? { xs: 1.5, sm: 2 } : { xs: 0.75, sm: 0.5 },
           }}
         >
           {description}
@@ -401,8 +404,8 @@ const TrophyCard = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: dims.image,
-          width: dims.image,
+          height: imgSize,
+          width: imgSize,
           margin: '0 auto',
           mb: { xs: 2, sm: 2.5 },
         }}
@@ -410,8 +413,8 @@ const TrophyCard = ({
         <Image
           src={image}
           alt={title}
-          height={dims.image.md}
-          width={dims.image.md}
+          height={imgSize.md}
+          width={imgSize.md}
           style={{
             height: '100%',
             width: '100%',
@@ -425,7 +428,7 @@ const TrophyCard = ({
       <Box
         sx={{
           mt: 'auto',
-          pb: { xs: 2, sm: 2.5 },
+          pb: { xs: 2, sm: 2 },
           px: { xs: 1.5, sm: 2 },
         }}
       >
@@ -433,25 +436,27 @@ const TrophyCard = ({
           variant="contained"
           fullWidth
           sx={{
-            backgroundColor: '#FFD700',
+            backgroundColor: color,
             color: '#FFFFFF',
             fontWeight: 900,
             fontSize: isLarge 
               ? { xs: '1rem', sm: '1.1rem', md: '1.5rem' }
               : { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
             py: isLarge ? { xs: 1.2, sm: 1.5 } : { xs: 0.9, sm: 1.1 },
-            borderRadius: '8px',
+            borderRadius: '0',
+            borderBottomLeftRadius: '6px',
+            borderBottomRightRadius: '6px',
             textTransform: 'uppercase',
             letterSpacing: 1,
             boxShadow: 'none',
             textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5)',
             '&:hover': {
-              backgroundColor: '#FFD700',
+              backgroundColor: color,
               boxShadow: 'none',
               filter: 'brightness(1.1)',
             },
             '&.Mui-disabled': {
-              backgroundColor: '#FFD700',
+              backgroundColor: color,
               color: '#FFFFFF',
               textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5)',
             },
@@ -2555,11 +2560,11 @@ export default function GlobalTrophyRoom() {
               justifyContent: 'center',
               width: filter === 'my' ? '100%' : 'auto',
             }}>
-              <Button
+              <Box
                 onClick={() => setFilter('all')}
                 sx={{
                   px: { xs: 3, sm: 6, md: 7 },
-                  // py: 0.5,
+                  py: { xs: 0.3, sm: 0.4, md: 0.5 },
                   fontSize: { xs: '1rem', sm: '1.1rem', md: '1.6rem' },
                   fontWeight: 600,
                   textTransform: 'none',
@@ -2567,18 +2572,23 @@ export default function GlobalTrophyRoom() {
                   color: 'white',
                   border: filter === 'all' ? 'none' : '2px solid white',
                   borderRadius: 1,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.2s',
                   '&:hover': {
                     backgroundColor: filter === 'all' ? '#0d9488' : 'rgba(255,255,255,0.1)',
                   }
                 }}
               >
                 Trophy Room
-              </Button>
-              <Button
+              </Box>
+              <Box
                 onClick={() => setFilter('my')}
                 sx={{
                   px: { xs: 2.5, sm: 3.5, md: 3 },
-                  // py: 0.7,
+                  py: { xs: 0.3, sm: 0.4, md: 0.5 },
                   fontSize: { xs: '1rem', sm: '1.1rem', md: '1.8rem' },
                   fontWeight: 600,
                   textTransform: 'none',
@@ -2586,13 +2596,18 @@ export default function GlobalTrophyRoom() {
                   color: 'white',
                   border: filter === 'my' ? 'none' : '1px solid white',
                   borderRadius: 1,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.2s',
                   '&:hover': {
                     backgroundColor: filter === 'my' ? '#0d9488' : 'rgba(255,255,255,0.1)',
                   }
                 }}
               >
                 My Achievements
-              </Button>
+              </Box>
             </Box>
           </Box>
         </Paper>
@@ -3053,7 +3068,7 @@ export default function GlobalTrophyRoom() {
           <Box sx={{ 
             display: 'grid', 
             gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' }, 
-            gap: { xs: 1, sm: 1.5, md: 0 }, 
+            gap: { xs: 1.5, sm: 2, md: 1.5 }, 
             justifyContent: 'center', 
             alignItems: 'stretch',
           }}>

@@ -647,7 +647,7 @@ export default function RewardsPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#0E0E0E' }}>
+    <Box sx={{ minHeight: '160vh', backgroundColor: '#0E0E0E' }}>
       {/* Header */}
       <Box
         sx={{

@@ -613,33 +613,30 @@ const AllPlayersPage = () => {
           color: 'white',
           boxShadow: 'none',
         }}>
-          {/* Centered Title */}
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pt: { xs: 2, md: 2 },
-            pb: 2,
-          }}>
-            <Typography 
-              variant="h2" 
-              component="h1" 
-              sx={{ 
-                fontWeight: 'bold', 
-                color: '#fff', 
-                fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' }, 
-                textTransform: 'uppercase',
-                letterSpacing: 4,
-                textAlign: 'center',
-              }}
-            >
-              PLAYERS
-            </Typography>
-          </Box>
-
-          {/* Orange divider under header */}
-          <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 4.5 }} />
+          <Typography variant="h3" sx={{
+            color: 'white',
+            fontFamily: '"Oswald", sans-serif !important',
+            fontWeight: 700,
+            fontSize: { xs: '32px', sm: '42px', md: '55px' },
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '0px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            pt: { xs: 1, md: 2 },
+            pb: { xs: 3, md: 6 }
+          }}
+            className='all-players-heading'
+          >
+            PLAYERS
+          </Typography>
+          
+          {/* Divider line below heading */}
+          <Box sx={{ 
+            width: '100%',
+            height: '3px', 
+            background: '#e16419',
+            mb: { xs: 2, md: 2 }
+          }} />
 
           {/* Search and Filters Section */}
           <Box sx={{
