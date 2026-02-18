@@ -501,12 +501,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const enriched = await Promise.all(
                     normalized.map(async (l) => {
                         try {
-                            const [statusRes, detailsRes] = await Promise.all([
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status`, { headers: { Authorization: `Bearer ${token}` } }),
-                                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { headers: { Authorization: `Bearer ${token}` } })
-                            ]);
-                            const statusJson = await statusRes.json().catch(() => ({} as Record<string, unknown>));
-                            const rawObj: Record<string, unknown> = (statusJson?.status as Record<string, unknown>) || (statusJson as Record<string, unknown>) || {};
+                            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { 
+                                headers: { Authorization: `Bearer ${token}` } 
+                            });
                             const detailsJson = await detailsRes.json().catch(() => ({} as Record<string, unknown>));
                             const leagueObj: Record<string, unknown> = (detailsJson?.league as Record<string, unknown>) || {};
 
@@ -518,23 +515,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             const getBool = (o: Record<string, unknown>, key: string): boolean => o?.[key] === true;
                             const getArray = (o: Record<string, unknown>, key: string): unknown[] => Array.isArray(o?.[key]) ? (o[key] as unknown[]) : [];
 
-                            const missing = getArray(rawObj, 'missing');
-                            const matchesPlayed = getNum(rawObj, 'matchesPlayed') ?? getNum(rawObj, 'gamesPlayed');
-                            const maxGames = getNum(rawObj, 'maxGames') ?? getNum(leagueObj, 'maxGames');
-                            const isCompleteFlag = getBool(rawObj, 'isComplete');
-                            const locked = getBool(rawObj, 'locked');
+                            const maxGames = getNum(leagueObj, 'maxGames');
                             const matchesRaw = leagueObj?.['matches'];
                             const matches: Array<Record<string, unknown>> = Array.isArray(matchesRaw) ? (matchesRaw as Array<Record<string, unknown>>) : [];
 
                             let completed = false;
-                            if (missing.length > 0) {
-                                completed = false;
-                            } else if (matches.length > 0 && typeof maxGames === 'number' && maxGames > 0) {
+                            if (matches.length > 0 && typeof maxGames === 'number' && maxGames > 0) {
                                 const completedCount = matches.reduce((acc, m) => {
                                     const mo = m as Record<string, unknown>;
                                     const statusVal = mo?.['status'];
                                     const status = typeof statusVal === 'string' ? statusVal.toLowerCase() : '';
-                                    const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+                                    const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended' || status === 'result_published';
                                     const activeVal = mo?.['active'];
                                     const endedByFlag = activeVal === false;
                                     const endedVal = mo?.['end'];
@@ -542,10 +533,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
                                 }, 0);
                                 completed = completedCount >= maxGames;
-                            } else if (typeof maxGames === 'number' && maxGames > 0 && typeof matchesPlayed === 'number') {
-                                completed = matchesPlayed >= maxGames;
-                            } else if (isCompleteFlag || locked) {
-                                completed = true;
                             } else if (l.active === false) {
                                 completed = true;
                             }

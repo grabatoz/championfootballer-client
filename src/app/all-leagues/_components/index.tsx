@@ -578,6 +578,19 @@ function LeagueMembersDialog({
   )
 }
 
+// Season interface
+interface Season {
+  id: string;
+  leagueId: string;
+  seasonNumber: number;
+  name: string;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  maxGames?: number;
+  showPoints?: boolean; // CF Advance Point Scoring per season
+}
+
 // Payload type for updating league settings
 type LeagueUpdatePayload = {
   name: string
@@ -587,10 +600,17 @@ type LeagueUpdatePayload = {
   admins: string[]
 }
 
+// Payload type for updating season settings
+type SeasonUpdatePayload = {
+  maxGames: number;
+  isActive?: boolean;
+  showPoints?: boolean; // CF Advance Point Scoring per season
+}
+
 interface LeagueSettingsDialogProps {
   open: boolean
   onClose: () => void
-  league: League
+  league: League & { seasons?: Season[] }
   onUpdate: (data: LeagueUpdatePayload) => void | Promise<void>
   onDelete: () => void | Promise<void>
   currentUserId: string
@@ -603,29 +623,86 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [name, setName] = useState('')
   const [adminId, setAdminId] = useState('')
   const [isActive, setIsActive] = useState(true)
-  const [maxGames, setMaxGames] = useState(20)
   const [showPoints, setShowPoints] = useState(true)
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('')
+  const [seasonMaxGames, setSeasonMaxGames] = useState(20)
+  const [seasonShowPoints, setSeasonShowPoints] = useState(true)
+  const { token } = useAuth()
 
   useEffect(() => {
     if (league) {
       setName(league.name || '')
       setIsActive(league.active !== false)
-      setMaxGames(league.maxGames || 20)
       setShowPoints(league.showPoints !== false)
       // Prefer explicit adminId, fall back to first administrator if present
       setAdminId(league.adminId || league.administrators?.[0]?.id || '')
+      
+      // Set selected season to active season or first season
+      const seasons = league.seasons || []
+      const activeSeason = seasons.find(s => s.isActive)
+      const currentSeason = activeSeason || (seasons.length > 0 ? seasons[0] : null)
+      
+      if (currentSeason) {
+        setSelectedSeasonId(currentSeason.id)
+        setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
+        setSeasonShowPoints(currentSeason.showPoints !== false)
+      }
     }
   }, [league])
+  
+  // Get current selected season
+  const currentSeason = (league?.seasons || []).find(s => s.id === selectedSeasonId)
+  const seasons = league?.seasons || []
+  
+  // Update when selected season changes
+  useEffect(() => {
+    if (currentSeason) {
+      setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
+      setSeasonShowPoints(currentSeason.showPoints !== false)
+    }
+  }, [selectedSeasonId, currentSeason, league.maxGames])
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     const updatedData: LeagueUpdatePayload = {
       name,
       active: isActive,
-      maxGames,
+      maxGames: league.maxGames || 20, // Keep league-level maxGames for backward compatibility
       showPoints,
       admins: adminId ? [adminId] : [],
     }
-    onUpdate(updatedData)
+    await Promise.resolve(onUpdate(updatedData))
+    
+    // Update season-specific maxGames if season is selected
+    if (selectedSeasonId && token) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${selectedSeasonId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            maxGames: seasonMaxGames,
+            showPoints: seasonShowPoints,
+          }),
+        })
+        
+        if (!response.ok) {
+          toast.error('Failed to update season settings')
+        } else {
+          toast.success('Season settings updated successfully')
+          // Trigger refresh of league data to get updated season values
+          if (onMembersChanged) {
+            await Promise.resolve(onMembersChanged())
+          }
+          // Close dialog to force re-fetch when reopened
+          onClose()
+        }
+      } catch (error) {
+        console.error('Error updating season:', error)
+        toast.error('Failed to update season settings')
+      }
+    }
   }
 
   // Helper to determine if a given user is an admin of this league
@@ -675,7 +752,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         await Promise.resolve(onUpdate({
           name,
           active: isActive,
-          maxGames,
+          maxGames: league.maxGames || 20,
           showPoints,
           admins: [adminId],
         }))
@@ -730,6 +807,42 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         <Grid container spacing={3} sx={{ mt: 0 }}>
           <Grid item xs={12} md={6}>
             <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Season Selector */}
+              {seasons.length > 0 && (
+                <FormControl fullWidth>
+                  <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                    Select Season
+                  </Typography>
+                  <Select
+                    value={selectedSeasonId}
+                    onChange={(e) => setSelectedSeasonId(e.target.value as string)}
+                    sx={{
+                      color: '#E5E7EB',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0388E3' },
+                      '& .MuiSelect-icon': { color: '#E5E7EB' },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                      },
+                    }}
+                  >
+                    {seasons.map((season) => (
+                      <MenuItem key={season.id} value={season.id}>
+                        {season.name} {season.isActive && '(Active)'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {currentSeason && (
+                    <Typography variant="caption" sx={{ color: '#9CA3AF', mt: 0.5 }}>
+                      Current matches in this season: {(league?.matches || []).filter(m => (m as any).seasonId === currentSeason.id).length}
+                    </Typography>
+                  )}
+                </FormControl>
+              )}
+              
               <FormControl fullWidth>
                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
                   Select league admin
@@ -806,13 +919,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
 
               <FormControl fullWidth>
                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                  Maximum number of matches
+                  Maximum matches for {currentSeason ? currentSeason.name : 'this season'}
                 </Typography>
                 <TextField
                   fullWidth
                   type="number"
-                  value={maxGames}
-                  onChange={(e) => setMaxGames(Number(e.target.value))}
+                  value={seasonMaxGames}
+                  onChange={(e) => setSeasonMaxGames(Number(e.target.value))}
+                  disabled={!selectedSeasonId}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       color: '#E5E7EB',
@@ -822,14 +936,17 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     },
                     '& .MuiInputBase-input': { color: '#E5E7EB' },
                   }}
+                  helperText={!selectedSeasonId ? 'Select a season first' : `This setting controls how many matches can be played in ${currentSeason?.name || 'this season'}`}
+                  FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
                 />
               </FormControl>
 
               <FormControlLabel
                 control={
                   <Switch
-                    checked={showPoints}
-                    onChange={(e) => setShowPoints(e.target.checked)}
+                    checked={seasonShowPoints}
+                    onChange={(e) => setSeasonShowPoints(e.target.checked)}
+                    disabled={!selectedSeasonId}
                     sx={{
                       '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
                       '& .Mui-checked': { color: '#27ab83' },
@@ -837,7 +954,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     }}
                   />
                 }
-                label="CF Advance Point Scoring"
+                label={`CF Advance Point Scoring for ${currentSeason ? currentSeason.name : 'this season'}`}
                 sx={{ color: '#E5E7EB' }}
               />
             </Box>
@@ -950,7 +1067,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     onUpdate({
                       name,
                       active: isActive,
-                      maxGames,
+                      maxGames: league.maxGames || 20,
                       showPoints,
                       admins: [replacementId],
                     })
@@ -1156,19 +1273,14 @@ function AllLeagues() {
                 const bust = Date.now();
                 // NOTE: Removed 'Cache-Control' and 'Pragma' custom request headers to avoid CORS preflight rejection
                 // Server must explicitly allow any non-simple headers in Access-Control-Allow-Headers; removing fixes the error you saw.
-                const [leagueResponse, statusResponse] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  }),
-                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status?bust=${bust}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  })
-                ]);
+                const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
 
                 let enriched: LeagueWithStatus = { ...league };
 
                 // If access is forbidden now, drop this league from the list
-                if (leagueResponse.status === 403 || statusResponse.status === 403) {
+                if (leagueResponse.status === 403) {
                   console.debug('[Leagues] Skipping league due to 403 (no access):', league.id);
                   return null;
                 }
@@ -1182,17 +1294,6 @@ function AllLeagues() {
                       members: leagueData.league.members || [],
                       matches: leagueData.league.matches || [],
                       administrators: leagueData.league.administrators || [],
-                    };
-                  }
-                }
-
-                if (statusResponse.ok) {
-                  const statusData = await statusResponse.json();
-                  if (statusData.success) {
-                    enriched = {
-                      ...enriched,
-                      computedStatus: statusData.status as LeagueStatus,
-                      isLocked: enriched.isLocked ?? false,
                     };
                   }
                 }
@@ -2414,6 +2515,7 @@ function AllLeagues() {
             setOpenAdminSettings(false);
           }}
           currentUserId={user?.id || ''}
+          onMembersChanged={fetchAllLeagues}
           onRemoveMember={async (memberId: string) => {
             try {
               const lid = adminSettingsLeague?.id || selectedLeague?.id;

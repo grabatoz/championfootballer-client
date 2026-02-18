@@ -412,10 +412,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
           try {
             // Add timestamp to bypass any caching
             const timestamp = Date.now();
-            const [statusRes, detailsRes] = await Promise.all([
-              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/status?_t=${timestamp}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit),
-              fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}?_t=${timestamp}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store', signal: aborter.signal } as RequestInit)
-            ]);
+            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}?_t=${timestamp}`, { 
+              headers: { 'Authorization': `Bearer ${token}` }, 
+              cache: 'no-store', 
+              signal: aborter.signal 
+            } as RequestInit);
 
             let matchesFromDetails: Match[] | undefined = undefined;
             let maxGamesFromDetails: number | undefined = undefined;
@@ -457,40 +458,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
               }
             }
 
-            let computed: LeagueComputedStatus | undefined = undefined;
-            if (statusRes.ok) {
-              const statusData = await statusRes.json();
-              const raw = (statusData?.status || {}) as Record<string, unknown>;
-              const toNum = (v: unknown): number | undefined => {
-                const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                return Number.isFinite(n) ? n : undefined;
-              };
-              const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed);
-              const maxGames = toNum(raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? l?.maxGames);
-              const locked = raw?.locked === true;
-              const isComplete = raw?.isComplete === true;
-              const missingRaw = (raw as Record<string, unknown>)?.missing as unknown;
-              const missing = Array.isArray(missingRaw) ? missingRaw : [];
-              computed = {
-                ...(raw as LeagueComputedStatus),
-                matchesPlayed,
-                gamesPlayed: matchesPlayed,
-                maxGames,
-                locked,
-                isComplete,
-                missing,
-              };
-            }
-
             // Update this league entry in-place
             setUserLeagues((prev) => {
               const arr = prev.map((item) => {
                 if (String(item.id) !== String(l.id)) return item;
                 const enriched: LeagueWithComputed = {
                   ...item,
-                  computedStatus: computed ?? item.computedStatus,
-                  isLocked: (computed?.locked === true) || item.isLocked,
-                  maxGames: (computed?.maxGames ?? maxGamesFromDetails ?? item.maxGames),
+                  maxGames: maxGamesFromDetails ?? item.maxGames,
                   matches: matchesFromDetails ?? item.matches,
                   seasonNumber: seasonNumberFromDetails ?? item.seasonNumber,
                 };
@@ -509,9 +483,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
               if (prev && String(prev.id) === String(l.id)) {
                 const updated: LeagueWithComputed = {
                   ...prev,
-                  computedStatus: computed ?? prev.computedStatus,
-                  isLocked: (computed?.locked === true) || prev.isLocked,
-                  maxGames: (computed?.maxGames ?? maxGamesFromDetails ?? prev.maxGames),
+                  maxGames: maxGamesFromDetails ?? prev.maxGames,
                   matches: matchesFromDetails ?? prev.matches,
                   seasonNumber: seasonNumberFromDetails ?? prev.seasonNumber,
                   status: typeof prev?.status === 'string' && prev.status!.trim() !== '' ? prev.status : 'active',
