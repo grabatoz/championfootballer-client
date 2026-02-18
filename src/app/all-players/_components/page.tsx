@@ -920,11 +920,15 @@ const AllPlayersPage = () => {
           <Box sx={{
             flex: 1,
             overflow: 'auto',
-            backgroundColor: 'rgba(40, 40, 40, 0.9)',
+            backgroundColor: '#383838',
             borderRadius: '0 0 8px 8px',
             '&::-webkit-scrollbar': { display: 'none' },
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
+             px: { xs: 0, sm: 1.5 },
+             pb: { xs: 0, sm: 1.5 },
+             pt: 0.5,
+          
           }}>
             <List sx={{ p: 0 }}>
               {sortedPlayers.map((player: Player, idx: number) => {
@@ -950,24 +954,24 @@ const AllPlayersPage = () => {
                         display: 'flex',
                         alignItems: 'center',
                         py: { xs: 0.7, sm: 0.7 },
-                        px: { xs: 2, sm: 3 },
+                        // px: { xs: 2, sm: 3 },
                         backgroundColor: rowBgColor,
                         borderBottom: '1px solid rgba(255,255,255,0.08)',
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',
                         transition: 'background-color 0.2s',
-                        '&:hover': {
-                          backgroundColor: rowBgColorHover,
-                        }
+                        // '&:hover': {
+                        //   backgroundColor: rowBgColorHover,
+                        // }
                       }}
                     >
                       {/* Player Avatar */}
                       <ListItemAvatar sx={{ minWidth: { xs: 48, sm: 60 } }}>
                         <Box sx={{ 
                           position: 'relative', 
-                          width: { xs: 38, sm: 45 }, 
-                          height: { xs: 38, sm: 45 },
+                          width: { xs: 38, sm: 42 }, 
+                          height: { xs: 38, sm: 42 },
                           borderRadius: '50%',
                           overflow: 'hidden',
                           backgroundColor: 'rgba(255,255,255,0.1)'

@@ -2370,7 +2370,7 @@ export default function PlayerStatsPage() {
                                                         {/* Bar */}
                                                         <Box sx={{ flex: 1 }}>
                                                             <Box sx={{ 
-                                                                bgcolor: '#d5d0cb', 
+                                                                bgcolor: 'transparent', 
                                                                 height: 42, 
                                                                 position: 'relative',
                                                                 overflow: 'hidden'
