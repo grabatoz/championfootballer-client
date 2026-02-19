@@ -488,11 +488,9 @@ export default function ScheduleMatchPage() {
       toast.success('Match created');
       router.push(`/league/${league.id}`);
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('Unable to load league');
-      }
+      const errorMsg = e instanceof Error ? e.message : 'Unable to create match';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
 
       setSaving(false);
