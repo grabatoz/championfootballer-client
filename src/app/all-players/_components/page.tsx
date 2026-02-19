@@ -663,7 +663,7 @@ const AllPlayersPage = () => {
                 }
               }}
               sx={{
-                width: { xs: '100%', md: '420px' },
+                width: { xs: '100%', md: '440px' },
                 ml: { xs: 0, md: 0.8 },
                 '& .MuiOutlinedInput-root': {
                   height: 42,
@@ -856,23 +856,23 @@ const AllPlayersPage = () => {
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          py: 2.5, 
+          py: 2, 
           px: { xs: 2, sm: 3 },
           backgroundColor: 'rgba(30, 30, 30, 0.95)',
-          borderRadius: '8px 8px 0 0',
+          // borderRadius: '8px 8px 0 0',
           borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}>
           {/* All Positions */}
-          <Box sx={{ minWidth: { xs: 120, sm: 180 }, display: 'flex', alignItems: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ minWidth: { xs: 120, sm: 180 }, display: 'flex', alignItems: 'center', mr: { xs: 4, sm: 6 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               ALL POSITIONS
             </Typography>
             <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10 }}>▼</Typography>
           </Box>
           
           {/* Playing Style */}
-          <Box sx={{ flex: 1, minWidth: { xs: 100, sm: 150 } }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ flex: 1, minWidth: { xs: 100, sm: 150 }, mr: { xs: 1, sm: 2 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               PLAYING STYLE
             </Typography>
           </Box>
@@ -882,14 +882,14 @@ const AllPlayersPage = () => {
           
           {/* View Stats */}
           <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               VIEW STATS
             </Typography>
           </Box>
           
           {/* XP Points */}
           <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 17 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               <span style={{ textTransform: 'lowercase' }}>xp</span> POINTS
             </Typography>
           </Box>
@@ -920,11 +920,15 @@ const AllPlayersPage = () => {
           <Box sx={{
             flex: 1,
             overflow: 'auto',
-            backgroundColor: 'rgba(40, 40, 40, 0.9)',
+            backgroundColor: '#383838',
             borderRadius: '0 0 8px 8px',
             '&::-webkit-scrollbar': { display: 'none' },
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
+             px: { xs: 0, sm: 1.5 },
+             pb: { xs: 0, sm: 1.5 },
+             pt: 0.5,
+          
           }}>
             <List sx={{ p: 0 }}>
               {sortedPlayers.map((player: Player, idx: number) => {
@@ -949,25 +953,25 @@ const AllPlayersPage = () => {
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        py: { xs: 1, sm: 1 },
-                        px: { xs: 2, sm: 3 },
+                        py: { xs: 0.7, sm: 0.7 },
+                        // px: { xs: 2, sm: 3 },
                         backgroundColor: rowBgColor,
                         borderBottom: '1px solid rgba(255,255,255,0.08)',
                         color: textColor,
                         fontWeight,
                         cursor: 'pointer',
                         transition: 'background-color 0.2s',
-                        '&:hover': {
-                          backgroundColor: rowBgColorHover,
-                        }
+                        // '&:hover': {
+                        //   backgroundColor: rowBgColorHover,
+                        // }
                       }}
                     >
                       {/* Player Avatar */}
                       <ListItemAvatar sx={{ minWidth: { xs: 48, sm: 60 } }}>
                         <Box sx={{ 
                           position: 'relative', 
-                          width: { xs: 38, sm: 48 }, 
-                          height: { xs: 38, sm: 48 },
+                          width: { xs: 38, sm: 42 }, 
+                          height: { xs: 38, sm: 42 },
                           borderRadius: '50%',
                           overflow: 'hidden',
                           backgroundColor: 'rgba(255,255,255,0.1)'
@@ -986,7 +990,7 @@ const AllPlayersPage = () => {
                       </ListItemAvatar>
                       
                       {/* Name and Position Column */}
-                      <Box sx={{ minWidth: { xs: 100, sm: 150 } }}>
+                      <Box sx={{ minWidth: { xs: 100, sm: 150 }, mr: { xs: 4, sm: 6 } }}>
                         <Typography sx={{ 
                           fontWeight: 600, 
                           fontSize: { xs: 13, sm: 15 },
@@ -1010,7 +1014,8 @@ const AllPlayersPage = () => {
                       <Box sx={{ 
                         flex: 1,
                         minWidth: { xs: 60, sm: 120 }, 
-                        display: { xs: 'none', sm: 'block' }
+                        display: { xs: 'none', sm: 'block' },
+                        mr: { xs: 1, sm: 2 }
                       }}>
                         <Typography sx={{ 
                           fontSize: { xs: 11, sm: 13 },
