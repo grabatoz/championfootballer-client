@@ -1197,6 +1197,17 @@ export default function PlayerDashboard() {
   // File input ref to allow re-selecting the same image
   const createLeagueFileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // User global stats state
+  const [userStats, setUserStats] = useState({
+    matchesPlayed: 0,
+    motmVotes: 0,
+    goals: 0,
+    assists: 0,
+    cleanSheets: 0,
+    defensiveImpact: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+
   const [, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   useEffect(() => {
@@ -1210,6 +1221,55 @@ export default function PlayerDashboard() {
   useEffect(() => {
     dispatch(initializeFromStorage());
   }, [dispatch]);
+
+  // Fetch user global stats
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      console.log('🔍 [Stats Fetch] Starting...');
+      console.log('🔍 [Stats Fetch] Token:', token ? 'Present' : 'Missing');
+      console.log('🔍 [Stats Fetch] User ID:', user?.id);
+      
+      if (!token || !user?.id) {
+        console.log('❌ [Stats Fetch] Skipped - Missing token or user ID');
+        return;
+      }
+      
+      setStatsLoading(true);
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/users/me/global-stats`;
+        console.log('🔍 [Stats Fetch] URL:', url);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log('🔍 [Stats Fetch] Response status:', response.status);
+        
+        const data = await response.json();
+        console.log('🔍 [Stats Fetch] Response data:', data);
+
+        if (response.ok) {
+          if (data.success && data.stats) {
+            console.log('✅ [Stats Fetch] Stats loaded:', data.stats);
+            setUserStats(data.stats);
+          } else {
+            console.warn('⚠️ [Stats Fetch] Response OK but no stats:', data);
+          }
+        } else {
+          console.error('❌ [Stats Fetch] Response not OK:', response.status, data);
+        }
+      } catch (error) {
+        console.error('❌ [Stats Fetch] Error:', error);
+      } finally {
+        setStatsLoading(false);
+        console.log('🔍 [Stats Fetch] Complete');
+      }
+    };
+
+    fetchUserStats();
+  }, [token, user?.id]);
 
   // Debug: log user details when it becomes available/changes
   useEffect(() => {
@@ -1501,9 +1561,15 @@ export default function PlayerDashboard() {
               textAlign: 'center',
               whiteSpace: 'nowrap',
             }}>
-              <Box component="span" sx={{ color: '#ffff99' }}>100 MATCH PLAYED</Box>
-              <Box component="span" sx={{ color: '#ff9933' }}>50 MOTM VOTES</Box>
-              <Box component="span" sx={{ color: '#ffff99' }}>30 GOALS</Box>
+              <Box component="span" sx={{ color: '#ffff99' }}>
+                {statsLoading ? '...' : userStats.matchesPlayed} MATCH{userStats.matchesPlayed !== 1 ? 'ES' : ''} PLAYED
+              </Box>
+              <Box component="span" sx={{ color: '#ff9933' }}>
+                {statsLoading ? '...' : userStats.motmVotes} MOTM VOTE{userStats.motmVotes !== 1 ? 'S' : ''}
+              </Box>
+              <Box component="span" sx={{ color: '#ffff99' }}>
+                {statsLoading ? '...' : userStats.goals} GOAL{userStats.goals !== 1 ? 'S' : ''}
+              </Box>
             </Box>
             
             {/* Row 2 */}
@@ -1522,9 +1588,15 @@ export default function PlayerDashboard() {
               textAlign: 'center',
               whiteSpace: 'nowrap',
             }}>
-              <Box component="span" sx={{ color: '#ff9933' }}>20 ASSISTS</Box>
-              <Box component="span" sx={{ color: '#ffff99' }}>2 CLEAN SHEETS</Box>
-              <Box component="span" sx={{ color: '#ff9933' }}>5 DEFENSIVE IMPACT</Box>
+              <Box component="span" sx={{ color: '#ff9933' }}>
+                {statsLoading ? '...' : userStats.assists} ASSIST{userStats.assists !== 1 ? 'S' : ''}
+              </Box>
+              <Box component="span" sx={{ color: '#ffff99' }}>
+                {statsLoading ? '...' : userStats.cleanSheets} CLEAN SHEET{userStats.cleanSheets !== 1 ? 'S' : ''}
+              </Box>
+              <Box component="span" sx={{ color: '#ff9933' }}>
+                {statsLoading ? '...' : userStats.defensiveImpact} DEFENSIVE IMPACT
+              </Box>
             </Box>
           </Box>
         </Box>
