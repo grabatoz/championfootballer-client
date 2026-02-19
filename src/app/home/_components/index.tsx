@@ -1640,6 +1640,8 @@ export default function PlayerDashboard() {
               profileImage={user?.profilePicture || undefined}
               shirtIcon=""
               position={user?.position || 'XXX'}
+              hideShareIcon={true}
+              whiteOverlayInsetBottom={{ xs: '38%', md: '40%' }}
             />
           </Box>
 
@@ -1928,6 +1930,8 @@ export default function PlayerDashboard() {
               profileImage={user?.profilePicture || undefined}
               shirtIcon={''}
               position={user?.position || 'XXX'}
+              hideShareIcon={true}
+              whiteOverlayInsetBottom={{ xs: '38%', md: '40%' }}
             />
           </Box>
 
