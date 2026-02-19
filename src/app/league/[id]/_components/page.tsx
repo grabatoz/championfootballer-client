@@ -699,6 +699,66 @@ export default function LeagueDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, authLoading, isAuthenticated, leagueId]);
 
+    // 🎯 Auto-select active season when league data loads
+    useEffect(() => {
+        if (!league || selectedSeasonId) return; // Skip if already selected
+        
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        if (!Array.isArray(seasonsUnknown) || seasonsUnknown.length === 0) return;
+        
+        // Find active season
+        const activeSeason = seasonsUnknown.find((s: unknown) => {
+            const seasonObj = s as Record<string, unknown>;
+            return seasonObj?.isActive === true;
+        });
+        
+        if (activeSeason) {
+            const seasonObj = activeSeason as Record<string, unknown>;
+            const activeSeasonId = String(seasonObj.id || '');
+            console.log('🎯 Auto-selecting active season:', activeSeasonId);
+            setSelectedSeasonId(activeSeasonId);
+        } else {
+            // If no active season found, select the latest season (highest season number)
+            const sortedSeasons = [...seasonsUnknown].sort((a: unknown, b: unknown) => {
+                const aNum = (a as Record<string, unknown>)?.seasonNumber as number || 0;
+                const bNum = (b as Record<string, unknown>)?.seasonNumber as number || 0;
+                return bNum - aNum; // Descending order
+            });
+            
+            if (sortedSeasons.length > 0) {
+                const latestSeason = sortedSeasons[0] as Record<string, unknown>;
+                const latestSeasonId = String(latestSeason.id || '');
+                console.log('🎯 Auto-selecting latest season:', latestSeasonId);
+                setSelectedSeasonId(latestSeasonId);
+            }
+        }
+    }, [league, selectedSeasonId]);
+
+    // 🔄 Refresh league data when page becomes visible (e.g., user comes back from settings)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && token && leagueId) {
+                console.log('🔄 Page became visible, refreshing league data...');
+                fetchLeagueDetails();
+            }
+        };
+
+        const handleFocus = () => {
+            if (token && leagueId) {
+                console.log('🔄 Window focused, refreshing league data...');
+                fetchLeagueDetails();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [fetchLeagueDetails, token, leagueId]);
+
     // 🔄 Auto-refresh: Event-driven (immediate) + Periodic check every 1 minute
     // This handles both manual operations AND automatic match completion detection
     useCombinedMatchRefresh(fetchLeagueDetails, 60000); // Check every 60 seconds
@@ -986,6 +1046,12 @@ export default function LeagueDetailPage() {
         console.log('🎯 Season selected:', seasonId);
         setSelectedSeasonId(seasonId);
         handleSeasonDropdownClose();
+        
+        // 🔄 Refresh league data to get latest season settings
+        if (token && leagueId) {
+            console.log('🔄 Refreshing league data after season selection...');
+            await fetchLeagueDetails();
+        }
     };
 
     // Handle league selection
@@ -1317,10 +1383,55 @@ export default function LeagueDetailPage() {
         
         console.log('✅ Final filtered members:', filteredMembers.length, filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
         
+        // Extract season settings (maxGames, showPoints)
+        let seasonMaxGames = league.maxGames;
+        let seasonShowPoints = league.showPoints;
+        
+        if (Array.isArray(seasonsUnknown)) {
+            const selectedSeason = seasonsUnknown.find((s: unknown) => {
+                const seasonObj = s as Record<string, unknown>;
+                return String(seasonObj?.id || '') === selectedSeasonId;
+            });
+            
+            if (selectedSeason) {
+                const seasonObj = selectedSeason as Record<string, unknown>;
+                
+                // Handle maxGames
+                seasonMaxGames = typeof seasonObj.maxGames === 'number' ? seasonObj.maxGames : league.maxGames;
+                
+                // Handle showPoints - be more flexible with types (boolean, number, string)
+                if (seasonObj.showPoints !== undefined && seasonObj.showPoints !== null) {
+                    if (typeof seasonObj.showPoints === 'boolean') {
+                        seasonShowPoints = seasonObj.showPoints;
+                    } else if (typeof seasonObj.showPoints === 'number') {
+                        seasonShowPoints = seasonObj.showPoints === 1;
+                    } else if (typeof seasonObj.showPoints === 'string') {
+                        seasonShowPoints = seasonObj.showPoints.toLowerCase() === 'true';
+                    } else {
+                        // If it's some other type, convert to boolean
+                        seasonShowPoints = Boolean(seasonObj.showPoints);
+                    }
+                } else {
+                    seasonShowPoints = league.showPoints;
+                }
+                
+                console.log('✅ Season settings applied:', {
+                    seasonId: selectedSeasonId,
+                    maxGames: seasonMaxGames,
+                    showPoints: seasonShowPoints,
+                    rawShowPoints: seasonObj.showPoints,
+                    showPointsType: typeof seasonObj.showPoints,
+                    leagueShowPoints: league.showPoints
+                });
+            }
+        }
+        
         return {
             ...league,
             matches: filteredMatches,
-            members: filteredMembers
+            members: filteredMembers,
+            maxGames: seasonMaxGames,
+            showPoints: seasonShowPoints
         };
     }, [league, selectedSeasonId]);
 
@@ -3009,7 +3120,7 @@ export default function LeagueDetailPage() {
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
                                                     const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                                                    const matchNumber = getNumericIndex(match) ?? (arr.length - idx);
+                                                    const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
                                                     // Calculate match duration in minutes
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
@@ -3404,7 +3515,7 @@ export default function LeagueDetailPage() {
                                                 .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED')
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
-                                                    const matchNumber = getNumericIndex(match) ?? (arr.length - idx);
+                                                    const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
@@ -4181,19 +4292,30 @@ export default function LeagueDetailPage() {
                                                 <div className="text-center">L</div>
                                                 <div className="text-center">GD</div>
                                                 <div className="text-center">W%</div>
-                                                <div className="text-center">xp PTS</div>
+                                                <div className="text-center">{filteredLeague?.showPoints === true ? 'PTS' : 'XP'}</div>
                                             </div>
 
                                             {/* Table Rows */}
                                             <div>
+                                                {(() => {
+                                                    console.log('📊 Table rendering with:', {
+                                                        filteredLeagueShowPoints: filteredLeague?.showPoints,
+                                                        leagueShowPoints: league?.showPoints,
+                                                        selectedSeasonId: selectedSeasonId,
+                                                        willUsePoints: filteredLeague?.showPoints === true
+                                                    });
+                                                    return null;
+                                                })()}
                                                 {[...tableData]
                                                     .sort((a, b) => {
                                                         const aPts = (a.wins ?? 0) * 3 + (a.draws ?? 0);
                                                         const bPts = (b.wins ?? 0) * 3 + (b.draws ?? 0);
                                                         const aXP = a.xp ?? 0;
                                                         const bXP = b.xp ?? 0;
-                                                        const aScore = (league?.showPoints === false) ? aPts : aXP;
-                                                        const bScore = (league?.showPoints === false) ? bPts : bXP;
+                                                        // Use season's showPoints if available, otherwise league's
+                                                        const usePoints = filteredLeague?.showPoints === true;
+                                                        const aScore = usePoints ? aPts : aXP;
+                                                        const bScore = usePoints ? bPts : bXP;
                                                         if (bScore !== aScore) return bScore - aScore;
                                                         if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0);
                                                         if ((a.played ?? 0) !== (b.played ?? 0)) return (a.played ?? 0) - (b.played ?? 0);
@@ -4203,7 +4325,9 @@ export default function LeagueDetailPage() {
                                                         const points = (player.wins ?? 0) * 3 + (player.draws ?? 0);
                                                         const firstName = player.name.split(' ')[0] || player.name;
                                                         const lastName = player.name.split(' ').slice(1).join(' ') || '';
-                                                        const xpPts = league?.showPoints === false ? points : (player.xp ?? 0);
+                                                        // Use season's showPoints if available, otherwise league's
+                                                        const usePoints = filteredLeague?.showPoints === true;
+                                                        const xpPts = usePoints ? points : (player.xp ?? 0);
 
                                                         const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || 'Striker';
                                                         const member = (league?.members || []).find(m => String(m.id) === String(player.id));
