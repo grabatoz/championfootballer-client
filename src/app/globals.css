@@ -364,7 +364,7 @@ input:-webkit-autofill:active {
 }
 
 /* White header bar for invite + New Match line */
-.league-header-white { background-color: #ffffff !important; }
+.league-header-white { background-color: #dddddd !important; }
 .league-header-white .text-foreground { color: #1a1a1a !important; }
 .league-header-white .text-muted-foreground { color: black !important; }
 
