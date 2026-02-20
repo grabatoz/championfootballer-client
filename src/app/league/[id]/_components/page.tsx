@@ -96,6 +96,8 @@ import CleanSheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import MOTM from "@/Components/images/MOTM.png"
 import Imapct from "@/Components/images/imapct.png"
+import DefensiveImpact from "@/Components/images/defimp.png"
+import Mentality from "@/Components/images/metality.png"
 import InfoIcon from "@/Components/images/info.png"
 import Star from '@mui/icons-material/Star';
 import LeagueTable from '@/Components/images/leagutable.png'
@@ -347,6 +349,8 @@ export default function LeagueDetailPage() {
         xp?: number;
         cleanSheets?: number;
         motmCount?: number;
+        defensiveImpact?: number;
+        mentality?: number;
         lastFive?: Array<{ result: 'W' | 'D' | 'L' }>;
         trophyTitle?: string;
         xpLatest?: number;
@@ -2374,6 +2378,8 @@ export default function LeagueDetailPage() {
                 xp: Number(data.xp ?? data.player?.xp ?? 0),
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
+                defensiveImpact: Number(data.defensiveImpact ?? 0),
+                mentality: Number(data.mentality ?? 0),
                 lastFive: Array.isArray(data.lastFive) ? data.lastFive : [],
             });
             setOpenQuickView(true);
@@ -5066,13 +5072,13 @@ export default function LeagueDetailPage() {
                                 order: { xs: 2, sm: 1 },
                                 mt: { xs: 0, sm: 5 }
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3 }}>Current Stats</Typography>
+                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3, mb: 0.3 }}>Current Stats</Typography>
                             <Box
                                 sx={{
                                     display: { xs: 'grid', sm: 'flex' },
                                     flexDirection: { sm: 'column' },
                                     gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
-                                    gap: { xs: 0.5, sm: 1 },
+                                    gap: { xs: 0, sm: 0 },
                                 }}
                             >
                                 {[
@@ -5080,6 +5086,8 @@ export default function LeagueDetailPage() {
                                     { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
                                     { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
                                     { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
+                                    { img: DefensiveImpact, label: 'Defensive Impact', value: quickView.defensiveImpact ?? 0 },
+                                    { img: Mentality, label: 'Mentality', value: quickView.mentality ?? 0 },
                                 ].map((it, i) => (
                                     <Box
                                         key={i}
@@ -5087,8 +5095,8 @@ export default function LeagueDetailPage() {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'flex-start',
-                                            gap: 0.25,
-                                            p: { xs: 0.25, sm: 0.5 },
+                                            gap: 0.1,
+                                            p: { xs: 0.15, sm: 0.3 },
                                         }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -5113,6 +5121,23 @@ export default function LeagueDetailPage() {
                                     </Box>
                                 ))}
                             </Box>
+                            <Button
+                                variant="text"
+                                sx={{
+                                    
+                                    color: '#1976d2',
+                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    padding: '4px 8px',
+                                    minWidth: 'auto',
+                                    '&:hover': {
+                                        backgroundColor: 'transparent',
+                                    },
+                                }}
+                            >
+                                More Stats
+                            </Button>
                             </Paper>
 
                             {/* Center: Player Card */}

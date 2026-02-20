@@ -1,12 +1,10 @@
 import React from 'react'
 import LeagueDetailPage from './_components/page'
 
-function page() {
+export default function Page() {
   return (
     <div>
       <LeagueDetailPage/>
     </div>
   )
 }
-
-export default page
