@@ -7,7 +7,9 @@ import {
   Divider,
   Modal,
   Button,
+  IconButton,
 } from '@mui/material';
+import ShareIcon from '@mui/icons-material/Share';
 import Foot from '@/Components/images/foot.png'
 import imgicon from '@/Components/images/imgicon.png'
 import Star from '@/Components/images/star.png'
@@ -121,6 +123,10 @@ interface PlayerCardProps {
   // hideEditIcon?: boolean; // NEW
   /** When true, clicking the avatar should NOT open the image popup */
   disableImagePopup?: boolean;
+  /** When true, hides the share icon button */
+  hideShareIcon?: boolean;
+  /** Custom bottom inset percentage for white texture overlay (default: { xs: '44%', md: '45%' }) */
+  whiteOverlayInsetBottom?: { xs: string; md: string } | string;
 }
 
 // Import all possible vector images
@@ -153,6 +159,8 @@ const PlayerCard = ({
   height,
   position,
   disableImagePopup = false,
+  hideShareIcon = false,
+  whiteOverlayInsetBottom,
   // hideEditIcon = false,
 }: PlayerCardProps) => {
   // Find the level info based on points
@@ -406,7 +414,7 @@ const PlayerCard = ({
     <Box
       sx={{
         width: width || 260,
-        height: height || 380,
+        height: height || 390,
         position: 'relative',
         fontWeight: 'bold',
         color: '#fff',
@@ -436,7 +444,11 @@ const PlayerCard = ({
             opacity: 1,
             backgroundColor: '#fff',
             // Only show on the top portion (shirt area-ish)
-            clipPath: { xs: 'inset(0 0 44% 0)', md: 'inset(0 0 42% 0)' },
+            clipPath: whiteOverlayInsetBottom 
+              ? (typeof whiteOverlayInsetBottom === 'string' 
+                  ? `inset(0 0 ${whiteOverlayInsetBottom} 0)` 
+                  : { xs: `inset(0 0 ${whiteOverlayInsetBottom.xs} 0)`, md: `inset(0 0 ${whiteOverlayInsetBottom.md} 0)` })
+              : { xs: 'inset(0 0 45% 0)', md: 'inset(0 0 46% 0)' },
             // Clip to the card silhouette so the pattern doesn't leak outside
             WebkitMaskImage: `url(${vectorImg.src})`,
             WebkitMaskRepeat: 'no-repeat',
@@ -632,6 +644,39 @@ const PlayerCard = ({
           </Box>
         )}
         </Box>
+
+        {/* Share Icon - Bottom Right Corner */}
+        {!hideShareIcon && (
+          <IconButton
+            sx={{
+              position: 'absolute',
+              bottom: 8,
+              right: -115,
+              zIndex: 20,
+              bgcolor: '#009371',
+              color: '#fff',
+              width: 36,
+              height: 36,
+              borderRadius: '4px',
+              '&:hover': {
+                bgcolor: '#007a5e',
+              },
+            }}
+            onClick={() => {
+              // Share functionality here
+              if (navigator.share) {
+                navigator.share({
+                  title: `${name} - Champion Footballer`,
+                  text: `Check out ${name}'s stats! ${points} XP`,
+                }).catch(() => {});
+              } else {
+                toast.success('Share feature coming soon!');
+              }
+            }}
+          >
+            <ShareIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        )}
       </Box>
 
       {/* Edit Options Modal */}
