@@ -3107,7 +3107,7 @@ export default function GlobalTrophyRoom() {
 
 
 
-          {selectedLeague && (
+          {/* {selectedLeague && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
               <Typography
                 variant="subtitle2"
@@ -3116,7 +3116,7 @@ export default function GlobalTrophyRoom() {
                 {selectedLeagueFlags?.final ? 'Final League Standing' : 'Current League Standing'}
               </Typography>
             </Box>
-          )}
+          )} */}
         </Box>
       )}
 
