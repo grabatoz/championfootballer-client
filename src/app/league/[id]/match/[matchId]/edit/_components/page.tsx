@@ -15,7 +15,7 @@
   import ShirtImg from '@/Components/images/shirtimg.png';
 
   // Lazy load heavy components
-  const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
+  // const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
 
   interface User { id: string; firstName: string; lastName: string; email: string; profilePicture?: string; shirtNumber?: string; skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number; }; preferredFoot?: 'right' | 'left'; }
   interface League { id: string; name: string; members: User[]; active: boolean; }
@@ -35,7 +35,14 @@
     availableUserIds?: string[];
   }
 
-  export default function EditMatchPage() {
+  interface EditMatchPageProps {
+    leagueIdProp?: string;
+    matchIdProp?: string;
+    isDialog?: boolean;
+    onClose?: () => void;
+  }
+
+  export default function EditMatchPage({ leagueIdProp, matchIdProp, isDialog, onClose }: EditMatchPageProps = {}) {
     // Fallback team image (used in responsive preview)
     const defaultTeamImage = '/assets/cflogo2.png';
     const defaultTeamImagee = '/assets/imgicon.png';
@@ -58,8 +65,8 @@
     const { token } = useAuth();
     const params = useParams();
     const router = useRouter();
-    const leagueId = params?.id ? String(params.id) : '';
-    const matchId = params?.matchId ? String(params.matchId) : '';
+    const leagueId = leagueIdProp || (params?.id ? String(params.id) : '');
+    const matchId = matchIdProp || (params?.matchId ? String(params.matchId) : '');
 
     const [league, setLeague] = useState<League | null>(null);
     const [loading, setLoading] = useState(true);
@@ -77,6 +84,10 @@
     const [awayTeamUsers, setAwayTeamUsers] = useState<PlayerOption[]>([]);
     const [homeCaptain, setHomeCaptain] = useState<PlayerOption | null>(null);
     const [awayCaptain, setAwayCaptain] = useState<PlayerOption | null>(null);
+
+    // Match Notification
+    const [showNotificationBox, setShowNotificationBox] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState('');
 
     // Images
     const [homeTeamImage, setHomeTeamImage] = useState<File | null>(null);
@@ -981,6 +992,24 @@
         if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
         if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
+        // Match notification message to all players
+        if (notificationMessage.trim()) {
+          formData.append('notificationMessage', notificationMessage.trim());
+          console.log('📢 [FRONTEND] Sending notificationMessage:', notificationMessage.trim());
+        } else {
+          console.log('📢 [FRONTEND] No notification message to send. notificationMessage value:', JSON.stringify(notificationMessage));
+        }
+
+        // Debug: log all formData keys
+        console.log('📢 [FRONTEND] FormData keys:');
+        for (const [key, value] of formData.entries()) {
+          if (key === 'homeTeamImage' || key === 'awayTeamImage') {
+            console.log(`  ${key}: [File]`);
+          } else {
+            console.log(`  ${key}: ${value}`);
+          }
+        }
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${token}` },
@@ -992,17 +1021,24 @@
         // Guests already synced via PATCH; no extra POST/DELETE calls needed
         // Clear matches cache and navigate
         try { cacheManager.clearCache('matches_cache'); } catch { }
-        toast.success('Match updated');
+        const serverMsg = j.message || 'Match updated';
+        toast.success(serverMsg);
         if (needsMore) toast.success('Players notified (server), teams not saved');
-        router.push(`/league/${leagueId}`);
+        setNotificationMessage('');
+        setShowNotificationBox(false);
+        if (isDialog && onClose) {
+          onClose();
+        } else {
+          router.push(`/league/${leagueId}`);
+        }
       } catch (er: unknown) {
         const msg = er instanceof Error ? er.message : 'Update error';
         setError(msg);
       } finally { setIsSubmitting(false); }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
-    if (error || !league) return <Box sx={{ p: 4, color: 'white' }}><Button startIcon={<ArrowLeft />} onClick={() => router.push(`/league/${leagueId}`)} sx={{ mb: 2, color: 'white', background: '#388e3c', '&:hover': { background: '#388e3c' } }}>Back</Button><Typography color="error">{error || 'Load failed'}</Typography></Box>;
+    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: isDialog ? '50vh' : '100vh' }}><CircularProgress /></Box>;
+    if (error || !league) return <Box sx={{ p: 4, color: 'white' }}><Button startIcon={<ArrowLeft />} onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ mb: 2, color: 'white', background: '#388e3c', '&:hover': { background: '#388e3c' } }}>Back</Button><Typography color="error">{error || 'Load failed'}</Typography></Box>;
 
     const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' } };
     const autocompleteStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& .MuiChip-root': { background: 'rgba(229,106,22,0.15)', color: '#E5E7EB', border: '1px solid rgba(229,106,22,0.3)' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } } };
@@ -1022,262 +1058,39 @@
 
     return (
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Box sx={{ p: 4, minHeight: '100vh', color: '#E5E7EB' }}>
-        {/* Close Button */}
-        <CloseButton fallbackRoute="/dashboard" />
-          <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-            <Box sx={{ width: { xs: '100%', md: '58.33%' } }}>
+        <Box sx={{ p: isDialog ? 2 : { xs: 1, sm: 2, md: 3 }, minHeight: isDialog ? 'auto' : '100vh', color: '#E5E7EB', bgcolor: '#000' }}>
+        {/* Close Button - hide in dialog mode since dialog has its own close */}
+        {/* {!isDialog && <CloseButton fallbackRoute="/dashboard" />} */}
+          <Box sx={{ display: 'flex', gap: 0, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'flex-start' }}>
+            {/* LEFT PANEL */}
+            <Box sx={{ width: { xs: '100%', md: '55%' } }}>
+              {/* EDIT MATCH Tab Header */}
+              <Box sx={{ py: 1.5, px: 3, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', textAlign: 'center', borderRadius: '12px 12px 0 0' }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
+                  Edit Match
+                </Typography>
+              </Box>
               <form ref={formRef} onSubmit={handleUpdateMatch} style={{ width: '100%' }}>
-                <Paper sx={{ p: 4, bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)', mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    {/* Updated heading styling to match main page (Anton, uppercase, large, glow) */}
-                    <Typography variant="h3" sx={{
-                      //  mb: { xs: 3, md: 4 },
-                      color: '#fff',
-                      // fontFamily: 'Arial Black, Arial, sans-serif',
-                      fontFamily: '"Anton", sans-serif',
-                      fontWeight: 'semibold',
-                      fontSize: { xs: '32px', sm: '42px', md: '56px' },
-                      textAlign: { xs: 'center', md: 'left' },
-                      textTransform: 'uppercase',
-                      letterSpacing: '2px',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}
-                      className='all-leagues-heading'
-                    >
-                      Edit Match
-                    </Typography>
-                    <Button
-                      startIcon={<UserPlus size={20} />}
-                      variant='contained'
-                      onClick={() => setGuestDialogOpen(true)}
-                      sx={{
-                        background: 'linear-gradient(135deg,#e56a16,#cf2326)',
-                        color: 'white',
-                        fontWeight: 600,
-                        borderRadius: 3,
-                        px: { xs: 2, sm: 3 },
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                        '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' },
-                        transition: 'all .25s ease'
-                      }}
-                    >
-                      Add Guest
-                    </Button>
+                <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', mb: 0 }}>
+                  {/* SELECT TEAM Section */}
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff', fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, textTransform: 'uppercase', mb: 1 }}>
+                    Select Team
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#9CA3AF', mb: 2, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                    Click on a player from the home or away team to switch or remove players.
+                  </Typography>
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap' }}>
+                    <Button startIcon={<UserPlus size={18} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' }, transition: 'all .25s ease' }}>Add Guest</Button>
+                    <Button startIcon={<Scale size={18} />} variant="outlined" onClick={balanceTeams} disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>{xpLoading || isBalancing ? 'Balancing…' : 'Balance Teams'}</Button>
+                    <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>Shuffle Teams</Button>
                   </Box>
-                  {/* Updated Team & Player Selection Section */}
-                  <Grid container spacing={3}>
-                    {/* Team Names & Images */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', gap: 3, mb: 3, flexDirection: { xs: 'row', sm: 'row' } }}>
-                        {/* Home Team */}
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ mb: 2, color: '#43a047', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Home Team</Typography>
-                          <TextField
-                            label="Team Name"
-                            value={homeTeamName}
-                            onChange={(e) => setHomeTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            sx={{ ...inputStyles, mb: 2 }}
-                          />
-                          <Box>
-                            <input
-                              accept="image/*"
-                              style={{ display: 'none' }}
-                              id="home-team-image-upload"
-                              type="file"
-                              onChange={handleHomeTeamImageUpload}
-                            />
-                            <TextField
-                              fullWidth
-                              label="Team Logo"
-                              value={homeTeamImage ? homeTeamImage.name : ''}
-                              onClick={() => {
-                                const input = document.getElementById('home-team-image-upload');
-                                input?.click();
-                              }}
-                              InputProps={{
-                                readOnly: true,
-                                style: { textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', cursor: 'pointer' },
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                      <Button
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{
-                                          color: '#43a047',
-                                          borderColor: '#43a047',
-                                          '&:hover': { borderColor: '#388e3c', backgroundColor: 'rgba(67, 160, 71, 0.1)' },
-                                          display: { xs: 'none', sm: 'inline-flex' }
-                                        }}
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          const input = document.getElementById('home-team-image-upload') as HTMLInputElement | null;
-                                          input?.click();
-                                        }}
-                                      >
-                                        Browse
-                                      </Button>
-                                      {homeTeamImage && (
-                                        <IconButton onClick={(e) => { e.stopPropagation(); handleRemoveHomeTeamImage(); }} size="small" sx={{ color: '#f44336' }}>
-                                          <X size={16} />
-                                        </IconButton>
-                                      )}
-                                    </Box>
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{ ...inputStyles }}
-                            />
-                            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <Avatar
-                                src={homeTeamImagePreview || defaultTeamImage}
-                                alt="Home Team"
-                                imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
-                                sx={{ width: 50, height: 50, border: '2px solid #43a047', '& .MuiAvatar-img': { objectFit: 'contain' } }}
-                              />
-                              <Typography variant="body2" sx={{ color: '#B2DFDB' }}>Logo Preview</Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                        {/* Away Team */}
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ mb: 2, color: '#ef5350', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Away Team</Typography>
-                          <TextField
-                            label="Team Name"
-                            value={awayTeamName}
-                            onChange={(e) => setAwayTeamName(e.target.value)}
-                            required
-                            fullWidth
-                            sx={{ ...inputStyles, mb: 2 }}
-                          />
-                          <Box>
-                            <input
-                              accept="image/*"
-                              style={{ display: 'none' }}
-                              id="away-team-image-upload"
-                              type="file"
-                              onChange={handleAwayTeamImageUpload}
-                            />
-                            <TextField
-                              fullWidth
-                              label="Team Logo"
-                              value={awayTeamImage ? awayTeamImage.name : ''}
-                              onClick={() => {
-                                const input = document.getElementById('away-team-image-upload');
-                                input?.click();
-                              }}
-                              InputProps={{
-                                readOnly: true,
-                                style: { textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', cursor: 'pointer' },
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                      <Button
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{
-                                          color: '#ef5350',
-                                          borderColor: '#ef5350',
-                                          '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(239, 83, 80, 0.1)' },
-                                          display: { xs: 'none', sm: 'inline-flex' }
-                                        }}
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          const input = document.getElementById('away-team-image-upload') as HTMLInputElement | null;
-                                          input?.click();
-                                        }}
-                                      >
-                                        Browse
-                                      </Button>
-                                      {awayTeamImage && (
-                                        <IconButton onClick={(e) => { e.stopPropagation(); handleRemoveAwayTeamImage(); }} size="small" sx={{ color: '#f44336' }}>
-                                          <X size={16} />
-                                        </IconButton>
-                                      )}
-                                    </Box>
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{ ...inputStyles }}
-                            />
-                            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <Avatar
-                                src={awayTeamImagePreview || defaultTeamImage}
-                                alt="Away Team"
-                                imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
-                                sx={{ width: 50, height: 50, border: '2px solid #ef5350', '& .MuiAvatar-img': { objectFit: 'contain' } }}
-                              />
-                              <Typography variant="body2" sx={{ color: '#EF9A9A' }}>Logo Preview</Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Grid>
-
-                    {/* Player Selection */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Team Selection</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
-                          <Button
-                            startIcon={<Shuffle size={18} />}
-                            variant="outlined"
-                            onClick={shuffleTeams}
-                            disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2}
-                            size="medium"
-                            sx={{
-                              borderColor: '#e56a16',
-                              color: '#e56a16',
-                              fontWeight: 600,
-                              borderRadius: 3,
-                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                              width: { xs: '100%', sm: 'auto' },
-                              height: { xs: 32, sm: 36 },
-                              '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(229, 106, 22, 0.1)' }
-                            }}
-                          >
-                            Shuffle
-                          </Button>
-                          <Button
-                            startIcon={<Scale size={18} />}
-                            variant="outlined"
-                            onClick={balanceTeams}
-                            disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)}
-                            size="medium"
-                            sx={{
-                              borderColor: '#43a047',
-                              color: '#43a047',
-                              fontWeight: 600,
-                              borderRadius: 3,
-                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                              width: { xs: '100%', sm: 'auto' },
-                              height: { xs: 32, sm: 36 },
-                              '&:hover': { borderColor: '#2e7d32', backgroundColor: 'rgba(67, 160, 71, 0.1)' }
-                            }}
-                          >
-                            {xpLoading || isBalancing ? 'Balancing…' : 'Balance Team'}
-                          </Button>
-                        </Box>
-                      </Box>
-
+                  {/* Player Selection Section */}
                       {/* Warn when fewer than 6 registered players are selected */}
                       {selectedRegistered > 0 && !hasMinPlayers && (
                         <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
                           {`Minimum 6 required to save teams. Players will be notified (Team not saved)`}.
                         </Alert>
-                      )}
-
-                      {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                        <Box sx={{ mb: 3, p: 3, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <Typography variant="body2" sx={{ mb: 2, color: '#9CA3AF', textAlign: 'center' }}>
-                            💡 Drag players between teams to balance. Equal teams create better matches!
-                          </Typography>
-                        </Box>
                       )}
 
                       <Grid container spacing={3}>
@@ -1722,22 +1535,109 @@
                         </Grid>
                         {/* END Captain selectors */}
                       </Grid>
+
+                  {/* Team Names (Optional) */}
+                  <Grid container spacing={2} sx={{ mt: 2 }}>
+                    <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.85rem', mb: 0.5 }}>Home Team Name (Optional)</Typography>
+                      <TextField
+                        placeholder='Enter team name'
+                        value={homeTeamName}
+                        onChange={e => setHomeTeamName(e.target.value)}
+                        fullWidth
+                        sx={{ ...inputStyles }}
+                      />
+                      <Button
+                        variant='outlined'
+                        component='label'
+                        fullWidth
+                        sx={{ mt: 1, color: '#1a8a6d', borderColor: 'rgba(26,138,109,0.5)', textTransform: 'none', '&:hover': { borderColor: '#1a8a6d', bgcolor: 'rgba(26,138,109,0.1)' } }}
+                      >
+                        Add Logo
+                        <input type='file' hidden accept='image/*' onChange={handleHomeTeamImageUpload} />
+                      </Button>
+                      {homeTeamImagePreview && (
+                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar src={homeTeamImagePreview} sx={{ width: 40, height: 40 }} />
+                          <Typography sx={{ color: '#9CA3AF', fontSize: '0.8rem', flex: 1 }}>Logo Preview</Typography>
+                          <IconButton size='small' onClick={handleRemoveHomeTeamImage} sx={{ color: '#ef5350' }}><X size={16} /></IconButton>
+                        </Box>
+                      )}
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.85rem', mb: 0.5 }}>Away Team Name (Optional)</Typography>
+                      <TextField
+                        placeholder='Enter team name'
+                        value={awayTeamName}
+                        onChange={e => setAwayTeamName(e.target.value)}
+                        fullWidth
+                        sx={{ ...inputStyles }}
+                      />
+                      <Button
+                        variant='outlined'
+                        component='label'
+                        fullWidth
+                        sx={{ mt: 1, color: '#1a8a6d', borderColor: 'rgba(26,138,109,0.5)', textTransform: 'none', '&:hover': { borderColor: '#1a8a6d', bgcolor: 'rgba(26,138,109,0.1)' } }}
+                      >
+                        Add Logo
+                        <input type='file' hidden accept='image/*' onChange={handleAwayTeamImageUpload} />
+                      </Button>
+                      {awayTeamImagePreview && (
+                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar src={awayTeamImagePreview} sx={{ width: 40, height: 40 }} />
+                          <Typography sx={{ color: '#9CA3AF', fontSize: '0.8rem', flex: 1 }}>Logo Preview</Typography>
+                          <IconButton size='small' onClick={handleRemoveAwayTeamImage} sx={{ color: '#ef5350' }}><X size={16} /></IconButton>
+                        </Box>
+                      )}
                     </Grid>
                   </Grid>
+
+                  {/* Add Match Notification */}
+                  <Box sx={{ mt: 3, mb: 1 }}>
+                    <Typography
+                      onClick={() => setShowNotificationBox(prev => !prev)}
+                      sx={{ color: '#1a8a6d', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, '&:hover': { textDecoration: 'underline' }, userSelect: 'none' }}
+                    >
+                      {showNotificationBox ? '− Close Notification' : '+ Add Match Notification'}
+                    </Typography>
+                    {showNotificationBox && (
+                      <Box sx={{ mt: 1.5, p: 2, bgcolor: 'rgba(26,138,109,0.08)', borderRadius: 2, border: '1px solid rgba(26,138,109,0.25)' }}>
+                        <Typography sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
+                          This message will be sent as a notification to all players in this match.
+                        </Typography>
+                        <TextField
+                          placeholder='Type your notification message...'
+                          value={notificationMessage}
+                          onChange={e => setNotificationMessage(e.target.value)}
+                          fullWidth
+                          multiline
+                          minRows={2}
+                          maxRows={4}
+                          sx={{ ...inputStyles }}
+                        />
+                        <Typography sx={{ color: '#6B7280', fontSize: '0.7rem', mt: 0.5, textAlign: 'right' }}>
+                          {notificationMessage.length}/500
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Paper>
-                <Paper sx={{ mt: 0, mb: 2, p: 4, bgcolor: 'rgba(15,15,15,0.95)', color: '#E5E7EB', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-                  <Typography variant='h6' sx={{ mb: 3, fontWeight: 600 }}>Match Details</Typography>
-                  <Typography variant='body2' sx={{ mb: 2, color: '#9CA3AF' }}>These fields are required to save your match.</Typography>
+
+                {/* MATCH DETAIL */}
+                <Paper sx={{ mt: 0, mb: 0, p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid rgba(255,255,255,0.1)', borderTop: 'none' }}>
+                  <Typography variant='h6' sx={{ mb: 3, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' } }}>Match Detail</Typography>
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Match Date</Typography>
                       <DatePicker
-                        label='Match Date'
+                        label='Select Date'
                         value={matchDate}
                         onChange={(nv: Dayjs | null) => setMatchDate(nv)}
                         slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Time</Typography>
                       <TimePicker
                         label='Start Time'
                         value={startTime}
@@ -1746,8 +1646,9 @@
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Duration</Typography>
                       <TextField
-                        label='Duration (minutes)'
+                        label='Time Duration'
                         type='number'
                         value={duration}
                         onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))}
@@ -1756,8 +1657,9 @@
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Location</Typography>
                       <TextField
-                        label='Location'
+                        label='Add Location'
                         value={location}
                         onChange={e => setLocation(e.target.value)}
                         fullWidth
@@ -1771,38 +1673,38 @@
                   type='submit'
                   variant='contained'
                   fullWidth
-                  sx={{ py: 2, background: '#ff6a00', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: 2, boxShadow: '0 2px 8px rgba(255,106,0,0.2)', '&:hover': { background: '#cf2326' } }}
+                  sx={{ py: 2, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: '0 0 12px 12px', boxShadow: '0 2px 8px rgba(26,138,109,0.3)', '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE MATCH'}
+                  {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE'}
                 </Button>
               </form>
             </Box>
-            <Box sx={{ width: { xs: '100%', md: '41.67%' } }}>
-              <Paper sx={{
-                p: { xs: 1.5, sm: 2, md: 3 },
-                bgcolor: 'rgba(15,15,15,0.95)',
-                color: '#E5E7EB',
-                borderRadius: { xs: 2, sm: 3, md: 4 },
-                border: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
-                overflow: 'hidden'
-              }}>
-                <Typography variant="h5" sx={{
-                  color: '#fff',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                  mb: { xs: 1.5, sm: 2, md: 3 },
-                  fontSize: { xs: '0.875rem', sm: '1.125rem', md: '1.5rem' }
-                }}>
+            {/* RIGHT PANEL */}
+            <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+              {/* MATCH PREVIEW Tab Header */}
+              <Box sx={{ py: 1.5, px: 3, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', textAlign: 'center', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
                   Match Preview
                 </Typography>
+                <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ color: 'white', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                  <X size={20} />
+                </IconButton>
+              </Box>
+              <Paper sx={{
+                p: { xs: 1.5, sm: 2, md: 3 },
+                bgcolor: '#1a1a1a',
+                color: '#E5E7EB',
+                borderRadius: '0 0 12px 12px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderTop: 'none',
+                overflow: 'hidden'
+              }}>
 
                 {/* Win Probability */}
                 {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                  <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: { xs: 2, sm: 3 }, border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>Team Balance</Typography>
+                  <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: { xs: 2, sm: 3 } }}>
+                    <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1.1rem', md: '1.35rem' }, textTransform: 'uppercase', letterSpacing: 1 }}>Team Balance</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                       <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.homePct)}%` : '—'}</Typography>
@@ -1845,92 +1747,46 @@
 
                 {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
 
-                { /* Team names row (no logos) + VS in center */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'stretch',
-                    px: { xs: 1, sm: 2, md: 3 },
-                    gap: { xs: 1, sm: 2, md: 3 },
-                    mb: { xs: 1, sm: 1.5, md: 2 }
-                  }}
-                >
-                  {/* Home */}
-                  <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: '#43a047',
-                        fontWeight: 700,
-                        fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                        lineHeight: 1.2
-                      }}
-                    >
+                {/* Team Logos + VS Section */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, px: { xs: 1, sm: 2 } }}>
+                  {/* Home Team Logo + Label */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <Avatar
+                      src={homeTeamImagePreview || defaultTeamImage}
+                      alt="Home"
+                      imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
+                      sx={{ width: { xs: 50, sm: 60, md: 70 }, height: { xs: 50, sm: 60, md: 70 }, border: '3px solid #1a8a6d', bgcolor: '#1a2a20', '& .MuiAvatar-img': { objectFit: 'contain' } }}
+                    />
+                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' } }}>
                       {homeTeamName || 'Home'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: '#9CA3AF',
-                        fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                      }}
-                    >
-                      {homeTeamUsers.length} players
                     </Typography>
                   </Box>
 
                   {/* VS Center */}
-                  <Box
-                    sx={{
-                      px: { xs: 1.5, sm: 2 },
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderLeft: '1px solid rgba(255,255,255,0.25)',
-                      borderRight: '1px solid rgba(255,255,255,0.25)'
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontWeight: 800,
-                        letterSpacing: 1,
-                        fontSize: { xs: '0.7rem', sm: '0.85rem', md: '1rem' },
-                        background: 'linear-gradient(135deg,#43a047,#ef5350)',
-                        WebkitBackgroundClip: 'text',
-                        color: 'transparent'
-                      }}
-                    >
-                      VS
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' }, color: '#fff', letterSpacing: 2 }}>
+                      V/S
+                    </Typography>
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.75rem' } }}>
+                      {duration || 90} Minutes Match
                     </Typography>
                   </Box>
 
-                  {/* Away */}
-                  <Box sx={{ flex: 1, textAlign: 'right' }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: '#ef5350',
-                        fontWeight: 700,
-                        fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' },
-                        lineHeight: 1.2
-                      }}
-                    >
+                  {/* Away Team Logo + Label */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <Avatar
+                      src={awayTeamImagePreview || defaultTeamImage}
+                      alt="Away"
+                      imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
+                      sx={{ width: { xs: 50, sm: 60, md: 70 }, height: { xs: 50, sm: 60, md: 70 }, border: '3px solid #e56a16', bgcolor: '#2a1a10', '& .MuiAvatar-img': { objectFit: 'contain' } }}
+                    />
+                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' } }}>
                       {awayTeamName || 'Away'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: '#9CA3AF',
-                        fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.7rem' }
-                      }}
-                    >
-                      {awayTeamUsers.length} players
                     </Typography>
                   </Box>
                 </Box>
 
-                { /* Player lists (headers WITHOUT avatars now) */}
+                { /* Player lists */}
                 <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
                   {/* Home Team list (header removed) */}
                   <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
@@ -1981,9 +1837,9 @@
                               />
                             )}
                           </Typography>
-                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: '#e56a16', fontWeight: 'bold' }}>Captain</Typography>
                           <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Skill: {calcSkill(homeCaptain)}
+                            Position: Defender
                           </Typography>
                           <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
                             Avg XP: {getAvgRating(homeCaptain)}
@@ -2064,7 +1920,7 @@
                               )}
                             </Typography>
                             <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                              Skill: {calcSkill(user)}
+                              Position: Defender
                             </Typography>
                             <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
                               Avg XP: {getAvgRating(user)}
@@ -2155,9 +2011,9 @@
                               />
                             )}
                           </Typography>
-                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: 'gold', fontWeight: 'bold' }}>Captain</Typography>
+                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: '#e56a16', fontWeight: 'bold' }}>Captain</Typography>
                           <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Skill: {calcSkill(awayCaptain)}
+                            Position: Defender
                           </Typography>
                           <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
                             Avg XP: {getAvgRating(awayCaptain)}
@@ -2238,7 +2094,7 @@
                               )}
                             </Typography>
                             <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                              Skill: {calcSkill(user)}
+                              Position: Defender
                             </Typography>
                             <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
                               Avg XP: {getAvgRating(user)}
@@ -2267,6 +2123,23 @@
                         </Box>
                       ))}
                   </Box>
+                </Box>
+
+                {/* Match Info Card */}
+                <Box sx={{ mt: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>📅 Date: {matchDate ? matchDate.format('DD/MM/YYYY') : '—'}</Typography>
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>🕐 Match Time: {startTime ? startTime.format('hh:mm A') : '—'}</Typography>
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>⏳ Duration: {duration || 90} Minutes</Typography>
+                  </Box>
+                  <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' }, mt: 0.5 }}>📍 Location: {location || '—'}</Typography>
+                </Box>
+
+                {/* Share Button */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                  <IconButton sx={{ bgcolor: '#1a8a6d', color: 'white', '&:hover': { bgcolor: '#157a62' }, width: 40, height: 40 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  </IconButton>
                 </Box>
               </Paper>
             </Box>

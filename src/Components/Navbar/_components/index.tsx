@@ -54,6 +54,7 @@ import { leagueAPI } from '@/lib/api-ultra-fast';
 type NotificationKind =
   | 'MATCH_CREATED'
   | 'MATCH_UPDATED'
+  | 'MATCH_NOTIFICATION'
   | 'TEAM_SELECTION'
   | 'AVAILABILITY_REMINDER'
   | 'RESULT_PUBLISHED'

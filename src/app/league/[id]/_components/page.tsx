@@ -78,6 +78,10 @@ const PlayerCard = dynamic(() => import('@/Components/PlayerCardd').then(mod => 
     loading: () => <CircularProgress />,
     ssr: false
 });
+const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/page'), {
+    loading: () => <CircularProgress />,
+    ssr: false
+});
 import CloseIcon from '@mui/icons-material/Close';
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
 // import { LeaderboardResponse } from '@/types/api';
@@ -311,6 +315,10 @@ export default function LeagueDetailPage() {
     const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
     const [archivedActionChecking, setArchivedActionChecking] = useState(false);
     const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
+
+    // Edit Match Dialog state
+    const [editMatchDialogOpen, setEditMatchDialogOpen] = useState(false);
+    const [editMatchId, setEditMatchId] = useState<string | null>(null);
 
     // Leaderboard state
     const [selectedMetric, setSelectedMetric] = useState('goals');
@@ -3409,7 +3417,8 @@ export default function LeagueDetailPage() {
                                                                                 <Button
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                        setEditMatchId(match.id);
+                                                                                        setEditMatchDialogOpen(true);
                                                                                     }}
                                                                                     disabled={!league?.active}
                                                                                     startIcon={<Edit size={16} />}
@@ -3962,7 +3971,8 @@ export default function LeagueDetailPage() {
                                                                                 <Button
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        router.push(`/league/${league?.id}/match/${match.id}/edit`);
+                                                                                        setEditMatchId(match.id);
+                                                                                        setEditMatchDialogOpen(true);
                                                                                     }}
                                                                                     disabled={!league?.active}
                                                                                     startIcon={<Edit size={14} color="#00a77f" />}
@@ -5185,6 +5195,47 @@ export default function LeagueDetailPage() {
                         </Box>
                     )}
                 </DialogContent>
+            </Dialog>
+
+            {/* Edit Match Dialog */}
+            <Dialog
+                open={editMatchDialogOpen}
+                onClose={() => {
+                    setEditMatchDialogOpen(false);
+                    setEditMatchId(null);
+                }}
+                fullScreen
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#0a0a0a',
+                        backgroundImage: 'none',
+                    }
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+                    <IconButton
+                        onClick={() => {
+                            setEditMatchDialogOpen(false);
+                            setEditMatchId(null);
+                        }}
+                        sx={{ color: '#fff' }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+                {editMatchDialogOpen && editMatchId && (
+                    <EditMatchPage
+                        leagueIdProp={leagueId}
+                        matchIdProp={editMatchId}
+                        isDialog={true}
+                        onClose={() => {
+                            setEditMatchDialogOpen(false);
+                            setEditMatchId(null);
+                            // Refresh league data after edit
+                            fetchLeagueDetails();
+                        }}
+                    />
+                )}
             </Dialog>
         </Box>
     );
