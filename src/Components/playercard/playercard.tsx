@@ -448,7 +448,7 @@ const PlayerCard = ({
               ? (typeof whiteOverlayInsetBottom === 'string' 
                   ? `inset(0 0 ${whiteOverlayInsetBottom} 0)` 
                   : { xs: `inset(0 0 ${whiteOverlayInsetBottom.xs} 0)`, md: `inset(0 0 ${whiteOverlayInsetBottom.md} 0)` })
-              : { xs: 'inset(0 0 44% 0)', md: 'inset(0 0 45% 0)' },
+              : { xs: 'inset(0 0 45% 0)', md: 'inset(0 0 46% 0)' },
             // Clip to the card silhouette so the pattern doesn't leak outside
             WebkitMaskImage: `url(${vectorImg.src})`,
             WebkitMaskRepeat: 'no-repeat',
