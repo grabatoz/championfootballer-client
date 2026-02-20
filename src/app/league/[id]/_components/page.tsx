@@ -96,6 +96,8 @@ import CleanSheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
 import MOTM from "@/Components/images/MOTM.png"
 import Imapct from "@/Components/images/imapct.png"
+import DefensiveImpact from "@/Components/images/defimp.png"
+import Mentality from "@/Components/images/metality.png"
 import InfoIcon from "@/Components/images/info.png"
 import Star from '@mui/icons-material/Star';
 import LeagueTable from '@/Components/images/leagutable.png'
@@ -347,6 +349,8 @@ export default function LeagueDetailPage() {
         xp?: number;
         cleanSheets?: number;
         motmCount?: number;
+        defensiveImpact?: number;
+        mentality?: number;
         lastFive?: Array<{ result: 'W' | 'D' | 'L' }>;
         trophyTitle?: string;
         xpLatest?: number;
@@ -2374,6 +2378,8 @@ export default function LeagueDetailPage() {
                 xp: Number(data.xp ?? data.player?.xp ?? 0),
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
+                defensiveImpact: Number(data.defensiveImpact ?? 0),
+                mentality: Number(data.mentality ?? 0),
                 lastFive: Array.isArray(data.lastFive) ? data.lastFive : [],
             });
             setOpenQuickView(true);
@@ -2388,7 +2394,8 @@ export default function LeagueDetailPage() {
         <Box
             sx={{
                 minHeight: '100vh',
-                fontFamily: 'Sailec, Geist, Roboto, Arial, sans-serif',
+                fontFamily: '"Woodford Bourne Pro", sans-serif',
+                fontWeight: 700,
                 // py: { xs: 2, md: 4 },
                 // px: { xs: 1, md: 0 },
                 background: 'transparent',
@@ -3687,9 +3694,12 @@ export default function LeagueDetailPage() {
                                                                             
                                                                             {/* V/S */}
                                                                             <Typography sx={{
-                                                                                fontWeight: 700,
+                                                                                fontFamily: '"Oswald", sans-serif !important',
+                                                                                fontWeight: 600,
                                                                                 fontSize: '1.5rem',
-                                                                                lineHeight: 1,
+                                                                                lineHeight: 0.5,
+                                                                                letterSpacing: '-2px',
+                                                                                textTransform: 'uppercase',
                                                                                 color: 'white',
                                                                             }}>
                                                                                 V/S
@@ -3792,9 +3802,9 @@ export default function LeagueDetailPage() {
                                                                         </Box>
 
                                                                         {/* MOTM Section */}
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' , mt:-8 }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' , mt:-6 }}>
                                                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                                                                                <Image src={CardStar} alt="MOTM" width={28} height={28} />
+                                                                                <Image src={CardStar} alt="MOTM" width={34} height={34} />
                                                                                 {(() => {
                                                                                     const votes = match.manOfTheMatchVotes || {};
                                                                                     const voteCounts: Record<string, number> = {};
@@ -3823,17 +3833,24 @@ export default function LeagueDetailPage() {
                                                                                         
                                                                                         if (motmPlayer && motmPlayer.firstName && motmPlayer.lastName) {
                                                                                             return (
-                                                                                                <Typography sx={{ color: '#FFD700', fontSize: '0.6rem', fontWeight: 700, textAlign: 'center' }}>
-                                                                                                    {motmPlayer.firstName} {motmPlayer.lastName}
-                                                                                                </Typography>
+                                                                                                <>
+                                                                                                    <Typography sx={{ color: '#FFD700', fontSize: '0.6rem', fontWeight: 700, textAlign: 'center', mt: 0.5 }}>
+                                                                                                        {motmPlayer.firstName} {motmPlayer.lastName}
+                                                                                                    </Typography>
+                                                                                                    <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
+                                                                                                        Man Of The Match
+                                                                                                    </Typography>
+                                                                                                </>
                                                                                             );
                                                                                         }
                                                                                     }
-                                                                                    return null;
+                                                                                    
+                                                                                    return (
+                                                                                        <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
+                                                                                            Man Of The Match
+                                                                                        </Typography>
+                                                                                    );
                                                                                 })()}
-                                                                           <Typography sx={{ color: 'white', fontSize: '0.4rem', fontWeight: 600, textAlign: 'center' }}>
-                                                                                    Man Of The Match
-                                                                                </Typography>
                                                                             </Box>
                                                                         </Box>
 
@@ -3868,6 +3885,7 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         py: 0.5,
                                                                                         px: 1,
+                                                                                        
                                                                                         borderRadius: '50px',
                                                                                         border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                         whiteSpace: 'nowrap',
@@ -3876,7 +3894,7 @@ export default function LeagueDetailPage() {
                                                                                         '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                     }}
                                                                                 >
-                                                                                    Add Stats
+                                                                                   <span style={{ marginTop: '4px',  }}>Add Stats</span> 
                                                                                 </Button>
                                                                             )}
 
@@ -3903,7 +3921,8 @@ export default function LeagueDetailPage() {
                                                                                     '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                 }}
                                                                             >
-                                                                                View Team
+                                                                              
+                                                                                 <span style={{ marginTop: '4px',  }}> View Team</span> 
                                                                             </Button>
 
                                                                             {/* Results Button */}
@@ -3927,7 +3946,8 @@ export default function LeagueDetailPage() {
                                                                                     '& .MuiButton-startIcon': { mr: 0.4 }
                                                                                 }}
                                                                             >
-                                                                                Results
+                                                                               <span style={{ marginTop: '4px',  }}>  Results</span>
+                                                                               
                                                                             </Button>
                                                                         </Box>
                                                                     </Box>
@@ -3937,6 +3957,7 @@ export default function LeagueDetailPage() {
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
                                                                         p: 1,
+                                                                        
                                                                         minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
@@ -3945,7 +3966,7 @@ export default function LeagueDetailPage() {
                                                                     }}>
                                                                         {isAdmin ? (
                                                                             <>
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' , ml:'-5px' }}>
+                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' , ml:'5px' }}>
                                                                                     For Admin Only
                                                                                 </Typography>
                                                                                 {/* Add Score Button */}
@@ -3961,10 +3982,11 @@ export default function LeagueDetailPage() {
                                                                                         justifyContent: 'flex-start',
                                                                                         textTransform: 'none',
                                                                                         p: 0,
+                                                                                        ml: '5px',
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
-                                                                                        '& .MuiButton-startIcon': { mr: 0.5 }
+                                                                                        '& .MuiButton-startIcon': { mr: 1 }
                                                                                     }}
                                                                                 >
                                                                                     Add Score
@@ -3982,6 +4004,7 @@ export default function LeagueDetailPage() {
                                                                                         justifyContent: 'flex-start',
                                                                                         textTransform: 'none',
                                                                                         p: 0,
+                                                                                        ml: '5px',
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
@@ -4006,6 +4029,7 @@ export default function LeagueDetailPage() {
                                                                                         justifyContent: 'flex-start',
                                                                                         textTransform: 'none',
                                                                                         p: 0,
+                                                                                        ml: '5px',
                                                                                         fontSize: '0.6rem',
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
@@ -5066,13 +5090,13 @@ export default function LeagueDetailPage() {
                                 order: { xs: 2, sm: 1 },
                                 mt: { xs: 0, sm: 5 }
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3 }}>Current Stats</Typography>
+                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3, mb: 0.3 }}>Current Stats</Typography>
                             <Box
                                 sx={{
                                     display: { xs: 'grid', sm: 'flex' },
                                     flexDirection: { sm: 'column' },
                                     gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
-                                    gap: { xs: 0.5, sm: 1 },
+                                    gap: { xs: 0, sm: 0 },
                                 }}
                             >
                                 {[
@@ -5080,6 +5104,8 @@ export default function LeagueDetailPage() {
                                     { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
                                     { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
                                     { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
+                                    { img: DefensiveImpact, label: 'Defensive Impact', value: quickView.defensiveImpact ?? 0 },
+                                    { img: Mentality, label: 'Mentality', value: quickView.mentality ?? 0 },
                                 ].map((it, i) => (
                                     <Box
                                         key={i}
@@ -5087,8 +5113,8 @@ export default function LeagueDetailPage() {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'flex-start',
-                                            gap: 0.25,
-                                            p: { xs: 0.25, sm: 0.5 },
+                                            gap: 0.1,
+                                            p: { xs: 0.15, sm: 0.3 },
                                         }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -5113,6 +5139,23 @@ export default function LeagueDetailPage() {
                                     </Box>
                                 ))}
                             </Box>
+                            <Button
+                                variant="text"
+                                sx={{
+                                    
+                                    color: '#1976d2',
+                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    padding: '4px 8px',
+                                    minWidth: 'auto',
+                                    '&:hover': {
+                                        backgroundColor: 'transparent',
+                                    },
+                                }}
+                            >
+                                More Stats
+                            </Button>
                             </Paper>
 
                             {/* Center: Player Card */}
