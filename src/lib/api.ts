@@ -132,6 +132,58 @@ export const authAPI = {
     }    
   },
 
+  verifyResetCode: async (email: string, code: string, newPassword: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Verification failed');
+      }
+
+      return { success: true, message: data.message || 'Password reset successfully!' };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message };
+      }
+      return { success: false, error: 'An error occurred during verification' };
+    }
+  },
+
+  verifyOtp: async (email: string, code: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'OTP verification failed');
+      }
+
+      return { success: true, message: data.message || 'Code verified!' };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message };
+      }
+      return { success: false, error: 'An error occurred during OTP verification' };
+    }
+  },
+
   getUserData: async (token: string) => {
     try {
       // Validate token before sending

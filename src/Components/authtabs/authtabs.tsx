@@ -27,11 +27,13 @@ import {
   OutlinedInput,
   InputAdornment,
   useMediaQuery,
+  Dialog,
+  DialogContent,
 } from "@mui/material"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import toast from "react-hot-toast"
-import { Visibility, VisibilityOff, Facebook, Apple } from "@mui/icons-material"
+import { Visibility, VisibilityOff, Facebook, Apple, Close as CloseIcon } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import type { User } from "@/types/user"
@@ -197,6 +199,19 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const [forgotMessage, setForgotMessage] = useState("")
   const [forgotError, setForgotError] = useState(false)
+
+  // Forgot password dialog state
+  const [forgotDialogOpen, setForgotDialogOpen] = useState(false)
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3 | 4>(1) // 1=email, 2=otp, 3=new password, 4=success
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotOtp, setForgotOtp] = useState(["" , "", "", "", ""])
+  const [forgotNewPassword, setForgotNewPassword] = useState("")
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("")
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false)
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotDialogMessage, setForgotDialogMessage] = useState("")
+  const [forgotDialogError, setForgotDialogError] = useState(false)
 
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegisterPassword, setShowRegisterPassword] = useState(false)
@@ -532,26 +547,156 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   }
 
   const handleForgotPassword = async () => {
-    setForgotMessage("")
-    setForgotError(false)
-    if (!loginData.email) {
-      const msg = "Please enter your email above first."
-      setForgotMessage(msg)
-      setForgotError(true)
-      toast.error(msg)
+    // Open the dialog instead of inline behavior
+    setForgotDialogOpen(true)
+    setForgotStep(1)
+    setForgotEmail(loginData.email || "")
+    setForgotOtp(["", "", "", "", ""])
+    setForgotNewPassword("")
+    setForgotConfirmPassword("")
+    setForgotDialogMessage("")
+    setForgotDialogError(false)
+    setForgotLoading(false)
+  }
+
+  const handleForgotDialogClose = () => {
+    setForgotDialogOpen(false)
+    setForgotStep(1)
+    setForgotDialogMessage("")
+    setForgotDialogError(false)
+    setForgotLoading(false)
+  }
+
+  // Step 1: Send OTP to email
+  const handleSendOtp = async () => {
+    setForgotDialogMessage("")
+    setForgotDialogError(false)
+    if (!forgotEmail) {
+      setForgotDialogMessage("Please enter your email address.")
+      setForgotDialogError(true)
       return
     }
-    const res = await authAPI.resetPassword(loginData.email)
-    if (res.success) {
-      const msg = extractSuccessMessage(res, "Password reset link sent! Check your email.")
-      setForgotMessage(msg)
-      toast.success(msg)
-      setForgotError(false)
-    } else {
-      const msg = extractApiMessage(res)
-      setForgotMessage(msg)
-      setForgotError(true)
-      toast.error(msg)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(forgotEmail)) {
+      setForgotDialogMessage("Please enter a valid email address.")
+      setForgotDialogError(true)
+      return
+    }
+    setForgotLoading(true)
+    try {
+      const res = await authAPI.resetPassword(forgotEmail)
+      if (res.success) {
+        setForgotStep(2)
+        setForgotDialogMessage("")
+        toast.success("Verification code sent to your email!")
+      } else {
+        setForgotDialogMessage(extractApiMessage(res))
+        setForgotDialogError(true)
+      }
+    } catch (err) {
+      setForgotDialogMessage(extractApiMessage(err))
+      setForgotDialogError(true)
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  // Handle OTP input boxes
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1)
+    if (value && !/^[0-9]$/.test(value)) return
+    const newOtp = [...forgotOtp]
+    newOtp[index] = value
+    setForgotOtp(newOtp)
+    // Auto-focus next input
+    if (value && index < 4) {
+      const next = document.getElementById(`otp-input-${index + 1}`)
+      if (next) (next as HTMLInputElement).focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !forgotOtp[index] && index > 0) {
+      const prev = document.getElementById(`otp-input-${index - 1}`)
+      if (prev) (prev as HTMLInputElement).focus()
+    }
+  }
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 5)
+    if (pasted.length === 5) {
+      setForgotOtp(pasted.split(""))
+      const last = document.getElementById(`otp-input-4`)
+      if (last) (last as HTMLInputElement).focus()
+    }
+  }
+
+  // Step 2: Verify OTP only (then move to password step)
+  const handleVerifyOtp = async () => {
+    setForgotDialogMessage("")
+    setForgotDialogError(false)
+    const code = forgotOtp.join("")
+    if (code.length < 5) {
+      setForgotDialogMessage("Please enter the complete 5-digit code.")
+      setForgotDialogError(true)
+      return
+    }
+    setForgotLoading(true)
+    try {
+      const res = await authAPI.verifyOtp(forgotEmail, code)
+      if (res.success) {
+        setForgotStep(3)
+        setForgotDialogMessage("")
+        toast.success("Code verified!")
+      } else {
+        setForgotDialogMessage(res.error || "Invalid code.")
+        setForgotDialogError(true)
+      }
+    } catch (err) {
+      setForgotDialogMessage(extractApiMessage(err))
+      setForgotDialogError(true)
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  // Step 3: Set new password
+  const handleVerifyAndReset = async () => {
+    setForgotDialogMessage("")
+    setForgotDialogError(false)
+    const code = forgotOtp.join("")
+    if (!forgotNewPassword) {
+      setForgotDialogMessage("Please enter a new password.")
+      setForgotDialogError(true)
+      return
+    }
+    if (forgotNewPassword.length < 6) {
+      setForgotDialogMessage("Password must be at least 6 characters.")
+      setForgotDialogError(true)
+      return
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotDialogMessage("Passwords do not match.")
+      setForgotDialogError(true)
+      return
+    }
+    setForgotLoading(true)
+    try {
+      const res = await authAPI.verifyResetCode(forgotEmail, code, forgotNewPassword)
+      if (res.success) {
+        setForgotStep(4)
+        setForgotDialogMessage("")
+        toast.success("Password reset successfully!")
+      } else {
+        setForgotDialogMessage(res.error || "Failed to reset password.")
+        setForgotDialogError(true)
+      }
+    } catch (err) {
+      setForgotDialogMessage(extractApiMessage(err))
+      setForgotDialogError(true)
+    } finally {
+      setForgotLoading(false)
     }
   }
 
@@ -653,12 +798,6 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 Forgot your password?
               </Button>
             </Box>
-
-            {forgotMessage && (
-              <Alert severity={forgotError ? "error" : "success"} sx={{ mt: 1 }}>
-                {forgotMessage}
-              </Alert>
-            )}
           </Stack>
         </Box>
       ) : (
@@ -1118,6 +1257,341 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           </Box>
         </Box>
       )}
+
+      {/* Forgot Password Dialog */}
+      <Dialog
+        open={forgotDialogOpen}
+        onClose={handleForgotDialogClose}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            overflow: 'hidden',
+            bgcolor: '#101010',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          },
+        }}
+      >
+        {/* Header with orange-red gradient */}
+        <Box sx={{
+          background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+          px: 3, pt: 3, pb: 3.5,
+          position: 'relative',
+          textAlign: 'center',
+        }}>
+          <IconButton
+            onClick={handleForgotDialogClose}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'rgba(255,255,255,0.8)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.15)' } }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {/* Step indicator */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2 }}>
+            {[1, 2, 3, 4].map((s) => (
+              <Box
+                key={s}
+                sx={{
+                  width: forgotStep === s ? 24 : 8,
+                  height: 8,
+                  borderRadius: '4px',
+                  bgcolor: forgotStep >= s ? '#fff' : 'rgba(255,255,255,0.3)',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            ))}
+          </Box>
+
+          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+            {forgotStep === 1 && 'Reset Password'}
+            {forgotStep === 2 && 'Enter Verification Code'}
+            {forgotStep === 3 && 'Create New Password'}
+            {forgotStep === 4 && 'All Done!'}
+          </Typography>
+          <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+            {forgotStep === 1 && 'Enter your email to get a verification code'}
+            {forgotStep === 2 && 'Check your email for the 5-digit code'}
+            {forgotStep === 3 && 'Choose a strong new password'}
+            {forgotStep === 4 && 'Your password has been updated'}
+          </Typography>
+        </Box>
+
+        <DialogContent sx={{ px: 3, pt: 3, pb: 4, bgcolor: '#101010' }}>
+          {forgotDialogMessage && (
+            <Alert
+              severity={forgotDialogError ? 'error' : 'success'}
+              sx={{
+                mb: 2,
+                borderRadius: '7px',
+                bgcolor: forgotDialogError ? 'rgba(207,35,38,0.15)' : 'rgba(0,167,127,0.15)',
+                color: forgotDialogError ? '#ff6b6b' : '#00c896',
+                '& .MuiAlert-icon': { color: forgotDialogError ? '#ff6b6b' : '#00c896' },
+              }}
+            >
+              {forgotDialogMessage}
+            </Alert>
+          )}
+
+          {/* ── Step 1: Email ── */}
+          {forgotStep === 1 && (
+            <Box>
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                Email Address
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="you@example.com"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                sx={{
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '7px',
+                    color: '#fff',
+                    '& fieldset': { borderColor: '#404040' },
+                    '&:hover fieldset': { borderColor: '#E56A16' },
+                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '& input': { color: '#fff', fontSize: '0.95rem' },
+                  },
+                  '& input::placeholder': { color: '#757575', opacity: 1 },
+                }}
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={forgotLoading}
+                onClick={handleSendOtp}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  py: 1.4,
+                  borderRadius: '7px',
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                }}
+              >
+                {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Send Verification Code'}
+              </Button>
+            </Box>
+          )}
+
+          {/* ── Step 2: OTP Only ── */}
+          {forgotStep === 2 && (
+            <Box>
+              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                We sent a 5-digit code to <span style={{ color: '#E56A16', fontWeight: 600 }}>{forgotEmail}</span>
+              </Typography>
+
+              {/* OTP boxes */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2, mb: 3 }}>
+                {forgotOtp.map((digit, idx) => (
+                  <TextField
+                    key={idx}
+                    id={`otp-input-${idx}`}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    onPaste={idx === 0 ? handleOtpPaste : undefined}
+                    inputProps={{
+                      maxLength: 1,
+                      style: {
+                        textAlign: 'center',
+                        fontSize: '1.6rem',
+                        fontWeight: 700,
+                        padding: '12px 0',
+                        color: '#E56A16',
+                        fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif',
+                      },
+                    }}
+                    sx={{
+                      width: 54,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#1a1a1a',
+                        borderRadius: '7px',
+                        '& fieldset': { borderColor: '#404040' },
+                        '&:hover fieldset': { borderColor: '#E56A16' },
+                        '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={forgotLoading}
+                onClick={handleVerifyOtp}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  py: 1.4,
+                  borderRadius: '7px',
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                }}
+              >
+                {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Verify Code'}
+              </Button>
+
+              <Button
+                fullWidth
+                variant="text"
+                onClick={handleSendOtp}
+                disabled={forgotLoading}
+                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' } }}
+              >
+                Didn&apos;t receive code? Resend
+              </Button>
+            </Box>
+          )}
+
+          {/* ── Step 3: New Password ── */}
+          {forgotStep === 3 && (
+            <Box>
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                New Password
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="Enter new password"
+                type={showForgotNewPassword ? 'text' : 'password'}
+                value={forgotNewPassword}
+                onChange={(e) => setForgotNewPassword(e.target.value)}
+                sx={{
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '7px',
+                    color: '#fff',
+                    '& fieldset': { borderColor: '#404040' },
+                    '&:hover fieldset': { borderColor: '#E56A16' },
+                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '& input': { color: '#fff', fontSize: '0.95rem' },
+                  },
+                  '& input::placeholder': { color: '#757575', opacity: 1 },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton onClick={() => setShowForgotNewPassword(v => !v)} edge="end" size="small" sx={{ color: '#757575' }}>
+                      {showForgotNewPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+              />
+
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                Confirm Password
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="Confirm new password"
+                type={showForgotConfirmPassword ? 'text' : 'password'}
+                value={forgotConfirmPassword}
+                onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleVerifyAndReset()}
+                sx={{
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '7px',
+                    color: '#fff',
+                    '& fieldset': { borderColor: '#404040' },
+                    '&:hover fieldset': { borderColor: '#E56A16' },
+                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '& input': { color: '#fff', fontSize: '0.95rem' },
+                  },
+                  '& input::placeholder': { color: '#757575', opacity: 1 },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton onClick={() => setShowForgotConfirmPassword(v => !v)} edge="end" size="small" sx={{ color: '#757575' }}>
+                      {showForgotConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+              />
+
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={forgotLoading}
+                onClick={handleVerifyAndReset}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  py: 1.4,
+                  borderRadius: '7px',
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                }}
+              >
+                {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Set New Password'}
+              </Button>
+            </Box>
+          )}
+
+          {/* ── Step 4: Success ── */}
+          {forgotStep === 4 && (
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <Box sx={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                mx: 'auto', mb: 2,
+                boxShadow: '0 4px 20px rgba(229,106,22,0.3)',
+              }}>
+                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>✓</Typography>
+              </Box>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#fff', mb: 1, fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif' }}>
+                Password Reset Successful
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', mb: 3, fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                You can now log in with your new password.
+              </Typography>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleForgotDialogClose}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  py: 1.4,
+                  borderRadius: '7px',
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                }}
+              >
+                Back to Login
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
