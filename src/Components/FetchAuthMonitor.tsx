@@ -101,27 +101,25 @@ export default function FetchAuthMonitor() {
 
         finalInit.headers = headers;
 
-        // Optional: small delay if no auth yet & protected endpoint heuristics (avoid spamming server)
+        // Optional: quick check if no auth yet & protected endpoint (non-blocking)
         if (!hasAuth && !headers["Authorization"]) {
           const protectedHeuristic = /\/notifications|\/leagues|\/matches|\/profile|\/players|\/dream-team|\/trophy-room|\/xp/i.test(url);
           if (protectedHeuristic) {
-            // Wait briefly for token to appear (up to 350ms)
-            const start = performance.now();
-            while (performance.now() - start < 350) {
+            // Quick single check for token (no busy-wait to avoid blocking main thread)
+            try {
               const cookieToken = document.cookie
                 .split(";")
                 .map(c => c.trim())
                 .find(c => c.startsWith("token=") || c.startsWith("auth_token="));
               if (cookieToken) {
                 const newTok = cookieToken.split("=")[1];
-                if (newTok) {
+                if (newTok && newTok !== 'undefined' && newTok.split('.').length === 3) {
                   headers["Authorization"] = `Bearer ${newTok}`;
                   finalInit.headers = headers;
-                  if (debug()) console.info("[FetchAuthMonitor] ⏱ Late token attach after wait:", url);
-                  break;
+                  if (debug()) console.info("[FetchAuthMonitor] ⏱ Late token attach:", url);
                 }
               }
-            }
+            } catch {/* ignore */}
           }
         }
 

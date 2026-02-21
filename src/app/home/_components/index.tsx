@@ -1247,10 +1247,15 @@ export default function PlayerDashboard() {
 
         console.log('🔍 [Stats Fetch] Response status:', response.status);
         
-        const data = await response.json();
+        if (!response.ok) {
+          console.error('❌ [Stats Fetch] Response not OK:', response.status);
+          return;
+        }
+        
+        const data = await response.json().catch(() => null);
         console.log('🔍 [Stats Fetch] Response data:', data);
 
-        if (response.ok) {
+        if (data) {
           if (data.success && data.stats) {
             console.log('✅ [Stats Fetch] Stats loaded:', data.stats);
             setUserStats(data.stats);

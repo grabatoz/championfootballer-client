@@ -1612,9 +1612,15 @@ export default function GlobalTrophyRoom() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?_=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
+        if (!res.ok) {
+          console.error('[Trophy Room] auth/status failed:', res.status);
+          setLeagues([]);
+          setLoading(false);
+          return;
+        }
+        const data = await res.json().catch(() => null);
         
-        if (res.ok && (data?.user || data?.success)) {
+        if (data && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
           const { leagues: rawLeagues, adminIds } = normalizeLeaguesFromAuthData(userPayload);
 
@@ -1758,11 +1764,17 @@ export default function GlobalTrophyRoom() {
           `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons?_=${Date.now()}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const data = await res.json();
         
+        if (!res.ok) {
+          console.log('[Trophy Room] Seasons API not OK:', res.status);
+          setSeasonsChecked(true);
+          return;
+        }
+        
+        const data = await res.json().catch(() => null);
         console.log('[Trophy Room] Seasons API response:', { status: res.status, data });
         
-        if (res.ok && data?.success && Array.isArray(data.seasons) && data.seasons.length > 0) {
+        if (data?.success && Array.isArray(data.seasons) && data.seasons.length > 0) {
           // Store seasons in dedicated state (NOT in leagues array)
           setLeagueSeasons(data.seasons);
           // Directly select the active season
@@ -1838,9 +1850,17 @@ export default function GlobalTrophyRoom() {
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
+        
+        if (!res.ok) {
+          console.error('[TrophyRoom] /leagues/trophy-room failed:', res.status);
+          setApiAllWinners([]);
+          setError('Failed to load trophy room.');
+          return;
+        }
+        
+        const data = await res.json().catch(() => null);
 
-        if (res.ok && data?.success) {
+        if (data?.success) {
           const trophiesWithMeta = Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : [];
           console.log('[Trophy Room] ✅ Fetched trophies:', trophiesWithMeta.length, trophiesWithMeta);
           setApiAllWinners(trophiesWithMeta);
