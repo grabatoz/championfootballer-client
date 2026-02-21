@@ -1929,40 +1929,61 @@ export default function GlobalTrophyRoom() {
         
         // Iterate through all leagues where user is a member
         for (const league of leagues) {
-          // Get all seasons for this league from league.seasons
-          const leagueSeasons = league.seasons || [];
-          
-          if (leagueSeasons.length === 0) {
-            // No seasons, try fetching trophies for league without season filter
-            const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&_=${Date.now()}`;
-            const res = await fetch(url, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json();
-            
-            if (res.ok && data?.success && Array.isArray(data.trophyWinners)) {
-              const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
-              const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
-              allUserTrophies.push(...userTrophies);
+          // First, fetch seasons for this league from the API
+          let seasons: Season[] = [];
+          try {
+            const seasonsRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons?_=${Date.now()}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (seasonsRes.ok) {
+              const seasonsData = await seasonsRes.json().catch(() => null);
+              if (seasonsData?.success && Array.isArray(seasonsData.seasons)) {
+                seasons = seasonsData.seasons;
+              }
             }
-          } else {
-            // Fetch trophies for each season in this league
-            for (const season of leagueSeasons) {
-              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&_=${Date.now()}`;
+          } catch {
+            // Ignore — will fall through to no-season fetch
+          }
+          
+          if (seasons.length === 0) {
+            // No seasons, try fetching trophies for league without season filter
+            try {
+              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&_=${Date.now()}`;
               const res = await fetch(url, {
                 headers: { Authorization: `Bearer ${token}` },
               });
-              const data = await res.json();
-              
-              if (res.ok && data?.success && Array.isArray(data.trophyWinners)) {
-                const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
-                const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
-                allUserTrophies.push(...userTrophies);
+              if (res.ok) {
+                const data = await res.json().catch(() => null);
+                if (data?.success && Array.isArray(data.trophyWinners)) {
+                  const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
+                  const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
+                  allUserTrophies.push(...userTrophies);
+                }
               }
+            } catch { /* skip this league */ }
+          } else {
+            // Fetch trophies for each season in this league
+            for (const season of seasons) {
+              try {
+                const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&_=${Date.now()}`;
+                const res = await fetch(url, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                  const data = await res.json().catch(() => null);
+                  if (data?.success && Array.isArray(data.trophyWinners)) {
+                    const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
+                    const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
+                    allUserTrophies.push(...userTrophies);
+                  }
+                }
+              } catch { /* skip this season */ }
             }
           }
         }
         
+        console.log('[My Achievements] Total user trophies found:', allUserTrophies.length);
         setMyAllTrophies(allUserTrophies);
       } catch (e) {
         console.error('[My Achievements] Error fetching all trophies:', e);
