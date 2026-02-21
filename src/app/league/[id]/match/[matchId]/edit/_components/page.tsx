@@ -12,10 +12,15 @@
   import { ArrowLeft, X, Shuffle, UserPlus, Scale, UserMinus, ArrowLeftRight, Crown, Check } from 'lucide-react';
   import toast, { Toaster } from 'react-hot-toast';
   import { cacheManager } from '@/lib/cacheManager';
+  import Image from 'next/image';
   import ShirtImg from '@/Components/images/shirtimg.png';
-
-  // Lazy load heavy components
-  // const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
+  import LeftShirt from '@/Components/images/leftshirt.png';
+  import RightShirt from '@/Components/images/rightshirt.png';
+  import GuestIcon from '@/Components/images/guesticon.png';
+import CalendarIcon from '@/Components/images/calander.png';
+import ClockIcon from '@/Components/images/clock.png';
+import GlassIcon from '@/Components/images/glass.png';
+import LocationIcon from '@/Components/images/location.png';
 
   interface User { id: string; firstName: string; lastName: string; email: string; profilePicture?: string; shirtNumber?: string; skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number; }; preferredFoot?: 'right' | 'left'; }
   interface League { id: string; name: string; members: User[]; active: boolean; }
@@ -1040,15 +1045,16 @@
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: isDialog ? '50vh' : '100vh' }}><CircularProgress /></Box>;
     if (error || !league) return <Box sx={{ p: 4, color: 'white' }}><Button startIcon={<ArrowLeft />} onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ mb: 2, color: 'white', background: '#388e3c', '&:hover': { background: '#388e3c' } }}>Back</Button><Typography color="error">{error || 'Load failed'}</Typography></Box>;
 
-    const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' } };
-    const autocompleteStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& .MuiChip-root': { background: 'rgba(229,106,22,0.15)', color: '#E5E7EB', border: '1px solid rgba(229,106,22,0.3)' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } } };
+    const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 0.5, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB', padding: '10px 14px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' }, '& .MuiOutlinedInput-input': { padding: '10px 14px' } };
+    const autocompleteStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, paddingTop: '6px', paddingBottom: '6px', '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& .MuiChip-root': { background: 'rgba(229,106,22,0.15)', color: '#E5E7EB', border: '1px solid rgba(229,106,22,0.3)', height: '24px', margin: '2px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiOutlinedInput-input': { padding: '6px 14px' }, '& .MuiAutocomplete-input': { padding: '6px 4px 6px 6px !important' } };
     // Enhanced ShirtAvatar supporting responsive size objects
-    const ShirtAvatar = ({ }: { number?: string | number; size?: number | { xs: number; sm: number; md?: number }; }) => {
+    const ShirtAvatar = ({ team }: { number?: string | number; size?: number | { xs: number; sm: number; md?: number }; team?: 'home' | 'away'; }) => {
       // const baseSize = typeof size === 'number' ? size : (size.sm || size.xs);
       // const fontSize = baseSize >= 56 ? 16 : baseSize >= 48 ? 14 : baseSize >= 40 ? 12 : baseSize >= 32 ? 10 : 8;
+      const shirtImage = team === 'away' ? RightShirt : LeftShirt;
       return (
         <Box sx={{ position: 'relative',  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1, overflow: 'hidden', flexShrink: 0 }}>
-          <img src={ShirtImg.src} alt='Shirt' style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+          <img src={shirtImage.src} alt='Shirt' style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
           {/* <Typography component='span' sx={{ position: 'relative', zIndex: 1, fontWeight: 800, fontSize, color: '#111', textShadow: '0 1px 1px rgba(255,255,255,0.6)', lineHeight: 1 }}>
             {number || '0'}
           </Typography> */}
@@ -1058,32 +1064,32 @@
 
     return (
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Box sx={{ p: isDialog ? 2 : { xs: 1, sm: 2, md: 3 }, minHeight: isDialog ? 'auto' : '100vh', color: '#E5E7EB', bgcolor: '#000' }}>
+        <Box sx={{ p: isDialog ? 0 : { xs: 1, sm: 2, md: 3 }, minHeight: isDialog ? 'auto' : '100vh', color: '#E5E7EB', bgcolor: '#000' }}>
         {/* Close Button - hide in dialog mode since dialog has its own close */}
         {/* {!isDialog && <CloseButton fallbackRoute="/dashboard" />} */}
-          <Box sx={{ display: 'flex', gap: 0, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'flex-start' }}>
+          <Box sx={{ display: 'flex', gap: 0, flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'stretch' } }}>
             {/* LEFT PANEL */}
-            <Box sx={{ width: { xs: '100%', md: '55%' } }}>
+            <Box sx={{ width: { xs: '100%', md: '55%' }, display: 'flex', flexDirection: 'column' }}>
               {/* EDIT MATCH Tab Header */}
-              <Box sx={{ py: 1.5, px: 3, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', textAlign: 'center', borderRadius: '12px 12px 0 0' }}>
+              <Box sx={{ py: 1.5, px: 3, background: '#00a77f', textAlign: 'center', borderRadius: 0 }}>
                 <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
                   Edit Match
                 </Typography>
               </Box>
-              <form ref={formRef} onSubmit={handleUpdateMatch} style={{ width: '100%' }}>
-                <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', mb: 0 }}>
+              <form ref={formRef} onSubmit={handleUpdateMatch} style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid white', borderTop: 'none', mb: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   {/* SELECT TEAM Section */}
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff', fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, textTransform: 'uppercase', mb: 1 }}>
                     Select Team
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#9CA3AF', mb: 2, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                  <Typography variant="body2" sx={{ color: '#fff', mb: 2, fontSize: { xs: '0.75rem', sm: '1rem' }, textAlign: 'center' }}>
                     Click on a player from the home or away team to switch or remove players.
                   </Typography>
                   {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap' }}>
-                    <Button startIcon={<UserPlus size={18} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' }, transition: 'all .25s ease' }}>Add Guest</Button>
-                    <Button startIcon={<Scale size={18} />} variant="outlined" onClick={balanceTeams} disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>{xpLoading || isBalancing ? 'Balancing…' : 'Balance Teams'}</Button>
-                    <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>Shuffle Teams</Button>
+                  <Box sx={{ display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button startIcon={<Image src={GuestIcon} alt="Guest" width={18} height={18} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' }, transition: 'all .25s ease' }}>Add Guest</Button>
+                    <Button startIcon={<Scale size={18} />} variant="outlined" onClick={balanceTeams} disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>{xpLoading || isBalancing ? 'Balancing…' : 'Balance Teams'}</Button>
+                    <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ borderColor: '#e56a16', color: '#e56a16', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#d35a0f', backgroundColor: 'rgba(229, 106, 22, 0.1)' } }}>Shuffle Teams</Button>
                   </Box>
                   {/* Player Selection Section */}
                       {/* Warn when fewer than 6 registered players are selected */}
@@ -1093,8 +1099,9 @@
                         </Alert>
                       )}
 
-                      <Grid container spacing={3}>
+                      <Grid container spacing={1}>
                         <Grid item xs={12} md={6}>
+                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Players</Typography>
                           <Autocomplete
                             key={`home-${availabilityVersion}`}
                             multiple
@@ -1237,15 +1244,16 @@
                             renderInput={params => (
                               <TextField
                                 {...params}
-                                label="Select Home Players"
+                                placeholder="Select players"
                                 // helperText="Green number = available; white = unavailable"
                                 FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
-                                sx={{ ...autocompleteStyles }}
+                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#00a77f', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#00a77f' }, '&.Mui-focused fieldset': { borderColor: '#00a77f' } } }}
                               />
                             )}
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
+                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Players</Typography>
                           <Autocomplete
                             key={`away-${availabilityVersion}`}
                             multiple
@@ -1387,10 +1395,10 @@
                             renderInput={params => (
                               <TextField
                                 {...params}
-                                label="Select Away Players"
+                                placeholder="Select players"
                                 // helperText="Green number = available; white = unavailable"
                                 FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
-                                sx={{ ...autocompleteStyles }}
+                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#e56a16', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#e56a16' }, '&.Mui-focused fieldset': { borderColor: '#e56a16' } } }}
                               />
                             )}
                           />
@@ -1398,6 +1406,7 @@
 
                         {/* Manual captain selectors */}
                         <Grid item xs={12} md={6}>
+                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={homeTeamUsers}
                             value={homeCaptain}
@@ -1410,9 +1419,8 @@
                             renderInput={params => (
                               <TextField
                                 {...params}
-                                label="Select Home Captain"
                                 placeholder="Choose captain"
-                                sx={{ ...autocompleteStyles }}
+                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#00a77f', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#00a77f' }, '&.Mui-focused fieldset': { borderColor: '#00a77f' } } }}
                                 helperText={homeCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
@@ -1466,6 +1474,7 @@
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
+                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={awayTeamUsers}
                             value={awayCaptain}
@@ -1478,9 +1487,8 @@
                             renderInput={params => (
                               <TextField
                                 {...params}
-                                label="Select Away Captain"
                                 placeholder="Choose captain"
-                                sx={{ ...autocompleteStyles }}
+                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#e56a16', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#e56a16' }, '&.Mui-focused fieldset': { borderColor: '#e56a16' } } }}
                                 helperText={awayCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
@@ -1537,25 +1545,25 @@
                       </Grid>
 
                   {/* Team Names (Optional) */}
-                  <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid container spacing={1} sx={{ mt: 0.5 }}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.85rem', mb: 0.5 }}>Home Team Name (Optional)</Typography>
-                      <TextField
-                        placeholder='Enter team name'
-                        value={homeTeamName}
-                        onChange={e => setHomeTeamName(e.target.value)}
-                        fullWidth
-                        sx={{ ...inputStyles }}
-                      />
-                      <Button
-                        variant='outlined'
-                        component='label'
-                        fullWidth
-                        sx={{ mt: 1, color: '#1a8a6d', borderColor: 'rgba(26,138,109,0.5)', textTransform: 'none', '&:hover': { borderColor: '#1a8a6d', bgcolor: 'rgba(26,138,109,0.1)' } }}
-                      >
-                        Add Logo
-                        <input type='file' hidden accept='image/*' onChange={handleHomeTeamImageUpload} />
-                      </Button>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Home Team Name (Optional)</Typography>
+                      <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+                        <TextField
+                          placeholder='Enter team name'
+                          value={homeTeamName}
+                          onChange={e => setHomeTeamName(e.target.value)}
+                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 0 }, '& fieldset': { borderRadius: 0, borderColor: '#00a77f' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#00a77f' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#00a77f' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
+                        />
+                        <Button
+                          variant='outlined'
+                          component='label'
+                          sx={{ color: '#00a77f', borderColor: '#00a77f', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: 0, '&:hover': { borderColor: '#00a77f', bgcolor: 'rgba(0,167,127,0.1)' } }}
+                        >
+                          Add Logo
+                          <input type='file' hidden accept='image/*' onChange={handleHomeTeamImageUpload} />
+                        </Button>
+                      </Box>
                       {homeTeamImagePreview && (
                         <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Avatar src={homeTeamImagePreview} sx={{ width: 40, height: 40 }} />
@@ -1565,23 +1573,23 @@
                       )}
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.85rem', mb: 0.5 }}>Away Team Name (Optional)</Typography>
-                      <TextField
-                        placeholder='Enter team name'
-                        value={awayTeamName}
-                        onChange={e => setAwayTeamName(e.target.value)}
-                        fullWidth
-                        sx={{ ...inputStyles }}
-                      />
-                      <Button
-                        variant='outlined'
-                        component='label'
-                        fullWidth
-                        sx={{ mt: 1, color: '#1a8a6d', borderColor: 'rgba(26,138,109,0.5)', textTransform: 'none', '&:hover': { borderColor: '#1a8a6d', bgcolor: 'rgba(26,138,109,0.1)' } }}
-                      >
-                        Add Logo
-                        <input type='file' hidden accept='image/*' onChange={handleAwayTeamImageUpload} />
-                      </Button>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Away Team Name (Optional)</Typography>
+                      <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+                        <TextField
+                          placeholder='Enter team name'
+                          value={awayTeamName}
+                          onChange={e => setAwayTeamName(e.target.value)}
+                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 0 }, '& fieldset': { borderRadius: 0, borderColor: '#e56a16' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#e56a16' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#e56a16' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
+                        />
+                        <Button
+                          variant='outlined'
+                          component='label'
+                          sx={{ color: '#e56a16', borderColor: '#e56a16', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: 0, '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.1)' } }}
+                        >
+                          Add Logo
+                          <input type='file' hidden accept='image/*' onChange={handleAwayTeamImageUpload} />
+                        </Button>
+                      </Box>
                       {awayTeamImagePreview && (
                         <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Avatar src={awayTeamImagePreview} sx={{ width: 40, height: 40 }} />
@@ -1591,12 +1599,15 @@
                       )}
                     </Grid>
                   </Grid>
+                </Paper>
 
+                {/* MATCH DETAIL */}
+                <Paper sx={{ mt: 0, mb: 0, p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid white', borderTop: 'none' }}>
                   {/* Add Match Notification */}
-                  <Box sx={{ mt: 3, mb: 1 }}>
+                  <Box sx={{ mb: 2, }}>
                     <Typography
                       onClick={() => setShowNotificationBox(prev => !prev)}
-                      sx={{ color: '#1a8a6d', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, '&:hover': { textDecoration: 'underline' }, userSelect: 'none' }}
+                      sx={{ color: 'white', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 500, '&:hover': { textDecoration: 'underline' }, userSelect: 'none' }}
                     >
                       {showNotificationBox ? '− Close Notification' : '+ Add Match Notification'}
                     </Typography>
@@ -1621,69 +1632,99 @@
                       </Box>
                     )}
                   </Box>
-                </Paper>
-
-                {/* MATCH DETAIL */}
-                <Paper sx={{ mt: 0, mb: 0, p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid rgba(255,255,255,0.1)', borderTop: 'none' }}>
-                  <Typography variant='h6' sx={{ mb: 3, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' } }}>Match Detail</Typography>
-                  <Grid container spacing={3}>
+                  <Typography variant='h6' sx={{ mb: 0.1, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' }, color: 'white' }}>Match Detail</Typography>
+                  <Grid container spacing={1}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Match Date</Typography>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
                       <DatePicker
-                        label='Select Date'
                         value={matchDate}
                         onChange={(nv: Dayjs | null) => setMatchDate(nv)}
-                        slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
+                        slotProps={{ 
+                          textField: { 
+                            fullWidth: true, 
+                            sx: inputStyles,
+                            InputProps: {
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <Image src={CalendarIcon} alt="Calendar" width={24} height={24} style={{ opacity: 0.7 }} />
+                                </InputAdornment>
+                              )
+                            }
+                          } 
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Time</Typography>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Time</Typography>
                       <TimePicker
-                        label='Start Time'
                         value={startTime}
                         onChange={(nv: Dayjs | null) => setStartTime(nv)}
-                        slotProps={{ textField: { fullWidth: true, sx: inputStyles } }}
+                        slotProps={{ 
+                          textField: { 
+                            fullWidth: true, 
+                            sx: inputStyles,
+                            InputProps: {
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <Image src={ClockIcon} alt="Clock" width={24} height={24} style={{ opacity: 0.7 }} />
+                                </InputAdornment>
+                              )
+                            }
+                          } 
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Duration</Typography>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration</Typography>
                       <TextField
-                        label='Time Duration'
                         type='number'
                         value={duration}
                         onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))}
                         fullWidth
                         sx={{ ...inputStyles }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Image src={GlassIcon} alt="Duration" width={24} height={24} style={{ opacity: 0.7 }} />
+                            </InputAdornment>
+                          )
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: '#9CA3AF', fontSize: '0.75rem', mb: 0.5, textTransform: 'uppercase' }}>Location</Typography>
+                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
                       <TextField
-                        label='Add Location'
                         value={location}
                         onChange={e => setLocation(e.target.value)}
                         fullWidth
                         sx={{ ...inputStyles }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Image src={LocationIcon} alt="Location" width={24} height={24} style={{ opacity: 0.7 }} />
+                            </InputAdornment>
+                          )
+                        }}
                       />
                     </Grid>
                   </Grid>
                   {error && <Typography color='error' sx={{ my: 3, p: 2, bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2, border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Typography>}
+                  <Button
+                    type='submit'
+                    variant='contained'
+                    fullWidth
+                    sx={{ mt: 3, py: 1, background: 'linear-gradient(135deg, #00a77f, #00a77f)', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: 1,  '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE'}
+                  </Button>
                 </Paper>
-                <Button
-                  type='submit'
-                  variant='contained'
-                  fullWidth
-                  sx={{ py: 2, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: '0 0 12px 12px', boxShadow: '0 2px 8px rgba(26,138,109,0.3)', '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE'}
-                </Button>
               </form>
             </Box>
             {/* RIGHT PANEL */}
-            <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+            <Box sx={{ width: { xs: '100%', md: '45%' }, display: 'flex', flexDirection: 'column' }}>
               {/* MATCH PREVIEW Tab Header */}
-              <Box sx={{ py: 1.5, px: 3, background: 'linear-gradient(135deg, #1a8a6d, #1a7a65)', textAlign: 'center', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <Box sx={{ py: 1.5, px: 3, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
                   Match Preview
                 </Typography>
@@ -1694,25 +1735,28 @@
               <Paper sx={{
                 p: { xs: 1.5, sm: 2, md: 3 },
                 bgcolor: '#1a1a1a',
-                color: '#E5E7EB',
-                borderRadius: '0 0 12px 12px',
-                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'white',
+                borderRadius: 0,
+                border: '1px solid white',
                 borderTop: 'none',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column'
               }}>
 
                 {/* Win Probability */}
                 {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                  <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: { xs: 2, sm: 3 } }}>
+                  <Box sx={{ mb: 0, p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: { xs: 2, sm: 3 } }}>
                     <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1.1rem', md: '1.35rem' }, textTransform: 'uppercase', letterSpacing: 1 }}>Team Balance</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" sx={{ color: '#43a047', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.homePct)}%` : '—'}</Typography>
-                        <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography>
+                        <Typography variant="h4" sx={{ color: '#00a77f', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.homePct)}%` : '—'}</Typography>
+                        {/* <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography> */}
                       </Box>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" sx={{ color: '#ef5350', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.awayPct)}%` : '—'}</Typography>
-                        <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography>
+                        <Typography variant="h4" sx={{ color: '#e56a16', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.awayPct)}%` : '—'}</Typography>
+                        {/* <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography> */}
                       </Box>
                     </Box>
                     {xpBased.total > 0 && (
@@ -1722,9 +1766,9 @@
                         sx={{
                           height: { xs: 6, sm: 8 },
                           borderRadius: { xs: 3, sm: 4 },
-                          bgcolor: 'rgba(239, 83, 80, 0.3)',
+                          bgcolor: '#e56a16',
                           '& .MuiLinearProgress-bar': {
-                            bgcolor: '#43a047',
+                            bgcolor: '#00a77f',
                             borderRadius: { xs: 3, sm: 4 }
                           }
                         }}
@@ -1748,46 +1792,40 @@
                 {/* <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 3 }, borderColor: 'rgba(255,255,255,0.3)', width: { xs: '50px', sm: '80px', md: '100px' }, mx: 'auto' }} /> */}
 
                 {/* Team Logos + VS Section */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, px: { xs: 1, sm: 2 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mx: 2, mb: { xs: 2, sm: 3, md: 4 },}}>
                   {/* Home Team Logo + Label */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <Avatar
-                      src={homeTeamImagePreview || defaultTeamImage}
-                      alt="Home"
-                      imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
-                      sx={{ width: { xs: 50, sm: 60, md: 70 }, height: { xs: 50, sm: 60, md: 70 }, border: '3px solid #1a8a6d', bgcolor: '#1a2a20', '& .MuiAvatar-img': { objectFit: 'contain' } }}
-                    />
-                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' } }}>
+                    <Box sx={{ width: { xs: 70, sm: 80, md: 90 }, height: { xs: 70, sm: 80, md: 90 }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Image src={LeftShirt} alt="Home" width={80} height={80} style={{ objectFit: 'contain' }} />
+                    </Box>
+                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } }}>
                       {homeTeamName || 'Home'}
                     </Typography>
                   </Box>
 
-                  {/* VS Center */}
+                  
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' }, color: '#fff', letterSpacing: 2 }}>
+                    <Typography sx={{  fontWeight: '500 !important', fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' }, color: '#fff', letterSpacing: 2, fontFamily: '"Anton", sans-serif !important', textTransform: 'uppercase' }}>
                       V/S
                     </Typography>
-                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.75rem' } }}>
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.75rem', } }}>
                       {duration || 90} Minutes Match
                     </Typography>
                   </Box>
 
                   {/* Away Team Logo + Label */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <Avatar
-                      src={awayTeamImagePreview || defaultTeamImage}
-                      alt="Away"
-                      imgProps={{ onError: (e) => { (e.currentTarget as HTMLImageElement).src = defaultTeamImage; } }}
-                      sx={{ width: { xs: 50, sm: 60, md: 70 }, height: { xs: 50, sm: 60, md: 70 }, border: '3px solid #e56a16', bgcolor: '#2a1a10', '& .MuiAvatar-img': { objectFit: 'contain' } }}
-                    />
-                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' } }}>
+                    <Box sx={{ width: { xs: 70, sm: 80, md: 90 }, height: { xs: 70, sm: 80, md: 90 }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Image src={RightShirt} alt="Away" width={80} height={80} style={{ objectFit: 'contain' }} />
+                    </Box>
+                    <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } }}>
                       {awayTeamName || 'Away'}
                     </Typography>
                   </Box>
                 </Box>
 
                 { /* Player lists */}
-                <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1, md: 2 }, alignItems: 'flex-start' }}>
+                <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5, md: 0.8 }, alignItems: 'flex-start' }}>
                   {/* Home Team list (header removed) */}
                   <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     {homeCaptain && (
@@ -1797,53 +1835,66 @@
                           alignItems: 'center',
                           mb: { xs: 0.5, sm: 1, md: 1.5 },
                           p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                          bgcolor: 'rgba(255, 215, 0, 0.1)',
-                          borderRadius: { xs: 1, sm: 2, md: 3 },
-                          border: '1px solid rgba(255, 215, 0, 0.3)',
+                          bgcolor: 'rgba(255,255,255,0.03)',
+                          borderRadius: 0,
+                          border: '1px solid #029470',
                           cursor: 'pointer',
                           minHeight: { xs: 28, sm: 35, md: 50 },
-                          '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
                           overflow: 'hidden'
                         }}
                         draggable
                         onDragEnd={() => movePlayer(homeCaptain, 'away')}
                         onClick={(e) => handlePlayerClick(e, homeCaptain, 'home')}
                       >
-                        <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                        <ShirtAvatar number={homeCaptain.shirtNumber || (homeCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} team="home" />
                         <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                          <Typography
-                            fontWeight="bold"
-                            sx={{
-                              fontSize: { xs: 6.5, sm: 8, md: 12 },
-                              color: 'white',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {homeCaptain.firstName} {homeCaptain.lastName}
-                            {homeCaptain.isGuest && (
-                              <Chip
-                                label="G"
-                                size="small"
-                                sx={{
-                                  ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                  height: { xs: 10, sm: 12, md: 16 },
-                                  fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                  bgcolor: '#e67e22',
-                                  color: 'white',
-                                  '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
-                                }}
-                              />
-                            )}
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: '#e56a16', fontWeight: 'bold' }}>Captain</Typography>
-                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Position: Defender
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
-                            Avg XP: {getAvgRating(homeCaptain)}
-                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                            <Typography
+                              fontWeight="bold"
+                              sx={{
+                                fontSize: { xs: 8, sm: 10, md: 14 },
+                                color: 'white',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: { xs: 0.3, sm: 0.5 }
+                              }}
+                            >
+                              <span>{homeCaptain.firstName} {homeCaptain.lastName}</span>
+                              {homeCaptain.isGuest && (
+                                <Chip
+                                  label="G"
+                                  size="small"
+                                  sx={{
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                    bgcolor: '#e67e22',
+                                    color: 'white',
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                  }}
+                                />
+                              )}
+                            </Typography>
+                            <Chip
+                              label="Captain"
+                              size="small"
+                              sx={{
+                                height: { xs: 10, sm: 12, md: 16 },
+                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                color: '#029470',
+                                fontWeight: 'bold',
+                                flexShrink: 0,
+                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', fontSize: { xs: 6, sm: 7, md: 10 } }}>
+                            <Typography sx={{ fontSize: 'inherit', color: '#9CA3AF' }}>Position: Defender</Typography>
+                            <Typography sx={{ fontSize: 'inherit', color: '#B0BEC5' }}>Avg XP: {getAvgRating(homeCaptain)}</Typography>
+                          </Box>
                         </Box>
                         {homeCaptain.isGuest && (
                           <IconButton
@@ -1877,13 +1928,13 @@
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            mb: { xs: 0.3, sm: 0.5, md: 1 },
-                            p: { xs: 0.3, sm: 0.5, md: 1 },
+                            mb: { xs: 0.5, sm: 1, md: 1.5 },
+                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
                             bgcolor: 'rgba(255,255,255,0.03)',
-                            borderRadius: { xs: 1, sm: 2, md: 3 },
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 0,
+                            border: '1px solid #029470',
                             cursor: 'pointer',
-                            minHeight: { xs: 24, sm: 30, md: 40 },
+                            minHeight: { xs: 28, sm: 35, md: 50 },
                             '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
                             overflow: 'hidden'
                           }}
@@ -1891,51 +1942,51 @@
                           onDragEnd={() => movePlayer(user, 'away')}
                           onClick={(e) => handlePlayerClick(e, user, 'home')}
                         >
-                          <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                          <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                          <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} team="home" />
+                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
                             <Typography
                               fontWeight={500}
                               sx={{
-                                fontSize: { xs: 6, sm: 7.5, md: 10 },
+                                fontSize: { xs: 8, sm: 10, md: 14 },
                                 color: 'white',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              {user.firstName} {user.lastName}
+                              <span>{user.firstName} {user.lastName}</span>
                               {user.isGuest && (
                                 <Chip
                                   label="G"
                                   size="small"
                                   sx={{
-                                    ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                    height: { xs: 8, sm: 10, md: 14 },
-                                    fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
                                     bgcolor: '#e67e22',
                                     color: 'white',
-                                    '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
                                   }}
                                 />
                               )}
                             </Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                              Position: Defender
-                            </Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
-                              Avg XP: {getAvgRating(user)}
-                            </Typography>
+                            <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', fontSize: { xs: 6, sm: 7, md: 10 } }}>
+                              <Typography sx={{ fontSize: 'inherit', color: '#9CA3AF' }}>Position: Defender</Typography>
+                              <Typography sx={{ fontSize: 'inherit', color: '#B0BEC5' }}>Avg XP: {getAvgRating(user)}</Typography>
+                            </Box>
                           </Box>
                           {user.isGuest && (
                             <IconButton
                               size="small"
                               sx={{
                                 color: '#f44336',
-                                ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                                minWidth: { xs: 12, sm: 16, md: 20 },
-                                width: { xs: 12, sm: 16, md: 20 },
-                                height: { xs: 12, sm: 16, md: 20 }
+                                ml: { xs: 0.2, sm: 0.3 },
+                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                minWidth: { xs: 14, sm: 18, md: 22 },
+                                width: { xs: 14, sm: 18, md: 22 },
+                                height: { xs: 14, sm: 18, md: 22 }
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1943,7 +1994,7 @@
                                 if (g) removeStagedGuest('home', g.tempId);
                               }}
                             >
-                              <X size={7} />
+                              <X size={8} />
                             </IconButton>
                           )}
                         </Box>
@@ -1971,53 +2022,66 @@
                           alignItems: 'center',
                           mb: { xs: 0.5, sm: 1, md: 1.5 },
                           p: { xs: 0.5, sm: 0.8, md: 1.5 },
-                          bgcolor: 'rgba(255, 215, 0, 0.1)',
-                          borderRadius: { xs: 1, sm: 2, md: 3 },
-                          border: '1px solid rgba(255, 215, 0, 0.3)',
+                          bgcolor: 'rgba(255,255,255,0.03)',
+                          borderRadius: 0,
+                          border: '1px solid #e56a16',
                           cursor: 'pointer',
                           minHeight: { xs: 28, sm: 35, md: 50 },
-                          '&:hover': { bgcolor: 'rgba(255, 215, 0, 0.15)' },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
                           overflow: 'hidden'
                         }}
                         draggable
                         onDragEnd={() => movePlayer(awayCaptain, 'home')}
                         onClick={(e) => handlePlayerClick(e, awayCaptain, 'away')}
                       >
-                        <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} />
+                        <ShirtAvatar number={awayCaptain.shirtNumber || (awayCaptain.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} team="away" />
                         <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
-                          <Typography
-                            fontWeight="bold"
-                            sx={{
-                              fontSize: { xs: 6.5, sm: 8, md: 12 },
-                              color: 'white',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {awayCaptain.firstName} {awayCaptain.lastName}
-                            {awayCaptain.isGuest && (
-                              <Chip
-                                label="G"
-                                size="small"
-                                sx={{
-                                  ml: { xs: 0.3, sm: 0.5, md: 0.8 },
-                                  height: { xs: 10, sm: 12, md: 16 },
-                                  fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
-                                  bgcolor: '#e67e22',
-                                  color: 'white',
-                                  '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
-                                }}
-                              />
-                            )}
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 5, sm: 6, md: 9 }, color: '#e56a16', fontWeight: 'bold' }}>Captain</Typography>
-                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                            Position: Defender
-                          </Typography>
-                          <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
-                            Avg XP: {getAvgRating(awayCaptain)}
-                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                            <Typography
+                              fontWeight="bold"
+                              sx={{
+                                fontSize: { xs: 8, sm: 10, md: 14 },
+                                color: 'white',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: { xs: 0.3, sm: 0.5 }
+                              }}
+                            >
+                              <span>{awayCaptain.firstName} {awayCaptain.lastName}</span>
+                              {awayCaptain.isGuest && (
+                                <Chip
+                                  label="G"
+                                  size="small"
+                                  sx={{
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                    bgcolor: '#e67e22',
+                                    color: 'white',
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                                  }}
+                                />
+                              )}
+                            </Typography>
+                            <Chip
+                              label="Captain"
+                              size="small"
+                              sx={{
+                                height: { xs: 10, sm: 12, md: 16 },
+                                fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
+                                color: '#e56a16',
+                                fontWeight: 'bold',
+                                flexShrink: 0,
+                                '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', fontSize: { xs: 6, sm: 7, md: 10 } }}>
+                            <Typography sx={{ fontSize: 'inherit', color: '#9CA3AF' }}>Position: Defender</Typography>
+                            <Typography sx={{ fontSize: 'inherit', color: '#B0BEC5' }}>Avg XP: {getAvgRating(awayCaptain)}</Typography>
+                          </Box>
                         </Box>
                         {awayCaptain.isGuest && (
                           <IconButton
@@ -2051,13 +2115,13 @@
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            mb: { xs: 0.3, sm: 0.5, md: 1 },
-                            p: { xs: 0.3, sm: 0.5, md: 1 },
+                            mb: { xs: 0.5, sm: 1, md: 1.5 },
+                            p: { xs: 0.5, sm: 0.8, md: 1.5 },
                             bgcolor: 'rgba(255,255,255,0.03)',
-                            borderRadius: { xs: 1, sm: 2, md: 3 },
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 0,
+                            border: '1px solid #e56a16',
                             cursor: 'pointer',
-                            minHeight: { xs: 24, sm: 30, md: 40 },
+                            minHeight: { xs: 28, sm: 35, md: 50 },
                             '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
                             overflow: 'hidden'
                           }}
@@ -2065,51 +2129,51 @@
                           onDragEnd={() => movePlayer(user, 'home')}
                           onClick={(e) => handlePlayerClick(e, user, 'away')}
                         >
-                          <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 16, sm: 20 }} />
-                          <Box sx={{ ml: { xs: 0.4, sm: 0.6, md: 1 }, flex: 1, minWidth: 0 }}>
+                          <ShirtAvatar number={user.shirtNumber || (user.isGuest ? 'G' : '0')} size={{ xs: 18, sm: 24 }} team="away" />
+                          <Box sx={{ ml: { xs: 0.5, sm: 0.8, md: 1.5 }, flex: 1, minWidth: 0 }}>
                             <Typography
                               fontWeight={500}
                               sx={{
-                                fontSize: { xs: 6, sm: 7.5, md: 10 },
+                                fontSize: { xs: 8, sm: 10, md: 14 },
                                 color: 'white',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              {user.firstName} {user.lastName}
+                              <span>{user.firstName} {user.lastName}</span>
                               {user.isGuest && (
                                 <Chip
                                   label="G"
                                   size="small"
                                   sx={{
-                                    ml: { xs: 0.2, sm: 0.4, md: 0.6 },
-                                    height: { xs: 8, sm: 10, md: 14 },
-                                    fontSize: { xs: '0.35rem', sm: '0.45rem', md: '0.55rem' },
+                                    height: { xs: 10, sm: 12, md: 16 },
+                                    fontSize: { xs: '0.4rem', sm: '0.5rem', md: '0.65rem' },
                                     bgcolor: '#e67e22',
                                     color: 'white',
-                                    '& .MuiChip-label': { px: { xs: 0.15, sm: 0.2, md: 0.4 } }
+                                    '& .MuiChip-label': { px: { xs: 0.2, sm: 0.3, md: 0.5 } }
                                   }}
                                 />
                               )}
                             </Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#9CA3AF', display: { xs: 'none', sm: 'block' } }}>
-                              Position: Defender
-                            </Typography>
-                            <Typography sx={{ fontSize: { xs: 4.5, sm: 5.5, md: 8 }, color: '#B0BEC5', display: { xs: 'none', sm: 'block' } }}>
-                              Avg XP: {getAvgRating(user)}
-                            </Typography>
+                            <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', fontSize: { xs: 6, sm: 7, md: 10 } }}>
+                              <Typography sx={{ fontSize: 'inherit', color: '#9CA3AF' }}>Position: Defender</Typography>
+                              <Typography sx={{ fontSize: 'inherit', color: '#B0BEC5' }}>Avg XP: {getAvgRating(user)}</Typography>
+                            </Box>
                           </Box>
                           {user.isGuest && (
                             <IconButton
                               size="small"
                               sx={{
                                 color: '#f44336',
-                                ml: { xs: 0.1, sm: 0.2, md: 0.3 },
-                                p: { xs: 0.1, sm: 0.15, md: 0.2 },
-                                minWidth: { xs: 12, sm: 16, md: 20 },
-                                width: { xs: 12, sm: 16, md: 20 },
-                                height: { xs: 12, sm: 16, md: 20 }
+                                ml: { xs: 0.2, sm: 0.3 },
+                                p: { xs: 0.1, sm: 0.2, md: 0.3 },
+                                minWidth: { xs: 14, sm: 18, md: 22 },
+                                width: { xs: 14, sm: 18, md: 22 },
+                                height: { xs: 14, sm: 18, md: 22 }
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -2117,7 +2181,7 @@
                                 if (g) removeStagedGuest('away', g.tempId);
                               }}
                             >
-                              <X size={7} />
+                              <X size={8} />
                             </IconButton>
                           )}
                         </Box>
@@ -2128,16 +2192,28 @@
                 {/* Match Info Card */}
                 <Box sx={{ mt: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
-                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>📅 Date: {matchDate ? matchDate.format('DD/MM/YYYY') : '—'}</Typography>
-                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>🕐 Match Time: {startTime ? startTime.format('hh:mm A') : '—'}</Typography>
-                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>⏳ Duration: {duration || 90} Minutes</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Image src={CalendarIcon} alt="Calendar" width={16} height={16} style={{ opacity: 0.7 }} />
+                      <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Match Date: {matchDate ? matchDate.format('DD/MM/YYYY') : '—'}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Image src={ClockIcon} alt="Clock" width={16} height={16} style={{ opacity: 0.7 }} />
+                      <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Time: {startTime ? startTime.format('hh:mm A') : '—'}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Image src={GlassIcon} alt="Duration" width={16} height={16} style={{ opacity: 0.7 }} />
+                      <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Duration: {duration || 90} Minutes</Typography>
+                    </Box>
                   </Box>
-                  <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.6rem', sm: '0.7rem' }, mt: 0.5 }}>📍 Location: {location || '—'}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 2 }}>
+                    <Image src={LocationIcon} alt="Location" width={16} height={16} style={{ opacity: 0.7 }} />
+                    <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Location: {location || '—'}</Typography>
+                  </Box>
                 </Box>
 
                 {/* Share Button */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                  <IconButton sx={{ bgcolor: '#1a8a6d', color: 'white', '&:hover': { bgcolor: '#157a62' }, width: 40, height: 40 }}>
+                  <IconButton sx={{ bgcolor: '#1a8a6d', color: 'white', '&:hover': { bgcolor: '#157a62' }, width: 40, height: 40, borderRadius: 1 }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                   </IconButton>
                 </Box>
