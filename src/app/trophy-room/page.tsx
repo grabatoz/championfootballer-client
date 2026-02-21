@@ -2285,7 +2285,7 @@ export default function GlobalTrophyRoom() {
               {filter === 'my' ? (
                 <Typography
                   sx={{
-                    fontFamily: '"Anton" , sens-serif !important',
+                    fontFamily: '"Anton" , sans-serif !important',
                     fontWeight: 400,
                     fontStyle: 'normal',
                     lineHeight: '100%',
