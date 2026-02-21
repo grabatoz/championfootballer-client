@@ -1424,6 +1424,7 @@ export default function GlobalTrophyRoom() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [trophyLoading, setTrophyLoading] = useState(false); // separate loading for trophy re-fetches (season/league change)
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
     const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -1527,8 +1528,20 @@ export default function GlobalTrophyRoom() {
         console.error('[Trophy Room] Failed to save preferred league:', err);
       }
     }
-    // Reset season selection when league changes
-    setSelectedSeasonId(undefined);
+    // When switching leagues, immediately try to pick the active season
+    // if this league already has seasons cached (avoids waiting for useEffect chain)
+    if (newId !== 'all') {
+      const league = leagues.find(l => l.id === newId);
+      if (league?.seasons && league.seasons.length > 0) {
+        const active = league.seasons.find(s => s.isActive) || league.seasons[0];
+        setSelectedSeasonId(active.id);
+      } else {
+        // Seasons not loaded yet — reset so auto-select picks it up after fetch
+        setSelectedSeasonId(undefined);
+      }
+    } else {
+      setSelectedSeasonId(undefined);
+    }
     handleLeaguesDropdownClose();
   };
 
@@ -1736,6 +1749,9 @@ export default function GlobalTrophyRoom() {
 
   // Fetch seasons for the selected league
   useEffect(() => {
+    // Reset seasonsChecked when league changes
+    setSeasonsChecked(false);
+
     if (!selectedLeague || !token) {
       console.log('[Trophy Room] Skipping season fetch - no league or token');
       return;
@@ -1753,20 +1769,29 @@ export default function GlobalTrophyRoom() {
         console.log('[Trophy Room] Seasons API response:', { status: res.status, data });
         
         if (res.ok && data?.success && Array.isArray(data.seasons)) {
-          // Update the league with seasons data
-          setLeagues(prevLeagues => 
-            prevLeagues.map(l => 
-              l.id === selectedLeague.id 
-                ? { ...l, seasons: data.seasons }
-                : l
-            )
-          );
-          console.log('[Trophy Room] ✅ Successfully fetched seasons for league:', selectedLeague.name, data.seasons);
+          if (data.seasons.length > 0) {
+            // Update the league with seasons data
+            setLeagues(prevLeagues => 
+              prevLeagues.map(l => 
+                l.id === selectedLeague.id 
+                  ? { ...l, seasons: data.seasons }
+                  : l
+              )
+            );
+            console.log('[Trophy Room] ✅ Successfully fetched seasons for league:', selectedLeague.name, data.seasons);
+          } else {
+            // League has no seasons — mark as checked so trophy fetch can proceed
+            console.log('[Trophy Room] League has no seasons (empty array)');
+            setSeasonsChecked(true);
+          }
         } else {
           console.error('[Trophy Room] ❌ Failed to fetch seasons:', data);
+          // Still mark as checked so trophy fetch doesn't hang forever
+          setSeasonsChecked(true);
         }
       } catch (err) {
         console.error('[Trophy Room] ❌ Error fetching seasons:', err);
+        setSeasonsChecked(true);
       }
     };
     
@@ -1776,6 +1801,7 @@ export default function GlobalTrophyRoom() {
       fetchSeasons();
     } else {
       console.log('[Trophy Room] League already has seasons:', selectedLeague.seasons.length);
+      setSeasonsChecked(true);
     }
   }, [selectedLeague?.id, token]);
 
@@ -1810,12 +1836,14 @@ export default function GlobalTrophyRoom() {
     return current;
   }, [selectedLeague]);
 
-  // Auto-select active season when league changes
+  // Auto-select active season when seasons load for a league
+  // Depends on currentSeason AND selectedLeagueId so it re-fires on league switch
   useEffect(() => {
     if (currentSeason && !selectedSeasonId) {
+      console.log('[Trophy Room] Auto-selecting season:', currentSeason.id, currentSeason.name);
       setSelectedSeasonId(currentSeason.id);
     }
-  }, [currentSeason, selectedSeasonId]);
+  }, [currentSeason, selectedLeagueId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get the season to display (selected season or current season as fallback)
   const displaySeason = useMemo(() => {
@@ -1823,18 +1851,25 @@ export default function GlobalTrophyRoom() {
     return availableSeasons.find(s => s.id === selectedSeasonId) || currentSeason;
   }, [selectedSeasonId, availableSeasons, currentSeason]);
 
+  // Track whether seasons have been checked for the current league
+  // This lets fetchWinners proceed without a season when the league genuinely has none
+  const [seasonsChecked, setSeasonsChecked] = useState(false);
+
   // Fetch trophy winners with league and season filters
   useEffect(() => {
+    if (!token || !selectedLeagueId || selectedLeagueId === 'all') return;
+
+    // Wait for season selection OR confirmation that no seasons exist
+    if (!selectedSeasonId && !seasonsChecked) {
+      console.log('[Trophy Room] Waiting for season auto-select or seasons check...');
+      return;
+    }
+
     const fetchWinners = async () => {
-      if (!token) return;
-      setLoading(true);
+      setTrophyLoading(true);
       try {
-        // Build query parameters for league and season filters
         const params = new URLSearchParams({ _: Date.now().toString() });
-        
-        if (selectedLeagueId && selectedLeagueId !== 'all') {
-          params.append('leagueId', selectedLeagueId);
-        }
+        params.append('leagueId', selectedLeagueId);
         
         if (selectedSeasonId && selectedSeasonId !== 'all') {
           params.append('seasonId', selectedSeasonId);
@@ -1853,7 +1888,6 @@ export default function GlobalTrophyRoom() {
         const data = await res.json();
 
         if (res.ok && data?.success) {
-          // Store winners with season information
           const trophiesWithMeta = Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : [];
           console.log('[Trophy Room] ✅ Fetched trophies:', trophiesWithMeta.length, trophiesWithMeta);
           setApiAllWinners(trophiesWithMeta);
@@ -1869,11 +1903,11 @@ export default function GlobalTrophyRoom() {
         setApiAllWinners([]);
         setError('An error occurred while fetching trophy room.');
       } finally {
-        setLoading(false);
+        setTrophyLoading(false);
       }
     };
     fetchWinners();
-  }, [token, selectedLeagueId, selectedSeasonId]); // Re-fetch when league or season changes
+  }, [token, selectedLeagueId, selectedSeasonId, seasonsChecked]); // Re-fetch when league or season changes
 
   // Persist and fetch achievements for the current user (saves XP to DB, then loads badges)
   useEffect(() => {
@@ -3021,7 +3055,23 @@ export default function GlobalTrophyRoom() {
           </Dialog>
         </Box>
       ) : (
-        <Box sx={{ px: { xs: 2, sm: 3, md: 11 } }}>
+        <Box sx={{ px: { xs: 2, sm: 3, md: 11 }, position: 'relative' }}>
+          {/* Subtle loading overlay when changing season/league (no full-page spinner) */}
+          {trophyLoading && (
+            <Box sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 10,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              bgcolor: 'rgba(0,0,0,0.35)',
+              borderRadius: 2,
+              backdropFilter: 'blur(2px)',
+            }}>
+              <CircularProgress size={36} sx={{ color: '#E56A16' }} />
+            </Box>
+          )}
           {/* Top Row - 3 Large Trophies */}
           <Box sx={{ 
             display: 'grid', 
