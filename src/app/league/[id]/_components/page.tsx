@@ -86,7 +86,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
 // import { LeaderboardResponse } from '@/types/api';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
-import ShirtImg from '@/Components/images/shirtimg.png'
+import ShirtImg from '@/Components/images/orage.png'
 import homeImg from '@/Components/images/matches.png'
 import awayImg from '@/Components/images/2nd champion icon football.png'
 import Goals from "@/Components/images/goal.png"
@@ -4066,9 +4066,10 @@ export default function LeagueDetailPage() {
                                 <Box sx={{
                                     height: 'auto',
                                     overflowY: 'visible',
+                                    overflowX: 'hidden',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
-                                    width: '100vw',
+                                    width: '99.4vw',
                                     position: 'relative',
                                     left: '50%',
                                     right: '50%',
@@ -4087,9 +4088,9 @@ export default function LeagueDetailPage() {
                                                 sx={{
                                                     position: 'relative',
                                                     width: '100%',
-                                                    height: { xs: '450px', sm: '500px', md: '550px', lg: '600px' },
+                                                    height: { xs: '500px', sm: '550px', md: '600px', lg: '650px' },
                                                     overflow: 'hidden',
-                                                    mt: -1,
+                                                    mt: -10,
                                                 }}
                                             >
                                                 <Image 
@@ -4132,32 +4133,23 @@ export default function LeagueDetailPage() {
 
                                                 {/* Overlay players */}
                                                 {(() => {
-                                                    // Collect all available players from all positions
-                                                    const allPlayers = [
-                                                        ...(dreamTeam.forwards || []),
-                                                        ...(dreamTeam.midfielders || []),
-                                                        ...(dreamTeam.defenders || []),
-                                                        ...(dreamTeam.goalkeeper || []),
-                                                    ].filter(p => p && p.id); // Filter out null/undefined players
+                                                    // Get league members with their XP
+                                                    const leagueMembers = filteredLeague?.members || [];
                                                     
-                                                    // Remove duplicates based on player id
-                                                    const uniquePlayers = allPlayers.filter((player, index, self) => 
-                                                        index === self.findIndex(p => p.id === player.id)
-                                                    );
+                                                    // Map members with their XP and sort by XP (highest first)
+                                                    const playersWithXP = leagueMembers.map(member => ({
+                                                        ...member,
+                                                        xp: userLeagueXP[member.id] || 0
+                                                    })).sort((a, b) => b.xp - a.xp);
                                                     
-                                                    // Take up to 5 players
-                                                    const playersToShow = uniquePlayers.slice(0, 5);
+                                                    // Take top 5 players based on XP
+                                                    const playersToShow = playersWithXP.slice(0, 5);
                                                     
-                                                    console.log('Dream Team Debug:', {
-                                                        forwards: dreamTeam.forwards?.length || 0,
-                                                        midfielders: dreamTeam.midfielders?.length || 0,
-                                                        defenders: dreamTeam.defenders?.length || 0,
-                                                        goalkeeper: dreamTeam.goalkeeper?.length || 0,
-                                                        allPlayers: allPlayers.length,
-                                                        uniquePlayers: uniquePlayers.length,
-                                                        playersToShow: playersToShow.length,
-                                                        playerNames: playersToShow.map(p => p?.lastName || p?.firstName || 'Unknown')
-                                                    });
+                                                    console.log('✅ Dream Team - Top 5 XP Players:', playersToShow.map(p => ({
+                                                        name: `${p?.firstName || ''} ${p?.lastName || ''}`.trim(),
+                                                        xp: p?.xp || 0,
+                                                        positionType: p?.positionType || 'N/A'
+                                                    })));
                                                     
                                                     // Define positions based on number of players (adjusted to stay inside pitch boundaries)
                                                     const getPositions = (count: number) => {
@@ -4184,11 +4176,11 @@ export default function LeagueDetailPage() {
                                                         } else {
                                                             // 5 players - 3-1-1 formation (inside pitch boundaries)
                                                             return [
-                                                                { left: '50%', top: '45%' },
-                                                                { left: '62%', top: '42%' },
-                                                                { left: '74%', top: '45%' },
-                                                                { left: '62%', top: '56%' },
-                                                                { left: '62%', top: '68%' },
+                                                                { left: '35%', top: '70%' },
+                                                                { left: '52%', top: '80%' },
+                                                                { left: '44%', top: '65%' },
+                                                                { left: '62%', top: '76%' },
+                                                                { left: '56%', top: '66%' },
                                                             ];
                                                         }
                                                     };
@@ -4216,7 +4208,7 @@ export default function LeagueDetailPage() {
                                                                     position: 'relative',
                                                                     width: { xs: 40, sm: 50, md: 60, lg: 70 },
                                                                     height: { xs: 40, sm: 50, md: 60, lg: 70 },
-                                                                    mb: 0.3,
+                                                                    mb: -0.5,
                                                                 }}
                                                             >
                                                                 <Link href={`/player/${player.id}`} prefetch={false}>
