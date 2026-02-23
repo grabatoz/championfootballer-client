@@ -23,6 +23,8 @@ function PrivacyPolicies() {
         setExpanded(isExpanded ? panel : false);
     };
 
+
+    
     const sections = [
         {
             title: "Purpose of this Privacy Policy",
