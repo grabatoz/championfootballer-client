@@ -5245,25 +5245,17 @@ export default function LeagueDetailPage() {
                     setEditMatchDialogOpen(false);
                     setEditMatchId(null);
                 }}
-                fullScreen
+                maxWidth="lg"
+                fullWidth
                 PaperProps={{
                     sx: {
                         bgcolor: '#0a0a0a',
                         backgroundImage: 'none',
+                        width: '85%',
+                        maxHeight: '90vh',
                     }
                 }}
             >
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-                    <IconButton
-                        onClick={() => {
-                            setEditMatchDialogOpen(false);
-                            setEditMatchId(null);
-                        }}
-                        sx={{ color: '#fff' }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                </Box>
                 {editMatchDialogOpen && editMatchId && (
                     <EditMatchPage
                         leagueIdProp={leagueId}
