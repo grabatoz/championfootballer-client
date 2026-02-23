@@ -3148,7 +3148,7 @@ export default function LeagueDetailPage() {
                                                             onClick={(event) => handleMatchCardClick(match, event)}
                                                             sx={{
                                                                 position: 'relative',
-                                                                borderRadius: 3,
+                                                                borderRadius: 1,
                                                                 overflow: 'hidden',
                                                                 background: '#222',
                                                                 cursor: 'pointer',
@@ -3235,13 +3235,13 @@ export default function LeagueDetailPage() {
                                                                         justifyContent: 'center'
                                                                     }}>
                                                                         <Typography sx={{
-                                                                            fontFamily: 'WinnerSans  !important',
-                                                                            fontWeight: 700,
-                                                                            // fontStyle: 'italic',
-                                                                            fontSize: '3rem',
-                                                                            lineHeight: 1,
+                                                                            fontFamily: '"Oswald", sans-serif !important',
+                                                                            fontWeight: 600,
+                                                                            fontSize: '2rem',
+                                                                            lineHeight: 0.5,
+                                                                            letterSpacing: '-2px',
+                                                                            textTransform: 'uppercase',
                                                                             color: 'white',
-                                                                            textShadow: '0px 2px 4px rgba(0,0,0,0.5)'
                                                                         }}>
                                                                             V/S
                                                                         </Typography>
@@ -3249,7 +3249,7 @@ export default function LeagueDetailPage() {
                                                                             color: '#ddd',
                                                                             fontSize: '0.85rem',
                                                                             textAlign: 'center',
-                                                                            mt: 0.5
+                                                                            mt: 1
                                                                         }}>
                                                                             {durationMinutes} Minutes Match
                                                                         </Typography>
@@ -3347,7 +3347,7 @@ export default function LeagueDetailPage() {
                                                                         {/* Availability Buttons */}
                                                                         {isMember && (
                                                                             <Box sx={{
-                                                                                display: 'flex', gap: 2,
+                                                                                display: 'flex', gap: 2, mb: 1
                                                                                 //  mt: 1
                                                                             }}>
                                                                                 <Button
@@ -3364,7 +3364,7 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         fontWeight: 500,
                                                                                         fontSize: '0.9rem',
-                                                                                        py: 0.4,
+                                                                                        py: 0.1,
                                                                                         px: 1.5,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
@@ -3390,7 +3390,7 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         fontWeight: 500,
                                                                                         fontSize: '0.9rem',
-                                                                                        py: 0.4,
+                                                                                        py: 0.1,
                                                                                         px: 1.5,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
@@ -3410,7 +3410,9 @@ export default function LeagueDetailPage() {
                                                                     <Box sx={{
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
-                                                                        p: 1,
+                                                                        pl: 1,
+                                                                        pr: 2,
+                                                                        py: 1,
                                                                         minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
@@ -3419,7 +3421,7 @@ export default function LeagueDetailPage() {
                                                                     }}>
                                                                         {isAdmin ? (
                                                                             <>
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' ,ml:'-4px' }}>
+                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>
                                                                                     For Admin Only
                                                                                 </Typography>
                                                                                 <Button
