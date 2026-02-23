@@ -111,6 +111,7 @@ import MATCHRESULT from '@/Components/images/matchresults.png'
 import ADDSTATS from '@/Components/images/cardstats.png'
 import FIXTURES from '@/Components/images/fixtures.png'
 import LEADERBOARD from '@/Components/images/leaderboard.png'
+import TableGraphIcon from '@/Components/images/tablegrapicon.png'
 import FirstBadge from '@/Components/images/1st.png';
 import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
@@ -3072,8 +3073,8 @@ export default function LeagueDetailPage() {
                                                                 <div></div>
 
                                                                 {/* View Stats */}
-                                                                <div className="text-center">
-                                                                    <SignalCellularAltIcon sx={{ color: '#00C853', fontSize: 24 }} />
+                                                                <div className="text-center flex justify-center items-center">
+                                                                    <Image src={TableGraphIcon} alt="View Stats" width={24} height={24} style={{ objectFit: 'contain' }} />
                                                                 </div>
 
                                                                 {/* XP Points */}
