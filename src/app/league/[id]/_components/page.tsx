@@ -3024,7 +3024,7 @@ export default function LeagueDetailPage() {
                                                 <div className="text-left font-semibold text-sm uppercase tracking-wide pl-8">PLAYING STYLE</div>
                                                 <div></div>
                                                 <div className="text-center font-semibold text-sm uppercase tracking-wide">VIEW STATS</div>
-                                                <div className="text-center font-semibold text-sm uppercase tracking-wide">xp POINTS</div>
+                                                <div className="text-center font-semibold text-sm uppercase tracking-wide"><span style={{ fontSize: '0.6rem' }}>xp</span> POINTS</div>
                                             </div>
 
                                             {/* Table Rows */}
