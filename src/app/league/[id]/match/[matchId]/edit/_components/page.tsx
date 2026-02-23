@@ -1045,7 +1045,7 @@ import LocationIcon from '@/Components/images/location.png';
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: isDialog ? '50vh' : '100vh' }}><CircularProgress /></Box>;
     if (error || !league) return <Box sx={{ p: 4, color: 'white' }}><Button startIcon={<ArrowLeft />} onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ mb: 2, color: 'white', background: '#388e3c', '&:hover': { background: '#388e3c' } }}>Back</Button><Typography color="error">{error || 'Load failed'}</Typography></Box>;
 
-    const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 0.5, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB', padding: '10px 14px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' }, '& .MuiOutlinedInput-input': { padding: '10px 14px' } };
+    const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 1, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB', padding: '10px 14px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' }, '& .MuiOutlinedInput-input': { padding: '10px 14px' } };
     const autocompleteStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 2, paddingTop: '6px', paddingBottom: '6px', '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& .MuiChip-root': { background: 'rgba(229,106,22,0.15)', color: '#E5E7EB', border: '1px solid rgba(229,106,22,0.3)', height: '24px', margin: '2px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiOutlinedInput-input': { padding: '6px 14px' }, '& .MuiAutocomplete-input': { padding: '6px 4px 6px 6px !important' } };
     // Enhanced ShirtAvatar supporting responsive size objects
     const ShirtAvatar = ({ team }: { number?: string | number; size?: number | { xs: number; sm: number; md?: number }; team?: 'home' | 'away'; }) => {
@@ -1247,7 +1247,18 @@ import LocationIcon from '@/Components/images/location.png';
                                 placeholder="Select players"
                                 // helperText="Green number = available; white = unavailable"
                                 FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
-                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#00a77f', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#00a77f' }, '&.Mui-focused fieldset': { borderColor: '#00a77f' } } }}
+                                sx={{ 
+                                  ...autocompleteStyles, 
+                                  '& .MuiOutlinedInput-root': { 
+                                    ...autocompleteStyles['& .MuiOutlinedInput-root'], 
+                                    borderRadius: 1, 
+                                    '& fieldset': { borderColor: '#00a77f', borderRadius: 1 }, 
+                                    '&:hover fieldset': { borderColor: '#00a77f' }, 
+                                    '&.Mui-focused fieldset': { borderColor: '#00a77f' } 
+                                  },
+                                  '& .MuiAutocomplete-clearIndicator': { color: 'white' },
+                                  '& .MuiAutocomplete-popupIndicator': { color: 'white' }
+                                }}
                               />
                             )}
                           />
@@ -1398,7 +1409,18 @@ import LocationIcon from '@/Components/images/location.png';
                                 placeholder="Select players"
                                 // helperText="Green number = available; white = unavailable"
                                 FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
-                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#e56a16', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#e56a16' }, '&.Mui-focused fieldset': { borderColor: '#e56a16' } } }}
+                                sx={{ 
+                                  ...autocompleteStyles, 
+                                  '& .MuiOutlinedInput-root': { 
+                                    ...autocompleteStyles['& .MuiOutlinedInput-root'], 
+                                    borderRadius: 1, 
+                                    '& fieldset': { borderColor: '#e56a16', borderRadius: 1 }, 
+                                    '&:hover fieldset': { borderColor: '#e56a16' }, 
+                                    '&.Mui-focused fieldset': { borderColor: '#e56a16' } 
+                                  },
+                                  '& .MuiAutocomplete-clearIndicator': { color: 'white' },
+                                  '& .MuiAutocomplete-popupIndicator': { color: 'white' }
+                                }}
                               />
                             )}
                           />
@@ -1420,7 +1442,18 @@ import LocationIcon from '@/Components/images/location.png';
                               <TextField
                                 {...params}
                                 placeholder="Choose captain"
-                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#00a77f', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#00a77f' }, '&.Mui-focused fieldset': { borderColor: '#00a77f' } } }}
+                                sx={{ 
+                                  ...autocompleteStyles, 
+                                  '& .MuiOutlinedInput-root': { 
+                                    ...autocompleteStyles['& .MuiOutlinedInput-root'], 
+                                    borderRadius: 1, 
+                                    '& fieldset': { borderColor: '#00a77f', borderRadius: 1 }, 
+                                    '&:hover fieldset': { borderColor: '#00a77f' }, 
+                                    '&.Mui-focused fieldset': { borderColor: '#00a77f' } 
+                                  },
+                                  '& .MuiAutocomplete-clearIndicator': { color: 'white' },
+                                  '& .MuiAutocomplete-popupIndicator': { color: 'white' }
+                                }}
                                 helperText={homeCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
@@ -1488,7 +1521,18 @@ import LocationIcon from '@/Components/images/location.png';
                               <TextField
                                 {...params}
                                 placeholder="Choose captain"
-                                sx={{ ...autocompleteStyles, '& .MuiOutlinedInput-root': { ...autocompleteStyles['& .MuiOutlinedInput-root'], borderRadius: 0, '& fieldset': { borderColor: '#e56a16', borderRadius: 0 }, '&:hover fieldset': { borderColor: '#e56a16' }, '&.Mui-focused fieldset': { borderColor: '#e56a16' } } }}
+                                sx={{ 
+                                  ...autocompleteStyles, 
+                                  '& .MuiOutlinedInput-root': { 
+                                    ...autocompleteStyles['& .MuiOutlinedInput-root'], 
+                                    borderRadius: 1, 
+                                    '& fieldset': { borderColor: '#e56a16', borderRadius: 1 }, 
+                                    '&:hover fieldset': { borderColor: '#e56a16' }, 
+                                    '&.Mui-focused fieldset': { borderColor: '#e56a16' } 
+                                  },
+                                  '& .MuiAutocomplete-clearIndicator': { color: 'white' },
+                                  '& .MuiAutocomplete-popupIndicator': { color: 'white' }
+                                }}
                                 helperText={awayCaptain?.isGuest ? 'Guest captain will not be saved on server' : ''}
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
@@ -1553,12 +1597,12 @@ import LocationIcon from '@/Components/images/location.png';
                           placeholder='Enter team name'
                           value={homeTeamName}
                           onChange={e => setHomeTeamName(e.target.value)}
-                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 0 }, '& fieldset': { borderRadius: 0, borderColor: '#00a77f' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#00a77f' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#00a77f' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
+                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '3px 0 0 3px' }, '& fieldset': { borderRadius: '3px 0 0 3px', borderColor: '#00a77f' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#00a77f' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#00a77f' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
                         />
                         <Button
                           variant='outlined'
                           component='label'
-                          sx={{ color: '#00a77f', borderColor: '#00a77f', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: 0, '&:hover': { borderColor: '#00a77f', bgcolor: 'rgba(0,167,127,0.1)' } }}
+                          sx={{ color: '#00a77f', borderColor: '#00a77f', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: '0 3px 3px 0', '&:hover': { borderColor: '#00a77f', bgcolor: 'rgba(0,167,127,0.1)' } }}
                         >
                           Add Logo
                           <input type='file' hidden accept='image/*' onChange={handleHomeTeamImageUpload} />
@@ -1579,12 +1623,12 @@ import LocationIcon from '@/Components/images/location.png';
                           placeholder='Enter team name'
                           value={awayTeamName}
                           onChange={e => setAwayTeamName(e.target.value)}
-                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 0 }, '& fieldset': { borderRadius: 0, borderColor: '#e56a16' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#e56a16' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#e56a16' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
+                          sx={{ ...inputStyles, flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '3px 0 0 3px' }, '& fieldset': { borderRadius: '3px 0 0 3px', borderColor: '#e56a16' }, '& .MuiOutlinedInput-root:hover fieldset': { borderColor: '#e56a16' }, '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: '#e56a16' }, '& input::placeholder': { color: 'white', opacity: 1 }, '& input': { color: 'white', fontWeight: 400 } }}
                         />
                         <Button
                           variant='outlined'
                           component='label'
-                          sx={{ color: '#e56a16', borderColor: '#e56a16', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: 0, '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.1)' } }}
+                          sx={{ color: '#e56a16', borderColor: '#e56a16', textTransform: 'none', whiteSpace: 'nowrap', px: 2, height: '43px', borderRadius: '0 3px 3px 0', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.1)' } }}
                         >
                           Add Logo
                           <input type='file' hidden accept='image/*' onChange={handleAwayTeamImageUpload} />
@@ -1724,12 +1768,12 @@ import LocationIcon from '@/Components/images/location.png';
             {/* RIGHT PANEL */}
             <Box sx={{ width: { xs: '100%', md: '45%' }, display: 'flex', flexDirection: 'column' }}>
               {/* MATCH PREVIEW Tab Header */}
-              <Box sx={{ py: 1.5, px: 3, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <Box sx={{ py: 1.5, px:3, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
                   Match Preview
                 </Typography>
-                <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ color: 'white', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
-                  <X size={20} />
+                <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ bgcolor: '#e6e6e6', color: '#000', position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', borderRadius: '0 1px 1px 0', '&:hover': { bgcolor: '#d0d0d0' } }}>
+                  <X size={45} />
                 </IconButton>
               </Box>
               <Paper sx={{
@@ -1747,7 +1791,7 @@ import LocationIcon from '@/Components/images/location.png';
 
                 {/* Win Probability */}
                 {(homeTeamUsers.length > 0 || awayTeamUsers.length > 0) && (
-                  <Box sx={{ mb: 0, p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: { xs: 2, sm: 3 } }}>
+                  <Box sx={{ mb: 0, p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1 }}>
                     <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1.1rem', md: '1.35rem' }, textTransform: 'uppercase', letterSpacing: 1 }}>Team Balance</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                       <Box sx={{ textAlign: 'center' }}>
@@ -1836,7 +1880,7 @@ import LocationIcon from '@/Components/images/location.png';
                           mb: { xs: 0.5, sm: 1, md: 1.5 },
                           p: { xs: 0.5, sm: 0.8, md: 1.5 },
                           bgcolor: 'rgba(255,255,255,0.03)',
-                          borderRadius: 0,
+                          borderRadius: 1,
                           border: '1px solid #029470',
                           cursor: 'pointer',
                           minHeight: { xs: 28, sm: 35, md: 50 },
@@ -1931,7 +1975,7 @@ import LocationIcon from '@/Components/images/location.png';
                             mb: { xs: 0.5, sm: 1, md: 1.5 },
                             p: { xs: 0.5, sm: 0.8, md: 1.5 },
                             bgcolor: 'rgba(255,255,255,0.03)',
-                            borderRadius: 0,
+                            borderRadius: 1,
                             border: '1px solid #029470',
                             cursor: 'pointer',
                             minHeight: { xs: 28, sm: 35, md: 50 },
@@ -2023,7 +2067,7 @@ import LocationIcon from '@/Components/images/location.png';
                           mb: { xs: 0.5, sm: 1, md: 1.5 },
                           p: { xs: 0.5, sm: 0.8, md: 1.5 },
                           bgcolor: 'rgba(255,255,255,0.03)',
-                          borderRadius: 0,
+                          borderRadius: 1,
                           border: '1px solid #e56a16',
                           cursor: 'pointer',
                           minHeight: { xs: 28, sm: 35, md: 50 },
@@ -2118,7 +2162,7 @@ import LocationIcon from '@/Components/images/location.png';
                             mb: { xs: 0.5, sm: 1, md: 1.5 },
                             p: { xs: 0.5, sm: 0.8, md: 1.5 },
                             bgcolor: 'rgba(255,255,255,0.03)',
-                            borderRadius: 0,
+                            borderRadius: 1,
                             border: '1px solid #e56a16',
                             cursor: 'pointer',
                             minHeight: { xs: 28, sm: 35, md: 50 },
@@ -2190,7 +2234,7 @@ import LocationIcon from '@/Components/images/location.png';
                 </Box>
 
                 {/* Match Info Card */}
-                <Box sx={{ mt: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
+                <Box sx={{ mt: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.08)' }}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Image src={CalendarIcon} alt="Calendar" width={16} height={16} style={{ opacity: 0.7 }} />
