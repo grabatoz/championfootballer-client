@@ -1260,6 +1260,7 @@ export interface WorldRankingResponse {
 }
 export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId?: string; positionType?: string; year?: number; country?: string; limit?: number; token?: string }) {
   const { token, ...rest } = params || {};
+  const mode = params.mode || 'total';
   const search = new URLSearchParams();
   Object.entries(rest).forEach(([k,v])=>{ if(v!==undefined && v!==null) search.append(k, String(v)); });
   // Always request fresh on non-local to avoid stale caches after new players are saved
@@ -1268,5 +1269,29 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
   const url = `${process.env.NEXT_PUBLIC_API_URL}/world-ranking?${search.toString()}`;
   const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if(!res.ok) throw new Error('Failed world ranking');
-  return res.json() as Promise<WorldRankingResponse>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any = await res.json();
+  // Server returns { success, rankings: [...] } — map to expected WorldRankingResponse shape
+  // Each ranking item has `xp` which is totalXP or avgXP depending on the requested mode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawList: any[] = Array.isArray(raw?.rankings) ? raw.rankings : (Array.isArray(raw?.players) ? raw.players : []);
+  const players: WorldRankingPlayer[] = rawList.map(p => ({
+    id: p.id,
+    name: p.name,
+    position: p.position || '',
+    positionType: p.positionType || '',
+    profilePicture: p.profilePicture || '',
+    totalXP: mode === 'total' ? (p.xp ?? p.totalXP ?? 0) : (p.totalXP ?? p.xp ?? 0),
+    avgXP: mode === 'avg' ? (p.xp ?? p.avgXP ?? 0) : (p.avgXP ?? 0),
+    matches: p.matches ?? 0,
+    rank: p.rank ?? 0,
+    country: p.country || undefined,
+  }));
+  return {
+    players,
+    mode: mode as 'avg' | 'total',
+    limit: raw?.limit ?? players.length,
+    playerOutsideTop: raw?.playerOutsideTop,
+    playerRank: raw?.playerRank,
+  } as WorldRankingResponse;
 }

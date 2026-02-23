@@ -1,11 +1,10 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWorldRanking, WorldRankingPlayer, WorldRankingResponse } from '@/lib/api';
-import { Box, Typography, Select, MenuItem, ToggleButtonGroup, ToggleButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, TextField, CircularProgress, Chip, Button } from '@mui/material';
+import { Box, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, CircularProgress } from '@mui/material';
 import Link from 'next/link';
 import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
-import CloseButton from '@/Components/CloseButton';
 
 interface Filters { mode: 'total' | 'avg'; year?: string; positionType?: string; country?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
@@ -145,7 +144,8 @@ export default function WorldRankingTable() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.mode, filters.positionType, filters.year, filters.country]);
+  // token is intentionally included so load() re-fires once auth resolves after mount
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.mode, filters.positionType, filters.year, filters.country, token]);
 
   // Note: Do not auto-set country from the user's profile; keep it manual per request
 
@@ -156,7 +156,7 @@ export default function WorldRankingTable() {
   }, [filters.mode]);
 
   const filtered = useMemo(() => {
-    if (!data) return [] as WorldRankingPlayer[];
+    if (!data || !Array.isArray(data.players)) return [] as WorldRankingPlayer[];
     const term = search.trim().toLowerCase();
     let base = !term ? data.players : data.players.filter(p => p.name.toLowerCase().includes(term));
     if (filters.country) {
@@ -228,398 +228,375 @@ export default function WorldRankingTable() {
   const hasActiveFilter = Boolean(filters.positionType || filters.year || filters.country || search);
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: { xs: 2, md: 4 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 2 }}>
- {/* Close Button */}
-            <CloseButton fallbackRoute="/dashboard" />
-      {/* <Typography variant="h4" sx={{ fontWeight:800, mb:2.5, textAlign:'center', letterSpacing:.8, background:'linear-gradient(90deg,#ff8a2b 0%,#ff3030 100%)', WebkitBackgroundClip:'text', color:'transparent', textShadow:'0 0 18px rgba(255,120,40,0.25)' }}>World Ranking</Typography> */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md:0 } }}>
-        <Typography variant="h3" sx={{
-          // mb: { xs: 3, md: 4 },
-          color: 'black',
-          // fontFamily: 'Arial Black, Arial, sans-serif',
+    <Box sx={{ minHeight: '100vh', bgcolor: '#0e0e0e', color: '#fff' }}>
+      <style>{`
+        .wr-select-wrap { position: relative; display: inline-block; }
+        .wr-select-wrap::after {
+          content: '';
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          width: 0; height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid #fff;
+          transform: translateY(-50%);
+          pointer-events: none;
+        }
+        .wr-select {
+          height: 39px;
+          padding: 0 36px 0 14px;
+          background: transparent;
+          color: #fff;
+          border: 1.5px solid #e56a16;
+          border-radius: 24px;
+          font-size: 15px;
+          cursor: pointer;
+          outline: none;
+          appearance: none;
+          -webkit-appearance: none;
+          font-weight: 600;
+        }
+        .wr-select option { background: #1a1a1a; color: #fff; }
+        .wr-search-icon { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; }
+      `}</style>
+
+      {/* ────────── HEADER ────────── */}
+      <Box sx={{
+        width: '100vw',
+        position: 'relative',
+        left: '50%',
+        right: '50%',
+        ml: '-50vw',
+        mr: '-50vw',
+        bgcolor: '#0e0e0e',
+        pt: { xs: 5, md: 5 },
+        pb: { xs: 3, md: 3 },
+        textAlign: 'center',
+      }}>
+        <Typography sx={{
           fontFamily: '"Anton", sans-serif',
-          fontWeight: 'semibold',
-          fontSize: { xs: '32px', sm: '42px', md: '56px' },
-          textAlign: { xs: 'center', md: 'left' },
+          fontWeight: 400,
+          fontSize: { xs: '2.6rem', sm: '3.5rem', md: '4.2rem' },
           textTransform: 'uppercase',
+          color: '#fff',
           letterSpacing: '2px',
-          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          mt:-2
-        }}
-          className='all-leagues-heading'
-        >
-          world ranking
+          lineHeight: 1,
+        }}>
+          WORLD RANKING
         </Typography>
       </Box>
-      {/* Unified Control + Summary Card */}
-      <Paper elevation={0} sx={{
-        mb: 2.5,
-        p: 2.4,
-        borderRadius: 3,
-        position: 'relative',
-        overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'linear-gradient(115deg,#181818 0%, #212121 40%, #2a0c00 100%)',
-        mt:-2
-      }}>
-        <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 12% 8%, rgba(255,120,40,0.18), transparent 55%)' }} />
 
-        {/* Desktop / Tablet Layout (md+) */}
-        <Box sx={{ position: 'relative', display: { xs: 'none', md: 'flex' }, flexWrap: 'wrap', gap: 2.2, alignItems: 'flex-end' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, minWidth: 160 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Mode</Typography>
-            <ToggleButtonGroup size="small" exclusive value={filters.mode} onChange={(_, v) => v && setFilters(f => ({ ...f, mode: v }))} sx={{
-              background: 'rgba(255,255,255,0.06)', borderRadius: 2,
-              width: 'fit-content',
-              display: 'inline-flex',
-              '& .MuiToggleButton-root': { fontSize: 12, px: 1.6, textTransform: 'none', fontWeight: 600, border: 0, color: '#e2e2e2' },
-              '& .MuiToggleButton-root.Mui-selected': { background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', boxShadow: '0 0 0 1px rgba(255,255,255,0.15)' }
-            }}>
-              <ToggleButton value="total">Total XP</ToggleButton>
-              <ToggleButton value="avg">Avg / Match</ToggleButton>
-            </ToggleButtonGroup>
+      {/* Orange divider */}
+      <Box sx={{
+        width: '100vw',
+        position: 'relative',
+        left: '50%',
+        right: '50%',
+        ml: '-50vw',
+        mr: '-50vw',
+        height: 3,
+        bgcolor: 'rgba(229,106,22,0.9)',
+      }} />
+
+      {/* ────────── FILTERS ────────── */}
+      <Box sx={{
+        width: '100vw',
+        position: 'relative',
+        left: '50%',
+        right: '50%',
+        ml: '-50vw',
+        mr: '-50vw',
+        bgcolor: '#0e0e0e',
+        px: { xs: 2, md: 4 },
+        py: 2,
+      }}>
+        <Box sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: { xs: 1, md: 1.2 },
+          maxWidth: 1200,
+          mx: 'auto',
+        }}>
+          {/* Mode toggle */}
+          <Box sx={{ display: 'flex', borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e56a16' }}>
+            {(['total', 'avg'] as const).map(mode => (
+              <Box
+                key={mode}
+                onClick={() => setFilters(f => ({ ...f, mode }))}
+                sx={{
+                  px: 2.2, py: 0.7,
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  bgcolor: filters.mode === mode ? '#e56a16' : 'transparent',
+                  color: '#fff',
+                  userSelect: 'none',
+                  transition: 'background 0.2s',
+                }}
+              >
+                {mode === 'total' ? 'Total XP' : 'Avg/Match'}
+              </Box>
+            ))}
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, minWidth: 170 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Position Type</Typography>
-            <Select size="small" value={filters.positionType || ''} onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))} displayEmpty sx={{ minWidth: 150, fontSize: 13, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}>
-              <MenuItem value=""><em>All</em></MenuItem>
-              <MenuItem value="Defender">Defender</MenuItem>
-              <MenuItem value="Midfielder">Midfielder</MenuItem>
-              <MenuItem value="Forward">Forward</MenuItem>
-              <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
-            </Select>
+
+          {/* Search */}
+          <Box sx={{
+            flex: { xs: '1 1 100%', md: '1 1 280px' },
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: '#1a1a1a',
+            borderRadius: '8px',
+            px: 1.5,
+            height: 42,
+            border: '1.5px solid #333',
+          }}>
+            <svg className="wr-search-icon" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="22" y2="22" />
+            </svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search player name and hit enter..."
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#fff',
+                fontSize: 15,
+              }}
+            />
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, minWidth: 110 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Year</Typography>
-            <Select
-              size="small"
+
+          {/* Position */}
+          <div className="wr-select-wrap">
+            <select
+              className="wr-select"
+              value={filters.positionType || ''}
+              onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))}
+              style={{ minWidth: 150 }}
+            >
+              <option value="">All Position</option>
+              <option value="Defender">Defender</option>
+              <option value="Midfielder">Midfielder</option>
+              <option value="Forward">Forward</option>
+              <option value="Goalkeeper">Goalkeeper</option>
+            </select>
+          </div>
+
+          {/* Year */}
+          <div className="wr-select-wrap">
+            <select
+              className="wr-select"
               value={filters.year || ''}
               onChange={e => setFilters(f => ({ ...f, year: e.target.value || undefined }))}
-              displayEmpty
-              sx={{ width: 110, fontSize: 13, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}
+              style={{ minWidth: 120 }}
             >
-              <MenuItem value=""><em>All</em></MenuItem>
-              {years.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-            </Select>
+              <option value="">All Years</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          {/* Country */}
+          <div className="wr-select-wrap">
+            <select
+              className="wr-select"
+              value={filters.country || ''}
+              onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))}
+              style={{ minWidth: 145 }}
+            >
+              <option value="">All Country</option>
+              {countries.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Clear */}
+          <Box
+            onClick={clearFilters}
+            sx={{
+              height: 39,
+              px: 2.2,
+              border: '1.5px solid rgba(255,255,255,0.5)',
+              borderRadius: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              fontSize: 15,
+              fontWeight: 600,
+              color: '#fff',
+              userSelect: 'none',
+              '&:hover': { borderColor: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
+              transition: 'all 0.2s',
+            }}
+          >
+            Clear
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, minWidth: 170 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Country</Typography>
-            <Select size="small" value={filters.country || ''} onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))} displayEmpty sx={{ minWidth: 150, fontSize: 13, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}>
-              <MenuItem value=""><em>All</em></MenuItem>
-              {countries.map(c => (
-                <MenuItem key={c} value={c}>{c}</MenuItem>
-              ))}
-            </Select>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, flexGrow: 1, minWidth: 200 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Search</Typography>
-            <TextField size="small" placeholder="Search Player" value={search} onChange={e => setSearch(e.target.value)} sx={{
-              minWidth: 200,
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                height: 42,
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.34)' }
-              }
-            }} />
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .7, minWidth: 130 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Actions</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" size="small" disabled={loading} onClick={load} sx={{
-                textTransform: 'none', fontWeight: 600, fontSize: 12.5,
-                borderColor: 'rgba(255,255,255,0.35)', color: '#ffb78b',
-                height: 42,
-                minHeight: 42,
-                display: 'flex', alignItems: 'center', px: 1.6,
-                '&:hover': { borderColor: '#ff9d55', background: 'rgba(255,120,40,0.08)' }
-              }}>{loading ? '...' : 'Refresh'}</Button>
-              <Button variant="outlined" size="small" onClick={clearFilters} sx={{
-                textTransform: 'none', fontWeight: 600, fontSize: 12.5,
-                borderColor: 'rgba(255,255,255,0.25)', color: '#dcdcdc',
-                height: 42,
-                minHeight: 42,
-                display: 'flex', alignItems: 'center', px: 1.6,
-                '&:hover': { borderColor: '#fff', background: 'rgba(255,255,255,0.08)' }
-              }}>Clear</Button>
-            </Box>
-          </Box>
-          {hasActiveFilter && <Box sx={{ flexBasis: '100%' }} />}
-          {hasActiveFilter && (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
-              {filters.positionType && <Chip size="small" label={`Pos: ${filters.positionType}`} onDelete={() => setFilters(f => ({ ...f, positionType: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-              {filters.year && <Chip size="small" label={`Year: ${filters.year}`} onDelete={() => setFilters(f => ({ ...f, year: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-              {filters.country && <Chip size="small" label={`Country: ${filters.country}`} onDelete={() => setFilters(f => ({ ...f, country: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-              {search && <Chip size="small" label={`Search: ${search}`} onDelete={() => setSearch('')} sx={{ background: 'linear-gradient(90deg,#333,#111)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
+        </Box>
+      </Box>
+
+      {/* ────────── INFO ROW ────────── */}
+      <Box sx={{ textAlign: 'center', py: 1, color: '#aaa', fontSize: 13 }}>
+        Mode&nbsp;&nbsp;
+        <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>
+          {filters.mode === 'total' ? 'Total XP' : 'Avg/Match'}
+        </Box>
+        &nbsp;&nbsp;&nbsp;Players Shown&nbsp;&nbsp;
+        <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>
+          {filtered.length}
+        </Box>
+        {data?.playerRank && (
+          <>
+            &nbsp;&nbsp;&nbsp;Your Rank&nbsp;&nbsp;
+            <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>#{data.playerRank}</Box>
+          </>
+        )}
+      </Box>
+
+      {/* ────────── TABLE ────────── */}
+      <Box sx={{ px: { xs: 1, md: 4 }, pb: 6 }}>
+        <Box sx={{
+          bgcolor: '#1a1a1a',
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid #2a2a2a',
+          position: 'relative',
+        }}>
+          {loading && (
+            <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.45)', zIndex: 2 }}>
+              <CircularProgress size={40} sx={{ color: '#e56a16' }} />
             </Box>
           )}
-          <Box sx={{ flexBasis: '100%' }} />
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.2, mt: hasActiveFilter ? .5 : 0, position: 'relative', zIndex: 1 }}>
-            <SummaryPill label="Mode" value={filters.mode === 'total' ? 'Total XP' : 'Average XP / Match'} />
-            <SummaryPill label="Players Shown" value={`${filtered.length.toLocaleString()}`} />
-            {data?.playerRank && <SummaryPill label="Your Rank" value={`#${data.playerRank}`} highlight />}
-            {/* {lastUpdated && <SummaryPill label="Updated" value={lastUpdated.toLocaleTimeString()} />} */}
-          </Box>
-        </Box>
-
-        {/* Mobile Layout (xs to md) */}
-        <Box sx={{ position: 'relative', display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.6 }}>
-          {/* Row 1: Mode */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .6 }}>
-            <Typography sx={{ fontSize: 10.5, fontWeight: 600, letterSpacing: .6, color: '#ff9d55', textTransform: 'uppercase' }}>Mode</Typography>
-            <ToggleButtonGroup size="small" exclusive value={filters.mode} onChange={(_, v) => v && setFilters(f => ({ ...f, mode: v }))} sx={{
-              background: 'rgba(255,255,255,0.07)', borderRadius: 2,
-              width: 'fit-content',
-              display: 'inline-flex',
-              '& .MuiToggleButton-root': { fontSize: 11.5, px: 1.2, textTransform: 'none', fontWeight: 600, border: 0, color: '#e2e2e2' },
-              '& .MuiToggleButton-root.Mui-selected': { background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff' }
-            }}>
-              <ToggleButton value="total">Total</ToggleButton>
-              <ToggleButton value="avg">Avg/Match</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-          {/* Row 2: Position Type / Year / Country */}
-            <Box sx={{ display: 'flex', gap: .9 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .4, flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 10, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Pos Type</Typography>
-                <Select size="small" value={filters.positionType || ''} onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))} displayEmpty sx={{ width: '100%', fontSize: 12, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}>
-                  <MenuItem value=""><em>All</em></MenuItem>
-                  <MenuItem value="Defender">Defender</MenuItem>
-                  <MenuItem value="Midfielder">Midfielder</MenuItem>
-                  <MenuItem value="Forward">Forward</MenuItem>
-                  <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
-                </Select>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .4, width: 90 }}>
-                <Typography sx={{ fontSize: 10, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Year</Typography>
-                <Select size="small" value={filters.year || ''} onChange={e => setFilters(f => ({ ...f, year: e.target.value || undefined }))} displayEmpty sx={{ fontSize: 12, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}>
-                  <MenuItem value=""><em>All</em></MenuItem>
-                  {years.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-                </Select>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .4, flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 10, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Country</Typography>
-                <Select size="small" value={filters.country || ''} onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))} displayEmpty sx={{ width: '100%', fontSize: 12, color: '#f1f1f1', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.18)' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.35)' } }}>
-                  <MenuItem value=""><em>All</em></MenuItem>
-                  {countries.map(c => (
-                    <MenuItem key={c} value={c}>{c}</MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            </Box>
-          {/* Row 3: Search + Actions */}
-          <Box sx={{ display: 'flex', gap: .9, width: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: .4, flex: '0 0 63%', maxWidth: '63%', minWidth: 0 }}>
-              <Typography sx={{ fontSize: 10, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Search</Typography>
-              <TextField size="small" placeholder="Search Player" value={search} onChange={e => setSearch(e.target.value)} sx={{
-                width: '100%',
-                '& .MuiOutlinedInput-root': {
-                  color: '#fff',
-                  height: 40,
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.34)' }
-                }
-              }} />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: .4, width: 128, flexGrow: 1 }}>
-              <Typography sx={{ fontSize: 10, fontWeight: 600, letterSpacing: .5, color: '#ff9d55', textTransform: 'uppercase' }}>Actions</Typography>
-              <Box sx={{ display: 'flex', gap: .6, alignItems: 'center' }}>
-                <Button variant="outlined" size="small" disabled={loading} onClick={load} sx={{
-                  textTransform: 'none', fontWeight: 600, fontSize: 11.5,
-                  borderColor: 'rgba(255,255,255,0.35)', color: '#ffb78b',
-                  height: 40,
-                  minHeight: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 1.2,
-                  '&:hover': { borderColor: '#ff9d55', background: 'rgba(255,120,40,0.08)' }
-                }}>{loading ? '...' : 'Refresh'}</Button>
-                <Button variant="outlined" size="small" onClick={clearFilters} sx={{
-                  textTransform: 'none', fontWeight: 600, fontSize: 11.5,
-                  borderColor: 'rgba(255,255,255,0.25)', color: '#dcdcdc',
-                  height: 40,
-                  minHeight: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 1.2,
-                  '&:hover': { borderColor: '#fff', background: 'rgba(255,255,255,0.08)' }
-                }}>Clear</Button>
-              </Box>
-            </Box>
-          </Box>
-          {/* Row 4: Active filter chips */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: .6 }}>
-            {filters.positionType && <Chip size="small" label={`Pos: ${filters.positionType}`} onDelete={() => setFilters(f => ({ ...f, positionType: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-            {filters.year && <Chip size="small" label={`Year: ${filters.year}`} onDelete={() => setFilters(f => ({ ...f, year: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-            {filters.country && <Chip size="small" label={`Country: ${filters.country}`} onDelete={() => setFilters(f => ({ ...f, country: undefined }))} sx={{ background: 'linear-gradient(90deg,#ff8a2b,#ff3030)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-            {search && <Chip size="small" label={`Search: ${search}`} onDelete={() => setSearch('')} sx={{ background: 'linear-gradient(90deg,#333,#111)', color: '#fff', '& .MuiChip-deleteIcon': { color: '#fff' } }} />}
-          </Box>
-          {/* Row 5: Summary (single line compact) */}
-          <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: .6, overflow: 'hidden' }}>
-            <SummaryPill label="Mode" value={filters.mode === 'total' ? 'Total XP' : 'Average XP / Match'} compact />
-            <SummaryPill label="Players" value={`${filtered.length.toLocaleString()}`} compact />
-            {data?.playerRank && <SummaryPill label="Your Rank" value={`#${data.playerRank}`} highlight compact />}
-          </Box>
-        </Box>
-        <Typography sx={{ position: 'relative', mt: hasActiveFilter ? 2 : 1, fontSize: 11.7, lineHeight: 1.5, color: '#c3c3c3', maxWidth: 880 }}>
-          View global performance of all registered players (guest players excluded). Your row is highlighted. Use Average mode to normalize by matches played. Scroll is auto-focused on you if ranked in the visible list.
-        </Typography>
-      </Paper>
-
-      {error && (
-        <Paper sx={{ p: 2, border: '1px solid #552', background: 'linear-gradient(135deg,#3a0000,#120000)', color: '#ffe2d8', borderRadius: 2, mb: 2 }}>
-          <Typography sx={{ fontWeight: 600, mb: 1 }}>Error: {error}</Typography>
-          <Button onClick={load} size="small" variant="outlined" sx={{ textTransform: 'none', borderColor: '#ff6a3c', color: '#ffb092', '&:hover': { borderColor: '#ff8a2b', background: 'rgba(255,120,40,0.08)' } }}>Retry</Button>
-        </Paper>
-      )}
-      <Paper
-        variant="outlined"
-        sx={{
-          position: 'relative',
-          border: '1px solid #4b4b4b',
-          borderRadius: 3,
-          overflow: 'hidden',
-          background: 'linear-gradient(90deg,#767676 0%, #000000 100%)',
-          p: 1.2
-        }}
-      >
-        {loading && <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)', background: 'rgba(0,0,0,0.35)', zIndex: 2 }}><CircularProgress size={42} thickness={5} sx={{ color: '#fff' }} /></Box>}
-        <TableContainer sx={{ maxHeight: 620 }} ref={tableContainerRef}>
-          <Table stickyHeader size="small" sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid rgba(255,255,255,0.18)' } }}>
-            <TableHead>
-              <TableRow>
-                {(() => {
-                  const showAvg = filters.mode === 'avg';
-                  const showTotal = filters.mode === 'total';
-                  const cols: Column[] = [
-                    { label: 'Rank', key: 'rank' },
-                    { label: 'Player', key: 'name' },
-                    { label: 'Position', key: 'position' },
-                    // { label:'Pos Type', key:'positionType' },
-                    { label: 'Country', key: 'position' },
-                    { label: 'XP Status', key: 'position' },
-                    ...(showAvg ? [{ label: 'Avg XP', key: 'avgXP' } as Column] : []),
-                    ...(showTotal ? [{ label: 'Total XP', key: 'totalXP' } as Column] : []),
-                  ];
-                  return cols.map(col => (
-                    <TableCell
-                      key={col.label}
-                      onClick={() => isSortableKey(col.key) && toggleSort(col.key)}
+          <TableContainer sx={{ maxHeight: 620 }} ref={tableContainerRef}>
+            <Table stickyHeader size="small" sx={{ '& .MuiTableCell-root': { border: 'none' } }}>
+              <TableHead>
+                <TableRow>
+                  {(() => {
+                    const showAvg = filters.mode === 'avg';
+                    const cols: Column[] = [
+                      { label: 'RANK', key: 'rank' },
+                      { label: 'PLAYERS', key: 'name' },
+                      { label: 'POSITION', key: 'position' },
+                      { label: 'COUNTRY', key: 'position' },
+                      { label: 'xp STATUS', key: 'position' },
+                      ...(showAvg ? [{ label: 'AVG xp', key: 'avgXP' } as Column] : [{ label: 'TOTAL xp', key: 'totalXP' } as Column]),
+                    ];
+                    return cols.map((col, i) => (
+                      <TableCell
+                        key={col.label}
+                        onClick={() => isSortableKey(col.key) && toggleSort(col.key)}
+                        sx={{
+                          cursor: isSortableKey(col.key) ? 'pointer' : 'default',
+                          userSelect: 'none',
+                          bgcolor: '#111',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                          py: 1.5,
+                          borderBottom: '2px solid #e56a16 !important',
+                          pl: i === 0 ? 3 : 1.5,
+                        }}
+                      >
+                        {col.label}
+                        {isSortableKey(col.key) && sort.key === col.key && (
+                          <Box component="span" sx={{ ml: 0.6, fontSize: 11 }}>
+                            {sort.direction === 'asc' ? '▲' : '▼'}
+                          </Box>
+                        )}
+                      </TableCell>
+                    ));
+                  })()}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filtered.map((p, idx) => {
+                  const isMe = user?.id === p.id;
+                  const rowBg = isMe
+                    ? 'rgba(229,106,22,0.18)'
+                    : idx % 2 === 0 ? '#1e1e1e' : '#242424';
+                  return (
+                    <TableRow
+                      key={p.id}
+                      ref={isMe ? userRowRef : undefined}
                       sx={{
-                        cursor: isSortableKey(col.key) ? 'pointer' : 'default',
-                        userSelect: 'none',
-                        background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        letterSpacing: .5,
-                        borderBottom: '2px solid rgba(255,255,255,0.35)'
+                        bgcolor: rowBg,
+                        '&:hover': { bgcolor: isMe ? 'rgba(229,106,22,0.25)' : '#2c2c2c' },
+                        transition: 'background 0.15s',
+                        boxShadow: isMe ? 'inset 3px 0 0 #e56a16' : undefined,
                       }}
                     >
-                      {col.label}
-                      {isSortableKey(col.key) && sort.key === col.key && (
-                        <Box component="span" sx={{ ml: .6, fontSize: 11, fontWeight: 700 }}>
-                          {sort.direction === 'asc' ? '▲' : '▼'}
-                        </Box>
-                      )}
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3 }}>
+                        {p.rank}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: isMe ? 800 : 600, color: '#fff', fontSize: 14 }}>
+                        <Link href={`/player/${p.id}`} style={{ textDecoration: 'none', color: '#fff' }}>
+                          {p.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{p.position || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{p.country || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                        {filters.mode === 'avg'
+                          ? formatNum(p.avgXP, { decimals: 2 })
+                          : formatNum(p.totalXP)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {!loading && error && filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ bgcolor: 'transparent' }}>
+                      <Typography sx={{ textAlign: 'center', py: 5, fontSize: 14, color: '#e56a16' }}>
+                        {error}
+                      </Typography>
                     </TableCell>
-                  ));
-                })()}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((p, idx) => {
-                const highlight = user?.id === p.id || (data?.playerOutsideTop && data.playerRank === p.rank && p.id === user?.id);
-                const baseGradient = 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)';
-                const altGradient = 'linear-gradient(177deg,rgba(229,106,22,0.82) 26%, rgba(207,35,38,0.82) 100%)';
-                const rowBg = highlight ? 'linear-gradient(177deg,rgba(255,168,92,1) 12%, rgba(240,96,54,1) 100%)' : (idx % 2 === 0 ? baseGradient : altGradient);
-                const medalBg = p.rank === 1 ? 'linear-gradient(135deg,#FFD700,#FFB400)' : p.rank === 2 ? 'linear-gradient(135deg,#D8D8D8,#B0B0B0)' : p.rank === 3 ? 'linear-gradient(135deg,#CD7F32,#AD5F20)' : (highlight ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)');
-                return (
-                  <TableRow
-                    key={p.id}
-                    ref={highlight ? userRowRef : undefined}
-                    hover
-                    sx={{
-                      background: rowBg,
-                      '&:hover': { filter: 'brightness(1.055)' },
-                      transition: 'filter .18s, transform .2s',
-                      fontSize: 13,
-                      boxShadow: highlight ? '0 0 0 2px rgba(255,255,255,0.55) inset, 0 0 12px -2px rgba(255,140,70,0.6)' : undefined,
-                      position: 'relative'
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 800, color: '#fff', fontSize: 12.5 }}>
-                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: .6 }}>
-                        <Box sx={{
-                          width: 28, height: 28, borderRadius: '9px',
-                          background: medalBg,
-                          color: p.rank <= 3 ? '#2d1600' : '#fff', fontWeight: 800, fontSize: 12.5,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: p.rank <= 3 ? '0 0 0 2px rgba(0,0,0,0.35), 0 2px 6px -2px rgba(0,0,0,0.6)' : undefined
-                        }}>{p.rank}</Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#fff', maxWidth: 220 }}>
-                      <Link href={`/player/${p.id}`} style={{ textDecoration: 'none', color: '#fff' }}>{p.name}</Link>
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12.5, color: '#fff', fontWeight: 500 }}>{p.position || '-'}</TableCell>
-                    {/* Country column */}
-                    <TableCell sx={{ fontSize: 12.5, color: '#fff', fontWeight: 500 }}>{p.country || '-'}</TableCell>
-                    {/* XP Status column: title from LEVELS based on total XP */}
-                    <TableCell sx={{ fontSize: 12.5, color: '#fff', fontWeight: 700 }}>
-                      {getLevelTitle(p.totalXP ?? 0)}
-                    </TableCell>
-                    {/* Matches column removed */}
-                    {filters.mode === 'avg' && (
-                      <TableCell sx={{ fontSize: 12.5, fontWeight: 700, color: '#fff' }}>{formatNum(p.avgXP, { decimals: 2 })}</TableCell>
-                    )}
-                    {filters.mode === 'total' && (
-                      <TableCell sx={{ fontSize: 12.5, fontWeight: 800, color: '#fff' }}>{formatNum(p.totalXP)}</TableCell>
-                    )}
                   </TableRow>
-                );
-              })}
-              {!loading && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} sx={{ background: 'transparent' }}>
-                    <Typography sx={{ textAlign: 'center', py: 5, fontSize: 13, color: '#fff' }}>No players found.</Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-              {loading && (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={`skeleton-${i}`} sx={{ opacity: .55 }}>
+                )}
+                {!loading && !error && filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ bgcolor: 'transparent' }}>
+                      <Typography sx={{ textAlign: 'center', py: 5, fontSize: 14, color: '#888' }}>
+                        No players found.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {loading && Array.from({ length: 8 }).map((_, i) => (
+                  <TableRow key={`sk-${i}`} sx={{ bgcolor: i % 2 === 0 ? '#1e1e1e' : '#242424', opacity: 0.5 }}>
                     {Array.from({ length: 6 }).map((__, c) => (
-                      <TableCell key={c} sx={{ background: 'rgba(255,255,255,0.04)' }}>
-                        <Box sx={{ height: 14, width: c === 1 ? '60%' : '40%', background: 'linear-gradient(90deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05))', borderRadius: 1 }} />
+                      <TableCell key={c}>
+                        <Box sx={{ height: 14, width: c === 1 ? '60%' : '40%', bgcolor: '#333', borderRadius: 1 }} />
                       </TableCell>
                     ))}
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Box>
     </Box>
   );
 }
 
-// Small summary pill component
+// Keep for backward compat (unused after redesign but harmless)
 function SummaryPill({ label, value, highlight, compact }: { label: string; value: string; highlight?: boolean; compact?: boolean }) {
   return (
     <Box sx={{
       px: compact ? 1.0 : 1.4,
       py: compact ? .6 : .75,
       borderRadius: 2,
-      background: highlight ? 'linear-gradient(90deg,#ff8a2b,#ff3030)' : 'linear-gradient(120deg,rgba(255,255,255,0.07), rgba(255,255,255,0.02))',
+      background: highlight ? '#e56a16' : 'rgba(255,255,255,0.07)',
       display: 'flex', flexDirection: 'column', minWidth: compact ? 84 : 110,
-      flexShrink: 0,
       border: highlight ? '1px solid rgba(255,255,255,0.35)' : '1px solid rgba(255,255,255,0.09)',
-      boxShadow: highlight ? '0 0 0 1px rgba(255,120,40,0.5), 0 2px 8px -2px rgba(0,0,0,0.6)' : undefined
     }}>
-      <Typography sx={{ fontSize: compact ? 9 : 10, letterSpacing: .8, textTransform: 'uppercase', color: highlight ? '#ffe8da' : '#b5b5b5', fontWeight: 600, lineHeight: 1.1 }}>{label}</Typography>
-      <Typography sx={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: '#ffffff', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{value}</Typography>
+      <Typography sx={{ fontSize: compact ? 9 : 10, letterSpacing: .8, textTransform: 'uppercase', color: highlight ? '#ffe8da' : '#b5b5b5', fontWeight: 600 }}>{label}</Typography>
+      <Typography sx={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{value}</Typography>
     </Box>
   );
 }
