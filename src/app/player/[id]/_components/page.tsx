@@ -1858,14 +1858,14 @@ export default function PlayerStatsPage() {
                                     borderRadius: 1,
                                     overflow: 'hidden',
                                     cursor: 'pointer',
-                                    '&:hover .icon-box': { bgcolor: '#099968' },
+                                    '&:hover .icon-box': { bgcolor: '#008c6b' },
                                     '&:hover .text-box': { bgcolor: '#333' },
                                     border: '1.5px solid #fff',
                                 }}
                                 onClick={() => setStatsModalOpen(true)}
                             >
                                 <Box className="icon-box" sx={{ 
-                                    bgcolor: TEAL_PRIMARY, 
+                                    bgcolor: '#00a77f', 
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center',
@@ -1930,7 +1930,7 @@ export default function PlayerStatsPage() {
                                 <Box sx={{
                                     width: '70%',
                                     height: '6px',
-                                    bgcolor: activeTab === tab ? TEAL_PRIMARY : '#555',
+                                    bgcolor: activeTab === tab ? '#00a77f' : '#555',
                                     mt: 1,
                                 }} />
                             </Box>
@@ -1975,7 +1975,7 @@ export default function PlayerStatsPage() {
                                 }}>
                                     <Box sx={{ 
                                         height: '100%', 
-                                        bgcolor: TEAL_PRIMARY, 
+                                        bgcolor: '#00a77f', 
                                         width: `${activeTab === 'career' ? careerWinRatio : currentWinRatio}%`,
                                         transition: 'width 0.4s ease'
                                     }} />
