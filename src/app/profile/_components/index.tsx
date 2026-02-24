@@ -129,10 +129,10 @@ const StyledSlider = styled(Slider)(() => ({
 const StyledTextField = styled(TextField)(() => ({
   maxWidth: 360,
   '& .MuiOutlinedInput-root': {
-    background: "#202225",
+    background: "#171717",
     color: themeColors.text,
     borderRadius: 6,
-    border: `1px solid ${themeColors.border}`,
+    border: `1px solid rgba(255,255,255,0.5)`,
     transition: ".25s",
     '& fieldset': { borderColor: "transparent" },
     '&:hover': { borderColor: themeColors.borderStrong },
@@ -156,8 +156,8 @@ const StyledTextField = styled(TextField)(() => ({
   '& .MuiInputLabel-root.Mui-focused': { color: themeColors.primary },
   '& .MuiFormHelperText-root': { color: '#fff !important' },
   '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-    WebkitBoxShadow: '0 0 0 1000px #202225 inset !important',
-    boxShadow: '0 0 0 1000px #202225 inset !important',
+    WebkitBoxShadow: '0 0 0 1000px #171717 inset !important',
+    boxShadow: '0 0 0 1000px #171717 inset !important',
     WebkitTextFillColor: themeColors.text,
     caretColor: themeColors.text,
     transition: 'background-color 9999s ease-out 0s',
@@ -585,7 +585,7 @@ const PlayerProfileCard = () => {
               borderRadius: 5,
               maxWidth: 380,
               mx: 'auto',
-              background: "linear-gradient(150deg,#1d1f23 0%,#25272b 55%)",
+              background: "#1f1f1f",
               border: `1px solid ${themeColors.border}`,
             }}>
               <Stepper activeStep={step - 1} sx={{
@@ -744,7 +744,7 @@ const PlayerProfileCard = () => {
           <Box>
             <StyledPaper sx={{
               p: 1.5,
-              background: "linear-gradient(145deg,#202226 0%,#27292d 60%)",
+              background: "#1f1f1f",
               borderRadius: 2
             }}>
               <Stepper activeStep={step - 1} sx={{
@@ -900,8 +900,8 @@ const PlayerProfileCard = () => {
                         <Card
                           sx={{
                             p: 0.5,
-                            background: "#222428",
-                            border: `1px solid ${themeColors.border}`,
+                            background: "#171717",
+                            border: `1px solid rgba(255,255,255,0.5)`,
                             borderRadius: 1.5,
                             display: 'flex',
                             alignItems: 'center',
@@ -937,8 +937,8 @@ const PlayerProfileCard = () => {
                         <Card
                           sx={{
                             p: 0.5,
-                            background: "#222428",
-                            border: `1px solid ${themeColors.border}`,
+                            background: "#171717",
+                            border: `1px solid rgba(255,255,255,0.5)`,
                             borderRadius: 1.5,
                             display: 'flex',
                             alignItems: 'center',
@@ -978,8 +978,8 @@ const PlayerProfileCard = () => {
                   <Typography sx={{ mb: 0.8, fontSize: 20, fontWeight: 400, color: themeColors.text, ml: 'calc((100% - 900px) / 2)', maxWidth: 900, mx: 'auto' }}>Position Type</Typography>
                   <Card sx={{
                     p: 2.2,
-                    background: "#222428",
-                    border: `1px solid ${themeColors.border}`,
+                    background: "#171717",
+                    border: `1px solid rgba(255,255,255,0.5)`,
                     borderRadius: 1.5,
                     maxWidth: 900,
                     mx: 'auto'
@@ -1008,8 +1008,8 @@ const PlayerProfileCard = () => {
                   <Card sx={{
                     p: 2,
                     pl: 4,
-                    background: "#222428",
-                    border: `1px solid ${themeColors.border}`,
+                    background: "#171717",
+                    border: `1px solid rgba(255,255,255,0.5)`,
                     borderRadius: 2,
                     maxWidth: 400
                   }}>
@@ -1029,8 +1029,8 @@ const PlayerProfileCard = () => {
                   <Card sx={{
                     p: 2,
                     pl: 4,
-                    background: "#222428",
-                    border: `1px solid ${themeColors.border}`,
+                    background: "#171717",
+                    border: `1px solid rgba(255,255,255,0.5)`,
                     borderRadius: 2,
                     maxWidth: 400
                   }}>
@@ -1078,7 +1078,7 @@ const PlayerProfileCard = () => {
               <Box sx={{
                 position: 'absolute',
                 top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                bgcolor: '#1f2125', color: '#fff', p: 3, borderRadius: 2,
+                bgcolor: '#1f1f1f', color: '#fff', p: 3, borderRadius: 2,
                 minWidth: 420, border: `1px solid ${themeColors.border}`,
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
@@ -1098,7 +1098,7 @@ const PlayerProfileCard = () => {
             <Modal open={cameraOpen} onClose={handleCloseCamera}>
               <Box sx={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                bgcolor: '#1f2125', color: '#fff', p: 2, borderRadius: 2, width: 460, maxWidth: '90vw',
+                bgcolor: '#1f1f1f', color: '#fff', p: 2, borderRadius: 2, width: 460, maxWidth: '90vw',
                 border: `1px solid ${themeColors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>Camera</Typography>
@@ -1134,7 +1134,7 @@ const PlayerProfileCard = () => {
           <Box>
             <StyledPaper sx={{
               p: 4,
-              background: "linear-gradient(140deg,#202226 0%,#272a2e 60%)",
+              background: "#1f1f1f",
               borderRadius: 2
             }}>
               <Stepper activeStep={step - 1} sx={{
