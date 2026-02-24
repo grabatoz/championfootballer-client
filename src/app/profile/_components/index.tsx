@@ -89,17 +89,17 @@ const StyledPaper = styled(Paper)(() => ({
 }))
 
 const SkillCard = styled(Card)(() => ({
-  background: "linear-gradient(135deg,#242529 0%,#2d2f33 100%)",
+  background: "#171717",
   borderRadius: 16,
   color: themeColors.text,
   position: "relative",
-  border: `1px solid ${themeColors.border}`,
+  border: "1px solid rgba(255,255,255,0.5)",
   boxShadow: "0 6px 22px -6px rgba(0,0,0,0.65)",
   transition: "transform .35s, box-shadow .35s, border-color .35s",
   "&:hover": {
     transform: "translateY(-4px)",
     boxShadow: "0 14px 38px -8px rgba(0,0,0,0.75)",
-    borderColor: themeColors.borderStrong
+    borderColor: "rgba(255,255,255,0.7)"
   }
 }))
 
@@ -180,10 +180,10 @@ const StyledFormLabel = styled(FormLabel)(() => ({
 
 // Utility coloring from skill value -> gradient stop
 const getSkillLabel = (value: number) => {
-  if (value >= 90) return { text: `${value} Elite`, color: themeColors.primaryGradient }
-  if (value >= 80) return { text: `${value} Pro`, color: themeColors.primaryGradient }
-  if (value >= 70) return { text: `${value} Advanced`, color: themeColors.primaryGradient }
-  return { text: `${value} Developing`, color: "linear-gradient(90deg,#666,#444)" }
+  if (value >= 90) return { text: `${value} Elite`, color: "linear-gradient(90deg,#b85214,#b85214)" }
+  if (value >= 80) return { text: `${value} Pro`, color: "linear-gradient(90deg,#e16419,#e16419)" }
+  if (value >= 70) return { text: `${value} Advanced`, color: "linear-gradient(90deg,#ff9861,#ff9861)" }
+  return { text: `${value} Developing`, color: "linear-gradient(90deg,#00a77f,#00a77f)" }
 }
 // const getSkillColor = (value: number) => {
 //   if (value >= 80) return themeColors.primary
@@ -596,7 +596,7 @@ const PlayerProfileCard = () => {
                 '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
               <Box sx={{ width: 'calc(100% + 32px)', height: 3, background: '#fff', mx: -2, mb: 3, opacity: 0.4 }} />
 
@@ -755,7 +755,7 @@ const PlayerProfileCard = () => {
                 '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 400, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
               <Box sx={{ width: 'calc(100% + 48px)', height: 2, background: '#fff', mx: -3, mb: 3, opacity: 0.80 }} />
 
@@ -1129,39 +1129,41 @@ const PlayerProfileCard = () => {
     ]
 
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, maxWidth: 1070 }}>
         <Fade in timeout={600}>
           <Box>
             <StyledPaper sx={{
-              p: 4,
+              p: 1.5,
               background: "#1f1f1f",
               borderRadius: 2
             }}>
               <Stepper activeStep={step - 1} sx={{
-                mb: 3,
-                maxWidth: 600,
+                mb: 1.5,
+                maxWidth: 700,
                 mx: 'auto',
                 '& .MuiStepIcon-root.Mui-active': { color: '#00a77f' },
                 '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
-              <Box sx={{ width: 'calc(100% + 64px)', height: 3, background: '#fff', mx: -4, mb: 3, opacity: 0.4 }} />
+              <Box sx={{ width: 'calc(100% + 48px)', height: 2, background: '#fff', mx: -3, mb: 3, opacity: 0.80 }} />
 
-              <Typography variant="h5" fontWeight={800} align="center" sx={{
-                mb: 0,
-                background: "#fff",
-                WebkitBackgroundClip: "text",
-                color: "transparent",
-                letterSpacing: .6
+              <Typography variant="h5" fontWeight={600} align="center" sx={{
+                mb: 2,
+                color: '#fff',
+                letterSpacing: .5,
+                fontFamily: 'Woodford Bourne Pro',
+                fontSize: '1.75rem',
+                textShadow: '0 2px 8px rgba(0,0,0,0.6)'
               }}>
-                <Sports sx={{ mr: .75, color: '#fff' }} /> Skills & Attributes
+                SKILLS & ATTRIBUTES
               </Typography>
 
-              <Grid container spacing={3} sx={{ mt: 1 }}>
+              <Grid container spacing={3} sx={{ mt: 1, px: 6 }}>
                 {skills.map(skill => {
                   const labelInfo = getSkillLabel(skill.value ?? 50)
+                  const solidColor = labelInfo.color.replace('linear-gradient(90deg,', '').split(',')[0]
                   return (
                     <Grid
                       item
@@ -1187,11 +1189,11 @@ const PlayerProfileCard = () => {
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
-                            <Image src={skill.icon} alt="icon" width={42} height={42} />
+                            <Image src={skill.icon} alt="icon" width={skill.name === "Physical" ? 36 : 42} height={skill.name === "Physical" ? 36 : 42} />
                             <Typography
                               variant="subtitle2"
                               fontWeight={700}
-                              sx={{ color: themeColors.text, letterSpacing: .4, fontSize: 14 }}
+                              sx={{ color: themeColors.text, letterSpacing: .4, fontSize: 22 }}
                             >
                               {skill.name}
                             </Typography>
@@ -1200,11 +1202,13 @@ const PlayerProfileCard = () => {
                               label={skill.value ?? 50}
                               sx={{
                                 ml: 'auto',
-                                fontSize: 11,
+                                fontSize: 13,
                                 fontWeight: 700,
-                                background: themeColors.primaryGradient,
+                                background: labelInfo.color,
                                 color: '#fff',
-                                height: 22
+                                height: 24,
+                                borderRadius: 1,
+                                px: 0.5
                               }}
                             />
                           </Box>
@@ -1216,6 +1220,20 @@ const PlayerProfileCard = () => {
                               min={50}
                               max={99}
                               step={1}
+                              sx={{
+                                '& .MuiSlider-track': {
+                                  background: labelInfo.color
+                                },
+                                '& .MuiSlider-thumb': {
+                                  border: `3px solid ${solidColor}`,
+                                  '&:hover': { 
+                                    boxShadow: `0 0 0 6px ${solidColor}40`
+                                  },
+                                  '&:focus-visible': { 
+                                    boxShadow: `0 0 0 8px ${solidColor}4D`
+                                  }
+                                }
+                              }}
                             />
                             <Box sx={{ textAlign: 'center', mt: 1 }}>
                               <Chip
@@ -1224,10 +1242,10 @@ const PlayerProfileCard = () => {
                                   background: labelInfo.color,
                                   color: '#fff',
                                   fontWeight: 700,
-                                  fontSize: '.65rem',
+                                  fontSize: '.8rem',
                                   px: 1.5,
                                   borderRadius: 2,
-                                  height: 22
+                                  height: 24
                                 }}
                               />
                             </Box>
@@ -1249,9 +1267,9 @@ const PlayerProfileCard = () => {
                       borderRadius: 1,
                       px: 4,
                       fontWeight: 600,
-                      borderColor: themeColors.danger,
+                      borderColor: '#00a77f',
                       color: themeColors.text,
-                      '&:hover': { background: "rgba(211,47,47,0.15)", borderColor: themeColors.danger }
+                      '&:hover': { background: "rgba(0,167,127,0.15)", borderColor: '#00a77f' }
                     }}
                   >Delete Account</Button>
                   <Button
