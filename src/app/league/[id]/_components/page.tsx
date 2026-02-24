@@ -82,6 +82,10 @@ const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/ed
     loading: () => <CircularProgress />,
     ssr: false
 });
+const MatchDetailsPage = dynamic(() => import('@/app/match/[matchId]/_components/index'), {
+    loading: () => <CircularProgress />,
+    ssr: false
+});
 import CloseIcon from '@mui/icons-material/Close';
 import { useCombinedMatchRefresh } from '@/lib/useMatchAutoRefresh';
 // import { LeaderboardResponse } from '@/types/api';
@@ -308,6 +312,10 @@ export default function LeagueDetailPage() {
     // Match detail modal state
     const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
     const [selectedMatchDetail, setSelectedMatchDetail] = useState<Match | null>(null);
+
+    // Results popup dialog state
+    const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
+    const [resultsDialogMatchId, setResultsDialogMatchId] = useState<string | null>(null);
 
     // Confirmation dialog state
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -3931,7 +3939,7 @@ export default function LeagueDetailPage() {
                                                                             {/* Results Button */}
                                                                             <Button
                                                                                 size="small"
-                                                                                onClick={() => router.push(`/match/${match.id}`)}
+                                                                                onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
                                                                                 disabled={match.status === 'RESULT_UPLOADED'}
                                                                                 sx={{
@@ -4928,6 +4936,36 @@ export default function LeagueDetailPage() {
                             onClose={() => setMatchDetailModalOpen(false)}
                             match={selectedMatchDetail}
                         />
+
+                        {/* Results Popup Dialog - renders full MatchDetailsPage */}
+                        <Dialog
+                            open={resultsDialogOpen}
+                            onClose={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
+                            fullWidth
+                            maxWidth="lg"
+                            PaperProps={{
+                                sx: {
+                                    bgcolor: '#0a0a0a',
+                                    backgroundImage: 'none',
+                                    borderRadius: 3,
+                                    maxHeight: '90vh',
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                }
+                            }}
+                        >
+                            <IconButton
+                                onClick={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
+                                sx={{ position: 'absolute', right: 8, top: 8, color: '#fff', zIndex: 10, bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                            <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+                                {resultsDialogOpen && resultsDialogMatchId && (
+                                    <MatchDetailsPage matchIdProp={resultsDialogMatchId} />
+                                )}
+                            </DialogContent>
+                        </Dialog>
                     </>
                 )}
             </Container>

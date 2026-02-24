@@ -1,12 +1,13 @@
 "use client";
-
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton } from "@mui/material";
+import { Groups, Edit, Close } from "@mui/icons-material";
+import GoalsIcon from '@/Components/images/goal.png';
+import AssistIcon from '@/Components/images/Assist.png';
+import CleanSheetIcon from '@/Components/images/cleansheet.png';
 import { useAuth } from '@/lib/hooks';
-
-// Lazy load heavy components
 const MatchSummary = dynamic(() => import('@/Components/MatchSummary'), {
   loading: () => <CircularProgress />,
   ssr: false
@@ -15,43 +16,11 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   loading: () => <></>,
   ssr: false
 });
-
-// import useMediaQuery from '@mui/material/useMediaQuery';
-// import { useTheme } from '@mui/material/styles';
-// import FirstBadge from '@/Components/images/1st.png';
-// import SecondBadge from '@/Components/images/2nd.png';
-// import ThirdBadge from '@/Components/images/3rd.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import React from "react";
-// import CloseIcon from '@mui/icons-material/Close';
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
-// import { ArrowLeft } from "lucide-react";
-
-// const getBadgeForPosition = (position: number) => {
-//   switch (position) {
-//     case 1:
-//       return <Image src={FirstBadge} alt="First Place" width={20} height={20} />
-//     case 2:
-//       return <Image src={SecondBadge} alt="Second Place" width={20} height={20} />
-//     case 3:
-//       return <Image src={ThirdBadge} alt="Third Place" width={20} height={20} />
-//     default:
-//       return `${position}th`
-//   }
-// }
-
-// const getRowStyles = (index: number) => {
-//   if (index === 0) {
-//     return "bg-[#0a3e1e]" // First place - darker green
-//   } else if (index === 1) {
-//     return "bg-[#0a4822]" // Second place - medium green
-//   } else if (index === 2) {
-//     return "bg-[#094420]" // Third place - another shade of green
-//   }
-//   return "bg-[#0a4822]" // All other places - medium green
-// }
 
 interface User {
   id: string;
@@ -105,6 +74,11 @@ interface Match {
   leagueId?: string;
   end?: string;
   availableUsers?: { id: string }[];
+  // Captain picks (from league matches data)
+  homeDefensiveImpactId?: string | null;
+  awayDefensiveImpactId?: string | null;
+  homeMentalityId?: string | null;
+  awayMentalityId?: string | null;
   // guests array provided by backend (team based) -> we merge into display list
   guests?: { id: string; team: 'home' | 'away'; firstName: string; lastName: string; shirtNumber?: string }[];
 }
@@ -112,7 +86,8 @@ interface Match {
 interface League {
   id: string;
   name: string;
-  matches: { id: string }[];
+  isAdmin?: boolean;
+  matches: { id: string; homeDefensiveImpactId?: string | null; awayDefensiveImpactId?: string | null; homeMentalityId?: string | null; awayMentalityId?: string | null }[];
 }
 
 type PlayerWithTeam = User & { __team: 'home' | 'away' };
@@ -130,9 +105,9 @@ type MatchStatLite = {
 };
 
 
-export default function MatchDetailsPage() {
+export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string } = {}) {
   const params = useParams();
-  const matchId = params?.matchId as string;
+  const matchId = matchIdProp || (params?.matchId as string);
   // const router = useRouter();
   const { token, user } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
@@ -142,6 +117,15 @@ export default function MatchDetailsPage() {
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
   const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
   const [, setVotedForId] = useState<string | null>(null);
+  // Admin state (from league response)
+  const [isAdmin, setIsAdmin] = useState(false);
+  // Admin edit mode - when true, clicking a player opens stats editor
+  const [adminEditMode, setAdminEditMode] = useState(false);
+  // Admin player stats editor dialog
+  const [editingPlayer, setEditingPlayer] = useState<(User & { __team?: 'home' | 'away' }) | null>(null);
+  const [editStats, setEditStats] = useState({ goals: 0, assists: 0, cleanSheets: 0 });
+  const [editStatsLoading, setEditStatsLoading] = useState(false);
+  const [editStatsSaving, setEditStatsSaving] = useState(false);
   // track if we already attempted detailed fetch to avoid loops
   const detailedFetchDone = useRef(false);
   // cache of per-player stats fetched via ultra-fast endpoint (used for guests)
@@ -164,8 +148,11 @@ export default function MatchDetailsPage() {
       })
       .then(data => {
         if (data.success && data.match) {
-          console.log('✅ Match data updated:', data.match);
-          setMatch(data.match);
+          // Normalize: ensure leagueId is always a top-level field
+          const m = data.match;
+          if (!m.leagueId && m.league?.id) m.leagueId = m.league.id;
+          console.log('✅ Match data updated:', m);
+          setMatch(m);
           // Reset detailed fetch flag to allow guests to be re-fetched
           detailedFetchDone.current = false;
           // Clear stats cache to force fresh fetch
@@ -202,26 +189,43 @@ export default function MatchDetailsPage() {
   }, [matchId, fetchMatchData]);
 
   useEffect(() => {
-    if (match && match.leagueId && token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${match.leagueId}`, {
+    const lid = match?.leagueId || (match as any)?.league?.id;
+    if (match && lid && token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success && data.league) setLeague(data.league);
+          if (data.success && data.league) {
+            setLeague(data.league);
+            // Set admin flag from league response
+            if (data.league.isAdmin === true) setIsAdmin(true);
+            // Merge captain pick IDs from league matches into current match
+            const leagueMatch = data.league.matches?.find((m: { id: string }) => m.id === match?.id);
+            if (leagueMatch) {
+              setMatch(prev => prev ? {
+                ...prev,
+                homeDefensiveImpactId: leagueMatch.homeDefensiveImpactId ?? prev.homeDefensiveImpactId,
+                awayDefensiveImpactId: leagueMatch.awayDefensiveImpactId ?? prev.awayDefensiveImpactId,
+                homeMentalityId: leagueMatch.homeMentalityId ?? prev.homeMentalityId,
+                awayMentalityId: leagueMatch.awayMentalityId ?? prev.awayMentalityId,
+              } : prev);
+            }
+          }
         });
     }
   }, [match, token]);
 
   // Fetch detailed match (including guests) if not present in initial /matches/:id response
   useEffect(() => {
-    if (!match || !token || !match.leagueId) return;
+    const lid2 = match?.leagueId || (match as any)?.league?.id;
+    if (!match || !token || !lid2) return;
     // If guests already present or already fetched, skip
     if (match.guests?.length || detailedFetchDone.current) return;
     detailedFetchDone.current = true;
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${match.leagueId}/matches/${match.id}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid2}/matches/${match.id}`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         if (data.success && data.match) {
@@ -231,45 +235,44 @@ export default function MatchDetailsPage() {
     })();
   }, [match, token]);
 
-  // Fetch per-match stats for guests (and only once per guest id)
+  // Fetch ALL per-match stats for every player (single call, no playerId param)
   useEffect(() => {
-    if (!token || !matchId || !match?.guests?.length) return;
-    const guestIds = (match.guests || []).map(g => String(g.id));
-    const toFetchKeys = guestIds
-      .map(id => `guest-${id}`)
-      .filter(key => !fetchedStatsKeysRef.current.has(key));
-    if (!toFetchKeys.length) return;
+    if (!token || !matchId || !match) return;
+    // Only fetch once per matchId load (cleared on refresh via fetchedStatsKeysRef)
+    if (fetchedStatsKeysRef.current.has('__all__')) return;
+    fetchedStatsKeysRef.current.add('__all__');
 
     (async () => {
-      await Promise.allSettled(toFetchKeys.map(async key => {
-        const rawGuestId = key.replace(/^guest-/, '');
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${encodeURIComponent(rawGuestId)}`, {
-            headers: { Authorization: `Bearer ${token}` }
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?_t=${Date.now()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        if (data?.success && Array.isArray(data.stats)) {
+          const statsMap: Record<string, MatchStatLite> = {};
+          data.stats.forEach((s: any) => {
+            const uid = String(s.userId || s.user?.id || '');
+            if (!uid) return;
+            const entry: MatchStatLite = {
+              goals: Number(s.goals) || 0,
+              assists: Number(s.assists) || 0,
+              cleanSheets: Number(s.cleanSheets) || 0,
+              penalties: Number(s.penalties) || 0,
+              freeKicks: Number(s.freeKicks) || 0,
+              defence: Number(s.defence) || 0,
+              impact: Number(s.impact) || 0,
+              xpAwarded: Number(s.xpAwarded) || 0,
+            };
+            // Map to both raw id and guest-prefixed id so both work
+            statsMap[uid] = entry;
+            statsMap[`guest-${uid}`] = entry;
           });
-          if (!res.ok) return;
-          const data = await res.json().catch(() => null);
-          if (data?.success && data.stats) {
-            setPerPlayerStats(prev => ({
-              ...prev,
-              [key]: {
-                goals: Number(data.stats.goals) || 0,
-                assists: Number(data.stats.assists) || 0,
-                cleanSheets: Number(data.stats.cleanSheets) || 0,
-                penalties: Number(data.stats.penalties) || 0,
-                freeKicks: Number(data.stats.freeKicks) || 0,
-                defence: Number(data.stats.defence) || 0,
-                impact: Number(data.stats.impact) || 0,
-                xpAwarded: Number(data.stats.xpAwarded) || 0,
-              }
-            }));
-          }
-        } finally {
-          fetchedStatsKeysRef.current.add(key);
+          setPerPlayerStats(statsMap);
         }
-      }));
+      } catch { /* ignore */ }
     })();
-  }, [token, matchId, match?.guests]);
+  }, [token, matchId, match]);
 
   // Automatically select home team on load if match is loaded
   useEffect(() => {
@@ -318,6 +321,80 @@ export default function MatchDetailsPage() {
     };
   }, [matchId, fetchVotes]);
   const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
+
+  // Admin: open player stats editor
+  const handleOpenPlayerEdit = async (player: User & { __team?: 'home' | 'away' }) => {
+    if (!token || !matchId) return;
+    setEditingPlayer(player);
+    setEditStatsLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${player.id}&_t=${Date.now()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.stats) {
+          setEditStats({
+            goals: data.stats.goals || 0,
+            assists: data.stats.assists || 0,
+            cleanSheets: data.stats.cleanSheets || 0,
+          });
+        } else {
+          setEditStats({ goals: 0, assists: 0, cleanSheets: 0 });
+        }
+      } else {
+        setEditStats({ goals: 0, assists: 0, cleanSheets: 0 });
+      }
+    } catch {
+      setEditStats({ goals: 0, assists: 0, cleanSheets: 0 });
+    } finally {
+      setEditStatsLoading(false);
+    }
+  };
+
+  // Admin: save player stats
+  const handleSavePlayerStats = async () => {
+    if (!editingPlayer || !token || !matchId) return;
+    setEditStatsSaving(true);
+    try {
+      // Compute impact based on team goals
+      const isHome = (match?.homeTeamUsers ?? []).some(p => p.id === editingPlayer.id);
+      const teamGoals = isHome ? (match?.homeTeamGoals ?? 0) : (match?.awayTeamGoals ?? 0);
+      const total = editStats.goals + editStats.assists + editStats.cleanSheets;
+      const impact = teamGoals > 0 ? Math.round((total / teamGoals) * 100) : 0;
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: editingPlayer.id,
+          ...editStats,
+          defence: 0,
+          penalties: 0,
+          freeKicks: 0,
+          impact,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Clear caches
+        const STORAGE_PREFIX = 'cf_cache_';
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith(STORAGE_PREFIX) && (key.includes('league') || key.includes('match'))) {
+            localStorage.removeItem(key);
+          }
+        });
+        window.dispatchEvent(new CustomEvent('match-updated', { detail: { matchId } }));
+        setEditingPlayer(null);
+        // Refresh match data
+        fetchMatchData();
+      }
+    } catch {
+      // silent
+    } finally {
+      setEditStatsSaving(false);
+    }
+  };
 
   function getTeamSkillAvg(players: User[]) {
     if (!players.length) return 0;
@@ -418,54 +495,6 @@ export default function MatchDetailsPage() {
   //   }
   // }, [router, match]);
 
-
-  const JerseyAvatar = ({
-    number,
-    sx = {},
-  }: {
-    number?: string | number;
-    sx?: SxProps<Theme>;
-  }) => (
-    <Box
-      sx={{
-        position: 'relative',
-        width: 60,
-        height: 60,
-        overflow: 'hidden',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...sx,
-      }}
-    >
-      <Image
-        src={ShirtImg}
-        alt="Shirt"
-        fill
-        sizes="(max-width: 600px) 48px, 60px"
-        quality={100}
-        style={{ objectFit: 'contain' }}
-        priority
-      />
-      <Typography
-        component="span"
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          color: '#fff',
-          fontWeight: 800,
-          textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-          fontSize: { xs: 10, sm: 12, md: 18 },
-          lineHeight: 1,
-        }}
-      >
-        {number ?? '0'}
-      </Typography>
-    </Box>
-  );
-
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
       {/* Top-right close button */}
@@ -509,7 +538,7 @@ export default function MatchDetailsPage() {
             winPercentRight={winPercentRight}
             matchStatus={match.status}
             matchEndTime={match.end || undefined}
-            leagueId={match.leagueId || ""}
+            leagueId={match.leagueId || (match as any).league?.id || ""}
             matchId={match.id}
             isUserAvailable={!!match.availableUsers?.some(u => u?.id === user?.id)}
             availabilityLoading={availabilityLoading}
@@ -521,16 +550,60 @@ export default function MatchDetailsPage() {
             </Typography>
           )}
           {/* <Divider sx={{ mb: 3 }} /> */}
+
+          {/* Teams View / Admin Only Edits section header */}
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: { xs: '100%', md: 1260 },
+            mx: 'auto',
+            mt: { xs: 2, sm: 3 },
+            mb: { xs: 1, sm: 1.5 },
+            px: { xs: 1, sm: 2 },
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Groups sx={{ color: '#fff', fontSize: { xs: 22, sm: 26, md: 30 } }} />
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: { xs: 14, sm: 16, md: 18 } }}>
+                Teams View
+              </Typography>
+            </Box>
+            {isAdmin && (
+              <Box
+                onClick={() => setAdminEditMode(prev => !prev)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  cursor: 'pointer',
+                  '&:hover': { opacity: 0.8 },
+                  bgcolor: adminEditMode ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 2,
+                  border: adminEditMode ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: 12, sm: 14, md: 16 } }}>
+                  Admin Only Edits
+                </Typography>
+                <Edit sx={{ color: '#fff', fontSize: { xs: 16, sm: 18, md: 20 } }} />
+              </Box>
+            )}
+          </Box>
+
           <Box sx={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {/* Single Players Table: Home + Away */}
             <Box sx={{ width: "100%" }}>
               {(() => {
-                // Responsive grid template: Player | Goals | Assists | Clean Sheets | Impact | Votes | XP
+                // Responsive grid template: Player | Goals | Assists | Clean Sheets | MOTM Votes | DEF IMP Votes | + Mentality | xp PTS
                 // Mobile: smaller columns, Desktop: comfortable spacing
                 const GRID_COLS = {
-                  xs: 'minmax(140px, 1fr) 45px 45px 70px 45px 45px 45px', // Mobile
-                  sm: 'minmax(180px, 1fr) 50px 50px 90px 50px 50px 50px', // Tablet
-                  md: 'minmax(200px, 1fr) 56px 56px 110px 56px 56px 56px' // Desktop
+                  xs: 'minmax(120px, 1fr) 40px 40px 60px 50px 55px 55px 45px', // Mobile (8 cols)
+                  sm: 'minmax(160px, 1fr) 50px 50px 80px 65px 75px 75px 55px', // Tablet
+                  md: 'minmax(200px, 1fr) 56px 56px 100px 75px 90px 90px 60px' // Desktop
                 };
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
@@ -562,6 +635,19 @@ export default function MatchDetailsPage() {
                     (typeof s.assists === 'number' ? s.assists : 0)
                   );
                 };
+
+                // Calculate DEF IMP and MENTALITY vote counts per player
+                const defImpactVotes: Record<string, number> = {};
+                const mentalityVotes: Record<string, number> = {};
+                if (match) {
+                  // Collect captain pick IDs for defensive impact and mentality
+                  const defPickIds = [match.homeDefensiveImpactId, match.awayDefensiveImpactId].filter(Boolean);
+                  const menPickIds = [match.homeMentalityId, match.awayMentalityId].filter(Boolean);
+                  allPlayers.forEach(p => {
+                    defImpactVotes[p.id] = defPickIds.filter(id => String(id) === String(p.id)).length;
+                    mentalityVotes[p.id] = menPickIds.filter(id => String(id) === String(p.id)).length;
+                  });
+                }
 
                 const sortedPlayers = [...allPlayers].sort((a, b) => {
                   const pb = getPoints(b);
@@ -608,7 +694,6 @@ export default function MatchDetailsPage() {
                       >
                         Match Result
                       </Typography>
-                      <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.3)' }} />
                     </Box>
 
                     {/* Scrollable Table Container */}
@@ -649,7 +734,7 @@ export default function MatchDetailsPage() {
                           fontSize: { xs: 10, sm: 12, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: { xs: 600, sm: 680, md: 720 } }}>
+                        <Box sx={{ minWidth: { xs: 700, sm: 800, md: 900 } }}>
                           {/* Header */}
                           <Box
                             sx={{
@@ -667,28 +752,32 @@ export default function MatchDetailsPage() {
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              pl: { xs: 0.5, sm: 1, md: 2 } 
+                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              pl: { xs: 0.5, sm: 1, md: 2 },
+                              textTransform: 'uppercase'
                             }}>Player</Box>
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              textAlign: 'center' 
+                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              textAlign: 'center',
+                              textTransform: 'uppercase'
                             }}>Goals</Box>
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              textAlign: 'center' 
+                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              textAlign: 'center',
+                              textTransform: 'uppercase'
                             }}>Assists</Box>
                             <Box
                               sx={{
                                 color: 'white',
                                 fontWeight: 'bold',
-                                fontSize: { xs: 10, sm: 11, md: 14 },
+                                fontSize: { xs: 9, sm: 10, md: 12 },
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
+                                textTransform: 'uppercase'
                               }}
                               title="Clean Sheets"
                             >
@@ -697,56 +786,70 @@ export default function MatchDetailsPage() {
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              textAlign: 'center' 
-                            }}>Imp</Box>
+                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              textAlign: 'center',
+                              whiteSpace: 'nowrap',
+                              textTransform: 'uppercase'
+                            }}>MOTM Votes</Box>
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              textAlign: 'center' 
-                            }}>Votes</Box>
+                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              textAlign: 'center',
+                              whiteSpace: 'nowrap',
+                              textTransform: 'uppercase'
+                            }}>Def Imp Votes</Box>
                             <Box sx={{ 
                               color: 'white', 
                               fontWeight: 'bold', 
-                              fontSize: { xs: 11, sm: 12, md: 14 }, 
-                              textAlign: 'center' 
-                            }}>XP</Box>
+                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              textAlign: 'center',
+                              whiteSpace: 'nowrap',
+                              textTransform: 'uppercase'
+                            }}>+ Mentality</Box>
+                            <Box sx={{ 
+                              color: 'white', 
+                              fontWeight: 'bold', 
+                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              textAlign: 'center',
+                              textTransform: 'lowercase'
+                            }}>xp PTS</Box>
                           </Box>
-
-                          {/* Rows */}
                           <Box>
                             {sortedPlayers.map((player, idx) => {
                               const embedded = (player.statistics?.[0] as Partial<MatchStatLite>) || {};
-                              // Prefer API-fetched per-match stats for guests; fall back to embedded for users
                               const stats: Partial<MatchStatLite> = perPlayerStats[player.id] || embedded;
                               const isHome = player.__team === 'home';
                               const isCaptain = player.id === (isHome ? match.homeCaptainId : match.awayCaptainId);
                               const textColor = '#fff';
                               const fontWeight = idx === 0 ? 700 : 500;
-
                               return (
                                 <React.Fragment key={player.id}>
-                                  <Link href={`/player/${player.id}`} passHref>
+                                  {adminEditMode ? (
                                     <Box
-                                      sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
-                                        alignItems: 'center',
-                                        columnGap: { xs: 0.5, sm: 0.75, md: 1 },
-                                        p: { xs: 0.75, sm: 1, md: 1.5 },
-                                        background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                                        color: textColor,
-                                        fontWeight,
-                                        boxShadow: 3,
-                                        minHeight: { xs: 45, sm: 50, md: 60 },
-                                        '&:hover': {
-                                          opacity: 0.9,
-                                          transition: 'opacity 0.2s'
-                                        }
-                                      }}
+                                      onClick={() => handleOpenPlayerEdit(player)}
+                                      sx={{ cursor: 'pointer' }}
                                     >
-                                      {/* Player cell */}
+                                      <Box
+                                        sx={{
+                                          display: 'grid',
+                                          gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
+                                          alignItems: 'center',
+                                          columnGap: { xs: 0.5, sm: 0.75, md: 1 },
+                                          p: { xs: 0.75, sm: 1, md: 1.5 },
+                                          background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                          color: textColor,
+                                          fontWeight,
+                                          boxShadow: 3,
+                                          minHeight: { xs: 45, sm: 50, md: 60 },
+                                          border: '1px dashed rgba(255,255,255,0.4)',
+                                          '&:hover': {
+                                            opacity: 0.85,
+                                            border: '1px solid rgba(255,255,255,0.8)',
+                                            transition: 'all 0.2s'
+                                          }
+                                        }}
+                                      >
                                       <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
                                         <Box sx={{ 
                                           display: 'flex', 
@@ -762,7 +865,6 @@ export default function MatchDetailsPage() {
                                             <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           </Box>
                                         </Box>
-
                                         <Typography
                                           variant="body2"
                                           sx={{
@@ -825,18 +927,67 @@ export default function MatchDetailsPage() {
                                       <Box sx={{ 
                                         textAlign: 'center', 
                                         fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{stats.impact ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
                                       }}>{playerVotes[player.id] ?? 0}</Box>
                                       <Box sx={{ 
                                         textAlign: 'center', 
                                         fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{stats.xpAwarded ?? 0}</Box>
+                                      }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 } 
+                                      }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                      <Box sx={{ 
+                                        textAlign: 'center', 
+                                        fontSize: { xs: 11, sm: 12, md: 14 },
+                                        fontWeight: 700
+                                      }}>{stats.xpAwarded || stats.impact || 0}</Box>
+                                      </Box>
+                                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                     </Box>
-                                    <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
-                                  </Link>
+                                  ) : (
+                                    <Link href={`/player/${player.id}`} passHref>
+                                      <Box
+                                        sx={{
+                                          display: 'grid',
+                                          gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
+                                          alignItems: 'center',
+                                          columnGap: { xs: 0.5, sm: 0.75, md: 1 },
+                                          p: { xs: 0.75, sm: 1, md: 1.5 },
+                                          background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                          color: textColor,
+                                          fontWeight,
+                                          boxShadow: 3,
+                                          minHeight: { xs: 45, sm: 50, md: 60 },
+                                          '&:hover': {
+                                            opacity: 0.9,
+                                            transition: 'opacity 0.2s'
+                                          }
+                                        }}
+                                      >
+                                        {/* Player cell */}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 0.5, sm: 1, md: 2 }, minWidth: { xs: 28, sm: 36, md: 44 } }}>
+                                            <Box sx={{ position: 'relative', width: { xs: 28, sm: 32, md: 40 }, height: { xs: 28, sm: 32, md: 40 } }}>
+                                              <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                            </Box>
+                                          </Box>
+                                          <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 11, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${player.firstName} ${player.lastName}`}>
+                                            {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
+                                            {player.isGuest && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
+                                          </Typography>
+                                          <Box sx={{ minWidth: { xs: 6, sm: 7, md: 8 }, textAlign: 'center', fontSize: { xs: 10, sm: 11, md: 12 }, fontWeight: 800, color: '#fff', bgcolor: isHome ? '#16a34a' : '#2563eb', px: { xs: 0.5, sm: 0.75, md: 1 }, py: { xs: 0.4, sm: 0.6, md: 0.8 }, borderRadius: 1, ml: { xs: 0.5, sm: 1, md: 2 }, flexShrink: 0 }} />
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{stats.xpAwarded || stats.impact || 0}</Box>
+                                      </Box>
+                                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
+                                    </Link>
+                                  )}
                                 </React.Fragment>
                               );
                             })}
@@ -849,67 +1000,162 @@ export default function MatchDetailsPage() {
               })()}
             </Box>
           </Box>
-
-          <div className="p-6 mt-8 text-white rounded-lg" style={{ background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' }}>
-            <h2 className="text-2xl font-semibold mb-4">MOTM Votes</h2>
-            <div className="w-full h-px bg-white mb-6"></div>
-
-            {/* Grid layout: 3 cards on larger screens, then 2 cards, and responsive for mobile */}
-            <div className="grid grid-cols-1 max-[500px]:grid-cols-1 min-[501px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-2 gap-6">
-              {[...match.homeTeamUsers, ...match.awayTeamUsers]
-                .filter(player => playerVotes[player.id] > 0)
-                .map((player) => (
-                  <Link key={player.id} href={`/player/${player.id}`}>
-                    <div className="group">
-                      {/* Mobile layout: Image on top center */}
-                      <div className="flex flex-col sm:flex-row items-center sm:items-start p-3 sm:p-4 rounded-lg border min-h-[80px] sm:min-h-[100px] hover:-translate-y-1 transition-all duration-200 ease-in-out" style={{ background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', borderColor: '#4b4b4b' }}>
-                        {/* Profile Image */}
-                        {/* -                                       <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 mb-3 sm:mb-0 sm:mr-4 flex-shrink-0" style={{ borderColor: '#4b4b4b' }}> */}
-                        {/* -                                           <img */}
-                        {/* -                                               src={player.profilePicture || "/placeholder.svg?height=60&width=60&query=football player"} */}
-                        {/* -                                               alt={`${player.firstName} ${player.lastName}`} */}
-                        {/* -                                               className="w-full h-full object-cover" */}
-                        {/* -                                           /> */}
-                        {/* -                                       </div> */}
-                        <JerseyAvatar
-                          number={player.shirtNumber || '0'}
-                          sx={{
-                            width: { xs: 25, sm: 35, md: 74 },
-                            height: { xs: 25, sm: 35, md: 74 },
-                            mr: { xs: 1, sm: 1.5 },
-                          }}
-                        />
-                        {/* Player Info */}
-                        <div className="flex-1 min-w-0 text-center sm:text-left">
-                          <h3 className="text-white font-bold text-sm sm:text-base md:text-lg mb-1 truncate leading-tight">
-                            {player.firstName} {player.lastName}
-                            {player.id === match.homeCaptainId ? " (C)" : ""}
-                          </h3>
-
-                          <p className="text-[#D1D5DB] text-xs sm:text-sm md:text-base mb-2 sm:mb-3 leading-tight">
-                            {player.positionType || "Player"}
-                          </p>
-
-                          {/* Buttons */}
-                          <div className="flex justify-center sm:justify-start gap-2 items-center">
-                            <Button
-                              variant="contained"
-                              size="small"
-                              className="bg-gradient-to-r from-[#767676] to-[#000000] hover:from-[#000000] hover:to-[#767676] text-white rounded-md px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold h-6 sm:h-7 min-w-0"
-                            >
-                              {typeof playerVotes[player.id] === "number" &&
-                                playerVotes[player.id] > 0 &&
-                                `${playerVotes[player.id]} vote${playerVotes[player.id] > 1 ? "s" : ""}`}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          </div>
         </>
+      )}
+
+      {/* Admin Player Stats Edit Dialog */}
+      {editingPlayer && (
+        <Dialog
+          open={!!editingPlayer}
+          onClose={() => setEditingPlayer(null)}
+          fullWidth
+          maxWidth="xs"
+          PaperProps={{
+            sx: {
+              background: 'linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%)',
+              color: '#fff',
+              borderRadius: 3,
+              border: '1px solid rgba(255,255,255,0.1)',
+            }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+            <Typography fontWeight={700} fontSize={{ xs: 16, sm: 18 }}>
+              Edit Stats — {editingPlayer.firstName} {editingPlayer.lastName}
+            </Typography>
+            <IconButton onClick={() => setEditingPlayer(null)} size="small" sx={{ color: '#fff' }}>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            {editStatsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress sx={{ color: '#fff' }} />
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
+                {/* Goals Row */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <img src={GoalsIcon.src} alt="Goals" style={{ width: 48, height: 48 }} />
+                  <TextField
+                    type="text"
+                    value={editStats.goals}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') { setEditStats(prev => ({ ...prev, goals: 0 })); return; }
+                      if (!/^\d+$/.test(val)) return;
+                      const numVal = parseInt(val, 10);
+                      if (!isNaN(numVal)) {
+                        const teamGoalsSafe = (match?.homeTeamUsers?.some(p => p.id === editingPlayer?.id)
+                          ? (match?.homeTeamGoals ?? 20) : (match?.awayTeamGoals ?? 20)) || 20;
+                        setEditStats(prev => ({ ...prev, goals: Math.max(0, Math.min(teamGoalsSafe, numVal)) }));
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    inputProps={{ style: { textAlign: 'center' } }}
+                    sx={{
+                      width: 180,
+                      '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: '#d9d9d9' },
+                        '&:hover fieldset': { borderColor: '#d9d9d9' },
+                        '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                      },
+                      '& .MuiInputBase-input': { fontSize: '1.25rem', fontWeight: 600, py: 0.75 },
+                    }}
+                  />
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>Goals</Typography>
+                </Box>
+
+                {/* Assists Row */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <img src={AssistIcon.src} alt="Assists" style={{ width: 48, height: 48 }} />
+                  <TextField
+                    type="text"
+                    value={editStats.assists}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') { setEditStats(prev => ({ ...prev, assists: 0 })); return; }
+                      if (!/^\d+$/.test(val)) return;
+                      const numVal = parseInt(val, 10);
+                      if (!isNaN(numVal)) {
+                        const teamGoalsSafe = (match?.homeTeamUsers?.some(p => p.id === editingPlayer?.id)
+                          ? (match?.homeTeamGoals ?? 20) : (match?.awayTeamGoals ?? 20)) || 20;
+                        setEditStats(prev => ({ ...prev, assists: Math.max(0, Math.min(teamGoalsSafe, numVal)) }));
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    inputProps={{ style: { textAlign: 'center' } }}
+                    sx={{
+                      width: 180,
+                      '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: '#d9d9d9' },
+                        '&:hover fieldset': { borderColor: '#d9d9d9' },
+                        '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                      },
+                      '& .MuiInputBase-input': { fontSize: '1.25rem', fontWeight: 600, py: 0.75 },
+                    }}
+                  />
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>Assists</Typography>
+                </Box>
+
+                {/* Clean Sheet Row */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <img src={CleanSheetIcon.src} alt="Clean Sheets" style={{ width: 48, height: 48 }} />
+                  <TextField
+                    type="text"
+                    value={editStats.cleanSheets}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') { setEditStats(prev => ({ ...prev, cleanSheets: 0 })); return; }
+                      if (!/^\d+$/.test(val)) return;
+                      const numVal = parseInt(val, 10);
+                      if (!isNaN(numVal)) {
+                        setEditStats(prev => ({ ...prev, cleanSheets: Math.max(0, Math.min(1, numVal)) }));
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    inputProps={{ style: { textAlign: 'center' } }}
+                    sx={{
+                      width: 180,
+                      '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: '#d9d9d9' },
+                        '&:hover fieldset': { borderColor: '#d9d9d9' },
+                        '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                      },
+                      '& .MuiInputBase-input': { fontSize: '1.25rem', fontWeight: 600, py: 0.75 },
+                    }}
+                  />
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>Clean Sheet</Typography>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              onClick={() => setEditingPlayer(null)}
+              sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'none' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSavePlayerStats}
+              disabled={editStatsLoading || editStatsSaving}
+              sx={{
+                bgcolor: '#e56a16',
+                '&:hover': { bgcolor: '#cf2326' },
+                textTransform: 'none',
+                fontWeight: 700,
+                px: 3,
+              }}
+            >
+              {editStatsSaving ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save Stats'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
     </Box>
   );
