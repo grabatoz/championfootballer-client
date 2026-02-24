@@ -59,10 +59,10 @@ import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
 
 // ===== THEME (brand palette reused) =====
 const themeColors = {
-  primary: "#E56A16",
-  primaryAlt: "#CF2326",
-  primaryGradient: "linear-gradient(135deg,#E56A16 0%,#CF2326 100%)",
-  primarySoft: "linear-gradient(135deg,rgba(229,106,22,0.25) 0%, rgba(207,35,38,0.25) 100%)",
+  primary: "#00a77f",
+  primaryAlt: "#00a77f",
+  primaryGradient: "linear-gradient(135deg,#00a77f 0%,#00a77f 100%)",
+  primarySoft: "linear-gradient(135deg,rgba(0,167,127,0.25) 0%, rgba(0,167,127,0.25) 100%)",
   surface: "#141416",
   surfaceAlt: "#1d1e21",
   surfaceElevated: "linear-gradient(140deg,#1e1f22 0%,#26272b 100%)",
@@ -74,7 +74,7 @@ const themeColors = {
   success: "#10b981",
   danger: "#d32f2f",
   warn: "#ffb300",
-  sliderTrack: "linear-gradient(90deg,#E56A16,#CF2326)"
+  sliderTrack: "linear-gradient(90deg,#00a77f,#00a77f)"
 }
 
 // ===== Styled Components (re-skinned) =====
@@ -121,16 +121,17 @@ const StyledSlider = styled(Slider)(() => ({
     background: '#fff',
     border: `3px solid ${themeColors.primary}`,
     boxShadow: '0 2px 6px rgba(0,0,0,0.45)',
-    '&:hover': { boxShadow: '0 0 0 6px rgba(229,106,22,0.25)' },
-    '&:focus-visible': { boxShadow: '0 0 0 8px rgba(229,106,22,0.30)' }
+    '&:hover': { boxShadow: '0 0 0 6px rgba(0,167,127,0.25)' },
+    '&:focus-visible': { boxShadow: '0 0 0 8px rgba(0,167,127,0.30)' }
   }
 }))
 
 const StyledTextField = styled(TextField)(() => ({
+  maxWidth: 360,
   '& .MuiOutlinedInput-root': {
     background: "#202225",
     color: themeColors.text,
-    borderRadius: 10,
+    borderRadius: 6,
     border: `1px solid ${themeColors.border}`,
     transition: ".25s",
     '& fieldset': { borderColor: "transparent" },
@@ -574,19 +575,11 @@ const PlayerProfileCard = () => {
         py: 4,
         display: 'flex',
         justifyContent: 'center',
-        // background: "linear-gradient(177deg,rgba(229,106,22,0.15) 0%, rgba(207,35,38,0.15) 80%)",
+        // background: "linear-gradient(177deg,rgba(0,167,127,0.15) 0%, rgba(0,167,127,0.15) 80%)",
         borderRadius: 4
       }}>
         <Fade in timeout={600}>
           <Box>
-            <Stepper activeStep={step - 1} sx={{
-              mb: 4,
-              '& .MuiStepIcon-root.Mui-active': { color: themeColors.primary },
-              '& .MuiStepIcon-root.Mui-completed': { color: themeColors.primaryAlt }
-            }}>
-              {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: themeColors.textDim } }}>{label}</StepLabel></Step>)}
-            </Stepper>
-
             <StyledPaper sx={{
               p: 2,
               borderRadius: 5,
@@ -595,6 +588,18 @@ const PlayerProfileCard = () => {
               background: "linear-gradient(150deg,#1d1f23 0%,#25272b 55%)",
               border: `1px solid ${themeColors.border}`,
             }}>
+              <Stepper activeStep={step - 1} sx={{
+                mb: 3,
+                maxWidth: 340,
+                mx: 'auto',
+                '& .MuiStepIcon-root.Mui-active': { color: '#00a77f' },
+                '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
+                '& .MuiStepConnector-line': { borderTopWidth: '1px' }
+              }}>
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+              </Stepper>
+              <Box sx={{ width: 'calc(100% + 32px)', height: 3, background: '#fff', mx: -2, mb: 3, opacity: 0.4 }} />
+
               <Box sx={{ display: 'flex', gap: 1.5, width: '100%', height: 180 }}>
                 <Avatar
                   src={imgSrc}
@@ -704,7 +709,7 @@ const PlayerProfileCard = () => {
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     px: 2.4,
-                    borderRadius: 2,
+                    borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
                   }}
@@ -718,7 +723,7 @@ const PlayerProfileCard = () => {
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     px: 2.4,
-                    borderRadius: 2,
+                    borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
                   }}
@@ -734,32 +739,35 @@ const PlayerProfileCard = () => {
   // ---------- STEP 2 ----------
   if (step === 2) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, maxWidth: 1070 }}>
         <Fade in timeout={600}>
           <Box>
-            <Stepper activeStep={step - 1} sx={{
-              mb: 4,
-              '& .MuiStepIcon-root.Mui-active': { color: themeColors.primary },
-              '& .MuiStepIcon-root.Mui-completed': { color: themeColors.primaryAlt }
-            }}>
-              {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: themeColors.textDim } }}>{label}</StepLabel></Step>)}
-            </Stepper>
-
             <StyledPaper sx={{
-              p: 3,
+              p: 1.5,
               background: "linear-gradient(145deg,#202226 0%,#27292d 60%)",
-              borderRadius: 6
+              borderRadius: 2
             }}>
-              <Typography variant="h5" fontWeight={800} align="center" sx={{
-                mb: 2,
-                color: themeColors.text,
-                letterSpacing: .5,
-                background: themeColors.primaryGradient,
-                WebkitBackgroundClip: "text",
-                colorAdjust: "exact",
-                // color: "transparent"
+              <Stepper activeStep={step - 1} sx={{
+                mb: 1.5,
+                maxWidth: 700,
+                mx: 'auto',
+                '& .MuiStepIcon-root.Mui-active': { color: '#00a77f' },
+                '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
+                '& .MuiStepConnector-line': { borderTopWidth: '1px' }
               }}>
-                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle', color: themeColors.primary }} /> Basic Information
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 400, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+              </Stepper>
+              <Box sx={{ width: 'calc(100% + 48px)', height: 2, background: '#fff', mx: -3, mb: 3, opacity: 0.80 }} />
+
+              <Typography variant="h5" fontWeight={600} align="center" sx={{
+                mb: 2,
+                color: '#fff',
+                letterSpacing: .5,
+                fontFamily: 'Woodford Bourne Pro',
+                fontSize: '1.75rem',
+                textShadow: '0 2px 8px rgba(0,0,0,0.6)'
+              }}>
+                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle', color: themeColors.primary, fontSize: 36, position: 'relative', top: -6 }} /> BASIC INFORMATION
               </Typography>
 
               <Box sx={{
@@ -773,7 +781,8 @@ const PlayerProfileCard = () => {
                   textAlign: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  ml: { xs: 0, md: 3 }
                 }}>
                   <Box sx={{ position: 'relative' }}>
                     <Avatar
@@ -786,9 +795,8 @@ const PlayerProfileCard = () => {
                       }}
                       sx={{
                         width: { xs: 120, sm: 140, md: 170 },
-                        height: { xs: 150, sm: 185, md: 180 },
-                        border: `3px solid ${themeColors.primary}`,
-                        borderRadius: 4,
+                        height: { xs: 120, sm: 140, md: 170 },
+                        borderRadius: '50%',
                         background: "#2c2e32",
                         cursor: 'pointer'
                       }}
@@ -798,32 +806,39 @@ const PlayerProfileCard = () => {
                     {/* Hidden file input for gallery */}
                     <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />
                   </Box>
+                  <Typography sx={{ mt: 1.5, fontWeight: 400, fontSize: 20, color: '#fff', fontFamily: 'Woodford Bourne Pro' }}>
+                    {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
+                  </Typography>
                   {/* Removed bottom Upload button per request */}
                 </Box>
 
                 <Box sx={{ flex: 1, pr: 0.5 }}>
                   <Grid container spacing={0.5}>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField size="small" label="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth />
+                      <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>First Name</Typography>
+                      <StyledTextField size="small" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth placeholder="First Name" sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField size="small" label="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth />
+                      <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Last Name</Typography>
+                      <StyledTextField size="small" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth placeholder="Last Name" sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <StyledTextField size="small" label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} fullWidth />
+                      <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Email</Typography>
+                      <StyledTextField size="small" type="email" value={email} onChange={e => setEmail(e.target.value)} fullWidth placeholder="123@gmail.com" sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
+                      <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Change Password</Typography>
                       <StyledTextField
                         size="small"
-                        label="Change Password"
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={e => handlePasswordChange(e.target.value)}
                         placeholder="Leave blank to keep current password"
                         fullWidth
                         error={Boolean(passwordError)}
-                        helperText={passwordError || "6-16 chars, 1 uppercase, 1 number, 1 special"}
+                        helperText={passwordError}
                         inputProps={{ minLength: 6, maxLength: 16 }}
+                        sx={{ mb: 1 }}
                         InputProps={{
                           endAdornment: (
                             <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
@@ -839,9 +854,9 @@ const PlayerProfileCard = () => {
                       <Grid item xs={12}>
                         <Grid container spacing={1}>
                           <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Country/Region</Typography>
                             <StyledTextField
                               size="small"
-                              label="Country / Region"
                               value={country}
                               select
                               onChange={e => {
@@ -851,6 +866,7 @@ const PlayerProfileCard = () => {
                               }}
                               placeholder="Select country"
                               fullWidth
+                              sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
                             >
                               {countryOptions.map(c => (
                                 <MenuItem key={c} value={c}>{c}</MenuItem>
@@ -858,92 +874,95 @@ const PlayerProfileCard = () => {
                             </StyledTextField>
                           </Grid>
                           <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>City/State</Typography>
                             <StyledTextField
                               size="small"
-                              label="City / State"
                               value={city}
                               onChange={e => {
                                 const v = e.target.value
                                 setCity(v)
                                 setStateProvince(v)
                               }}
-                              // helperText="Enter your city, town or region"
                               placeholder="London"
                               fullWidth
+                              sx={{ mb: 1 }}
                             />
                           </Grid>
                         </Grid>
                       </Grid>
                       <Grid item xs={12} sm={3} md={2}>
-                        <StyledTextField size="small" label="Age" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth />
+                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Age</Typography>
+                        <StyledTextField size="small" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth placeholder="00" sx={{ mb: 1 }} />
                       </Grid>
 
-                      <Grid item xs={12} sm={4} md={5} sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <Grid item xs={12} sm={3} md={3} sx={{ mt: { xs: 2, sm: 0 } }}>
+                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Gender</Typography>
                         <Card
                           sx={{
                             p: 0.5,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
-                            borderRadius: 3,
+                            borderRadius: 1.5,
                             display: 'flex',
                             alignItems: 'center',
                             minHeight: 44,
-                            overflow: 'visible'
+                            overflow: 'visible',
+                            maxWidth: 240
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <StyledFormLabel sx={{ mb: 0, fontSize: 12, whiteSpace: 'nowrap', color: themeColors.text }}>Gender</StyledFormLabel>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
                               <RadioGroup
                                 row
                                 value={gender}
                                 onChange={e => setGender(e.target.value)}
                                 sx={{
-                                  justifyContent: 'flex-start',
+                                  justifyContent: 'center',
                                   flexWrap: 'nowrap',
-                                  gap: 1.2,
+                                  gap: 2,
                                   '& .MuiFormControlLabel-root': { m: 0 },
-                                  '& .MuiFormControlLabel-label': { fontSize: 12, color: themeColors.textDim, letterSpacing: .2 }
+                                  '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
                                 }}
                               >
-                                <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Male" />
-                                <FormControlLabel value="female" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Female" />
+                                <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Male" />
+                                <FormControlLabel value="female" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Female" />
                               </RadioGroup>
                             </Box>
                           </FormControl>
                         </Card>
                       </Grid>
 
-                      <Grid item xs={12} sm={5} md={5} sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <Grid item xs={12} sm={4} md={4} sx={{ mt: { xs: 2, sm: 0 } }}>
+                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Preferred Foot</Typography>
                         <Card
                           sx={{
                             p: 0.5,
                             background: "#222428",
                             border: `1px solid ${themeColors.border}`,
-                            borderRadius: 3,
+                            borderRadius: 1.5,
                             display: 'flex',
                             alignItems: 'center',
                             minHeight: 44,
-                            overflow: 'visible'
+                            overflow: 'visible',
+                            maxWidth: 260
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <StyledFormLabel sx={{ mb: 0, fontSize: 12, whiteSpace: 'nowrap', color: themeColors.text }}>Preferred Foot</StyledFormLabel>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
                               <RadioGroup
                                 row
                                 value={preferredFoot}
                                 onChange={e => setPreferredFoot(e.target.value)}
                                 sx={{
-                                  justifyContent: 'flex-start',
+                                  justifyContent: 'center',
                                   flexWrap: 'nowrap',
-                                  gap: 1.2,
+                                  gap: 2,
                                   '& .MuiFormControlLabel-root': { m: 0 },
-                                  '& .MuiFormControlLabel-label': { fontSize: 12, color: themeColors.textDim, letterSpacing: .2 }
+                                  '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
                                 }}
                               >
-                                <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Left" />
-                                <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 16 } }} />} label="Right" />
+                                <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
+                                <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Right" />
                               </RadioGroup>
                             </Box>
                           </FormControl>
@@ -954,17 +973,19 @@ const PlayerProfileCard = () => {
                 </Box>
               </Box>
 
-              <Grid container spacing={3}>
+              <Grid container spacing={3} justifyContent="space-between" sx={{ px: 6 }}>
                 <Grid item xs={12}>
+                  <Typography sx={{ mb: 0.8, fontSize: 20, fontWeight: 400, color: themeColors.text, ml: 'calc((100% - 900px) / 2)', maxWidth: 900, mx: 'auto' }}>Position Type</Typography>
                   <Card sx={{
                     p: 2.2,
                     background: "#222428",
                     border: `1px solid ${themeColors.border}`,
-                    borderRadius: 5
+                    borderRadius: 1.5,
+                    maxWidth: 900,
+                    mx: 'auto'
                   }}>
-                    <FormControl component="fieldset">
-                      <StyledFormLabel sx={{ mb: 1 }}>Position Type</StyledFormLabel>
-                      <RadioGroup value={positionType} onChange={e => setPositionType(e.target.value)} row>
+                    <FormControl component="fieldset" sx={{ width: '100%' }}>
+                      <RadioGroup value={positionType} onChange={e => setPositionType(e.target.value)} row sx={{ justifyContent: 'space-between', px: 4 }}>
                         {["Goalkeeper", "Defender", "Midfielder", "Forward"].map(type => (
                           <FormControlLabel
                             key={type}
@@ -974,7 +995,7 @@ const PlayerProfileCard = () => {
                               color: positionType === type ? themeColors.text : themeColors.textDim,
                               fontWeight: positionType === type ? 700 : 500
                             }}>{type}</span>}
-                            sx={{ mr: 3 }}
+                            sx={{ mr: 0 }}
                           />
                         ))}
                       </RadioGroup>
@@ -982,15 +1003,17 @@ const PlayerProfileCard = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={5}>
+                  <Typography sx={{ mb: 0.8, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Specific Position</Typography>
                   <Card sx={{
                     p: 2,
+                    pl: 4,
                     background: "#222428",
                     border: `1px solid ${themeColors.border}`,
-                    borderRadius: 5
+                    borderRadius: 2,
+                    maxWidth: 400
                   }}>
                     <FormControl component="fieldset">
-                      <StyledFormLabel sx={{ mb: 1 }}>Specific Position</StyledFormLabel>
                       <RadioGroup value={position} onChange={e => setPosition(e.target.value)}>
                         {positionType === "Goalkeeper" && <FormControlLabel value="Goalkeeper (GK)" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Goalkeeper (GK)</span>} />}
                         {positionType === "Defender" && ["Center-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Right Wing-back (RWB)", "Left Wing-back (LWB)"].map(p => <FormControlLabel key={p} value={p} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{p}</span>} />)}
@@ -1001,15 +1024,17 @@ const PlayerProfileCard = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={5}>
+                  <Typography sx={{ mb: 0.8, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Playing Style</Typography>
                   <Card sx={{
                     p: 2,
+                    pl: 4,
                     background: "#222428",
                     border: `1px solid ${themeColors.border}`,
-                    borderRadius: 5
+                    borderRadius: 2,
+                    maxWidth: 400
                   }}>
                     <FormControl component="fieldset">
-                      <StyledFormLabel sx={{ mb: 1 }}>Playing Style</StyledFormLabel>
                       <RadioGroup value={style} onChange={e => setStyle(e.target.value)}>
                         {currentStyleOptions.map(s => (
                           <FormControlLabel key={s} value={s} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{s}</span>} />
@@ -1020,13 +1045,13 @@ const PlayerProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
+              <Stack direction="row" justifyContent="space-between" sx={{ mt: 4, px: 6 }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
                   startIcon={<ArrowBack />}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: 1,
                     px: 3,
                     borderColor: themeColors.primary,
                     color: themeColors.text,
@@ -1039,7 +1064,7 @@ const PlayerProfileCard = () => {
                   onClick={handleNext}
                   endIcon={<ArrowForward />}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: 1,
                     px: 3,
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
@@ -1054,7 +1079,7 @@ const PlayerProfileCard = () => {
                 position: 'absolute',
                 top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 bgcolor: '#1f2125', color: '#fff', p: 3, borderRadius: 2,
-                minWidth: 320, border: `1px solid ${themeColors.border}`,
+                minWidth: 420, border: `1px solid ${themeColors.border}`,
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>Update Profile Image</Typography>
@@ -1073,7 +1098,7 @@ const PlayerProfileCard = () => {
             <Modal open={cameraOpen} onClose={handleCloseCamera}>
               <Box sx={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                bgcolor: '#1f2125', color: '#fff', p: 2, borderRadius: 2, width: 360, maxWidth: '90vw',
+                bgcolor: '#1f2125', color: '#fff', p: 2, borderRadius: 2, width: 460, maxWidth: '90vw',
                 border: `1px solid ${themeColors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>Camera</Typography>
@@ -1107,19 +1132,23 @@ const PlayerProfileCard = () => {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Fade in timeout={600}>
           <Box>
-            <Stepper activeStep={step - 1} sx={{
-              mb: 4,
-              '& .MuiStepIcon-root.Mui-active': { color: themeColors.primary },
-              '& .MuiStepIcon-root.Mui-completed': { color: themeColors.primaryAlt }
-            }}>
-              {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: themeColors.textDim } }}>{label}</StepLabel></Step>)}
-            </Stepper>
-
             <StyledPaper sx={{
               p: 4,
               background: "linear-gradient(140deg,#202226 0%,#272a2e 60%)",
-              borderRadius: 6
+              borderRadius: 2
             }}>
+              <Stepper activeStep={step - 1} sx={{
+                mb: 3,
+                maxWidth: 600,
+                mx: 'auto',
+                '& .MuiStepIcon-root.Mui-active': { color: '#00a77f' },
+                '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
+                '& .MuiStepConnector-line': { borderTopWidth: '1px' }
+              }}>
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem' } }}>{label}</StepLabel></Step>)}
+              </Stepper>
+              <Box sx={{ width: 'calc(100% + 64px)', height: 3, background: '#fff', mx: -4, mb: 3, opacity: 0.4 }} />
+
               <Typography variant="h5" fontWeight={800} align="center" sx={{
                 mb: 0,
                 background: "#fff",
@@ -1217,7 +1246,7 @@ const PlayerProfileCard = () => {
                     color="error"
                     onClick={handleDeleteProfile}
                     sx={{
-                      borderRadius: 3,
+                      borderRadius: 1,
                       px: 4,
                       fontWeight: 600,
                       borderColor: themeColors.danger,
@@ -1231,7 +1260,7 @@ const PlayerProfileCard = () => {
                     disabled={isUpdating}
                     startIcon={isUpdating ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : null}
                     sx={{
-                      borderRadius: 3,
+                      borderRadius: 1,
                       px: 5,
                       fontWeight: 700,
                       background: themeColors.primaryGradient,
@@ -1243,13 +1272,13 @@ const PlayerProfileCard = () => {
                 </Stack>
               </form>
 
-              <Stack direction="row" justifyContent="flex-start" sx={{ mt: 4 }}>
+              <Stack direction="row" justifyContent="flex-start" sx={{ mt: 4, px: 6 }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
                   startIcon={<ArrowBack />}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: 1,
                     px: 3,
                     borderColor: themeColors.primary,
                     color: themeColors.text,
