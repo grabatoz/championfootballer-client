@@ -583,14 +583,14 @@ const PlayerProfileCard = () => {
             <StyledPaper sx={{
               p: 2,
               borderRadius: 5,
-              maxWidth: 380,
+              maxWidth: 900,
               mx: 'auto',
               background: "#1f1f1f",
               border: `1px solid ${themeColors.border}`,
             }}>
               <Stepper activeStep={step - 1} sx={{
                 mb: 3,
-                maxWidth: 340,
+                maxWidth: 900,
                 mx: 'auto',
                 '& .MuiStepIcon-root.Mui-active': { color: '#00a77f' },
                 '& .MuiStepIcon-root.Mui-completed': { color: '#00a77f' },
@@ -665,7 +665,7 @@ const PlayerProfileCard = () => {
                     gap: .6,
                     color: themeColors.text
                   }}>
-                    <Sports fontSize="small" sx={{ color: themeColors.primary }} /> Skills Overview
+                    Skills Overview
                   </Typography>
                   <Stack spacing={1.1}>
                     {[
@@ -944,7 +944,7 @@ const PlayerProfileCard = () => {
                             alignItems: 'center',
                             minHeight: 44,
                             overflow: 'visible',
-                            maxWidth: 260
+                            maxWidth: 180
                           }}
                         >
                           <FormControl component="fieldset" sx={{ width: '100%' }}>
