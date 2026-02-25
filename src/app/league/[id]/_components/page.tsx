@@ -78,7 +78,7 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').th
     loading: () => <CircularProgress />,
     ssr: false
 });
-const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/page'), {
+const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
     loading: () => <CircularProgress />,
     ssr: false
 });

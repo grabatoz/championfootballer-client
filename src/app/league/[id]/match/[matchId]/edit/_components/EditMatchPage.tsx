@@ -47,7 +47,7 @@ import LocationIcon from '@/Components/images/location.png';
     onClose?: () => void;
   }
 
-  export default function EditMatchPage({ leagueIdProp, matchIdProp, isDialog, onClose }: EditMatchPageProps = {}) {
+  export default function EditMatchPage({ leagueIdProp, matchIdProp, isDialog, onClose }: EditMatchPageProps) {
     // Fallback team image (used in responsive preview)
     const defaultTeamImage = '/assets/cflogo2.png';
     const defaultTeamImagee = '/assets/imgicon.png';

@@ -1,5 +1,5 @@
 import React from 'react'
-import EditMatchPage from './_components/page'
+import EditMatchPage from './_components/EditMatchPage'
 
 function page() {
   return (
