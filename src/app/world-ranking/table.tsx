@@ -228,7 +228,7 @@ export default function WorldRankingTable() {
   const hasActiveFilter = Boolean(filters.positionType || filters.year || filters.country || search);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#0e0e0e', color: '#fff' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#0e0e0e', color: '#fff', overflowX: 'hidden' }}>
       <style>{`
         .wr-select-wrap { position: relative; display: inline-block; }
         .wr-select-wrap::after {
@@ -256,224 +256,260 @@ export default function WorldRankingTable() {
           appearance: none;
           -webkit-appearance: none;
           font-weight: 600;
+          width: auto;
         }
         .wr-select option { background: #1a1a1a; color: #fff; }
         .wr-search-icon { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; }
       `}</style>
 
       {/* ────────── HEADER ────────── */}
-      <Box sx={{
-        width: '100vw',
-        position: 'relative',
-        left: '50%',
-        right: '50%',
-        ml: '-50vw',
-        mr: '-50vw',
-        bgcolor: '#0e0e0e',
-        pt: { xs: 5, md: 5 },
-        pb: { xs: 3, md: 3 },
-        textAlign: 'center',
+      <Box sx={{ 
+        mb: { xs: 3, md: 5 }, 
+        bgcolor: '#0e0e0e', 
+        p: { xs: 2, md: 3 }, 
+        mx: { xs: -2, sm: -3, md: -3 } 
       }}>
         <Typography sx={{
-          fontFamily: '"Anton", sans-serif',
-          fontWeight: 400,
-          fontSize: { xs: '2.6rem', sm: '3.5rem', md: '4.2rem' },
+          fontFamily: '"Oswald", sans-serif !important',
+          fontWeight: 700,
+          fontSize: { xs: '32px', sm: '42px', md: '55px' },
+          textAlign: 'center',
           textTransform: 'uppercase',
           color: '#fff',
-          letterSpacing: '2px',
+          letterSpacing: '0px',
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          pt: { xs: 1, md: 2 },
+          pb: { xs: 3, md: 6 },
           lineHeight: 1,
         }}>
           WORLD RANKING
         </Typography>
+        
+        {/* Divider line below heading */}
+        <Box sx={{ 
+          width: 'calc(100% + 32px)',
+          marginLeft: '-16px',
+          marginRight: '-16px',
+          height: '3px', 
+          background: '#e56a16',
+          // mb: { xs: 2, md: 2 },
+          '@media (min-width: 900px)': {
+            width: 'calc(100% + 48px)',
+            marginLeft: '-24px',
+            marginRight: '-24px'
+          }
+        }} />
       </Box>
-
-      {/* Orange divider */}
-      <Box sx={{
-        width: '100vw',
-        position: 'relative',
-        left: '50%',
-        right: '50%',
-        ml: '-50vw',
-        mr: '-50vw',
-        height: 3,
-        bgcolor: 'rgba(229,106,22,0.9)',
-      }} />
 
       {/* ────────── FILTERS ────────── */}
       <Box sx={{
-        width: '100vw',
-        position: 'relative',
-        left: '50%',
-        right: '50%',
-        ml: '-50vw',
-        mr: '-50vw',
         bgcolor: '#0e0e0e',
         px: { xs: 2, md: 4 },
-        py: 2,
+        mt: { xs: -3, md: -6 },
+        mb: { xs: 2, md: 2 },
+        mx: { xs: -2, sm: -3, md: -3 },
       }}>
         <Box sx={{
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: { xs: 1, md: 1.2 },
-          maxWidth: 1200,
+          maxWidth: 1150,
           mx: 'auto',
         }}>
-          {/* Mode toggle */}
-          <Box sx={{ display: 'flex', borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e56a16' }}>
-            {(['total', 'avg'] as const).map(mode => (
-              <Box
-                key={mode}
-                onClick={() => setFilters(f => ({ ...f, mode }))}
-                sx={{
-                  px: 2.2, py: 0.7,
-                  cursor: 'pointer',
-                  fontSize: 15,
-                  fontWeight: 600,
-                  bgcolor: filters.mode === mode ? '#e56a16' : 'transparent',
-                  color: '#fff',
-                  userSelect: 'none',
-                  transition: 'background 0.2s',
-                }}
-              >
-                {mode === 'total' ? 'Total XP' : 'Avg/Match'}
-              </Box>
-            ))}
-          </Box>
-
-          {/* Search */}
-          <Box sx={{
-            flex: { xs: '1 1 100%', md: '1 1 280px' },
-            display: 'flex',
+          {/* Left side - Mode toggle and Search */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: { xs: 1, md: 1.2 },
             alignItems: 'center',
-            gap: 1,
-            bgcolor: '#1a1a1a',
-            borderRadius: '8px',
-            px: 1.5,
-            height: 42,
-            border: '1.5px solid #333',
+            flex: { xs: '1 1 100%', md: '0 1 auto' }
           }}>
-            <svg className="wr-search-icon" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="16.5" y1="16.5" x2="22" y2="22" />
-            </svg>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search player name and hit enter..."
-              style={{
-                flex: 1,
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: '#fff',
-                fontSize: 15,
-              }}
-            />
-          </Box>
+            {/* Mode toggle */}
+            <Box sx={{ display: 'flex', borderRadius: '2px', overflow: 'hidden', border: '1.5px solid #e56a16' }}>
+              {(['total', 'avg'] as const).map(mode => (
+                <Box
+                  key={mode}
+                  onClick={() => setFilters(f => ({ ...f, mode }))}
+                  sx={{
+                    px: 2.2, py: 1,
+                    cursor: 'pointer',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    bgcolor: filters.mode === mode ? '#e56a16' : 'transparent',
+                    color: '#fff',
+                    userSelect: 'none',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {mode === 'total' ? 'Total XP' : 'Avg/Match'}
+                </Box>
+              ))}
+            </Box>
 
-          {/* Position */}
-          <div className="wr-select-wrap">
-            <select
-              className="wr-select"
-              value={filters.positionType || ''}
-              onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))}
-              style={{ minWidth: 150 }}
-            >
-              <option value="">All Position</option>
-              <option value="Defender">Defender</option>
-              <option value="Midfielder">Midfielder</option>
-              <option value="Forward">Forward</option>
-              <option value="Goalkeeper">Goalkeeper</option>
-            </select>
-          </div>
-
-          {/* Year */}
-          <div className="wr-select-wrap">
-            <select
-              className="wr-select"
-              value={filters.year || ''}
-              onChange={e => setFilters(f => ({ ...f, year: e.target.value || undefined }))}
-              style={{ minWidth: 120 }}
-            >
-              <option value="">All Years</option>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-
-          {/* Country */}
-          <div className="wr-select-wrap">
-            <select
-              className="wr-select"
-              value={filters.country || ''}
-              onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))}
-              style={{ minWidth: 145 }}
-            >
-              <option value="">All Country</option>
-              {countries.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          {/* Clear */}
-          <Box
-            onClick={clearFilters}
-            sx={{
-              height: 39,
-              px: 2.2,
-              border: '1.5px solid rgba(255,255,255,0.5)',
-              borderRadius: '24px',
+            {/* Search */}
+            <Box sx={{
+              flex: { xs: '1 1 100%', md: '0 0 280px' },
               display: 'flex',
               alignItems: 'center',
-              cursor: 'pointer',
-              fontSize: 15,
-              fontWeight: 600,
-              color: '#fff',
-              userSelect: 'none',
-              '&:hover': { borderColor: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
-              transition: 'all 0.2s',
-            }}
-          >
-            Clear
+              gap: 1,
+              bgcolor: '#1a1a1a',
+              borderRadius: '2px',
+              px: 1.5,
+              height: 40,
+              border: '1.5px solid #e56a16',
+            }}>
+              <svg className="wr-search-icon" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16.5" y1="16.5" x2="22" y2="22" />
+              </svg>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search player name and hit enter..."
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: '#fff',
+                  fontSize: 15,
+                }}
+              />
+            </Box>
+          </Box>
+
+          {/* Right side - Filters group */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: { xs: 1, md: 1.2 },
+            alignItems: 'center',
+            justifyContent: { xs: 'flex-start', md: 'flex-end' }
+          }}>
+            {/* Position */}
+            <div className="wr-select-wrap">
+              <select
+                className="wr-select"
+                value={filters.positionType || ''}
+                onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))}
+                style={{ minWidth: '150px' }}
+              >
+                <option value="">All Position</option>
+                <option value="Defender">Defender</option>
+                <option value="Midfielder">Midfielder</option>
+                <option value="Forward">Forward</option>
+                <option value="Goalkeeper">Goalkeeper</option>
+              </select>
+            </div>
+
+            {/* Year */}
+            <div className="wr-select-wrap">
+              <select
+                className="wr-select"
+                value={filters.year || ''}
+                onChange={e => setFilters(f => ({ ...f, year: e.target.value || undefined }))}
+                style={{ minWidth: '120px' }}
+              >
+                <option value="">All Years</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+
+            {/* Country */}
+            <div className="wr-select-wrap">
+              <select
+                className="wr-select"
+                value={filters.country || ''}
+                onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))}
+                style={{ minWidth: '150px', width: '100px' }}
+              >
+                <option value="">All Country</option>
+                {countries.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {/* Clear */}
+            <Box
+              onClick={clearFilters}
+              sx={{
+                height: 39,
+                px: 2.2,
+                border: '1.5px solid rgba(255,255,255,0.5)',
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 15,
+                fontWeight: 600,
+                color: '#fff',
+                userSelect: 'none',
+                '&:hover': { borderColor: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
+                transition: 'all 0.2s',
+              }}
+            >
+              Clear
+            </Box>
           </Box>
         </Box>
       </Box>
 
       {/* ────────── INFO ROW ────────── */}
-      <Box sx={{ textAlign: 'center', py: 1, color: '#aaa', fontSize: 13 }}>
-        Mode&nbsp;&nbsp;
+      <Box sx={{ textAlign: 'center', py: 1, color: '#aaa', fontSize: 15 }}>
+        Mode&nbsp;&nbsp;&nbsp;&nbsp;
         <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>
           {filters.mode === 'total' ? 'Total XP' : 'Avg/Match'}
         </Box>
-        &nbsp;&nbsp;&nbsp;Players Shown&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Players Shown&nbsp;&nbsp;&nbsp;&nbsp;
         <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>
           {filtered.length}
         </Box>
         {data?.playerRank && (
           <>
-            &nbsp;&nbsp;&nbsp;Your Rank&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Your Rank&nbsp;&nbsp;&nbsp;&nbsp;
             <Box component="span" sx={{ color: '#fff', fontWeight: 600 }}>#{data.playerRank}</Box>
           </>
         )}
       </Box>
 
       {/* ────────── TABLE ────────── */}
-      <Box sx={{ px: { xs: 1, md: 4 }, pb: 6 }}>
+      <Box sx={{ px: { xs: 1, md: 4 },mt: { xs: 2, md: 3 },pb: 6, maxWidth: 1220, mx: 'auto' }}>
         <Box sx={{
-          bgcolor: '#1a1a1a',
+          bgcolor: '#242424',
           borderRadius: 2,
           overflow: 'hidden',
           border: '1px solid #2a2a2a',
           position: 'relative',
+          p: 1.5,
         }}>
           {loading && (
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.45)', zIndex: 2 }}>
               <CircularProgress size={40} sx={{ color: '#e56a16' }} />
             </Box>
           )}
-          <TableContainer sx={{ maxHeight: 620 }} ref={tableContainerRef}>
-            <Table stickyHeader size="small" sx={{ '& .MuiTableCell-root': { border: 'none' } }}>
-              <TableHead>
-                <TableRow>
+          <TableContainer 
+            sx={{ 
+              maxHeight: 620,
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }} 
+            ref={tableContainerRef}
+          >
+            <Table 
+              stickyHeader 
+              size="small" 
+              sx={{ 
+                '& .MuiTableCell-root': { border: 'none' },
+                '& .MuiTableCell-head': { 
+                  bgcolor: '#1e1e1e !important',
+                  backgroundColor: '#1e1e1e !important'
+                }
+              }}
+            >
+              <TableHead sx={{ bgcolor: '#1e1e1e !important' }}>
+                <TableRow sx={{ bgcolor: '#1e1e1e !important' }}>
                   {(() => {
                     const showAvg = filters.mode === 'avg';
                     const cols: Column[] = [
@@ -491,13 +527,13 @@ export default function WorldRankingTable() {
                         sx={{
                           cursor: isSortableKey(col.key) ? 'pointer' : 'default',
                           userSelect: 'none',
-                          bgcolor: '#111',
+                          bgcolor: '#1e1e1e !important',
                           color: '#fff',
                           fontWeight: 700,
                           fontSize: 13,
                           letterSpacing: 0.5,
                           py: 1.5,
-                          borderBottom: '2px solid #e56a16 !important',
+                          // borderBottom: '2px solid #e56a16 !important',
                           pl: i === 0 ? 3 : 1.5,
                         }}
                       >
@@ -517,7 +553,7 @@ export default function WorldRankingTable() {
                   const isMe = user?.id === p.id;
                   const rowBg = isMe
                     ? 'rgba(229,106,22,0.18)'
-                    : idx % 2 === 0 ? '#1e1e1e' : '#242424';
+                    : idx % 2 === 0 ? '#242424' : '#1e1e1e';
                   return (
                     <TableRow
                       key={p.id}
@@ -529,18 +565,18 @@ export default function WorldRankingTable() {
                         boxShadow: isMe ? 'inset 3px 0 0 #e56a16' : undefined,
                       }}
                     >
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3 }}>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8 }}>
                         {p.rank}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: isMe ? 800 : 600, color: '#fff', fontSize: 14 }}>
+                      <TableCell sx={{ fontWeight: isMe ? 800 : 600, color: '#fff', fontSize: 14, py: 1.8 }}>
                         <Link href={`/player/${p.id}`} style={{ textDecoration: 'none', color: '#fff' }}>
                           {p.name}
                         </Link>
                       </TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{p.position || '-'}</TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{p.country || '-'}</TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13 }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.position || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.country || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8 }}>
                         {filters.mode === 'avg'
                           ? formatNum(p.avgXP, { decimals: 2 })
                           : formatNum(p.totalXP)}
