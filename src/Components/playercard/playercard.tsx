@@ -18,7 +18,6 @@ import Star from '@/Components/images/star.png'
 import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
-import cardPattern from '@/Components/images/cardimg.png';
 
 // const fallback = '/assets/cflogo2.png';
 
@@ -125,8 +124,6 @@ interface PlayerCardProps {
   disableImagePopup?: boolean;
   /** When true, hides the share icon button */
   hideShareIcon?: boolean;
-  /** Custom bottom inset percentage for white texture overlay (default: { xs: '44%', md: '45%' }) */
-  whiteOverlayInsetBottom?: { xs: string; md: string } | string;
 }
 
 // Import all possible vector images
@@ -137,7 +134,7 @@ import vectorSilver from '@/Components/images/silver.svg';
 import vectorGold from '@/Components/images/golden.svg';
 import vectorBlack from '@/Components/images/goat.png';
 import vectorDefault from '@/Components/images/green.svg';
-import vectorImg from '@/Components/images/Vector.svg'
+import vectorImg from '@/Components/images/Vectorcard.png'
 
 const vectorMap: Record<string, StaticImageData> = {
   Green: vectorGreen,
@@ -160,7 +157,6 @@ const PlayerCard = ({
   position,
   disableImagePopup = false,
   hideShareIcon = false,
-  whiteOverlayInsetBottom,
   // hideEditIcon = false,
 }: PlayerCardProps) => {
   // Find the level info based on points
@@ -433,41 +429,6 @@ const PlayerCard = ({
           objectPosition="top center"
           className="z-0"
         />
-
-        {/* Top texture overlay */}
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 5,
-            pointerEvents: 'none',
-            opacity: 1,
-            backgroundColor: '#fff',
-            // Only show on the top portion (shirt area-ish)
-            clipPath: whiteOverlayInsetBottom 
-              ? (typeof whiteOverlayInsetBottom === 'string' 
-                  ? `inset(0 0 ${whiteOverlayInsetBottom} 0)` 
-                  : { xs: `inset(0 0 ${whiteOverlayInsetBottom.xs} 0)`, md: `inset(0 0 ${whiteOverlayInsetBottom.md} 0)` })
-              : { xs: 'inset(0 0 45% 0)', md: 'inset(0 0 46% 0)' },
-            // Clip to the card silhouette so the pattern doesn't leak outside
-            WebkitMaskImage: `url(${vectorImg.src})`,
-            WebkitMaskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'top center',
-            WebkitMaskSize: '100% 100%',
-            maskImage: `url(${vectorImg.src})`,
-            maskRepeat: 'no-repeat',
-            maskPosition: 'top center',
-            maskSize: '100% 100%',
-          }}
-        >
-          <Image
-            src={cardPattern}
-            alt="Card Top Texture"
-            fill
-            sizes="260px"
-            style={{ objectFit: 'cover', objectPosition: 'top center' }}
-          />
-        </Box>
 
         {/* Overlay Content */}
         <Box
