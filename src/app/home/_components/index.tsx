@@ -346,10 +346,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
         const data = await response.json();
         if (!(data?.success && data?.user)) return;
 
-        // Extract and merge XP from primary /auth/status call
+        // Extract and merge XP + skills from primary /auth/status call
         const xp = data?.user?.xp;
-        if (typeof xp === 'number') {
-          dispatch(mergeUser({ xp }));
+        const skills = data?.user?.skills;
+        const mergePayload: Record<string, unknown> = {};
+        if (typeof xp === 'number') mergePayload.xp = xp;
+        if (skills && typeof skills === 'object') mergePayload.skills = skills;
+        if (Object.keys(mergePayload).length > 0) {
+          dispatch(mergeUser(mergePayload));
         }
 
         // Prefer modern key adminLeagues; fall back to administeredLeagues for backward compatibility

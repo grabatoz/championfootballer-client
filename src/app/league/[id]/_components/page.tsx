@@ -2350,31 +2350,60 @@ export default function LeagueDetailPage() {
     const openQuickViewFromTable = async (leagueId: string, playerId: string) => {
         if (!leagueId || !playerId || !token) return;
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const data = await res.json();
-            console.log('fdsf', data);
+            // Find member from local league data as fallback
+            const localMember = league?.members?.find((m: User) => m.id === playerId);
 
-            if (!res.ok || !data?.success) return;
+            // Fetch quick-view (motmCount) AND full player profile (skills, xp, etc.) in parallel
+            const [quickViewRes, playerRes, statsRes] = await Promise.all([
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}/stats?leagueId=${encodeURIComponent(leagueId)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+            ]);
+
+            const [data, playerData, statsData] = await Promise.all([
+                quickViewRes.json(),
+                playerRes.json().catch(() => ({ success: false })),
+                statsRes.json().catch(() => ({ success: false })),
+            ]);
+            console.log('quick-view:', data, 'player:', playerData, 'stats:', statsData);
+
+            if (!quickViewRes.ok || !data?.success) return;
+
+            const fullPlayer = playerData?.success ? playerData.player : null;
+            const matchStats = statsData?.success ? statsData.stats : null;
+
             const player: User & PlayerProfileLike = {
-                id: String(data.player?.id ?? playerId),
-                firstName: data.player?.firstName ?? '',
-                lastName: data.player?.lastName ?? '',
+                id: String(fullPlayer?.id ?? data.player?.id ?? playerId),
+                firstName: fullPlayer?.firstName ?? data.player?.firstName ?? localMember?.firstName ?? '',
+                lastName: fullPlayer?.lastName ?? data.player?.lastName ?? localMember?.lastName ?? '',
                 email: '',
-                xp: Number(data.player?.xp ?? 0),
-                position: data.player?.position ?? undefined,
-                profilePicture: data.player?.profilePicture ?? null,
-                preferredFoot: data.player?.preferredFoot ?? null,
-                shirtNumber: data.player?.shirtNumber ?? null,
+                xp: Number(fullPlayer?.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
+                position: fullPlayer?.position ?? data.player?.position ?? localMember?.position ?? undefined,
+                profilePicture: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? null,
+                preferredFoot: fullPlayer?.preferredFoot ?? data.player?.preferredFoot ?? null,
+                shirtNumber: fullPlayer?.shirtNumber ?? data.player?.shirtNumber ?? localMember?.shirtNumber ?? null,
                 positionType: undefined,
             };
-            setQuickView({
-                player,
-                league,
-                stats: { goals: Number(data.stats?.goals ?? 0), assists: Number(data.stats?.assists ?? 0) },
-                skills: data.skills
+
+            const skills = fullPlayer?.skills
+                ? {
+                    dribbling: Number(fullPlayer.skills.dribbling ?? 0),
+                    shooting: Number(fullPlayer.skills.shooting ?? 0),
+                    passing: Number(fullPlayer.skills.passing ?? 0),
+                    pace: Number(fullPlayer.skills.pace ?? 0),
+                    defending: Number(fullPlayer.skills.defending ?? 0),
+                    physical: Number(fullPlayer.skills.physical ?? 0),
+                }
+                : data.skills
                     ? {
                         dribbling: Number(data.skills.dribbling ?? 0),
                         shooting: Number(data.skills.shooting ?? 0),
@@ -2383,8 +2412,17 @@ export default function LeagueDetailPage() {
                         defending: Number(data.skills.defending ?? 0),
                         physical: Number(data.skills.physical ?? 0),
                     }
-                    : undefined,
-                xp: Number(data.xp ?? data.player?.xp ?? 0),
+                    : undefined;
+
+            setQuickView({
+                player,
+                league,
+                stats: {
+                    goals: Number(matchStats?.goals ?? data.stats?.goals ?? 0),
+                    assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
+                },
+                skills,
+                xp: Number(fullPlayer?.xp ?? data.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(data.defensiveImpact ?? 0),
@@ -5201,7 +5239,7 @@ export default function LeagueDetailPage() {
                                 {(() => {
                                     const p = quickView.player as User & PlayerProfileLike;
                                     const playerCardProps = {
-                                        name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+                                        name: p.firstName ?? '',
                                         number: getShirtNumber(p),
                                         points: Number(quickView.xp ?? 0),
                                         stats: {

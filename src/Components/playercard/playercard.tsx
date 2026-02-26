@@ -540,7 +540,7 @@ const PlayerCard = ({
         </Box>
 
         {/* Name and Title (from static logic) */}
-        <Box sx={{ mt: 2,mb:1 }}>
+        <Box sx={{ mt: disableImagePopup ? 1 : 2, mb:0.5 }}>
           <Typography
             fontSize="14px"
             fontWeight="bold"
