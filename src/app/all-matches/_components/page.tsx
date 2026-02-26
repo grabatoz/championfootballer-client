@@ -53,6 +53,11 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   ssr: false
 });
 
+const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 
@@ -305,7 +310,7 @@ export default function AllMatches() {
                                 optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
                                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                     cacheTTL: 300000 // 5 minutes
-                                }),
+                                }).catch(() => null),
                                 optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
                                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                     cacheTTL: 300000 // 5 minutes
@@ -1014,11 +1019,11 @@ export default function AllMatches() {
 
         try {
             if (hasScores) {
-                // 🚀 Use mutateWithRefresh for automatic cache invalidation on PATCH
+                // 🚀 Use mutateWithRefresh for automatic cache invalidation
                 const res = await mutateWithRefresh(
                     `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
                     {
-                        method: 'PATCH',
+                        method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
@@ -1199,11 +1204,11 @@ export default function AllMatches() {
 
     const handleRestoreMatch = async (match: Match) => {
         try {
-            // 🚀 Use mutateWithRefresh for automatic cache invalidation on PATCH
+            // 🚀 Use mutateWithRefresh for automatic cache invalidation
             const res = await mutateWithRefresh(
                 `${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`,
                 {
-                    method: 'PATCH',
+                    method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1560,8 +1565,12 @@ export default function AllMatches() {
     // Open Match Stats modal instead of navigating for play actions
     const [matchStatsOpen, setMatchStatsOpen] = React.useState(false);
     const [selectedMatchIdForDialog, setSelectedMatchIdForDialog] = React.useState<string | null>(null);
-    const [selectedLeagueIdForDialog,] = React.useState<string | null>(null);
+    const [selectedLeagueIdForDialog, setSelectedLeagueIdForDialog] = React.useState<string | null>(null);
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
+    // Edit Match dialog state
+    const [editMatchOpen, setEditMatchOpen] = React.useState(false);
+    const [editMatchLeagueId, setEditMatchLeagueId] = React.useState<string | null>(null);
+    const [editMatchId, setEditMatchId] = React.useState<string | null>(null);
         // Header helper: reflect loading/no-league/selected league label
     const noLeagues = !loading && leagues.length === 0;
 
@@ -2137,7 +2146,7 @@ export default function AllMatches() {
                                                         {(isAdmin || (isMember && (match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id))))) && (
                                                             <Button
                                                                 size="small"
-                                                                onClick={() => { setSelectedMatchIdForDialog(match.id); setShouldShowAdminGoals(false); setMatchStatsOpen(true); }}
+                                                                onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true); }}
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
                                                                 disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived}
                                                                 sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
@@ -2171,14 +2180,14 @@ export default function AllMatches() {
                                                         <>
                                                             <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}>For Admin Only</Typography>
                                                             <Button
-                                                                onClick={() => { setSelectedMatchIdForDialog(match.id); setShouldShowAdminGoals(true); setMatchStatsOpen(true); }}
+                                                                onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(true); setMatchStatsOpen(true); }}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
                                                                 sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 1 } }}
                                                             >
                                                                 Add Score
                                                             </Button>
                                                             <Button
-                                                                onClick={(e) => { e.stopPropagation(); router.push(`/league/${match.leagueId}/match/${match.id}/edit`); }}
+                                                                onClick={(e) => { e.stopPropagation(); setEditMatchLeagueId(String(match.leagueId)); setEditMatchId(match.id); setEditMatchOpen(true); }}
                                                                 disabled={!league?.active}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
                                                                 sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
@@ -2323,7 +2332,7 @@ export default function AllMatches() {
                                                     <>
                                                         <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>For Admin Only</Typography>
                                                         <Button
-                                                            onClick={(e) => { e.stopPropagation(); router.push(`/league/${match.leagueId}/match/${match.id}/edit`); }}
+                                                            onClick={(e) => { e.stopPropagation(); setEditMatchLeagueId(String(match.leagueId)); setEditMatchId(match.id); setEditMatchOpen(true); }}
                                                             disabled={!league?.active}
                                                             startIcon={<Edit size={16} />}
                                                             sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, fontSize: '0.65rem', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' }, '& .MuiButton-startIcon': { mr: 0.5 } }}
@@ -2407,11 +2416,35 @@ export default function AllMatches() {
             {/* Match Stats Dialog (embedded) */}
             <PlayMatchPagee
                 open={matchStatsOpen}
-                onClose={() => setMatchStatsOpen(false)}
+                onClose={() => { setMatchStatsOpen(false); setSelectedMatchIdForDialog(null); setSelectedLeagueIdForDialog(null); }}
                 initialLeagueId={selectedLeagueIdForDialog || undefined}
                 initialMatchId={selectedMatchIdForDialog || undefined}
                 showAdminGoalsSection={shouldShowAdminGoals}
             />
+
+            {/* Edit Match Dialog */}
+            <Dialog
+                open={editMatchOpen}
+                onClose={() => { setEditMatchOpen(false); setEditMatchLeagueId(null); setEditMatchId(null); }}
+                 maxWidth="lg"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#0a0a0a',
+                        backgroundImage: 'none',
+                        width: '85%',
+                        maxHeight: '90vh',
+                    }
+                }}>
+                    {editMatchOpen && editMatchLeagueId && editMatchId && (
+                        <EditMatchPage
+                            leagueIdProp={editMatchLeagueId}
+                            matchIdProp={editMatchId}
+                            isDialog
+                            onClose={() => { setEditMatchOpen(false); setEditMatchLeagueId(null); setEditMatchId(null); if (selectedLeague) fetchMatchesByLeague(selectedLeague); }}
+                        />
+                    )}
+            </Dialog>
 
             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
                 <DialogTitle sx={{ fontWeight: 'bold' }}>Are you sure you want to delete this match?</DialogTitle>
