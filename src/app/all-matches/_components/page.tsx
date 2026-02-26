@@ -58,6 +58,11 @@ const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/ed
   ssr: false
 });
 
+const MatchDetailsPage = dynamic(() => import('@/app/match/[matchId]/_components'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
+
 type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 
@@ -1571,6 +1576,9 @@ export default function AllMatches() {
     const [editMatchOpen, setEditMatchOpen] = React.useState(false);
     const [editMatchLeagueId, setEditMatchLeagueId] = React.useState<string | null>(null);
     const [editMatchId, setEditMatchId] = React.useState<string | null>(null);
+    // Results dialog state
+    const [resultsDialogOpen, setResultsDialogOpen] = React.useState(false);
+    const [resultsMatchId, setResultsMatchId] = React.useState<string | null>(null);
         // Header helper: reflect loading/no-league/selected league label
     const noLeagues = !loading && leagues.length === 0;
 
@@ -2164,7 +2172,7 @@ export default function AllMatches() {
                                                         </Button>
                                                         <Button
                                                             size="small"
-                                                            onClick={() => router.push(`/match/${match.id}`)}
+                                                            onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
                                                             disabled={match.status === 'RESULT_UPLOADED'}
                                                             sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
@@ -2444,6 +2452,34 @@ export default function AllMatches() {
                             onClose={() => { setEditMatchOpen(false); setEditMatchLeagueId(null); setEditMatchId(null); if (selectedLeague) fetchMatchesByLeague(selectedLeague); }}
                         />
                     )}
+            </Dialog>
+
+            {/* Results Dialog */}
+            <Dialog
+                open={resultsDialogOpen}
+                onClose={() => { setResultsDialogOpen(false); setResultsMatchId(null); }}
+               fullWidth
+                            maxWidth="lg"
+                            PaperProps={{
+                                sx: {
+                                    bgcolor: '#0a0a0a',
+                                    backgroundImage: 'none',
+                                    borderRadius: 3,
+                                    maxHeight: '90vh',
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                }
+                            }}  >
+              
+                    <IconButton onClick={() => { setResultsDialogOpen(false); setResultsMatchId(null); }}   sx={{ position: 'absolute', right: 8, top: 8, color: '#fff', zIndex: 10, bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
+                        <CloseIcon />
+                    </IconButton>
+             
+                <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+                    {resultsDialogOpen && resultsMatchId && (
+                        <MatchDetailsPage matchIdProp={resultsMatchId} />
+                    )}
+                </DialogContent>
             </Dialog>
 
             <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
