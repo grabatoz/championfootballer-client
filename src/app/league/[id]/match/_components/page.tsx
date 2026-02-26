@@ -21,6 +21,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseButton from '@/Components/CloseButton';
+import mapImg from '@/Components/images/map.png';
+import Image from 'next/image';
 
 /* ================== CUSTOM CALENDAR ================== */
 interface CustomCalendarProps {
@@ -49,14 +51,13 @@ function CustomCalendar({
 
   return (
     <Paper
-      elevation={4}
+      elevation={0}
       sx={{
         maxWidth: 360,
         mx: 'auto',
         p: 2,
-        bgcolor: THEME.PANEL_BG,
-        borderRadius: 3,
-        boxShadow: '0 6px 20px rgba(0,0,0,0.6)'
+        bgcolor: '#131212',
+        borderRadius: 3
       }}
     >
       {/* header with icon buttons */}
@@ -155,7 +156,7 @@ const THEME = {
   TEXT: '#E5E7EB',
   TEXT_MUTED: '#9CA3AF',
   TEXT_FADE: 'rgba(229,231,235,0.55)',
-  PANEL_BG: 'rgba(15,15,15,0.85)',            // slightly more transparent so glass pops
+  PANEL_BG: '#2b2b2b',
   BORDER: 'rgba(255,255,255,0.14)',
   BORDER_SOFT: 'rgba(255,255,255,0.08)',
   BORDER_HOVER: 'rgba(255,255,255,0.32)',
@@ -208,22 +209,11 @@ const GradientCard: React.FC<React.PropsWithChildren<{ title: string; subtitle?:
     elevation={0}
     sx={{
       p: { xs: 2, md: 3 },
-      bgcolor: THEME.PANEL_BG,
-      borderRadius: 4,
-      border: `1px solid ${THEME.BORDER}`,
-      backdropFilter: 'blur(18px)',
+      bgcolor: '#2b2b2b !important',
+      borderRadius: 2,
+      // border: `1px solid ${THEME.BORDER}`,
       position: 'relative',
-      overflow: 'hidden',
-      boxShadow:
-        '0 18px 55px -12px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.04)',
-      '&:before': {
-        content: '""',
-        position: 'absolute',
-        inset: 0,
-        pointerEvents: 'none',
-        background:
-          'radial-gradient(circle at 78% 9%, rgba(229,106,22,0.16), transparent 62%)'
-      }
+      overflow: 'hidden'
     }}
   >
     <Typography variant="h3" sx={{
@@ -267,11 +257,11 @@ const GradientButton: React.FC<
     onClick={onClick}
     disabled={disabled || loading}
     sx={{
-      py: 1.65,
+      
       fontWeight: 700,
       borderRadius: 3,
-      fontSize: { xs: '0.95rem', md: '1.05rem' },
-      background: THEME.GRADIENT_MAIN,
+      fontSize: { xs: '1.1rem', md: '1.7rem' },
+      background: '#00a77f',
       color: '#fff',
       letterSpacing: 0.55,
       position: 'relative',
@@ -287,8 +277,8 @@ const GradientButton: React.FC<
       },
       '&:hover:before': { opacity: 1 },
       '&:hover': {
-        background: THEME.GRADIENT_HOVER,
-        boxShadow: '0 10px 34px -4px rgba(229,106,22,0.55)'
+        background: '#008c6a',
+        boxShadow: '0 10px 34px -4px rgba(0,167,127,0.55)'
       },
       '&.Mui-disabled': {
         background: 'linear-gradient(135deg,#4b4b4b,#2b2b2b)',
@@ -553,9 +543,10 @@ export default function ScheduleMatchPage() {
   const selectStyles = {
     color: THEME.TEXT,
     fontWeight: 500,
+    backgroundColor: '#424242',
     '.MuiSelect-icon': { color: THEME.TEXT_MUTED },
-    '.MuiOutlinedInput-notchedOutline': { borderColor: THEME.BORDER_SOFT },
-    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: THEME.BORDER_HOVER },
+    '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.45)' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.65)' },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
       borderColor: THEME.FOCUS,
       boxShadow: THEME.SHADOW_GLOW
@@ -570,12 +561,12 @@ export default function ScheduleMatchPage() {
     '& .MuiOutlinedInput-root': {
       background: 'rgba(255,255,255,0.02)',
       color: THEME.TEXT,
-      borderRadius: 3,
+      borderRadius: 2,
       fontWeight: 500,
       letterSpacing: 0.35,
       transition: 'border-color .25s, box-shadow .25s',
-      '& fieldset': { borderColor: THEME.BORDER_SOFT },
-      '&:hover fieldset': { borderColor: THEME.BORDER_HOVER },
+      '& fieldset': { borderColor: 'rgba(255,255,255,0.45)' },
+      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.65)' },
       '&.Mui-focused fieldset': {
         borderColor: THEME.FOCUS,
         boxShadow: THEME.SHADOW_GLOW
@@ -601,6 +592,7 @@ export default function ScheduleMatchPage() {
           minHeight: '100vh',
           p: { xs: 2.5, md: 5 },
           color: THEME.TEXT,
+          fontFamily: '"Woodford Bourne Pro", sans-serif',
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
@@ -608,22 +600,68 @@ export default function ScheduleMatchPage() {
           //   'radial-gradient(circle at 18% 14%, rgba(229,106,22,0.12) 0%, #050505 58%)'
         }}
       >
-        {/* Close Button */}
-        <CloseButton fallbackRoute="/dashboard" />
+        {/* CREATE MATCH Header */}
+        <Box sx={{ mb: { xs: 1, md: 2 }, mt: { xs: -2.5, md: -5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2.5, sm: -3, md: -5 } }}>
+          <Typography
+            variant="h3"
+            sx={{
+              color: 'white',
+              fontFamily: '"Oswald", sans-serif !important',
+              fontWeight: 700,
+              fontSize: { xs: '32px', sm: '42px', md: '55px' },
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '0px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              pt: { xs: 1, md: 2 },
+               pb: { xs: 0.5, md: 1 },
+            }}
+            className="all-leagues-heading"
+          >
+            CREATE MATCH
+          </Typography>
+          <Typography
+            sx={{
+              color:'#fff',
+              fontSize: { xs: 13.5, md: 19 },
+              fontWeight: 400,
+              textAlign: 'center',
+              letterSpacing: 0.5,
+              mb: { xs: 2, md: 5 },
+            }}
+          >
+            Simple quick match creation. You can assign teams later.
+          </Typography>
+          <Box
+            sx={{
+              width: 'calc(100% + 32px)',
+              marginLeft: '-16px',
+              marginRight: '-16px',
+              height: '3px',
+              background: '#e16419',
+              mb: { xs: 2, md: 2 },
+              '@media (min-width: 900px)': {
+                width: 'calc(100% + 48px)',
+                marginLeft: '-24px',
+                marginRight: '-24px',
+              },
+            }}
+          />
+        </Box>
+
         <GradientCard
-          title="Create Match"
-          subtitle="Simple quick match creation. You can assign teams later."
+          title=""
         >
           <Grid container spacing={4}>
             {/* DATE */}
             <Grid item xs={12} md={6}>
               <Typography
                 sx={{
-                  fontWeight: 600,
+                  fontWeight: 500,
                   mb: 1,
-                  fontSize: 14,
-                  letterSpacing: 0.55,
-                  color: THEME.TEXT_MUTED
+                  fontSize: 22,
+                  letterSpacing: 1,
+                  color: '#fff'
                 }}
               >
                 Match Date
@@ -632,15 +670,10 @@ export default function ScheduleMatchPage() {
                 sx={{
                   position: 'relative',
                   p: 2,
-                  borderRadius: 4,
-                  background:
-                    'linear-gradient(140deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(24px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                  overflow: 'hidden',
-                  boxShadow:
-                    '0 18px 40px -14px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.04)'
+                  borderRadius: 2,
+                  background: '#1e1e1e',
+                  // border: '1px solid rgba(255,255,255,0.15)',
+                  overflow: 'hidden'
                 }}
               >
                 {/* Custom Header */}
@@ -650,18 +683,17 @@ export default function ScheduleMatchPage() {
                     alignItems: 'center',
                     mb: 1.5,
                     px: 1,
-                    gap: 1
+                    gap: 1,
+                    
                   }}
                 >
                   <Typography
                     sx={{
                       flex: 1,
-                      fontSize: 15,
+                      fontSize: 19,
                       fontWeight: 600,
                       letterSpacing: 0.6,
-                      background: THEME.GRADIENT_MAIN,
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent'
+                      color: '#00a77f'
                     }}
                   >
                     {date.format('MMMM YYYY')}
@@ -712,19 +744,18 @@ export default function ScheduleMatchPage() {
                     mt: 3.5,
                     py: 1,
                     px: 1.5,
-                    borderRadius: 3,
+                    borderRadius: 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1.2,
-                    background:
-                      'linear-gradient(120deg,rgba(229,106,22,0.18),rgba(229,106,22,0.05))',
-                    border: '1px solid rgba(229,106,22,0.35)'
+                    background: '#323232',
+                    border: '1px solid #196c58'
                   }}
                 >
-                  <Typography sx={{ fontSize: 12.2, fontWeight: 600, letterSpacing: 0.5, color: '#fff' }}>
+                  <Typography sx={{ fontSize: 18, fontWeight: 500, letterSpacing: 0.5, color: '#fff' }}>
                     Selected:
                   </Typography>
-                  <Typography sx={{ fontSize: 12.2, color: THEME.TEXT_MUTED }}>
+                  <Typography sx={{ fontSize: 16, color: THEME.TEXT_MUTED }}>
                     {date.format('ddd, DD MMM YYYY')}
                   </Typography>
                 </Box>
@@ -734,11 +765,11 @@ export default function ScheduleMatchPage() {
             <Grid item xs={12} md={6}>
               <Typography
                 sx={{
-                  fontWeight: 600,
+                  fontWeight: 500,
                   mb: 1,
-                  fontSize: 14,
-                  letterSpacing: 0.55,
-                  color: THEME.TEXT_MUTED
+                  fontSize: 22,
+                  letterSpacing: 1,
+                  color: '#fff'
                 }}
               >
                 Start Time
@@ -749,13 +780,13 @@ export default function ScheduleMatchPage() {
                   gap: 2,
                   flexWrap: 'wrap',
                   p: 2,
-                  border: `1px solid ${THEME.BORDER}`,
-                  borderRadius: 3,
-                  background: 'rgba(255,255,255,0.035)'
+                  border: '1px solid rgba(255,255,255,0.45)',
+                  borderRadius: 2,
+                  background: '#2b2b2b'
                 }}
               >
                 <Box sx={{ flex: '1 1 140px', minWidth: 140 }}>
-                  <Typography sx={{ fontSize: 11, mb: 0.5, color: THEME.TEXT_MUTED }}>
+                  <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                     Hour
                   </Typography>
                   <Select
@@ -784,7 +815,7 @@ export default function ScheduleMatchPage() {
                   </Select>
                 </Box>
                 <Box sx={{ flex: '1 1 110px', minWidth: 100 }}>
-                  <Typography sx={{ fontSize: 11, mb: 0.5, color: THEME.TEXT_MUTED }}>
+                  <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                     Minute
                   </Typography>
                   <Select
@@ -809,11 +840,11 @@ export default function ScheduleMatchPage() {
               <Box sx={{ mt: 1 }}>
                 <Typography
                   sx={{
-                    fontWeight: 600,
+                    fontWeight: 500,
                     mb: 1,
-                    fontSize: 14,
-                    letterSpacing: 0.55,
-                    color: THEME.TEXT_MUTED
+                    fontSize: 22,
+                    letterSpacing: 1,
+                    color: '#fff'
                   }}
                 >
                   Match Duration
@@ -823,13 +854,13 @@ export default function ScheduleMatchPage() {
                     display: 'flex',
                     gap: 2,
                     p: 2,
-                    border: `1px solid ${THEME.BORDER}`,
-                    borderRadius: 3,
-                    background: 'rgba(255,255,255,0.035)'
+                    border: '1px solid rgba(255,255,255,0.45)',
+                    borderRadius: 2,
+                    background: '#2b2b2b'
                   }}
                 >
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: 11, mb: 0.5, color: THEME.TEXT_MUTED }}>
+                    <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                       Hours
                     </Typography>
                     <Select
@@ -849,7 +880,7 @@ export default function ScheduleMatchPage() {
                     </Select>
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: 11, mb: 0.5, color: THEME.TEXT_MUTED }}>
+                    <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                       Minutes
                     </Typography>
                     <Select
@@ -874,24 +905,40 @@ export default function ScheduleMatchPage() {
               <Grid item xs={12}>
                 <Typography
                   sx={{
-                    fontWeight: 600,
+                    fontWeight: 500,
                     mb: 1,
-                    fontSize: 14,
-                    letterSpacing: 0.55,
-                    color: THEME.TEXT_MUTED,
+                    fontSize: 22,
+                    letterSpacing: 1,
+                    color: '#fff',
                     mt: 1.5
                   }}
                 >
                   Location
                 </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="e.g. City, Country"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  sx={textFieldStyles}
-                  inputProps={{ maxLength: 120 }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <TextField
+                    fullWidth
+                    placeholder="e.g. City, Country"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    sx={{
+                      ...textFieldStyles,
+                      '& .MuiInputBase-input': { py: '12px' },
+                      '& .MuiOutlinedInput-root': {
+                        ...textFieldStyles['& .MuiOutlinedInput-root'],
+                        background: '#424242'
+                      }
+                    }}
+                    inputProps={{ maxLength: 120 }}
+                  />
+                  <Image
+                    src={mapImg}
+                    alt="map"
+                    width={40}
+                    height={40}
+                    style={{ flexShrink: 0 }}
+                  />
+                </Box>
                 <Box
                   sx={{
                     mt: 0.75,
@@ -909,15 +956,15 @@ export default function ScheduleMatchPage() {
               <Grid item xs={12}>
                 <Box
                   sx={{
-                    background: THEME.GRADIENT_MAIN,
-                    p: 2,
+                    background: '#2b2b2b',
+                    px: 1,
+                    py: 1,
                     borderRadius: 3,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: 500,
                     color: '#fff',
                     lineHeight: 1.55,
-                    letterSpacing: 0.35,
-                    boxShadow: '0 8px 28px -6px rgba(229,106,22,0.45)'
+                    letterSpacing: 0.35
                   }}
                 >
                   Match will last {durHours} hour(s) {durMinutes} minute(s).
@@ -954,6 +1001,8 @@ export default function ScheduleMatchPage() {
 
           </Grid>
         </GradientCard>
+        {/* Bottom spacer */}
+        <Box sx={{ pb: { xs: 8, md: 25 } }} />
       </Box>
       <Toaster position="top-center" reverseOrder={false} />
     </>
