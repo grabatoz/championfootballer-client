@@ -5261,37 +5261,37 @@ export default function LeagueDetailPage() {
 
                             {/* Right: Last 10 Matches */}
                             <Paper elevation={0} sx={{
-                                p: { xs: 0.75, sm: 1 },
+                                p: { xs: 0.5, sm: 0.75 },
                                 border: '1px solid rgba(0,0,0,0.08)',
-                                height: { xs: 'auto', sm: '280px' },
                                 borderRadius: 2,
-                                overflowY: 'auto',
+                                overflowY: 'hidden',
                                 order: { xs: 3, sm: 3 },
-                                mt: { xs: 0, sm: 5 }
+                                mt: { xs: 0, sm: 5 },
+                                minHeight: { xs: 240, sm: 275 },
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
-                                <Stack direction="column" spacing={0.5}>
+                                <Typography sx={{ fontWeight: 800, mb: 0.25, fontSize: { xs: '0.6rem', sm: '0.7rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                                <Stack direction="column" spacing={0.2}>
                                     {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
                                         <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <Box
                                                 sx={{
                                                     width: { xs: 24, sm: 28 },
                                                     height: { xs: 20, sm: 24 },
-                                                    borderRadius: 1,
+                                                    borderRadius: 0.5,
                                                     backgroundColor: resultColor(m.result),
                                                     color: '#fff',
                                                     fontWeight: 800,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                                    fontSize: { xs: '0.55rem', sm: '0.6rem' },
                                                     lineHeight: 1,
                                                 }}
                                             >
                                                 {m.result}
                                             </Box>
                                             {idx === 0 && (
-                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.55rem', sm: '0.6rem' } }}>
                                                     Latest
                                                 </Typography>
                                             )}
