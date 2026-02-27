@@ -2835,8 +2835,9 @@ export default function LeagueDetailPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        mx: 'auto',
-                                        mt: 2
+                                        // mx: 'aut90100o',
+                                        mt: 2,
+                                   
                                     }}
                                 >
                                     <ButtonGroup
@@ -2851,7 +2852,7 @@ export default function LeagueDetailPage() {
                                                 borderWidth: 3,
                                                 textTransform: 'none',
                                                 fontWeight: 'normal',
-                                                px: { xs: 1.5, sm: 2.5, md: 4 },
+                                                px: { xs: 1.5, sm: 2.5, md: 4.5 },
                                                 py: 0.5,
                                                 minWidth: 'auto',
                                             },
@@ -4315,6 +4316,7 @@ export default function LeagueDetailPage() {
                                         borderRadius: { xs: 2, sm: 3 },
                                         boxShadow: 'none',
                                         mt: 1.2,
+                                        mb: 4,
                                         overflow: 'auto',
                                         '&::-webkit-scrollbar': {
                                             height: '6px',
