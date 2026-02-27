@@ -818,7 +818,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         <Box
           sx={{
             position: 'absolute',
-            top: 'calc(100% - 2px)',
+            top: selectedLeague?.userRole === 'ADMIN'
+              ? { xs: 'calc(100% - 2px)', md: 'calc(100% - 66px)' }
+              : 'calc(100% - 2px)',
             left: 0,
             width: '100%',
             maxWidth: '100%',
