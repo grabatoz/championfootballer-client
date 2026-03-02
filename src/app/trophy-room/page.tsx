@@ -463,7 +463,7 @@ const TrophyCard = ({
           }}
           disabled={!onButtonClick}
         >
-          {winner || 'TBC'}
+          {winner ? winner.split(' ')[0] : 'TBC'}
         </Button>
       </Box>
     </Paper>
@@ -3115,6 +3115,7 @@ export default function GlobalTrophyRoom() {
             gap: { xs: 1.5, sm: 2, md: 1.5 }, 
             justifyContent: 'center', 
             alignItems: 'stretch',
+            mb: { xs: 4, sm: 6, md: 8 },
           }}>
             {(() => {
               const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
