@@ -10,6 +10,10 @@ import CircularProgress from "@mui/material/CircularProgress"
 import { Add } from "@mui/icons-material"
 import MatchStatsDialog from './matchstatsdialog/MatchStatsDialog'
 import { useAuth } from '@/lib/hooks'
+import Image from 'next/image'
+import ThumImg from '@/Components/images/thum.png'
+import LeftShirtImg from '@/Components/images/leftshirt.png'
+import RightShirtImg from '@/Components/images/rightshirt.png'
 
 interface MatchSummaryProps {
   homeTeamName: string
@@ -197,11 +201,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           p: { xs: 2, md: 3 },
           // background: "#1f673b",
           // background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
-          background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+          background: '#2b2b2b',
           boxShadow: "0 4px 24px 0 rgba(0,0,0,0.06)",
-          borderRadius: 3,
+          borderRadius: 1.5,
           width: "100%",
-          maxWidth: 900,
+          maxWidth: 680,
           mx: "auto",
           mb: 3,
           border: "1px solid #f0f0f0",
@@ -211,8 +215,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         {/* Match Status - Top Left */}
         <Box sx={{
           position: 'absolute', 
-          top: 8, 
-          left: 8, 
+          top: 13, 
+          left: 29, 
           zIndex: 2 
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -230,10 +234,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               variant="caption" 
               sx={{ 
                 color: 'white',
-                fontWeight: 'bold',
-                backgroundColor: '#2B2B2B',
+                fontWeight: 'semi-bold',
+                backgroundColor: '#00a77f',
                 px: { xs: 1, sm: 1.5, md: 2 },
-                py: { xs: 0.3, sm: 0.5, md: 0.7 },
+                py: { xs: 0.1, sm: 0.2, md: 0.3 },
                 borderRadius: 1,
                 fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' }
               }}
@@ -250,15 +254,15 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             sx={{
               fontSize: { xs: 12, sm: 14, md: 16, lg: 18, xl: 22 },
               color: "white",
-              fontWeight: 600,
+              fontWeight: 400,
               textAlign: "center",
               width: "100%",
               mt: { xs: 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
-              mb: { xs: 1, md: 2 },
+              // mb: { xs: 1, md: 2 },
             }}
           >
-            League Name : <span className="underline">{leagueName}</span> &nbsp;·&nbsp; Game {currentMatch} of{" "}
-            {totalMatches}
+            <span className="">{leagueName}</span>
+            <span style={{ display: 'block', lineHeight: 1.2, marginTop: '-2px', fontSize: '0.75em' }}>Match {currentMatch} of {totalMatches}</span>
           </Typography>
         </Link>
 
@@ -286,28 +290,19 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               gap: { xs: 1, sm: 2 }, // Gap between image and text
             }}
           >
-            <Box
-              component="img"
-              src={homeTeamImg}
+            <Image
+              src={LeftShirtImg}
               alt={homeTeamName}
-              sx={{
-                height: { xs: 80, sm: 90, md: 120, lg: 130, xl: 150 }, // More responsive image sizes
-                width: { xs: 65, sm: 70, md: 100, lg: 120, xl: 130 }, // More responsive image sizes
-                maxWidth: { xs: 150, sm: 150, md: 200 },
-                p: { xs: 0, sm: 0, md: 1 },
-                color: "white",
-                borderRadius: 2,
-                // Remove marginRight for xs since we're stacking vertically
-                marginRight: { sm: 5, md: 1 },
-                // objectFit: "contain", // Ensure image fits without cropping
-              }}
+              width={100}
+              height={100}
+              style={{ objectFit: 'contain',  }}
             />
             <Box sx={{
               minWidth: 0,
-              textAlign: { xs: "center", sm: "left" },
+              textAlign: "center",
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", sm: "flex-start" }
+              alignItems: "center"
             }}>
               <Typography
                 variant="h6"
@@ -317,9 +312,15 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 {homeTeamName}
               </Typography>
               <Typography
+                variant="caption"
+                sx={{ fontSize: { xs: 10, sm: 11, md: 19 }, color: '#fff', lineHeight: 1, letterSpacing: 1, mt: 1 }}
+              >
+                Home
+              </Typography>
+              <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#fff", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 },mt: 1,color: "#fff", lineHeight: 1 }}
               >
                 {homeGoals}
               </Typography>
@@ -342,9 +343,15 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ fontSize: { xs: 24, sm: 30, md: 38, lg: 44, xl: 48 }, color: "white", letterSpacing: 2, mb: 0.5, mt: { xs: -3, sm: 0, md: 0 } }}
+              sx={{ fontSize: { xs: 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: -3, sm: 0, md: 0 }, fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase' }}
             >
               VS
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' }, color: '#fff', textAlign: 'center', whiteSpace: 'nowrap', mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
+            >
+              Captains Confirmed <Image src={ThumImg} alt="thumbs up" width={10} height={10} style={{ filter: 'brightness(0) invert(1)' }} />
             </Typography>
           </Box>
 
@@ -364,10 +371,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             {/* For larger screens, show goals first (left), then image (right) */}
             <Box sx={{
               minWidth: 0,
-              textAlign: { xs: "center", sm: "right" }, // Right align text for away team
+              textAlign: "center",
               display: "flex",
               flexDirection: "column",
-              alignItems: { xs: "center", sm: "flex-end" }, // Right align for away team
+              alignItems: "center",
               order: { xs: 2, sm: 1 } // On xs: goals below image, on sm+: goals first (left)
             }}>
               <Typography
@@ -378,27 +385,25 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 {awayTeamName}
               </Typography>
               <Typography
+                variant="caption"
+                sx={{ fontSize: { xs: 10, sm: 11, md: 19 }, color: '#fff', lineHeight: 1,  letterSpacing: 1, mt: 1 }}
+              >
+                Away
+              </Typography>
+              <Typography
                 variant="h4"
                 fontWeight={800}
-                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, color: "#fff", lineHeight: 1 }}
+                sx={{ fontSize: { xs: 16, sm: 20, md: 28, lg: 34, xl: 40 }, mt: 1, color: "#fff", lineHeight: 1 }}
               >
                 {awayGoals}
               </Typography>
             </Box>
-            <Box
-              component="img"
-              src={awayTeamImg}
+            <Image
+              src={RightShirtImg}
               alt={awayTeamName}
-              sx={{
-                height: { xs: 80, sm: 90, md: 120, lg: 130, xl: 150 }, // More responsive image sizes
-                width: { xs: 65, sm: 70, md: 100, lg: 120, xl: 130 }, // More responsive image sizes
-                maxWidth: { xs: 150, sm: 150, md: 200 },
-                p: { xs: 0, sm: 0, md: 1 },
-                color: "white",
-                borderRadius: 2,
-                marginLeft: { sm: 5, md: 1 }, // Add margin left for larger screens
-                order: { xs: 1, sm: 2 } // On xs: image first (top), on sm+: image second (right)
-              }}
+              width={100}
+              height={100}
+              style={{ objectFit: 'contain', order: 2,  }}
             />
           </Box>
         </Box>
@@ -471,10 +476,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       bgcolor: "#2B2B2B",
                       color: "white",
                       fontWeight: "bold",
+                      border: '1px solid #e16419',
                       "&:hover": { bgcolor: "#2B2B2B" },
                       fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                       px: { xs: 1, sm: 1.5, md: 2 },
-                      py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                      py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
                       minWidth: { xs: "auto", sm: 120, md: 140 },
                     }}
                   >
@@ -494,11 +500,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   sx={{
                     bgcolor: "#2B2B2B",
                     color: "white",
-                    fontWeight: "bold",
-                    "&:hover": { bgcolor: "#2B2B2B" },
+                    fontWeight: "bold",                    border: '1px solid #e16419',                    "&:hover": { bgcolor: "#2B2B2B" },
                     fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                     px: { xs: 1, sm: 1.5, md: 2 },
-                    py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                    py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
                     minWidth: { xs: "auto", sm: 120, md: 140 },
                   }}
                 >
@@ -516,11 +521,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               width: { xs: "100%", md: "auto" },
             }}
           >
-            <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
+            <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" } }}>
               Start: {new Date(matchStartTime).toLocaleString()}
             </Typography>
             {isCompleted && matchEndTime && (
-              <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.8rem", lg: "0.9rem" } }}>
+              <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" } }}>
                 End: {new Date(matchEndTime).toLocaleString()}
               </Typography>
             )}

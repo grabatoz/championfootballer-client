@@ -17,6 +17,7 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   ssr: false
 });
 import ShirtImg from '@/Components/images/shirtimg.png';
+import EditImg from '@/Components/images/edit.png';
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -497,10 +498,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
 
   return (
     <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
-      {/* Top-right close button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-        <CloseButton fallbackRoute="/dashboard" />
-      </Box>
+
       {/* <Button
         startIcon={<ArrowLeft />}
         onClick={() => router.push(`/league/${match?.leagueId}`)}
@@ -520,6 +518,21 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         <Typography color="error">Match not found.</Typography>
       ) : (
         <>
+          {/* Match Result Label */}
+          <Typography
+            sx={{
+              textAlign: 'center',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: { xs: 16, sm: 20, md: 36 },
+              mb: 1,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+            }}
+          >
+            Match Result
+          </Typography>
+
           {/* Improved Match Summary Bar */}
           <MatchSummary
             homeTeamName={match.homeTeamName}
@@ -559,13 +572,13 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             width: '100%',
             maxWidth: { xs: '100%', md: 1260 },
             mx: 'auto',
-            mt: { xs: 2, sm: 3 },
-            mb: { xs: 1, sm: 1.5 },
+            mt: { xs: 1, sm: 1.5 },
+            mb: { xs: 0.5, sm: 0.75 },
             px: { xs: 1, sm: 2 },
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Groups sx={{ color: '#fff', fontSize: { xs: 22, sm: 26, md: 30 } }} />
-              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: { xs: 14, sm: 16, md: 18 } }}>
+              <Groups sx={{ color: '#fff', fontSize: { xs: 22, sm: 26, md: 50 } }} />
+              <Typography sx={{ color: '#fff',mt: 1,fontWeight: 600, fontSize: { xs: 14, sm: 16, md: 18 } }}>
                 Teams View
               </Typography>
             </Box>
@@ -578,18 +591,18 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   gap: 0.5,
                   cursor: 'pointer',
                   '&:hover': { opacity: 0.8 },
-                  bgcolor: adminEditMode ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  // bgcolor: adminEditMode ? 'rgba(255,255,255,0.15)' : 'transparent',
                   px: 1.5,
                   py: 0.5,
-                  borderRadius: 2,
-                  border: adminEditMode ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+                  // borderRadius: 2,
+                  // border: adminEditMode ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
                   transition: 'all 0.2s',
                 }}
               >
-                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: { xs: 12, sm: 14, md: 16 } }}>
+                <Typography sx={{ color: '#fff', mt: 1.5,fontWeight: 500, fontSize: { xs: 12, sm: 14, md: 18 } }}>
                   Admin Only Edits
                 </Typography>
-                <Edit sx={{ color: '#fff', fontSize: { xs: 16, sm: 18, md: 20 } }} />
+                <Image src={EditImg} alt="Edit" width={30} height={30} style={{ objectFit: 'contain',color: '#00a77f'}} />
               </Box>
             )}
           </Box>
@@ -601,9 +614,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                 // Responsive grid template: Player | Goals | Assists | Clean Sheets | MOTM Votes | DEF IMP Votes | + Mentality | xp PTS
                 // Mobile: smaller columns, Desktop: comfortable spacing
                 const GRID_COLS = {
-                  xs: 'minmax(120px, 1fr) 40px 40px 60px 50px 55px 55px 45px', // Mobile (8 cols)
-                  sm: 'minmax(160px, 1fr) 50px 50px 80px 65px 75px 75px 55px', // Tablet
-                  md: 'minmax(200px, 1fr) 56px 56px 100px 75px 90px 90px 60px' // Desktop
+                  xs: 'minmax(120px, 1fr) 55px 60px 90px 80px 85px 85px 60px', // Mobile (8 cols)
+                  sm: 'minmax(160px, 1fr) 65px 70px 110px 95px 105px 105px 70px', // Tablet
+                  md: 'minmax(200px, 1fr) 75px 80px 130px 110px 120px 120px 80px' // Desktop
                 };
                 const guestPlayers: PlayerWithTeam[] = (match?.guests ?? []).map(g => ({
                   id: `guest-${g.id}`,
@@ -668,7 +681,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   <Box
                     sx={{
                       width: "100%",
-                      mt: { xs: 2, sm: 3, md: 4 },
+                      mt: { xs: 0.5, sm: 1, md: 1.5 },
                     }}
                   >
                     {/* Fixed Header - Outside scroll container */}
@@ -677,12 +690,16 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                         width: "100%",
                         maxWidth: { xs: '100%', md: 1260 },
                         mx: "auto",
-                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                        background: '#383838',
                         borderRadius: { xs: '8px 8px 0 0', md: '12px 12px 0 0' },
                         p: { xs: 0.5, sm: 1 },
+                        borderTop: '1.5px solid rgba(255,255,255,0.6)',
+                        borderLeft: '1.5px solid rgba(255,255,255,0.6)',
+                        borderRight: '1.5px solid rgba(255,255,255,0.6)',
+                        borderBottom: 'none',
                       }}
                     >
-                      <Typography
+                      {/* <Typography
                         variant="h6"
                         fontWeight="bold"
                         sx={{ 
@@ -693,7 +710,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                         }}
                       >
                         Match Result
-                      </Typography>
+                      </Typography> */}
                     </Box>
 
                     {/* Scrollable Table Container */}
@@ -703,6 +720,11 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                         maxWidth: { xs: '100%', md: 1260 },
                         mx: "auto",
                         overflowX: "auto",
+                        borderTop: 'none',
+                        borderLeft: '1.5px solid rgba(255,255,255,0.6)',
+                        borderRight: '1.5px solid rgba(255,255,255,0.6)',
+                        borderBottom: '1.5px solid rgba(255,255,255,0.6)',
+                        borderRadius: { xs: '0 0 8px 8px', md: '0 0 12px 12px' },
                         scrollbarWidth: "thin",
                         scrollbarColor: "rgba(255,255,255,0.3) transparent",
                         "&::-webkit-scrollbar": { 
@@ -728,7 +750,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             backgroundColor: "rgba(255,255,255,0.3)",
                             borderRadius: "3px"
                           },
-                          background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                          background: '#383838',
                           borderRadius: { xs: '0 0 8px 8px', md: '0 0 12px 12px' },
                           p: { xs: 0.5, sm: 1 },
                           fontSize: { xs: 10, sm: 12, md: 15 },
@@ -738,43 +760,45 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           {/* Header */}
                           <Box
                             sx={{
-                              background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                              borderRadius: { xs: 2, md: 3 },
+                              background: '#2b2b2b',
+                              borderRadius: { xs: '8px 8px 0 0', md: '12px 12px 0 0' },
                               px: { xs: 1, sm: 1.5, md: 2 },
-                              py: { xs: 0.5, sm: 0.75, md: 1 },
-                              mb: { xs: 1, sm: 1.5, md: 2 },
+                              py: { xs: 0.3, sm: 0.5, md: 0.75 },
+                              mb: { xs: 0.5, sm: 0.75, md: 1 },
+                              minHeight: { xs: 32, sm: 38, md: 44 },
                               display: 'grid',
                               gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                               alignItems: 'center',
-                              columnGap: { xs: 0.5, sm: 0.75, md: 1 },
+                              columnGap: { xs: 2, sm: 2, md: 1.7 },
                             }}
                           >
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 10, sm: 11, md: 13 }, 
-                              pl: { xs: 0.5, sm: 1, md: 2 },
+                              fontWeight: 500, 
+                              fontSize: { xs: 13, sm: 14, md: 17 }, 
+                              pl: { xs: 1.5, sm: 2, md: 3 },
+                              pr: { xs: 1, sm: 1.5, md: 2 },
                               textTransform: 'uppercase'
                             }}>Player</Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              fontWeight: '500', 
+                              fontSize: { xs: 12, sm: 13, md: 16 }, 
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Goals</Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              fontWeight: '500', 
+                              fontSize: { xs: 12, sm: 13, md: 16 }, 
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Assists</Box>
                             <Box
                               sx={{
                                 color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: { xs: 9, sm: 10, md: 12 },
+                                fontWeight: '500',
+                                fontSize: { xs: 11, sm: 12, md: 16 },
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
                                 textTransform: 'uppercase'
@@ -785,35 +809,38 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             </Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              fontWeight: '500', 
+                              fontSize: { xs: 11, sm: 12, md: 16 }, 
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>MOTM Votes</Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              fontWeight: '500', 
+                              fontSize: { xs: 11, sm: 12, md: 16 }, 
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>Def Imp Votes</Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 9, sm: 10, md: 12 }, 
+                              fontWeight: '500', 
+                              fontSize: { xs: 11, sm: 12, md: 16 }, 
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>+ Mentality</Box>
                             <Box sx={{ 
                               color: 'white', 
-                              fontWeight: 'bold', 
-                              fontSize: { xs: 10, sm: 11, md: 13 }, 
+                              fontWeight: '500', 
                               textAlign: 'center',
-                              textTransform: 'lowercase'
-                            }}>xp PTS</Box>
+                              whiteSpace: 'nowrap',
+                              fontSize: { xs: 11, sm: 12, md: 16 },
+                            }}>
+                              <span style={{ fontWeight: '500' }}>xp </span>
+                              <span style={{ fontSize: '1em', fontWeight: '500', letterSpacing: 1 }}>PTS</span>
+                            </Box>
                           </Box>
                           <Box>
                             {sortedPlayers.map((player, idx) => {
@@ -835,17 +862,16 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           display: 'grid',
                                           gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                                           alignItems: 'center',
-                                          columnGap: { xs: 0.5, sm: 0.75, md: 1 },
-                                          p: { xs: 0.75, sm: 1, md: 1.5 },
-                                          background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                          columnGap: { xs: 2, sm: 2, md: 1.7 },
+                                          p: { xs: 0.3, sm: 0.5, md: 0.75 },
+                                          background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
                                           color: textColor,
                                           fontWeight,
-                                          boxShadow: 3,
-                                          minHeight: { xs: 45, sm: 50, md: 60 },
-                                          border: '1px dashed rgba(255,255,255,0.4)',
+                                          minHeight: { xs: 32, sm: 38, md: 44 },
+                                          mb: { xs: 0.5, sm: 0.75 },
+                                          borderRadius: 1,
                                           '&:hover': {
                                             opacity: 0.85,
-                                            border: '1px solid rgba(255,255,255,0.8)',
                                             transition: 'all 0.2s'
                                           }
                                         }}
@@ -894,21 +920,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           )}
                                         </Typography>
 
-                                        <Box
-                                          sx={{
-                                            minWidth: { xs: 6, sm: 7, md: 8 },
-                                            textAlign: 'center',
-                                            fontSize: { xs: 10, sm: 11, md: 12 },
-                                            fontWeight: 800,
-                                            color: '#fff',
-                                            bgcolor: isHome ? '#16a34a' : '#2563eb',
-                                            px: { xs: 0.5, sm: 0.75, md: 1 },
-                                            py: { xs: 0.4, sm: 0.6, md: 0.8 },
-                                            borderRadius: 1,
-                                            ml: { xs: 0.5, sm: 1, md: 2 },
-                                            flexShrink: 0,
-                                          }}
-                                        />
+
                                       </Box>
 
                                       {/* Stats cells */}
@@ -942,7 +954,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         fontWeight: 700
                                       }}>{stats.xpAwarded || stats.impact || 0}</Box>
                                       </Box>
-                                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                     </Box>
                                   ) : (
                                     <Link href={`/player/${player.id}`} passHref>
@@ -951,13 +962,14 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           display: 'grid',
                                           gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                                           alignItems: 'center',
-                                          columnGap: { xs: 0.5, sm: 0.75, md: 1 },
-                                          p: { xs: 0.75, sm: 1, md: 1.5 },
-                                          background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                                          columnGap: { xs: 2, sm: 2, md: 1.7 },
+                                          p: { xs: 0.3, sm: 0.5, md: 0.75 },
+                                          background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
                                           color: textColor,
                                           fontWeight,
-                                          boxShadow: 3,
-                                          minHeight: { xs: 45, sm: 50, md: 60 },
+                                          minHeight: { xs: 32, sm: 38, md: 44 },
+                                          mb: { xs: 0.5, sm: 0.75 },
+                                          borderRadius: 1,
                                           '&:hover': {
                                             opacity: 0.9,
                                             transition: 'opacity 0.2s'
@@ -975,7 +987,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
                                             {player.isGuest && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
                                           </Typography>
-                                          <Box sx={{ minWidth: { xs: 6, sm: 7, md: 8 }, textAlign: 'center', fontSize: { xs: 10, sm: 11, md: 12 }, fontWeight: 800, color: '#fff', bgcolor: isHome ? '#16a34a' : '#2563eb', px: { xs: 0.5, sm: 0.75, md: 1 }, py: { xs: 0.4, sm: 0.6, md: 0.8 }, borderRadius: 1, ml: { xs: 0.5, sm: 1, md: 2 }, flexShrink: 0 }} />
+
                                         </Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
@@ -985,7 +997,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{stats.xpAwarded || stats.impact || 0}</Box>
                                       </Box>
-                                      <Divider sx={{ backgroundColor: '#fff', height: 1, mb: 0, mt: 0 }} />
                                     </Link>
                                   )}
                                 </React.Fragment>
@@ -1015,7 +1026,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
               background: 'linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%)',
               color: '#fff',
               borderRadius: 3,
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid #fff',
             }
           }}
         >

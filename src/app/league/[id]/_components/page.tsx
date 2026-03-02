@@ -4985,22 +4985,23 @@ export default function LeagueDetailPage() {
                             maxWidth="lg"
                             PaperProps={{
                                 sx: {
-                                    bgcolor: '#0a0a0a',
+                                    bgcolor: '#2b2b2b',
                                     backgroundImage: 'none',
                                     borderRadius: 3,
                                     maxHeight: '90vh',
                                     overflow: 'hidden',
                                     position: 'relative',
+                                    border: '1px solid #fff',
                                 }
                             }}
                         >
                             <IconButton
                                 onClick={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
-                                sx={{ position: 'absolute', right: 8, top: 8, color: '#fff', zIndex: 10, bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}
+                                sx={{ position: 'absolute', right: 0, top: 0, color: '#000', zIndex: 10, bgcolor: '#e6e6e6', borderRadius: '0 8px 0 0', width: 60, height: 50, '&:hover': { bgcolor: '#cfcfcf' } }}
                             >
-                                <CloseIcon />
+                                <CloseIcon fontSize="medium" />
                             </IconButton>
-                            <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+                            <DialogContent sx={{ p: 0, overflow: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                                 {resultsDialogOpen && resultsDialogMatchId && (
                                     <MatchDetailsPage matchIdProp={resultsDialogMatchId} />
                                 )}

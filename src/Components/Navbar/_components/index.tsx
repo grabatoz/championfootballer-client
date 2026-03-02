@@ -2595,8 +2595,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             </Box>
           ) : (
             notifications.map((notification, index) => {
-              console.log('Render notif', notification.id, 'type=', notification.type);
-              
               const meta: MatchMeta = (notification.meta ?? {}) as MatchMeta;
               const leagueKeyForIndex =
                 meta.leagueId ||
