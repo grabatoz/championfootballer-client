@@ -2350,31 +2350,60 @@ export default function LeagueDetailPage() {
     const openQuickViewFromTable = async (leagueId: string, playerId: string) => {
         if (!leagueId || !playerId || !token) return;
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const data = await res.json();
-            console.log('fdsf', data);
+            // Find member from local league data as fallback
+            const localMember = league?.members?.find((m: User) => m.id === playerId);
 
-            if (!res.ok || !data?.success) return;
+            // Fetch quick-view (motmCount) AND full player profile (skills, xp, etc.) in parallel
+            const [quickViewRes, playerRes, statsRes] = await Promise.all([
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}/stats?leagueId=${encodeURIComponent(leagueId)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+            ]);
+
+            const [data, playerData, statsData] = await Promise.all([
+                quickViewRes.json(),
+                playerRes.json().catch(() => ({ success: false })),
+                statsRes.json().catch(() => ({ success: false })),
+            ]);
+            console.log('quick-view:', data, 'player:', playerData, 'stats:', statsData);
+
+            if (!quickViewRes.ok || !data?.success) return;
+
+            const fullPlayer = playerData?.success ? playerData.player : null;
+            const matchStats = statsData?.success ? statsData.stats : null;
+
             const player: User & PlayerProfileLike = {
-                id: String(data.player?.id ?? playerId),
-                firstName: data.player?.firstName ?? '',
-                lastName: data.player?.lastName ?? '',
+                id: String(fullPlayer?.id ?? data.player?.id ?? playerId),
+                firstName: fullPlayer?.firstName ?? data.player?.firstName ?? localMember?.firstName ?? '',
+                lastName: fullPlayer?.lastName ?? data.player?.lastName ?? localMember?.lastName ?? '',
                 email: '',
-                xp: Number(data.player?.xp ?? 0),
-                position: data.player?.position ?? undefined,
-                profilePicture: data.player?.profilePicture ?? null,
-                preferredFoot: data.player?.preferredFoot ?? null,
-                shirtNumber: data.player?.shirtNumber ?? null,
+                xp: Number(fullPlayer?.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
+                position: fullPlayer?.position ?? data.player?.position ?? localMember?.position ?? undefined,
+                profilePicture: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? null,
+                preferredFoot: fullPlayer?.preferredFoot ?? data.player?.preferredFoot ?? null,
+                shirtNumber: fullPlayer?.shirtNumber ?? data.player?.shirtNumber ?? localMember?.shirtNumber ?? null,
                 positionType: undefined,
             };
-            setQuickView({
-                player,
-                league,
-                stats: { goals: Number(data.stats?.goals ?? 0), assists: Number(data.stats?.assists ?? 0) },
-                skills: data.skills
+
+            const skills = fullPlayer?.skills
+                ? {
+                    dribbling: Number(fullPlayer.skills.dribbling ?? 0),
+                    shooting: Number(fullPlayer.skills.shooting ?? 0),
+                    passing: Number(fullPlayer.skills.passing ?? 0),
+                    pace: Number(fullPlayer.skills.pace ?? 0),
+                    defending: Number(fullPlayer.skills.defending ?? 0),
+                    physical: Number(fullPlayer.skills.physical ?? 0),
+                }
+                : data.skills
                     ? {
                         dribbling: Number(data.skills.dribbling ?? 0),
                         shooting: Number(data.skills.shooting ?? 0),
@@ -2383,8 +2412,17 @@ export default function LeagueDetailPage() {
                         defending: Number(data.skills.defending ?? 0),
                         physical: Number(data.skills.physical ?? 0),
                     }
-                    : undefined,
-                xp: Number(data.xp ?? data.player?.xp ?? 0),
+                    : undefined;
+
+            setQuickView({
+                player,
+                league,
+                stats: {
+                    goals: Number(matchStats?.goals ?? data.stats?.goals ?? 0),
+                    assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
+                },
+                skills,
+                xp: Number(fullPlayer?.xp ?? data.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(data.defensiveImpact ?? 0),
@@ -2797,8 +2835,9 @@ export default function LeagueDetailPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        mx: 'auto',
-                                        mt: 2
+                                        // mx: 'aut90100o',
+                                        mt: 2,
+                                   
                                     }}
                                 >
                                     <ButtonGroup
@@ -2813,7 +2852,7 @@ export default function LeagueDetailPage() {
                                                 borderWidth: 3,
                                                 textTransform: 'none',
                                                 fontWeight: 'normal',
-                                                px: { xs: 1.5, sm: 2.5, md: 4 },
+                                                px: { xs: 1.5, sm: 2.5, md: 4.5 },
                                                 py: 0.5,
                                                 minWidth: 'auto',
                                             },
@@ -4299,6 +4338,7 @@ export default function LeagueDetailPage() {
                                         borderRadius: { xs: 2, sm: 3 },
                                         boxShadow: 'none',
                                         mt: 1.2,
+                                        mb: 4,
                                         overflow: 'auto',
                                         '&::-webkit-scrollbar': {
                                             height: '6px',
@@ -4334,7 +4374,7 @@ export default function LeagueDetailPage() {
                                                     </button>
                                                 </div>
                                                 <div className="col-start-10 col-span-2 justify-self-end">
-                                                    <button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                    <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
                                                         {/* <Plus className="w-4 h-4 mr-2" /> */}
                                                         + New Match
                                                     </button>
@@ -4967,22 +5007,23 @@ export default function LeagueDetailPage() {
                             maxWidth="lg"
                             PaperProps={{
                                 sx: {
-                                    bgcolor: '#0a0a0a',
+                                    bgcolor: '#2b2b2b',
                                     backgroundImage: 'none',
                                     borderRadius: 3,
                                     maxHeight: '90vh',
                                     overflow: 'hidden',
                                     position: 'relative',
+                                    border: '1px solid #fff',
                                 }
                             }}
                         >
                             <IconButton
                                 onClick={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
-                                sx={{ position: 'absolute', right: 8, top: 8, color: '#fff', zIndex: 10, bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}
+                                sx={{ position: 'absolute', right: 0, top: 0, color: '#000', zIndex: 10, bgcolor: '#e6e6e6', borderRadius: '0 8px 0 0', width: 60, height: 50, '&:hover': { bgcolor: '#cfcfcf' } }}
                             >
-                                <CloseIcon />
+                                <CloseIcon fontSize="medium" />
                             </IconButton>
-                            <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+                            <DialogContent sx={{ p: 0, overflow: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                                 {resultsDialogOpen && resultsDialogMatchId && (
                                     <MatchDetailsPage matchIdProp={resultsDialogMatchId} />
                                 )}
@@ -5223,7 +5264,7 @@ export default function LeagueDetailPage() {
                                 {(() => {
                                     const p = quickView.player as User & PlayerProfileLike;
                                     const playerCardProps = {
-                                        name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+                                        name: p.firstName ?? '',
                                         number: getShirtNumber(p),
                                         points: Number(quickView.xp ?? 0),
                                         stats: {
@@ -5245,37 +5286,37 @@ export default function LeagueDetailPage() {
 
                             {/* Right: Last 10 Matches */}
                             <Paper elevation={0} sx={{
-                                p: { xs: 0.75, sm: 1 },
+                                p: { xs: 0.5, sm: 0.75 },
                                 border: '1px solid rgba(0,0,0,0.08)',
-                                height: { xs: 'auto', sm: '280px' },
                                 borderRadius: 2,
-                                overflowY: 'auto',
+                                overflowY: 'hidden',
                                 order: { xs: 3, sm: 3 },
-                                mt: { xs: 0, sm: 5 }
+                                mt: { xs: 0, sm: 5 },
+                                minHeight: { xs: 240, sm: 275 },
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
-                                <Stack direction="column" spacing={0.5}>
+                                <Typography sx={{ fontWeight: 800, mb: 0.25, fontSize: { xs: '0.6rem', sm: '0.7rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                                <Stack direction="column" spacing={0.2}>
                                     {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
                                         <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <Box
                                                 sx={{
                                                     width: { xs: 24, sm: 28 },
                                                     height: { xs: 20, sm: 24 },
-                                                    borderRadius: 1,
+                                                    borderRadius: 0.5,
                                                     backgroundColor: resultColor(m.result),
                                                     color: '#fff',
                                                     fontWeight: 800,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                                    fontSize: { xs: '0.55rem', sm: '0.6rem' },
                                                     lineHeight: 1,
                                                 }}
                                             >
                                                 {m.result}
                                             </Box>
                                             {idx === 0 && (
-                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.55rem', sm: '0.6rem' } }}>
                                                     Latest
                                                 </Typography>
                                             )}

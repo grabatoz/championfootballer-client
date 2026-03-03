@@ -136,7 +136,7 @@ const isApiLeague = (val: unknown): val is ApiLeague => {
   return idOk;
 };
 
-const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number }) => {  
+const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, onAdminStatusChange }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number; onAdminStatusChange?: (isAdmin: boolean) => void }) => {  
   const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [, setLoading] = useState(true);
@@ -148,6 +148,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
   const dispatch = useDispatch<AppDispatch>();
 
   const isFetching = !networkDone;
+
+  // Notify parent about admin status changes
+  useEffect(() => {
+    onAdminStatusChange?.(selectedLeague?.userRole === 'ADMIN');
+  }, [selectedLeague?.userRole, onAdminStatusChange]);
 
   // Helper: compute user's role for a newly created/joined league without using any-casts
   const computeUserRoleForCreatedLeague = (l: League, uid?: string | number): 'ADMIN' | 'MEMBER' | undefined => {
@@ -346,10 +351,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
         const data = await response.json();
         if (!(data?.success && data?.user)) return;
 
-        // Extract and merge XP from primary /auth/status call
+        // Extract and merge XP + skills from primary /auth/status call
         const xp = data?.user?.xp;
-        if (typeof xp === 'number') {
-          dispatch(mergeUser({ xp }));
+        const skills = data?.user?.skills;
+        const mergePayload: Record<string, unknown> = {};
+        if (typeof xp === 'number') mergePayload.xp = xp;
+        if (skills && typeof skills === 'object') mergePayload.skills = skills;
+        if (Object.keys(mergePayload).length > 0) {
+          dispatch(mergeUser(mergePayload));
         }
 
         // Prefer modern key adminLeagues; fall back to administeredLeagues for backward compatibility
@@ -809,7 +818,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId }: 
         <Box
           sx={{
             position: 'absolute',
-            top: 'calc(100% - 2px)',
+            top: selectedLeague?.userRole === 'ADMIN'
+              ? { xs: 'calc(100% - 2px)', md: 'calc(100% - 66px)' }
+              : 'calc(100% - 2px)',
             left: 0,
             width: '100%',
             maxWidth: '100%',
@@ -1194,6 +1205,8 @@ export default function PlayerDashboard() {
   const [leaguesRefreshKey, setLeaguesRefreshKey] = useState(0);
   // Pass the newly created league down so it appears instantly
   const [createdLeague, setCreatedLeague] = useState<League | null>(null);
+  // Track whether the selected league has admin role (for conditional spacing)
+  const [isLeagueAdmin, setIsLeagueAdmin] = useState(false);
   // File input ref to allow re-selecting the same image
   const createLeagueFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -1708,6 +1721,7 @@ export default function PlayerDashboard() {
                   refreshKey={leaguesRefreshKey}
                   createdLeague={createdLeague}
                   currentUserId={user?.id}
+                  onAdminStatusChange={setIsLeagueAdmin}
                 />
 
                 {/* Add New Season Button */}
@@ -1752,7 +1766,7 @@ export default function PlayerDashboard() {
                     color: 'white',
                     fontWeight: 600,
                     mb: 1,
-                    mt: 0,
+                    mt: isLeagueAdmin ? 0 : 1,
                     borderRadius: 2,
                     '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)' },
                     width: '100%',

@@ -197,23 +197,36 @@ const PlayerCard = ({
   // };
 
   // Hydrate from localStorage first (survives refresh), then fallback to prop
+  // ONLY for the logged-in user's own card (disableImagePopup=false).
+  // When viewing another player's card (disableImagePopup=true), always use the prop.
   useEffect(() => {
+    if (disableImagePopup) {
+      // Viewing another player — always use the profileImage prop
+      if (profileImage) setImgUrl(profileImage);
+      return;
+    }
     if (typeof window !== 'undefined') {
       const storedUrl = localStorage.getItem('avatar_url');
       const storedV = localStorage.getItem('avatar_v');
       if (storedUrl) setImgUrl(storedUrl);             // use latest known URL
       if (storedV) setImgVersion(Number(storedV) || 0); // use latest cache buster
     }
-  }, []);
+  }, [disableImagePopup, profileImage]);
 
-  // When prop changes (e.g. after user fetch), only set if we don't have a storedUrl
+  // When prop changes (e.g. after user fetch), update image URL.
+  // For other players' cards (disableImagePopup=true), always use the prop directly.
   useEffect(() => {
-    const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('avatar_url') : null;
-    if (!storedUrl && profileImage) setImgUrl(profileImage);
+    if (disableImagePopup) {
+      // Viewing another player — always honour the prop
+      if (profileImage) setImgUrl(profileImage);
+    } else {
+      const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('avatar_url') : null;
+      if (!storedUrl && profileImage) setImgUrl(profileImage);
+    }
 
     // prefer persisted cache-buster; fallback to Cloudinary version in URL
     let v = 0;
-    if (typeof window !== 'undefined') {
+    if (!disableImagePopup && typeof window !== 'undefined') {
       const stored = localStorage.getItem('avatar_v');
       if (stored) v = Number(stored) || 0;
     }
@@ -222,7 +235,7 @@ const PlayerCard = ({
       if (m) v = Number(m[1]);
     }
     if (v) setImgVersion(v);
-  }, [profileImage]);
+  }, [profileImage, disableImagePopup]);
 
   // Auto-click the file input when the image modal opens
   // useEffect(() => {
@@ -540,7 +553,7 @@ const PlayerCard = ({
         </Box>
 
         {/* Name and Title (from static logic) */}
-        <Box sx={{ mt: 2,mb:1 }}>
+        <Box sx={{ mt: disableImagePopup ? 1 : 2, mb:0.5 }}>
           <Typography
             fontSize="14px"
             fontWeight="bold"

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
@@ -30,13 +31,20 @@ import {
   Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ShareIcon from '@mui/icons-material/Share';
 import Goals from "@/Components/images/goal.png"
 import Assist from "@/Components/images/Assist.png"
 import Cleansheet from "@/Components/images/cleansheet.png"
 import Momt from "@/Components/images/MOTM.png"
+import DefImp from "@/Components/images/defimp.png"
+import Mentality from "@/Components/images/metality.png"
+import cflogo from '@/Components/images/champion football logo 3 (1).png';
 import Raisingstart from '@/Components/images/brown.svg';
 import StarKeeperImg from '@/Components/images/startkeeper.png';
-import PlayerCard from '@/Components/PlayerCardd';
+const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').then(mod => ({ default: mod.default })), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
 import LeagueIcon from '@/Components/images/league icon.png'
 
 // import { achievementsAPI } from '@/lib/api';
@@ -463,7 +471,7 @@ const TrophyCard = ({
           }}
           disabled={!onButtonClick}
         >
-          {winner || 'TBC'}
+          {winner ? winner.split(' ')[0] : 'TBC'}
         </Button>
       </Box>
     </Paper>
@@ -1492,6 +1500,8 @@ export default function GlobalTrophyRoom() {
     skills?: Skills;
     cleanSheets?: number;   // all matches in this league
     motmCount?: number;     // matches with any MOTM vote in this league
+    defensiveImpact?: number;
+    mentality?: number;
     // NEW: backend XP fields
     xp?: number;
     xpLatest?: number;
@@ -2119,52 +2129,78 @@ export default function GlobalTrophyRoom() {
     if (!trophy.winnerId || !trophy.leagueId || !token) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view?_=${Date.now()}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const data = await res.json();
-      if (!res.ok || !data?.success) return;
+      // Fetch quick-view, full player profile, and league stats in parallel
+      const [quickViewRes, playerRes, statsRes] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view?_=${Date.now()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(trophy.winnerId))}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(trophy.winnerId))}/stats?leagueId=${encodeURIComponent(String(trophy.leagueId))}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+      ]);
 
-      const league = leagues.find(l => l.id === String(data.league?.id)) ?? null;
+      const [data, playerData, statsData] = await Promise.all([
+        quickViewRes.json(),
+        playerRes.json().catch(() => ({ success: false })),
+        statsRes.json().catch(() => ({ success: false })),
+      ]);
+
+      if (!quickViewRes.ok || !data?.success) return;
+
+      // fullPlayer has skills, xp, profilePicture
+      const fullPlayer = playerData?.success ? playerData.player : null;
+      const matchStats = statsData?.success ? statsData.stats : null;
+
+      const league = leagues.find(l => l.id === String(data.league?.id ?? trophy.leagueId)) ?? null;
+      // fallback: find from local leagues for profilePicture
+      const localMember = league?.members?.find((m: User) => m.id === String(trophy.winnerId));
 
       const player: User & PlayerProfileLike = {
-        id: String(data.player?.id ?? trophy.winnerId),
-        firstName: data.player?.firstName ?? '',
-        lastName: data.player?.lastName ?? '',
-        position: data.player?.position,
-        preferredFoot: data.player?.preferredFoot,
-        shirtNumber: data.player?.shirtNumber,
-        profilePicture: data.player?.profilePicture,
-        avatarUrl: data.player?.profilePicture,
+        id: String(fullPlayer?.id ?? data.player?.id ?? trophy.winnerId),
+        firstName: fullPlayer?.firstName ?? data.player?.firstName ?? '',
+        lastName: fullPlayer?.lastName ?? data.player?.lastName ?? '',
+        position: fullPlayer?.position ?? data.player?.position,
+        preferredFoot: fullPlayer?.preferredFoot ?? data.player?.preferredFoot,
+        shirtNumber: fullPlayer?.shirtNumber ?? data.player?.shirtNumber,
+        profilePicture: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? null,
+        avatarUrl: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? undefined,
       };
 
       const stats: PlayerStats = {
-        played: Number(data.stats?.played ?? 0),
-        wins: Number(data.stats?.wins ?? 0),
-        draws: Number(data.stats?.draws ?? 0),
-        losses: Number(data.stats?.losses ?? 0),
-        goals: Number(data.stats?.goals ?? 0),
-        assists: Number(data.stats?.assists ?? 0),
-        motmVotes: Number(data.stats?.motmVotes ?? 0),
-        teamGoalsConceded: Number(data.stats?.teamGoalsConceded ?? 0),
+        played: Number(matchStats?.played ?? data.stats?.played ?? 0),
+        wins: Number(matchStats?.wins ?? data.stats?.wins ?? 0),
+        draws: Number(matchStats?.draws ?? data.stats?.draws ?? 0),
+        losses: Number(matchStats?.losses ?? data.stats?.losses ?? 0),
+        goals: Number(matchStats?.goals ?? data.stats?.goals ?? 0),
+        assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
+        motmVotes: Number(matchStats?.motmVotes ?? data.stats?.motmVotes ?? 0),
+        teamGoalsConceded: Number(matchStats?.teamGoalsConceded ?? data.stats?.teamGoalsConceded ?? 0),
       };
 
-      // Use skills from backend only (no client calculation)
-      const skills: Skills | undefined = data.skills
+      // Prefer fullPlayer.skills, then quick-view skills
+      const skillsSrc = fullPlayer?.skills ?? data.skills;
+      const skills: Skills | undefined = skillsSrc
         ? {
-            dribbling: Number(data.skills.dribbling ?? 0),
-            shooting: Number(data.skills.shooting ?? 0),
-            passing: Number(data.skills.passing ?? 0),
-            pace: Number(data.skills.pace ?? 0),
-            defending: Number(data.skills.defending ?? 0),
-            physical: Number(data.skills.physical ?? 0),
+            dribbling: Number(skillsSrc.dribbling ?? 0),
+            shooting: Number(skillsSrc.shooting ?? 0),
+            passing: Number(skillsSrc.passing ?? 0),
+            pace: Number(skillsSrc.pace ?? 0),
+            defending: Number(skillsSrc.defending ?? 0),
+            physical: Number(skillsSrc.physical ?? 0),
           }
         : undefined;
 
       const lastFive: UserMatchSummary[] = Array.isArray(data.lastFive) ? data.lastFive : [];
       const cleanSheets: number = Number(data.cleanSheets ?? 0);
       const motmCount: number = Number(data.motmCount ?? 0);
+      const defensiveImpact: number = Number(data.defensiveImpact ?? 0);
+      const mentality: number = Number(data.mentality ?? 0);
 
       // NEW: prefer backend XP fields
       const pickNumber = (...vals: Array<number | string | null | undefined>): number => {
@@ -2174,10 +2210,10 @@ export default function GlobalTrophyRoom() {
         }
         return 0;
       };
-      const xp = pickNumber(data.xp, data.profileXP, data.xpLatest, data.xpRecentTotal, data.player?.xp);
+      const xp = pickNumber(fullPlayer?.xp, data.xp, data.profileXP, data.xpLatest, data.xpRecentTotal, data.player?.xp);
       const xpLatest = pickNumber(data.xpLatest);
       const xpRecentTotal = pickNumber(data.xpRecentTotal);
-      const profileXP = pickNumber(data.profileXP, data.player?.xp);
+      const profileXP = pickNumber(fullPlayer?.xp, data.profileXP, data.player?.xp);
 
       setQuickView({
         player,
@@ -2188,6 +2224,8 @@ export default function GlobalTrophyRoom() {
         skills,
         cleanSheets,
         motmCount,
+        defensiveImpact,
+        mentality,
         // NEW: backend XP
         xp,
         xpLatest,
@@ -3115,6 +3153,7 @@ export default function GlobalTrophyRoom() {
             gap: { xs: 1.5, sm: 2, md: 1.5 }, 
             justifyContent: 'center', 
             alignItems: 'stretch',
+            mb: { xs: 4, sm: 6, md: 8 },
           }}>
             {(() => {
               const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
@@ -3169,96 +3208,67 @@ export default function GlobalTrophyRoom() {
             open={openQuickView}
             onClose={() => setOpenQuickView(false)}
             fullWidth
-            maxWidth="xs"
-            PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+            maxWidth="sm"
+            PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden', maxWidth: '500px' } }}
           >
-            <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0, py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
-              {quickView.trophyTitle ? `${quickView.trophyTitle} • ` : ''} Player
-              <Box sx={{ flexGrow: 1 }} />
-              <IconButton onClick={() => setOpenQuickView(false)} edge="end" size="small">
+            <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 }, bgcolor: '#000', position: 'relative' }}>
+              <Image src={cflogo} alt="CF Logo" width={320} height={320} />
+              <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
                 <CloseIcon />
               </IconButton>
             </DialogTitle>
             <Divider />
-            <DialogContent sx={{ p: { xs: 1, sm: 2 }, overflowX: 'hidden' }}>
+            <DialogContent sx={{ py: { xs: 0.5, sm: 3 }, overflow: 'hidden', position: 'relative' }}>
               {quickView.player && (
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '170px 1fr', sm: '240px 1fr' },
-                    gap: { xs: 1.5, sm: 2 },
-                    alignItems: 'start'
+                    gridTemplateColumns: { xs: '1fr', sm: '110px 250px 120px' },
+                    gap: { xs: 1, sm: 0 },
+                    alignItems: 'start',
+                    justifyContent: 'center',
+                    height: '382px',
                   }}
                 >
-                  {/* Left: PlayerCard with stats */}
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    width: '100%'
+                  {/* Left: Stats Icons */}
+                  <Paper elevation={0} sx={{
+                    p: { xs: 0.75, sm: 1 },
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    height: { xs: 'auto', sm: '280px' },
+                    borderRadius: 2,
+                    order: { xs: 2, sm: 1 },
+                    mt: { xs: 0, sm: 5 }
                   }}>
-                    <Box sx={{
-                      position: 'relative',
-                      width: { xs: 170, sm: 240 },
-                      height: { xs: 255, sm: 360 },
-                      mx: { xs: 'auto', sm: 0 },
-                      '& > *': {
-                        transform: { xs: 'scale(0.7)', sm: 'none' },
-                        transformOrigin: 'top left'
-                      }
-                    }}>
-                      {(() => {
-                        const p = quickView.player as User & PlayerProfileLike;
-                        const playerCardProps = {
-                          name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
-                          number: getShirtNumber(p),
-                          points: Number(quickView.xp ?? 0),
-                          stats: {
-                            DRI: String(quickView.skills?.dribbling ?? 0),
-                            SHO: String(quickView.skills?.shooting ?? 0),
-                            PAS: String(quickView.skills?.passing ?? 0),
-                            PAC: String(quickView.skills?.pace ?? 0),
-                            DEF: String(quickView.skills?.defending ?? 0),
-                            PHY: String(quickView.skills?.physical ?? 0),
-                          },
-                          foot: getPreferredFoot(p),
-                          profileImage: getProfileImage(p),
-                          shirtIcon: '',
-                          position: posToShort(p.position),
-                        } as const;
-                        return <PlayerCard {...playerCardProps} disableImagePopup />;
-                      })()}
-                    </Box>
-                    {/* Icons grid under the player card - 2 columns on mobile */}
+                    <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3, mb: 0.3 }}>Current Stats</Typography>
                     <Box
                       sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
-                        gap: { xs: 1, sm: 1 },
-                        maxWidth: { xs: 170, sm: '100%' },
-                        mx: { xs: 'auto', sm: 0 },
-                        mt: 2
+                        display: { xs: 'grid', sm: 'flex' },
+                        flexDirection: { sm: 'column' },
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
+                        gap: { xs: 0, sm: 0 },
                       }}
                     >
                       {[
                         { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
                         { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
                         { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                        { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
+                        { img: Momt, label: 'Motm Votes', value: quickView.motmCount ?? 0 },
+                        { img: DefImp, label: 'Defensive Impact', value: quickView.defensiveImpact ?? 0 },
+                        { img: Mentality, label: 'Mentality', value: quickView.mentality ?? 0 },
                       ].map((it, i) => (
                         <Box
                           key={i}
                           sx={{
                             display: 'flex',
                             flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 0.25,
-                            p: 0.5,
+                            alignItems: 'flex-start',
+                            gap: 0.1,
+                            p: { xs: 0.15, sm: 0.3 },
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Image src={it.img} alt={it.label} width={24} height={24} style={{ objectFit: 'contain' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '1rem' } }}>
+                            <Image src={it.img} alt={it.label} width={20} height={20} style={{ objectFit: 'contain' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
                               {it.value}
                             </Typography>
                           </Box>
@@ -3266,8 +3276,8 @@ export default function GlobalTrophyRoom() {
                             variant="caption"
                             sx={{
                               color: '#64748b',
-                              fontSize: { xs: it.label === 'Clean Sheets' ? '0.55rem' : '0.6rem', sm: '0.75rem' },
-                              textAlign: 'center',
+                              fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                              textAlign: 'left',
                               lineHeight: 1.1,
                               whiteSpace: 'nowrap',
                               letterSpacing: 0,
@@ -3278,39 +3288,85 @@ export default function GlobalTrophyRoom() {
                         </Box>
                       ))}
                     </Box>
+                    <Button
+                      variant="text"
+                      sx={{
+                        color: '#1976d2',
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        padding: '4px 8px',
+                        minWidth: 'auto',
+                        '&:hover': { backgroundColor: 'transparent' },
+                      }}
+                    >
+                      More Stats
+                    </Button>
+                  </Paper>
+
+                  {/* Center: Player Card */}
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    order: { xs: 1, sm: 2 }
+                  }}>
+                    {(() => {
+                      const p = quickView.player as User & PlayerProfileLike;
+                      const playerCardProps = {
+                        name: p.firstName ?? '',
+                        number: getShirtNumber(p),
+                        points: Number(quickView.xp ?? 0),
+                        stats: {
+                          DRI: String(quickView.skills?.dribbling ?? 0),
+                          SHO: String(quickView.skills?.shooting ?? 0),
+                          PAS: String(quickView.skills?.passing ?? 0),
+                          PAC: String(quickView.skills?.pace ?? 0),
+                          DEF: String(quickView.skills?.defending ?? 0),
+                          PHY: String(quickView.skills?.physical ?? 0),
+                        },
+                        foot: getPreferredFoot(p),
+                        profileImage: getProfileImage(p),
+                        shirtIcon: '',
+                        position: p.position ?? 'Striker (ST)',
+                      };
+                      return <PlayerCard {...playerCardProps} disableImagePopup hideShareIcon />;
+                    })()}
                   </Box>
+
                   {/* Right: Last 10 Matches */}
                   <Paper elevation={0} sx={{
-                    p: { xs: 1.25, sm: 2 },
+                    p: { xs: 0.5, sm: 0.75 },
                     border: '1px solid rgba(0,0,0,0.08)',
-                    height: { xs: 'auto', sm: '420px' },
                     borderRadius: 2,
-                    overflowY: 'auto',
-                    position: 'relative'
+                    overflowY: 'hidden',
+                    order: { xs: 3, sm: 3 },
+                    mt: { xs: 0, sm: 5 },
+                    minHeight: { xs: 240, sm: 275 },
                   }}>
-                    <Typography sx={{ fontWeight: 800, mb: 1, fontSize: { xs: '0.75rem', sm: '0.95rem' , md: '0.8rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
-                    <Stack direction="column" spacing={1}>
+                    <Typography sx={{ fontWeight: 800, mb: 0.25, fontSize: { xs: '0.6rem', sm: '0.7rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                    <Stack direction="column" spacing={0.2}>
                       {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
-                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           <Box
                             sx={{
-                              width: { xs: 26, sm: 32 },
-                              height: { xs: 22, sm: 28 },
-                              borderRadius: 1,
+                              width: { xs: 24, sm: 28 },
+                              height: { xs: 20, sm: 24 },
+                              borderRadius: 0.5,
                               backgroundColor: resultColor(m.result),
                               color: '#fff',
                               fontWeight: 800,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: { xs: '0.65rem', sm: '0.8rem' },
+                              fontSize: { xs: '0.55rem', sm: '0.6rem' },
                               lineHeight: 1,
                             }}
                           >
                             {m.result}
                           </Box>
                           {idx === 0 && (
-                            <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                            <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.55rem', sm: '0.6rem' } }}>
                               Latest
                             </Typography>
                           )}
@@ -3324,6 +3380,35 @@ export default function GlobalTrophyRoom() {
                     </Stack>
                   </Paper>
                 </Box>
+              )}
+              {/* Share button - bottom right */}
+              {quickView.player && (
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    bottom: 28,
+                    right: 19,
+                    bgcolor: '#009371',
+                    color: '#fff',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '4px',
+                    '&:hover': { bgcolor: '#007a5e' },
+                  }}
+                  onClick={() => {
+                    const p = quickView.player;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: `${p?.firstName ?? ''} - Champion Footballer`,
+                        text: `Check out ${p?.firstName ?? ''}'s stats! ${quickView.xp ?? 0} XP`,
+                      }).catch(() => {});
+                    } else {
+                      import('react-hot-toast').then(({ default: toast }) => toast.success('Share feature coming soon!'));
+                    }
+                  }}
+                >
+                  <ShareIcon sx={{ fontSize: 18 }} />
+                </IconButton>
               )}
             </DialogContent>
           </Dialog>
