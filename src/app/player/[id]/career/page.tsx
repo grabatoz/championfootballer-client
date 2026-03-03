@@ -98,9 +98,23 @@ interface LeagueMatch {
   team1Id?: string;
   team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
   team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
+  // Defensive impact vote IDs (captain picks per match)
+  homeDefensiveImpactId?: string;
+  awayDefensiveImpactId?: string;
   // Added for filtering by selected league
   leagueId?: string;
+  seasonId?: string;
 }
+
+interface SeasonInfo {
+  id: string;
+  name: string;
+  seasonNumber: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
 interface LeagueWithMatches {
   id: string;
   matches?: LeagueMatch[];
@@ -360,20 +374,175 @@ export default function CareerPage() {
       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
   }, [data]);
 
-  // Matches filtered by selected league and year (for "Your Stats")
+  // ---------- State for seasons filter ----------
+  const [seasonFilter, setSeasonFilter] = useState<string>('all');
+  const [availableSeasons, setAvailableSeasons] = useState<SeasonInfo[]>([]);
+  const [seasonsLoading, setSeasonsLoading] = useState(false);
+
+  // Fetch seasons when a league is selected
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === 'all') {
+      setAvailableSeasons([]);
+      setSeasonFilter('all');
+      return;
+    }
+    if (!token) return; // Need auth token
+    let cancelled = false;
+    setSeasonsLoading(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
+    fetch(`${apiUrl}/api/leagues/${filters.leagueId}/seasons`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then((data: { success?: boolean; seasons?: SeasonInfo[] } | SeasonInfo[]) => {
+        if (!cancelled) {
+          // API returns { success: true, seasons: [...] }
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
+          setAvailableSeasons(list);
+          setSeasonsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableSeasons([]);
+          setSeasonsLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [filters.leagueId, token]);
+
+  // Matches filtered by selected league, year, and season (for "Your Stats")
   const filteredMatches = useMemo(() => {
     const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : m.leagueId === filters.leagueId;
     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
-    return matches.filter(m => byLeague(m) && byYear(m));
-  }, [matches, filters.leagueId, filters.year]);
+    const bySeason = (m: LeagueMatch) => {
+      if (!seasonFilter || seasonFilter === 'all') return true;
+      // Method 1: Match has seasonId directly
+      if (m.seasonId) return m.seasonId === seasonFilter;
+      // Method 2: Filter by season date range
+      const selectedSeason = availableSeasons.find(s => s.id === seasonFilter);
+      if (selectedSeason?.startDate) {
+        const matchDate = dayjs(m.date);
+        const start = dayjs(selectedSeason.startDate);
+        const end = selectedSeason.endDate ? dayjs(selectedSeason.endDate) : dayjs(); // if no end date, season is still active
+        return matchDate.isAfter(start.subtract(1, 'day')) && matchDate.isBefore(end.add(1, 'day'));
+      }
+      return true;
+    };
+    return matches.filter(m => byLeague(m) && byYear(m) && bySeason(m));
+  }, [matches, filters.leagueId, filters.year, seasonFilter, availableSeasons]);
+
+  // ------------- Independent league filters per chart card -------------
+  const [chartLeague, setChartLeague] = useState<string>('all');
+  const [influenceLeague, setInfluenceLeague] = useState<string>('all');
+  const [winLossLeague, setWinLossLeague] = useState<string>('all');
+
+  // ------------- League averages from backend (for influence radar) -------------
+  const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, { goals: number; assists: number; cleanSheets: number; defence: number; motmVotes: number; defensiveImpactVotes: number; impact: number }>>({});
+
+  // Fetch league averages for each league the player is in
+  useEffect(() => {
+    if (!token || availableLeagues.length === 0) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
+    let cancelled = false;
+
+    const fetchAvg = async (leagueId: string) => {
+      try {
+        const res = await fetch(`${apiUrl}/api/leagues/${leagueId}/player-averages`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.success) return { leagueId, leagueAvg: data.leagueAvg, players: data.players };
+      } catch { /* ignore */ }
+      return null;
+    };
+
+    (async () => {
+      const results = await Promise.all(availableLeagues.map(l => fetchAvg(l.id)));
+      if (cancelled) return;
+      const cache: typeof leagueAvgCache = {};
+      for (const r of results) {
+        if (r) cache[r.leagueId] = r.leagueAvg;
+      }
+      setLeagueAvgCache(cache);
+    })();
+
+    return () => { cancelled = true; };
+  }, [token, availableLeagues]);
+
+  // Compute combined league average when "all" is selected, otherwise use specific league avg
+  const currentInfluenceLeagueAvg = useMemo(() => {
+    if (influenceLeague !== 'all' && leagueAvgCache[influenceLeague]) {
+      return leagueAvgCache[influenceLeague];
+    }
+    // Average across all leagues
+    const entries = Object.values(leagueAvgCache);
+    if (entries.length === 0) return null;
+    const sum = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+    for (const e of entries) {
+      sum.goals += e.goals; sum.assists += e.assists; sum.cleanSheets += e.cleanSheets;
+      sum.defence += e.defence; sum.motmVotes += e.motmVotes; sum.defensiveImpactVotes += e.defensiveImpactVotes || 0; sum.impact += e.impact;
+    }
+    const n = entries.length;
+    return {
+      goals: +(sum.goals / n).toFixed(2),
+      assists: +(sum.assists / n).toFixed(2),
+      cleanSheets: +(sum.cleanSheets / n).toFixed(2),
+      defence: +(sum.defence / n).toFixed(2),
+      motmVotes: +(sum.motmVotes / n).toFixed(2),
+      defensiveImpactVotes: +(sum.defensiveImpactVotes / n).toFixed(2),
+      impact: +(sum.impact / n).toFixed(2)
+    };
+  }, [influenceLeague, leagueAvgCache]);
+
+  // Compute league average for the IMPACT table (follows global league filter)
+  const impactLeagueAvg = useMemo(() => {
+    const selectedLeague = filters.leagueId;
+    if (selectedLeague && selectedLeague !== 'all' && leagueAvgCache[selectedLeague]) {
+      return leagueAvgCache[selectedLeague];
+    }
+    // Average across all leagues
+    const entries = Object.values(leagueAvgCache);
+    if (entries.length === 0) return null;
+    const sum = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+    for (const e of entries) {
+      sum.goals += e.goals; sum.assists += e.assists; sum.cleanSheets += e.cleanSheets;
+      sum.defence += e.defence; sum.motmVotes += e.motmVotes; sum.defensiveImpactVotes += e.defensiveImpactVotes || 0; sum.impact += e.impact;
+    }
+    const n = entries.length;
+    return {
+      goals: +(sum.goals / n).toFixed(2),
+      assists: +(sum.assists / n).toFixed(2),
+      cleanSheets: +(sum.cleanSheets / n).toFixed(2),
+      defence: +(sum.defence / n).toFixed(2),
+      motmVotes: +(sum.motmVotes / n).toFixed(2),
+      defensiveImpactVotes: +(sum.defensiveImpactVotes / n).toFixed(2),
+      impact: +(sum.impact / n).toFixed(2)
+    };
+  }, [filters.leagueId, leagueAvgCache]);
+
+  // Locally filtered matches for each card (independent of global Redux league filter)
+  const chartMatches = useMemo(() =>
+    chartLeague === 'all' ? matches : matches.filter(m => m.leagueId === chartLeague),
+    [matches, chartLeague]);
+  const influenceMatches = useMemo(() =>
+    influenceLeague === 'all' ? matches : matches.filter(m => m.leagueId === influenceLeague),
+    [matches, influenceLeague]);
+  const winLossMatches = useMemo(() =>
+    winLossLeague === 'all' ? matches : matches.filter(m => m.leagueId === winLossLeague),
+    [matches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
-  const [groupMode, setGroupMode] = useState<'auto'|'weekly'|'monthly'>('auto');
+  const [groupMode, setGroupMode] = useState<'weekly'|'monthly'>('weekly');
   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
 
   // ------------- AGGREGATION (supports forced modes) -------------
   const { performanceData, groupingType } = useMemo(() => {
-    const base = filteredMatches;
+    const base = chartMatches;
     if (!base.length) {
       return {
         performanceData: [] as PerformanceRow[],
@@ -384,13 +553,13 @@ export default function CareerPage() {
     const buildWeekly = (): PerformanceRow[] => {
       const map = new Map<string, PerformanceRow>();
       base.forEach(m => {
-        const weekStart = dayjs(m.date).startOf('week');
-        const key = weekStart.format('YYYY-MM-DD');
+        const weekEnd = dayjs(m.date).endOf('week'); // Sunday
+        const key = weekEnd.format('YYYY-MM-DD');
         if (!map.has(key)) {
           map.set(key, {
             key,
-            label: weekStart.format('DD-MMM'),
-            year: weekStart.format('YYYY'),
+            label: weekEnd.format('DD-MMM'),
+            year: weekEnd.format('YYYY'),
             matches: 0,
             totalPoints: 0,
             avgPoints: 0,
@@ -493,24 +662,7 @@ export default function CareerPage() {
       return filled;
     };
 
-    let mode: 'weekly' | 'monthly';
     if (groupMode === 'weekly') {
-      mode = 'weekly';
-    } else if (groupMode === 'monthly') {
-      mode = 'monthly';
-    } else {
-      // auto mode - switch based on data points
-      const weekly = buildWeekly();
-      if (weekly.length <= AUTO_SWITCH_THRESHOLD) {
-        return {
-          performanceData: weekly,
-          groupingType: 'weekly' as const,
-        };
-      }
-      mode = 'monthly';
-    }
-
-    if (mode === 'weekly') {
       return {
         performanceData: buildWeekly(),
         groupingType: 'weekly' as const,
@@ -521,7 +673,7 @@ export default function CareerPage() {
         groupingType: 'monthly' as const,
       };
     }
-  }, [filteredMatches, groupMode]);
+  }, [chartMatches, groupMode]);
 
   // ------------- RANGE FILTER -------------
   const chartData = useMemo(() => {
@@ -773,6 +925,14 @@ export default function CareerPage() {
 
     const winRate = n ? (wins / n) * 100 : 0;
     const motmVotes = sum(arr, ps => ps.motmVotes || 0);
+    const defence = sum(arr, ps => ps.defence || 0);
+    // Count defensive impact votes: check homeDefensiveImpactId/awayDefensiveImpactId per match
+    const defensiveImpactVotes = arr.reduce((total, m) => {
+      if (String(m.homeDefensiveImpactId) === String(playerId) || String(m.awayDefensiveImpactId) === String(playerId)) {
+        return total + 1;
+      }
+      return total;
+    }, 0);
     const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
     const goals = sum(arr, ps => ps.goals || 0);
     const assists = sum(arr, ps => ps.assists || 0);
@@ -800,7 +960,7 @@ export default function CareerPage() {
     // Normalize: Assume max realistic is 5 contributions per match = 100%
     const impactAvg = Math.min(100, (avgContributions / 5) * 100);
     
-    return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
+    return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
@@ -859,7 +1019,7 @@ export default function CareerPage() {
       'MOTM Votes': 0
     };
 
-    filteredMatches.forEach(match => {
+    influenceMatches.forEach(match => {
       const ps = match.playerStats || {};
       playerTotals.Goals += ps.goals || 0;
       playerTotals.Assists += ps.assists || 0;
@@ -869,7 +1029,7 @@ export default function CareerPage() {
     });
 
     // Calculate per-game averages for player
-    const matchCount = Math.max(filteredMatches.length, 1);
+    const matchCount = Math.max(influenceMatches.length, 1);
     const playerAvgPerGame = {
       Goals: +(playerTotals.Goals / matchCount).toFixed(1),
       Assists: +(playerTotals.Assists / matchCount).toFixed(1),
@@ -878,13 +1038,20 @@ export default function CareerPage() {
       'MOTM Votes': +(playerTotals['MOTM Votes'] / matchCount).toFixed(1)
     };
 
-    // Dynamic league averages based on player performance (more realistic)
-    const leagueAvg = {
-      Goals: Math.max(0.3, playerAvgPerGame.Goals * 0.75), // League avg is typically 75% of good players
-      Assists: Math.max(0.2, playerAvgPerGame.Assists * 0.7),
-      'Clean Sheets': Math.max(0.1, playerAvgPerGame['Clean Sheets'] * 0.6),
-      'Defensive Impact': Math.max(0.2, playerAvgPerGame['Defensive Impact'] * 0.8),
-      'MOTM Votes': Math.max(0.1, playerAvgPerGame['MOTM Votes'] * 0.5)
+    // Use real league averages from backend if available
+    const dbAvg = currentInfluenceLeagueAvg;
+    const leagueAvg = dbAvg ? {
+      Goals: dbAvg.goals,
+      Assists: dbAvg.assists,
+      'Clean Sheets': dbAvg.cleanSheets,
+      'Defensive Impact': dbAvg.defence,
+      'MOTM Votes': dbAvg.motmVotes
+    } : {
+      Goals: 0,
+      Assists: 0,
+      'Clean Sheets': 0,
+      'Defensive Impact': 0,
+      'MOTM Votes': 0
     };
 
     const displayName = playerName || 'Player';
@@ -894,7 +1061,7 @@ export default function CareerPage() {
       [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
       'League Avg': +(leagueAvg[metric as keyof typeof leagueAvg]).toFixed(1)
     }));
-  }, [filteredMatches, playerName]);
+  }, [influenceMatches, playerName, currentInfluenceLeagueAvg]);
 
   // Calculate actual win/loss/draw data from backend matches
   const actualWinLossData = useMemo(() => {
@@ -902,7 +1069,7 @@ export default function CareerPage() {
     let losses = 0;
     let draws = 0;
 
-    const arr = filteredMatches;
+    const arr = winLossMatches;
     arr.forEach(match => {
       // Prefer explicit per-player result
       const r = match.playerStats?.result || match.result || match.outcome;
@@ -932,20 +1099,20 @@ export default function CareerPage() {
     const total = wins + losses + draws;
     if (total === 0) {
       return [
-        { name: 'Win', value: 55, color: '#15b67a' },
-        { name: 'Loss', value: 30, color: '#d32f2f' },
-        { name: 'Draw', value: 15, color: '#ffb300' },
+        { name: 'Win', value: 0, color: '#15b67a' },
+        { name: 'Loss', value: 0, color: '#d32f2f' },
+        { name: 'Draw', value: 0, color: '#ffb300' },
       ];
     }
     const winPercent = Math.round((wins / total) * 100);
-    const lossPercent = Math.round((losses / total) * 100);
-    const drawPercent = 100 - winPercent - lossPercent;
+    const drawPercent = Math.round((draws / total) * 100);
+    const lossPercent = 100 - winPercent - drawPercent;
     return [
       { name: 'Win', value: winPercent, color: '#15b67a' },
       { name: 'Loss', value: lossPercent, color: '#d32f2f' },
       { name: 'Draw', value: drawPercent, color: '#ffb300' },
     ];
-  }, [filteredMatches, playerId]);
+  }, [winLossMatches, playerId]);
 
   // Alternative: Direct API call to get match results
   useEffect(() => {
@@ -1153,9 +1320,6 @@ export default function CareerPage() {
     return () => { aborted = true; };
   }, [playerId, matches, filters.leagueId, token]);
 
-  // State for seasons filter
-  const [seasonFilter, setSeasonFilter] = useState<string>('all');
-
   // Get unique years from matches for year filter
   const availableYears = useMemo(() => {
     const years = new Set<string>();
@@ -1171,6 +1335,19 @@ export default function CareerPage() {
     const league = availableLeagues.find(l => l.id === filters.leagueId);
     return (league as LeagueWithMatches & { name?: string })?.name || `League ${filters.leagueId}`;
   }, [filters.leagueId, availableLeagues]);
+
+  // Preferred league from localStorage (persisted across pages)
+  const [preferredLeagueId, setPreferredLeagueId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPreferredLeagueId(localStorage.getItem('preferredLeagueId'));
+    }
+  }, []);
+  const preferredLeagueName = useMemo(() => {
+    if (!preferredLeagueId) return null;
+    const league = availableLeagues.find(l => l.id === preferredLeagueId);
+    return (league as LeagueWithMatches & { name?: string })?.name || null;
+  }, [preferredLeagueId, availableLeagues]);
 
   // Clear all filters
   const handleClearFilters = () => {
@@ -1347,6 +1524,11 @@ export default function CareerPage() {
                     }}
                   >
                     <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                    {availableSeasons.map(season => (
+                      <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                        {season.name}{season.isActive ? ' (Active)' : ''}
+                      </option>
+                    ))}
                   </select>
 
                   {/* Clear Button */}
@@ -1393,48 +1575,56 @@ export default function CareerPage() {
                     flexWrap: 'wrap',
                     gap: 1
                   }}>
-                    {/* Left side - League toggles */}
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {/* Left side - League selector (independent per card) */}
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <Button
                         size="small"
                         sx={{
-                          background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
+                          background: chartLeague === 'all' ? themeColors.primary : '#2a2a2a',
                           color: themeColors.text,
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: 600,
                           textTransform: 'none',
-                          px: 1.5,
-                          py: 0.5,
+                          px: 1.2,
+                          py: 0.4,
                           borderRadius: 1,
                           minWidth: 'auto',
-                          '&:hover': { background: themeColors.primary }
+                          '&:hover': { background: chartLeague === 'all' ? themeColors.primary : '#3a3a3a' }
                         }}
-                        onClick={() => dispatch(setLeagueFilter('all'))}
+                        onClick={() => setChartLeague('all')}
                       >
                         All Leagues
                       </Button>
-                      <Button
-                        size="small"
-                        sx={{
-                          background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
-                          color: themeColors.text,
-                          fontSize: 11,
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          minWidth: 'auto',
-                          '&:hover': { background: selectedLeagueName ? themeColors.primary : '#3a3a3a' }
-                        }}
-                      >
-                        {selectedLeagueName}
-                      </Button>
+                      {(() => {
+                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                        if (!currentId || !currentName) return null;
+                        return (
+                          <Button
+                            size="small"
+                            sx={{
+                              background: chartLeague === currentId ? themeColors.primary : '#2a2a2a',
+                              color: themeColors.text,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              px: 1.2,
+                              py: 0.4,
+                              borderRadius: 1,
+                              minWidth: 'auto',
+                              '&:hover': { background: chartLeague === currentId ? themeColors.primary : '#3a3a3a' }
+                            }}
+                            onClick={() => setChartLeague(currentId)}
+                          >
+                            Current
+                          </Button>
+                        );
+                      })()}
                     </Box>
 
                     {/* Right side - Time grouping toggles */}
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {['auto', 'weekly', 'monthly'].map((mode) => (
+                      {['weekly', 'monthly'].map((mode) => (
                         <Button
                           key={mode}
                           size="small"
@@ -1450,7 +1640,7 @@ export default function CareerPage() {
                             minWidth: 'auto',
                             '&:hover': { background: groupMode === mode ? themeColors.primary : '#3a3a3a' }
                           }}
-                          onClick={() => setGroupMode(mode as 'auto' | 'weekly' | 'monthly')}
+                          onClick={() => setGroupMode(mode as 'weekly' | 'monthly')}
                         >
                           {mode}
                         </Button>
@@ -1518,8 +1708,9 @@ export default function CareerPage() {
                           formatter={(value: unknown, name: unknown) => {
                             const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
                             const n = typeof name === 'string' ? name : String(name ?? '');
-                            if (n.includes('Avg')) return [v, 'Avg Points'];
-                            if (n.includes('Cumulative')) return [v, 'Cumulative XP'];
+                            const period = groupMode === 'monthly' ? 'Month' : 'Week';
+                            if (n.includes('Avg')) return [v, `Avg Points Per ${period}`];
+                            if (n.includes('Cumulative')) return [v, `Cumulative XP (${period}ly)`];
                             return [v, n];
                           }}
                         />
@@ -1529,7 +1720,7 @@ export default function CareerPage() {
                           yAxisId="avg"
                           dataKey="avgPoints"
                           fill={themeColors.chartBar}
-                          name="Avg Points"
+                          name={groupMode === 'monthly' ? 'Avg Points/Month' : 'Avg Points/Week'}
                           maxBarSize={35}
                           radius={[3, 3, 0, 0]}
                         />
@@ -1539,7 +1730,7 @@ export default function CareerPage() {
                           yAxisId="cum"
                           type="monotone"
                           dataKey="cumulativePoints"
-                          name="Cumulative XP"
+                          name={groupMode === 'monthly' ? 'Cumulative XP (Monthly)' : 'Cumulative XP (Weekly)'}
                           stroke={themeColors.chartLine}
                           strokeWidth={2}
                           dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
@@ -1561,13 +1752,13 @@ export default function CareerPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
                       <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                        Average XP Points Per Week
+                        {groupMode === 'monthly' ? 'Average XP Points Per Month' : 'Average XP Points Per Week'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Box sx={{ width: 14, height: 3, borderRadius: 1, background: themeColors.chartLine }} />
                       <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                        Cumulative XP Points
+                        {groupMode === 'monthly' ? 'Cumulative XP Points (Monthly)' : 'Cumulative XP Points (Weekly)'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1582,45 +1773,56 @@ export default function CareerPage() {
                     {/* Header with toggle */}
                     <Box sx={{ 
                       display: 'flex', 
-                      justifyContent: 'space-between', 
+                      justifyContent: 'flex-start', 
                       alignItems: 'center',
                       p: 1.5,
-                      borderBottom: `1px solid ${themeColors.border}`
+                      borderBottom: `1px solid ${themeColors.border}`,
+                      flexWrap: 'wrap',
+                      gap: 0.5
                     }}>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Button
-                          size="small"
-                          sx={{
-                            background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
-                            color: themeColors.text,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 1,
-                            py: 0.3,
-                            borderRadius: 1,
-                            minWidth: 'auto',
-                          }}
-                        >
-                          All Leagues
-                        </Button>
-                        <Button
-                          size="small"
-                          sx={{
-                            background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
-                            color: themeColors.text,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 1,
-                            py: 0.3,
-                            borderRadius: 1,
-                            minWidth: 'auto',
-                          }}
-                        >
-                          {selectedLeagueName}
-                        </Button>
-                      </Box>
+                      <Button
+                        size="small"
+                        sx={{
+                          background: influenceLeague === 'all' ? themeColors.primary : '#2a2a2a',
+                          color: themeColors.text,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          px: 1.2,
+                          py: 0.4,
+                          borderRadius: 1,
+                          minWidth: 'auto',
+                          '&:hover': { background: influenceLeague === 'all' ? themeColors.primary : '#3a3a3a' }
+                        }}
+                        onClick={() => setInfluenceLeague('all')}
+                      >
+                        All Leagues
+                      </Button>
+                      {(() => {
+                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                        if (!currentId || !currentName) return null;
+                        return (
+                          <Button
+                            size="small"
+                            sx={{
+                              background: influenceLeague === currentId ? themeColors.primary : '#2a2a2a',
+                              color: themeColors.text,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              px: 1.2,
+                              py: 0.4,
+                              borderRadius: 1,
+                              minWidth: 'auto',
+                              '&:hover': { background: influenceLeague === currentId ? themeColors.primary : '#3a3a3a' }
+                            }}
+                            onClick={() => setInfluenceLeague(currentId)}
+                          >
+                            Current
+                          </Button>
+                        );
+                      })()}
                     </Box>
 
                     <CardContent sx={{ p: 2, pt: 1 }}>
@@ -1728,45 +1930,56 @@ export default function CareerPage() {
                     {/* Header with toggle */}
                     <Box sx={{ 
                       display: 'flex', 
-                      justifyContent: 'space-between', 
+                      justifyContent: 'flex-start', 
                       alignItems: 'center',
                       p: 1.5,
-                      borderBottom: `1px solid ${themeColors.border}`
+                      borderBottom: `1px solid ${themeColors.border}`,
+                      flexWrap: 'wrap',
+                      gap: 0.5
                     }}>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Button
-                          size="small"
-                          sx={{
-                            background: filters.leagueId === 'all' || !filters.leagueId ? themeColors.primary : '#2a2a2a',
-                            color: themeColors.text,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 1,
-                            py: 0.3,
-                            borderRadius: 1,
-                            minWidth: 'auto',
-                          }}
-                        >
-                          All Leagues
-                        </Button>
-                        <Button
-                          size="small"
-                          sx={{
-                            background: selectedLeagueName ? themeColors.primary : '#2a2a2a',
-                            color: themeColors.text,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 1,
-                            py: 0.3,
-                            borderRadius: 1,
-                            minWidth: 'auto',
-                          }}
-                        >
-                          {selectedLeagueName}
-                        </Button>
-                      </Box>
+                      <Button
+                        size="small"
+                        sx={{
+                          background: winLossLeague === 'all' ? themeColors.primary : '#2a2a2a',
+                          color: themeColors.text,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          px: 1.2,
+                          py: 0.4,
+                          borderRadius: 1,
+                          minWidth: 'auto',
+                          '&:hover': { background: winLossLeague === 'all' ? themeColors.primary : '#3a3a3a' }
+                        }}
+                        onClick={() => setWinLossLeague('all')}
+                      >
+                        All Leagues
+                      </Button>
+                      {(() => {
+                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                        if (!currentId || !currentName) return null;
+                        return (
+                          <Button
+                            size="small"
+                            sx={{
+                              background: winLossLeague === currentId ? themeColors.primary : '#2a2a2a',
+                              color: themeColors.text,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              px: 1.2,
+                              py: 0.4,
+                              borderRadius: 1,
+                              minWidth: 'auto',
+                              '&:hover': { background: winLossLeague === currentId ? themeColors.primary : '#3a3a3a' }
+                            }}
+                            onClick={() => setWinLossLeague(currentId)}
+                          >
+                            Current
+                          </Button>
+                        );
+                      })()}
                     </Box>
 
                     <CardContent sx={{ p: 2, pt: 1 }}>
@@ -1783,6 +1996,9 @@ export default function CareerPage() {
                       </Typography>
 
                       <Box sx={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {actualWinLossData.every(d => d.value === 0) ? (
+                          <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
+                        ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -1832,6 +2048,7 @@ export default function CareerPage() {
                             />
                           </PieChart>
                         </ResponsiveContainer>
+                        )}
                       </Box>
 
                       {/* Legend */}
@@ -1874,30 +2091,6 @@ export default function CareerPage() {
 
                 <Box sx={{ p: 2 }}>
                   <Grid container spacing={2} alignItems="flex-start">
-                    {/* Circle with Matches Played */}
-                    <Grid item xs={12} md={2}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
-                        <Box sx={{
-                          width: 70,
-                          height: 70,
-                          borderRadius: '50%',
-                          border: `3px solid ${themeColors.primary}`,
-                          backgroundColor: 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mb: 1
-                        }}>
-                          <Typography sx={{ fontSize: 20, fontWeight: 'bold', color: themeColors.text }}>
-                            {filteredMatches.length}
-                          </Typography>
-                        </Box>
-                        <Typography sx={{ fontSize: 11, fontWeight: 500, textAlign: 'center', color: themeColors.textDim }}>
-                          Matches<br />Played
-                        </Typography>
-                      </Box>
-                    </Grid>
-
                     {/* Tables Container */}
                     <Grid item xs={12} md={10}>
                       {/* First Table - Expected Probabilities */}
@@ -1958,33 +2151,58 @@ export default function CareerPage() {
                         <TableBody>
                           {(() => {
                             const current = yourStats;
+                            const n = current.n || 1;
                             const goals = current.goals || 0;
                             const assists = current.assists || 0;
                             const cleanSheets = current.cleanSheets || 0;
                             const motmVotes = current.motmVotes || 0;
+                            const defensiveImpactVotes = current.defensiveImpactVotes || 0;
                             const contributionIndex = current.impactAvg;
+                            
+                            // Use real league averages (per game * total matches) for comparison
+                            const avg = impactLeagueAvg;
+                            const avgGoals = avg ? +(avg.goals * n).toFixed(1) : 0;
+                            const avgAssists = avg ? +(avg.assists * n).toFixed(1) : 0;
+                            const avgCleanSheets = avg ? +(avg.cleanSheets * n).toFixed(1) : 0;
+                            const avgMotm = avg ? +(avg.motmVotes * n).toFixed(1) : 0;
+                            const avgDefImpact = avg ? +((avg.defensiveImpactVotes || 0) * n).toFixed(1) : 0;
+
+                            const diffCell = (playerVal: number, leagueAvgVal: number) => {
+                              const diff = +(playerVal - leagueAvgVal).toFixed(1);
+                              const isPositive = diff >= 0;
+                              return (
+                                <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: isPositive ? themeColors.success : '#f44336', borderBottom: `1px solid ${themeColors.border}` }}>
+                                  {isPositive ? '+' : ''}{diff}
+                                </TableCell>
+                              );
+                            };
                             
                             return (
                               <>
                                 <TableRow>
                                   <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Goals</TableCell>
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goals}</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, goals - 2)}</TableCell>
+                                  {diffCell(goals, avgGoals)}
                                 </TableRow>
                                 <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Assist</TableCell>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Assists</TableCell>
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assists}</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, assists - 1)}</TableCell>
+                                  {diffCell(assists, avgAssists)}
                                 </TableRow>
                                 <TableRow>
                                   <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Clean Sheets</TableCell>
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheets}</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, cleanSheets - 1)}</TableCell>
+                                  {diffCell(cleanSheets, avgCleanSheets)}
                                 </TableRow>
                                 <TableRow>
                                   <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>MOTM Votes</TableCell>
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{motmVotes}</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}` }}>+{Math.max(0, motmVotes)}</TableCell>
+                                  {diffCell(motmVotes, avgMotm)}
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Defensive Impact Votes</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{defensiveImpactVotes}</TableCell>
+                                  {diffCell(defensiveImpactVotes, avgDefImpact)}
                                 </TableRow>
                                 <TableRow sx={{ bgcolor: '#111' }}>
                                   <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>Game Contribution Index</TableCell>
@@ -2026,7 +2244,7 @@ export default function CareerPage() {
                       <TableRow>
                         <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
                         <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Agst Top 20%</TableCell>
+                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

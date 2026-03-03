@@ -598,6 +598,9 @@ type LeagueUpdatePayload = {
   maxGames: number
   showPoints: boolean
   admins: string[]
+  seasonId?: string
+  seasonMaxGames?: number
+  seasonShowPoints?: boolean
 }
 
 // Payload type for updating season settings
@@ -669,39 +672,23 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       maxGames: league.maxGames || 20, // Keep league-level maxGames for backward compatibility
       showPoints,
       admins: adminId ? [adminId] : [],
+      // Include season settings so they're updated atomically with league
+      ...(selectedSeasonId ? {
+        seasonId: selectedSeasonId,
+        seasonMaxGames: seasonMaxGames,
+        seasonShowPoints: seasonShowPoints,
+      } : {}),
     }
     await Promise.resolve(onUpdate(updatedData))
     
-    // Update season-specific maxGames if season is selected
-    if (selectedSeasonId && token) {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${selectedSeasonId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            maxGames: seasonMaxGames,
-            showPoints: seasonShowPoints,
-          }),
-        })
-        
-        if (!response.ok) {
-          toast.error('Failed to update season settings')
-        } else {
-          toast.success('Season settings updated successfully')
-          // Trigger refresh of league data to get updated season values
-          if (onMembersChanged) {
-            await Promise.resolve(onMembersChanged())
-          }
-          // Close dialog to force re-fetch when reopened
-          onClose()
-        }
-      } catch (error) {
-        console.error('Error updating season:', error)
-        toast.error('Failed to update season settings')
+    // Season settings are now handled by the league PATCH endpoint
+    // so we just need to trigger refresh and close
+    if (selectedSeasonId) {
+      toast.success('Settings updated successfully')
+      if (onMembersChanged) {
+        await Promise.resolve(onMembersChanged())
       }
+      onClose()
     }
   }
 
@@ -1529,6 +1516,9 @@ function AllLeagues() {
           maxGames: data.maxGames,
           showPoints: data.showPoints,
           admins: data.admins,
+          seasonId: data.seasonId,
+          seasonMaxGames: data.seasonMaxGames,
+          seasonShowPoints: data.seasonShowPoints,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -1544,6 +1534,7 @@ function AllLeagues() {
         active: data.active ?? l.active,
         maxGames: data.maxGames ?? l.maxGames,
         showPoints: data.showPoints ?? l.showPoints,
+        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (l.members || []).filter(m => data.admins!.includes(m.id))
           : l.administrators,
@@ -1557,6 +1548,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
           : prev.administrators,
@@ -1606,6 +1598,9 @@ function AllLeagues() {
           maxGames: data.maxGames,
           showPoints: data.showPoints,
           admins: data.admins,
+          seasonId: data.seasonId,
+          seasonMaxGames: data.seasonMaxGames,
+          seasonShowPoints: data.seasonShowPoints,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -1622,6 +1617,7 @@ function AllLeagues() {
         active: data.active ?? l.active,
         maxGames: data.maxGames ?? l.maxGames,
         showPoints: data.showPoints ?? l.showPoints,
+        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (l.members || []).filter(m => data.admins!.includes(m.id))
           : l.administrators,
@@ -1635,6 +1631,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
           : prev.administrators,
@@ -1648,6 +1645,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
           : prev.administrators,

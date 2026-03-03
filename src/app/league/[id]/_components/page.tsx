@@ -3874,21 +3874,41 @@ export default function LeagueDetailPage() {
                                                                             // mt: 1.5
                                                                         }}>
                                                                             {/* Add Stats Button */}
-                                                                            {(isAdmin || (
-                                                                                isMember && (
-                                                                                    match.homeTeamUsers?.some((u) => String(u?.id) === String(user?.id)) ||
-                                                                                    match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id))
-                                                                                )
-                                                                            )) && (
+                                                                            {(isAdmin || isMember) && (() => {
+                                                                                const isInMatch = match.homeTeamUsers?.some((u) => String(u?.id) === String(user?.id)) ||
+                                                                                    match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id));
+                                                                                const isDisabled = !league?.active || match.status === 'RESULT_UPLOADED' || match.archived || !isSelectedSeasonActive;
+                                                                                return (
+                                                                                <Box
+                                                                                    onClick={() => {
+                                                                                        if (!isAdmin && !isInMatch) {
+                                                                                            toast('You are not added to this match', {
+                                                                                                icon: '⚠️',
+                                                                                                duration: 4000,
+                                                                                                style: {
+                                                                                                    background: '#F97316',
+                                                                                                    color: '#fff',
+                                                                                                    fontWeight: 600,
+                                                                                                    fontSize: '0.95rem',
+                                                                                                    padding: '14px 20px',
+                                                                                                    borderRadius: '12px',
+                                                                                                    boxShadow: '0 4px 20px rgba(249, 115, 22, 0.5)',
+                                                                                                },
+                                                                                            });
+                                                                                            return;
+                                                                                        }
+                                                                                        if (!isDisabled) {
+                                                                                            setSelectedMatchIdForDialog(match.id);
+                                                                                            setShouldShowAdminGoals(false);
+                                                                                            setMatchStatsOpen(true);
+                                                                                        }
+                                                                                    }}
+                                                                                    sx={{ cursor: 'pointer' }}
+                                                                                >
                                                                                 <Button
                                                                                     size="small"
-                                                                                    onClick={() => {
-                                                                                        setSelectedMatchIdForDialog(match.id);
-                                                                                        setShouldShowAdminGoals(false);
-                                                                                        setMatchStatsOpen(true);
-                                                                                    }}
                                                                                     startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
-                                                                                    disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived || !isSelectedSeasonActive}
+                                                                                    disabled={isDisabled && (isAdmin || !!isInMatch)}
                                                                                     sx={{
                                                                                         // backgroundColor: '#333',
                                                                                         color: 'white',
@@ -3896,7 +3916,7 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         py: 0.5,
                                                                                         px: 1,
-                                                                                        
+                                                                                        pointerEvents: 'none',
                                                                                         borderRadius: '50px',
                                                                                         border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                         whiteSpace: 'nowrap',
@@ -3907,7 +3927,9 @@ export default function LeagueDetailPage() {
                                                                                 >
                                                                                    <span style={{ marginTop: '4px',  }}>Add Stats</span> 
                                                                                 </Button>
-                                                                            )}
+                                                                                </Box>
+                                                                                );
+                                                                            })()}
 
                                                                             {/* View Team Button */}
                                                                             <Button

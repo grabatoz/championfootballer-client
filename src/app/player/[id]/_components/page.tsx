@@ -1960,7 +1960,7 @@ export default function PlayerStatsPage() {
                         <Grid item xs={6} sm={4} md>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
                                 <Typography sx={{ color: '#c8c8c8', fontSize: 19, fontWeight: 500 }}>
-                                    Win Ratio
+                                    Total xp
                                 </Typography>
                                 <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>
                                     {/* {activeTab === 'career' ? careerWinRatio : currentWinRatio}% */}

@@ -2151,17 +2151,45 @@ export default function AllMatches() {
 
                                                     {/* Action Buttons */}
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
-                                                        {(isAdmin || (isMember && (match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id))))) && (
+                                                        {(isAdmin || isMember) && (() => {
+                                                            const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
+                                                            const isDisabled = !league?.active || match.status === 'RESULT_UPLOADED' || match.archived;
+                                                            return (
+                                                            <Box
+                                                                onClick={() => {
+                                                                    if (!isAdmin && !isInMatch) {
+                                                                        toast('You are not added to this match', {
+                                                                            icon: '⚠️',
+                                                                            duration: 4000,
+                                                                            style: {
+                                                                                background: '#F97316',
+                                                                                color: '#fff',
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.95rem',
+                                                                                padding: '14px 20px',
+                                                                                borderRadius: '12px',
+                                                                                boxShadow: '0 4px 20px rgba(249, 115, 22, 0.5)',
+                                                                            },
+                                                                        });
+                                                                        return;
+                                                                    }
+                                                                    if (!isDisabled) {
+                                                                        setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true);
+                                                                    }
+                                                                }}
+                                                                sx={{ cursor: 'pointer' }}
+                                                            >
                                                             <Button
                                                                 size="small"
-                                                                onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true); }}
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
-                                                                disabled={!league?.active || match.status === 'RESULT_UPLOADED' || match.archived}
-                                                                sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
+                                                                disabled={isDisabled && (isAdmin || !!isInMatch)}
+                                                                sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
                                                             >
                                                                 <span style={{ marginTop: '4px' }}>Add Stats</span>
                                                             </Button>
-                                                        )}
+                                                            </Box>
+                                                            );
+                                                        })()}
                                                         <Button
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id }); setViewTeamOpen(true); }}
