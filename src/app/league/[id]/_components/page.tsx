@@ -298,7 +298,7 @@ export default function LeagueDetailPage() {
 
 
     const [viewTeamOpen, setViewTeamOpen] = React.useState(false);
-    const [viewTeamMatch, setViewTeamMatch] = React.useState<{ leagueId: string; matchId: string } | null>(null);
+    const [viewTeamMatch, setViewTeamMatch] = React.useState<{ leagueId: string; matchId: string; matchNumber?: number } | null>(null);
     // Leagues dropdown state
     const [allLeagues, setAllLeagues] = useState<League[]>([]);
     const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
@@ -3362,7 +3362,7 @@ export default function LeagueDetailPage() {
                                                                                 size="small"
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
-                                                                                    setViewTeamMatch({ leagueId, matchId: match.id });
+                                                                                    setViewTeamMatch({ leagueId, matchId: match.id, matchNumber });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={20} height={20} />}
@@ -3975,7 +3975,7 @@ export default function LeagueDetailPage() {
                                                                                 size="small"
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
-                                                                                    setViewTeamMatch({ leagueId, matchId: match.id });
+                                                                                    setViewTeamMatch({ leagueId, matchId: match.id, matchNumber });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={34} height={34} />}
@@ -5116,23 +5116,31 @@ export default function LeagueDetailPage() {
                 </DialogActions>
             </Dialog>
             {/* // ...existing code... */}
-            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
+            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} maxWidth={false} PaperProps={{ sx: { bgcolor: '#2b2b2b', width: '65%', maxWidth: '65%' } }}>
                 <DialogTitle sx={{
                     fontWeight: 'bold',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'center',
+                    bgcolor: '#d1d1d1',
+                    position: 'relative',
+                    py: 0.5,
+                    minHeight: 0,
                 }}>
-                    Team Preview
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>TEAMS</span>
+                        <span style={{ fontSize: '1.9rem' }}>&#9917;</span>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>MATCH {viewTeamMatch?.matchNumber ?? '-'}</span>
+                    </Box>
                     <IconButton
                         onClick={() => setViewTeamOpen(false)}
                         size="small"
-                        sx={{ color: 'inherit' }}
+                        sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: 0 }}>
+                <DialogContent dividers sx={{ p: 0, '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                     <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
                 </DialogContent>
             </Dialog>

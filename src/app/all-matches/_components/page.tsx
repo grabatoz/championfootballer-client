@@ -620,7 +620,7 @@ export default function AllMatches() {
     const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
     // View team modal state (used in buttons below)
     const [viewTeamOpen, setViewTeamOpen] = useState(false);
-    const [viewTeamMatch, setViewTeamMatch] = useState<{ leagueId: string; matchId: string } | null>(null);
+    const [viewTeamMatch, setViewTeamMatch] = useState<{ leagueId: string; matchId: string; matchNumber?: number } | null>(null);
 
 
 
@@ -2192,7 +2192,7 @@ export default function AllMatches() {
                                                         })()}
                                                         <Button
                                                             size="small"
-                                                            onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id }); setViewTeamOpen(true); }}
+                                                            onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                             startIcon={<Image src={ViewTeamImg} alt="View Team" width={34} height={34} />}
                                                             sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
                                                         >
@@ -2315,7 +2315,7 @@ export default function AllMatches() {
                                                     </Box>
                                                     <Button
                                                         size="small"
-                                                        onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id }); setViewTeamOpen(true); }}
+                                                        onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                         startIcon={<Image src={ViewTeamImg} alt="View Team" width={20} height={20} />}
                                                         sx={{ color: 'white', fontSize: '0.65rem', textTransform: 'none', p: 0, minWidth: 'auto', textDecoration: 'underline', whiteSpace: 'nowrap', '&:hover': { color: '#ccc' }, '& .MuiButton-startIcon': { mr: 1 } }}
                                                     >
@@ -2656,23 +2656,31 @@ export default function AllMatches() {
             </Dialog>
 
 
-            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} fullWidth maxWidth="sm">
+            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} maxWidth={false} PaperProps={{ sx: { bgcolor: '#2b2b2b', width: '70%', maxWidth: '70%' } }}>
                 <DialogTitle sx={{
                     fontWeight: 'bold',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'center',
+                    bgcolor: '#d1d1d1',
+                    position: 'relative',
+                    py: 0.5,
+                    minHeight: 0,
                 }}>
-                    Team Preview
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>TEAMS</span>
+                        <span style={{ fontSize: '1.8rem' }}>&#9917;</span>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>MATCH {viewTeamMatch?.matchNumber ?? '-'}</span>
+                    </Box>
                     <IconButton
                         onClick={() => setViewTeamOpen(false)}
                         size="small"
-                        sx={{ color: 'inherit' }}
+                        sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: 0 }}>
+                <DialogContent dividers sx={{ p: 0, '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                     <TeamPreviewScreen leagueId={viewTeamMatch?.leagueId} matchId={viewTeamMatch?.matchId} />
                 </DialogContent>
                 {/* <DialogActions>

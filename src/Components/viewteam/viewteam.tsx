@@ -21,8 +21,13 @@ import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import FlagIcon from '@mui/icons-material/Flag';
 import Pitch from '@/Components/images/pitch.jpg';
-import Shirt from '@/Components/images/shirtimg.png';
-import Shirtaway from '@/Components/images/shirtblue.png'
+import Shirt from '@/Components/images/rightshirt.png';
+import Shirtaway from '@/Components/images/leftshirt.png';
+import FootballIcon from '@/Components/images/football.png';
+import TableViewImg from '@/Components/images/table.png';
+import PitchViewImg from '@/Components/images/footblgrond.png';
+import BulbImg from '@/Components/images/bulb.png';
+import UndoImg from '@/Components/images/undo.png';
 import { useAuth } from '@/lib/hooks';
 
 // Define the expected shape from useAuth
@@ -212,6 +217,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Start with empty lists; fill with API data when loaded
   const [homeTeamName, setHomeTeamName] = React.useState<string>('Home');
   const [awayTeamName, setAwayTeamName] = React.useState<string>('Away');
+  const [viewMode, setViewMode] = React.useState<'pitch' | 'table'>('pitch');
   const [homePlayers, setHomePlayers] = React.useState<Player[]>([]);
   const [awayPlayers, setAwayPlayers] = React.useState<Player[]>([]);
   const [guests, setGuests] = React.useState<Guest[]>([]);
@@ -245,6 +251,20 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   React.useEffect(() => { awayPosRef.current = awayPos; }, [awayPos]);
 
   const pitchRef = React.useRef<HTMLDivElement | null>(null);
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const [pitchW, setPitchW] = React.useState(850);
+  React.useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setPitchW(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    setPitchW(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, [viewMode]);
   // Track natural size of the pitch image to compute drawn bounds when using background-size: contain
   const pitchImgSizeRef = React.useRef<{ w: number; h: number } | null>(null);
   React.useEffect(() => {
@@ -580,26 +600,13 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       y = clamp01(mouseY);
     }
 
-    // Keep the icon fully inside the visible pitch image
-    const SHIRT_W = 40;
-    const SHIRT_H = 40;
-    const marginX = (SHIRT_W / 2) / rect.width;
-    const marginY = (SHIRT_H / 2) / rect.height;
+    // Keep the icon inside pitch bounds.
+    // Image uses objectFit:fill so it covers 100% of the CSS box.
+    // Margins are in normalized portrait space (portrait CSS: ~340px wide, ~900px tall).
+    const margin = 0.04;
 
-    const bounds = getPitchBoundsNorm(rect);
-    const midY = (bounds.top + bounds.bottom) / 2;
-
-    const minX = bounds.left + marginX;
-    const maxX = bounds.right - marginX;
-
-    // Limit y to team's half: Home = top (0 to 0.5), Away = bottom (0.5 to 1.0)
-    const halfTop = teamSide === 'home' ? bounds.top : midY;
-    const halfBottom = teamSide === 'home' ? midY : bounds.bottom;
-    const minY = halfTop + marginY;
-    const maxY = halfBottom - marginY;
-
-    x = Math.max(minX, Math.min(maxX, x));
-    y = Math.max(minY, Math.min(maxY, y));
+    x = Math.max(margin, Math.min(1 - margin, x));
+    y = Math.max(margin, Math.min(1 - margin, y));
 
     if (teamSide === 'home') {
       setHomePos(prev => {
@@ -1057,7 +1064,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           justifyContent: 'center',
         }}
       >
-        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+        <Box sx={{ position: 'relative', width: 60, height: 60 }}>
           <img 
             src={shirtImage.src} 
             alt="shirt" 
@@ -1094,7 +1101,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           )}
         </Box>
         <Box sx={{ height: 4 }} />
-        <Typography sx={{ fontSize: 10, fontWeight: 600, color: teamColor, textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '60px' }}>
+        <Typography sx={{ fontSize: 10, fontWeight: 600, color: '#fff', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '60px' }}>
           {player.name}
         </Typography>
         {matchStatus === 'RESULT_PUBLISHED' && typeof player.xp === 'number' && (
@@ -1129,7 +1136,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           touchAction: 'none',
         }}
       >
-        <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+        <Box sx={{ position: 'relative', width: 60, height: 60 }}>
           <img 
             src={shirtImage.src} 
             alt="guest-shirt" 
@@ -1142,7 +1149,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           />
         </Box>
         <Box sx={{ height: 6 }} />
-        <Typography sx={{ fontSize: 10, fontWeight: 600, color: teamColor, textAlign: 'center' }}>
+        <Typography sx={{ fontSize: 10, fontWeight: 600, color: '#fff', textAlign: 'center' }}>
           {name}
         </Typography>
       </Box>
@@ -1153,9 +1160,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const awaitingTeams = dataLoaded && homePlayers.length === 0 && awayPlayers.length === 0;
 
   return (
-    <Box sx={{ minHeight: '100%', bgcolor: '#fafafa' }}>
+    <Box sx={{ minHeight: '100%', bgcolor: '#2b2b2b' }}>
       {/* AppBar substitute */}
-      <Box
+      {/* <Box
         sx={{
           px: 2,
           py: 1.25,
@@ -1163,51 +1170,108 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor2} 100%)`,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           position: 'sticky',
           top: 0,
           zIndex: 10
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>Team Formation</Typography>
-        <IconButton onClick={shareTeam} size="small" sx={{ color: '#fff' }}>
-          <ShareIcon />
-        </IconButton>
-      </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: 1, textTransform: 'uppercase' }}>TEAMS</Typography>
+          <img src={FootballIcon.src} alt="football" width={22} height={22} style={{ objectFit: 'contain' }} />
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: 1, textTransform: 'uppercase' }}>MATCH {matchNumber ?? '-'}</Typography>
+        </Box>
+      </Box> */}
 
       <Box component="main" sx={{ p: 2 }}>
+        {/* View toggle row: Home count | Table/Pitch buttons | Away count */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, mb: 1.5 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#00a77f' }}>
+            Home ({homePlayers.length + homeGuests.length})
+          </Typography>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: 0.75, display: 'flex', gap: 1 }}>
+            <Box
+              onClick={() => setViewMode('table')}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                px: 1.5, py: 0.5,
+                border: `1.5px solid ${viewMode === 'table' ? primaryColor : '#ccc'}`,
+                borderRadius: 1,
+                cursor: 'pointer',
+                bgcolor: viewMode === 'table' ? `${primaryColor}18` : 'transparent',
+              }}
+            >
+              <img src={TableViewImg.src} alt="table" width={23} height={23} style={{ objectFit: 'contain', filter: 'brightness(0)' }} />
+              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'table' ? primaryColor : '#555' }}>Table View</Typography>
+            </Box>
+            <Box
+              onClick={() => setViewMode('pitch')}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                px: 1.5, py: 0.5,
+                border: '0.5px solid #212121',
+                borderRadius: 1,
+                cursor: 'pointer',
+                bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
+              }}
+            >
+              <img src={PitchViewImg.src} alt="pitch" width={26} height={26} style={{ objectFit: 'contain' }} />
+              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555' }}>Pitch View</Typography>
+            </Box>
+          </Box>
+          <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#c95c1a' }}>
+            ({awayPlayers.length + awayGuests.length}) Away
+          </Typography>
+        </Box>
         {/* Formation card */}
+        {viewMode === 'pitch' && (
+        <>
         <Paper
+          ref={wrapperRef}
           elevation={0}
           sx={{
-            p: 2,
-            border: `1px solid ${primaryColor}33`,
-            borderRadius: 2,
-            bgcolor: '#fff'
+            p: 0,
+            border: 'none',
+            borderRadius: 1,
+            bgcolor: '#2b2b2b',
+            overflow: 'hidden',
+            mx: 1,
+            /* Wrapper defines the visible landscape area */
+            height: { xs: 220, sm: 250, md: 410 },
+            position: 'relative',
           }}
         >
-          <Divider sx={{ mb: 0 }} />
+          {/* pitchRef is portrait-sized, rotated 90deg CW so goals end up on left/right.
+              CSS width = visible height; CSS height = large enough to fill visible width */}
           <Box
             ref={pitchRef}
             sx={{
-              width: '100%',
-              height: { xs: 400, sm: 450, md: 500 },
-              maxWidth: { xs: '100%', sm: '700px', md: '900px', lg: '1100px' },
-              margin: '0 auto',
-              position: 'relative',
-              borderRadius: 2,
-              overflow: 'hidden',
-              backgroundImage: `url(${Pitch.src})`,
-              backgroundSize: 'contain',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center',
-              // Big screens: rotate pitch to horizontal view
-              transform: { xs: 'none', md: 'rotate(90deg)' },
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: { xs: 220, sm: 250, md: 405 },
+              height: `${pitchW}px`,
+              transform: 'translate(-50%, -50%) rotate(90deg)',
               transformOrigin: 'center center',
-              mt: { xs: 2, md: -2 },
-              mb: { xs: 2, md: -2 },
+              bgcolor: '#2b2b2b',
             }}
           >
+            {/* Pitch image: grayscale→invert→brightness turns white-bg→black and teal-lines→white;
+                mix-blend-mode:screen makes black transparent so #2b2b2b container shows through */}
+            <img
+              src={Pitch.src}
+              alt=""
+              style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'fill',
+                filter: 'grayscale(1) invert(1) brightness(10) contrast(5)',
+                mixBlendMode: 'screen',
+                pointerEvents: 'none',
+              }}
+            />
             {awaitingTeams ? (
               <Box
                 sx={{
@@ -1249,17 +1313,49 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               </>
             )}
           </Box>
-
-          {/* Team Labels – on desktop the pitch is rotated 90° CW so Home (top) ends up on the right */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', flexDirection: { xs: 'row', md: 'row-reverse' }, mt: { xs: 2, md: 4 }, px: 2 }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 700, color: primaryColor }}>
-              {homeTeamName} (Home)
-            </Typography>
-            <Typography sx={{ fontSize: 14, fontWeight: 700, color: awayTeamColor }}>
-              {awayTeamName} (Away)
-            </Typography>
-          </Box>
         </Paper>
+
+        
+        </>
+        )}
+
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <Paper elevation={0} sx={{ border: `1px solid ${primaryColor}33`, borderRadius: 2, overflow: 'hidden' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              {/* Home Team */}
+              <Box>
+                <Box sx={{ bgcolor: primaryColor, py: 0.75, px: 1.5 }}>
+                  <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{homeTeamName} (Home)</Typography>
+                </Box>
+                {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const }))].map((p, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderBottom: '1px solid #f0f0f0', bgcolor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Typography sx={{ color: '#fff', fontSize: '0.65rem', fontWeight: 700 }}>{p.number || (i + 1)}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>{p.name}</Typography>
+                    <Typography sx={{ fontSize: '0.7rem', color: '#888', ml: 'auto' }}>{p.position}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              {/* Away Team */}
+              <Box sx={{ borderLeft: `1px solid ${primaryColor}33` }}>
+                <Box sx={{ bgcolor: awayTeamColor, py: 0.75, px: 1.5 }}>
+                  <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{awayTeamName} (Away)</Typography>
+                </Box>
+                {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const }))].map((p, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderBottom: '1px solid #f0f0f0', bgcolor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: awayTeamColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Typography sx={{ color: '#fff', fontSize: '0.65rem', fontWeight: 700 }}>{p.number || (i + 1)}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>{p.name}</Typography>
+                    <Typography sx={{ fontSize: '0.7rem', color: '#888', ml: 'auto' }}>{p.position}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        )}
 
         {/* Context Menu */}
         <Menu open={Boolean(menuAnchor)} anchorEl={menuAnchor} onClose={closeMenu}>
@@ -1344,89 +1440,114 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
         <Box sx={{ height: 12 }} />
 
-        {/* Match Result / Predictions */}
-        <Typography sx={{ fontSize: 16, fontWeight: 600, textAlign: 'center' }}>
-          {matchStatus === 'RESULT_PUBLISHED' ? 'Match Result' : 'Match Predictions'}
-        </Typography>
-        <Box sx={{ height: 12 }} />
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            border: `1px solid ${primaryColor}33`,
-            borderRadius: 2,
-            bgcolor: '#fff',
-            textAlign: 'center'
-          }}
-        >
-          <Typography sx={{ fontSize: 14, fontWeight: 700, color: primaryColor }}>
-            Match {matchNumber ?? '-'}
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1 }}>
+          {/* Left: Undo / back placeholder */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
+            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px',  display: 'flex',alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              onClick={() => window.history.back()}
+            >
+              <img src={UndoImg.src} alt="undo" width={24} height={24} style={{ objectFit: 'contain' }} />
+            </Box>
+          </Box>
 
-          {matchStatus === 'RESULT_PUBLISHED' && homeTeamGoals != null && awayTeamGoals != null ? (
-            <>
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
-                <span style={{ color: primaryColor }}>
-                  {homeTeamGoals > awayTeamGoals
-                    ? homeTeamName
-                    : awayTeamGoals > homeTeamGoals
-                    ? awayTeamName
-                    : 'Match'}
-                </span>{' '}
-                <span style={{ color: textColor }}>
-                  {homeTeamGoals === awayTeamGoals
-                    ? 'ended in a draw.'
-                    : 'won the match!'}
-                </span>
-              </Typography>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>
-                Final score is{' '}
-                <span style={{ color: primaryColor }}>
-                  {homeTeamGoals} - {awayTeamGoals}
-                </span>
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
-                <span style={{ color: primaryColor }}>
-                  {teamInsights
-                    ? teamInsights.predicted === 'home'
+          {/* Center: Match Predictions */}
+          <Paper
+            elevation={0}
+            sx={{
+              px: 2,
+              py: 1.5,
+              border: '1.5px solid #fff',
+              borderRadius: 1,
+              bgcolor: '#2b2b2b',
+              textAlign: 'center',
+              flex: 1,
+              mx: 10,
+            }}
+          >
+            <Typography sx={{ fontSize: 19, fontWeight: 600, color: '#00a77f', lineHeight: 1.1, mb: 0 }}>
+              Match Predictions
+            </Typography>
+
+            {matchStatus === 'RESULT_PUBLISHED' && homeTeamGoals != null && awayTeamGoals != null ? (
+              <>
+                <Typography sx={{ fontSize: 19, fontWeight: 500, lineHeight: 1.1, mb: 0 }}>
+                  <span style={{ color: primaryColor }}>
+                    {homeTeamGoals > awayTeamGoals
                       ? homeTeamName
-                      : teamInsights.predicted === 'away'
+                      : awayTeamGoals > homeTeamGoals
                       ? awayTeamName
-                      : 'Draw'
-                    : homeTeamName}
-                </span>{' '}
-                <span style={{ color: textColor }}>
-                  {teamInsights
-                    ? teamInsights.predicted === 'draw'
-                      ? 'is predicted (draw).'
-                      : 'is predicted to win.'
-                    : ''}
-                </span>
-              </Typography>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: textColor }}>
-                Predicted score is{' '}
-                <span style={{ color: primaryColor }}>
-                  {teamInsights ? teamInsights.predictedScore : '\u2014'}
-                </span>
-              </Typography>
-              {!!predictionReason && !teamInsights && !insightsLoading && (
-                <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>
-                  {predictionReason === 'FIRST_MATCH_NO_STATS'
-                    ? 'Predictions are unavailable for the first match without prior stats.'
-                    : predictionReason === 'NO_SELECTED_PLAYERS'
-                    ? 'Select players to see predictions.'
-                    : predictionReason === 'NO_SIGNAL'
-                    ? 'Not enough data to estimate.'
-                    : 'Prediction unavailable.'}
+                      : 'Match'}
+                  </span>{' '}
+                  <span style={{ color: '#fff' }}>
+                    {homeTeamGoals === awayTeamGoals
+                      ? 'ended in a draw.'
+                      : 'is predicted to win !'}
+                  </span>
                 </Typography>
-              )}
-            </>
-          )}
-        </Paper>
+                <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.1 }}>
+                  Predicted scores{' '}
+                  <span style={{ color: primaryColor }}>
+                    {homeTeamGoals} - {awayTeamGoals}
+                  </span>
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Typography sx={{ fontSize: 19, fontWeight: 600, lineHeight: 1.1, mb: 0 }}>
+                  <span style={{ color: primaryColor }}>
+                    {teamInsights
+                      ? teamInsights.predicted === 'home'
+                        ? homeTeamName
+                        : teamInsights.predicted === 'away'
+                        ? awayTeamName
+                        : 'Draw'
+                      : homeTeamName}
+                  </span>{' '}
+                  <span style={{ color: '#fff' }}>
+                    {teamInsights
+                      ? teamInsights.predicted === 'draw'
+                        ? 'is predicted (draw).'
+                        : 'is predicted to win.'
+                      : ''}
+                  </span>
+                </Typography>
+                <Typography sx={{ fontSize: 19, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
+                  Predicted score is{' '}
+                  <span style={{ color: primaryColor }}>
+                    {teamInsights ? teamInsights.predictedScore : '\u2014'}
+                  </span>
+                </Typography>
+                {!!predictionReason && !teamInsights && !insightsLoading && (
+                  <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>
+                    {predictionReason === 'FIRST_MATCH_NO_STATS'
+                      ? 'Predictions are unavailable for the first match without prior stats.'
+                      : predictionReason === 'NO_SELECTED_PLAYERS'
+                      ? 'Select players to see predictions.'
+                      : predictionReason === 'NO_SIGNAL'
+                      ? 'Not enough data to estimate.'
+                      : 'Prediction unavailable.'}
+                  </Typography>
+                )}
+              </>
+            )}
+          </Paper>
+
+          {/* Right: Share button */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
+            <Box sx={{ width: 44, height: 44, ml: -13, borderRadius: '3px', bgcolor: '#00a77f', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              onClick={shareTeam}
+            >
+              <ShareIcon sx={{ color: '#fff', fontSize: 20 }} />
+            </Box>
+          </Box>
+        </Box>
+
+        <Typography sx={{ fontSize: 17, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+          <img src={BulbImg.src} alt="tip" width={20} height={20} style={{ objectFit: 'contain' }} />
+          Captain's can drag players into formation
+        </Typography>
         <Box sx={{ height: 40 }} />
+        
       </Box>
     </Box>
   );
