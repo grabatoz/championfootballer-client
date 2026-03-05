@@ -6,6 +6,8 @@ export interface ApiResponse<T> {
   data?: T;
   token?: string;
   error?: string;
+  requiresVerification?: boolean;
+  email?: string;
 }
 
 export interface LoginCredentials {

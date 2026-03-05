@@ -68,8 +68,10 @@ export const authAPI = {
         data: data.user,
         token: data.token,
         error: data.error,
-        message:data.message
-      };
+        message: data.message,
+        requiresVerification: data.requiresVerification,
+        email: data.email,
+      } as ApiResponse<User>;
     } catch (error) {
       return {
         success: false,
@@ -96,14 +98,69 @@ export const authAPI = {
         data: data.user,
         token: data.token,
         error: data.error,
-        message:data.message
-      };
+        message: data.message,
+        requiresVerification: data.requiresVerification,
+        email: data.email,
+      } as ApiResponse<User>;
     } catch (error) {
       return {
         success: false,
          message: 'Registration failed', 
         error: error instanceof Error ? error.message : 'Registration failed'
       };
+    }
+  },
+
+  verifyRegistration: async (email: string, code: string): Promise<ApiResponse<User>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-registration`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, code }),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      return {
+        success: response.ok,
+        data: data.user,
+        token: data.token,
+        error: data.error || data.message,
+        message: data.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Verification failed',
+        message: 'Verification failed',
+      };
+    }
+  },
+
+  resendVerification: async (email: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to resend code');
+      }
+      return { success: true, message: data.message || 'Verification code sent!' };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message };
+      }
+      return { success: false, error: 'Failed to resend verification code' };
     }
   },
 

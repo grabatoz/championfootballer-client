@@ -212,12 +212,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotDialogMessage, setForgotDialogMessage] = useState("")
   const [forgotDialogError, setForgotDialogError] = useState(false)
+  const [forgotPasswordError, setForgotPasswordError] = useState("")
+  const [forgotConfirmError, setForgotConfirmError] = useState("")
 
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegisterPassword, setShowRegisterPassword] = useState(false)
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [confirmError, setConfirmError] = useState("")
+
+  // Email verification dialog state
+  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
+  const [verifyEmail, setVerifyEmail] = useState("")
+  const [verifyOtp, setVerifyOtp] = useState(["", "", "", "", "", ""])
+  const [verifyLoading, setVerifyLoading] = useState(false)
+  const [verifyMessage, setVerifyMessage] = useState("")
+  const [verifyError, setVerifyError] = useState(false)
+  const [verifySuccess, setVerifySuccess] = useState(false)
+
+  // Resend cooldown timers (60 seconds)
+  const [forgotResendTimer, setForgotResendTimer] = useState(0)
+  const [verifyResendTimer, setVerifyResendTimer] = useState(0)
 
   // Location selectors state (codes used to derive dependent lists)
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
@@ -327,18 +342,30 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setTabValue(showLogin ? 0 : 1)
   }, [showLogin])
 
+  // Countdown timer for forgot-password resend button
+  useEffect(() => {
+    if (forgotResendTimer <= 0) return
+    const id = setTimeout(() => setForgotResendTimer(t => t - 1), 1000)
+    return () => clearTimeout(id)
+  }, [forgotResendTimer])
+
+  // Countdown timer for verification resend button
+  useEffect(() => {
+    if (verifyResendTimer <= 0) return
+    const id = setTimeout(() => setVerifyResendTimer(t => t - 1), 1000)
+    return () => clearTimeout(id)
+  }, [verifyResendTimer])
+
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value })
   }
 
-  const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}$/
+  const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9]).{7,}$/
+  const PASSWORD_FORMAT_MSG = "Password must contain letters and numbers. Consider also using upper and lower case and other characters (-, _, @, ?, etc)"
   const getPasswordError = (pw: string): string => {
-    if (!pw) return "Password is required"
-    if (pw.length < 6) return "Minimum 6 characters required"
-    if (pw.length > 16) return "Maximum 16 characters allowed"
-    if (!/[A-Z]/.test(pw)) return "Include at least one uppercase letter"
-    if (!/[0-9]/.test(pw)) return "Include at least one number"
-    if (!/[^A-Za-z0-9]/.test(pw)) return "Include at least one special character"
+    if (!pw) return ""
+    if (pw.length < 7) return "Password must be at least 7 characters"
+    if (!/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) return PASSWORD_FORMAT_MSG
     return ""
   }
 
@@ -452,10 +479,36 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           window.location.href = "/home"
         }, 150)
       } else {
+        // Check if account needs verification
+        const errData = result as any
+        if (errData.requiresVerification && errData.email) {
+          setVerifyEmail(errData.email)
+          setVerifyOtp(["", "", "", "", "", ""])
+          setVerifyMessage("")
+          setVerifyError(false)
+          setVerifySuccess(false)
+          setVerifyResendTimer(60)
+          setVerifyDialogOpen(true)
+          toast(errData.message || "Please verify your email to continue.")
+          return
+        }
         toast.error(extractApiMessage(result))
       }
     } catch (err: unknown) {
       console.error("[AuthTabs] Login submission error:", err)
+      // Also check for verification requirement in error responses
+      const errData = err as any
+      if (errData?.requiresVerification && errData?.email) {
+        setVerifyEmail(errData.email)
+        setVerifyOtp(["", "", "", "", "", ""])
+        setVerifyMessage("")
+        setVerifyError(false)
+        setVerifySuccess(false)
+        setVerifyResendTimer(60)
+        setVerifyDialogOpen(true)
+        toast("Please verify your email to continue.")
+        return
+      }
       toast.error(extractApiMessage(err))
     } finally {
       setLoginLoading(false)
@@ -479,7 +532,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     )
       msg = "Please fill in all fields"
     else if (!passwordPattern.test(registerData.password)) {
-      msg = "Password must be 6-16 characters and include 1 uppercase, 1 number and 1 special character"
+      msg = PASSWORD_FORMAT_MSG
       setPasswordError(getPasswordError(registerData.password))
     }
     else if (registerData.password !== registerData.confirmPassword) {
@@ -509,6 +562,21 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     try {
       const result = await dispatch(register(registerData)).unwrap()
       console.log("[AuthTabs] Register result from server:", result)
+
+      // Check if server says verification is required (6-digit code flow)
+      if (result.success && result.requiresVerification) {
+        const emailForVerify = result.email || registerData.email
+        setVerifyEmail(emailForVerify)
+        setVerifyOtp(["", "", "", "", "", ""])
+        setVerifyMessage("")
+        setVerifyError(false)
+        setVerifySuccess(false)
+        setVerifyResendTimer(60)
+        setVerifyDialogOpen(true)
+        toast.success(result.message || "Registration successful! Check your email for verification code.")
+        return
+      }
+
       if (result.success && result.data) {
         if (result.token) {
           // Use the helper functions to normalize data
@@ -519,7 +587,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           const saved = authStorage.saveAuthExact(normalizedUser, userData, result.token)
           console.log("[AuthTabs] Token saved:", saved)
           
-          // ✨ Wait for cookies to be set properly
+          // Wait for cookies to be set properly
           await new Promise(resolve => setTimeout(resolve, 100))
           
           // Verify token was saved
@@ -531,11 +599,24 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         }
         toast.success(result.message || "Registration successful!")
         
-        // ✨ Small delay before redirect to ensure cookies are set
+        // Small delay before redirect to ensure cookies are set
         setTimeout(() => {
           window.location.href = "/home"
         }, 150)
       } else {
+        // Check if the error response also has requiresVerification (e.g., from login attempt of unverified user)
+        const errData = result as any
+        if (errData.requiresVerification && errData.email) {
+          setVerifyEmail(errData.email)
+          setVerifyOtp(["", "", "", "", "", ""])
+          setVerifyMessage("")
+          setVerifyError(false)
+          setVerifySuccess(false)
+          setVerifyResendTimer(60)
+          setVerifyDialogOpen(true)
+          toast("Please verify your email to continue.")
+          return
+        }
         toast.error(extractApiMessage(result))
       }
     } catch (err: unknown) {
@@ -543,6 +624,100 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       toast.error(extractApiMessage(err))
     } finally {
       setRegisterLoading(false)
+    }
+  }
+
+  // Verification dialog handlers
+  const handleVerifyOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1)
+    if (value && !/^[0-9]$/.test(value)) return
+    const newOtp = [...verifyOtp]
+    newOtp[index] = value
+    setVerifyOtp(newOtp)
+    // Auto-focus next input
+    if (value && index < 5) {
+      const next = document.getElementById(`verify-otp-input-${index + 1}`)
+      if (next) (next as HTMLInputElement).focus()
+    }
+  }
+
+  const handleVerifyOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !verifyOtp[index] && index > 0) {
+      const prev = document.getElementById(`verify-otp-input-${index - 1}`)
+      if (prev) (prev as HTMLInputElement).focus()
+    }
+  }
+
+  const handleVerifyOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6)
+    if (pasted.length === 6) {
+      setVerifyOtp(pasted.split(""))
+      const last = document.getElementById(`verify-otp-input-5`)
+      if (last) (last as HTMLInputElement).focus()
+    }
+  }
+
+  const handleVerifyRegistration = async () => {
+    setVerifyMessage("")
+    setVerifyError(false)
+    const code = verifyOtp.join("")
+    if (code.length < 6) {
+      setVerifyMessage("Please enter the complete 6-digit code.")
+      setVerifyError(true)
+      return
+    }
+    setVerifyLoading(true)
+    try {
+      const res = await authAPI.verifyRegistration(verifyEmail, code)
+      if (res.success && res.data) {
+        setVerifySuccess(true)
+        toast.success("Email verified successfully! Welcome to Champion Footballer!")
+
+        if (res.token) {
+          const normalizedUser = normalizeUserForStorage(res.data)
+          const userData = normalizeUserData(res.data)
+          authStorage.saveAuthExact(normalizedUser, userData, res.token)
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+
+        // Redirect to home after a brief celebration
+        setTimeout(() => {
+          window.location.href = "/home"
+        }, 1500)
+      } else {
+        setVerifyMessage(extractApiMessage(res))
+        setVerifyError(true)
+      }
+    } catch (err) {
+      setVerifyMessage(extractApiMessage(err))
+      setVerifyError(true)
+    } finally {
+      setVerifyLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setVerifyMessage("")
+    setVerifyError(false)
+    setVerifyLoading(true)
+    try {
+      const res = await authAPI.resendVerification(verifyEmail)
+      if (res.success) {
+        setVerifyOtp(["", "", "", "", "", ""])
+        setVerifyResendTimer(60)
+        toast.success("New verification code sent to your email!")
+        setVerifyMessage("New code sent! Check your email.")
+        setVerifyError(false)
+      } else {
+        setVerifyMessage((res as any).error || "Failed to resend code.")
+        setVerifyError(true)
+      }
+    } catch (err) {
+      setVerifyMessage(extractApiMessage(err))
+      setVerifyError(true)
+    } finally {
+      setVerifyLoading(false)
     }
   }
 
@@ -556,6 +731,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setForgotConfirmPassword("")
     setForgotDialogMessage("")
     setForgotDialogError(false)
+    setForgotPasswordError("")
+    setForgotConfirmError("")
     setForgotLoading(false)
   }
 
@@ -564,6 +741,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setForgotStep(1)
     setForgotDialogMessage("")
     setForgotDialogError(false)
+    setForgotPasswordError("")
+    setForgotConfirmError("")
     setForgotLoading(false)
   }
 
@@ -588,6 +767,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       if (res.success) {
         setForgotStep(2)
         setForgotDialogMessage("")
+        setForgotResendTimer(60)
         toast.success("Verification code sent to your email!")
       } else {
         setForgotDialogMessage(extractApiMessage(res))
@@ -671,8 +851,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       setForgotDialogError(true)
       return
     }
-    if (forgotNewPassword.length < 6) {
-      setForgotDialogMessage("Password must be at least 6 characters.")
+    if (forgotNewPassword.length < 7) {
+      setForgotDialogMessage("Password must be at least 7 characters with letters and numbers.")
+      setForgotDialogError(true)
+      return
+    }
+    if (!/[a-zA-Z]/.test(forgotNewPassword) || !/[0-9]/.test(forgotNewPassword)) {
+      setForgotDialogMessage(PASSWORD_FORMAT_MSG)
       setForgotDialogError(true)
       return
     }
@@ -959,10 +1144,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
-                inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
+                inputProps={{ minLength: 7 }}
                 error={Boolean(passwordError)}
-                helperText={passwordError || '6-16 chars, 1 uppercase, 1 number, 1 special'}
-                FormHelperTextProps={{ sx: { display: { xs: 'block', md: 'none' } } }}
+                helperText={passwordError || 'Min 7 characters with letters and numbers'}
+                FormHelperTextProps={{ sx: { color: passwordError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
                 InputProps={{
                   endAdornment: (
                     <IconButton
@@ -989,10 +1174,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
-                inputProps={{ minLength: 6, maxLength: 16, pattern: '(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}' }}
+                inputProps={{ minLength: 7 }}
                 error={Boolean(confirmError)}
                 helperText={confirmError || 'Re-type your password'}
-                FormHelperTextProps={{ sx: { display: { xs: 'block', md: 'none' } } }}
+                FormHelperTextProps={{ sx: { color: confirmError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
                 InputProps={{
                   endAdornment: (
                     <IconButton
@@ -1334,7 +1519,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          {/* ── Step 1: Email ── */}
+          {/* â”€â”€ Step 1: Email â”€â”€ */}
           {forgotStep === 1 && (
             <Box>
               <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1385,7 +1570,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Box>
           )}
 
-          {/* ── Step 2: OTP Only ── */}
+          {/* â”€â”€ Step 2: OTP Only â”€â”€ */}
           {forgotStep === 2 && (
             <Box>
               <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1453,15 +1638,15 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 fullWidth
                 variant="text"
                 onClick={handleSendOtp}
-                disabled={forgotLoading}
-                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' } }}
+                disabled={forgotLoading || forgotResendTimer > 0}
+                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' }, '&:disabled': { color: 'rgba(229,106,22,0.4)' } }}
               >
-                Didn&apos;t receive code? Resend
+                {forgotResendTimer > 0 ? `Resend code in ${forgotResendTimer}s` : "Didn't receive code? Resend"}
               </Button>
             </Box>
           )}
 
-          {/* ── Step 3: New Password ── */}
+          {/* â”€â”€ Step 3: New Password â”€â”€ */}
           {forgotStep === 3 && (
             <Box>
               <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1472,7 +1657,19 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 placeholder="Enter new password"
                 type={showForgotNewPassword ? 'text' : 'password'}
                 value={forgotNewPassword}
-                onChange={(e) => setForgotNewPassword(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setForgotNewPassword(v)
+                  setForgotPasswordError(getPasswordError(v))
+                  if (forgotConfirmPassword && forgotConfirmPassword !== v) {
+                    setForgotConfirmError("Passwords do not match")
+                  } else {
+                    setForgotConfirmError("")
+                  }
+                }}
+                error={Boolean(forgotPasswordError)}
+                helperText={forgotPasswordError || 'Min 7 characters with letters and numbers'}
+                FormHelperTextProps={{ sx: { color: forgotPasswordError ? '#ff6b6b' : 'rgba(255,255,255,0.4)', fontSize: '0.75rem' } }}
                 sx={{
                   mb: 2,
                   '& .MuiOutlinedInput-root': {
@@ -1503,8 +1700,15 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 placeholder="Confirm new password"
                 type={showForgotConfirmPassword ? 'text' : 'password'}
                 value={forgotConfirmPassword}
-                onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setForgotConfirmPassword(v)
+                  setForgotConfirmError(v && v !== forgotNewPassword ? "Passwords do not match" : "")
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleVerifyAndReset()}
+                error={Boolean(forgotConfirmError)}
+                helperText={forgotConfirmError || 'Re-type your password'}
+                FormHelperTextProps={{ sx: { color: forgotConfirmError ? '#ff6b6b' : 'rgba(255,255,255,0.4)', fontSize: '0.75rem' } }}
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
@@ -1551,7 +1755,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Box>
           )}
 
-          {/* ── Step 4: Success ── */}
+          {/* â”€â”€ Step 4: Success â”€â”€ */}
           {forgotStep === 4 && (
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box sx={{
@@ -1561,7 +1765,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 mx: 'auto', mb: 2,
                 boxShadow: '0 4px 20px rgba(229,106,22,0.3)',
               }}>
-                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>✓</Typography>
+                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>âœ“</Typography>
               </Box>
               <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#fff', mb: 1, fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif' }}>
                 Password Reset Successful
@@ -1587,6 +1791,163 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 }}
               >
                 Back to Login
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Verification Dialog (after registration) */}
+      <Dialog
+        open={verifyDialogOpen}
+        onClose={() => {}} /* prevent closing by clicking outside */
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            overflow: 'hidden',
+            bgcolor: '#101010',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          },
+        }}
+      >
+        {/* Header with green gradient for success feel */}
+        <Box sx={{
+          background: verifySuccess
+            ? 'linear-gradient(177deg, #16a34a 26%, #15803d 100%)'
+            : 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+          px: 3, pt: 3, pb: 3.5,
+          position: 'relative',
+          textAlign: 'center',
+        }}>
+          <IconButton
+            onClick={() => setVerifyDialogOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'rgba(255,255,255,0.8)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.15)' } }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {verifySuccess ? (
+            <>
+              <Box sx={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                mx: 'auto', mb: 2,
+              }}>
+                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>âœ“</Typography>
+              </Box>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+                Welcome to CF!
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                Your account has been verified. Redirecting...
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+                Registration Successful! 
+              </Typography>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 1 }}>
+                Welcome to CF.
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', lineHeight: 1.5 }}>
+                Head over to your email and enter the 6-digit verification key to complete your sign-up and start playing
+              </Typography>
+            </>
+          )}
+        </Box>
+
+        <DialogContent sx={{ px: 3, pt: 3, pb: 4, bgcolor: '#101010' }}>
+          {verifyMessage && (
+            <Alert
+              severity={verifyError ? 'error' : 'success'}
+              sx={{
+                mb: 2,
+                borderRadius: '7px',
+                bgcolor: verifyError ? 'rgba(207,35,38,0.15)' : 'rgba(0,167,127,0.15)',
+                color: verifyError ? '#ff6b6b' : '#00c896',
+                '& .MuiAlert-icon': { color: verifyError ? '#ff6b6b' : '#00c896' },
+              }}
+            >
+              {verifyMessage}
+            </Alert>
+          )}
+
+          {!verifySuccess && (
+            <Box>
+              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                We sent a 6-digit code to <span style={{ color: '#E56A16', fontWeight: 600 }}>{verifyEmail}</span>
+              </Typography>
+
+              {/* 6-digit OTP boxes */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3 }}>
+                {verifyOtp.map((digit, idx) => (
+                  <TextField
+                    key={idx}
+                    id={`verify-otp-input-${idx}`}
+                    value={digit}
+                    onChange={(e) => handleVerifyOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleVerifyOtpKeyDown(idx, e)}
+                    onPaste={idx === 0 ? handleVerifyOtpPaste : undefined}
+                    inputProps={{
+                      maxLength: 1,
+                      style: {
+                        textAlign: 'center',
+                        fontSize: '1.5rem',
+                        fontWeight: 700,
+                        padding: '12px 0',
+                        color: '#E56A16',
+                        fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif',
+                      },
+                    }}
+                    sx={{
+                      width: 48,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#1a1a1a',
+                        borderRadius: '7px',
+                        '& fieldset': { borderColor: '#404040' },
+                        '&:hover fieldset': { borderColor: '#E56A16' },
+                        '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={verifyLoading}
+                onClick={handleVerifyRegistration}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  py: 1.4,
+                  borderRadius: '7px',
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                }}
+              >
+                {verifyLoading ? <CircularProgress size={22} color="inherit" /> : 'Verify & Start Playing'}
+              </Button>
+
+              <Button
+                fullWidth
+                variant="text"
+                onClick={handleResendVerification}
+                disabled={verifyLoading || verifyResendTimer > 0}
+                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' }, '&:disabled': { color: 'rgba(229,106,22,0.4)' } }}
+              >
+                {verifyResendTimer > 0 ? `Resend code in ${verifyResendTimer}s` : "Didn't receive code? Resend"}
               </Button>
             </Box>
           )}
