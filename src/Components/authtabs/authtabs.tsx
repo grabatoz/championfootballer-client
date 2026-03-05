@@ -531,6 +531,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       !registerData.city
     )
       msg = "Please fill in all fields"
+    else if (registerData.firstName.length > 20) msg = "First name must be 20 characters or less"
+    else if (registerData.lastName.length > 20) msg = "Last name must be 20 characters or less"
     else if (!passwordPattern.test(registerData.password)) {
       msg = PASSWORD_FORMAT_MSG
       setPasswordError(getPasswordError(registerData.password))
@@ -1025,6 +1027,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
+                inputProps={{ maxLength: 20 }}
               />
             </Box>
 
@@ -1038,6 +1041,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
+                inputProps={{ maxLength: 20 }}
               />
             </Box>
 

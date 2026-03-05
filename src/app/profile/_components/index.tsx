@@ -323,6 +323,18 @@ const PlayerProfileCard = () => {
         return
       }
 
+      // Validate name length
+      if (firstName.trim().length > 20) {
+        toast.error("First name must be 20 characters or less")
+        setIsUpdating(false)
+        return
+      }
+      if (lastName.trim().length > 20) {
+        toast.error("Last name must be 20 characters or less")
+        setIsUpdating(false)
+        return
+      }
+
       // Helper to treat undefined/null/empty-string as blank
       const isBlank = (v: unknown) => v == null || (typeof v === 'string' && v.trim() === '')
 
@@ -816,11 +828,11 @@ const PlayerProfileCard = () => {
                   <Grid container spacing={0.5}>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>First Name</Typography>
-                      <StyledTextField size="small" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth placeholder="First Name" sx={{ mb: 1 }} />
+                      <StyledTextField size="small" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth placeholder="First Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Last Name</Typography>
-                      <StyledTextField size="small" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth placeholder="Last Name" sx={{ mb: 1 }} />
+                      <StyledTextField size="small" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth placeholder="Last Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Email</Typography>
