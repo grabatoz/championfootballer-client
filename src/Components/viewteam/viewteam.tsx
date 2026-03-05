@@ -100,6 +100,21 @@ type TeamViewPayload = {
     guests?: Guest[];
     positions?: { home?: TeamPositions; away?: TeamPositions }; // server-saved positions
     removed?: { home?: string[]; away?: string[] }; // NEW
+    duration?: number | string | null;
+    durationMinutes?: number | string | null;
+    duration_minutes?: number | string | null;
+    matchDuration?: number | string | null;
+    lengthMinutes?: number | string | null;
+    length?: number | string | null;
+    startedAt?: string | null;
+    startTime?: string | null;
+    matchStartTime?: string | null;
+    kickoffTime?: string | null;
+    endedAt?: string | null;
+    endTime?: string | null;
+    matchEndTime?: string | null;
+    finishTime?: string | null;
+    completedAt?: string | null;
   };
 };
 
@@ -200,6 +215,34 @@ function mapApiToPlayer(u: ApiPlayer, captainId?: string): Player {
   };
 }
 
+function toMinuteValue(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v) && v >= 0) return Math.floor(v);
+  if (typeof v === 'string') {
+    const n = Number(v.trim());
+    if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+  }
+  return null;
+}
+
+function pickFirstMinute(record: Record<string, unknown>, keys: string[]): number | null {
+  for (const k of keys) {
+    const n = toMinuteValue(record[k]);
+    if (n !== null) return n;
+  }
+  return null;
+}
+
+function pickFirstIso(record: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const v = record[k];
+    if (typeof v === 'string' && v.trim()) {
+      const ms = Date.parse(v);
+      if (!Number.isNaN(ms)) return v;
+    }
+  }
+  return null;
+}
+
 export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: string; matchId?: string }) {
   const { token, user }: UseAuthResult = useAuth();
 
@@ -224,6 +267,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const [matchStatus, setMatchStatus] = React.useState<string | undefined>(undefined);
   const [homeTeamGoals, setHomeTeamGoals] = React.useState<number | null>(null);
   const [awayTeamGoals, setAwayTeamGoals] = React.useState<number | null>(null);
+  const [matchTiming, setMatchTiming] = React.useState<{
+    durationMinutes: number | null;
+    startIso: string | null;
+    endIso: string | null;
+  }>({ durationMinutes: null, startIso: null, endIso: null });
   const [dataLoaded, setDataLoaded] = React.useState(false);
 
   // Removed tracking from server
@@ -234,6 +282,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // REMOVE any role-based "admin" usage and use league admin instead
   // const isAdmin: boolean = Boolean(user?.isAdmin || user?.role === 'admin');
   const [isLeagueAdmin, setIsLeagueAdmin] = React.useState<boolean>(false);
+  const [nowMs, setNowMs] = React.useState<number>(Date.now());
 
   // Remove the toggle - we'll show both teams
   // const [isHomeTeam, setIsHomeTeam] = React.useState(true);
@@ -315,6 +364,38 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     if (!meId) return false;
     return t === 'home' ? meId === homeCaptainId : meId === awayCaptainId;
   }, [isLeagueAdmin, meId, homeCaptainId, awayCaptainId]);
+
+  const syncMatchTimingFromMatch = React.useCallback((m?: TeamViewPayload['match']) => {
+    if (!m) return;
+    const rec = m as unknown as Record<string, unknown>;
+    const durationMinutes = pickFirstMinute(rec, ['duration', 'durationMinutes', 'duration_minutes', 'matchDuration', 'lengthMinutes', 'length']);
+    const startIso = pickFirstIso(rec, ['startedAt', 'startTime', 'matchStartTime', 'kickoffTime']);
+    const endIso = pickFirstIso(rec, ['endedAt', 'endTime', 'matchEndTime', 'finishTime', 'completedAt']);
+    setMatchTiming({ durationMinutes, startIso, endIso });
+  }, []);
+
+  const isLiveMatch = React.useMemo(() => {
+    const s = String(matchStatus || '').toUpperCase();
+    return s === 'LIVE' || s === 'IN_PROGRESS' || s === 'STARTED';
+  }, [matchStatus]);
+
+  React.useEffect(() => {
+    if (!isLiveMatch || !matchTiming.startIso || !!matchTiming.endIso || matchTiming.durationMinutes !== null) return;
+    const t = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, [isLiveMatch, matchTiming.startIso, matchTiming.endIso, matchTiming.durationMinutes]);
+
+  const playedMinutes = React.useMemo(() => {
+    if (matchTiming.durationMinutes !== null) return matchTiming.durationMinutes;
+    if (!matchTiming.startIso) return null;
+    const startMs = Date.parse(matchTiming.startIso);
+    if (Number.isNaN(startMs)) return null;
+    const endMs = matchTiming.endIso ? Date.parse(matchTiming.endIso) : (isLiveMatch ? nowMs : NaN);
+    if (Number.isNaN(endMs) || endMs < startMs) return null;
+    return Math.floor((endMs - startMs) / 60000);
+  }, [matchTiming.durationMinutes, matchTiming.startIso, matchTiming.endIso, isLiveMatch, nowMs]);
+
+  const matchDurationLabel = playedMinutes !== null ? `${playedMinutes} minutes match` : '-- minutes match';
 
   // Auto layout by roles and team size
   // VERTICAL layout: Home = top half (y: 0-0.5), Away = bottom half (y: 0.5-1.0)
@@ -418,6 +499,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         setAwayTeamGoals(m.awayTeamGoals ?? null);
         setHomeCaptainId(m.homeCaptainId);
         setAwayCaptainId(m.awayCaptainId);
+        syncMatchTimingFromMatch(m);
 
         setRemoved({
           home: (m.removed?.home || []).map(String),
@@ -465,7 +547,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     };
     fetchTeams();
     return () => { active = false; };
-  }, [leagueId, matchId, token, autoLayout]);
+  }, [leagueId, matchId, token, autoLayout, syncMatchTimingFromMatch]);
 
   // Fetch league data once â€” admin check + match index
   React.useEffect(() => {
@@ -505,20 +587,36 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     if (!matchId || !token) return;
     let cancelled = false;
     (async () => {
+      // Clear previous match insight so stale percentage doesn't appear on next match.
+      setTeamInsights(null);
+      setPredictionReason(null);
       setInsightsLoading(true);
       try {
         const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/prediction`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         });
         const j = await r.json();
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[TeamBalance] prediction response', {
+            matchId,
+            ok: r.ok,
+            success: j?.success,
+            available: j?.available,
+            matchupPct: j?.matchupPct,
+            reason: j?.reason,
+          });
+        }
         if (cancelled) return;
         if (r.ok && j?.success) {
           if (typeof j.matchNumber === 'number') setMatchNumber(j.matchNumber);
           if (j.available) {
+            const rawPct = Number(j?.matchupPct);
+            const safePct = Number.isFinite(rawPct) ? Math.max(0, Math.min(100, rawPct)) : 0;
             setTeamInsights({
               homeStrength: Number(j?.home?.average ?? 0),
               awayStrength: Number(j?.away?.average ?? 0),
-              matchupPct: Number(j?.matchupPct ?? 0),
+              matchupPct: safePct,
               predicted: (j?.predicted as 'home'|'away'|'draw') || 'draw',
               predictedScore: String(j?.predictedScore ?? 'â€”'),
             });
@@ -746,12 +844,23 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Otherwise: min(count)/max(count) * 100 (rounded)
   const totalHomeCount = React.useMemo(() => (homePlayers?.length || 0) + (homeGuests?.length || 0), [homePlayers, homeGuests]);
   const totalAwayCount = React.useMemo(() => (awayPlayers?.length || 0) + (awayGuests?.length || 0), [awayPlayers, awayGuests]);
-  const lineupMatchupPct = React.useMemo(() => {
-    const maxC = Math.max(totalHomeCount, totalAwayCount);
-    if (maxC === 0) return 0;
-    const minC = Math.min(totalHomeCount, totalAwayCount);
-    return Math.round((minC / maxC) * 100);
-  }, [totalHomeCount, totalAwayCount]);
+  const homeBalancePct = React.useMemo(() => {
+    // 1. Use prediction API matchupPct if available
+    if (teamInsights && Number.isFinite(teamInsights.matchupPct) && teamInsights.matchupPct > 0) {
+      return Math.round(Math.max(1, Math.min(99, teamInsights.matchupPct)));
+    }
+    // 2. Use summed XP of each team's players
+    const homeXpTotal = homePlayers.reduce((acc, p) => acc + (typeof p.xp === 'number' ? p.xp : 0), 0);
+    const awayXpTotal = awayPlayers.reduce((acc, p) => acc + (typeof p.xp === 'number' ? p.xp : 0), 0);
+    const totalXp = homeXpTotal + awayXpTotal;
+    if (totalXp > 0) {
+      return Math.round(Math.max(1, Math.min(99, (homeXpTotal / totalXp) * 100)));
+    }
+    // 3. Fallback: player count ratio
+    return totalHomeCount > 0 || totalAwayCount > 0
+      ? Math.round(Math.max(1, Math.min(99, (totalHomeCount / Math.max(totalHomeCount + totalAwayCount, 1)) * 100)))
+      : 50;
+  }, [teamInsights, homePlayers, awayPlayers, totalHomeCount, totalAwayCount]);
 
   // Simple row layout for guests within same half
   // SWAPPED: home at y=0.99 (right when rotated), away at y=0.01 (left when rotated)
@@ -996,6 +1105,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           setGuests(m.guests || []);
           setHomeCaptainId(m.homeCaptainId);
           setAwayCaptainId(m.awayCaptainId);
+          syncMatchTimingFromMatch(m);
           setRemoved({
             home: (m.removed?.home || []).map(String),
             away: (m.removed?.away || []).map(String),
@@ -1195,14 +1305,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               sx={{
                 display: 'flex', alignItems: 'center', gap: 1.5,
                 px: 1.5, py: 0.5,
-                border: `1.5px solid ${viewMode === 'table' ? primaryColor : '#ccc'}`,
+                border: `0.5px solid #212121`,
                 borderRadius: 1,
                 cursor: 'pointer',
-                bgcolor: viewMode === 'table' ? `${primaryColor}18` : 'transparent',
+                bgcolor: viewMode === 'table' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={TableViewImg.src} alt="table" width={23} height={23} style={{ objectFit: 'contain', filter: 'brightness(0)' }} />
-              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'table' ? primaryColor : '#555' }}>Table View</Typography>
+              <img src={TableViewImg.src} alt="table" width={23} height={23} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555' }}>Table View</Typography>
             </Box>
             <Box
               onClick={() => setViewMode('pitch')}
@@ -1215,7 +1325,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                 bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={PitchViewImg.src} alt="pitch" width={26} height={26} style={{ objectFit: 'contain' }} />
+              <img src={PitchViewImg.src} alt="pitch" width={26} height={26} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
               <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555' }}>Pitch View</Typography>
             </Box>
           </Box>
@@ -1321,40 +1431,110 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
         {/* Table View */}
         {viewMode === 'table' && (
-          <Paper elevation={0} sx={{ border: `1px solid ${primaryColor}33`, borderRadius: 2, overflow: 'hidden' }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-              {/* Home Team */}
-              <Box>
-                <Box sx={{ bgcolor: primaryColor, py: 0.75, px: 1.5 }}>
-                  <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{homeTeamName} (Home)</Typography>
-                </Box>
-                {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const }))].map((p, i) => (
-                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderBottom: '1px solid #f0f0f0', bgcolor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                    <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography sx={{ color: '#fff', fontSize: '0.65rem', fontWeight: 700 }}>{p.number || (i + 1)}</Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>{p.name}</Typography>
-                    <Typography sx={{ fontSize: '0.7rem', color: '#888', ml: 'auto' }}>{p.position}</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+
+            {/* Team Balance Bar */}
+            <Box sx={{ bgcolor: '#2b2b2b', borderRadius: 1.5, px: 2, py: 1.5, border: '1px solid #2b2b2b', maxWidth: 600, mx: 'auto', width: '100%' }}>
+              <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1', color: '#fff', textTransform: 'uppercase', letterSpacing: 1, mb: 0 }}>Team Balance</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                {/* Home shirt */}
+                <img src={Shirtaway.src} alt="Home" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
+                {/* Center: % + bar + VS */}
+                <Box sx={{ flex: 1, mx: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  {/* % labels at corners of bar */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography sx={{ color: '#00a77f', fontWeight: 800, fontSize: '1.9rem', lineHeight: 1 }}>
+                      {`${homeBalancePct}%`}
+                    </Typography>
+                    <Typography sx={{ color: '#e56a16', fontWeight: 800, fontSize: '1.9rem', lineHeight: 1 }}>
+                      {`${100 - homeBalancePct}%`}
+                    </Typography>
                   </Box>
-                ))}
-              </Box>
-              {/* Away Team */}
-              <Box sx={{ borderLeft: `1px solid ${primaryColor}33` }}>
-                <Box sx={{ bgcolor: awayTeamColor, py: 0.75, px: 1.5 }}>
-                  <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{awayTeamName} (Away)</Typography>
-                </Box>
-                {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const }))].map((p, i) => (
-                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderBottom: '1px solid #f0f0f0', bgcolor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                    <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: awayTeamColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography sx={{ color: '#fff', fontSize: '0.65rem', fontWeight: 700 }}>{p.number || (i + 1)}</Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>{p.name}</Typography>
-                    <Typography sx={{ fontSize: '0.7rem', color: '#888', ml: 'auto' }}>{p.position}</Typography>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 4,
+                      borderRadius: 6,
+                      bgcolor: '#e56a16',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${homeBalancePct}%`,
+                        height: '100%',
+                        bgcolor: '#00a77f',
+                        borderRadius: '6px 0 0 6px',
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: `${homeBalancePct}%`,
+                        width: 2,
+                        transform: 'translateX(-1px)',
+                        bgcolor: '#fff',
+                      }}
+                    />
                   </Box>
-                ))}
+                  <Typography sx={{ fontWeight: 600, fontSize: '1.7rem', color: '#fff', letterSpacing: '1px', fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
+                  <Typography sx={{ color: '#fff', fontSize: '0.82rem', textAlign: 'center', fontWeight: 600, mt: -1 }}>{matchDurationLabel}</Typography>
+                </Box>
+                {/* Away shirt */}
+                <img src={Shirt.src} alt="Away" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
               </Box>
             </Box>
-          </Paper>
+
+          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center',mt: -2 }}>
+            {/* Home Team */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 275 }}>
+              {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+                const pid = String(p.id || p.name);
+                const isCap = homeCaptainId === pid;
+                return (
+                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #166956', borderRadius: 1, px: 1.5, py: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
+                        {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+                      </Box>
+                      {matchStatus === 'RESULT_PUBLISHED' && typeof (p as Player).xp === 'number' && (
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
+                      )}
+                    </Box>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+            {/* Divider */}
+            <Box sx={{ width: '1.5px', bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
+            {/* Away Team */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 275 }}>
+              {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+                const pid = String(p.id || p.name);
+                const isCap = awayCaptainId === pid;
+                return (
+                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #884a20', borderRadius: 1, px: 1.5, py: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
+                        {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+                      </Box>
+                      {matchStatus === 'RESULT_PUBLISHED' && typeof (p as Player).xp === 'number' && (
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
+                      )}
+                    </Box>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+          </Box>
         )}
 
         {/* Context Menu */}
@@ -1443,7 +1623,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1 }}>
           {/* Left: Undo / back placeholder */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
-            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px',  display: 'flex',alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px',  display: 'flex',alignItems: 'center', justifyContent: 'center', cursor: 'pointer', visibility: viewMode === 'pitch' ? 'visible' : 'hidden' }}
               onClick={() => window.history.back()}
             >
               <img src={UndoImg.src} alt="undo" width={24} height={24} style={{ objectFit: 'contain' }} />
