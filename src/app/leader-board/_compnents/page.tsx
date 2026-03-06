@@ -80,8 +80,11 @@ export default function LeaderBoardPage() {
   const { token } = useAuth();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
-  // Helper: determine if a league is completed (SIMPLIFIED for speed)
+  // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
+    // Prefer backend-computed season-based completion status
+    if ((l as any)?.computedStatus?.isCompleted === true) return true;
+
     // Check explicit completion flags
     if (l?.isComplete === true) return true;
     if (l?.isCompleted === true) return true;

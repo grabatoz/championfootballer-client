@@ -129,8 +129,11 @@ const AllPlayersPage = () => {
     dispatch(initializeFromStorage());
   }, [dispatch]);
 
-  // Helper: determine if a league is completed
+  // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = useCallback((l: LeagueOption): boolean => {
+    // Prefer backend-computed season-based completion status
+    if ((l as any)?.computedStatus?.isCompleted === true) return true;
+
     const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
     if (missingArr.length > 0) return false;
 

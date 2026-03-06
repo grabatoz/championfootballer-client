@@ -188,6 +188,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
   // Helper: determine if a league is completed (exclude from dropdown)
   const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
+    // Prefer backend-computed season-based completion status
+    if (l?.computedStatus?.isCompleted === true) return true;
+
     // If there are any missing items (e.g., pending stats), do NOT treat as completed
     const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
     if (missingArr.length > 0) return false;
@@ -610,8 +613,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   // Keep selected league at top
   const sortedUserLeagues = React.useMemo(() => {
     if (!userLeagues?.length) return [];
-    // Only show INCOMPLETE leagues in the dropdown
-    const visible = userLeagues.filter(l => !leagueIsCompleted(l));
+    // Only show ACTIVE & INCOMPLETE leagues in the dropdown
+    // Inactive leagues (completed / archived / admin-deactivated) go to Leagues page
+    const visible = userLeagues.filter(l => l.active !== false && !(l as any).archived && !leagueIsCompleted(l));
     // Sort alphabetically by name (A -> Z)
     const arr = [...visible].sort((a, b) => {
       const an = (a?.name ?? '').toString().trim().toLowerCase();
@@ -1197,6 +1201,7 @@ export default function PlayerDashboard() {
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [leagueNameError, setLeagueNameError] = useState<string>('');
+  const [maxGames, setMaxGames] = useState<string>('20');
   const [isCreating, setIsCreating] = useState(false);
   const { token } = useAuth();
   const [, setLeagues] = useState<League[]>([]);
@@ -1310,7 +1315,10 @@ export default function PlayerDashboard() {
   }, [user]);
 
   const handleJoinLeague = async () => {
-    if (!inviteCode.trim()) return;
+    if (!inviteCode.trim()) {
+      toast.error('Please enter an invite code');
+      return;
+    }
 
     try {
       // Dispatch join and get the joined league payload
@@ -1362,7 +1370,7 @@ export default function PlayerDashboard() {
       setInviteCode('');
       toast.success('Successfully joined league!');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
+      const errorMessage = typeof error === 'string' ? error : error instanceof Error ? error.message : 'Failed to join league';
       toast.error(errorMessage);
     }
   };
@@ -1377,11 +1385,17 @@ export default function PlayerDashboard() {
       toast.error('Please enter a league name');
       return;
     }
+    const gamesNum = Number(maxGames);
+    if (!maxGames || isNaN(gamesNum) || gamesNum < 1 || gamesNum > 100) {
+      toast.error('Number of games must be between 1 and 100');
+      return;
+    }
     setIsCreating(true);
     try {
       console.log('Creating league:', leagueName.trim());
       const formData = new FormData();
       formData.append('name', leagueName.trim());
+      formData.append('maxGames', String(gamesNum));
       if (leagueImage) formData.append('image', leagueImage);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
@@ -1403,6 +1417,7 @@ export default function PlayerDashboard() {
         setLeagueName('');
         setLeagueImage(null);
         setImagePreview(null);
+        setMaxGames('20');
 
         // Update the leagues cache with the new league
         if (data.league) {
@@ -2305,7 +2320,7 @@ export default function PlayerDashboard() {
               onChange={(e) => {
                 const raw = e.target.value;
                 const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
-                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
+                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 30);
                 setLeagueName(sanitized);
                 setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
               }}
@@ -2355,11 +2370,54 @@ export default function PlayerDashboard() {
                 '& .MuiInputLabel-root': { color: '#fff' },
                 '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
               }}
-              inputProps={{ maxLength: 20, 'aria-invalid': Boolean(leagueNameError) }}
+              inputProps={{ maxLength: 30, 'aria-invalid': Boolean(leagueNameError) }}
               InputLabelProps={{ sx: { color: '#fff' } }}
               FormHelperTextProps={{ sx: { color: '#fff', '&.Mui-error': { color: '#f44336' } } }}
               error={Boolean(leagueNameError)}
-              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 20).'}
+              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 30).'}
+            />
+
+            {/* Number of Games in Season */}
+            <TextField
+              margin="dense"
+              label="Number of Games"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={maxGames}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                setMaxGames(v);
+              }}
+              onKeyPress={(e) => {
+                if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
+                  e.preventDefault();
+                }
+                if (e.key === 'Enter' && !leagueNameError && leagueName.trim().length > 0) {
+                  handleCreateLeague();
+                }
+              }}
+              sx={{
+                mt: 1,
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  background: '#2B2B2B',
+                  color: '#fff',
+                  borderRadius: 2,
+                  border: '1.5px solid #3A3A3A',
+                  '& fieldset': { borderColor: '#E56A16' },
+                  '&:hover fieldset': { borderColor: '#CF2326' },
+                  '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                  '& input': { color: '#fff' },
+                },
+                '& label': { color: '#fff' },
+                '& .MuiInputLabel-root': { color: '#fff' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
+              }}
+              inputProps={{ min: 1, max: 100 }}
+              InputLabelProps={{ sx: { color: '#fff' } }}
+              FormHelperTextProps={{ sx: { color: '#fff' } }}
+              helperText="Number of games to be played in the current season (1–100)."
             />
 
             {/* League Image Upload Section */}

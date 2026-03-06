@@ -199,6 +199,9 @@ export default function AllMatches() {
     const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
     // Helper: determine if a league is completed (exclude from dropdown)
     const leagueIsCompleted = useCallback((l: League): boolean => {
+        // Prefer backend-computed season-based completion status
+        if (l?.computedStatus?.isCompleted === true) return true;
+
         // If there are any missing items (e.g., pending stats), do NOT treat as completed
         const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
         if (missingArr.length > 0) return false;

@@ -48,6 +48,7 @@ function getLevelInfo(points: number) {
 
 // Function to convert position to short form
 function getPositionShortForm(position: string): string {
+  if (!position || !position.trim()) return '-';
   // First try to extract from parentheses
   const match = position.match(/\(([^)]+)\)/);
   if (match) {

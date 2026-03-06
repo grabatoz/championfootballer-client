@@ -1442,8 +1442,11 @@ export default function GlobalTrophyRoom() {
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
-  // Helper: determine if a league is completed
+  // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
+    // Prefer backend-computed season-based completion status
+    if (l?.computedStatus?.isCompleted === true) return true;
+
     const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
     if (missingArr.length > 0) return false;
 
@@ -3328,7 +3331,7 @@ export default function GlobalTrophyRoom() {
                         foot: getPreferredFoot(p),
                         profileImage: getProfileImage(p),
                         shirtIcon: '',
-                        position: p.position ?? 'Striker (ST)',
+                        position: p.position ?? '',
                       };
                       return <PlayerCard {...playerCardProps} disableImagePopup hideShareIcon />;
                     })()}

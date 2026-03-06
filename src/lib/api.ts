@@ -427,7 +427,11 @@ export const leagueAPI = {
       },
       body: JSON.stringify({ inviteCode }),
     });
-    return response.json();
+    const data = await response.json();
+    if (!response.ok) {
+      return { success: false, message: data?.message || 'Failed to join league' };
+    }
+    return data;
   },
 };
 

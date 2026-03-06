@@ -50,9 +50,9 @@ export const joinLeague = createAsyncThunk(
       }
       const response = await leagueAPI.joinLeague(token, inviteCode);
       if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to join league');
+        return rejectWithValue(response.message || response.error || 'Failed to join league');
       }
-      return response.data;
+      return response;
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(error.message);

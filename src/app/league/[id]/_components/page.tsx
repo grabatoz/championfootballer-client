@@ -169,6 +169,7 @@ interface League {
     isCompleted?: boolean;
     updatedAt?: string;
     status?: string;
+    archived?: boolean;
 }
 
 interface User {
@@ -264,6 +265,7 @@ export default function LeagueDetailPage() {
     const [shouldShowAdminGoals, setShouldShowAdminGoals] = React.useState(false);
     const [league, setLeague] = useState<League | null>(null);
     console.log('leagues matches', league?.matches)
+    console.log('league archived status:', league?.archived, '| league active:', league?.active, '| league name:', league?.name)
     const [error, setError] = useState<string | null>(null);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
@@ -817,6 +819,9 @@ export default function LeagueDetailPage() {
 
     // Helper: determine if a league is completed (exclude from dropdown)
     const leagueIsCompleted = useCallback((l: League): boolean => {
+        // Prefer backend-computed season-based completion status
+        if (l?.computedStatus?.isCompleted === true) return true;
+
         // If there are any missing items (e.g., pending stats), do NOT treat as completed
         const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
         if (missingArr.length > 0) return false;
@@ -2463,12 +2468,12 @@ export default function LeagueDetailPage() {
                     </Box>
                 ) : (
                     <>
-                        {/* League inactive warning - only show when league data is available */}
+                        {/* League inactive warning - only show when league data is available
                         {league && !league.active && (
                             <Alert severity="warning" sx={{ mb: 2 }}>
                                 This league is currently inactive. All actions are disabled until an admin reactivates it.
                             </Alert>
-                        )}
+                        )} */}
 
                         <Box sx={{
                             mt: 0,
@@ -2482,6 +2487,12 @@ export default function LeagueDetailPage() {
                             // height: '30vh',
                             background: '#0e0e0e',
                         }}>
+                               {/* League inactive warning - only show when league data is available */}
+                        {league && !league.active && (
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                This league is currently inactive. All actions are disabled until an admin reactivates it.
+                            </Alert>
+                        )}
                             <Paper sx={{
                                 px: 0,
                                 py: { xs: 4, md: 3.1 },
@@ -5286,7 +5297,7 @@ export default function LeagueDetailPage() {
                                         foot: getPreferredFoot(p),
                                         profileImage: getProfileImage(p),
                                         shirtIcon: '',
-                                        position: p.position ?? 'Striker (ST)',
+                                        position: p.position ?? '',
                                     } satisfies PlayerCardProps;
                                     return <PlayerCard {...playerCardProps} disableImagePopup />;
                                 })()}

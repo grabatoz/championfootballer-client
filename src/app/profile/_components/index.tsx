@@ -222,12 +222,12 @@ const PlayerProfileCard = () => {
   const [, setError] = useState<string>("")
   const [firstName, setFirstName] = useState(user?.firstName || "")
   const [lastName, setLastName] = useState(user?.lastName || "")
-  const [age, setAge] = useState(user?.age || "00")
+  const [age, setAge] = useState(user?.age || "")
   const [gender, setGender] = useState(user?.gender || "")
   const [positionType, setPositionType] = useState(user?.positionType || "")
-  const [position, setPosition] = useState(user?.position || "Goalkeeper (GK)")
+  const [position, setPosition] = useState(user?.position || "")
   const [style, setStyle] = useState(user?.style || "")
-  const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "Left")
+  const [preferredFoot, setPreferredFoot] = useState(user?.preferredFoot || "")
   // const [shirtNumber, ] = useState(user?.shirtNumber || "00")
   // setShirtNumber
   const [country, setCountry] = useState(user?.country || "")
@@ -272,12 +272,12 @@ const PlayerProfileCard = () => {
     Forward: ["Finisher", "Poacher", "Predator" , "Rocket" ,"Ruthless" , "Sniper"],
   }
 
-  const resolvedPositionType: "Goalkeeper" | "Defender" | "Midfielder" | "Forward" =
+  const resolvedPositionType: "Goalkeeper" | "Defender" | "Midfielder" | "Forward" | "" =
     (positionType === "Goalkeeper" || positionType === "Defender" || positionType === "Midfielder" || positionType === "Forward")
       ? positionType
-      : "Goalkeeper"
+      : ""
 
-  const currentStyleOptions = playingStylesMap[resolvedPositionType]
+  const currentStyleOptions = resolvedPositionType ? playingStylesMap[resolvedPositionType] : []
 
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
 
@@ -288,10 +288,10 @@ const PlayerProfileCard = () => {
       else if (p.includes("Back") || p.includes("Wing-back")) { setPositionType("Defender"); setPosition(p) }
       else if (p.includes("Midfielder")) { setPositionType("Midfielder"); setPosition(p) }
       else if (p.includes("Forward") || p.includes("Striker") || p.includes("Winger")) { setPositionType("Forward"); setPosition(p) }
-      else { setPositionType("Goalkeeper"); setPosition("Goalkeeper (GK)") }
+      else { setPositionType(""); setPosition("") }
     } else {
-      setPositionType("Goalkeeper")
-      setPosition("Goalkeeper (GK)")
+      setPositionType("")
+      setPosition("")
     }
   }, [user?.position])
 
@@ -640,12 +640,12 @@ const PlayerProfileCard = () => {
                   }}>
                     {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
                   </Typography>
-                  <Typography sx={{ fontSize: 13, color: themeColors.textDim, mt: .5 }}>Age: <b style={{ color: themeColors.text }}>{user?.age || "18"}</b></Typography>
+                  <Typography sx={{ fontSize: 13, color: themeColors.textDim, mt: .5 }}>Age: <b style={{ color: themeColors.text }}>{user?.age || "-"}</b></Typography>
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim, display: 'flex', gap: .5 }}>
                     Email: <span style={{ color: themeColors.text }}>{user?.email || "email@example.com"}</span>
                   </Typography>
                   {/* Shirt number hidden per request */}
-                  <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Foot: <b style={{ color: themeColors.text }}>{user?.preferredFoot || "Right"}</b></Typography>
+                  <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Foot: <b style={{ color: themeColors.text }}>{user?.preferredFoot || "-"}</b></Typography>
                   <Chip
                     label={positionType || "Position"}
                     size="small"

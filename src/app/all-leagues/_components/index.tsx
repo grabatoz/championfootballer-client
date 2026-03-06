@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import dynamic from 'next/dynamic';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search, ExpandMore } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -187,6 +187,8 @@ interface LeagueMembersDialogProps {
   onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
   onDeleteLeague: () => Promise<void> | void
   openSettingsOnOpen?: boolean
+  onArchiveLeague?: () => void | Promise<void>
+  onUnarchiveLeague?: () => void | Promise<void>
 }
 
 const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
@@ -203,6 +205,8 @@ function LeagueMembersDialog({
   onUpdateLeague,
   onDeleteLeague,
   openSettingsOnOpen,
+  onArchiveLeague,
+  onUnarchiveLeague,
 }: LeagueMembersDialogProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -572,6 +576,8 @@ function LeagueMembersDialog({
           currentUserId={currentUserId}
           onRemoveMember={onRemoveMember}
           onLeaveLeague={onLeaveLeague}
+          onArchive={onArchiveLeague}
+          onUnarchive={onUnarchiveLeague}
         />
       )}
     </Dialog>
@@ -601,6 +607,8 @@ type LeagueUpdatePayload = {
   seasonId?: string
   seasonMaxGames?: number
   seasonShowPoints?: boolean
+  imageFile?: File | null
+  removeImage?: boolean
 }
 
 // Payload type for updating season settings
@@ -620,9 +628,11 @@ interface LeagueSettingsDialogProps {
   onRemoveMember: (memberId: string) => void | Promise<void>
   onLeaveLeague?: () => void | Promise<void>
   onMembersChanged?: () => void | Promise<void>;
+  onArchive?: () => void | Promise<void>;
+  onUnarchive?: () => void | Promise<void>;
 }
 
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged }: LeagueSettingsDialogProps) {
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged, onArchive, onUnarchive }: LeagueSettingsDialogProps) {
   const [name, setName] = useState('')
   const [adminId, setAdminId] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -630,6 +640,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('')
   const [seasonMaxGames, setSeasonMaxGames] = useState(20)
   const [seasonShowPoints, setSeasonShowPoints] = useState(true)
+  const [settingsImageFile, setSettingsImageFile] = useState<File | null>(null)
+  const [settingsImagePreview, setSettingsImagePreview] = useState<string | null>(null)
+  const [settingsRemoveImage, setSettingsRemoveImage] = useState(false)
+  const settingsFileInputRef = React.useRef<HTMLInputElement | null>(null)
   const { token } = useAuth()
 
   useEffect(() => {
@@ -637,6 +651,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       setName(league.name || '')
       setIsActive(league.active !== false)
       setShowPoints(league.showPoints !== false)
+      setSettingsImageFile(null)
+      setSettingsImagePreview(league.image || null)
+      setSettingsRemoveImage(false)
       // Prefer explicit adminId, fall back to first administrator if present
       setAdminId(league.adminId || league.administrators?.[0]?.id || '')
       
@@ -678,6 +695,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         seasonMaxGames: seasonMaxGames,
         seasonShowPoints: seasonShowPoints,
       } : {}),
+      // Image changes
+      ...(settingsImageFile ? { imageFile: settingsImageFile } : {}),
+      ...(settingsRemoveImage ? { removeImage: true } : {}),
     }
     await Promise.resolve(onUpdate(updatedData))
     
@@ -867,7 +887,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   value={name}
                   onChange={(e) => {
                     const raw = e.target.value || ''
-                    const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 20)
+                    const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 30)
                     setName(cleaned)
                   }}
                   sx={{
@@ -881,9 +901,111 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   }}
                   InputLabelProps={{ sx: { color: '#9CA3AF' } }}
                   FormHelperTextProps={{ sx: { color: '#E5E7EB' } }}
-                  inputProps={{ maxLength: 20 }}
-                  helperText="Max 20 characters, letters/numbers only"
+                  inputProps={{ maxLength: 30 }}
+                  helperText="Max 30 characters, letters/numbers only"
                 />
+              </FormControl>
+
+              {/* League Display Picture */}
+              <FormControl fullWidth>
+                <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
+                  League Display Picture
+                </Typography>
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mb: 1.5,
+                  p: 2,
+                  border: '2px dashed rgba(255,255,255,0.2)',
+                  borderRadius: 2,
+                  background: 'rgba(255,255,255,0.03)',
+                  minHeight: 70,
+                }}>
+                  <Avatar
+                    src={settingsImagePreview || '/assets/league.png'}
+                    alt="League Image"
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      background: '#2B2B2B',
+                    }}
+                    variant="rounded"
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.3 }}>
+                      {settingsImagePreview && !settingsRemoveImage ? 'Current Image' : 'No Image'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                      {settingsImagePreview && !settingsRemoveImage ? 'Upload a new image to replace or click Remove' : 'Upload a custom image for your league'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    startIcon={<CloudUpload />}
+                    sx={{
+                      color: '#0388E3',
+                      borderColor: 'rgba(3,136,227,0.5)',
+                      borderRadius: 2,
+                      px: 2,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      '&:hover': {
+                        borderColor: '#0388E3',
+                        backgroundColor: 'rgba(3,136,227,0.08)',
+                      },
+                    }}
+                  >
+                    {settingsImagePreview && !settingsRemoveImage ? 'Change Image' : 'Upload Image'}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      ref={settingsFileInputRef}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+                        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+                        setSettingsImageFile(file)
+                        setSettingsRemoveImage(false)
+                        const reader = new FileReader()
+                        reader.onload = (ev) => setSettingsImagePreview(ev.target?.result as string)
+                        reader.readAsDataURL(file)
+                      }}
+                      onClick={(e) => { try { (e.target as HTMLInputElement).value = '' } catch {} }}
+                    />
+                  </Button>
+                  {settingsImagePreview && !settingsRemoveImage && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setSettingsImageFile(null)
+                        setSettingsImagePreview(null)
+                        setSettingsRemoveImage(true)
+                        if (settingsFileInputRef.current) { try { settingsFileInputRef.current.value = '' } catch {} }
+                      }}
+                      sx={{
+                        color: '#ff6b6b',
+                        borderColor: 'rgba(255,107,107,0.5)',
+                        borderRadius: 2,
+                        px: 2,
+                        fontWeight: 600,
+                        fontSize: 13,
+                        '&:hover': {
+                          borderColor: '#ff6b6b',
+                          backgroundColor: 'rgba(255,107,107,0.08)',
+                        },
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
               </FormControl>
 
               <FormControl component="fieldset">
@@ -1074,6 +1196,39 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {(league as any)?.archived ? (
+            onUnarchive && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (!window.confirm('Restore this league from archive? It will become active again.')) return;
+                  onUnarchive();
+                }}
+                sx={{
+                  bgcolor: '#27ab83',
+                  '&:hover': { bgcolor: '#1e8463' },
+                }}
+              >
+                Unarchive League
+              </Button>
+            )
+          ) : (
+            onArchive && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (!window.confirm('Are you sure you want to archive this league? It will be hidden from active views.')) return;
+                  onArchive();
+                }}
+                sx={{
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  '&:hover': { background: 'linear-gradient(177deg, rgba(229,106,22,0.9) 26%, rgba(207,35,38,0.9) 100%)' },
+                }}
+              >
+                Archive League
+              </Button>
+            )
+          )}
           <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
             Update League
           </Button>
@@ -1109,6 +1264,7 @@ function AllLeagues() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
+  const [showArchived, setShowArchived] = useState(false);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -1125,15 +1281,22 @@ function AllLeagues() {
     return range;
   }, []);
 
-  // A league is considered completed ONLY if completed matches >= maxGames (when maxGames > 0)
+  // A league is considered completed when:
+  // 1. Backend computedStatus.isCompleted is true (season-based: all season matches completed), OR
+  // 2. Fallback: completed matches >= maxGames (when maxGames > 0)
   const isLeagueCompleted = (l: LeagueWithStatus): boolean => {
+    // Prefer backend-computed completion status (season-aware)
+    if ((l as any).computedStatus?.isCompleted === true) return true;
+
+    // Fallback: old logic for backward compatibility
     const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
     if (max <= 0) return false; // without a target, don't show as completed
 
     const matches: Match[] = Array.isArray(l.matches) ? l.matches : [];
     const completedCount = matches.reduce((acc, m) => {
       const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-      const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
+      const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended'
+        || status === 'result_published' || status === 'result_uploaded';
       const endedByFlag = m.active === false;
       const endedByEnd = Boolean(m.end);
       return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
@@ -1143,8 +1306,10 @@ function AllLeagues() {
   };
 
   // Apply filters: by completion tab, by year (createdAt) and by league name
+  // Archived leagues are always excluded from both Live and Complete views
   const filteredLeagues = useMemo(() => {
-    const base = leagues.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
+    const nonArchived = leagues.filter(l => !(l as any).archived);
+    const base = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
     const byYear = selectedYear === 'all'
       ? base
       : base.filter(l => {
@@ -1158,6 +1323,11 @@ function AllLeagues() {
     if (!term) return byYear;
     return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
   }, [leagues, selectedYear, searchTerm, completionTab]);
+
+  // Archived leagues — always separate from the main list
+  const archivedLeagues = useMemo(() => {
+    return leagues.filter(l => Boolean((l as any).archived));
+  }, [leagues]);
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -1187,7 +1357,7 @@ function AllLeagues() {
       toast.success('Successfully joined the league!');
       setInviteCode('');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to join league';
+      const errorMessage = typeof error === 'string' ? error : error instanceof Error ? error.message : 'Failed to join league';
       toast.error(errorMessage);
     } finally {
       setIsJoining(false);
@@ -1295,6 +1465,7 @@ function AllLeagues() {
 
           setLeagues(sortLeaguesByRecency(detailedLeagues.filter(Boolean) as LeagueWithStatus[]));
           console.log('Setting detailed leagues:', detailedLeagues);
+          console.log('Leagues archived status:', detailedLeagues.map(l => ({ name: l?.name, archived: (l as any)?.archived, active: l?.active })));
         }
       } else {
         console.error('Failed to fetch leagues');
@@ -1504,27 +1675,53 @@ function AllLeagues() {
   const handleUpdateLeagueFromSettings = useCallback(async (data: LeagueUpdatePayload) => {
     if (!selectedLeague) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          active: data.active,
-          maxGames: data.maxGames,
-          showPoints: data.showPoints,
-          admins: data.admins,
-          seasonId: data.seasonId,
-          seasonMaxGames: data.seasonMaxGames,
-          seasonShowPoints: data.seasonShowPoints,
-        }),
-      });
+      const hasImageChange = !!data.imageFile || !!data.removeImage;
+      let fetchOptions: RequestInit;
+
+      if (hasImageChange) {
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('active', String(data.active));
+        formData.append('maxGames', String(data.maxGames));
+        formData.append('showPoints', String(data.showPoints));
+        if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
+        if (data.seasonId) formData.append('seasonId', data.seasonId);
+        if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
+        if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+        if (data.imageFile) formData.append('image', data.imageFile);
+        if (data.removeImage) formData.append('removeImage', 'true');
+        fetchOptions = {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        };
+      } else {
+        fetchOptions = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            active: data.active,
+            maxGames: data.maxGames,
+            showPoints: data.showPoints,
+            admins: data.admins,
+            seasonId: data.seasonId,
+            seasonMaxGames: data.seasonMaxGames,
+            seasonShowPoints: data.seasonShowPoints,
+          }),
+        };
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, fetchOptions);
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.success === false) {
         throw new Error(json.message || 'Failed to update league');
       }
+
+      const newImage = json.league?.image ?? (data.removeImage ? '' : selectedLeague.image);
 
       toast.success('League updated');
       // Update local list optimistically
@@ -1534,6 +1731,7 @@ function AllLeagues() {
         active: data.active ?? l.active,
         maxGames: data.maxGames ?? l.maxGames,
         showPoints: data.showPoints ?? l.showPoints,
+        image: newImage,
         adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (l.members || []).filter(m => data.admins!.includes(m.id))
@@ -1548,6 +1746,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        image: newImage,
         adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
@@ -1582,31 +1781,103 @@ function AllLeagues() {
     }
   }, [selectedLeague, token]);
 
-  // Admin Settings dialog: update/delete handlers that operate on adminSettingsLeague
-  const handleUpdateLeagueFromAdminSettings = useCallback(async (data: LeagueUpdatePayload) => {
-    if (!adminSettingsLeague) return;
+  const handleArchiveLeagueFromSettings = useCallback(async () => {
+    if (!selectedLeague) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: data.name,
-          active: data.active,
-          maxGames: data.maxGames,
-          showPoints: data.showPoints,
-          admins: data.admins,
-          seasonId: data.seasonId,
-          seasonMaxGames: data.seasonMaxGames,
-          seasonShowPoints: data.seasonShowPoints,
-        }),
+        body: JSON.stringify({ active: false }),
       });
+      if (!res.ok) throw new Error('Failed to archive league');
+      toast.success('League archived');
+      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? { ...l, active: false, archived: true } as typeof l : l));
+      setOpenMembers(false);
+      setSelectedLeague(null);
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to archive league';
+      toast.error(msg);
+    }
+  }, [selectedLeague, token, fetchAllLeagues]);
+
+  const handleUnarchiveLeagueFromSettings = useCallback(async () => {
+    if (!selectedLeague) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: true }),
+      });
+      if (!res.ok) throw new Error('Failed to unarchive league');
+      toast.success('League restored');
+      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? { ...l, active: true, archived: false } as typeof l : l));
+      setOpenMembers(false);
+      setSelectedLeague(null);
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to unarchive league';
+      toast.error(msg);
+    }
+  }, [selectedLeague, token, fetchAllLeagues]);
+
+  // Admin Settings dialog: update/delete handlers that operate on adminSettingsLeague
+  const handleUpdateLeagueFromAdminSettings = useCallback(async (data: LeagueUpdatePayload) => {
+    if (!adminSettingsLeague) return;
+    try {
+      const hasImageChange = !!data.imageFile || !!data.removeImage;
+      let fetchOptions: RequestInit;
+
+      if (hasImageChange) {
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('active', String(data.active));
+        formData.append('maxGames', String(data.maxGames));
+        formData.append('showPoints', String(data.showPoints));
+        if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
+        if (data.seasonId) formData.append('seasonId', data.seasonId);
+        if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
+        if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+        if (data.imageFile) formData.append('image', data.imageFile);
+        if (data.removeImage) formData.append('removeImage', 'true');
+        fetchOptions = {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        };
+      } else {
+        fetchOptions = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            active: data.active,
+            maxGames: data.maxGames,
+            showPoints: data.showPoints,
+            admins: data.admins,
+            seasonId: data.seasonId,
+            seasonMaxGames: data.seasonMaxGames,
+            seasonShowPoints: data.seasonShowPoints,
+          }),
+        };
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, fetchOptions);
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.success === false) {
         throw new Error(json.message || 'Failed to update league');
       }
+
+      const newImage = json.league?.image ?? (data.removeImage ? '' : adminSettingsLeague.image);
 
       toast.success('League updated');
 
@@ -1617,6 +1888,7 @@ function AllLeagues() {
         active: data.active ?? l.active,
         maxGames: data.maxGames ?? l.maxGames,
         showPoints: data.showPoints ?? l.showPoints,
+        image: newImage,
         adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (l.members || []).filter(m => data.admins!.includes(m.id))
@@ -1631,6 +1903,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        image: newImage,
         adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
@@ -1645,6 +1918,7 @@ function AllLeagues() {
         active: data.active ?? prev.active,
         maxGames: data.maxGames ?? prev.maxGames,
         showPoints: data.showPoints ?? prev.showPoints,
+        image: newImage,
         adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
         administrators: data.admins && data.admins.length > 0
           ? (prev.members || []).filter(m => data.admins!.includes(m.id))
@@ -1688,6 +1962,63 @@ function AllLeagues() {
       toast.error(msg);
     }
   }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+
+  const handleArchiveLeagueFromAdminSettings = useCallback(async () => {
+    if (!adminSettingsLeague) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: false }),
+      });
+      if (!res.ok) throw new Error('Failed to archive league');
+      toast.success('League archived');
+      // Update local state
+      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? { ...l, active: false, archived: true } as typeof l : l));
+      // Clear dialog/selection states
+      setAdminSettingsLeague(null);
+      setOpenAdminSettings(false);
+      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+        setSelectedLeague(null);
+        setOpenMembers(false);
+      }
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to archive league';
+      toast.error(msg);
+    }
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+
+  const handleUnarchiveLeagueFromAdminSettings = useCallback(async () => {
+    if (!adminSettingsLeague) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: true }),
+      });
+      if (!res.ok) throw new Error('Failed to unarchive league');
+      toast.success('League restored');
+      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? { ...l, active: true, archived: false } as typeof l : l));
+      setAdminSettingsLeague(null);
+      setOpenAdminSettings(false);
+      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+        setSelectedLeague(null);
+        setOpenMembers(false);
+      }
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to unarchive league';
+      toast.error(msg);
+    }
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+
   // const handleBackToAllLeagues = () => {
   //   router.push('/home');
   // };
@@ -2000,8 +2331,6 @@ function AllLeagues() {
                     '&:hover': {
                       backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
                       transform: isCompleted ? 'none' : 'translateY(-3px)',
-                      // boxShadow: '0 12px 30px rgba(30, 58, 138, 0.3)',
-                      // border: '2px solid rgba(255,255,255,0.2)'
                     }
                   }}
                 >
@@ -2263,6 +2592,260 @@ function AllLeagues() {
             })
           )}
         </Box>
+
+        {/* Archived Leagues Section */}
+        {archivedLeagues.length > 0 && (
+          <Box sx={{ mt: 4, mb: 2 }}>
+            <Box
+              onClick={() => setShowArchived(!showArchived)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                cursor: 'pointer',
+                py: 1.5,
+                px: 3,
+                borderRadius: 2,
+                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
+                '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
+              }}
+            >
+              <Typography sx={{
+                color: 'white',
+                fontFamily: '"League Spartan", sans-serif',
+                fontWeight: 600,
+                fontSize: { xs: '15px', md: '18px' },
+                letterSpacing: '0.5px',
+              }}>
+                Archived Leagues ({archivedLeagues.length})
+              </Typography>
+              <ExpandMore sx={{
+                color: 'white',
+                transform: showArchived ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s ease',
+                fontSize: 22,
+              }} />
+            </Box>
+
+            {showArchived && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                {archivedLeagues.map((league) => (
+                  <Box
+                    key={league.id}
+                    onClick={() => router.push(`/league/${league.id}`)}
+                    sx={{
+                      p: { xs: 3, md: 3 },
+                      borderRadius: 3,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                      position: 'relative',
+                      minHeight: { xs: '140px', md: '160px' },
+                      opacity: 0.75,
+                      '&:hover': {
+                        opacity: 1,
+                        transform: 'translateY(-3px)',
+                      }
+                    }}
+                  >
+                    {/* Archived Badge + Restore - Top Right */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 14,
+                        right: 14,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        zIndex: 4,
+                      }}
+                    >
+                      <Chip label="Archived" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
+                          (async () => {
+                            try {
+                              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
+                                method: 'PATCH',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ active: true }),
+                              });
+                              if (!res.ok) throw new Error('Failed');
+                              toast.success('League restored');
+                              setLeagues(prev => prev.map(l => l.id === league.id ? { ...l, active: true, archived: false } as typeof l : l));
+                              await fetchAllLeagues();
+                            } catch { toast.error('Failed to restore league'); }
+                          })();
+                        }}
+                        sx={{
+                          bgcolor: '#27ab83',
+                          '&:hover': { bgcolor: '#1e8463' },
+                          fontSize: '11px',
+                          px: 1.5,
+                          py: 0.3,
+                          minWidth: 'auto',
+                          textTransform: 'none',
+                        }}
+                      >
+                        Restore
+                      </Button>
+                    </Box>
+
+                    {/* Grid Layout - 6/6 Split (same as live league card) */}
+                    <Grid container spacing={2}>
+                      {/* Left Column - Trophy, Title, Players, Created */}
+                      <Grid item xs={12} md={6}>
+                        <Grid container spacing={2}>
+                          {/* Trophy Icon - 4 */}
+                          <Grid item xs={12} md={3}>
+                            <Box sx={{
+                              width: { xs: 60, sm: 80, md: 100 },
+                              height: { xs: 60, sm: 80, md: 100 },
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              position: 'relative',
+                              bgcolor: 'white',
+                              borderRadius: '50%',
+                            }}>
+                              <Image src={league?.image || trofy} alt={`${league.name} icon`} width={60} height={60} priority style={{ objectFit: 'contain' }} />
+                            </Box>
+                          </Grid>
+
+                          {/* Title and Details - 8 */}
+                          <Grid item xs={12} md={9}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                              {/* League Title */}
+                              <Typography sx={{
+                                color: 'white',
+                                fontFamily: '"Anton", sans-serif !important',
+                                fontSize: { xs: '28px', sm: '32px', md: '36px' },
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 'semi-bold',
+                                lineHeight: 1.3,
+                                letterSpacing: '1px',
+                                textTransform: 'uppercase'
+                              }}>
+                                {formatLeagueName(league.name)}
+                              </Typography>
+
+                              {/* Players */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
+                                <Typography sx={{
+                                  color: 'rgba(255,255,255,0.9)',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 300,
+                                  fontSize: { xs: '10px', sm: '16px' }
+                                }}>
+                                  Players {league.members?.length || 0}
+                                </Typography>
+                              </Box>
+
+                              {/* Created */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                                <Typography sx={{
+                                  color: 'rgba(255,255,255,0.9)',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 300,
+                                  fontSize: { xs: '10px', sm: '16px' }
+                                }}>
+                                  Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+
+                      {/* Right Column - Matches, View */}
+                      <Grid item xs={12} md={6}>
+                        <Grid container spacing={0}>
+                          {/* Matches - 8 */}
+                          <Grid item xs={12} md={8}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: 1.5,
+                              mt: { xs: 1, md: 6 },
+                              height: '100%'
+                            }}>
+                              {/* Matches */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                                <Typography sx={{
+                                  color: 'rgba(255,255,255,0.9)',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 300,
+                                  fontSize: { xs: '10px', sm: '16px' }
+                                }}>
+                                  Matches: {league.matches?.length || 0}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+
+                          {/* View Button - 4 */}
+                          <Grid item xs={12} md={4}>
+                            <Grid container spacing={2} mt={2}>
+                              {/* Image - 6 */}
+                              <Grid item xs={6} md={6}>
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'start', height: '100%', ml: -5 }}>
+                                  <Image src={playerfull} alt="View" width={70} height={70} style={{ flexShrink: 0 }} />
+                                </Box>
+                              </Grid>
+
+                              {/* View Text - 6 */}
+                              <Grid item xs={6} md={6}>
+                                <Box 
+                                  sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'flex-start', 
+                                    alignItems: 'center', 
+                                    height: '100%',
+                                    cursor: 'pointer',
+                                    mt: 3
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/league/${league.id}`);
+                                  }}
+                                >
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography sx={{
+                                      color: 'white',
+                                      fontFamily: '"League Spartan", sans-serif',
+                                      fontWeight: 'semi-bold',
+                                      fontSize: { xs: '22px', md: '22px' }
+                                    }}>
+                                      View
+                                    </Typography>
+                                    <Image src={play} alt="Play" width={15} height={15} style={{ flexShrink: 0 }} />
+                                  </Box>
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
 
         {/* Create League Dialog */}
         <Dialog
@@ -2565,7 +3148,8 @@ function AllLeagues() {
             }
           }}
           onLeaveLeague={handleLeaveLeague}
-
+          onArchive={handleArchiveLeagueFromAdminSettings}
+          onUnarchive={handleUnarchiveLeagueFromAdminSettings}
         />
       )}
       <LeagueMembersDialog
@@ -2578,6 +3162,8 @@ function AllLeagues() {
         onUpdateLeague={handleUpdateLeagueFromSettings}
         onDeleteLeague={handleDeleteLeagueFromSettings}
         openSettingsOnOpen={Boolean(selectedLeague && (selectedLeague.adminId || selectedLeague.administrators?.[0]?.id) === (user?.id || ''))}
+        onArchiveLeague={handleArchiveLeagueFromSettings}
+        onUnarchiveLeague={handleUnarchiveLeagueFromSettings}
       />
     </Box>
   )
