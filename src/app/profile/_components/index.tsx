@@ -271,6 +271,14 @@ const PlayerProfileCard = () => {
     Midfielder: ["Gladiator", "Maestro", "Magician" , "Powerhouse" , "Roadrunner" , "Scientist"],
     Forward: ["Finisher", "Poacher", "Predator" , "Rocket" ,"Ruthless" , "Sniper"],
   }
+  const positionOptionsMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
+    Goalkeeper: ["Goalkeeper (GK)"],
+    Defender: ["Center-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Right Wing-back (RWB)", "Left Wing-back (LWB)"],
+    Midfielder: ["Central Midfielder (CM)", "Defensive Midfielder (CDM)", "Attacking Midfielder (CAM)", "Right Midfielder (RM)", "Left Midfielder (LM)"],
+    Forward: ["Striker (ST)", "Central Forward (CF)", "Right Forward (RF)", "Left Forward (LF)", "Right Winger (RW)", "Left Winger (LW)"],
+  }
+  const specificPositionRowHeight = 42
+  const specificPositionRowsTarget = 6
 
   const resolvedPositionType: "Goalkeeper" | "Defender" | "Midfielder" | "Forward" | "" =
     (positionType === "Goalkeeper" || positionType === "Defender" || positionType === "Midfielder" || positionType === "Forward")
@@ -278,6 +286,8 @@ const PlayerProfileCard = () => {
       : ""
 
   const currentStyleOptions = resolvedPositionType ? playingStylesMap[resolvedPositionType] : []
+  const currentPositionOptions = resolvedPositionType ? positionOptionsMap[resolvedPositionType] : []
+  const useExpandedPositionSpacing = currentPositionOptions.length === 5
 
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
 
@@ -1026,11 +1036,21 @@ const PlayerProfileCard = () => {
                     maxWidth: 400
                   }}>
                     <FormControl component="fieldset">
-                      <RadioGroup value={position} onChange={e => setPosition(e.target.value)}>
-                        {positionType === "Goalkeeper" && <FormControlLabel value="Goalkeeper (GK)" control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>Goalkeeper (GK)</span>} />}
-                        {positionType === "Defender" && ["Center-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Right Wing-back (RWB)", "Left Wing-back (LWB)"].map(p => <FormControlLabel key={p} value={p} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{p}</span>} />)}
-                        {positionType === "Midfielder" && ["Central Midfielder (CM)", "Defensive Midfielder (CDM)", "Attacking Midfielder (CAM)", "Right Midfielder (RM)", "Left Midfielder (LM)"].map(p => <FormControlLabel key={p} value={p} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{p}</span>} />)}
-                        {positionType === "Forward" && ["Striker (ST)", "Central Forward (CF)", "Right Forward (RF)", "Left Forward (LF)", "Right Winger (RW)", "Left Winger (LW)"].map(p => <FormControlLabel key={p} value={p} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{p}</span>} />)}
+                      <RadioGroup
+                        value={position}
+                        onChange={e => setPosition(e.target.value)}
+                        sx={{
+                          minHeight: specificPositionRowHeight * specificPositionRowsTarget,
+                          justifyContent: useExpandedPositionSpacing ? 'space-between' : 'flex-start',
+                          '& .MuiFormControlLabel-root': {
+                            m: 0,
+                            minHeight: specificPositionRowHeight
+                          }
+                        }}
+                      >
+                        {currentPositionOptions.map(p => (
+                          <FormControlLabel key={p} value={p} control={<StyledRadio />} label={<span style={{ color: themeColors.textDim }}>{p}</span>} />
+                        ))}
                       </RadioGroup>
                     </FormControl>
                   </Card>
