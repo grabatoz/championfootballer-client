@@ -864,6 +864,7 @@ interface UpdateProfileData {
   country?: string;
   state?: string;
   city?: string;
+  phone?: string;
 }
 
 export const updateProfile = async ( token: string , updateData: UpdateProfileData) => {
@@ -900,6 +901,23 @@ export async function deleteProfile(token: string) {
     },
   });
   return res.ok;
+}
+
+export async function deleteProfilePicture(token: string) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const res = await fetch(`${apiUrl}/profile/picture`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = { message: 'Invalid server response' };
+  }
+  return { ok: res.ok, data };
 }
 
 interface PlayerStatsData {

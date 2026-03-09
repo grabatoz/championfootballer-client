@@ -183,7 +183,7 @@ interface LeagueMembersDialogProps {
   league: League | null
   currentUserId: string
   onRemoveMember: (memberId: string) => void
-  onLeaveLeague: () => void
+  onLeaveLeague: (preferredAdminId?: string) => void
   onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
   onDeleteLeague: () => Promise<void> | void
   openSettingsOnOpen?: boolean
@@ -626,7 +626,7 @@ interface LeagueSettingsDialogProps {
   onDelete: () => void | Promise<void>
   currentUserId: string
   onRemoveMember: (memberId: string) => void | Promise<void>
-  onLeaveLeague?: () => void | Promise<void>
+  onLeaveLeague?: (preferredAdminId?: string) => void | Promise<void>
   onMembersChanged?: () => void | Promise<void>;
   onArchive?: () => void | Promise<void>;
   onUnarchive?: () => void | Promise<void>;
@@ -1154,38 +1154,29 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             <Button
               variant="outlined"
               color="warning"
-              onClick={() => {
+              onClick={async () => {
                 const isAdmin = !!(league && league.adminId === currentUserId)
+                const otherMembers = ((league?.members || []) as User[]).filter(m => m.id !== currentUserId)
                 const confirmMsg = isAdmin
-                  ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+                  ? (otherMembers.length > 0
+                    ? 'You are the league admin. Leaving will transfer admin to another member. Continue?'
+                    : 'You are the only member. Leaving will archive this league. Continue?')
                   : 'Are you sure you want to leave this league?'
                 if (!window.confirm(confirmMsg)) return
 
-                if (isAdmin) {
-                  // Prefer selected admin if different, otherwise first other member
+                let preferredAdminId: string | undefined
+                if (isAdmin && otherMembers.length > 0) {
+                  // Determine who should become the new admin
                   let replacementId = adminId && adminId !== currentUserId ? adminId : ''
-                  if (!replacementId) {
-                    const firstOther = ((league?.members || []) as User[]).find(m => m.id !== currentUserId)
-                    if (firstOther) replacementId = firstOther.id
+                  if (!replacementId && otherMembers.length > 0) {
+                    replacementId = otherMembers[0].id
                   }
-                  if (!replacementId) {
-                    window.alert('Cannot leave as admin because no other members are available to assign as admin.')
-                    return
-                  }
-                  try {
-                    onUpdate({
-                      name,
-                      active: isActive,
-                      maxGames: league.maxGames || 20,
-                      showPoints,
-                      admins: [replacementId],
-                    })
-                  } catch { }
+                  preferredAdminId = replacementId || undefined
                 }
 
-                // Trigger leave action if provided
+                // Trigger leave action — backend handles admin reassignment + notification
                 if (typeof onLeaveLeague === 'function') {
-                  try { onLeaveLeague() } catch { }
+                  try { await onLeaveLeague(preferredAdminId) } catch { }
                 }
                 try { onClose() } catch { }
               }}
@@ -1651,16 +1642,24 @@ function AllLeagues() {
     }
   };
 
-  const handleLeaveLeague = async () => {
-    if (!selectedLeague) return;
+  const handleLeaveLeague = async (preferredAdminId?: string) => {
+    const league = selectedLeague || adminSettingsLeague;
+    if (!league) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/leave`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/leave`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferredAdminId ? { preferredAdminId } : {}),
       });
 
       if (response.ok) {
         setOpenMembers(false);
+        setOpenAdminSettings(false);
+        setSelectedLeague(null);
+        setAdminSettingsLeague(null);
         await fetchAllLeagues();
         toast.success('Successfully left the league');
       } else {
@@ -1761,7 +1760,7 @@ function AllLeagues() {
 
   const handleDeleteLeagueFromSettings = useCallback(async () => {
     if (!selectedLeague) return;
-    if (!window.confirm('Are you sure you want to delete this league? This action cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this league? All players\' XP points will be preserved.')) return;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, {
         method: 'DELETE',
@@ -1936,7 +1935,7 @@ function AllLeagues() {
 
   const handleDeleteLeagueFromAdminSettings = useCallback(async () => {
     if (!adminSettingsLeague) return;
-    if (!window.confirm('Are you sure you want to delete this league? This action cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this league? All players\' XP points will be preserved.')) return;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, {
         method: 'DELETE',

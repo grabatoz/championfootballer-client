@@ -42,6 +42,7 @@ export interface UserProfile {
   country?: string | null;
   state?: string | null;
   city?: string | null;
+  phone?: string | null;
   position?: string;
   positionType?: string;
   style?: string;

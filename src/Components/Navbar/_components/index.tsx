@@ -64,6 +64,8 @@ type NotificationKind =
   | 'MATCH_ENDED'
   | 'MOTM_VOTE'
   | 'NEW_SEASON'
+  | 'ADMIN_REASSIGNED'
+  | 'LEAGUE_DELETED'
   | 'GENERAL';
 interface NotificationMeta {
   matchId?: string;
@@ -819,6 +821,56 @@ function buildNotificationDisplay(
 
     const uiTitle = `Match ${matchNo || ''} Scheduled`;
     return { title: uiTitle, plain, node };
+  }
+
+  // ADMIN_REASSIGNED notification — rich display
+  if (n.type === 'ADMIN_REASSIGNED') {
+    const meta = (n.meta ?? {}) as Record<string, unknown>;
+    const leagueName = (meta.leagueName as string) || '';
+    const newAdminName = (meta.newAdminName as string) || 'a new player';
+    const bodyText = n.body || `New admin selected, ${newAdminName}.`;
+    const node = (
+      <Box>
+        <Typography sx={{ fontWeight: 700, color: '#111', fontSize: '12px', lineHeight: 1.25, mb: 0.3 }}>
+          👑 New Admin Selected
+        </Typography>
+        <Typography sx={{ color: '#444', fontSize: '13px', lineHeight: 1.45 }}>
+          {bodyText}
+        </Typography>
+        {leagueName && (
+          <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600, mt: 0.5 }}>
+            League: {leagueName}
+          </Typography>
+        )}
+      </Box>
+    );
+    return { title: n.title || '👑 New Admin Selected', plain: bodyText, node };
+  }
+
+  // LEAGUE_DELETED notification — rich display
+  if (n.type === 'LEAGUE_DELETED') {
+    const meta = (n.meta ?? {}) as Record<string, unknown>;
+    const leagueName = (meta.leagueName as string) || '';
+    const bodyText = n.body || `The league "${leagueName}" has been deleted. Your XP points have been preserved.`;
+    const node = (
+      <Box>
+        <Typography sx={{ fontWeight: 700, color: '#d32f2f', fontSize: '12px', lineHeight: 1.25, mb: 0.3 }}>
+          🗑️ League Deleted
+        </Typography>
+        <Typography sx={{ color: '#444', fontSize: '13px', lineHeight: 1.45 }}>
+          {bodyText}
+        </Typography>
+        {leagueName && (
+          <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600, mt: 0.5 }}>
+            League: {leagueName}
+          </Typography>
+        )}
+        <Typography sx={{ fontSize: '11px', color: '#27ab83', fontWeight: 600, mt: 0.5 }}>
+          ✓ Your XP points are safe
+        </Typography>
+      </Box>
+    );
+    return { title: n.title || '🗑️ League Deleted', plain: bodyText, node };
   }
 
   // Non-match notification fallback (show league, match no/index, date, and CTA)

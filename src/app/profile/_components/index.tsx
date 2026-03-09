@@ -37,8 +37,43 @@ import {
 const countryOptions = [
   "United Kingdom","United States","Canada","Australia","Germany","France","Spain","Italy","Netherlands","Brazil","Argentina","Portugal","Belgium","Sweden","Norway","Denmark","Finland","Switzerland","Austria","Ireland","Turkey","Japan","South Korea","China","India","Pakistan","Saudi Arabia","United Arab Emirates","South Africa","Nigeria","Mexico"
 ]
+
+// Country → list of major cities / states for auto-filter
+const countryCityMap: Record<string, string[]> = {
+  "United Kingdom": ["London","Manchester","Birmingham","Liverpool","Leeds","Glasgow","Edinburgh","Bristol","Cardiff","Belfast","Sheffield","Newcastle","Nottingham","Leicester","Southampton"],
+  "United States": ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose","Austin","Jacksonville","Miami","Seattle","Denver"],
+  "Canada": ["Toronto","Vancouver","Montreal","Calgary","Edmonton","Ottawa","Winnipeg","Quebec City","Hamilton","Halifax"],
+  "Australia": ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Gold Coast","Canberra","Newcastle","Hobart","Darwin"],
+  "Germany": ["Berlin","Munich","Hamburg","Frankfurt","Cologne","Stuttgart","Düsseldorf","Dortmund","Leipzig","Dresden"],
+  "France": ["Paris","Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Montpellier","Bordeaux","Lille"],
+  "Spain": ["Madrid","Barcelona","Valencia","Seville","Zaragoza","Malaga","Bilbao","Alicante","Cordoba","Granada"],
+  "Italy": ["Rome","Milan","Naples","Turin","Palermo","Genoa","Bologna","Florence","Venice","Verona"],
+  "Netherlands": ["Amsterdam","Rotterdam","The Hague","Utrecht","Eindhoven","Groningen","Tilburg","Almere","Breda","Nijmegen"],
+  "Brazil": ["São Paulo","Rio de Janeiro","Brasília","Salvador","Fortaleza","Belo Horizonte","Curitiba","Manaus","Recife","Porto Alegre"],
+  "Argentina": ["Buenos Aires","Córdoba","Rosario","Mendoza","La Plata","San Miguel de Tucumán","Mar del Plata","Salta","Santa Fe"],
+  "Portugal": ["Lisbon","Porto","Braga","Coimbra","Funchal","Setúbal","Aveiro","Faro","Évora"],
+  "Belgium": ["Brussels","Antwerp","Ghent","Charleroi","Liège","Bruges","Namur","Leuven","Mons"],
+  "Sweden": ["Stockholm","Gothenburg","Malmö","Uppsala","Västerås","Örebro","Linköping","Helsingborg","Norrköping"],
+  "Norway": ["Oslo","Bergen","Stavanger","Trondheim","Drammen","Fredrikstad","Kristiansand","Tromsø"],
+  "Denmark": ["Copenhagen","Aarhus","Odense","Aalborg","Frederiksberg","Esbjerg","Randers","Kolding"],
+  "Finland": ["Helsinki","Espoo","Tampere","Vantaa","Oulu","Turku","Jyväskylä","Lahti","Kuopio"],
+  "Switzerland": ["Zurich","Geneva","Basel","Bern","Lausanne","Winterthur","Lucerne","St. Gallen"],
+  "Austria": ["Vienna","Graz","Linz","Salzburg","Innsbruck","Klagenfurt","Villach","Wels"],
+  "Ireland": ["Dublin","Cork","Limerick","Galway","Waterford","Drogheda","Dundalk","Swords"],
+  "Turkey": ["Istanbul","Ankara","Izmir","Bursa","Antalya","Adana","Konya","Gaziantep"],
+  "Japan": ["Tokyo","Osaka","Yokohama","Nagoya","Sapporo","Kobe","Kyoto","Fukuoka","Hiroshima"],
+  "South Korea": ["Seoul","Busan","Incheon","Daegu","Daejeon","Gwangju","Suwon","Ulsan"],
+  "China": ["Beijing","Shanghai","Guangzhou","Shenzhen","Chengdu","Hangzhou","Wuhan","Nanjing","Xi'an"],
+  "India": ["Mumbai","Delhi","Bangalore","Hyderabad","Chennai","Kolkata","Pune","Ahmedabad","Jaipur","Lucknow"],
+  "Pakistan": ["Karachi","Lahore","Islamabad","Rawalpindi","Faisalabad","Multan","Peshawar","Quetta","Sialkot","Hyderabad"],
+  "Saudi Arabia": ["Riyadh","Jeddah","Mecca","Medina","Dammam","Khobar","Tabuk","Abha"],
+  "United Arab Emirates": ["Dubai","Abu Dhabi","Sharjah","Ajman","Ras Al Khaimah","Fujairah","Al Ain"],
+  "South Africa": ["Johannesburg","Cape Town","Durban","Pretoria","Port Elizabeth","Bloemfontein","Nelspruit"],
+  "Nigeria": ["Lagos","Abuja","Kano","Ibadan","Port Harcourt","Benin City","Kaduna","Enugu"],
+  "Mexico": ["Mexico City","Guadalajara","Monterrey","Puebla","Tijuana","León","Cancún","Mérida","Querétaro"],
+}
 import { styled } from "@mui/material/styles"
-import { updateProfile, deleteProfile } from "@/lib/api"
+import { updateProfile, deleteProfile, deleteProfilePicture } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
@@ -233,6 +268,7 @@ const PlayerProfileCard = () => {
   const [country, setCountry] = useState(user?.country || "")
   const [stateProvince, setStateProvince] = useState(user?.state || "")
   const [city, setCity] = useState(user?.city || "")
+  const [phone, setPhone] = useState(user?.phone || "")
   // When editing location we mirror the City/State value into both city and stateProvince for backward compatibility.
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
@@ -365,6 +401,7 @@ const PlayerProfileCard = () => {
       if (!isBlank(country)) updateData.country = country
       if (!isBlank(stateProvince)) updateData.state = stateProvince
       if (!isBlank(city)) updateData.city = city
+      if (!isBlank(phone)) updateData.phone = phone
 
       // Skills: include only the ones that have numeric values; skip otherwise
       const skillsUpdate: Record<string, number> = {}
@@ -398,6 +435,7 @@ const PlayerProfileCard = () => {
           country: data.user.country,
           state: data.user.state,
           city: data.user.city,
+          phone: data.user.phone || null,
           profilePicture: data.user.profilePicture || null,
           image: data.user.profilePicture || null,
           skills: data.user.skills,
@@ -410,6 +448,11 @@ const PlayerProfileCard = () => {
       }
 
       toast.success("Profile updated successfully!")
+      if (password) {
+        setPassword("")
+        setPasswordError("")
+        toast.success("Password changed successfully!", { duration: 4000 })
+      }
       // Optional: refresh app router cache for any server components
       // router.refresh?.()
       router.push("/home")
@@ -459,6 +502,18 @@ const PlayerProfileCard = () => {
   const performUpload = async (file: File) => {
     try {
       if (!token) throw new Error('Not authenticated')
+
+      // Client-side validation
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        toast.error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error(`Invalid file type "${file.type}". Please upload an image file (JPEG, PNG, etc.).`)
+        return
+      }
+
       setImageFile(file)
       setImagePreview(URL.createObjectURL(file))
       setIsUpdating(true)
@@ -470,7 +525,18 @@ const PlayerProfileCard = () => {
         body: formData,
         cache: 'no-store',
       })
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        data = { message: 'Invalid server response' }
+      }
+      if (!res.ok) {
+        const errMsg = data?.message || data?.error || `Upload failed (HTTP ${res.status})`
+        toast.error(errMsg)
+        setImagePreview(null)
+        return
+      }
       if (data.success) {
         const newUrl: string | undefined = data.user?.profilePicture
         if (data.user) cacheManager.updatePlayersCache(data.user)
@@ -485,10 +551,13 @@ const PlayerProfileCard = () => {
         toast.success('Profile picture updated!')
       } else {
         toast.error(data?.message || 'Upload failed')
+        setImagePreview(null)
       }
     } catch (err) {
       console.error(err)
-      toast.error('Upload failed')
+      const msg = err instanceof Error ? err.message : 'Upload failed'
+      toast.error(msg)
+      setImagePreview(null)
     } finally {
       setIsUpdating(false)
     }
@@ -502,6 +571,33 @@ const PlayerProfileCard = () => {
   }
   const openGalleryPicker = () => fileInputRef.current?.click()
   const handleAvatarClick = () => setAvatarOptionsOpen(true)
+
+  const handleDeleteProfilePicture = async () => {
+    try {
+      if (!token) throw new Error('Not authenticated')
+      setIsUpdating(true)
+      const { ok, data } = await deleteProfilePicture(token)
+      if (ok && data.success) {
+        setImgSrc(fallbackImgSrc)
+        setImagePreview(null)
+        dispatch(mergeUser({ profilePicture: null, image: null }))
+        dispatch(syncWithStorage())
+        localStorage.removeItem('avatar_url')
+        localStorage.setItem('avatar_v', String(Date.now()))
+        if (data.user) cacheManager.updatePlayersCache(data.user)
+        toast.success('Profile picture removed')
+      } else {
+        toast.error(data?.message || 'Failed to remove profile picture')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to remove profile picture')
+    } finally {
+      setIsUpdating(false)
+      setAvatarOptionsOpen(false)
+    }
+  }
+
   const handleOpenCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
@@ -646,6 +742,7 @@ const PlayerProfileCard = () => {
                   </Typography>
                   {/* Shirt number hidden per request */}
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Foot: <b style={{ color: themeColors.text }}>{user?.preferredFoot || "-"}</b></Typography>
+                  {user?.phone && <Typography sx={{ fontSize: 13, color: themeColors.textDim }}>Phone: <b style={{ color: themeColors.text }}>{user.phone}</b></Typography>}
                   <Chip
                     label={positionType || "Position"}
                     size="small"
@@ -786,6 +883,7 @@ const PlayerProfileCard = () => {
                 display: 'flex',
                 gap: 4,
                 mb: 2,
+                px: 6,
                 flexDirection: { xs: 'column', md: 'row' }
               }}>
                 <Box sx={{
@@ -887,98 +985,127 @@ const PlayerProfileCard = () => {
                           </Grid>
                           <Grid item xs={12} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>City/State</Typography>
+                            {country && countryCityMap[country] ? (
+                              <StyledTextField
+                                size="small"
+                                value={city}
+                                select
+                                onChange={e => {
+                                  const v = e.target.value
+                                  setCity(v)
+                                  setStateProvince(v)
+                                }}
+                                placeholder="Select city"
+                                fullWidth
+                                sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
+                              >
+                                {countryCityMap[country].map(c => (
+                                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                                ))}
+                              </StyledTextField>
+                            ) : (
+                              <StyledTextField
+                                size="small"
+                                value={city}
+                                onChange={e => {
+                                  const v = e.target.value
+                                  setCity(v)
+                                  setStateProvince(v)
+                                }}
+                                placeholder={country ? "Type your city" : "Select country first"}
+                                fullWidth
+                                sx={{ mb: 1 }}
+                              />
+                            )}
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Phone Number</Typography>
                             <StyledTextField
                               size="small"
-                              value={city}
-                              onChange={e => {
-                                const v = e.target.value
-                                setCity(v)
-                                setStateProvince(v)
-                              }}
-                              placeholder="London"
+                              type="tel"
+                              value={phone}
+                              onChange={e => setPhone(e.target.value)}
+                              placeholder="+44 7911 123456"
                               fullWidth
+                              inputProps={{ maxLength: 20 }}
                               sx={{ mb: 1 }}
                             />
                           </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Age</Typography>
+                            <StyledTextField size="small" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth placeholder="00" sx={{ mb: 1 }} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Gender</Typography>
+                            <Card
+                              sx={{
+                                p: 0.5,
+                                background: "#171717",
+                                border: `1px solid rgba(255,255,255,0.5)`,
+                                borderRadius: 1.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                minHeight: 44,
+                                overflow: 'visible',
+                              }}
+                            >
+                              <FormControl component="fieldset" sx={{ width: '100%' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
+                                  <RadioGroup
+                                    row
+                                    value={gender}
+                                    onChange={e => setGender(e.target.value)}
+                                    sx={{
+                                      justifyContent: 'center',
+                                      flexWrap: 'nowrap',
+                                      gap: 2,
+                                      '& .MuiFormControlLabel-root': { m: 0 },
+                                      '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
+                                    }}
+                                  >
+                                    <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Male" />
+                                    <FormControlLabel value="female" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Female" />
+                                  </RadioGroup>
+                                </Box>
+                              </FormControl>
+                            </Card>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Preferred Foot</Typography>
+                            <Card
+                              sx={{
+                                p: 0.5,
+                                background: "#171717",
+                                border: `1px solid rgba(255,255,255,0.5)`,
+                                borderRadius: 1.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                minHeight: 44,
+                                overflow: 'visible',
+                              }}
+                            >
+                              <FormControl component="fieldset" sx={{ width: '100%' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
+                                  <RadioGroup
+                                    row
+                                    value={preferredFoot}
+                                    onChange={e => setPreferredFoot(e.target.value)}
+                                    sx={{
+                                      justifyContent: 'center',
+                                      flexWrap: 'nowrap',
+                                      gap: 2,
+                                      '& .MuiFormControlLabel-root': { m: 0 },
+                                      '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
+                                    }}
+                                  >
+                                    <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
+                                    <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Right" />
+                                  </RadioGroup>
+                                </Box>
+                              </FormControl>
+                            </Card>
+                          </Grid>
                         </Grid>
-                      </Grid>
-                      <Grid item xs={12} sm={3} md={2}>
-                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Age</Typography>
-                        <StyledTextField size="small" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth placeholder="00" sx={{ mb: 1 }} />
-                      </Grid>
-
-                      <Grid item xs={12} sm={3} md={3} sx={{ mt: { xs: 2, sm: 0 } }}>
-                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Gender</Typography>
-                        <Card
-                          sx={{
-                            p: 0.5,
-                            background: "#171717",
-                            border: `1px solid rgba(255,255,255,0.5)`,
-                            borderRadius: 1.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            minHeight: 44,
-                            overflow: 'visible',
-                            maxWidth: 240
-                          }}
-                        >
-                          <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
-                              <RadioGroup
-                                row
-                                value={gender}
-                                onChange={e => setGender(e.target.value)}
-                                sx={{
-                                  justifyContent: 'center',
-                                  flexWrap: 'nowrap',
-                                  gap: 2,
-                                  '& .MuiFormControlLabel-root': { m: 0 },
-                                  '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
-                                }}
-                              >
-                                <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Male" />
-                                <FormControlLabel value="female" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Female" />
-                              </RadioGroup>
-                            </Box>
-                          </FormControl>
-                        </Card>
-                      </Grid>
-
-                      <Grid item xs={12} sm={4} md={4} sx={{ mt: { xs: 2, sm: 0 } }}>
-                        <Typography sx={{ mb: 0.5, fontSize: 20, fontWeight: 400, color: themeColors.text }}>Preferred Foot</Typography>
-                        <Card
-                          sx={{
-                            p: 0.5,
-                            background: "#171717",
-                            border: `1px solid rgba(255,255,255,0.5)`,
-                            borderRadius: 1.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            minHeight: 44,
-                            overflow: 'visible',
-                            maxWidth: 180
-                          }}
-                        >
-                          <FormControl component="fieldset" sx={{ width: '100%' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
-                              <RadioGroup
-                                row
-                                value={preferredFoot}
-                                onChange={e => setPreferredFoot(e.target.value)}
-                                sx={{
-                                  justifyContent: 'center',
-                                  flexWrap: 'nowrap',
-                                  gap: 2,
-                                  '& .MuiFormControlLabel-root': { m: 0 },
-                                  '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
-                                }}
-                              >
-                                <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
-                                <FormControlLabel value="Right" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Right" />
-                              </RadioGroup>
-                            </Box>
-                          </FormControl>
-                        </Card>
                       </Grid>
                     </Grid>
                   </Grid>
@@ -1095,13 +1222,23 @@ const PlayerProfileCard = () => {
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>Update Profile Image</Typography>
-                <Stack direction="row" spacing={2} justifyContent="center">
+                <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
                   <Button variant="contained" onClick={handleOpenCamera} sx={{ textTransform: 'none', fontWeight: 700, background: themeColors.primaryGradient }}>
                     Take a new photo
                   </Button>
                   <Button variant="outlined" onClick={openGalleryPicker} sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.primary, color: '#fff' }}>
                     Upload a new photo
                   </Button>
+                  {imgSrc && imgSrc !== fallbackImgSrc && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleDeleteProfilePicture}
+                      disabled={isUpdating}
+                      sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.danger, color: themeColors.danger, '&:hover': { background: 'rgba(211,47,47,0.1)', borderColor: themeColors.danger } }}
+                    >
+                      Delete image
+                    </Button>
+                  )}
                 </Stack>
               </Box>
             </Modal>
