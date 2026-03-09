@@ -45,7 +45,7 @@ const themeColors = {
   surfaceAlt: '#1a1a1a',
   surfacePanel: '#1a1a1a',
   cardBg: '#1e1e1e',
-  border: 'rgba(255,255,255,0.1)',
+  border: '#383a3f',
   borderStrong: 'rgba(255,255,255,0.2)',
   text: '#fff',
   textDim: 'rgba(255,255,255,0.7)',
@@ -166,7 +166,6 @@ const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false 
 const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
 const PieChart = dynamic(() => import('recharts').then(m => m.PieChart), { ssr: false });
 const Pie = dynamic(() => import('recharts').then(m => m.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(m => m.Cell), { ssr: false });
 const RadarChart = dynamic(() => import('recharts').then(m => m.RadarChart), { ssr: false });
 const PolarGrid = dynamic(() => import('recharts').then(m => m.PolarGrid), { ssr: false });
 const PolarAngleAxis = dynamic(() => import('recharts').then(m => m.PolarAngleAxis), { ssr: false });
@@ -202,7 +201,7 @@ const SectionTitle = styled(Typography)(() => ({
 const FilterButton = styled(Button)(() => ({
   background: '#2a2a2a',
   color: themeColors.text,
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: `1px solid ${themeColors.border}`,
   borderRadius: 4,
   padding: '6px 16px',
   fontSize: 12,
@@ -1099,18 +1098,18 @@ export default function CareerPage() {
     const total = wins + losses + draws;
     if (total === 0) {
       return [
-        { name: 'Win', value: 0, color: '#15b67a' },
-        { name: 'Loss', value: 0, color: '#d32f2f' },
-        { name: 'Draw', value: 0, color: '#ffb300' },
+        { name: 'Win', value: 0, color: '#15b57a', fill: '#15b57a' },
+        { name: 'Loss', value: 0, color: '#d22f2f', fill: '#d22f2f' },
+        { name: 'Draw', value: 0, color: '#ff4bd2', fill: '#ff4bd2' },
       ];
     }
     const winPercent = Math.round((wins / total) * 100);
     const drawPercent = Math.round((draws / total) * 100);
     const lossPercent = 100 - winPercent - drawPercent;
     return [
-      { name: 'Win', value: winPercent, color: '#15b67a' },
-      { name: 'Loss', value: lossPercent, color: '#d32f2f' },
-      { name: 'Draw', value: drawPercent, color: '#ffb300' },
+      { name: 'Win', value: winPercent, color: '#15b57a', fill: '#15b57a' },
+      { name: 'Loss', value: lossPercent, color: '#d22f2f', fill: '#d22f2f' },
+      { name: 'Draw', value: drawPercent, color: '#ff4bd2', fill: '#ff4bd2' },
     ];
   }, [winLossMatches, playerId]);
 
@@ -1555,7 +1554,7 @@ export default function CareerPage() {
           </Box>
 
           {/* Main Content */}
-          <Box sx={{ maxWidth: '1000px', mx: 'auto' }}>
+          <Box sx={{ maxWidth: '1130px', mx: 'auto' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress sx={{ color: themeColors.primary }} />
@@ -1563,7 +1562,7 @@ export default function CareerPage() {
           ) : (
             <Box>
               {/* Performance Over Time Chart */}
-              <GlassCard sx={{ mb: 3 }}>
+              <GlassCard sx={{ mb: 3, border: `2px solid ${themeColors.border}`, background: '#232528' }}>
                 <Box sx={{ p: 0 }}>
                   {/* Chart Header with toggles */}
                   <Box sx={{ 
@@ -1746,7 +1745,8 @@ export default function CareerPage() {
                     justifyContent: 'center', 
                     gap: 3, 
                     pb: 2,
-                    pt: 1,
+                    pt: 2,
+                    backgroundColor: '#383a3f',
                     borderTop: `1px solid ${themeColors.border}`,
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1769,7 +1769,7 @@ export default function CareerPage() {
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 {/* Influence Radar Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard>
+                  <GlassCard sx={{ background: '#27292d' }}>
                     {/* Header with toggle */}
                     <Box sx={{ 
                       display: 'flex', 
@@ -1825,7 +1825,7 @@ export default function CareerPage() {
                       })()}
                     </Box>
 
-                    <CardContent sx={{ p: 2, pt: 1 }}>
+                    <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
                       {/* Title */}
                       <Typography sx={{ 
                         fontSize: 14, 
@@ -1837,28 +1837,6 @@ export default function CareerPage() {
                       }}>
                         Influence
                       </Typography>
-                      
-                      {/* Legend */}
-                      <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        gap: 3, 
-                        mb: 1,
-                        alignItems: 'center'
-                      }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
-                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                            {playerName || 'Player'}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.chartBar, borderRadius: 1 }} />
-                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                            League Average
-                          </Typography>
-                        </Box>
-                      </Box>
 
                       <Box sx={{ height: 160 }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -1921,18 +1899,41 @@ export default function CareerPage() {
                         </ResponsiveContainer>
                       </Box>
                     </CardContent>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      gap: 3,
+                      pb: 2,
+                      pt: 2,
+                      backgroundColor: '#383a3f',
+                      borderTop: `1px solid ${themeColors.border}`,
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
+                        <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                          {playerName || 'Player'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.chartBar, borderRadius: 1 }} />
+                        <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                          League Average
+                        </Typography>
+                      </Box>
+                    </Box>
                   </GlassCard>
                 </Grid>
 
                 {/* Win/Loss Pie Chart */}
                 <Grid item xs={12} md={6}>
-                  <GlassCard>
+                  <GlassCard sx={{ background: '#27292d' }}>
                     {/* Header with toggle */}
                     <Box sx={{ 
                       display: 'flex', 
                       justifyContent: 'flex-start', 
                       alignItems: 'center',
                       p: 1.5,
+                     
                       borderBottom: `1px solid ${themeColors.border}`,
                       flexWrap: 'wrap',
                       gap: 0.5
@@ -1982,7 +1983,7 @@ export default function CareerPage() {
                       })()}
                     </Box>
 
-                    <CardContent sx={{ p: 2, pt: 1 }}>
+                    <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
                       {/* Title */}
                       <Typography sx={{ 
                         fontSize: 14, 
@@ -1995,7 +1996,7 @@ export default function CareerPage() {
                         Win/Loss/Draw
                       </Typography>
 
-                      <Box sx={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {actualWinLossData.every(d => d.value === 0) ? (
                           <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
                         ) : (
@@ -2011,31 +2012,9 @@ export default function CareerPage() {
                               paddingAngle={2}
                               startAngle={90}
                               endAngle={450}
-                              label={({ cx, cy, midAngle, outerRadius, value }) => {
-                                const safeValue = value ?? 0;
-                                if (safeValue < 5) return null;
-                                const RADIAN = Math.PI / 180;
-                                const radius = (outerRadius || 0) + 12;
-                                const safeMidAngle = midAngle ?? 0;
-                                const x = (cx || 0) + radius * Math.cos(-safeMidAngle * RADIAN);
-                                const y = (cy || 0) + radius * Math.sin(-safeMidAngle * RADIAN);
-                                return (
-                                  <text 
-                                    x={x} y={y} fill="#fff" 
-                                    textAnchor={x > (cx || 0) ? 'start' : 'end'} 
-                                    dominantBaseline="central"
-                                    fontSize={10} fontWeight="bold"
-                                  >
-                                    {`${safeValue}%`}
-                                  </text>
-                                );
-                              }}
+                              label={false}
                               labelLine={false}
-                            >
-                              {actualWinLossData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                              ))}
-                            </Pie>
+                            />
                             <Tooltip 
                               contentStyle={{
                                 background: themeColors.surfaceAlt,
@@ -2051,38 +2030,48 @@ export default function CareerPage() {
                         )}
                       </Box>
 
-                      {/* Legend */}
-                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1 }}>
-                        {actualWinLossData.map((entry, index) => (
-                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Box sx={{ 
-                              width: 10, height: 10, borderRadius: '50%', 
-                              backgroundColor: entry.color 
-                            }} />
-                            <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                              {entry.name} {entry.value}%
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
                     </CardContent>
+                    <Box sx={{ 
+                      display: 'flex',
+                      justifyContent: 'center',
+                      gap: 2,
+                      pb: 2,
+                      pt: 2,
+                      backgroundColor: '#383a3f',
+                      borderTop: `1px solid ${themeColors.border}`,
+                    }}>
+                      {actualWinLossData.map((entry, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ 
+                            width: 10, height: 10, borderRadius: '50%',
+                            backgroundColor: entry.color
+                          }} />
+                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                            {entry.name} {entry.value}%
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
                   </GlassCard>
                 </Grid>
               </Grid>
 
               {/* IMPACT Section */}
-              <GlassCard sx={{ mb: 3 }}>
+              <GlassCard sx={{ mb: 3, background: '#232427' }}>
                 {/* Orange Header */}
                 <Box sx={{ 
-                  background: themeColors.primary, 
+                  // background: themeColors.primary, 
                   px: 2, 
                   py: 1,
+                 
                   borderRadius: '8px 8px 0 0'
                 }}>
                   <Typography sx={{ 
-                    fontSize: 14, 
+                    fontSize: 16, 
                     fontWeight: 'bold', 
                     color: themeColors.text,
+                    pl: 5,
+                    pt:1,
                     textTransform: 'uppercase'
                   }}>
                     IMPACT
@@ -2092,14 +2081,22 @@ export default function CareerPage() {
                 <Box sx={{ p: 2 }}>
                   <Grid container spacing={2} alignItems="flex-start">
                     {/* Tables Container */}
-                    <Grid item xs={12} md={10}>
+                    <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
                       {/* First Table - Expected Probabilities */}
-                      <Table size="small" sx={{ mb: 2 }}>
+                      <Table
+                        size="small"
+                        sx={{
+                          mb: 2,
+                          width: '100%',
+                          tableLayout: 'fixed',
+                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
+                        }}
+                      >
                         <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected Per Match</TableCell>
+                          <TableRow sx={{ backgroundColor: '#202124' }}>
+                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected Per Match</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -2128,10 +2125,10 @@ export default function CareerPage() {
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xCS / 100).toFixed(1)}</TableCell>
                                 </TableRow>
-                                <TableRow sx={{ bgcolor: '#111' }}>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>Win rate</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>{winRate.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}></TableCell>
+                                <TableRow sx={{ bgcolor: '#383a3e' }}>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}></TableCell>
                                 </TableRow>
                               </>
                             );
@@ -2140,12 +2137,19 @@ export default function CareerPage() {
                       </Table>
 
                       {/* Second Table - Actual Stats */}
-                      <Table size="small">
+                      <Table
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          tableLayout: 'fixed',
+                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
+                        }}
+                      >
                         <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                            <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
+                          <TableRow sx={{ backgroundColor: '#202124' }}>
+                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -2204,10 +2208,10 @@ export default function CareerPage() {
                                   <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{defensiveImpactVotes}</TableCell>
                                   {diffCell(defensiveImpactVotes, avgDefImpact)}
                                 </TableRow>
-                                <TableRow sx={{ bgcolor: '#111' }}>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>Game Contribution Index</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>{contributionIndex.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#111' }}>+{Math.max(0, contributionIndex - 30).toFixed(0)}</TableCell>
+                                <TableRow sx={{ bgcolor: '#383a3e' }}>
+                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Game Contribution Index</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{contributionIndex.toFixed(0)}%</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>+{Math.max(0, contributionIndex - 30).toFixed(0)}</TableCell>
                                 </TableRow>
                               </>
                             );
@@ -2220,10 +2224,10 @@ export default function CareerPage() {
               </GlassCard>
 
               {/* YOUR TOP STRENGTHS Section */}
-              <GlassCard sx={{ mb: 3 }}>
+              <GlassCard sx={{ mb: 3, background: '#27292d' }}>
                 {/* Orange Header */}
                 <Box sx={{ 
-                  background: themeColors.primary, 
+                  // background: '#202124', 
                   px: 2, 
                   py: 1,
                   borderRadius: '8px 8px 0 0'
@@ -2232,6 +2236,8 @@ export default function CareerPage() {
                     fontSize: 14, 
                     fontWeight: 'bold', 
                     color: themeColors.text,
+                    pl: 5,
+                    pt: 1,
                     textTransform: 'uppercase'
                   }}>
                     Your Top Strengths
@@ -2239,51 +2245,62 @@ export default function CareerPage() {
                 </Box>
 
                 <Box sx={{ p: 2 }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}></TableCell>
-                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                        <TableCell align="center" sx={{ fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {strengths.map((s) => {
-                        const n = Math.max(filteredMatches.length, 1);
-                        const youVal = (s.value / n).toFixed(2);
-                        const pctDiff = Math.round(s.scaled - 80);
-                        const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
-                        const up = pctDiff >= 0;
-                        return (
-                          <TableRow key={s.metric}>
-                            <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
-                            <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
-                            <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                <Typography sx={{ fontSize: 11, color: up ? themeColors.success : themeColors.danger }}>
-                                  {diff}
-                                </Typography>
-                                {up ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />}
-                              </Box>
-                            </TableCell>
+                  <Grid container spacing={2} alignItems="flex-start">
+                    <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
+                      <Table
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          tableLayout: 'fixed',
+                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
+                        }}
+                      >
+                        <TableHead>
+                          <TableRow sx={{ backgroundColor: '#202124' }}>
+                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
+                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
                           </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                  {topStrengthNote && (
-                    <Typography sx={{ fontSize: 11, mt: 1.5, color: themeColors.textDim }}>
-                      {topStrengthNote}
-                    </Typography>
-                  )}
+                        </TableHead>
+                        <TableBody>
+                          {strengths.map((s) => {
+                            const n = Math.max(filteredMatches.length, 1);
+                            const youVal = (s.value / n).toFixed(2);
+                            const pctDiff = Math.round(s.scaled - 80);
+                            const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
+                            const up = pctDiff >= 0;
+                            return (
+                              <TableRow key={s.metric}>
+                                <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
+                                <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
+                                <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                    <Typography sx={{ fontSize: 11, color: up ? themeColors.success : themeColors.danger }}>
+                                      {diff}
+                                    </Typography>
+                                    {up ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />}
+                                  </Box>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                      {topStrengthNote && (
+                        <Typography sx={{ fontSize: 11, mt: 1.5, pl: 5, color: themeColors.textDim }}>
+                          {topStrengthNote}
+                        </Typography>
+                      )}
+                    </Grid>
+                  </Grid>
                 </Box>
               </GlassCard>
 
               {/* FOCUS AREA Section */}
-              <GlassCard sx={{ mb: 3 }}>
+              <GlassCard sx={{ mb: 3, background: '#25262a' }}>
                 {/* Orange Header */}
                 <Box sx={{ 
-                  background: themeColors.primary, 
+                  background: '#25262a', 
                   px: 2, 
                   py: 1,
                   borderRadius: '8px 8px 0 0'
@@ -2292,6 +2309,8 @@ export default function CareerPage() {
                     fontSize: 14, 
                     fontWeight: 'bold', 
                     color: themeColors.text,
+                    pl: 5,
+                    pt: 1,
                     textTransform: 'uppercase'
                   }}>
                     Focus Area
@@ -2299,7 +2318,7 @@ export default function CareerPage() {
                 </Box>
 
                 <Box sx={{ p: 2 }}>
-                  <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>
+                  <Typography sx={{ fontSize: 12, pl: 5, color: themeColors.textDim }}>
                     {focusSuggestion}
                   </Typography>
                 </Box>
