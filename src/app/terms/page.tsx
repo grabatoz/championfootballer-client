@@ -285,16 +285,19 @@ function TermConditions() {
             <Typography
                 variant="h3"
                 sx={{
-                    fontWeight: 800,
+                    fontFamily: '"Oswald", sans-serif !important',
+                    fontWeight: 700,
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0px',
                     mb: 2,
-                    background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent'
+                    color: 'white'
                 }}
             >
                 Terms & Conditions
             </Typography>
-            <Typography variant="h6" sx={{ mb: 4, color: '#666' }}>
+            <Typography variant="h6" sx={{ mb: 4, color: 'white', textAlign: 'center' }}>
                 Last updated August 22, 2022
             </Typography>
 
@@ -310,7 +313,8 @@ function TermConditions() {
                                 display: 'none',
                             },
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            borderRadius: 2,
+                            borderRadius: 0,
+                            overflow: 'hidden',
                             '&.Mui-expanded': {
                                 margin: '16px 0',
                             },
@@ -319,15 +323,14 @@ function TermConditions() {
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
                             sx={{
-                                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                                background: '#2b2b2b',
                                 color: 'white',
-                                borderRadius: 2,
+                                borderRadius: 0,
                                 '&:hover': {
                                     opacity: 0.95,
                                 },
                                 '&.Mui-expanded': {
-                                    borderBottomLeftRadius: 0,
-                                    borderBottomRightRadius: 0,
+                                    borderRadius: 0,
                                 },
                             }}
                         >

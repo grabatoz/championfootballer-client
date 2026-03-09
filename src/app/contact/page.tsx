@@ -72,8 +72,8 @@ export default function ContactForm() {
     >
       <Box
         sx={{
-          width: { xs: '100%', sm: 420 },
-          background: 'linear-gradient(150deg,#1d1f23 0%,#25272b 55%)',
+          width: { xs: '100%', sm: 700 },
+          background: '#1f1f1f',
           borderRadius: 4,
           boxShadow: '0 10px 34px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
           border: '1px solid rgba(255,255,255,0.08)',
@@ -83,14 +83,16 @@ export default function ContactForm() {
       >
         <Typography
           variant="h4"
-          fontWeight="bold"
           align="center"
           sx={{
             mb: 2,
-            background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
-            WebkitBackgroundClip: 'text',
-            color: 'transparent',
-            textShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            color: 'white',
+            fontFamily: '"Oswald", sans-serif !important',
+            fontWeight: 700,
+            fontSize: { xs: '32px', sm: '42px', md: '55px' },
+            textTransform: 'uppercase',
+            letterSpacing: '0px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
         >
           Contact Us
@@ -116,34 +118,42 @@ export default function ContactForm() {
                 },
               }}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Your name"
-                  variant="outlined"
-                  fullWidth
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                  inputProps={{ maxLength: 41 }}
-                  sx={{
-                    background: '#202225',
-                    borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
+                <Box>
+                  <Typography
+                    sx={{ mb: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500, fontSize: '22px', lineHeight: 1.1 }}
+                  >
+                    Your name
+                  </Typography>
+                  <TextField
+                    {...field}
+                    variant="outlined"
+                    fullWidth
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                    inputProps={{ maxLength: 41 }}
+                    sx={{
+                      background: '#202225',
                       borderRadius: 2,
-                      '& fieldset': { borderColor: 'transparent' },
-                      '&:hover fieldset': { borderColor: '#E56A16' },
-                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
-                      '& input': { color: '#fff', background: 'transparent' },
-                      '& input:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
-                        WebkitTextFillColor: '#fff',
-                        color: '#fff',
-                        transition: 'background-color 5000s ease-in-out 0s',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.75)' },
+                        '&:hover fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-focused fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-error fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error:hover fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error.Mui-focused fieldset': { borderColor: '#00a77f' },
+                        '& input': { color: '#fff', background: 'transparent' },
+                        '& input:-webkit-autofill': {
+                          WebkitBoxShadow: '0 0 0 1000px #202225 inset',
+                          WebkitTextFillColor: '#fff',
+                          color: '#fff',
+                          transition: 'background-color 5000s ease-in-out 0s',
+                        },
                       },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
-                  }}
-                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
-                />
+                      '& .MuiFormHelperText-root.Mui-error': { color: '#00a77f' },
+                    }}
+                  />
+                </Box>
               )}
             />
 
@@ -163,35 +173,43 @@ export default function ContactForm() {
                 },
               }}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Email address"
-                  type="email"
-                  variant="outlined"
-                  fullWidth
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  inputProps={{ maxLength: 30 }}
-                  sx={{
-                    background: '#202225',
-                    borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
+                <Box>
+                  <Typography
+                    sx={{ mb: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500, fontSize: '22px', lineHeight: 1.1 }}
+                  >
+                    Email address
+                  </Typography>
+                  <TextField
+                    {...field}
+                    type="email"
+                    variant="outlined"
+                    fullWidth
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    inputProps={{ maxLength: 30 }}
+                    sx={{
+                      background: '#202225',
                       borderRadius: 2,
-                      '& fieldset': { borderColor: 'transparent' },
-                      '&:hover fieldset': { borderColor: '#E56A16' },
-                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
-                      '& input': { color: '#fff', background: 'transparent' },
-                      '& input:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
-                        WebkitTextFillColor: '#fff',
-                        color: '#fff',
-                        transition: 'background-color 5000s ease-in-out 0s',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.75)' },
+                        '&:hover fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-focused fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-error fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error:hover fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error.Mui-focused fieldset': { borderColor: '#00a77f' },
+                        '& input': { color: '#fff', background: 'transparent' },
+                        '& input:-webkit-autofill': {
+                          WebkitBoxShadow: '0 0 0 1000px #202225 inset',
+                          WebkitTextFillColor: '#fff',
+                          color: '#fff',
+                          transition: 'background-color 5000s ease-in-out 0s',
+                        },
                       },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
-                  }}
-                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
-                />
+                      '& .MuiFormHelperText-root.Mui-error': { color: '#00a77f' },
+                    }}
+                  />
+                </Box>
               )}
             />
 
@@ -207,36 +225,44 @@ export default function ContactForm() {
                 },
               }}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Your message"
-                  multiline
-                  rows={4}
-                  variant="outlined"
-                  fullWidth
-                  error={!!errors.message}
-                  helperText={errors.message?.message}
-                  inputProps={{ maxLength: 500 }}
-                  sx={{
-                    background: '#202225',
-                    borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
+                <Box>
+                  <Typography
+                    sx={{ mb: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500, fontSize: '22px', lineHeight: 1.1 }}
+                  >
+                    Your message
+                  </Typography>
+                  <TextField
+                    {...field}
+                    multiline
+                    rows={4}
+                    variant="outlined"
+                    fullWidth
+                    error={!!errors.message}
+                    helperText={errors.message?.message}
+                    inputProps={{ maxLength: 500 }}
+                    sx={{
+                      background: '#202225',
                       borderRadius: 2,
-                      '& fieldset': { borderColor: 'transparent' },
-                      '&:hover fieldset': { borderColor: '#E56A16' },
-                      '&.Mui-focused fieldset': { borderColor: '#E56A16' },
-                      '& textarea': { color: '#fff', background: 'transparent' },
-                      '& textarea:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #202225 inset',
-                        WebkitTextFillColor: '#fff',
-                        color: '#fff',
-                        transition: 'background-color 5000s ease-in-out 0s',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.75)' },
+                        '&:hover fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-focused fieldset': { borderColor: '#ffffff' },
+                        '&.Mui-error fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error:hover fieldset': { borderColor: '#00a77f' },
+                        '&.Mui-error.Mui-focused fieldset': { borderColor: '#00a77f' },
+                        '& textarea': { color: '#fff', background: 'transparent' },
+                        '& textarea:-webkit-autofill': {
+                          WebkitBoxShadow: '0 0 0 1000px #202225 inset',
+                          WebkitTextFillColor: '#fff',
+                          color: '#fff',
+                          transition: 'background-color 5000s ease-in-out 0s',
+                        },
                       },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#E56A16' },
-                  }}
-                  InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.72)' } }}
-                />
+                      '& .MuiFormHelperText-root.Mui-error': { color: '#00a77f' },
+                    }}
+                  />
+                </Box>
               )}
             />
 
@@ -248,7 +274,7 @@ export default function ContactForm() {
               disabled={!isValid || isSubmitting}
               startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
               sx={{
-                background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
+                background: '#00a77f',
                 color: "white",
                 fontWeight: 600,
                 py: 1.5,
@@ -257,13 +283,13 @@ export default function ContactForm() {
                 fontSize: 16,
                 boxShadow: '0 6px 16px -4px rgba(0,0,0,0.4)',
                 '&:hover': {
-                  opacity: 0.92,
+                  background: '#009270',
                   transform: "translateY(-1px)",
                   boxShadow: "0 10px 22px -8px rgba(0,0,0,0.55)",
                 },
                 '&:disabled': {
-                  bgcolor: "#ccc",
-                  color: "#666",
+                  bgcolor: "#00a77f",
+                  color: "#fff",
                 },
                 transition: "all 0.2s ease",
               }}

@@ -267,47 +267,53 @@ function PrivacyPolicies() {
     };
 
     return (
-        <Box sx={{ p: 6, minHeight: '100vh', background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)' }}>
+        <Box sx={{ p: 3, minHeight: '100vh', background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)' }}>
             <Typography
                 variant="h3"
                 sx={{
-                    mb: 5,
-                    fontWeight: 800,
-                    background: 'linear-gradient(135deg,#E56A16 0%,#CF2326 100%)',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent'
+                    fontFamily: '"Oswald", sans-serif !important',
+                    fontWeight: 700,
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0px',
+                    mb: 2,
+                    color: 'white'
                 }}
             >
                 Privacy Policy
             </Typography>
-            <Typography variant="body1" sx={{ mb: 3, fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 4, color: 'white', textAlign: 'center' }}>
                 Last updated August 22, 2022
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 1200, mx: 'auto' }}>
                 {sections.map((section, index) => (
                     <Accordion
                         key={index}
                         expanded={expanded === `panel${index}`}
                         onChange={handleChange(`panel${index}`)}
                         sx={{
+                            mb: 2,
                             '&:before': { display: 'none' },
-                            boxShadow: 2,
-                            borderRadius: 2,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            borderRadius: 0,
                             overflow: 'hidden',
+                            '&.Mui-expanded': {
+                                margin: '16px 0',
+                            },
                         }}
                     >
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
                             sx={{
-                                background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
+                                background: '#2b2b2b',
                                 color: 'white',
-                                borderRadius: 2,
+                                borderRadius: 0,
                                 '&:hover': {
                                     opacity: 0.95,
                                 },
                                 '&.Mui-expanded': {
-                                    borderBottomLeftRadius: 0,
-                                    borderBottomRightRadius: 0,
+                                    borderRadius: 0,
                                 },
                             }}
                         >
