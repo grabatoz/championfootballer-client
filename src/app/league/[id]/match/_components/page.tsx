@@ -178,8 +178,9 @@ interface League {
 /* ================== HELPERS ================== */
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);          // 12‑hour clock (start time)
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
-// NEW: duration hours include 0
-const DURATION_HOURS = Array.from({ length: 13 }, (_, i) => i);     // 0..12 for duration
+// Duration: max 3 hours, 5-minute intervals
+const DURATION_HOURS = [0, 1, 2, 3];
+const DURATION_MINUTES = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10, ... 55
 
 const buildDateTime = (base: Dayjs, hour12: number, minute: number, isPM: boolean) => {
   let h24 = hour12 % 12;
@@ -317,8 +318,8 @@ export default function ScheduleMatchPage() {
   const [hour, setHour] = useState<number>(initialHour12);      // was 9
   const [minute, setMinute] = useState<number>(initialMinute);  // was 30
   const [isPM, setIsPM] = useState<boolean>(initialIsPM);       // was true
-  const [durHours, setDurHours] = useState<number>(1);
-  const [durMinutes, setDurMinutes] = useState<number>(40);
+  const [durHours, setDurHours] = useState<number>(0);
+  const [durMinutes, setDurMinutes] = useState<number>(0);
   const [location, setLocation] = useState<string>('');
 
   const finishTime = useMemo(
@@ -802,12 +803,16 @@ export default function ScheduleMatchPage() {
                     }}
                     sx={selectStyles}
                   >
-                    {HOURS.map((h) => (
+                    {/* AM: 12 AM, 1 AM, 2 AM, ... 11 AM */}
+                    <MenuItem key="AM-12" value="12-AM">12 AM</MenuItem>
+                    {HOURS.filter(h => h !== 12).map((h) => (
                       <MenuItem key={`AM-${h}`} value={`${h}-AM`}>
                         {h} AM
                       </MenuItem>
                     ))}
-                    {HOURS.map((h) => (
+                    {/* PM: 12 PM, 1 PM, 2 PM, ... 11 PM */}
+                    <MenuItem key="PM-12" value="12-PM">12 PM</MenuItem>
+                    {HOURS.filter(h => h !== 12).map((h) => (
                       <MenuItem key={`PM-${h}`} value={`${h}-PM`}>
                         {h} PM
                       </MenuItem>
@@ -892,7 +897,7 @@ export default function ScheduleMatchPage() {
                       }
                       sx={selectStyles}
                     >
-                      {MINUTES.map((m) => (
+                      {DURATION_MINUTES.map((m) => (
                         <MenuItem key={m} value={m}>
                           {String(m).padStart(2, '0')}
                         </MenuItem>
@@ -918,7 +923,7 @@ export default function ScheduleMatchPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <TextField
                     fullWidth
-                    placeholder="e.g. City, Country"
+                    placeholder="e.g. County or State"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     sx={{
