@@ -2153,7 +2153,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     <Box sx={{
       display: 'flex',
       alignItems: 'flex-end',
-      // gap: { xs: 0.5, md: 1 },
+      gap: { xs: 0.5, lg: 1.1 },
       flexWrap: 'nowrap',
       overflow: 'hidden',
       justifyContent: 'flex-end' ,
@@ -2242,7 +2242,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 300, sm: 260, md: 300, lg: 355 },
+              width: { xs: 340, sm: 300, md: 340, lg: 400 },
               height: { xs: 64, md: 75 },
               display: 'flex',
               alignItems: 'center',
@@ -2251,10 +2251,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               <Image
                 src={cflogo}
                 alt="Champion Footballer Logo"
-                width={370}
+                width={430}
                 height={64}
                 priority
-                sizes="(max-width:600px) 300px, (max-width:900px) 260px, (max-width:1200px) 300px, 355px"
+                sizes="(max-width:600px) 340px, (max-width:900px) 300px, (max-width:1200px) 340px, 400px"
                 style={{
                   height: '100%',
                   width: 'auto',
@@ -2290,6 +2290,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   sx={{
                     color: '#fff',
                     display: { xs: 'none', lg: 'flex' },
+                    mr: { lg: 2.5 },
                     transition: 'all 0.2s ease',
                     position: 'relative',
                     '&:hover': {
