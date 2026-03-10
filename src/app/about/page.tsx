@@ -20,12 +20,12 @@ export default function AboutCF() {
     >
       <div
         className="max-w-3xl mx-auto rounded-2xl border border-white/10 shadow-xl overflow-hidden"
-        style={{ background: "linear-gradient(150deg,#1d1f23 0%,#25272b 55%)" }}
+        style={{ background: "#2b2b2b" }}
       >
-        <header className="px-6 sm:px-8 pt-8 pb-4 border-b border-white/10 bg-gradient-to-r from-[#0a0e1a]/60 to-[#141c2b]/60">
+        <header className="px-6 sm:px-8 pt-8 pb-4 bg-[#2b2b2b]">
           <h1
-            className="text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(135deg,#E56A16 0%,#CF2326 100%)" }}
+            className="text-[32px] sm:text-[42px] md:text-[55px] font-bold text-white text-center uppercase tracking-normal"
+            style={{ fontFamily: '"Oswald", sans-serif' }}
           >
             About CF
           </h1>
@@ -71,8 +71,8 @@ export default function AboutCF() {
           </p>
         </div>
 
-        <footer className="px-6 sm:px-8 pb-8 pt-4 border-t border-white/10 bg-gradient-to-r from-[#0a0e1a]/60 to-[#141c2b]/60">
-          <p className="text-xs sm:text-sm text-white/60">
+        <footer className="px-6 sm:px-8 pb-8 pt-4 border-t border-white/10 bg-[#2b2b2b]">
+          <p className="text-xs sm:text-sm text-white">
             Built with love for the global football community.
           </p>
         </footer>
