@@ -282,7 +282,6 @@ export default function LeagueDetailPage() {
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [, setCheckedCommonLeague] = useState(false);
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
-    const [xpFetchAttempted, setXpFetchAttempted] = useState(false);
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
     const [activeMatchId,] = React.useState<string | null>(null);
@@ -1005,14 +1004,14 @@ export default function LeagueDetailPage() {
         }
     }, [token, leagueIsCompleted]);
 
-    // Fetch XP for all users in this league (from API) - only attempt once
+    // Fetch XP for all users in this league (from API) - refetch when season changes
     useEffect(() => {
         async function fetchXP() {
-            if (!league?.id || xpFetchAttempted) return;
-            setXpFetchAttempted(true);
+            if (!league?.id) return;
             try {
                 const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp`, { headers });
+                const seasonParam = selectedSeasonId ? `?seasonId=${encodeURIComponent(selectedSeasonId)}` : '';
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp${seasonParam}`, { headers });
                 if (!res.ok) {
                     // Silently handle 404 - endpoint may not exist yet
                     console.warn(`XP endpoint returned ${res.status}, using empty map`);
@@ -1020,11 +1019,14 @@ export default function LeagueDetailPage() {
                     return;
                 }
                 const json = await res.json().catch(() => ({}));
+                console.log('📊 XP API response:', JSON.stringify(json));
                 if (json?.success === undefined || json?.success) {
                     // Support either { xp } or { data: { xp } }
                     const xpMap = json.xp || json.data?.xp || {};
+                    console.log('📊 XP map set to:', JSON.stringify(xpMap));
                     setUserLeagueXP(xpMap as Record<string, number>);
                 } else {
+                    console.log('📊 XP API returned success=false, using empty map');
                     setUserLeagueXP({});
                 }
             } catch {
@@ -1032,7 +1034,7 @@ export default function LeagueDetailPage() {
             }
         }
         fetchXP();
-    }, [league?.id, token, xpFetchAttempted]);
+    }, [league?.id, token, selectedSeasonId]);
 
     // Fetch all leagues for dropdown
     useEffect(() => {
@@ -1491,7 +1493,7 @@ export default function LeagueDetailPage() {
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
-                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : (member?.xp ?? 0),
+                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : 0,
                 motmCount: typeof motmCounts[member.id] === 'number' ? motmCounts[member.id] : 0,
             });
         });
@@ -1501,7 +1503,7 @@ export default function LeagueDetailPage() {
         // Process matches to build stats for players who played in this season
         filteredLeague.matches
             .filter(m => !m.archived) // <-- exclude archived
-            .filter(m => (m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_PUBLISHED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .filter(m => (m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_UPLOADED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
@@ -1578,18 +1580,19 @@ export default function LeagueDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [league?.id, selectedSeasonId, filteredLeague?.matches]);
 
-    // Fetch MOTM votes per player via quick-view endpoint when league changes
+    // Fetch MOTM votes per player via quick-view endpoint when league or season changes
     useEffect(() => {
         if (!league?.id || !token || !league.members?.length) return;
         let ignore = false;
         const controller = new AbortController();
         (async () => {
             try {
+                const seasonParam = selectedSeasonId ? `?seasonId=${encodeURIComponent(selectedSeasonId)}` : '';
                 const entries = await Promise.all(
                     league.members.map(async (m) => {
                         try {
                             const res = await fetch(
-                                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(league.id)}/player/${encodeURIComponent(m.id)}/quick-view`,
+                                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(league.id)}/player/${encodeURIComponent(m.id)}/quick-view${seasonParam}`,
                                 { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
                             );
                             if (!res.ok) return [m.id, 0] as const;
@@ -1611,7 +1614,7 @@ export default function LeagueDetailPage() {
             controller.abort();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [league?.id, token]);
+    }, [league?.id, token, selectedSeasonId]);
 
     const [leagueStats, setLeagueStats] = useState<LeagueStatistics | null>(null);
     // ...existing code...
@@ -2359,9 +2362,10 @@ export default function LeagueDetailPage() {
             const localMember = league?.members?.find((m: User) => m.id === playerId);
 
             // Fetch quick-view (motmCount) AND full player profile (skills, xp, etc.) in parallel
+            const seasonParam = selectedSeasonId ? `?seasonId=${encodeURIComponent(selectedSeasonId)}` : '';
             const [quickViewRes, playerRes, statsRes] = await Promise.all([
                 fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view${seasonParam}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 ),
                 fetch(
@@ -2427,7 +2431,7 @@ export default function LeagueDetailPage() {
                     assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
                 },
                 skills,
-                xp: Number(fullPlayer?.xp ?? data.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
+                xp: (userLeagueXP && userLeagueXP[playerId] != null) ? userLeagueXP[playerId] : 0,
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(data.defensiveImpact ?? 0),
