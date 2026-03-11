@@ -63,16 +63,17 @@ export default function LandingPage() {
                 sx={{
                   fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                   fontWeight: 400,
-                  fontSize: { xs: '1.5rem', md: '38px' },
-                  lineHeight: '100%',
+                  fontSize: { xs: 'clamp(1.15rem, 6.5vw, 1.55rem)', md: '38px' },
+                  lineHeight: { xs: 1.1, md: '100%' },
                   letterSpacing: '0%',
                   color: '#FFFFFF',
-                  mb: -4,
-                  mt: 1,
+                  mb: { xs: 1.5, md: -4 },
+                  mt: { xs: 0, md: 1 },
                   textTransform: 'uppercase',
-                  width: { xs: 'auto', md: '817px' },
+                  width: { xs: '100%', md: '817px' },
                   height: { xs: 'auto', md: '81px' },
-                  whiteSpace: 'nowrap',
+                  whiteSpace: { xs: 'normal', md: 'nowrap' },
+                  wordBreak: 'break-word',
                   overflow: 'visible',
                 }}
               >
@@ -84,14 +85,14 @@ export default function LandingPage() {
                 sx={{
                   fontFamily: 'var(--font-inter), Inter, sans-serif !important',
                   fontWeight: '500 !important',
-                  fontSize: { xs: '0.95rem', md: '18px' },
+                  fontSize: { xs: '0.86rem', md: '18px' },
                   fontStyle: 'italic !important',
                   lineHeight: { xs: '1.4', md: '23px' },  
                   letterSpacing: '0% !important',
                   color: '#FFFFFF',
-                  width: { xs: 'auto', md: '1152px' },
+                  width: { xs: '100%', md: '1152px' },
                   height: { xs: 'auto', md: '49px' },
-                  mb: 2,
+                  mb: { xs: 2.5, md: 2 },
                 }}
               >
                 Create your matches, track your stats, and rise through the rankings<br />
@@ -102,8 +103,8 @@ export default function LandingPage() {
               <Box
                 sx={{
                   width: '100%',
-                  maxWidth: '650px',
-                  mb: 3,
+                  maxWidth: { xs: '100%', md: '650px' },
+                  mb: { xs: 2, md: 3 },
                 }}
               >
                 <Image
@@ -117,14 +118,25 @@ export default function LandingPage() {
               </Box>
 
               {/* Bottom Text */}
-              <Box sx={{ display: 'flex', alignItems: 'baseline', mt: -3.5, whiteSpace: 'nowrap', gap: 0, width: { xs: 'auto', md: '826px' }, height: { xs: 'auto', md: '90px' } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: { xs: 'flex-start', md: 'baseline' },
+                  mt: { xs: 0.5, md: -3.5 },
+                  whiteSpace: { xs: 'normal', md: 'nowrap' },
+                  gap: { xs: 0.2, md: 0 },
+                  width: { xs: '100%', md: '826px' },
+                  height: { xs: 'auto', md: '90px' }
+                }}
+              >
                 <Typography
                   component="span"
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
-                    fontSize: { xs: '1.5rem', md: '31px' },
-                    lineHeight: '100% !important',
+                    fontSize: { xs: '1.2rem', md: '31px' },
+                    lineHeight: { xs: 1.05, md: '100% !important' },
                     letterSpacing: '0% !important',
                     textTransform: 'uppercase',
                   }}
@@ -136,12 +148,12 @@ export default function LandingPage() {
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
-                    fontSize: { xs: '1.5rem', md: '42px' },
-                    lineHeight: '100% !important',
+                    fontSize: { xs: '1.25rem', md: '42px' },
+                    lineHeight: { xs: 1.05, md: '100% !important' },
                     letterSpacing: '0% !important',
                     textTransform: 'uppercase',
-                    ml: 1,
-                    mt:1,
+                    ml: { xs: 0, md: 1 },
+                    mt: { xs: 0.2, md: 1 },
                   }}
                 >
                   BUT WINNING AIN'T ONE!
@@ -158,23 +170,24 @@ export default function LandingPage() {
                 flexDirection: 'column',
                 alignItems: 'stretch',
                 height: '100%',
+                mt: { xs: 1, md: 0 },
                 
               }}
             >
               {/* Top Text */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, mb: 1 }}>
                 <Typography
                   sx={{
                     fontFamily: 'Inter !important',
                     fontWeight: '600 !important',
-                    fontSize: { xs: '1.2rem', md: '23px' },
-                    lineHeight: { xs: '1.4', md: '35px' },
+                    fontSize: { xs: '1rem', md: '23px' },
+                    lineHeight: { xs: '1.3', md: '35px' },
                     letterSpacing: '0% !important',
                     color: 'white',
-                    textAlign: 'right',
+                    textAlign: { xs: 'left', md: 'right' },
                     maxWidth: { xs: '100%', md: '355px' },
                     width: '100%',
-                    mt: 1,
+                    mt: { xs: 0, md: 1 },
                   }}
                 >
                   The best football app<br />on the planet!
@@ -182,7 +195,7 @@ export default function LandingPage() {
               </Box>
 
               {/* Join Button */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, mb: { xs: 1.5, md: 1 } }}>
                 <Button
                   variant="outlined"
                   onClick={() => {
@@ -195,7 +208,9 @@ export default function LandingPage() {
                   sx={{
                     color: 'white',
                     textTransform: 'none',
-                    fontSize: '1rem',
+                    fontSize: { xs: '0.95rem', md: '1rem' },
+                    width: { xs: '100%', md: 'auto' },
+                    height: { xs: '40px', md: 'auto' },
                     
                     border: '1px solid #FFFFFF',
                    
@@ -204,7 +219,7 @@ export default function LandingPage() {
                       border: '1px solid #FFFFFF',
                     },
                     borderRadius: '7px',
-                    px: 4,
+                    px: { xs: 3, md: 4 },
                     
                   }}
                 >
@@ -325,7 +340,8 @@ export default function LandingPage() {
               elevation={0}
               sx={{
                 width: '100%',
-                height: { xs: 180, sm: 200, md: 200 },
+                height: { xs: 'auto', sm: 200, md: 200 },
+                minHeight: { xs: 180, sm: 200, md: 200 },
                 borderRadius: 2,
                 overflow: 'hidden',
                 display: 'flex',
@@ -341,7 +357,19 @@ export default function LandingPage() {
               {/* <Typography variant="overline" sx={{ color: '#000000', letterSpacing: 1, fontWeight: 700 }}>
                 {f.id}
               </Typography> */}
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.8rem', md: '1.1rem' }, color: '#000000', fontWeight: 700, mt: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: { xs: '0.88rem', md: '1.1rem' },
+                  lineHeight: { xs: 1.25, md: 1.2 },
+                  color: '#000000',
+                  fontWeight: 700,
+                  mt: 0.5,
+                  whiteSpace: { xs: 'normal', md: 'nowrap' },
+                  overflow: { xs: 'visible', md: 'hidden' },
+                  textOverflow: { xs: 'clip', md: 'ellipsis' }
+                }}
+              >
                 {f.id}. {f.title}
               </Typography>
               <Box sx={{ mt: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

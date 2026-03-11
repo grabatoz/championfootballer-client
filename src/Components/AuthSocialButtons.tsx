@@ -39,9 +39,11 @@ export default function AuthSocialButtons() {
   // };
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', alignItems: 'flex-end', marginTop: '-30px' }}>
+    <>
+    <div className="auth-social-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', alignItems: 'flex-end', marginTop: '-30px' }}>
       <button 
         onClick={() => go('google')} 
+        className="auth-social-btn"
         style={{
           ...buttonStyle,
           border: '1px solid #404040'
@@ -65,6 +67,7 @@ export default function AuthSocialButtons() {
       
       <button 
         onClick={() => go('facebook')} 
+        className="auth-social-btn"
         style={{
           ...buttonStyle,
           backgroundColor: '#1877f2',
@@ -90,6 +93,7 @@ export default function AuthSocialButtons() {
       
       <button 
         onClick={() => go('apple')} 
+        className="auth-social-btn"
         style={{
           ...buttonStyle,
           backgroundColor: '#000000',
@@ -113,5 +117,18 @@ export default function AuthSocialButtons() {
         Continue with Apple
       </button>
     </div>
+    <style jsx>{`
+      @media (max-width: 899.95px) {
+        .auth-social-wrap {
+          align-items: stretch !important;
+          margin-top: 0 !important;
+        }
+
+        .auth-social-btn {
+          width: 100% !important;
+        }
+      }
+    `}</style>
+    </>
   );
 }
