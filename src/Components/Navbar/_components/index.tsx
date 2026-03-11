@@ -2242,11 +2242,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 340, sm: 300, md: 340, lg: 400 },
-              height: { xs: 64, md: 75 },
+              width: { xs: 170, sm: 240, md: 340, lg: 400 },
+              height: { xs: 34, sm: 48, md: 75 },
               display: 'flex',
               alignItems: 'center',
-              mt: -2,
+              mt: { xs: 0, md: -2 },
             }}>
               <Image
                 src={cflogo}
@@ -2254,10 +2254,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 width={430}
                 height={64}
                 priority
-                sizes="(max-width:600px) 340px, (max-width:900px) 300px, (max-width:1200px) 340px, 400px"
+                sizes="(max-width:600px) 170px, (max-width:900px) 240px, (max-width:1200px) 340px, 400px"
                 style={{
                   height: '100%',
-                  width: 'auto',
+                  width: '100%',
                   objectFit: 'contain'
                 }}
               />

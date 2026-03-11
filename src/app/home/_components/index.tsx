@@ -1561,7 +1561,7 @@ export default function PlayerDashboard() {
         }}>
           <Box component="div" sx={{ 
             fontFamily: '"Oswald", sans-serif', 
-            fontSize: '28px', 
+            fontSize: { xs: '20px', sm: '24px', md: '28px' }, 
             fontWeight: 300, 
             lineHeight: '100%', 
             letterSpacing: '0%',
@@ -1586,7 +1586,7 @@ export default function PlayerDashboard() {
               columnGap: { xs: 2, md: 3 },
               rowGap: 0,
               fontFamily: '"Oswald", sans-serif',
-              fontSize: '28px',
+              fontSize: { xs: '12px', sm: '18px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',
               lineHeight: '100%',
@@ -1613,7 +1613,7 @@ export default function PlayerDashboard() {
               columnGap: { xs: 2, md: 3 },
               rowGap: 0,
               fontFamily: '"Oswald", sans-serif',
-              fontSize: '28px',
+              fontSize: { xs: '12px', sm: '18px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',
               lineHeight: '100%',
@@ -1642,18 +1642,20 @@ export default function PlayerDashboard() {
           // backgroundColor: 'black',
           width: { xs: '100%', md: '620px' },
           height: { xs: 'auto', md: '416px' },
-          overflow: 'hidden',
+          overflow: { xs: 'visible', md: 'hidden' },
           position: 'relative',
         }}>
           {/* Left Div - Player Card */}
           <Box sx={{
             flex: { xs: 'none', md: '0 0 300px' },
             width: { xs: '100%', md: '300px' },
+            height: { xs: '410px', sm: '410px', md: 'auto' },
             display: 'flex',
             justifyContent: { xs: 'center', md: 'center' },
             mb: { xs: 2, md: 0 },
-             mt: { xs: 1 },
-            alignSelf: { md: 'stretch' },
+            mt: { xs: 1, md: 0 },
+            order: { xs: 1, md: 1 },
+            alignSelf: { xs: 'center', md: 'stretch' },
             // backgroundColor: 'red',
           }}>
             <PlayerCard 
@@ -1680,14 +1682,16 @@ export default function PlayerDashboard() {
           {/* Right Div - White Card */}
           <Box
             sx={{
-              flex: { xs: 1, md: '0 0 310px' },
-              maxWidth: { xs: '100%', md: '310px' },
-              width: { xs: '96%', sm: '100%', md: '310px' },
+              flex: { xs: 'none', md: '0 0 310px' },
+              maxWidth: { xs: '310px', md: '310px' },
+              width: { xs: '94%', sm: '96%', md: '310px' },
               display: 'flex',
               flexDirection: 'column',
               gap: 1,
-              mt: { xs: 0, md: 0 },
+              mt: { xs: 0.25, md: 0 },
               ml: { md: 0 },
+              order: { xs: 2, md: 2 },
+              alignSelf: { xs: 'center', md: 'auto' },
           
               position: 'relative',
               // backgroundColor: 'green',
@@ -1787,11 +1791,11 @@ export default function PlayerDashboard() {
                     width: '100%',
                     maxWidth: 290,
                     mx: 'auto',
-                    display: { xs: 'none', sm: 'none', md: 'flex' },
+                    display: 'flex',
                     justifyContent: 'space-center',
                     px: 3,
-                    fontSize: '19px',
-                    minHeight: 48,
+                    fontSize: { xs: '16px', md: '19px' },
+                    minHeight: { xs: 42, md: 48 },
                     position: 'relative',
                     fontFamily: '"Woodford Bourne Pro", sans-serif',
                     lineHeight: '100%',
@@ -1806,7 +1810,7 @@ export default function PlayerDashboard() {
                 {/* Invite Code Join Section */}
                 <Box sx={{
                   mx: 'auto',
-                  display: { xs: 'none', sm: 'none', md: 'flex' },
+                  display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   width: '100%',
@@ -2180,11 +2184,7 @@ export default function PlayerDashboard() {
           width: '100%',
           boxShadow: 'none',
           mt: 0,
-          display: {
-            xs: 'flex',
-            sm: 'flex',
-            md: 'none',
-          },
+          display: 'none',
           flexDirection: 'column',
           alignItems: 'center',
         }}
