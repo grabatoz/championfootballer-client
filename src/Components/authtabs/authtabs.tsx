@@ -250,7 +250,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       backgroundColor: "#fff",
       color: "#000",
       borderRadius: '7px',
-      height: { xs: 'auto', md: '40px' },
+      height: '40px',
       boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
       overflow: "hidden",
       boxSizing: "border-box",
@@ -964,7 +964,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               {loginLoading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
             </Button>
 
-            <Box sx={{ display: "flex", justifyContent: "center", width: "220px" }}>
+            <Box sx={{ display: "flex", justifyContent: "center", width: { xs: "100%", md: "220px" } }}>
               <Button
                 variant="text"
                 onClick={handleForgotPassword}
