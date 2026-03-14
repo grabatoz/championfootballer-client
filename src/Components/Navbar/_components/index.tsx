@@ -2577,11 +2577,46 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           }
         }}
       >
-        <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#333' }}>
-            Notifications {notifications.length > 0 && `(${notifications.length})`}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            p: { xs: 1.25, sm: 2 },
+            borderBottom: '1px solid #e0e0e0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: { xs: 0.5, sm: 1 },
+            flexWrap: 'nowrap'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, minWidth: 0, flexShrink: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: '#333',
+                fontSize: { xs: '0.9rem', sm: '1.25rem' },
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Notifications
+            </Typography>
+            {notifications.length > 0 && (
+              <Typography
+                component="span"
+                sx={{
+                  fontWeight: 700,
+                  color: '#333',
+                  fontSize: { xs: '0.85rem', sm: '1.05rem' },
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                ({notifications.length})
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.2, sm: 1 }, flexShrink: 0, whiteSpace: 'nowrap' }}>
             {/* REFRESH BUTTON */}
             <IconButton
               onClick={handleRefreshNotifications}
@@ -2589,14 +2624,15 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               size="small"
               sx={{ 
                 color: '#1976d2',
+                p: { xs: 0.35, sm: 0.8 },
                 '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' },
                 '&:disabled': { color: '#ccc' }
               }}
               title="Refresh notifications"
             >
               <RefreshIcon 
-                fontSize="small" 
                 sx={{ 
+                  fontSize: { xs: 16, sm: 20 },
                   animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
                   '@keyframes spin': {
                     '0%': { transform: 'rotate(0deg)' },
@@ -2612,22 +2648,32 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 onClick={markAllAsRead}
                 size="small"
                 sx={{ 
-                  color: '#1976d2', 
-                  fontSize: '12px',
+                  color: '#1976d2',
+                  fontSize: { xs: '10px', sm: '12px' },
                   textTransform: 'none',
                   fontWeight: 600,
+                  minWidth: 'auto',
+                  px: { xs: 0.4, sm: 1 },
+                  py: { xs: 0.2, sm: 0.4 },
+                  lineHeight: 1.1,
+                  whiteSpace: 'nowrap',
                   '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' }
                 }}
               >
-                Mark all read
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                  Mark all
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Mark all read
+                </Box>
               </Button>
             )}
             <IconButton
               onClick={handleNotificationClose}
               size="small"
-              sx={{ color: '#666' }}
+              sx={{ color: '#666', p: { xs: 0.35, sm: 0.8 } }}
             >
-              <CloseIcon fontSize="small" />
+              <CloseIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
             </IconButton>
           </Box>
         </Box>
@@ -3261,7 +3307,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         sx={{ 
           '& .MuiDrawer-paper': {
             width: 280,
-            background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
+            background: '#686868',
             boxShadow: 3,
             mt:7
           },
