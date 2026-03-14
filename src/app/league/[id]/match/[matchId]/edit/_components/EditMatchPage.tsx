@@ -879,7 +879,9 @@ import LocationIcon from '@/Components/images/location.png';
       const tempId = `${guestTeam}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; const sg: StagedGuest = { tempId, team: guestTeam, firstName, lastName };
       if (guestTeam === 'home') { setHomeGuests(p => [sg, ...p]); setHomeTeamUsers(p => [guestToPlayer(sg), ...p]); }
       else { setAwayGuests(p => [sg, ...p]); setAwayTeamUsers(p => [guestToPlayer(sg), ...p]); }
-      toast.success('Guest added'); setGuestName(''); setGuestTeam('home'); setGuestDialogOpen(false);
+      toast.success('Guest added');
+      // Keep dialog open so admins can add multiple guests without reopening it.
+      setGuestName('');
     };
 
     const removeStagedGuest = (team: 'home' | 'away', tempId: string) => {
