@@ -125,6 +125,7 @@ import LocationIcon from '@/Components/images/location.png';
     const [availabilityVersion, setAvailabilityVersion] = useState(0);
 
     const MIN_PLAYERS = 6;
+    const DURATION_ERROR_MESSAGE = 'Incorrect duration time added. Please enter a valid time.';
     // Target balance for XP split
     const TARGET_XP_RATIO = 50; // aim for 50-50
     // const RATIO_TOLERANCE = 3;  // acceptable +/- range around target
@@ -884,6 +885,23 @@ import LocationIcon from '@/Components/images/location.png';
     const removeStagedGuest = (team: 'home' | 'away', tempId: string) => {
       if (team === 'home') { setHomeGuests(g => g.filter(x => x.tempId !== tempId)); setHomeTeamUsers(p => p.filter(x => x.guestTempId !== tempId)); if (homeCaptain?.guestTempId === tempId) setHomeCaptain(null); }
       else { setAwayGuests(g => g.filter(x => x.tempId !== tempId)); setAwayTeamUsers(p => p.filter(x => x.guestTempId !== tempId)); if (awayCaptain?.guestTempId === tempId) setAwayCaptain(null); }
+    };
+
+    const handleDurationChange = (value: string) => {
+      if (value === '') {
+        setDuration('');
+        return;
+      }
+      if (!/^\d+$/.test(value) || value.length > 3) {
+        toast.error(DURATION_ERROR_MESSAGE);
+        return;
+      }
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        toast.error(DURATION_ERROR_MESSAGE);
+        return;
+      }
+      setDuration(parsed);
     };
 
     // const homeGuestOptions: PlayerOption[] = homeGuests.map(guestToPlayer);
@@ -1681,6 +1699,7 @@ import LocationIcon from '@/Components/images/location.png';
                     <Grid item xs={12} md={6}>
                       <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
                       <DatePicker
+                        format="DD-MMM-YYYY"
                         value={matchDate}
                         onChange={(nv: Dayjs | null) => setMatchDate(nv)}
                         slotProps={{ 
@@ -1723,9 +1742,10 @@ import LocationIcon from '@/Components/images/location.png';
                       <TextField
                         type='number'
                         value={duration}
-                        onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))}
+                        onChange={e => handleDurationChange(e.target.value)}
                         fullWidth
                         sx={{ ...inputStyles }}
+                        inputProps={{ min: 1, max: 999 }}
                         InputProps={{
                           endAdornment: (
                             <InputAdornment position="end">
@@ -1739,8 +1759,9 @@ import LocationIcon from '@/Components/images/location.png';
                       <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
                       <TextField
                         value={location}
-                        onChange={e => setLocation(e.target.value)}
+                        onChange={e => setLocation(e.target.value.slice(0, 30))}
                         fullWidth
+                        inputProps={{ maxLength: 30 }}
                         sx={{ ...inputStyles }}
                         InputProps={{
                           endAdornment: (
@@ -2238,7 +2259,7 @@ import LocationIcon from '@/Components/images/location.png';
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Image src={CalendarIcon} alt="Calendar" width={16} height={16} style={{ opacity: 0.7 }} />
-                      <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Match Date: {matchDate ? matchDate.format('DD/MM/YYYY') : '—'}</Typography>
+                      <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.80rem' } }}>Match Date: {matchDate ? matchDate.format('DD-MMM-YYYY') : '—'}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Image src={ClockIcon} alt="Clock" width={16} height={16} style={{ opacity: 0.7 }} />
