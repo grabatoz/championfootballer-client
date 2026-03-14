@@ -321,6 +321,8 @@ export default function LeagueDetailPage() {
     // Confirmation dialog state
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
+    const [matchHasData, setMatchHasData] = useState<boolean | null>(null);
+    const [matchDeleteChecking, setMatchDeleteChecking] = useState(false);
     // const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
     const [undoInfo, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
 
@@ -1086,6 +1088,9 @@ export default function LeagueDetailPage() {
     // Handle league selection
     const handleLeagueSelect = async (selectedLeagueId: string) => {
         if (selectedLeagueId !== leagueId) {
+            // Reset season selection so the new league shows all its matches
+            setSelectedSeasonId(null);
+
             // Fetch the new league data first, then update URL and state
             try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeagueId}`, {
@@ -1774,13 +1779,16 @@ export default function LeagueDetailPage() {
     };
 
     const compareMatchesDesc = (a: Match, b: Match): number => {
+        const ad = getBestDateMs(a);
+        const bd = getBestDateMs(b);
+        if (ad !== bd) return bd - ad; // most recent first
+
         const ai = getNumericIndex(a);
         const bi = getNumericIndex(b);
         if (ai !== undefined && bi !== undefined) return bi - ai; // larger index first
         if (ai !== undefined) return -1; // known index before unknown
         if (bi !== undefined) return 1;
-        // fallback to date: latest first
-        return getBestDateMs(b) - getBestDateMs(a);
+        return 0;
     };
 
     if (error) {
@@ -2125,9 +2133,38 @@ export default function LeagueDetailPage() {
 
     // Add these handlers before the return statement
 
-    const handleRequestDeleteMatch = (match: Match) => {
+    const handleRequestDeleteMatch = async (match: Match) => {
         setMatchPendingDelete(match);
+        setMatchHasData(null);
+        setMatchDeleteChecking(true);
         setConfirmDeleteOpen(true);
+
+        // Check if match has players or stats/scores
+        const hasPlayers = (match.homeTeamUsers?.length ?? 0) > 0 || (match.awayTeamUsers?.length ?? 0) > 0;
+        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
+
+        if (hasPlayers || hasScores) {
+            setMatchHasData(true);
+            setMatchDeleteChecking(false);
+            return;
+        }
+
+        // Also check server for stats
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}/has-stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMatchHasData(!!data.hasStats);
+            } else {
+                setMatchHasData(false);
+            }
+        } catch {
+            setMatchHasData(false);
+        } finally {
+            setMatchDeleteChecking(false);
+        }
     };
 
     const handleConfirmDeleteMatch = async () => {
@@ -2135,13 +2172,9 @@ export default function LeagueDetailPage() {
         const m = matchPendingDelete;
         setConfirmDeleteOpen(false);
 
-        const hasScores = (m.homeTeamGoals ?? 0) > 0 ||
-            (m.awayTeamGoals ?? 0) > 0 ||
-            ((m.status ?? '') === 'RESULT_PUBLISHED');
-
         try {
-            if (hasScores) {
-                // Archive the match
+            if (matchHasData) {
+                // Archive the match (has players/scores/stats)
                 console.log('🗑️ Archiving match:', m.id);
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
                     method: 'PUT',
@@ -2160,7 +2193,6 @@ export default function LeagueDetailPage() {
 
                 const data = await res.json();
                 console.log('✅ Archive response:', data);
-                console.log('📦 Archived status in response:', data?.match?.archived);
 
                 // Update local state
                 setLeague(prev => prev ? {
@@ -2170,13 +2202,11 @@ export default function LeagueDetailPage() {
                     )
                 } : prev);
 
-                console.log('💾 Local state updated with archived: true');
-
                 setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
-                setToastMessage('Match archived (Canceled by Admin)');
+                setToastMessage('Match archived successfully');
 
             } else {
-                // Hard delete
+                // Hard delete (no players, no scores, no stats)
                 console.log('🗑️ Permanently deleting match:', m.id);
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`, {
                     method: 'DELETE',
@@ -2191,29 +2221,20 @@ export default function LeagueDetailPage() {
                 } : prev);
 
                 setUndoInfo({ match: m, action: 'delete' });
-                setToastMessage('Match deleted permanently');
+                setToastMessage('Match deleted successfully');
             }
 
             // Refresh league data to ensure sync
             console.log('🔄 Refreshing league data...');
             await fetchLeagueDetails();
             console.log('✅ League data refreshed');
-            
-            // Log the updated match status after refresh
-            setTimeout(() => {
-                const updatedMatch = league?.matches?.find(match => match.id === m.id);
-                console.log('🔍 Match status after refresh:', {
-                    matchId: m.id,
-                    archived: updatedMatch?.archived,
-                    fullMatch: updatedMatch
-                });
-            }, 1000);
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
-            toast.error(`Failed to ${hasScores ? 'archive' : 'delete'} match`);
+            toast.error(`Failed to ${matchHasData ? 'archive' : 'delete'} match`);
         } finally {
             setMatchPendingDelete(null);
+            setMatchHasData(null);
         }
     };
 
@@ -3393,7 +3414,7 @@ export default function LeagueDetailPage() {
                                                                                     '& .MuiButton-startIcon': { mr: 1 },
                                                                                 }}
                                                                             >
-                                                                                View Team
+                                                                                View Teams
                                                                             </Button>
                                                                         </Box>
 
@@ -3594,7 +3615,7 @@ export default function LeagueDetailPage() {
                                             gap: 2
                                         }}>
                                             {filteredLeague.matches
-                                                .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED')
+                                                .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED' || match.status === 'REVISION_REQUESTED')
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
                                                     const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
@@ -4009,7 +4030,7 @@ export default function LeagueDetailPage() {
                                                                                 }}
                                                                             >
                                                                               
-                                                                                 <span style={{ marginTop: '4px',  }}> View Team</span> 
+                                                                                 <span style={{ marginTop: '4px',  }}> View Teams</span> 
                                                                             </Button>
 
                                                                             {/* Results Button */}
@@ -5049,21 +5070,35 @@ export default function LeagueDetailPage() {
             </Container>
 
 
-            <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-                <DialogTitle sx={{ fontWeight: 'bold' }}>Are you sure you want to delete this match?</DialogTitle>
+            <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
+                <DialogTitle sx={{ fontWeight: 'bold' }}>
+                    {matchDeleteChecking ? 'Checking match...' : matchHasData ? 'Archive Match' : 'Delete Match'}
+                </DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                        {(matchPendingDelete?.homeTeamGoals ?? 0) > 0 ||
-                            (matchPendingDelete?.awayTeamGoals ?? 0) > 0 ||
-                            matchPendingDelete?.status === 'RESULT_PUBLISHED' || matchPendingDelete?.status === 'RESULT_PUBLISHED'
-                            ? 'Scores exist. It will be archived (Canceled by Admin) and removed from stats. You can undo.'
-                            : 'No scores yet. It will be permanently deleted.'}
-                    </Typography>
+                    {matchDeleteChecking ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                            <CircularProgress size={20} />
+                            <Typography variant="body2">Checking match data...</Typography>
+                        </Box>
+                    ) : (
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                            {matchHasData
+                                ? 'This match cannot be deleted because it includes player stats and/or scores. It will be moved to Archived Matches and hidden from the Match Results screen. Matches can be permanently deleted or restored from the Match Archived area. This will not disturb the points and stats added to players that played the match.'
+                                : 'Are you sure you want to delete this match?'}
+                        </Typography>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
-                    <Button color="error" variant="contained" onClick={handleConfirmDeleteMatch}>
-                        Confirm
+                    <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
+                        {matchHasData ? 'No' : 'Cancel'}
+                    </Button>
+                    <Button
+                        color="error"
+                        variant="contained"
+                        onClick={handleConfirmDeleteMatch}
+                        disabled={matchDeleteChecking}
+                    >
+                        {matchHasData ? 'Yes, Archive' : 'Delete Match'}
                     </Button>
                 </DialogActions>
             </Dialog>

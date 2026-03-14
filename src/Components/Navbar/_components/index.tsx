@@ -1970,92 +1970,170 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
   // NEW: open reject panel and prefill with current score if available
   const openRejectPanel = async (matchId: string) => {
-    const mid = sanitizeMatchId(matchId)!;
-    setResultRejectPending(prev => ({ ...prev, [mid]: true }));
+    const mid = sanitizeMatchId(matchId) || matchId;
+    // Use both mid (for API) and matchId (for state, matching JSX keys)
+    setResultRejectPending(prev => ({ ...prev, [matchId]: true }));
     // Prefill by fetching match once (best-effort)
     try {
       if (!token) return;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}`, {
         headers: { Authorization: `Bearer ${token}` }, cache: 'no-store'
-     
       });
       let home = '', away = '';
       if (res.ok) {
-       
         const data = await res.json();
         const h = data.homeTeamGoals ?? data.home_goals ?? data.home?.goals;
         const a = data.awayTeamGoals ?? data.away_goals ?? data.away?.goals;
         if (Number.isFinite(h)) home = String(h);
         if (Number.isFinite(a)) away = String(a);
       }
-      setResultSuggestion(prev => ({ ...prev, [mid]: { home, away } }));
+      setResultSuggestion(prev => ({ ...prev, [matchId]: { home, away } }));
     } catch {
       // ignore
     }
   };
 
   const cancelReject = (matchId: string) => {
-    const mid = sanitizeMatchId(matchId)!;
-    setResultRejectPending(prev => ({ ...prev, [mid]: false }));
+    setResultRejectPending(prev => ({ ...prev, [matchId]: false }));
     setResultSuggestion(prev => {
       const next = { ...prev };
-      delete next[mid];
+      delete next[matchId];
       return next;
     });
     setResultSelections(prev => {
       const next = { ...prev };
-      delete next[mid];
+      delete next[matchId];
       return next;
     });
   };
 
-  // NEW: submit suggested scores with decision NO
-  const submitResultSuggestion = async (matchId: string, notificationId: string) => {
-    if (!token || !user?.id) return;
-    const mid = sanitizeMatchId(matchId)!;
-    const s = resultSuggestion[mid] || { home: '', away: '' };
-    const h = parseInt(String(s.home), 10);
-    const a = parseInt(String(s.away), 10);
-    if (!Number.isFinite(h) || h < 0 || !Number.isFinite(a) || a < 0) {
-      console.warn('Invalid suggested scores');
-      return;
+  const isConfirmationAlreadyProcessed = (status: number, responseText: string): boolean => {
+    if (![400, 409, 422].includes(status)) return false;
+    const text = (responseText || '').toLowerCase();
+    return (
+      text.includes('already confirmed') ||
+      text.includes('already processed') ||
+      text.includes('already submitted') ||
+      text.includes('already responded') ||
+      text.includes('already decided')
+    );
+  };
+
+  const buildConfirmPayload = (
+    decision: 'YES' | 'NO',
+    suggestedHomeGoals?: number,
+    suggestedAwayGoals?: number
+  ): Record<string, unknown> => {
+    const isYes = decision === 'YES';
+    const payload: Record<string, unknown> = {
+      decision,
+      action: decision,
+      status: decision,
+      confirmationDecision: decision,
+      captainDecision: decision,
+      confirm: isYes,
+      confirmed: isYes,
+      isConfirmed: isYes
+    };
+
+    if (!isYes && Number.isFinite(suggestedHomeGoals) && Number.isFinite(suggestedAwayGoals)) {
+      payload.suggestedHomeGoals = suggestedHomeGoals;
+      payload.suggestedAwayGoals = suggestedAwayGoals;
+      payload.suggested_home_goals = suggestedHomeGoals;
+      payload.suggested_away_goals = suggestedAwayGoals;
+      payload.homeTeamGoals = suggestedHomeGoals;
+      payload.awayTeamGoals = suggestedAwayGoals;
+      payload.home_goals = suggestedHomeGoals;
+      payload.away_goals = suggestedAwayGoals;
     }
 
-    setSavingResult(prev => ({ ...prev, [mid]: true }));
-    const body = JSON.stringify({
-      decision: 'NO',
-      suggestedHomeGoals: h,
-      suggestedAwayGoals: a
-    });
+    return payload;
+  };
 
+  const submitResultDecision = async (
+    mid: string,
+    decision: 'YES' | 'NO',
+    suggestedHomeGoals?: number,
+    suggestedAwayGoals?: number
+  ): Promise<{ ok: boolean; lastError: string }> => {
+    const payload = buildConfirmPayload(decision, suggestedHomeGoals, suggestedAwayGoals);
+    const encodedMid = encodeURIComponent(mid);
     const urlCandidates = [
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodedMid}/confirm`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodedMid}/result/confirm`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodedMid}/confirm?decision=${decision}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodedMid}/result/confirm?decision=${decision}`
     ];
+    const methods: Array<'POST' | 'PATCH'> = ['POST', 'PATCH'];
 
-    let ok = false;
+    let lastError = '';
+
     for (const url of urlCandidates) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body
-        });
-        if (res.ok) { ok = true; break; }
-        console.warn('⚠️ revision submit failed', res.status, await res.text());
-      } catch (err) {
-        console.warn('⚠️ revision submit error', err);
+      for (const method of methods) {
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const responseText = await res.text();
+          if (res.ok || isConfirmationAlreadyProcessed(res.status, responseText)) {
+            return { ok: true, lastError: '' };
+          }
+
+          lastError = `${method} ${url} -> ${res.status}: ${responseText}`;
+          console.warn('Result confirmation attempt failed:', lastError);
+        } catch (err) {
+          lastError = `${method} ${url} -> ${String(err)}`;
+          console.warn('Result confirmation attempt error:', err);
+        }
       }
     }
 
-    const n = notifications.find(n => n.id === notificationId);
-    if (n && !n.read) await markAsRead(notificationId);
-    await notifyAdminOnResultRejected(mid, n?.meta, h, a);
+    return { ok: false, lastError };
+  };
 
-    if (!ok) console.error('Failed to submit suggested scores');
+  // NEW: submit suggested scores with decision NO
+  const submitResultSuggestion = async (matchId: string, notificationId: string) => {
+    if (!token) return;
+    const mid = sanitizeMatchId(matchId) || matchId;
+    const s = resultSuggestion[matchId] || { home: '', away: '' };
+    const h = parseInt(String(s.home), 10);
+    const a = parseInt(String(s.away), 10);
+    if (!Number.isFinite(h) || h < 0 || !Number.isFinite(a) || a < 0) {
+      alert('Please enter valid scores (non-negative numbers).');
+      return;
+    }
 
-    setSavingResult(prev => ({ ...prev, [mid]: false }));
-    cancelReject(mid);
+    setSavingResult(prev => ({ ...prev, [matchId]: true }));
+    const { ok } = await submitResultDecision(mid, 'NO', h, a);
+
+    if (ok) {
+      try {
+        const n = notifications.find(n => String(n.id) === String(notificationId));
+        if (n && !n.read) markAsRead(notificationId);
+      } catch {}
+      // Remove the notification from the list after successful rejection submission
+      const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+      setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      try {
+        const notif = notifications.find(n => String(n.id) === String(notificationId));
+        await notifyAdminOnResultRejected(mid, notif?.meta, h, a);
+      } catch (notifyError) {
+        console.warn('Failed to notify admin about rejected result', notifyError);
+      }
+    } else {
+      console.error('Failed to submit suggested scores');
+      alert('Failed to send scores to admin. Please try again.');
+    }
+
+    setSavingResult(prev => ({ ...prev, [matchId]: false }));
+    cancelReject(matchId);
   };
 
   // Keep YES flow immediate
@@ -2070,37 +2148,42 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       return;
     }
 
-    if (!token || !user?.id) return;
-    const mid = sanitizeMatchId(matchId)!;
+    if (!token) {
+      console.warn('handleConfirmResult: no token');
+      return;
+    }
+    const mid = sanitizeMatchId(matchId) || matchId;
     debugId('POST confirm mid', mid);
 
-    setResultSelections(prev => ({ ...prev, [mid]: value }));
-    setSavingResult(prev => ({ ...prev, [mid]: true }));
+    // Use matchId (the key used in JSX) for all state updates so UI stays in sync
+    setResultSelections(prev => ({ ...prev, [matchId]: value }));
+    setSavingResult(prev => ({ ...prev, [matchId]: true }));
 
-    const urlCandidates = [
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/confirm`,
-      `${process.env.NEXT_PUBLIC_API_URL}/matches/${encodeURIComponent(mid)}/result/confirm`
-    ];
+    const { ok, lastError } = await submitResultDecision(mid, 'YES');
 
-    let ok = false;
-    for (const url of urlCandidates) {
+    if (ok) {
+      // Mark as read (non-blocking), then remove the notification
       try {
-        console.log('➡️ POST', url);
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ decision: 'YES' })
-        });
-        if (res.ok) { ok = true; break; }
-        console.warn('⚠️ confirm failed', res.status, await res.text());
-      } catch (err) { console.warn('⚠️ confirm error', err); }
+        const n = notifications.find(n => String(n.id) === String(notificationId));
+        if (n && !n.read) markAsRead(notificationId);
+      } catch {}
+      // Remove the notification from the list so it disappears after confirmation
+      const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+      setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } else {
+      console.error('Result confirmation update failed:', lastError);
+      // Reset selection so user can retry
+      setResultSelections(prev => {
+        const next = { ...prev };
+        delete next[matchId];
+        return next;
+      });
+      alert('Failed to confirm result. Please try again.');
     }
-
-    const n = notifications.find(n => n.id === notificationId);
-    if (n && !n.read) await markAsRead(notificationId);
-
-    if (!ok) console.error('Result confirmation update failed');
-    setSavingResult(prev => ({ ...prev, [mid]: false }));
+    setSavingResult(prev => ({ ...prev, [matchId]: false }));
   };
 
   // Safe debug helper (used in availability/result flows)
@@ -2926,7 +3009,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                 }}
                                 onClick={(e)=>e.stopPropagation()}
                               >
-                                <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>Suggest score:</Typography>
+                                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#555', width: '100%', mb: 0.5 }}>
+                                  Enter the scores you believe are correct. The league admin will be notified. Note: the admin can overrule and still upload the original scores.
+                                </Typography>
+                                <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>Correct score:</Typography>
                                 <TextField
                                   size="small"
                                   type="number"
@@ -2957,7 +3043,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   disabled={!!savingResult[matchId]}
                                   onClick={() => submitResultSuggestion(matchId, notification.id)}
                                 >
-                                  Send suggestion
+                                  Send to Admin
                                 </Button>
                                 <Button
                                   size="small"
