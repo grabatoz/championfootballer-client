@@ -414,14 +414,15 @@ const DreamTeamPage = () => {
             variant="h3"
             component="h1"
             sx={{
-              fontWeight: 'semibold',
-              fontSize: { xs: '32px', sm: '42px', md: '56px' },
-              color: "black",
+              fontWeight: '600',
+              fontSize: { xs: 'clamp(1.8rem, 7.8vw, 2.4rem)', sm: '42px', md: '56px' },
+              lineHeight: 1,
+              color: "white",
               textAlign: "center",
               whiteSpace: "nowrap",
-              letterSpacing: '2px',
+              letterSpacing: { xs: '0px', sm: '0.5px' },
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              fontFamily: '"Anton", sans-serif',
+              fontFamily: '"Oswald", sans-serif !important',
 
             }}
           >

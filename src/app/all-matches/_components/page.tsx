@@ -48,11 +48,6 @@ const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam')
   ssr: false
 });
 
-const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
-  loading: () => <></>,
-  ssr: false
-});
-
 const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
   loading: () => <CircularProgress />,
   ssr: false
@@ -1623,10 +1618,10 @@ export default function AllMatches() {
                 minHeight: '100vh',
                 // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
                 // backgroundColor:'white',
-                py: 4,
+                py: 0,
             }}
         >
-            <Container maxWidth="lg">
+            <Container maxWidth={false} disableGutters>
 
                 {/* <Button
                     startIcon={<ArrowLeft />}
@@ -1638,20 +1633,25 @@ export default function AllMatches() {
                 >
                     Back to Dashboard
                 </Button> */}
-                {/* Close Button */}
-                <CloseButton fallbackRoute="/dashboard" />
-                <Box sx={{ mb: { xs: 3, md: 5 } }}>
+                <Box sx={{
+                    mb: { xs: 3, md: 5 },
+                    bgcolor: 'black',
+                    px: { xs: 3, sm: 3, md: 14 },
+                    py: { xs: 2, md: 3 },
+                    borderRadius: 0
+                }}>
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
                     <Typography variant="h3" sx={{
-                        // mb: { xs: 3, md: 4 },
-                        color: 'black',
+                        mb: { xs: 4, md: 6 },
+                        mt:{xs: 1.25, md: 4},
+                        color: 'white',
                         // fontFamily: 'Arial Black, Arial, sans-serif',
-                        fontFamily: '"Anton", sans-serif',
-                        fontWeight: 'semibold',
+                        fontFamily: '"Oswald", sans-serif !important',
+                        fontWeight: '600',
                         fontSize: { xs: '32px', sm: '42px', md: '56px' },
-                        textAlign: { xs: 'center', md: 'left' },
+                        textAlign: 'center',
                         textTransform: 'uppercase',
-                        letterSpacing: '2px',
+                        letterSpacing: '0.5px',
                         textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                         className='all-leagues-heading'
@@ -1659,23 +1659,37 @@ export default function AllMatches() {
                         ALL MATCHES
                     </Typography>
 
+                    <Box
+                        sx={{
+                            width: '98.5vw',
+                            position: 'relative',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            height: '3px',
+                            background: '#b75512',
+                            mb: { xs: 2, md: 2.5 },
+                        }}
+                    />
+
                     {/* </Box> */}
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
-                        gap: { xs: 2, md: 3 },
+                        gap: { xs: 1.25, md: 3 },
                         mb: { xs: 3, md: 5 },
-                        flexWrap: 'wrap',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'stretch', sm: 'center' }
+                        flexWrap: { xs: 'wrap', md: 'nowrap' },
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: { xs: 'stretch', md: 'center' },
+                        justifyContent: { xs: 'flex-start', md: 'space-between' }
                     }}>
 
                         <Box sx={{
                             display: 'flex',
                             gap: { xs: 1, md: 2 },
-                            width: { xs: '100%', sm: '1' },
+                            width: { xs: '100%', md: 'auto' },
                             alignItems: 'center',
-                            flexDirection: { xs: 'column', sm: 'row' }
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            flexShrink: 0
                         }}>
                             <Button
                                 variant="contained"
@@ -1685,11 +1699,13 @@ export default function AllMatches() {
                                     color: 'white',
                                     fontFamily: 'Arial, Helvetica, sans-serif',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                                    fontSize: { xs: '13px', sm: '16px', md: '18px' },
+                                    minHeight: { md: 48 },
+                                    height: { md: 48 },
                                     '&:hover': { bgcolor: '#0388E3' },
                                     width: { xs: '100%', sm: 'fit-content' },
                                     borderRadius: 2,
-                                    py: { xs: 1.5, md: 1 },
+                                    py: { xs: 1, md: 1 },
                                     px: { xs: 3, md: 3 },
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                                     border: '1px solid rgba(255,255,255,0.1)',
@@ -1746,27 +1762,31 @@ export default function AllMatches() {
                                 onClick={handleLeaguesDropdownOpen}
                                 sx={{
                                     textTransform: 'uppercase',
-                                    fontSize: { xs: '1rem', sm: '1.5rem', md: '1.4rem' },
+                                    fontSize: { xs: '0.9rem', sm: '1.25rem', md: '1.2rem' },
                                     fontWeight: 'bold',
+                                    minHeight: { md: 48 },
+                                    height: { md: 48 },
                                     lineHeight: 1.2,
-                                    wordBreak: 'break-word',
+                                    wordBreak: { xs: 'normal', sm: 'break-word' },
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    whiteSpace: 'wrap',
+                                    whiteSpace: { xs: 'nowrap', sm: 'wrap' },
                                     flexShrink: 1,
                                     minWidth: 0,
+                                    width: { xs: '100%', sm: 'auto' },
                                     textAlign: { xs: 'left', md: 'left' },
                                     // color: 'white',
                                     backgroundColor: '#2B2B2B',
                                     borderRadius: 2,
-                                    px: 2,
-                                    py: 1,
+                                    px: { xs: 1.5, sm: 2 },
+                                    py: { xs: 0.9, sm: 1 },
                                     '&:hover': {
                                         backgroundColor: '#2B2B2B',
                                     },
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 1,
+                                    justifyContent: { xs: 'space-between', sm: 'flex-start' },
+                                    gap: { xs: 0.5, sm: 1 },
                                     // Dynamic text color: grey when no leagues, white otherwise
                                     color: noLeagues ? '#fff' : 'white',
                                     // Keep readable disabled style without dimming background
@@ -1924,23 +1944,38 @@ export default function AllMatches() {
 
                         {/* Filters: All | Results | Matches | Fixtures */}
                         <Box sx={{
-                            display: 'flex',
-                            gap: 1,
-                            flexWrap: 'wrap',
+                            display: { xs: 'grid', md: 'flex' },
+                            gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', md: 'none' },
+                            gap: { xs: 0.75, sm: 1 },
+                            flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '100%',
+                            justifyContent: { xs: 'center', md: 'flex-end' },
+                            width: { xs: '100%', md: 'auto' },
                             mt: { xs: 1, md: 0 }
                         }}>
                             <Button
                                 variant={matchFilter === 'all' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('all')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'all' ? '#0388E3' : 'transparent',
+                                    backgroundColor: matchFilter === 'all' ? '#b75512' : 'transparent',
                                     color: 'white',
-                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    borderColor: '#b75512',
+                                    borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    minHeight: { md: 48 },
+                                    height: { md: 48 },
+                                    minWidth: 0,
+                                    width: { xs: '100%', sm: 'auto' },
+                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.65, sm: 0.8 },
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: 1.1,
+                                    '&:hover': {
+                                        backgroundColor: matchFilter === 'all' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        borderColor: '#b75512',
+                                    },
                                 }}
                             >
                                 All Matches
@@ -1949,11 +1984,25 @@ export default function AllMatches() {
                                 variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'results' ? '#0388E3' : 'transparent',
+                                    backgroundColor: matchFilter === 'results' ? '#b75512' : 'transparent',
                                     color: 'white',
-                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    borderColor: '#b75512',
+                                    borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    minHeight: { md: 48 },
+                                    height: { md: 48 },
+                                    minWidth: 0,
+                                    width: { xs: '100%', sm: 'auto' },
+                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.65, sm: 0.8 },
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: 1.1,
+                                    '&:hover': {
+                                        backgroundColor: matchFilter === 'results' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        borderColor: '#b75512',
+                                    },
                                 }}
                             >
                                 Match Results
@@ -1963,11 +2012,25 @@ export default function AllMatches() {
                                 variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('fixtures')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'fixtures' ? '#0388E3' : 'transparent',
+                                    backgroundColor: matchFilter === 'fixtures' ? '#b75512' : 'transparent',
                                     color: 'white',
-                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    borderColor: '#b75512',
+                                    borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    minHeight: { md: 48 },
+                                    height: { md: 48 },
+                                    minWidth: 0,
+                                    width: { xs: '100%', sm: 'auto' },
+                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.65, sm: 0.8 },
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: 1.1,
+                                    '&:hover': {
+                                        backgroundColor: matchFilter === 'fixtures' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        borderColor: '#b75512',
+                                    },
                                 }}
                             >
                                 Fixtures
@@ -1977,6 +2040,7 @@ export default function AllMatches() {
                 </Box>
                 {/* Match Cards */}
                 <Box sx={{
+                    px: { xs: 3, sm: 3, md: 14 },
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                     gap: 3,
