@@ -1957,8 +1957,9 @@ export default function AllMatches() {
                                 variant={matchFilter === 'all' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('all')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'all' ? '#b75512' : 'transparent',
+                                    backgroundColor: matchFilter === 'all' ? '#00a77f' : 'transparent',
                                     color: 'white',
+                                    border: '1px solid #b75512',
                                     borderColor: '#b75512',
                                     borderRadius: '9999px',
                                     textTransform: 'none',
@@ -1973,7 +1974,7 @@ export default function AllMatches() {
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'all' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        backgroundColor: matchFilter === 'all' ? '#00a77f' : 'rgba(183,85,18,0.08)',
                                         borderColor: '#b75512',
                                     },
                                 }}
@@ -1984,8 +1985,9 @@ export default function AllMatches() {
                                 variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'results' ? '#b75512' : 'transparent',
+                                    backgroundColor: matchFilter === 'results' ? '#00a77f' : 'transparent',
                                     color: 'white',
+                                    border: '1px solid #b75512',
                                     borderColor: '#b75512',
                                     borderRadius: '9999px',
                                     textTransform: 'none',
@@ -2000,7 +2002,7 @@ export default function AllMatches() {
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'results' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        backgroundColor: matchFilter === 'results' ? '#00a77f' : 'rgba(183,85,18,0.08)',
                                         borderColor: '#b75512',
                                     },
                                 }}
@@ -2012,8 +2014,9 @@ export default function AllMatches() {
                                 variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('fixtures')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'fixtures' ? '#b75512' : 'transparent',
+                                    backgroundColor: matchFilter === 'fixtures' ? '#00a77f' : 'transparent',
                                     color: 'white',
+                                    border: '1px solid #b75512',
                                     borderColor: '#b75512',
                                     borderRadius: '9999px',
                                     textTransform: 'none',
@@ -2028,7 +2031,7 @@ export default function AllMatches() {
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'fixtures' ? '#b75512' : 'rgba(183,85,18,0.08)',
+                                        backgroundColor: matchFilter === 'fixtures' ? '#00a77f' : 'rgba(183,85,18,0.08)',
                                         borderColor: '#b75512',
                                     },
                                 }}
