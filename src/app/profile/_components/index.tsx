@@ -692,7 +692,7 @@ const PlayerProfileCard = () => {
     return (
       <Container maxWidth={false} disableGutters sx={{
         py: { xs: 2, sm: 4 },
-        px: { xs: 0, sm: 1 },
+        px: { xs: 1.5, sm: 1 },
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
