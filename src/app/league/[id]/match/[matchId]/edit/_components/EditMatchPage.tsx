@@ -40,6 +40,7 @@ import LocationIcon from '@/Components/images/location.png';
     availableUserIds?: string[];
   }
 
+
   interface EditMatchPageProps {
     leagueIdProp?: string;
     matchIdProp?: string;
@@ -124,23 +125,25 @@ import LocationIcon from '@/Components/images/location.png';
     const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityRecord['status']>>({});
     const [availabilityVersion, setAvailabilityVersion] = useState(0);
 
-    const MIN_PLAYERS = 6;
+    const MIN_TOTAL_PLAYERS_FOR_TEAM_UPLOAD = 8;
+    const MIN_REGISTERED_PLAYERS_FOR_TEAM_UPLOAD = 6;
+    const MIN_REGISTERED_PLAYERS_MESSAGE = 'A minimum of 6 registered players is required to choose teams';
     const DURATION_ERROR_MESSAGE = 'Incorrect duration time added. Please enter a valid time.';
     // Target balance for XP split
     const TARGET_XP_RATIO = 50; // aim for 50-50
     // const RATIO_TOLERANCE = 3;  // acceptable +/- range around target
 
-    // Counts for UI banner (include guests now)
-    const registeredHomeCount = React.useMemo(
-      () => homeTeamUsers.length,
-      [homeTeamUsers]
+    // Counts for team validation
+    const homeSelectedCount = React.useMemo(() => homeTeamUsers.length, [homeTeamUsers]);
+    const awaySelectedCount = React.useMemo(() => awayTeamUsers.length, [awayTeamUsers]);
+    const totalSelectedCount = React.useMemo(() => homeSelectedCount + awaySelectedCount, [homeSelectedCount, awaySelectedCount]);
+    const registeredSelectedCount = React.useMemo(
+      () => homeTeamUsers.filter((u) => !u.isGuest).length + awayTeamUsers.filter((u) => !u.isGuest).length,
+      [homeTeamUsers, awayTeamUsers]
     );
-    const registeredAwayCount = React.useMemo(
-      () => awayTeamUsers.length,
-      [awayTeamUsers]
-    );
-    const selectedRegistered = registeredHomeCount + registeredAwayCount;
-    const hasMinPlayers = selectedRegistered >= MIN_PLAYERS;
+    const hasMinimumTeamRequirements =
+      registeredSelectedCount >= MIN_REGISTERED_PLAYERS_FOR_TEAM_UPLOAD &&
+      totalSelectedCount >= MIN_TOTAL_PLAYERS_FOR_TEAM_UPLOAD;
 
     // REMOVE client notification route/helper – backend handles it on PATCH
     // const NOTIFY_ROUTE = ...
@@ -972,14 +975,17 @@ import LocationIcon from '@/Components/images/location.png';
         shirtNumber: g.shirtNumber
       }));
 
-      // NEW: include guests in the min-players check (total selected on both teams)
-      const selectedTotal = homeTeamUsers.length + awayTeamUsers.length;
-
-      // Notify whenever < 6 players total
-      const needsMore = selectedTotal > 0 && selectedTotal < MIN_PLAYERS;
-
-      if (needsMore) {
-        toast('Fewer than 6 players. Not saving teams, notifying selected players.', { icon: '🔔' });
+      const registeredCount = new Set<string>([...newHomeIds, ...newAwayIds]).size;
+      const totalCount = registeredCount + homeGuestsPayload.length + awayGuestsPayload.length;
+      if (registeredCount < MIN_REGISTERED_PLAYERS_FOR_TEAM_UPLOAD) {
+        toast.error(MIN_REGISTERED_PLAYERS_MESSAGE);
+        setIsSubmitting(false);
+        return;
+      }
+      if (totalCount < MIN_TOTAL_PLAYERS_FOR_TEAM_UPLOAD) {
+        toast.error('A minimum of 8 total players (including at least 6 registered league players) is required to save teams.');
+        setIsSubmitting(false);
+        return;
       }
 
       try {
@@ -1010,17 +1016,16 @@ import LocationIcon from '@/Components/images/location.png';
         formData.append('homeGuests', JSON.stringify(homeGuestsPayload));
         formData.append('awayGuests', JSON.stringify(awayGuestsPayload));
 
-        if (needsMore) {
-          formData.append('notifyOnly', 'true');
-        }
-
         if (homeTeamImage) formData.append('homeTeamImage', homeTeamImage);
         if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
         // Match notification message to all players
-        if (notificationMessage.trim()) {
-          formData.append('notificationMessage', notificationMessage.trim());
-          console.log('📢 [FRONTEND] Sending notificationMessage:', notificationMessage.trim());
+        const notificationToSend = notificationMessage.trim();
+        if (notificationToSend) {
+          formData.append('notificationMessage', notificationToSend);
+          formData.append('message', notificationToSend);
+          formData.append('body', notificationToSend);
+          console.log('📢 [FRONTEND] Sending notificationMessage:', notificationToSend);
         } else {
           console.log('📢 [FRONTEND] No notification message to send. notificationMessage value:', JSON.stringify(notificationMessage));
         }
@@ -1048,7 +1053,9 @@ import LocationIcon from '@/Components/images/location.png';
         try { cacheManager.clearCache('matches_cache'); } catch { }
         const serverMsg = j.message || 'Match updated';
         toast.success(serverMsg);
-        if (needsMore) toast.success('Players notified (server), teams not saved');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('refresh-notifications'));
+        }
         setNotificationMessage('');
         setShowNotificationBox(false);
         if (isDialog && onClose) {
@@ -1112,10 +1119,11 @@ import LocationIcon from '@/Components/images/location.png';
                     <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ borderColor: '#e56a16', color: '#e56a16', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#d35a0f', backgroundColor: 'rgba(229, 106, 22, 0.1)' } }}>Shuffle Teams</Button>
                   </Box>
                   {/* Player Selection Section */}
-                      {/* Warn when fewer than 6 registered players are selected */}
-                      {selectedRegistered > 0 && !hasMinPlayers && (
+                      {(homeSelectedCount > 0 || awaySelectedCount > 0) && !hasMinimumTeamRequirements && (
                         <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                          {`Minimum 6 required to save teams. Players will be notified (Team not saved)`}.
+                          {registeredSelectedCount < MIN_REGISTERED_PLAYERS_FOR_TEAM_UPLOAD
+                            ? MIN_REGISTERED_PLAYERS_MESSAGE
+                            : `A minimum of 8 total players (including at least 6 registered league players) is required to save teams. Current total: ${totalSelectedCount}.`}
                         </Alert>
                       )}
 
@@ -1143,12 +1151,14 @@ import LocationIcon from '@/Components/images/location.png';
                               }
                             }}
                             renderOption={(props, option, { selected }) => {
+                              const { key, ...optionProps } = props;
                               const isAvailable = availabilityMap[option.id] === 'available';
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
                                 <Box
+                                  key={key}
                                   component="li"
-                                  {...props}
+                                  {...optionProps}
                                   sx={{
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -1204,12 +1214,15 @@ import LocationIcon from '@/Components/images/location.png';
                             }}
                             renderTags={(value, getTagProps) =>
                               value.map((opt, index) => {
+                                const tagProps = getTagProps({ index });
+                                const { key: tagKey, ...safeTagProps } = tagProps;
+                                delete (safeTagProps as { onDelete?: unknown }).onDelete;
                                 const isAvailable = availabilityMap[opt.id] === 'available';
                                 // const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                                 return (
                                   <Box
-                                    {...getTagProps({ index })}
-                                    key={opt.id}
+                                    key={tagKey ?? opt.id}
+                                    {...safeTagProps}
                                     sx={{
                                       display: 'flex',
                                       flexDirection: 'column',
@@ -1306,12 +1319,14 @@ import LocationIcon from '@/Components/images/location.png';
                               }
                             }}
                             renderOption={(props, option, { selected }) => {
+                              const { key, ...optionProps } = props;
                               const isAvailable = availabilityMap[option.id] === 'available';
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
                                 <Box
+                                  key={key}
                                   component="li"
-                                  {...props}
+                                  {...optionProps}
                                   sx={{
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -1367,12 +1382,15 @@ import LocationIcon from '@/Components/images/location.png';
                             }}
                             renderTags={(value, getTagProps) =>
                               value.map((opt, index) => {
+                                const tagProps = getTagProps({ index });
+                                const { key: tagKey, ...safeTagProps } = tagProps;
+                                delete (safeTagProps as { onDelete?: unknown }).onDelete;
                                 const isAvailable = availabilityMap[opt.id] === 'available';
                                 // const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                                 return (
                                   <Box
-                                    {...getTagProps({ index })}
-                                    key={opt.id}
+                                    key={tagKey ?? opt.id}
+                                    {...safeTagProps}
                                     sx={{
                                       display: 'flex',
                                       flexDirection: 'column',
@@ -1478,10 +1496,13 @@ import LocationIcon from '@/Components/images/location.png';
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
                             )}
-                            renderOption={(props, option, { selected }) => (
+                            renderOption={(props, option, { selected }) => {
+                              const { key, ...optionProps } = props;
+                              return (
                               <Box
+                                key={key}
                                 component="li"
-                                {...props}
+                                {...optionProps}
                                 sx={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1523,7 +1544,7 @@ import LocationIcon from '@/Components/images/location.png';
                                   <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
                                 )}
                               </Box>
-                            )}
+                            )}}
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
@@ -1557,10 +1578,13 @@ import LocationIcon from '@/Components/images/location.png';
                                 FormHelperTextProps={{ sx: { color: '#ffb300' } }}
                               />
                             )}
-                            renderOption={(props, option, { selected }) => (
+                            renderOption={(props, option, { selected }) => {
+                              const { key, ...optionProps } = props;
+                              return (
                               <Box
+                                key={key}
                                 component="li"
-                                {...props}
+                                {...optionProps}
                                 sx={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1602,7 +1626,7 @@ import LocationIcon from '@/Components/images/location.png';
                                   <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
                                 )}
                               </Box>
-                            )}
+                            )}}
                           />
                         </Grid>
                         {/* END Captain selectors */}

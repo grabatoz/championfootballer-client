@@ -1397,9 +1397,13 @@ export default function NavigationBar() {
       
       if (data.success) {
         const notificationList: Notification[] = data.notifications || [];
-        setNotifications(notificationList);
-        const unread = notificationList.filter((n) => !n.read).length;
-        setUnreadCount(unread);
+        setNotifications((prev) => {
+          const localOnly = prev.filter((n) => String(n.id).startsWith('local-'));
+          const serverIds = new Set(notificationList.map((n) => String(n.id)));
+          const keptLocal = localOnly.filter((n) => !serverIds.has(String(n.id)));
+          return [...keptLocal, ...notificationList];
+        });
+        setUnreadCount(notificationList.filter((n) => !n.read).length);
 
         syncAvailabilityFromServer(notificationList);
         await hydrateLeagueNames(notificationList);
@@ -1664,8 +1668,17 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       }, 60000); // Changed from 30000ms to 60000ms (1 minute)
       
       // 🆕 Listen for custom refresh events (e.g., after voting)
-      const handleRefreshEvent = () => {
+      const handleRefreshEvent = (evt: Event) => {
         console.log('🔔 Received notification refresh event');
+        const customEvt = evt as CustomEvent<{ localNotification?: Notification }>;
+        const localN = customEvt?.detail?.localNotification;
+        if (localN && localN.id) {
+          setNotifications(prev => {
+            if (prev.some(n => String(n.id) === String(localN.id))) return prev;
+            return [localN, ...prev];
+          });
+          setUnreadCount(prev => prev + (localN.read ? 0 : 1));
+        }
         fetchNotifications(true);
       };
       window.addEventListener('refresh-notifications', handleRefreshEvent);

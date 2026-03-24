@@ -1528,6 +1528,24 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             toast.error('Match ID is missing. Please select a match first.');
             return;
         }
+        if (!match) {
+            toast.error('Match details are still loading. Please try again.');
+            return;
+        }
+
+        const registeredPlayers = new Set<string>([
+            ...(match.homeTeamUsers ?? []).map((p) => String(p.id)),
+            ...(match.awayTeamUsers ?? []).map((p) => String(p.id)),
+        ]).size;
+        const totalPlayers = registeredPlayers + (match.guests?.length ?? 0);
+        if (registeredPlayers < 6) {
+            toast.error('A minimum of 6 registered players is required to choose teams');
+            return;
+        }
+        if (totalPlayers < 8) {
+            toast.error('A minimum of 8 total players (including at least 6 registered league players) is required before uploading match scores.');
+            return;
+        }
 
         try {
             setSavingMatchDetails(true);
