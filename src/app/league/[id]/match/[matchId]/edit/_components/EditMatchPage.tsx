@@ -38,6 +38,8 @@ import LocationIcon from '@/Components/images/location.png';
     success?: boolean;
     matchId?: string;
     availableUserIds?: string[];
+    availableOrderedUserIds?: string[];
+    availableOrderMap?: Record<string, number>;
   }
 
 
@@ -123,6 +125,7 @@ import LocationIcon from '@/Components/images/location.png';
 
     // NEW: availability map
     const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityRecord['status']>>({});
+    const [availableOrderMap, setAvailableOrderMap] = useState<Record<string, number>>({});
     const [availabilityVersion, setAvailabilityVersion] = useState(0);
 
     const MIN_TOTAL_PLAYERS_FOR_TEAM_UPLOAD = 8;
@@ -172,7 +175,24 @@ import LocationIcon from '@/Components/images/location.png';
         const map: Record<string, AvailabilityStatus> = {};
         (j.availableUserIds || []).forEach(id => { if (id) map[id] = 'available'; });
 
-        setAvailabilityMap(map);          // others stay undefined => treated as not selectable
+        const nextOrderMap: Record<string, number> = {};
+        if (j.availableOrderMap && typeof j.availableOrderMap === 'object') {
+          Object.entries(j.availableOrderMap).forEach(([uid, order]) => {
+            const num = Number(order);
+            if (uid && Number.isFinite(num) && num > 0) nextOrderMap[uid] = num;
+          });
+        } else if (Array.isArray(j.availableOrderedUserIds) && j.availableOrderedUserIds.length > 0) {
+          j.availableOrderedUserIds.forEach((uid, idx) => {
+            if (uid) nextOrderMap[uid] = idx + 1;
+          });
+        } else {
+          (j.availableUserIds || []).forEach((uid, idx) => {
+            if (uid) nextOrderMap[uid] = idx + 1;
+          });
+        }
+
+        setAvailabilityMap(map);          // availability is visual-only in team selection
+        setAvailableOrderMap(nextOrderMap);
         setAvailabilityVersion(v => v + 1);
       } catch {
         /* silent */
@@ -911,14 +931,34 @@ import LocationIcon from '@/Components/images/location.png';
 
     // const homeGuestOptions: PlayerOption[] = homeGuests.map(guestToPlayer);
     // const awayGuestOptions: PlayerOption[] = awayGuests.map(guestToPlayer);
-    const homePlayerOptions: PlayerOption[] = [
-      ...(league?.members || []).filter(m => !awayTeamUsers.some(p => p.id === m.id)),
-      ...homeGuests.map(guestToPlayer)
-    ];
-    const awayPlayerOptions: PlayerOption[] = [
-      ...(league?.members || []).filter(m => !homeTeamUsers.some(p => p.id === m.id)),
-      ...awayGuests.map(guestToPlayer)
-    ];
+    const compareByAcceptanceThenName = useCallback((a: PlayerOption, b: PlayerOption) => {
+      const aOrder = availableOrderMap[a.id];
+      const bOrder = availableOrderMap[b.id];
+      const aHasOrder = Number.isFinite(aOrder);
+      const bHasOrder = Number.isFinite(bOrder);
+
+      if (aHasOrder && bHasOrder) return (aOrder as number) - (bOrder as number);
+      if (aHasOrder && !bHasOrder) return -1;
+      if (!aHasOrder && bHasOrder) return 1;
+
+      const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+      const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+      return aName.localeCompare(bName);
+    }, [availableOrderMap]);
+
+    const homePlayerOptions: PlayerOption[] = React.useMemo(() => {
+      const members = [...(league?.members || [])]
+        .filter(m => !awayTeamUsers.some(p => p.id === m.id))
+        .sort(compareByAcceptanceThenName);
+      return [...members, ...homeGuests.map(guestToPlayer)];
+    }, [league?.members, awayTeamUsers, homeGuests, compareByAcceptanceThenName]);
+
+    const awayPlayerOptions: PlayerOption[] = React.useMemo(() => {
+      const members = [...(league?.members || [])]
+        .filter(m => !homeTeamUsers.some(p => p.id === m.id))
+        .sort(compareByAcceptanceThenName);
+      return [...members, ...awayGuests.map(guestToPlayer)];
+    }, [league?.members, homeTeamUsers, awayGuests, compareByAcceptanceThenName]);
 
     // When teams change (by content, not only count), re-fetch prediction
     const homeIdsKey = React.useMemo(() => homeTeamUsers.map(u => u.id).join('|'), [homeTeamUsers]);
@@ -1153,6 +1193,7 @@ import LocationIcon from '@/Components/images/location.png';
                             renderOption={(props, option, { selected }) => {
                               const { key, ...optionProps } = props;
                               const isAvailable = availabilityMap[option.id] === 'available';
+                              const availabilityOrder = availableOrderMap[option.id];
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
                                 <Box
@@ -1192,6 +1233,11 @@ import LocationIcon from '@/Components/images/location.png';
                                   <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                     {option.firstName}
                                   </Typography>
+                                  {isAvailable && Number.isFinite(availabilityOrder) && (
+                                    <Typography sx={{ fontSize: '0.55rem', lineHeight: 1, color: '#43a047' }}>
+                                      ({availabilityOrder})
+                                    </Typography>
+                                  )}
                                   {selected && (
                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isAvailable ? '#43a047' : '#fff', border: '1px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}>
                                       <Check size={12} />
@@ -1218,6 +1264,7 @@ import LocationIcon from '@/Components/images/location.png';
                                 const { key: tagKey, ...safeTagProps } = tagProps;
                                 delete (safeTagProps as { onDelete?: unknown }).onDelete;
                                 const isAvailable = availabilityMap[opt.id] === 'available';
+                                const availabilityOrder = availableOrderMap[opt.id];
                                 // const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                                 return (
                                   <Box
@@ -1251,6 +1298,11 @@ import LocationIcon from '@/Components/images/location.png';
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                       {opt.firstName}
                                     </Typography>
+                                    {isAvailable && Number.isFinite(availabilityOrder) && (
+                                      <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, color: '#43a047' }}>
+                                        ({availabilityOrder})
+                                      </Typography>
+                                    )}
                                     {/* Shirt number instead of availability text */}
                                     {/* <Box sx={{
                                       mt: 0.2,
@@ -1321,6 +1373,7 @@ import LocationIcon from '@/Components/images/location.png';
                             renderOption={(props, option, { selected }) => {
                               const { key, ...optionProps } = props;
                               const isAvailable = availabilityMap[option.id] === 'available';
+                              const availabilityOrder = availableOrderMap[option.id];
                               // const number = option.shirtNumber || (option.isGuest ? 'G' : '—');
                               return (
                                 <Box
@@ -1360,6 +1413,11 @@ import LocationIcon from '@/Components/images/location.png';
                                   <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 , color: isAvailable ? '#43a047' : '#fff' }}>
                                     {option.firstName}
                                   </Typography>
+                                  {isAvailable && Number.isFinite(availabilityOrder) && (
+                                    <Typography sx={{ fontSize: '0.55rem', lineHeight: 1, color: '#43a047' }}>
+                                      ({availabilityOrder})
+                                    </Typography>
+                                  )}
                                   {selected && (
                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isAvailable ? '#43a047' : '#fff', border: '1px solid', borderColor: isAvailable ? '#43a047' : '#fff' }}>
                                       <Check size={12} />
@@ -1386,6 +1444,7 @@ import LocationIcon from '@/Components/images/location.png';
                                 const { key: tagKey, ...safeTagProps } = tagProps;
                                 delete (safeTagProps as { onDelete?: unknown }).onDelete;
                                 const isAvailable = availabilityMap[opt.id] === 'available';
+                                const availabilityOrder = availableOrderMap[opt.id];
                                 // const number = opt.shirtNumber || (opt.isGuest ? 'G' : '—');
                                 return (
                                   <Box
@@ -1418,6 +1477,11 @@ import LocationIcon from '@/Components/images/location.png';
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
                                       {opt.firstName}
                                     </Typography>
+                                    {isAvailable && Number.isFinite(availabilityOrder) && (
+                                      <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, color: '#43a047' }}>
+                                        ({availabilityOrder})
+                                      </Typography>
+                                    )}
                                     {/* Shirt number instead of availability text */}
                                     {/* <Box sx={{
                                       mt: 0.2,
