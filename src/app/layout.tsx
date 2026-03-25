@@ -13,6 +13,7 @@ import ProductionOptimizer from '@/Components/ProductionOptimizer';
 import FetchAuthMonitor from '@/Components/FetchAuthMonitor';
 import RealtimeClient from '@/Components/RealtimeClient';
 import RealtimeLatency from '@/Components/RealtimeLatency';
+import GlobalCacheSync from '@/Components/GlobalCacheSync';
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -84,6 +85,7 @@ export default function RootLayout({
           <ProductionOptimizer /> {/* Initialize production optimizations */}
           <FetchAuthMonitor /> {/* Global fetch auth injection & debug */}
           <RealtimeClient /> {/* Start SSE connection for realtime updates */}
+          <GlobalCacheSync /> {/* Keep caches aligned across all routes on data mutations */}
           <AuthBootstrap />
           <AuthCheck />
           <LayoutContent>

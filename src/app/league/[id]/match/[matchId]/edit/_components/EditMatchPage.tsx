@@ -322,18 +322,32 @@ import LocationIcon from '@/Components/images/location.png';
     //   }
     // };
 
+    const isMemberUser = useCallback((id: string, memberIds: Set<string>) => memberIds.has(String(id)), []);
+
     const fetchData = useCallback(async () => {
       try {
         setLoading(true);
+        const cacheBuster = `?_t=${Date.now()}`;
         const [leagueRes, matchRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}`, { headers: { Authorization: `Bearer ${token}` } })
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}${cacheBuster}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: 'no-store',
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}${cacheBuster}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: 'no-store',
+          })
         ]);
         const leagueData = await parseJson(leagueRes);
         const matchData = await parseJson(matchRes);
         if (!leagueData?.success) throw new Error(leagueData?.message || 'League fetch failed');
         if (!matchData?.success) throw new Error(matchData?.message || 'Match fetch failed');
-        setLeague(leagueData.league);
+        const leagueObj: League = leagueData.league;
+        setLeague(leagueObj);
         const m: MatchResp = matchData.match;
         setHomeTeamName(m.homeTeamName || '');
         setAwayTeamName(m.awayTeamName || '');
@@ -352,9 +366,10 @@ import LocationIcon from '@/Components/images/location.png';
         setHomeGuests(homeG); setAwayGuests(awayG);
         originalGuestIds.current = new Set(guests.map(g => g.id));
 
-        // Players (exclude guests from arrays if backend didn't)
-        const homeUsers = (m.homeTeamUsers || []).map(u => ({ ...u }));
-        const awayUsers = (m.awayTeamUsers || []).map(u => ({ ...u }));
+        // Players: keep only current league members (fixes stale ex-members still attached to old matches)
+        const memberIds = new Set<string>((leagueObj?.members || []).map((u: User) => String(u.id)));
+        const homeUsers = (m.homeTeamUsers || []).map(u => ({ ...u })).filter(u => isMemberUser(u.id, memberIds));
+        const awayUsers = (m.awayTeamUsers || []).map(u => ({ ...u })).filter(u => isMemberUser(u.id, memberIds));
         setHomeTeamUsers([...homeUsers, ...homeG.map(g => guestToPlayer(g))]);
         setAwayTeamUsers([...awayUsers, ...awayG.map(g => guestToPlayer(g))]);
 
@@ -362,11 +377,11 @@ import LocationIcon from '@/Components/images/location.png';
         originalHomeIdsRef.current = homeUsers.map(u => u.id);
         originalAwayIdsRef.current = awayUsers.map(u => u.id);
 
-        if (m.homeCaptainId) {
+        if (m.homeCaptainId && memberIds.has(String(m.homeCaptainId))) {
           const cap = homeUsers.find(u => u.id === m.homeCaptainId);
           if (cap) setHomeCaptain(cap as PlayerOption);
         }
-        if (m.awayCaptainId) {
+        if (m.awayCaptainId && memberIds.has(String(m.awayCaptainId))) {
           const cap = awayUsers.find(u => u.id === m.awayCaptainId);
           if (cap) setAwayCaptain(cap as PlayerOption);
         }
@@ -376,7 +391,7 @@ import LocationIcon from '@/Components/images/location.png';
         const msg = e instanceof Error ? e.message : 'Load failed';
         setError(msg);
       } finally { setLoading(false); }
-    }, [leagueId, matchId, token]);
+    }, [leagueId, matchId, token, isMemberUser]);
 
     useEffect(() => { if (leagueId && matchId && token) fetchData(); }, [leagueId, matchId, token, fetchData]);
     useEffect(() => { if (leagueId && matchId && token) fetchAvailability(); }, [leagueId, matchId, token, fetchAvailability]);

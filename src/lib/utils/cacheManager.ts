@@ -9,6 +9,22 @@ import { invalidateCache } from './optimizedFetch';
 
 const STORAGE_PREFIX = 'cf_cache_';
 
+type ResourceType = 'league' | 'match' | 'team' | 'user' | 'stats';
+
+function parseMutationResource(url: string): { resourceType?: ResourceType; resourceId?: string } {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const trimmed = url.replace(API_BASE_URL, '');
+    const pathOnly = trimmed.split('?')[0] || '';
+
+    const resourceMatch = pathOnly.match(/\/(leagues?|matches?|teams?|users?|stats)(?:\/([^/]+))?/i);
+    if (!resourceMatch) return {};
+
+    const rawResource = resourceMatch[1].toLowerCase().replace(/s$/, '');
+    const resourceType = rawResource as ResourceType;
+    const resourceId = resourceMatch[2];
+    return { resourceType, resourceId };
+}
+
 // Background upload tracking
 const uploadLog: Array<{ url: string; method: string; timestamp: number; status: 'pending' | 'success' | 'failed' }> = [];
 
@@ -89,9 +105,10 @@ export function clearCacheByResource(resourceType: 'league' | 'match' | 'team' |
     
     // Invalidate specific endpoints
     if (resourceId) {
+        const id = String(resourceId);
         const endpoints = [
-            `${process.env.NEXT_PUBLIC_API_URL}/${resourceType}s/${resourceId}`,
-            `${process.env.NEXT_PUBLIC_API_URL}/${resourceType}/${resourceId}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/${resourceType}s/${id}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/${resourceType}/${id}`,
         ];
         endpoints.forEach(endpoint => {
             invalidateCache(endpoint);
@@ -139,18 +156,9 @@ export async function fetchWithCacheInvalidation(
         console.log(`✅ [CacheManager] ${method} successful, clearing cache...`);
         
         // Extract resource type from URL
-        const urlPath = url.replace(process.env.NEXT_PUBLIC_API_URL || '', '');
-        const resourceMatch = urlPath.match(/\/(leagues?|matches?|teams?|users?|stats)/i);
+        const { resourceType, resourceId } = parseMutationResource(url);
         
-        if (resourceMatch) {
-            const resource = resourceMatch[1].toLowerCase();
-            // Extract ID if present
-            const idMatch = urlPath.match(/\/(\d+)/);
-            const resourceId = idMatch ? idMatch[1] : undefined;
-            
-            // Map plural to singular
-            const resourceType = resource.replace(/s$/, '') as 'league' | 'match' | 'team' | 'user' | 'stats';
-            
+        if (resourceType) {
             clearCacheByResource(resourceType, resourceId);
             
             // For match operations, also clear parent league cache
@@ -166,6 +174,15 @@ export async function fetchWithCacheInvalidation(
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('cache-cleared', {
                 detail: { method, url, timestamp: Date.now() }
+            }));
+            window.dispatchEvent(new CustomEvent('data-mutated', {
+                detail: {
+                    method,
+                    url,
+                    resourceType: resourceType || null,
+                    resourceId: resourceId || null,
+                    timestamp: Date.now()
+                }
             }));
         }
     }

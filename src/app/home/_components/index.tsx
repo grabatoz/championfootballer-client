@@ -436,7 +436,27 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             if (detailsRes.ok) {
               const leagueData = await detailsRes.json();
               const rawMatches = leagueData?.league?.matches as unknown;
-              if (Array.isArray(rawMatches)) matchesFromDetails = rawMatches as Match[];
+              if (Array.isArray(rawMatches)) {
+                const memberIds = new Set<string>(
+                  ((leagueData?.league?.members || []) as Array<{ id?: string | number }>)
+                    .map((m) => String(m?.id))
+                    .filter((id) => id !== 'undefined')
+                );
+
+                // Keep only active league members inside team lists to avoid showing users who left the league
+                matchesFromDetails = (rawMatches as Match[]).map((match) => {
+                  const home = Array.isArray(match.homeTeamUsers)
+                    ? match.homeTeamUsers.filter((u) => memberIds.has(String(u.id)))
+                    : [];
+                  const away = Array.isArray(match.awayTeamUsers)
+                    ? match.awayTeamUsers.filter((u) => memberIds.has(String(u.id)))
+                    : [];
+                  const available = Array.isArray(match.availableUsers)
+                    ? match.availableUsers.filter((u) => memberIds.has(String(u.id)))
+                    : [];
+                  return { ...match, homeTeamUsers: home, awayTeamUsers: away, availableUsers: available };
+                });
+              }
               if (typeof leagueData?.league?.maxGames === 'number') maxGamesFromDetails = leagueData.league.maxGames as number;
               
               // Get active season number (where isActive === true)

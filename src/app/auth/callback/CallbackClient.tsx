@@ -258,7 +258,7 @@ function CallbackHandler() {
 
   return (
     <div className="flex h-screen items-center justify-center">
-      <div className="text-center">
+      <div className="text-center text-white">
         <h2 className="text-2xl font-bold mb-4">Authentication</h2>
         <p>{msg}</p>
         <div className="mt-4">
