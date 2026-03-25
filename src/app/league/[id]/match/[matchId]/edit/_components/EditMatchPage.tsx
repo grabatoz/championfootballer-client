@@ -1100,7 +1100,7 @@ import LocationIcon from '@/Components/images/location.png';
               shirtNumber: staged?.shirtNumber,
             };
           })
-          .filter((g): g is { id?: string; team: 'home' | 'away'; firstName: string; lastName: string; shirtNumber?: string } => Boolean(g));
+          .filter((g): g is NonNullable<typeof g> => Boolean(g));
       };
       const homeGuestsPayload = toGuestPayload(homeTeamUsers, 'home');
       const awayGuestsPayload = toGuestPayload(awayTeamUsers, 'away');
