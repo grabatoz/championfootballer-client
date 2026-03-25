@@ -904,7 +904,8 @@ export default function AllMatches() {
     };
 
     const getBestDateMs = (m: Match): number => {
-        const candidates: Array<string | Date | undefined | null> = [m.date, m.end, m.start, m.updatedAt, m.createdAt];
+        // Prioritize scheduled kickoff time first so same-day later-time matches appear above earlier ones.
+        const candidates: Array<string | Date | undefined | null> = [m.start, m.date, m.end, m.updatedAt, m.createdAt];
         for (const c of candidates) {
             if (!c) continue;
             const t = new Date(c).getTime();

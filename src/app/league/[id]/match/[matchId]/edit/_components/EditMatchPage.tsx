@@ -254,11 +254,18 @@ import LocationIcon from '@/Components/images/location.png';
         
         // If it's a guest, update the guest's team
         if (player.isGuest && player.guestTempId) {
-          const g = homeGuests.find(g => g.tempId === player.guestTempId);
-          if (g) {
-            removeStagedGuest('home', g.tempId);
-            setAwayGuests(prev => [...prev, { ...g, team: 'away' }]);
-          }
+          setHomeGuests(prev => prev.filter(g => g.tempId !== player.guestTempId));
+          setAwayGuests(prev => {
+            const existing = prev.find(g => g.tempId === player.guestTempId);
+            if (existing) return prev.map(g => g.tempId === player.guestTempId ? { ...g, team: 'away' } : g);
+            return [...prev, {
+              tempId: player.guestTempId!,
+              existingId: player.existingGuestId,
+              team: 'away',
+              firstName: player.firstName,
+              lastName: player.lastName,
+            }];
+          });
         }
       } else {
         // Move from away to home
@@ -270,11 +277,18 @@ import LocationIcon from '@/Components/images/location.png';
         
         // If it's a guest, update the guest's team
         if (player.isGuest && player.guestTempId) {
-          const g = awayGuests.find(g => g.tempId === player.guestTempId);
-          if (g) {
-            removeStagedGuest('away', g.tempId);
-            setHomeGuests(prev => [...prev, { ...g, team: 'home' }]);
-          }
+          setAwayGuests(prev => prev.filter(g => g.tempId !== player.guestTempId));
+          setHomeGuests(prev => {
+            const existing = prev.find(g => g.tempId === player.guestTempId);
+            if (existing) return prev.map(g => g.tempId === player.guestTempId ? { ...g, team: 'home' } : g);
+            return [...prev, {
+              tempId: player.guestTempId!,
+              existingId: player.existingGuestId,
+              team: 'home',
+              firstName: player.firstName,
+              lastName: player.lastName,
+            }];
+          });
         }
       }
 
@@ -918,9 +932,43 @@ import LocationIcon from '@/Components/images/location.png';
     const movePlayer = (player: PlayerOption, target: 'home' | 'away') => {
       if (player.isGuest) { // allow moving guest too
         if (target === 'home') {
-          if (!homeTeamUsers.find(p => p.id === player.id)) { setHomeTeamUsers(p => [...p, player]); setAwayTeamUsers(p => p.filter(p => p.id !== player.id)); if (awayCaptain?.id === player.id) setAwayCaptain(null); }
+          if (!homeTeamUsers.find(p => p.id === player.id)) {
+            setHomeTeamUsers(p => [...p, { ...player, team: 'home' }]);
+            setAwayTeamUsers(p => p.filter(p => p.id !== player.id));
+            setAwayGuests(g => g.filter(x => x.tempId !== player.guestTempId));
+            setHomeGuests(g => {
+              if (!player.guestTempId) return g;
+              const exists = g.some(x => x.tempId === player.guestTempId);
+              if (exists) return g.map(x => x.tempId === player.guestTempId ? { ...x, team: 'home' } : x);
+              return [...g, {
+                tempId: player.guestTempId,
+                existingId: player.existingGuestId,
+                team: 'home',
+                firstName: player.firstName,
+                lastName: player.lastName,
+              }];
+            });
+            if (awayCaptain?.id === player.id) setAwayCaptain(null);
+          }
         } else {
-          if (!awayTeamUsers.find(p => p.id === player.id)) { setAwayTeamUsers(p => [...p, player]); setHomeTeamUsers(p => p.filter(p => p.id !== player.id)); if (homeCaptain?.id === player.id) setHomeCaptain(null); }
+          if (!awayTeamUsers.find(p => p.id === player.id)) {
+            setAwayTeamUsers(p => [...p, { ...player, team: 'away' }]);
+            setHomeTeamUsers(p => p.filter(p => p.id !== player.id));
+            setHomeGuests(g => g.filter(x => x.tempId !== player.guestTempId));
+            setAwayGuests(g => {
+              if (!player.guestTempId) return g;
+              const exists = g.some(x => x.tempId === player.guestTempId);
+              if (exists) return g.map(x => x.tempId === player.guestTempId ? { ...x, team: 'away' } : x);
+              return [...g, {
+                tempId: player.guestTempId,
+                existingId: player.existingGuestId,
+                team: 'away',
+                firstName: player.firstName,
+                lastName: player.lastName,
+              }];
+            });
+            if (homeCaptain?.id === player.id) setHomeCaptain(null);
+          }
         }
         return;
       }
@@ -1032,21 +1080,30 @@ import LocationIcon from '@/Components/images/location.png';
       //   awayOrig !== null &&
       //   (!sameSet(newHomeIds, homeOrig) || !sameSet(newAwayIds, awayOrig));
 
-      // NEW: include guests in PATCH so server can count and sync them in one step
-      const homeGuestsPayload = homeGuests.map(g => ({
-        id: g.existingId,
-        team: 'home',
-        firstName: g.firstName,
-        lastName: g.lastName,
-        shirtNumber: g.shirtNumber
-      }));
-      const awayGuestsPayload = awayGuests.map(g => ({
-        id: g.existingId,
-        team: 'away',
-        firstName: g.firstName,
-        lastName: g.lastName,
-        shirtNumber: g.shirtNumber
-      }));
+      // Derive guests payload from current team selections so guest side moves are always persisted.
+      const stagedGuestMap = new Map<string, StagedGuest>();
+      [...homeGuests, ...awayGuests].forEach(g => stagedGuestMap.set(g.tempId, g));
+      const toGuestPayload = (teamUsers: PlayerOption[], team: 'home' | 'away') => {
+        const seen = new Set<string>();
+        return teamUsers
+          .filter(u => u.isGuest && !!u.guestTempId)
+          .map((u) => {
+            const tempId = String(u.guestTempId);
+            if (seen.has(tempId)) return null;
+            seen.add(tempId);
+            const staged = stagedGuestMap.get(tempId);
+            return {
+              id: u.existingGuestId || staged?.existingId,
+              team,
+              firstName: staged?.firstName || u.firstName,
+              lastName: staged?.lastName || u.lastName,
+              shirtNumber: staged?.shirtNumber,
+            };
+          })
+          .filter((g): g is { id?: string; team: 'home' | 'away'; firstName: string; lastName: string; shirtNumber?: string } => Boolean(g));
+      };
+      const homeGuestsPayload = toGuestPayload(homeTeamUsers, 'home');
+      const awayGuestsPayload = toGuestPayload(awayTeamUsers, 'away');
 
       const registeredCount = new Set<string>([...newHomeIds, ...newAwayIds]).size;
       const totalCount = registeredCount + homeGuestsPayload.length + awayGuestsPayload.length;
@@ -1093,9 +1150,10 @@ import LocationIcon from '@/Components/images/location.png';
         if (awayTeamImage) formData.append('awayTeamImage', awayTeamImage);
 
         // Match notification message to all players
-        const notificationToSend = notificationMessage.trim();
+        const notificationToSend = notificationMessage.trim().slice(0, 50);
         if (notificationToSend) {
           formData.append('notificationMessage', notificationToSend);
+          formData.append('notes', notificationToSend);
           formData.append('message', notificationToSend);
           formData.append('body', notificationToSend);
           console.log('📢 [FRONTEND] Sending notificationMessage:', notificationToSend);
@@ -1804,15 +1862,16 @@ import LocationIcon from '@/Components/images/location.png';
                         <TextField
                           placeholder='Type your notification message...'
                           value={notificationMessage}
-                          onChange={e => setNotificationMessage(e.target.value)}
+                          onChange={e => setNotificationMessage(e.target.value.slice(0, 50))}
                           fullWidth
                           multiline
                           minRows={2}
                           maxRows={4}
+                          inputProps={{ maxLength: 50 }}
                           sx={{ ...inputStyles }}
                         />
                         <Typography sx={{ color: '#6B7280', fontSize: '0.7rem', mt: 0.5, textAlign: 'right' }}>
-                          {notificationMessage.length}/500
+                          {notificationMessage.length}/50
                         </Typography>
                       </Box>
                     )}
