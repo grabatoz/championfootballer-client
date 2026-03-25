@@ -1357,21 +1357,23 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <Box
               sx={{
                 position: 'absolute',
-                inset: 0,
+                left: '50%',
+                top: '52%',
+                transform: 'translate(-50%, -50%)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                lineHeight: 1,
+                lineHeight: 0.95,
                 pointerEvents: 'none',
                 textShadow: '0 1px 3px rgba(0,0,0,0.6)'
               }}
             >
-              <Typography sx={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.3 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.2 }}>
                 {Math.round(player.xp)}
               </Typography>
-              <Typography sx={{ fontSize: 16, fontWeight: 800, mt: 0.2 }}>
+              <Typography sx={{ fontSize: 8.5, fontWeight: 800, mt: 0.05 }}>
                 xp
               </Typography>
             </Box>
