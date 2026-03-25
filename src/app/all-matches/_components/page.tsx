@@ -927,7 +927,7 @@ export default function AllMatches() {
     };
 
     const filteredMatches = React.useMemo(() => {
-        const arr = Array.isArray(matches) ? matches : [];
+        const arr = (Array.isArray(matches) ? matches : []).filter(m => !m.archived);
 
         const normalizeStatus = (s: unknown): string =>
             typeof s === 'string' ? s.trim().toUpperCase() : '';
@@ -1051,75 +1051,50 @@ export default function AllMatches() {
         setConfirmDeleteOpen(false);
 
         try {
-            if (matchHasData) {
-                // Archive the match (has players/scores/stats)
-                const res = await mutateWithRefresh(
-                    `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
-                    {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ archived: true })
+            // Always archive from main delete action.
+            // Permanent delete is only available from Archived actions.
+            const res = await mutateWithRefresh(
+                `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     },
-                    'match',
-                    m.id
-                );
+                    body: JSON.stringify({ archived: true })
+                },
+                'match',
+                m.id
+            );
 
-                if (!res.ok) {
-                    const errorData = await res.text();
-                    console.error('Archive failed:', errorData);
-                    throw new Error('Failed to archive match');
-                }
-
-                const data = await res.json();
-                console.log('Archive response:', data);
-
-                // Update local state (league.matches and matches list)
-                setLeague(prev => prev ? {
-                    ...prev,
-                    matches: (prev.matches ?? []).map(mm =>
-                        mm.id === m.id ? { ...mm, archived: true } : mm
-                    )
-                } : prev);
-
-                setMatches(prev => prev.map(mm => mm.id === m.id ? { ...mm, archived: true } : mm));
-
-                setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
-                setToastMessage('Match archived successfully');
-
-            } else {
-                // Hard delete (no players, no scores, no stats)
-                const res = await mutateWithRefresh(
-                    `${process.env.NEXT_PUBLIC_API_URL}/matches/${m.id}`,
-                    {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    },
-                    'match',
-                    m.id
-                );
-
-                if (!res.ok) throw new Error('Failed to delete match');
-
-                setLeague(prev => prev ? {
-                    ...prev,
-                    matches: (prev.matches ?? []).filter(mm => mm.id !== m.id)
-                } : prev);
-
-                setMatches(prev => prev.filter(mm => mm.id !== m.id));
-
-                setUndoInfo({ match: m, action: 'delete' });
-                setToastMessage('Match deleted successfully');
+            if (!res.ok) {
+                const errorData = await res.text();
+                console.error('Archive failed:', errorData);
+                throw new Error('Failed to archive match');
             }
+
+            const data = await res.json();
+            console.log('Archive response:', data);
+
+            // Update local state (league.matches and matches list)
+            setLeague(prev => prev ? {
+                ...prev,
+                matches: (prev.matches ?? []).map(mm =>
+                    mm.id === m.id ? { ...mm, archived: true } : mm
+                )
+            } : prev);
+
+            setMatches(prev => prev.map(mm => mm.id === m.id ? { ...mm, archived: true } : mm));
+
+            setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
+            setToastMessage('Match archived successfully');
 
             // Refresh league data to ensure sync
             fetchLeagueDetails();
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
-            toast.error(`Failed to ${matchHasData ? 'archive' : 'delete'} match`);
+            toast.error('Failed to archive match');
         } finally {
             setMatchPendingDelete(null);
             setMatchHasData(null);
@@ -2254,7 +2229,11 @@ export default function AllMatches() {
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
                                                         {(isAdmin || isMember) && (() => {
                                                             const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
-                                                            const isDisabled = !league?.active || match.status === 'RESULT_UPLOADED' || match.archived;
+                                                            const isAwaitingCaptainConfirmation = match.status === 'RESULT_UPLOADED';
+                                                            const isDisabled =
+                                                                !league?.active ||
+                                                                match.archived ||
+                                                                (isAwaitingCaptainConfirmation && !isAdmin);
                                                             return (
                                                             <Box
                                                                 onClick={() => {
@@ -2303,7 +2282,7 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
-                                                            disabled={match.status === 'RESULT_UPLOADED'}
+                                                            disabled={match.status === 'RESULT_UPLOADED' && !isAdmin}
                                                             sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
                                                         >
                                                             <span style={{ marginTop: '4px' }}>Results</span>
@@ -2613,7 +2592,7 @@ export default function AllMatches() {
 
             <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
                 <DialogTitle sx={{ fontWeight: 'bold' }}>
-                    {matchDeleteChecking ? 'Checking match...' : matchHasData ? 'Archive Match' : 'Delete Match'}
+                    {matchDeleteChecking ? 'Checking match...' : 'Archive Match'}
                 </DialogTitle>
                 <DialogContent>
                     {matchDeleteChecking ? (
@@ -2623,15 +2602,13 @@ export default function AllMatches() {
                         </Box>
                     ) : (
                         <Typography variant="body2" sx={{ mt: 1 }}>
-                            {matchHasData
-                                ? 'This match cannot be deleted because it includes player stats and/or scores. It will be moved to Archived Matches and hidden from the Match Results screen. Matches can be permanently deleted or restored from the Match Archived area. This will not disturb the points and stats added to players that played the match.'
-                                : 'Are you sure you want to delete this match?'}
+                            {'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
                         </Typography>
                     )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
-                        {matchHasData ? 'No' : 'Cancel'}
+                        Cancel
                     </Button>
                     <Button
                         color="error"
@@ -2639,7 +2616,7 @@ export default function AllMatches() {
                         onClick={handleConfirmDeleteMatch}
                         disabled={matchDeleteChecking}
                     >
-                        {matchHasData ? 'Yes, Archive' : 'Delete Match'}
+                        Archive Match
                     </Button>
                 </DialogActions>
             </Dialog>

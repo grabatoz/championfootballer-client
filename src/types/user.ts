@@ -85,6 +85,9 @@ export interface Match {
   awayTeamUsers: User[];
   end: string;
   active: boolean;
+  archived?: boolean;
+  seasonId?: string;
+  matchNumber?: number;
   awayTeamImage : string;
   homeTeamImage : string;
   manOfTheMatchVotes?: Record<string, string>;

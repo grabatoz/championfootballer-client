@@ -2025,7 +2025,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     };
 
 
-    const baseCanSubmit = match?.status === 'RESULT_UPLOADED' || match?.status === 'RESULT_PUBLISHED';
+    const baseCanSubmit =
+        match?.status === 'RESULT_UPLOADED' ||
+        match?.status === 'RESULT_PUBLISHED' ||
+        match?.status === 'REVISION_REQUESTED';
     const isAdmin = league?.administrators?.some(a => a.id === user?.id) ?? false;
 
     // NEW: captain role flags

@@ -1463,6 +1463,22 @@ export default function NavigationBar() {
     }
   };
 
+  const deleteNotificationById = async (notificationId: string): Promise<boolean> => {
+    try {
+      if (!token) return false;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.status === 204 || response.ok;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  };
+
   // 🔥 FIXED: Use component level token and user instead of calling useAuth inside function
   const markAllAsRead = async () => {
     try {
@@ -2123,16 +2139,23 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     const { ok } = await submitResultDecision(mid, 'NO', h, a);
 
     if (ok) {
-      try {
-        const n = notifications.find(n => String(n.id) === String(notificationId));
-        if (n && !n.read) markAsRead(notificationId);
-      } catch {}
-      // Remove the notification from the list after successful rejection submission
       const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+      const deleted = await deleteNotificationById(notificationId);
+      try {
+        if (!deleted) {
+          const n = notifications.find(n => String(n.id) === String(notificationId));
+          if (n && !n.read) {
+            await markAsRead(notificationId);
+          }
+        }
+      } catch {}
+      // Remove immediately for responsive UI.
       setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-      if (wasUnread) {
+      if (wasUnread && deleted) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
+      // Re-sync from server so dismissed notifications do not reappear.
+      void fetchNotifications();
 
       try {
         const notif = notifications.find(n => String(n.id) === String(notificationId));
@@ -2175,17 +2198,24 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     const { ok, lastError } = await submitResultDecision(mid, 'YES');
 
     if (ok) {
-      // Mark as read (non-blocking), then remove the notification
-      try {
-        const n = notifications.find(n => String(n.id) === String(notificationId));
-        if (n && !n.read) markAsRead(notificationId);
-      } catch {}
-      // Remove the notification from the list so it disappears after confirmation
       const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+      const deleted = await deleteNotificationById(notificationId);
+      // Fallback to read when delete fails.
+      try {
+        if (!deleted) {
+          const n = notifications.find(n => String(n.id) === String(notificationId));
+          if (n && !n.read) {
+            await markAsRead(notificationId);
+          }
+        }
+      } catch {}
+      // Remove from local list immediately.
       setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-      if (wasUnread) {
+      if (wasUnread && deleted) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
+      // Re-sync from server so confirmed notifications stay gone.
+      void fetchNotifications();
     } else {
       console.error('Result confirmation update failed:', lastError);
       // Reset selection so user can retry

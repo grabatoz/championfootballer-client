@@ -645,6 +645,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [settingsRemoveImage, setSettingsRemoveImage] = useState(false)
   const settingsFileInputRef = React.useRef<HTMLInputElement | null>(null)
   const { token } = useAuth()
+  const [archivedMatchesOpen, setArchivedMatchesOpen] = useState(false)
+  const [archivedMatchesLoading, setArchivedMatchesLoading] = useState(false)
+  const [archivedMatchActionId, setArchivedMatchActionId] = useState<string | null>(null)
+  const [archivedMatches, setArchivedMatches] = useState<Array<Match & { archived?: boolean; seasonId?: string; matchNumber?: number }>>([])
 
   useEffect(() => {
     if (league) {
@@ -723,6 +727,110 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }
 
   const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+
+  const fetchArchivedMatches = useCallback(async () => {
+    const fallback = ((league?.matches || []) as Array<Match & { archived?: boolean; seasonId?: string; matchNumber?: number }>)
+      .filter((m) => Boolean(m.archived));
+    if (!token || !league?.id) {
+      setArchivedMatches(fallback);
+      return;
+    }
+
+    setArchivedMatchesLoading(true);
+    try {
+      const bust = Date.now();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const jsonUnknown: unknown = await res.json().catch(() => ({}));
+      const json = (typeof jsonUnknown === 'object' && jsonUnknown !== null)
+        ? jsonUnknown as { success?: boolean; league?: { matches?: Array<Match & { archived?: boolean; seasonId?: string; matchNumber?: number }> } }
+        : {};
+      if (!res.ok || !json.success) {
+        setArchivedMatches(fallback);
+        return;
+      }
+      const allMatches = Array.isArray(json.league?.matches) ? json.league.matches : [];
+      const archivedOnly = allMatches.filter((m) => Boolean(m?.archived));
+      setArchivedMatches(archivedOnly);
+    } catch {
+      setArchivedMatches(fallback);
+    } finally {
+      setArchivedMatchesLoading(false);
+    }
+  }, [league?.id, league?.matches, token]);
+
+  const openArchivedMatchesDialog = useCallback(async () => {
+    setArchivedMatchesOpen(true);
+    await fetchArchivedMatches();
+  }, [fetchArchivedMatches]);
+
+  const handleRestoreArchivedMatch = useCallback(async (matchId: string) => {
+    if (!token) return;
+    setArchivedMatchActionId(matchId);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ archived: false }),
+      });
+      if (!res.ok) throw new Error('Failed to restore match');
+      setArchivedMatches(prev => prev.filter(m => m.id !== matchId));
+      toast.success('Match restored');
+      if (onMembersChanged) await Promise.resolve(onMembersChanged());
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to restore match';
+      toast.error(msg);
+    } finally {
+      setArchivedMatchActionId(null);
+    }
+  }, [token, onMembersChanged]);
+
+  const handlePermanentDeleteArchivedMatch = useCallback(async (matchId: string) => {
+    if (!token) return;
+    if (!window.confirm('Permanently delete this archived match? This cannot be undone.')) return;
+    setArchivedMatchActionId(matchId);
+    try {
+      const hasStatsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (hasStatsRes.ok) {
+        const hasStatsUnknown: unknown = await hasStatsRes.json().catch(() => ({}));
+        const hasStatsJson = (typeof hasStatsUnknown === 'object' && hasStatsUnknown !== null)
+          ? hasStatsUnknown as { hasStats?: boolean }
+          : {};
+        if (hasStatsJson.hasStats) {
+          toast.error('This archived match has player stats and cannot be permanently deleted.');
+          return;
+        }
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        let msg = 'Failed to permanently delete match';
+        try {
+          const json = await res.json();
+          if (json?.message) msg = json.message;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      setArchivedMatches(prev => prev.filter(m => m.id !== matchId));
+      toast.success('Match permanently deleted');
+      if (onMembersChanged) await Promise.resolve(onMembersChanged());
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to permanently delete match';
+      toast.error(msg);
+    } finally {
+      setArchivedMatchActionId(null);
+    }
+  }, [token, onMembersChanged]);
 
   // Sort members: Admins first, then current user, then by name
   const sortedMembers = React.useMemo(() => {
@@ -1187,6 +1295,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={openArchivedMatchesDialog}
+            sx={{ borderColor: 'rgba(3,136,227,0.6)', color: '#0388E3', '&:hover': { borderColor: '#0388E3', bgcolor: 'rgba(3,136,227,0.08)' } }}
+          >
+            Archived Matches
+          </Button>
           {(league as any)?.archived ? (
             onUnarchive && (
               <Button
@@ -1228,6 +1343,91 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           </Button>
         </Box>
       </DialogActions>
+
+      <Dialog
+        open={archivedMatchesOpen}
+        onClose={() => setArchivedMatchesOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(15,15,15,0.96)',
+            color: '#E5E7EB',
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.08)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: '#E5E7EB' }}>
+          Archived / Deleted Matches
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          {archivedMatchesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : archivedMatches.length === 0 ? (
+            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+              No archived matches found.
+            </Typography>
+          ) : (
+            <List sx={{ py: 0 }}>
+              {archivedMatches.map((m, idx) => {
+                const loadingThis = archivedMatchActionId === m.id;
+                return (
+                  <Box key={m.id}>
+                    <ListItem
+                      sx={{
+                        px: 0,
+                        py: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1.5,
+                      }}
+                    >
+                      <Box>
+                        <Typography sx={{ color: '#E5E7EB', fontWeight: 600 }}>
+                          {(m.homeTeamName || 'Home')} vs {(m.awayTeamName || 'Away')}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                          {m.date ? new Date(m.date).toLocaleDateString() : 'No date'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          disabled={loadingThis}
+                          onClick={() => handleRestoreArchivedMatch(m.id)}
+                          sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}
+                        >
+                          Restore
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="error"
+                          disabled={loadingThis}
+                          onClick={() => handlePermanentDeleteArchivedMatch(m.id)}
+                        >
+                          Delete Forever
+                        </Button>
+                      </Box>
+                    </ListItem>
+                    {idx < archivedMatches.length - 1 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />}
+                  </Box>
+                );
+              })}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setArchivedMatchesOpen(false)} sx={{ color: '#E5E7EB' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   )
 }
