@@ -47,6 +47,7 @@ import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
 import React from 'react';
+import toast from 'react-hot-toast';
 import TextField from '@mui/material/TextField';
 import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import { leagueAPI } from '@/lib/api-ultra-fast';
@@ -658,12 +659,16 @@ function buildNotificationDisplay(
 ): BuiltNotificationDisplay {
   if (isMatchCreated(n)) {
     const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
+    const matchMetaId = getMatchId(meta) || '';
+    const cachedMatchNo = matchMetaId ? metaCache?.[matchMetaId]?.matchNumber : undefined;
 
     // Match number (backend or derived)
     const backendMatchNo = pickFirst(meta, [
       'matchNumber','match_no','matchIndex','match_index'
     ]);
-    const matchNo = backendMatchNo
+    const matchNo = cachedMatchNo
+      ? String(cachedMatchNo)
+      : backendMatchNo
       ? String(backendMatchNo)
       : (derivedMatchNo ? String(derivedMatchNo) : '');
 
@@ -796,7 +801,7 @@ function buildNotificationDisplay(
     }
 
     // Match id & link
-    const matchId = getMatchId(meta) || '';
+    const matchId = matchMetaId || '';
     const seeDetailsHref = matchId ? `/match/${matchId}` : '#';
 
     const plainParts: string[] = [];
@@ -1252,24 +1257,18 @@ export default function NavigationBar() {
   async function fetchMissingMatchMeta(notifs: Notification[]) {
     if (!token) return;
 
+    const metaByMatchId: Record<string, MatchMeta> = {};
     const targets: string[] = [];
     for (const n of notifs) {
       const meta = (n.meta ?? {}) as MatchMeta;
       const mid = getMatchId(meta);
       if (!mid) continue;
-
-      const hasMatchNo = !!pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']);
-      const hasDate = !!pickFirst(meta, [
-        'date','matchDate','scheduledDate','startDate','start_date','startDateTime','start_datetime',
-        'start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time'
-      ]);
+      metaByMatchId[mid] = meta;
 
       const cached = matchMetaCache[mid];
-      const cacheHasMatchNo = !!cached?.matchNumber;
-      const cacheHasDate = !!cached?.date;
-
-      if (!hasMatchNo && !cacheHasMatchNo) targets.push(mid);
-      else if (!hasDate && !cacheHasDate) targets.push(mid);
+      if (!cached?.matchNumber || !cached?.date || !cached?.leagueName) {
+        targets.push(mid);
+      }
     }
 
     const unique = Array.from(new Set(targets));
@@ -1295,15 +1294,61 @@ export default function NavigationBar() {
 
           const matchNumber =
           pick('matchNumber','match_no','index','matchIndex');
-          const dateRaw =
+          let dateRaw =
           pick('date','startDate','start_date','startDateTime','start_datetime','start','startTime','start_time','scheduledStart','scheduled_start','kickoff','kickoffTime','kickoff_time');
 
-          const leagueName =
+          let leagueName =
             data.league?.name || data.league?.title || data.leagueName || data.league_name;
+
+          let resolvedMatchNumber = matchNumber != null ? String(matchNumber) : undefined;
+          const sourceMeta = metaByMatchId[id] || {};
+          const leagueId =
+            String(
+              sourceMeta.leagueId ||
+              sourceMeta.league_id ||
+              data.league?.id ||
+              ''
+            ) || undefined;
+
+          // Fallback: derive match number from actual league matches sequence.
+          if ((!resolvedMatchNumber || !dateRaw || !leagueName) && leagueId) {
+            try {
+              const lRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store'
+              });
+              if (lRes.ok) {
+                const lData = await lRes.json().catch(() => ({}));
+                const leagueObj = lData?.league || lData;
+                const leagueMatches = Array.isArray(leagueObj?.matches) ? leagueObj.matches : [];
+                const visibleMatches = leagueMatches.filter((m: Record<string, unknown>) => !m?.archived);
+                const toTs = (m: Record<string, unknown>) => {
+                  const candidates = [m.start, m.date, m.createdAt, m.updatedAt];
+                  for (const c of candidates) {
+                    const t = c ? new Date(String(c)).getTime() : NaN;
+                    if (!Number.isNaN(t)) return t;
+                  }
+                  return 0;
+                };
+                const sortedAsc = [...visibleMatches].sort((a, b) => toTs(a) - toTs(b));
+                const idx = sortedAsc.findIndex((m: Record<string, unknown>) => String(m?.id || '') === String(id));
+                if (!resolvedMatchNumber && idx >= 0) resolvedMatchNumber = String(idx + 1);
+                const found = idx >= 0 ? sortedAsc[idx] : undefined;
+                if (!dateRaw && found) {
+                  dateRaw = String(found.start || found.date || '');
+                }
+                if (!leagueName) {
+                  leagueName = String(leagueObj?.name || leagueObj?.leagueName || '');
+                }
+              }
+            } catch {
+              // ignore fallback errors; keep whatever we already have
+            }
+          }
 
         return {
           id,
-          matchNumber: matchNumber != null ? String(matchNumber) : undefined,
+          matchNumber: resolvedMatchNumber,
           date: dateRaw ? String(dateRaw) : undefined,
           leagueName: leagueName ? String(leagueName) : undefined
         };
@@ -1534,8 +1579,16 @@ export default function NavigationBar() {
       if (!res.ok) {
         console.error('Availability update failed', res.status);
       } else {
-        const n = notifications.find(n => n.id === notificationId);
-        if (n && !n.read) await markAsRead(notificationId);
+        const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+        const deleted = await deleteNotificationById(notificationId);
+        if (!deleted) {
+          const n = notifications.find(n => n.id === notificationId);
+          if (n && !n.read) await markAsRead(notificationId);
+        }
+        setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
+        if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+        toast.success(value === 'YES' ? '👍 Availability confirmed' : 'Marked unavailable');
+        try { window.dispatchEvent(new Event('refresh-notifications')); } catch {}
       }
     } catch (e) {
       console.error('Error setting availability', e);
@@ -2827,7 +2880,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 meta.leagueName ||
                 meta.league_name ||
                 'default';
-              const derivedMatchNo = leagueMatchIndexMap[leagueKeyForIndex]?.[notification.id];
+              const matchMetaId = getMatchId(meta) || '';
+              const derivedMatchNo = matchMetaId
+                ? Number(matchMetaCache[matchMetaId]?.matchNumber || NaN)
+                : leagueMatchIndexMap[leagueKeyForIndex]?.[notification.id];
 
               // Resolve league name safely (avoid indexing with undefined)
               const leagueIdKey = meta.leagueId || meta.league_id;
@@ -2836,7 +2892,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 leagueNames[leagueKeyForIndex];
 
               // Insert times override beforehand:
-              const matchMetaId = getMatchId(meta) || '';
               const timesOverride = matchMetaId ? matchTimes[matchMetaId] : undefined;
               const isMatchType = isMatchCreated(notification); // removed: as any
               const isAvailType = isAvailabilityNotification(notification);
@@ -2852,8 +2907,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 '';
 
               const confirmMatchNo =
-                pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']) ||
                 (matchMetaId ? matchMetaCache[matchMetaId]?.matchNumber : '') ||
+                pickFirst(meta, ['matchNumber','match_no','matchIndex','match_index']) ||
                 '';
 
               const confirmDateIso =
@@ -2903,6 +2958,27 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                         : '0 2px 8px rgba(0,0,0,0.08)'
                     }}
                   >
+                    <IconButton
+                      size="small"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const wasUnread = !notification.read;
+                        const deleted = await deleteNotificationById(notification.id);
+                        if (deleted) {
+                          setNotifications(prev => prev.filter(n => String(n.id) !== String(notification.id)));
+                          if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+                        }
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        color: '#777',
+                        '&:hover': { color: '#111', bgcolor: 'rgba(0,0,0,0.06)' }
+                      }}
+                    >
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Box sx={{ flex: 1, pr: 1 }}>
                         {!isMatchType && notification.type !== 'MATCH_CREATED' && notification.type !== 'MATCH_ENDED' && notification.type !== 'MOTM_VOTE' && notification.type !== 'NEW_SEASON' && (
