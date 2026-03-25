@@ -813,10 +813,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     let x: number, y: number;
 
     if (isRotated) {
-      // Desktop: pitch is rotated 90deg clockwise via CSS
+      // Desktop: pitch is rotated 90deg counter-clockwise via CSS
       // Convert screen coords back to original vertical coords
-      x = clamp01(mouseY);
-      y = clamp01(1 - mouseX);
+      x = clamp01(1 - mouseY);
+      y = clamp01(mouseX);
     } else {
       // Mobile: pitch in vertical orientation, no rotation
       x = clamp01(mouseX);
@@ -1329,7 +1329,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           position: 'absolute',
           left: `${pos.x * 100}%`,
           top: `${pos.y * 100}%`,
-          transform: { xs: 'translate(-50%, -50%)', md: 'translate(-50%, -50%) rotate(-90deg)' },
+          transform: { xs: 'translate(-50%, -50%)', md: 'translate(-50%, -50%) rotate(90deg)' },
           cursor: canDragTeam(teamSide) && !isRemovedHere ? 'grab' : 'pointer',
           touchAction: 'none',
           opacity: isRemovedHere ? 0.75 : 1,
@@ -1427,7 +1427,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           position: 'absolute',
           left: `${pos.x * 100}%`,
           top: `${pos.y * 100}%`,
-          transform: { xs: 'translate(-50%, -50%)', md: 'translate(-50%, -50%) rotate(-90deg)' },
+          transform: { xs: 'translate(-50%, -50%)', md: 'translate(-50%, -50%) rotate(90deg)' },
           cursor: canDragTeam(teamSide) ? 'grab' : 'pointer',
           touchAction: 'none',
         }}
@@ -1539,7 +1539,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             position: 'relative',
           }}
         >
-          {/* pitchRef is portrait-sized, rotated 90deg CW so goals end up on left/right.
+          {/* pitchRef is portrait-sized, rotated 90deg CCW so goals end up on left/right.
               CSS width = visible height; CSS height = large enough to fill visible width */}
           <Box
             ref={pitchRef}
@@ -1549,7 +1549,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               left: '50%',
               width: { xs: 220, sm: 250, md: 405 },
               height: `${pitchW}px`,
-              transform: 'translate(-50%, -50%) rotate(90deg)',
+              transform: 'translate(-50%, -50%) rotate(-90deg)',
               transformOrigin: 'center center',
               bgcolor: '#2b2b2b',
             }}
@@ -1581,7 +1581,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                   bgcolor: 'rgba(0,0,0,0.20)'
                 }}
               >
-                <Typography sx={{ color: '#fff', fontWeight: 800, transform: { xs: 'none', md: 'rotate(-90deg)' } }}>
+                <Typography sx={{ color: '#fff', fontWeight: 800, transform: { xs: 'none', md: 'rotate(90deg)' } }}>
                   Awaiting admin to generate teams
                 </Typography>
               </Box>
@@ -1625,7 +1625,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1', color: '#fff', textTransform: 'uppercase', letterSpacing: 1, mb: 0 }}>Team Balance</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 {/* Home shirt */}
-                <img src={Shirtaway.src} alt="Home" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
+                <img src={Shirt.src} alt="Home" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
                 {/* Center: % + bar + VS */}
                 <Box sx={{ flex: 1, mx: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   {/* % labels at corners of bar */}
@@ -1671,7 +1671,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                   <Typography sx={{ color: '#fff', fontSize: '0.82rem', textAlign: 'center', fontWeight: 600, mt: -1 }}>{matchDurationLabel}</Typography>
                 </Box>
                 {/* Away shirt */}
-                <img src={Shirt.src} alt="Away" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
+                <img src={Shirtaway.src} alt="Away" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
               </Box>
             </Box>
 
