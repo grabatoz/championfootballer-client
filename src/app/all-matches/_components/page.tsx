@@ -72,7 +72,7 @@ interface Match {
     location?: string;
     availablePlayers: number;
     pendingPlayers: number;
-    status: 'SCHEDULED' | 'RESULT_PUBLISHED' | 'RESULT_UPLOADED';
+    status: string;
     leagueId: string;
     league?: {
         id: string;
@@ -927,11 +927,42 @@ export default function AllMatches() {
         return 0;
     };
 
+    const normalizeMatchStatus = (s: unknown): string =>
+        typeof s === 'string' ? s.trim().toUpperCase() : '';
+
+    const isResultLikeStatus = (s: unknown): boolean => {
+        const st = normalizeMatchStatus(s);
+        const direct = new Set([
+            'RESULT_PUBLISHED',
+            'RESULT_UPLOADED',
+            'REVISION_REQUESTED',
+            'RESULT_CONFIRMED',
+            'RESULT_APPROVED',
+            'RESULT_FINAL',
+            'RESULT_COMPLETED',
+            'COMPLETED',
+            'FINISHED',
+            'ENDED'
+        ]);
+        if (direct.has(st)) return true;
+        return st.includes('RESULT') || st.includes('CONFIRM') || st.includes('COMPLETE') || st.includes('FINISH');
+    };
+
+    const isAwaitingConfirmationStatus = (s: unknown): boolean => {
+        const st = normalizeMatchStatus(s);
+        const awaiting = new Set([
+            'RESULT_UPLOADED',
+            'REVISION_REQUESTED',
+            'RESULT_CONFIRMATION_REQUEST',
+            'RESULT_PENDING_CONFIRMATION',
+            'AWAITING_CONFIRMATION'
+        ]);
+        if (awaiting.has(st)) return true;
+        return st.includes('UPLOAD') || st.includes('REVISION') || (st.includes('CONFIRM') && !st.includes('CONFIRMED'));
+    };
+
     const filteredMatches = React.useMemo(() => {
         const arr = (Array.isArray(matches) ? matches : []).filter(m => !m.archived);
-
-        const normalizeStatus = (s: unknown): string =>
-            typeof s === 'string' ? s.trim().toUpperCase() : '';
 
         // Treat these as fixtures (upcoming) across possible backend variants
         const fixtureStatuses = new Set([
@@ -939,7 +970,7 @@ export default function AllMatches() {
         ]);
 
         const isFixture = (m: Match): boolean => {
-            const st = normalizeStatus(m?.status);
+            const st = normalizeMatchStatus(m?.status);
             if (st && fixtureStatuses.has(st)) return true;
             // Fallback: if status missing, use date in future as fixture
             if (!st) {
@@ -1016,7 +1047,7 @@ export default function AllMatches() {
 
         // Check if match has players or stats/scores
         const hasPlayers = (match.homeTeamUsers?.length ?? 0) > 0 || (match.awayTeamUsers?.length ?? 0) > 0;
-        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
+        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || isResultLikeStatus(match.status);
 
         if (hasPlayers || hasScores) {
             setMatchHasData(true);
@@ -2093,7 +2124,7 @@ export default function AllMatches() {
                             const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
-                            const isCompleted = match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
+                            const isCompleted = isResultLikeStatus(match.status);
                             const matchNumber = getNumericIndex(match) ?? (idx + 1);
                             const startTime = match.start ? new Date(match.start as string) : new Date(match.date);
                             const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
@@ -2137,7 +2168,7 @@ export default function AllMatches() {
                                             {/* Result Banner */}
                                             <Box sx={{ py: 0.5, textAlign: 'center' }}>
                                                 <Typography sx={{ color: 'white', fontSize: '0.75rem', fontWeight: 400 }}>
-                                                    {match.status === 'RESULT_UPLOADED' ? 'Awaiting Confirmation' : resultText}
+                                                    {isAwaitingConfirmationStatus(match.status) ? 'Awaiting Confirmation' : resultText}
                                                 </Typography>
                                             </Box>
 

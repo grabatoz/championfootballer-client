@@ -1512,7 +1512,7 @@ export default function LeagueDetailPage() {
         // Process matches to build stats for players who played in this season
         filteredLeague.matches
             .filter(m => !m.archived) // <-- exclude archived
-            .filter(m => (m.status === 'RESULT_PUBLISHED' || m.status === 'RESULT_UPLOADED') && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .filter(m => isResultLikeStatus(m.status) && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
@@ -1795,6 +1795,41 @@ export default function LeagueDetailPage() {
         if (bi !== undefined) return 1;
         return 0;
     };
+
+    function normalizeMatchStatus(s: unknown): string {
+        return typeof s === 'string' ? s.trim().toUpperCase() : '';
+    }
+
+    function isResultLikeStatus(s: unknown): boolean {
+        const st = normalizeMatchStatus(s);
+        const direct = new Set([
+            'RESULT_PUBLISHED',
+            'RESULT_UPLOADED',
+            'REVISION_REQUESTED',
+            'RESULT_CONFIRMED',
+            'RESULT_APPROVED',
+            'RESULT_FINAL',
+            'RESULT_COMPLETED',
+            'COMPLETED',
+            'FINISHED',
+            'ENDED'
+        ]);
+        if (direct.has(st)) return true;
+        return st.includes('RESULT') || st.includes('CONFIRM') || st.includes('COMPLETE') || st.includes('FINISH');
+    }
+
+    function isAwaitingConfirmationStatus(s: unknown): boolean {
+        const st = normalizeMatchStatus(s);
+        const awaiting = new Set([
+            'RESULT_UPLOADED',
+            'REVISION_REQUESTED',
+            'RESULT_CONFIRMATION_REQUEST',
+            'RESULT_PENDING_CONFIRMATION',
+            'AWAITING_CONFIRMATION'
+        ]);
+        if (awaiting.has(st)) return true;
+        return st.includes('UPLOAD') || st.includes('REVISION') || (st.includes('CONFIRM') && !st.includes('CONFIRMED'));
+    }
 
     if (error) {
         return (
@@ -2146,7 +2181,7 @@ export default function LeagueDetailPage() {
 
         // Check if match has players or stats/scores
         const hasPlayers = (match.homeTeamUsers?.length ?? 0) > 0 || (match.awayTeamUsers?.length ?? 0) > 0;
-        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED';
+        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || isResultLikeStatus(match.status);
 
         if (hasPlayers || hasScores) {
             setMatchHasData(true);
@@ -3601,7 +3636,7 @@ export default function LeagueDetailPage() {
                                             gap: 2
                                         }}>
                                             {filteredLeague.matches
-                                                .filter(match => match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_UPLOADED' || match.status === 'REVISION_REQUESTED')
+                                                .filter(match => isResultLikeStatus(match.status))
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx, arr) => {
                                                     const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
@@ -3698,7 +3733,7 @@ export default function LeagueDetailPage() {
                                                                         fontSize: '0.75rem',
                                                                         fontWeight: 400
                                                                     }}>
-                                                                        {match.status === 'RESULT_UPLOADED' ? 'Awaiting Confirmation' : resultText}
+                                                                        {isAwaitingConfirmationStatus(match.status) ? 'Awaiting Confirmation' : resultText}
                                                                     </Typography>
                                                                 </Box>
 
@@ -4551,7 +4586,7 @@ export default function LeagueDetailPage() {
                                                             const derivedPlayed = (() => {
                                                                 if (!selectedSeasonId && typeof leagueStats?.playedMatches === 'number') return Number(leagueStats.playedMatches);
                                                                 const matches = Array.isArray(matchesToUse) ? matchesToUse : [];
-                                                                return matches.filter(m => m?.status === 'RESULT_PUBLISHED' || m?.status === 'RESULT_UPLOADED').length;
+                                                                return matches.filter(m => isResultLikeStatus(m?.status)).length;
                                                             })();
 
                                                             const played = derivedPlayed;

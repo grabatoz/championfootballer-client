@@ -50,6 +50,8 @@ import LocationIcon from '@/Components/images/location.png';
     onClose?: () => void;
   }
 
+  type NotificationAudience = 'match' | 'league';
+
   export default function EditMatchPage({ leagueIdProp, matchIdProp, isDialog, onClose }: EditMatchPageProps) {
     // Fallback team image (used in responsive preview)
     const defaultTeamImage = '/assets/cflogo2.png';
@@ -96,6 +98,7 @@ import LocationIcon from '@/Components/images/location.png';
     // Match Notification
     const [showNotificationBox, setShowNotificationBox] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationAudience, setNotificationAudience] = useState<NotificationAudience>('match');
 
     // Images
     const [homeTeamImage, setHomeTeamImage] = useState<File | null>(null);
@@ -1060,6 +1063,74 @@ import LocationIcon from '@/Components/images/location.png';
     const handleRemoveAwayTeamImage = () => { setAwayTeamImage(null); setAwayTeamImagePreview(null); };
 
     // Submit (PATCH)
+    const sendLeagueWideNotification = async (message: string): Promise<boolean> => {
+      if (!token || !leagueId || !league?.members?.length) return false;
+
+      const memberIds = Array.from(
+        new Set((league.members || []).map((m) => String(m.id)).filter(Boolean))
+      );
+      if (!memberIds.length) return false;
+
+      const payloadBase = {
+        type: 'GENERAL',
+        title: 'League Message',
+        body: message,
+        message,
+        leagueId,
+        userIds: memberIds
+      };
+
+      const candidates: Array<{ url: string; body: Record<string, unknown> }> = [
+        { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/notifications`, body: payloadBase },
+        { url: `${process.env.NEXT_PUBLIC_API_URL}/notifications/broadcast`, body: payloadBase },
+        { url: `${process.env.NEXT_PUBLIC_API_URL}/notifications`, body: payloadBase }
+      ];
+
+      for (const c of candidates) {
+        try {
+          const res = await fetch(c.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(c.body)
+          });
+          if (res.ok) return true;
+        } catch {
+          // try next
+        }
+      }
+
+      // Last fallback: send one-by-one through generic notifications endpoint
+      try {
+        const perUser = await Promise.all(
+          memberIds.map(async (uid) => {
+            const bodyVariants = [
+              { ...payloadBase, userId: uid },
+              { ...payloadBase, user_id: uid },
+              { ...payloadBase, receiverId: uid },
+              { ...payloadBase, receiver_id: uid },
+              { ...payloadBase, recipientId: uid },
+            ];
+            for (const body of bodyVariants) {
+              try {
+                const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify(body)
+                });
+                if (r.ok) return true;
+              } catch {
+                // try next variant
+              }
+            }
+            return false;
+          })
+        );
+        return perUser.some(Boolean);
+      } catch {
+        return false;
+      }
+    };
+
     const handleUpdateMatch = async (e: React.FormEvent) => {
       e.preventDefault(); setIsSubmitting(true); setError(null);
 
@@ -1156,6 +1227,7 @@ import LocationIcon from '@/Components/images/location.png';
           formData.append('notes', notificationToSend);
           formData.append('message', notificationToSend);
           formData.append('body', notificationToSend);
+          formData.append('notificationAudience', notificationAudience);
           console.log('📢 [FRONTEND] Sending notificationMessage:', notificationToSend);
         } else {
           console.log('📢 [FRONTEND] No notification message to send. notificationMessage value:', JSON.stringify(notificationMessage));
@@ -1187,7 +1259,14 @@ import LocationIcon from '@/Components/images/location.png';
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('refresh-notifications'));
         }
+        if (notificationToSend && notificationAudience === 'league') {
+          const sent = await sendLeagueWideNotification(notificationToSend);
+          if (!sent) {
+            console.warn('League-wide notification could not be sent via fallback endpoints.');
+          }
+        }
         setNotificationMessage('');
+        setNotificationAudience('match');
         setShowNotificationBox(false);
         if (isDialog && onClose) {
           onClose();
@@ -1857,8 +1936,17 @@ import LocationIcon from '@/Components/images/location.png';
                     {showNotificationBox && (
                       <Box sx={{ mt: 1.5, p: 2, bgcolor: 'rgba(26,138,109,0.08)', borderRadius: 2, border: '1px solid rgba(26,138,109,0.25)' }}>
                         <Typography sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
-                          This message will be sent as a notification to all players in this match.
+                          Choose target audience for this notification.
                         </Typography>
+                        <RadioGroup
+                          row
+                          value={notificationAudience}
+                          onChange={(e) => setNotificationAudience(e.target.value as NotificationAudience)}
+                          sx={{ mb: 1 }}
+                        >
+                          <FormControlLabel value="match" control={<Radio size="small" />} label="Players in this match" />
+                          <FormControlLabel value="league" control={<Radio size="small" />} label="All players in this league" />
+                        </RadioGroup>
                         <TextField
                           placeholder='Type your notification message...'
                           value={notificationMessage}
