@@ -1370,10 +1370,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                 textShadow: '0 1px 3px rgba(0,0,0,0.6)'
               }}
             >
-              <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.2 }}>
                 {Math.round(player.xp)}
               </Typography>
-              <Typography sx={{ fontSize: 8.5, fontWeight: 800, mt: 0.05 }}>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 700  }}>
                 xp
               </Typography>
             </Box>
