@@ -2303,6 +2303,33 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     { label: 'PLAYERS', href: '/all-players' },
   ];
 
+  const getNavHref = (label: string, fallbackHref: string): string => {
+    if (label === 'TABLE') {
+      if (typeof window === 'undefined') return fallbackHref;
+      const preferredLeagueId =
+        localStorage.getItem('preferredLeagueId') ||
+        localStorage.getItem('prefferdLeagueId');
+      const leagueId = preferredLeagueId?.trim();
+      if (!leagueId) return '/all-leagues';
+      return `/league/${encodeURIComponent(leagueId)}?tab=table`;
+    }
+
+    if (label === 'VIEW STATS') {
+      const currentUserId = user?.id ? String(user.id).trim() : '';
+      if (currentUserId) return `/player/${encodeURIComponent(currentUserId)}`;
+      return '/profile';
+    }
+
+    return fallbackHref;
+  };
+
+  const isNavActive = (label: string, href: string): boolean => {
+    if (!pathname) return false;
+    if (label === 'TABLE') return pathname.startsWith('/league/');
+    if (label === 'VIEW STATS') return pathname.startsWith('/player/') || pathname.startsWith('/profile');
+    return pathname.startsWith(href);
+  };
+
   const [statsOpen, setStatsOpen] = useState(false);
   const [statsSubmitting, setStatsSubmitting] = useState(false);
   const [myStats, setMyStats] = useState({ goals: 0, assists: 0, cleanSheets: 0, penalties: 0, freeKicks: 0, defence: 0, impact: 0 });
@@ -2339,12 +2366,13 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       mt: 0,     // ✅ push links to the right inside this box
     }}>
       {navItems.map(({ label, href }) => {
-        const active = pathname?.startsWith(href);
+        const active = isNavActive(label, href);
+        const targetHref = getNavHref(label, href);
         return (
           <Button
             key={href}
             component={Link}
-            href={href}
+            href={targetHref}
             aria-current={active ? 'page' : undefined}
             disableRipple
             sx={{
@@ -3558,14 +3586,15 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {/* MOBILE NAVIGATION LINKS */}
             {isAuthenticated && (
               navItems.map(({ label, href }) => {
-                const active = pathname?.startsWith(href);
+                const active = isNavActive(label, href);
+                const targetHref = getNavHref(label, href);
                
                 return (
                   <ListItem key={href} disablePadding>
                     <Button
                      
                       component={Link}
-                      href={href}
+                      href={targetHref}
                       fullWidth
                       onClick={() => setDrawerOpen(false)}
                       disableRipple
