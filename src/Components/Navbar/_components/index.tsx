@@ -96,6 +96,11 @@ type NotificationCreateBody = NotificationPayloadBase & {
   user_id?: string | number;
   receiverId?: string | number;
   receiver_id?: string | number;
+  recipientId?: string | number;
+  recipient_id?: string | number;
+  toUserId?: string | number;
+  to_user_id?: string | number;
+  userIds?: Array<string | number>;
 };
 
 interface Notification {
@@ -984,9 +989,11 @@ export default function NavigationBar() {
 
   // 🔥 NOTIFICATION STATES
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<Record<string, true>>({});
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const openNotifications = Boolean(notificationAnchor);
 
@@ -1441,7 +1448,10 @@ export default function NavigationBar() {
       }
       
       if (data.success) {
-        const notificationList: Notification[] = data.notifications || [];
+        const serverList: Notification[] = data.notifications || [];
+        const notificationList = serverList.filter(
+          (n) => !dismissedNotificationIds[String(n.id)]
+        );
         setNotifications((prev) => {
           const localOnly = prev.filter((n) => String(n.id).startsWith('local-'));
           const serverIds = new Set(notificationList.map((n) => String(n.id)));
@@ -1511,13 +1521,30 @@ export default function NavigationBar() {
   const deleteNotificationById = async (notificationId: string): Promise<boolean> => {
     try {
       if (!token) return false;
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const encodedId = encodeURIComponent(notificationId);
+      const urlCandidates = [
+        `${process.env.NEXT_PUBLIC_API_URL}/notifications/${encodedId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/notifications/${encodedId}/delete`
+      ];
+      const methods: Array<'DELETE' | 'POST'> = ['DELETE', 'POST'];
+
+      for (const url of urlCandidates) {
+        for (const method of methods) {
+          try {
+            const response = await fetch(url, {
+              method,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.status === 204 || response.ok) return true;
+          } catch {
+            // try next candidate
+          }
         }
-      });
-      return response.status === 204 || response.ok;
+      }
+      return false;
     } catch (error) {
       console.error('Error deleting notification:', error);
       return false;
@@ -1525,21 +1552,66 @@ export default function NavigationBar() {
   };
 
   const dismissActionedNotification = async (notificationId: string) => {
-    const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+    const id = String(notificationId);
+    const wasUnread = notifications.some(n => String(n.id) === id && !n.read);
+    setDismissedNotificationIds(prev => ({ ...prev, [id]: true }));
     const deleted = await deleteNotificationById(notificationId);
-    let didMarkReadFallback = false;
 
     if (!deleted) {
-      const n = notifications.find(n => String(n.id) === String(notificationId));
+      const n = notifications.find(n => String(n.id) === id);
       if (n && !n.read) {
         await markAsRead(notificationId);
-        didMarkReadFallback = true;
       }
     }
 
-    setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-    if (wasUnread && !didMarkReadFallback) {
+    setNotifications(prev => prev.filter(n => String(n.id) !== id));
+    if (wasUnread) {
       setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    const current = [...notifications];
+    if (!current.length) return;
+
+    const ids = current.map(n => String(n.id));
+    const nextDismissed: Record<string, true> = {};
+    ids.forEach(id => { nextDismissed[id] = true; });
+    setDismissedNotificationIds(prev => ({ ...prev, ...nextDismissed }));
+
+    // Optimistic clear for UX
+    setNotifications([]);
+    setUnreadCount(0);
+    setIsClearingAll(true);
+
+    try {
+      if (!token || !user?.id) return;
+      const userId = String(user.id);
+
+      // Try bulk clear endpoints first
+      const bulkCandidates: Array<{ method: 'DELETE' | 'POST'; url: string; body?: Record<string, unknown> }> = [
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications?userId=${encodeURIComponent(userId)}` },
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications/clear-all?userId=${encodeURIComponent(userId)}` },
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications/clear-all`, body: { userId } }
+      ];
+
+      for (const req of bulkCandidates) {
+        try {
+          const res = await fetch(req.url, {
+            method: req.method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: req.body ? JSON.stringify(req.body) : undefined
+          });
+          if (res.ok || res.status === 204) return;
+        } catch {
+          // continue
+        }
+      }
+
+      // Fallback: delete one by one
+      await Promise.all(ids.map(id => deleteNotificationById(id)));
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
@@ -1547,29 +1619,45 @@ export default function NavigationBar() {
   const markAllAsRead = async () => {
     try {
       console.log('📖 Marking all notifications as read');
-      
-      // 🔥 REMOVED: const { token } = useAuth(); - USING COMPONENT LEVEL TOKEN
-      const userId = user?.id; // 🔥 USE COMPONENT LEVEL USER
+
+      const userId = user?.id;
       if (!token || !userId) {
         console.log('❌ No token or user ID found for markAllAsRead');
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/read-all?userId=${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 🔥 USE COMPONENT LEVEL TOKEN
-        }
-      });
+      const unreadIds = notifications
+        .filter((n) => !n.read)
+        .map((n) => String(n.id));
 
-      if (response.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      if (unreadIds.length === 0) {
         setUnreadCount(0);
-        console.log('✅ All notifications marked as read');
-      } else {
-        console.error('❌ Failed to mark all notifications as read:', response.status);
+        return;
       }
+
+      // Backend does not support bulk read-all route (405). Mark each unread notification directly.
+      await Promise.all(
+        unreadIds.map(async (id) => {
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${encodeURIComponent(id)}/read`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (!response.ok) {
+              console.warn('mark notification read failed', id, response.status);
+            }
+          } catch (err) {
+            console.warn('mark notification read error', id, err);
+          }
+        })
+      );
+
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      console.log('✅ All notifications marked as read');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
@@ -1598,14 +1686,7 @@ export default function NavigationBar() {
       if (!res.ok) {
         console.error('Availability update failed', res.status);
       } else {
-        const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
-        const deleted = await deleteNotificationById(notificationId);
-        if (!deleted) {
-          const n = notifications.find(n => n.id === notificationId);
-          if (n && !n.read) await markAsRead(notificationId);
-        }
-        setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-        if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+        await dismissActionedNotification(notificationId);
         toast.success(value === 'YES' ? '👍 Availability confirmed' : 'Marked unavailable');
         try { window.dispatchEvent(new Event('refresh-notifications')); } catch {}
       }
@@ -1740,6 +1821,25 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
     setMounted(true);
     dispatch(initializeFromStorage());
   }, [dispatch]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('dismissedNotificationIds');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, true>;
+      if (parsed && typeof parsed === 'object') setDismissedNotificationIds(parsed);
+    } catch {
+      // ignore invalid local storage
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dismissedNotificationIds', JSON.stringify(dismissedNotificationIds));
+    } catch {
+      // ignore storage failures
+    }
+  }, [dismissedNotificationIds]);
 
   // 🔥 FETCH NOTIFICATIONS ON MOUNT AND POLL
   useEffect(() => {
@@ -1951,7 +2051,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       { userId: adminUserId, ...payloadBase },
       { user_id: adminUserId, ...payloadBase },
       { receiverId: adminUserId, ...payloadBase },
-      { receiver_id: adminUserId, ...payloadBase }
+      { receiver_id: adminUserId, ...payloadBase },
+      { recipientId: adminUserId, ...payloadBase },
+      { recipient_id: adminUserId, ...payloadBase },
+      { toUserId: adminUserId, ...payloadBase },
+      { to_user_id: adminUserId, ...payloadBase },
+      { userIds: [adminUserId], ...payloadBase }
     ];
     for (const url of endpoints) {
       for (const body of bodies) {
@@ -1988,8 +2093,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     notifMeta?: NotificationMeta,
     suggestedHomeGoals?: number,
     suggestedAwayGoals?: number
-  ) => {
-    if (!token || !user?.id) return;
+  ): Promise<boolean> => {
+    if (!token || !user?.id) return false;
     const mid = sanitizeMatchId(matchId)!;
     debugId('POST notify admin mid', mid);
 
@@ -2033,7 +2138,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     }
 
     const adminUserId = leagueId ? await getLeagueAdminUserId(leagueId) : undefined;
-    if (!adminUserId) { console.warn('No league admin to notify'); return; }
+    if (!adminUserId) { console.warn('No league admin to notify'); return false; }
 
     const actorName = getUserDisplayName(user);
     const role = actorIsCaptain ? 'Captain' : 'Player';
@@ -2061,12 +2166,13 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       suggestedAwayGoals
     };
 
-    await postAdminNotification(adminUserId, {
+    const sent = await postAdminNotification(adminUserId, {
       type: 'RESULT_CONFIRMATION_REJECTED',
       title,
       body,
       meta
     });
+    return sent;
   };
 
   // NEW: open reject panel and prefill with current score if available
@@ -2210,30 +2316,20 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     setSavingResult(prev => ({ ...prev, [matchId]: true }));
     const { ok } = await submitResultDecision(mid, 'NO', h, a);
 
-    if (ok) {
-      const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
-      const deleted = await deleteNotificationById(notificationId);
-      try {
-        if (!deleted) {
-          const n = notifications.find(n => String(n.id) === String(notificationId));
-          if (n && !n.read) {
-            await markAsRead(notificationId);
-          }
-        }
-      } catch {}
-      // Remove immediately for responsive UI.
-      setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-      if (wasUnread && deleted) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+    let adminNotified = false;
+    try {
+      const notif = notifications.find(n => String(n.id) === String(notificationId));
+      adminNotified = await notifyAdminOnResultRejected(mid, notif?.meta, h, a);
+    } catch (notifyError) {
+      console.warn('Failed to notify admin about rejected result', notifyError);
+    }
+
+    if (ok || adminNotified) {
+      await dismissActionedNotification(notificationId);
       // Re-sync from server so dismissed notifications do not reappear.
       void fetchNotifications();
-
-      try {
-        const notif = notifications.find(n => String(n.id) === String(notificationId));
-        await notifyAdminOnResultRejected(mid, notif?.meta, h, a);
-      } catch (notifyError) {
-        console.warn('Failed to notify admin about rejected result', notifyError);
+      if (!ok && adminNotified) {
+        toast.success('Suggestion sent to admin.');
       }
     } else {
       console.error('Failed to submit suggested scores');
@@ -2270,22 +2366,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     const { ok, lastError } = await submitResultDecision(mid, 'YES');
 
     if (ok) {
-      const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
-      const deleted = await deleteNotificationById(notificationId);
-      // Fallback to read when delete fails.
-      try {
-        if (!deleted) {
-          const n = notifications.find(n => String(n.id) === String(notificationId));
-          if (n && !n.read) {
-            await markAsRead(notificationId);
-          }
-        }
-      } catch {}
-      // Remove from local list immediately.
-      setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
-      if (wasUnread && deleted) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+      await dismissActionedNotification(notificationId);
       // Re-sync from server so confirmed notifications stay gone.
       void fetchNotifications();
     } else {
@@ -2900,6 +2981,27 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 </Box>
               </Button>
             )}
+            {notifications.length > 0 && (
+              <Button
+                onClick={clearAllNotifications}
+                size="small"
+                disabled={isClearingAll}
+                sx={{
+                  color: '#d32f2f',
+                  fontSize: { xs: '10px', sm: '12px' },
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 'auto',
+                  px: { xs: 0.4, sm: 1 },
+                  py: { xs: 0.2, sm: 0.4 },
+                  lineHeight: 1.1,
+                  whiteSpace: 'nowrap',
+                  '&:hover': { bgcolor: 'rgba(211,47,47,0.06)' }
+                }}
+              >
+                {isClearingAll ? 'Clearing...' : 'Clear all'}
+              </Button>
+            )}
             <IconButton
               onClick={handleNotificationClose}
               size="small"
@@ -3015,12 +3117,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       size="small"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const wasUnread = !notification.read;
-                        const deleted = await deleteNotificationById(notification.id);
-                        if (deleted) {
-                          setNotifications(prev => prev.filter(n => String(n.id) !== String(notification.id)));
-                          if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
-                        }
+                        await dismissActionedNotification(notification.id);
                       }}
                       sx={{
                         position: 'absolute',
