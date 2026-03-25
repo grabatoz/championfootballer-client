@@ -167,6 +167,9 @@ interface League {
     id: string;
     name: string;
     administrators: User[];
+    administeredLeagues?: User[];
+    adminId?: string;
+    isAdmin?: boolean;
     active: boolean;
     createdAt?: string;
     updatedAt?: string;
@@ -2029,7 +2032,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         match?.status === 'RESULT_UPLOADED' ||
         match?.status === 'RESULT_PUBLISHED' ||
         match?.status === 'REVISION_REQUESTED';
-    const isAdmin = league?.administrators?.some(a => a.id === user?.id) ?? false;
+    const isAdmin = useMemo(() => {
+        if (!user?.id || !league) return false;
+        const uid = String(user.id);
+        if (league.isAdmin === true) return true;
+        if (league.adminId && String(league.adminId) === uid) return true;
+        const admins = Array.isArray(league.administrators) ? league.administrators : [];
+        const administered = Array.isArray(league.administeredLeagues) ? league.administeredLeagues : [];
+        return [...admins, ...administered].some((a) => String(a?.id) === uid);
+    }, [league, user?.id]);
 
     // NEW: captain role flags
     const isHomeCaptain = !!(user && match && user.id === match.homeCaptainId);

@@ -2229,11 +2229,9 @@ export default function AllMatches() {
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
                                                         {(isAdmin || isMember) && (() => {
                                                             const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
-                                                            const isAwaitingCaptainConfirmation = match.status === 'RESULT_UPLOADED';
                                                             const isDisabled =
                                                                 !league?.active ||
-                                                                match.archived ||
-                                                                (isAwaitingCaptainConfirmation && !isAdmin);
+                                                                match.archived;
                                                             return (
                                                             <Box
                                                                 onClick={() => {
@@ -2282,7 +2280,6 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
-                                                            disabled={match.status === 'RESULT_UPLOADED' && !isAdmin}
                                                             sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.4 } }}
                                                         >
                                                             <span style={{ marginTop: '4px' }}>Results</span>

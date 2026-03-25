@@ -520,23 +520,38 @@ import LocationIcon from '@/Components/images/location.png';
       return { homeSum, awaySum, total, homePct, awayPct };
     }, [homeTeamUsers, awayTeamUsers, userLeagueAvgXP, leagueAvgXPValue]);
 
-    // Shuffle: swap all players between teams (including guests) exactly
+    // Shuffle: randomly repartition registered players (guests stay on current sides)
     const shuffleTeams = () => {
-      const oldHome = homeTeamUsers;
-      const oldAway = awayTeamUsers;
-      const newHome = oldAway.map(p => p.isGuest ? { ...p, team: 'home' } as PlayerOption : p);
-      const newAway = oldHome.map(p => p.isGuest ? { ...p, team: 'away' } as PlayerOption : p);
+      const registeredHome = homeTeamUsers.filter(p => !p.isGuest);
+      const registeredAway = awayTeamUsers.filter(p => !p.isGuest);
+      const allRegistered = [...registeredHome, ...registeredAway];
 
-      setHomeTeamUsers(newHome);
-      setAwayTeamUsers(newAway);
+      const byId = new Map<string, PlayerOption>();
+      allRegistered.forEach(p => byId.set(p.id, p));
+      const uniqueRegistered = Array.from(byId.values());
+      if (uniqueRegistered.length < 2) return;
 
-      // Also swap staged guests to keep state consistent
-      setHomeGuests(awayGuests.map(g => ({ ...g, team: 'home' })));
-      setAwayGuests(homeGuests.map(g => ({ ...g, team: 'away' })));
+      const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest).map(p => ({ ...p, team: 'home' as const }));
+      const awayGuestsOnly = awayTeamUsers.filter(p => p.isGuest).map(p => ({ ...p, team: 'away' as const }));
+
+      const targetHomeTotal = Math.ceil((uniqueRegistered.length + homeGuestsOnly.length + awayGuestsOnly.length) / 2);
+      const targetHomeReg = Math.max(0, targetHomeTotal - homeGuestsOnly.length);
+      const shuffled = [...uniqueRegistered];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      const newHomeReg = shuffled.slice(0, targetHomeReg);
+      const newAwayReg = shuffled.slice(targetHomeReg);
+
+      setHomeTeamUsers([...newHomeReg, ...homeGuestsOnly]);
+      setAwayTeamUsers([...newAwayReg, ...awayGuestsOnly]);
 
       // Clear captains when teams change massively
-      setHomeCaptain(null); setAwayCaptain(null);
-      toast.success('Teams swapped');
+      setHomeCaptain(null);
+      setAwayCaptain(null);
+      toast.success('Teams shuffled');
       fetchPrediction();
     };
 
@@ -545,7 +560,10 @@ import LocationIcon from '@/Components/images/location.png';
       if (isBalancing) return;
       setIsBalancing(true);
       try {
-        const combinedReg = [...homeTeamUsers.filter(p => !p.isGuest), ...awayTeamUsers.filter(p => !p.isGuest)];
+        const combinedRegRaw = [...homeTeamUsers.filter(p => !p.isGuest), ...awayTeamUsers.filter(p => !p.isGuest)];
+        const regById = new Map<string, PlayerOption>();
+        combinedRegRaw.forEach(p => regById.set(p.id, p));
+        const combinedReg = Array.from(regById.values());
         if (combinedReg.length < 2) { toast.error('Need at least 2 registered players'); return; }
 
         // Ensure maps are loaded (fills userLeagueXP and userLeagueAvgXP)
@@ -1059,11 +1077,11 @@ import LocationIcon from '@/Components/images/location.png';
 
         formData.append('location', location);
 
-        // Always send selected captains if they are registered users
-        const homeCaptainIdToSend = homeCaptain && !homeCaptain.isGuest ? homeCaptain.id : undefined;
-        const awayCaptainIdToSend = awayCaptain && !awayCaptain.isGuest ? awayCaptain.id : undefined;
-        if (homeCaptainIdToSend) formData.append('homeCaptainId', homeCaptainIdToSend);
-        if (awayCaptainIdToSend) formData.append('awayCaptainId', awayCaptainIdToSend);
+        // Captains are optional; send empty value to explicitly clear captain when not selected.
+        const homeCaptainIdToSend = homeCaptain && !homeCaptain.isGuest ? homeCaptain.id : '';
+        const awayCaptainIdToSend = awayCaptain && !awayCaptain.isGuest ? awayCaptain.id : '';
+        formData.append('homeCaptainId', homeCaptainIdToSend);
+        formData.append('awayCaptainId', awayCaptainIdToSend);
 
         // Always send teams and guests so backend can persist all changes in one go
         formData.append('homeTeamUsers', JSON.stringify(newHomeIds));

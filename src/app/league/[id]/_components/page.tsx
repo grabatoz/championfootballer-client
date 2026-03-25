@@ -3937,12 +3937,10 @@ export default function LeagueDetailPage() {
                                                                             {(isAdmin || isMember) && (() => {
                                                                                 const isInMatch = match.homeTeamUsers?.some((u) => String(u?.id) === String(user?.id)) ||
                                                                                     match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id));
-                                                                                const isAwaitingCaptainConfirmation = match.status === 'RESULT_UPLOADED';
                                                                                 const isDisabled =
                                                                                     !league?.active ||
                                                                                     match.archived ||
-                                                                                    !isSelectedSeasonActive ||
-                                                                                    (isAwaitingCaptainConfirmation && !isAdmin);
+                                                                                    !isSelectedSeasonActive;
                                                                                 return (
                                                                                 <Box
                                                                                     onClick={() => {
@@ -4028,7 +4026,6 @@ export default function LeagueDetailPage() {
                                                                                 size="small"
                                                                                 onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
-                                                                                disabled={match.status === 'RESULT_UPLOADED' && !isAdmin}
                                                                                 sx={{
                                                                                     // backgroundColor: '#333',
                                                                                     color: 'white',
