@@ -21,8 +21,8 @@ import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import FlagIcon from '@mui/icons-material/Flag';
 import Pitch from '@/Components/images/pitch.jpg';
-import Shirt from '@/Components/images/rightshirt.png';
-import Shirtaway from '@/Components/images/leftshirt.png';
+import Shirt from '@/Components/images/viewteamhome.png';
+import Shirtaway from '@/Components/images/viewteamaway.png';
 import FootballIcon from '@/Components/images/football.png';
 import TableViewImg from '@/Components/images/table.png';
 import PitchViewImg from '@/Components/images/footblgrond.png';
@@ -53,8 +53,29 @@ function debounce<A extends unknown[], R>(fn: (...args: A) => R, wait: number) {
 }
 
 // Add this helper so references to normalizeTeam compile
-// const normalizeTeam = (v: any): 'home' | 'away' =>
-//   String(v).toLowerCase() === 'away' ? 'away' : 'home';
+function normalizeTeam(v: unknown): 'home' | 'away' {
+  const s = String(v ?? '').trim().toLowerCase();
+  if (s.includes('away')) return 'away';
+  if (s.includes('home')) return 'home';
+  return 'home';
+}
+
+function isPublishedResultStatus(v: unknown): boolean {
+  const s = String(v ?? '').trim().toUpperCase();
+  const set = new Set([
+    'RESULT_PUBLISHED',
+    'RESULT_UPLOADED',
+    'RESULT_CONFIRMED',
+    'RESULT_APPROVED',
+    'RESULT_FINAL',
+    'RESULT_COMPLETED',
+    'COMPLETED',
+    'FINISHED',
+    'ENDED'
+  ]);
+  if (set.has(s)) return true;
+  return s.includes('RESULT') || s.includes('CONFIRM') || s.includes('COMPLETE') || s.includes('FINISH');
+}
 
 type Player = {
   id?: string;
@@ -117,6 +138,42 @@ type TeamViewPayload = {
     completedAt?: string | null;
   };
 };
+
+function clonePositions(input: TeamPositions): TeamPositions {
+  const next: TeamPositions = {};
+  Object.entries(input || {}).forEach(([k, v]) => {
+    next[String(k)] = { x: Number(v?.x ?? 0), y: Number(v?.y ?? 0) };
+  });
+  return next;
+}
+
+function normalizeGuestsForMatch(
+  rawGuests?: Guest[],
+  positions?: { home?: TeamPositions; away?: TeamPositions }
+): Guest[] {
+  const homePosIds = new Set(Object.keys(positions?.home || {}).map(String));
+  const awayPosIds = new Set(Object.keys(positions?.away || {}).map(String));
+  const dedup = new Map<string, Guest>();
+
+  (rawGuests || []).forEach((g) => {
+    const gid = String(g?.id ?? '').trim();
+    if (!gid) return;
+
+    let team = normalizeTeam(g?.team);
+    if (homePosIds.has(gid)) team = 'home';
+    if (awayPosIds.has(gid)) team = 'away';
+
+    dedup.set(gid, {
+      id: gid,
+      team,
+      firstName: String(g?.firstName ?? '').trim() || 'Guest',
+      lastName: String(g?.lastName ?? '').trim(),
+      shirtNumber: g?.shirtNumber ?? null
+    });
+  });
+
+  return Array.from(dedup.values());
+}
 
 type BasicUser = { id: string; firstName: string; lastName?: string; shirtNumber?: string | null }; // added
 
@@ -293,9 +350,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const [awayCaptainId, setAwayCaptainId] = React.useState<string | undefined>(undefined);
   const [homePos, setHomePos] = React.useState<TeamPositions>({});
   const [awayPos, setAwayPos] = React.useState<TeamPositions>({});
+  const [undoStack, setUndoStack] = React.useState<Array<{ home: TeamPositions; away: TeamPositions }>>([]);
   // live refs
   const homePosRef = React.useRef<TeamPositions>({});
   const awayPosRef = React.useRef<TeamPositions>({});
+  const isDraggingRef = React.useRef(false);
   React.useEffect(() => { homePosRef.current = homePos; }, [homePos]);
   React.useEffect(() => { awayPosRef.current = awayPos; }, [awayPos]);
 
@@ -362,8 +421,16 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const canDragTeam = React.useCallback((t: 'home'|'away') => {
     if (isLeagueAdmin) return true;
     if (!meId) return false;
-    return t === 'home' ? meId === homeCaptainId : meId === awayCaptainId;
+    const homeCap = String(homeCaptainId || '');
+    const awayCap = String(awayCaptainId || '');
+    return t === 'home' ? meId === homeCap : meId === awayCap;
   }, [isLeagueAdmin, meId, homeCaptainId, awayCaptainId]);
+
+  const canEditAnyFormation = React.useMemo(() => {
+    if (isLeagueAdmin) return true;
+    if (!meId) return false;
+    return String(homeCaptainId || '') === meId || String(awayCaptainId || '') === meId;
+  }, [isLeagueAdmin, homeCaptainId, awayCaptainId, meId]);
 
   const syncMatchTimingFromMatch = React.useCallback((m?: TeamViewPayload['match']) => {
     if (!m) return;
@@ -378,6 +445,20 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const s = String(matchStatus || '').toUpperCase();
     return s === 'LIVE' || s === 'IN_PROGRESS' || s === 'STARTED';
   }, [matchStatus]);
+  const hasPublishedResult = React.useMemo(() => isPublishedResultStatus(matchStatus), [matchStatus]);
+
+  const pushUndoSnapshot = React.useCallback(() => {
+    setUndoStack((prev) => {
+      const next = [
+        ...prev,
+        {
+          home: clonePositions(homePosRef.current),
+          away: clonePositions(awayPosRef.current),
+        }
+      ];
+      return next.slice(-30);
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!isLiveMatch || !matchTiming.startIso || !!matchTiming.endIso || matchTiming.durationMinutes !== null) return;
@@ -493,12 +574,12 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         setAwayPlayers(away);
         setHomeTeamName(m.homeTeamName || 'Home');
         setAwayTeamName(m.awayTeamName || 'Away');
-        setGuests(m.guests || []);
+        setGuests(normalizeGuestsForMatch(m.guests, m.positions));
         setMatchStatus(m.status);
         setHomeTeamGoals(m.homeTeamGoals ?? null);
         setAwayTeamGoals(m.awayTeamGoals ?? null);
-        setHomeCaptainId(m.homeCaptainId);
-        setAwayCaptainId(m.awayCaptainId);
+        setHomeCaptainId(m.homeCaptainId ? String(m.homeCaptainId) : undefined);
+        setAwayCaptainId(m.awayCaptainId ? String(m.awayCaptainId) : undefined);
         syncMatchTimingFromMatch(m);
 
         setRemoved({
@@ -548,6 +629,50 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     fetchTeams();
     return () => { active = false; };
   }, [leagueId, matchId, token, autoLayout, syncMatchTimingFromMatch]);
+
+  // Read-only clients poll latest formation so all league players can see live updates.
+  React.useEffect(() => {
+    if (!leagueId || !matchId || !token || !dataLoaded || canEditAnyFormation) return;
+    let active = true;
+
+    const pullLatestLayout = async () => {
+      if (!active || isDraggingRef.current) return;
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches/${matchId}/team-view`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const payload: TeamViewPayload = await res.json();
+        if (!active || !payload?.success || !payload.match) return;
+
+        const m = payload.match;
+        const nextHome = m.positions?.home || {};
+        const nextAway = m.positions?.away || {};
+
+        if (Object.keys(nextHome).length > 0) {
+          homePosRef.current = nextHome;
+          setHomePos(nextHome);
+        }
+        if (Object.keys(nextAway).length > 0) {
+          awayPosRef.current = nextAway;
+          setAwayPos(nextAway);
+        }
+
+        setGuests(normalizeGuestsForMatch(m.guests, m.positions));
+        setMatchStatus(m.status);
+        setHomeTeamGoals(m.homeTeamGoals ?? null);
+        setAwayTeamGoals(m.awayTeamGoals ?? null);
+      } catch {
+        // ignore polling errors
+      }
+    };
+
+    const id = setInterval(pullLatestLayout, 5000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [leagueId, matchId, token, dataLoaded, canEditAnyFormation]);
 
   // Fetch league data once â€” admin check + match index
   React.useEffect(() => {
@@ -706,6 +831,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     x = Math.max(margin, Math.min(1 - margin, x));
     y = Math.max(margin, Math.min(1 - margin, y));
 
+    // Enforce formation to each team's own half only.
+    const centerGap = 0.02;
+    if (teamSide === 'home') {
+      y = Math.min(0.5 - centerGap, y);
+    } else {
+      y = Math.max(0.5 + centerGap, y);
+    }
+
     if (teamSide === 'home') {
       setHomePos(prev => {
         const next = { ...prev, [pid]: { x, y } };
@@ -722,16 +855,40 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       });
     }
   };
-  const startDrag = (pid: string, teamSide: 'home'|'away') => () => {
+  const startDrag = (pid: string, teamSide: 'home'|'away') => (ev: React.PointerEvent<HTMLDivElement>) => {
     // block dragging if removed
     const removedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
     if (removedHere) return;
     if (!canDragTeam(teamSide)) return;
 
-    const move = (ev: PointerEvent) => onDrag(ev, pid, teamSide);
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.currentTarget.setPointerCapture?.(ev.pointerId);
+    isDraggingRef.current = true;
+    pushUndoSnapshot();
+    document.body.style.userSelect = 'none';
+
+    let rafId: number | null = null;
+    let lastEv: PointerEvent | null = null;
+    const flush = () => {
+      rafId = null;
+      if (lastEv) onDrag(lastEv, pid, teamSide);
+    };
+    const move = (nextEv: PointerEvent) => {
+      lastEv = nextEv;
+      if (rafId === null) {
+        rafId = window.requestAnimationFrame(flush);
+      }
+    };
     const up = () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        if (lastEv) onDrag(lastEv, pid, teamSide);
+      }
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      isDraggingRef.current = false;
+      document.body.style.userSelect = '';
       savePositionsNow(teamSide);
     };
     window.addEventListener('pointermove', move);
@@ -842,25 +999,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Simple count-based lineup matchup percent
   // If both teams have equal players (including guests) => 100%
   // Otherwise: min(count)/max(count) * 100 (rounded)
-  const totalHomeCount = React.useMemo(() => (homePlayers?.length || 0) + (homeGuests?.length || 0), [homePlayers, homeGuests]);
-  const totalAwayCount = React.useMemo(() => (awayPlayers?.length || 0) + (awayGuests?.length || 0), [awayPlayers, awayGuests]);
   const homeBalancePct = React.useMemo(() => {
-    // 1. Use prediction API matchupPct if available
+    // Keep team-balance aligned with server prediction algorithm.
+    // If prediction is unavailable, show neutral 50/50 rather than a different local formula.
     if (teamInsights && Number.isFinite(teamInsights.matchupPct) && teamInsights.matchupPct > 0) {
       return Math.round(Math.max(1, Math.min(99, teamInsights.matchupPct)));
     }
-    // 2. Use summed XP of each team's players
-    const homeXpTotal = homePlayers.reduce((acc, p) => acc + (typeof p.xp === 'number' ? p.xp : 0), 0);
-    const awayXpTotal = awayPlayers.reduce((acc, p) => acc + (typeof p.xp === 'number' ? p.xp : 0), 0);
-    const totalXp = homeXpTotal + awayXpTotal;
-    if (totalXp > 0) {
-      return Math.round(Math.max(1, Math.min(99, (homeXpTotal / totalXp) * 100)));
-    }
-    // 3. Fallback: player count ratio
-    return totalHomeCount > 0 || totalAwayCount > 0
-      ? Math.round(Math.max(1, Math.min(99, (totalHomeCount / Math.max(totalHomeCount + totalAwayCount, 1)) * 100)))
-      : 50;
-  }, [teamInsights, homePlayers, awayPlayers, totalHomeCount, totalAwayCount]);
+    return 50;
+  }, [teamInsights]);
 
   // Simple row layout for guests within same half
   // SWAPPED: home at y=0.99 (right when rotated), away at y=0.01 (left when rotated)
@@ -887,6 +1033,26 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     });
     return map;
   }, [awayGuests]);
+
+  const persistBothPositions = React.useCallback(async () => {
+    await Promise.all([savePositionsNow('home'), savePositionsNow('away')]);
+  }, [savePositionsNow]);
+
+  const handleUndoFormation = React.useCallback(() => {
+    if (!canEditAnyFormation) return;
+    setUndoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const snapshot = prev[prev.length - 1];
+      const nextHome = clonePositions(snapshot.home);
+      const nextAway = clonePositions(snapshot.away);
+      homePosRef.current = nextHome;
+      awayPosRef.current = nextAway;
+      setHomePos(nextHome);
+      setAwayPos(nextAway);
+      void persistBothPositions();
+      return prev.slice(0, -1);
+    });
+  }, [canEditAnyFormation, persistBothPositions]);
 
   // Context Menu
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
@@ -1102,9 +1268,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           const m = p.match;
           setHomePlayers(arrangePlayers(m.homeTeam || [], m.homeCaptainId));
           setAwayPlayers(arrangePlayers(m.awayTeam || [], m.awayCaptainId));
-          setGuests(m.guests || []);
-          setHomeCaptainId(m.homeCaptainId);
-          setAwayCaptainId(m.awayCaptainId);
+          setGuests(normalizeGuestsForMatch(m.guests, m.positions));
+          setHomeCaptainId(m.homeCaptainId ? String(m.homeCaptainId) : undefined);
+          setAwayCaptainId(m.awayCaptainId ? String(m.awayCaptainId) : undefined);
           syncMatchTimingFromMatch(m);
           setRemoved({
             home: (m.removed?.home || []).map(String),
@@ -1146,11 +1312,11 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const onClick = (e: React.MouseEvent) => {
       if (switchMode) {
         tryCompleteSwitch(teamSide, pid);
-      } else {
+      } else if (canDragTeam(teamSide)) {
         openMenu(e, teamSide, pid, player.name);
       }
     };
-    const isCaptainNow = (teamSide === 'home' ? homeCaptainId : awayCaptainId) === pid;
+    const isCaptainNow = String(teamSide === 'home' ? (homeCaptainId || '') : (awayCaptainId || '')) === pid;
     const teamColor = teamSide === 'home' ? primaryColor : awayTeamColor;
     const shirtImage = teamSide === 'away' ? Shirtaway : Shirt;
     
@@ -1178,13 +1344,38 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <img 
             src={shirtImage.src} 
             alt="shirt" 
+            draggable={false}
             style={{ 
               width: '100%', 
               height: '100%', 
               objectFit: 'contain', 
-              opacity: 0.85
+              opacity: 0.85,
+              userSelect: 'none'
             }} 
           />
+          {hasPublishedResult && typeof player.xp === 'number' && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                lineHeight: 1,
+                pointerEvents: 'none',
+                textShadow: '0 1px 3px rgba(0,0,0,0.6)'
+              }}
+            >
+              <Typography sx={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.3 }}>
+                {Math.round(player.xp)}
+              </Typography>
+              <Typography sx={{ fontSize: 16, fontWeight: 800, mt: 0.2 }}>
+                xp
+              </Typography>
+            </Box>
+          )}
           {isCaptainNow && (
             <Box 
               sx={{ 
@@ -1214,11 +1405,6 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         <Typography sx={{ fontSize: 10, fontWeight: 600, color: '#fff', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '60px' }}>
           {player.name}
         </Typography>
-        {matchStatus === 'RESULT_PUBLISHED' && typeof player.xp === 'number' && (
-          <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#0B6623', textAlign: 'center' }}>
-            XP: {player.xp}
-          </Typography>
-        )}
       </Box>
     );
   };
@@ -1250,11 +1436,13 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <img 
             src={shirtImage.src} 
             alt="guest-shirt" 
+            draggable={false}
             style={{ 
               width: '100%', 
               height: '100%', 
               objectFit: 'contain', 
-              opacity: 0.85
+              opacity: 0.85,
+              userSelect: 'none'
             }} 
           />
         </Box>
@@ -1425,7 +1613,6 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </Box>
         </Paper>
 
-        
         </>
         )}
 
@@ -1501,7 +1688,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
-                      {matchStatus === 'RESULT_PUBLISHED' && typeof (p as Player).xp === 'number' && (
+                      {hasPublishedResult && typeof (p as Player).xp === 'number' && (
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
                       )}
                     </Box>
@@ -1524,7 +1711,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
-                      {matchStatus === 'RESULT_PUBLISHED' && typeof (p as Player).xp === 'number' && (
+                      {hasPublishedResult && typeof (p as Player).xp === 'number' && (
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
                       )}
                     </Box>
@@ -1623,8 +1810,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1 }}>
           {/* Left: Undo / back placeholder */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
-            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px',  display: 'flex',alignItems: 'center', justifyContent: 'center', cursor: 'pointer', visibility: viewMode === 'pitch' ? 'visible' : 'hidden' }}
-              onClick={() => window.history.back()}
+            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canEditAnyFormation && undoStack.length > 0 ? 'pointer' : 'not-allowed', opacity: canEditAnyFormation && undoStack.length > 0 ? 1 : 0.45, visibility: viewMode === 'pitch' ? 'visible' : 'hidden' }}
+              onClick={handleUndoFormation}
             >
               <img src={UndoImg.src} alt="undo" width={24} height={24} style={{ objectFit: 'contain' }} />
             </Box>
@@ -1648,7 +1835,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               Match Predictions
             </Typography>
 
-            {matchStatus === 'RESULT_PUBLISHED' && homeTeamGoals != null && awayTeamGoals != null ? (
+            {hasPublishedResult && homeTeamGoals != null && awayTeamGoals != null ? (
               <>
                 <Typography sx={{ fontSize: 19, fontWeight: 500, lineHeight: 1.1, mb: 0 }}>
                   <span style={{ color: primaryColor }}>
@@ -1724,7 +1911,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
         <Typography sx={{ fontSize: 17, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
           <img src={BulbImg.src} alt="tip" width={20} height={20} style={{ objectFit: 'contain' }} />
-          Captain's can drag players into formation
+          {canEditAnyFormation
+            ? 'Admins/Captains can drag players and save formation.'
+            : 'Read-only view: formation can only be changed by Admin/Captains.'}
         </Typography>
         <Box sx={{ height: 40 }} />
         
