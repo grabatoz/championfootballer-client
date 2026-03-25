@@ -1524,6 +1524,25 @@ export default function NavigationBar() {
     }
   };
 
+  const dismissActionedNotification = async (notificationId: string) => {
+    const wasUnread = notifications.some(n => String(n.id) === String(notificationId) && !n.read);
+    const deleted = await deleteNotificationById(notificationId);
+    let didMarkReadFallback = false;
+
+    if (!deleted) {
+      const n = notifications.find(n => String(n.id) === String(notificationId));
+      if (n && !n.read) {
+        await markAsRead(notificationId);
+        didMarkReadFallback = true;
+      }
+    }
+
+    setNotifications(prev => prev.filter(n => String(n.id) !== String(notificationId)));
+    if (wasUnread && !didMarkReadFallback) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
   // 🔥 FIXED: Use component level token and user instead of calling useAuth inside function
   const markAllAsRead = async () => {
     try {
@@ -1662,9 +1681,9 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ Season action ${action} successful:`, data.message);
-        
-        // Refresh notifications to update UI
-        await fetchNotifications(true);
+
+        // Actioned notification should disappear immediately.
+        await dismissActionedNotification(notificationId);
         
         // Show success message
         alert(data.message);
@@ -2335,6 +2354,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   const [myStats, setMyStats] = useState({ goals: 0, assists: 0, cleanSheets: 0, penalties: 0, freeKicks: 0, defence: 0, impact: 0 });
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
+  const [statsSourceNotificationId, setStatsSourceNotificationId] = useState<string | null>(null);
 
   const handleStatChange = (stat: 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact', increment: number, max: number) => {
     setMyStats(prev => {
@@ -2349,7 +2369,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     try {
       // no-op save simulation
       await new Promise(r => setTimeout(r, 300));
+      if (statsSourceNotificationId) {
+        await dismissActionedNotification(statsSourceNotificationId);
+      }
       setStatsOpen(false);
+      setStatsSourceNotificationId(null);
     } finally {
       setStatsSubmitting(false);
     }
@@ -2748,6 +2772,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           setStatsOpen(false);
           setSelectedMatchId(null);
           setSelectedLeagueId(null);
+          setStatsSourceNotificationId(null);
         }}
         onSave={handleStatsSave}
         isSubmitting={statsSubmitting}
@@ -3332,9 +3357,9 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   const leagueId = (notification.meta as MatchMeta)?.leagueId || (notification.meta as MatchMeta)?.league_id;
                                   setSelectedMatchId(matchId);
                                   setSelectedLeagueId(leagueId || null);
+                                  setStatsSourceNotificationId(notification.id);
                                   setStatsOpen(true);
                                   handleNotificationClose();
-                                  if (!notification.read) markAsRead(notification.id);
                                 }}
                                 size="small"
                                 variant="contained"
