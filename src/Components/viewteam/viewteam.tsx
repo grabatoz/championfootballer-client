@@ -1536,23 +1536,22 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             bgcolor: '#2b2b2b',
             overflow: 'hidden',
             mx: 1,
-            /* Wrapper defines the visible landscape area */
-            height: { xs: 220, sm: 250, md: 410 },
+            /* Desktop: horizontal pitch, Mobile: vertical pitch */
+            height: { xs: 420, sm: 500, md: 410 },
             position: 'relative',
           }}
         >
-          {/* pitchRef is portrait-sized, rotated 90deg CCW so goals end up on left/right.
-              CSS width = visible height; CSS height = large enough to fill visible width */}
+          {/* Desktop keeps rotated horizontal pitch; mobile stays vertical */}
           <Box
             ref={pitchRef}
             sx={{
               position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: { xs: 220, sm: 250, md: 405 },
-              height: `${pitchW}px`,
-              transform: 'translate(-50%, -50%) rotate(-90deg)',
-              transformOrigin: 'center center',
+              top: { xs: 0, md: '50%' },
+              left: { xs: 0, md: '50%' },
+              width: { xs: '100%', md: 405 },
+              height: { xs: '100%', md: `${pitchW}px` },
+              transform: { xs: 'none', md: 'translate(-50%, -50%) rotate(-90deg)' },
+              transformOrigin: { xs: 'top left', md: 'center center' },
               bgcolor: '#2b2b2b',
             }}
           >
