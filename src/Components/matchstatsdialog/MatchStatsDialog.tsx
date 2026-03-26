@@ -123,6 +123,8 @@ interface User {
         impact?: number;
     }[];
     positionType?: string; // Added for new player card
+    isGuest?: boolean;
+    guestId?: string;
 }
 
 interface Match {
@@ -345,11 +347,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const [isPickDialogOpen, setIsPickDialogOpen] = useState(false);
     const [pickCategory, setPickCategory] = useState<CaptainPickCategory | null>(null);
     const [savingPick, setSavingPick] = useState(false);
-    // Capability flag – assume API is available unless we get 404/405 from POST
+    // Capability flag â€“ assume API is available unless we get 404/405 from POST
     const [captainApiAvailable, setCaptainApiAvailable] = useState(true);
     // --- end captain picks state ---
 
     const { user, token } = useAuth();
+    const currentUserId = String((user as { id?: string; userId?: string } | undefined)?.id || (user as { id?: string; userId?: string } | undefined)?.userId || '');
     const params = useParams();
     const router = useRouter();
     const leagueId = params?.id ? String(params.id) : '';
@@ -609,7 +612,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         }
         if (!token) return;
 
-        console.log('🔍 Fetching matches for league:', leagueIdForList);
+        console.log('ًں”چ Fetching matches for league:', leagueIdForList);
         setMatchesLoading(true);
         setMatchesError(null);
 
@@ -618,7 +621,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const sorted = await getMatchesForLeague(leagueIdForList);
             if (myNonce !== fetchNonceRef.current) return; // stale
 
-            console.log('✅ Fetched matches:', sorted.length);
+            console.log('âœ… Fetched matches:', sorted.length);
             setSelectedLeagueMatches(sorted);
             setSelectedLeagueHasNoMatches(sorted.length === 0);
 
@@ -636,7 +639,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // Open Matches Dialog and fetch
     const openMatchesDialog = useCallback(async () => {
-        console.log('🔓 Opening matches dialog...', {
+        console.log('ًں”“ Opening matches dialog...', {
             selectedLeagueIdForList,
             resolvedLeagueId,
             leagueName: league?.name
@@ -654,7 +657,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const leagueIdToUse = resolvedLeagueId || league?.id || '';
             setSelectedLeagueIdForList(leagueIdToUse);
             setSelectedLeagueNameForList(league?.name || selectedLeagueNameForList || '');
-            console.log('📝 Synced league state:', { leagueIdToUse, leagueName: league?.name });
+            console.log('ًں“‌ Synced league state:', { leagueIdToUse, leagueName: league?.name });
         }
 
         setMatchesDialogOpen(true);
@@ -672,9 +675,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 return;
             }
 
-            // 🔄 Add cache busting to ensure fresh data
+            // ًں”„ Add cache busting to ensure fresh data
             const cacheBuster = `?_t=${Date.now()}`;
-            console.log('🔄 Fetching match details with cache busting...', { resolvedLeagueId, resolvedMatchId });
+            console.log('ًں”„ Fetching match details with cache busting...', { resolvedLeagueId, resolvedMatchId });
 
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
             let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/matches/${resolvedMatchId}${cacheBuster}`, {
@@ -727,10 +730,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const m = normalizeMatch(matchObj);
             setMatch(m);
 
-            // 🎯 Update goals from fetched match data
+            // ًںژ¯ Update goals from fetched match data
             const hg = typeof m.homeTeamGoals === 'number' ? m.homeTeamGoals : 0;
             const ag = typeof m.awayTeamGoals === 'number' ? m.awayTeamGoals : 0;
-            console.log('✅ Match goals fetched:', { homeTeamGoals: hg, awayTeamGoals: ag });
+            console.log('âœ… Match goals fetched:', { homeTeamGoals: hg, awayTeamGoals: ag });
             setHomeGoals(hg);
             setAwayGoals(ag);
             setHomeGoalsInput(String(hg));
@@ -788,7 +791,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         if (match) {
             const hg = typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0;
             const ag = typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0;
-            console.log('🔄 Updating goals from match state:', { homeTeamGoals: hg, awayTeamGoals: ag });
+            console.log('ًں”„ Updating goals from match state:', { homeTeamGoals: hg, awayTeamGoals: ag });
             setHomeGoals(hg);
             setAwayGoals(ag);
             setHomeGoalsInput(String(hg));
@@ -1588,11 +1591,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             toast.success('Match details saved successfully!');
 
             // Trigger notification refresh for captains to see the confirmation request
-            console.log('🔔 Triggering notification refresh event');
+            console.log('ًں”” Triggering notification refresh event');
             window.dispatchEvent(new Event('refresh-notifications'));
 
-            // �️ Clear cache FIRST to ensure fresh data on next fetch
-            console.log('�️ Clearing cache for fresh data...');
+            // ï؟½ï¸ڈ Clear cache FIRST to ensure fresh data on next fetch
+            console.log('ï؟½ï¸ڈ Clearing cache for fresh data...');
             const STORAGE_PREFIX = 'cf_cache_';
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith(STORAGE_PREFIX) &&
@@ -1601,27 +1604,27 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
             });
 
-            // 📢 Dispatch event IMMEDIATELY to trigger parent refresh
-            console.log('📢 Dispatching match-updated event for match:', resolvedMatchId);
+            // ًں“¢ Dispatch event IMMEDIATELY to trigger parent refresh
+            console.log('ًں“¢ Dispatching match-updated event for match:', resolvedMatchId);
             window.dispatchEvent(new CustomEvent('match-updated', {
                 detail: { matchId: resolvedMatchId }
             }));
 
-            // ⏱️ Small delay to let parent component start fetching
+            // âڈ±ï¸ڈ Small delay to let parent component start fetching
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // 🔄 Refetch local match details
-            console.log('🔄 Refetching local match details...');
+            // ًں”„ Refetch local match details
+            console.log('ًں”„ Refetching local match details...');
             await fetchLeagueAndMatchDetails(true);
 
-            console.log('✅ Match details saved, cache cleared, events dispatched');
+            console.log('âœ… Match details saved, cache cleared, events dispatched');
 
-            // ⏱️ Another small delay before closing dialog
+            // âڈ±ï¸ڈ Another small delay before closing dialog
             await new Promise(resolve => setTimeout(resolve, 200));
 
             // Close the admin dialog after successful save
             if (onClose) {
-                console.log('🚪 Closing dialog after successful save');
+                console.log('ًںڑھ Closing dialog after successful save');
                 onClose();
             }
         } catch (err: unknown) {
@@ -1636,35 +1639,35 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // Fetch votes and set votedForId ONLY from backend
     const fetchVotes = useCallback(async () => {
         if (!token || !resolvedMatchId) return;
-        console.log('🔍 Fetching votes for match:', resolvedMatchId);
+        console.log('ًں”چ Fetching votes for match:', resolvedMatchId);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/votes`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            console.log('📡 Votes API Response Status:', response.status);
+            console.log('ًں“، Votes API Response Status:', response.status);
 
             // Check if endpoint exists (not 404 or 405)
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, use default values
-                console.warn('⚠️ Votes endpoint not found (404/405)');
+                console.warn('âڑ ï¸ڈ Votes endpoint not found (404/405)');
                 setPlayerVotes({});
                 setVotedForId(null);
                 return;
             }
 
             const data = await response.json();
-            console.log('📥 Votes API Response Data:', data);
+            console.log('ًں“¥ Votes API Response Data:', data);
             if (data.success) {
-                console.log('✅ Setting playerVotes:', data.votes);
-                console.log('✅ Setting votedForId:', data.userVote);
+                console.log('âœ… Setting playerVotes:', data.votes);
+                console.log('âœ… Setting votedForId:', data.userVote);
                 setPlayerVotes(data.votes || {});
                 setVotedForId(data.userVote || null); // <-- Always set from backend only!
             } else {
-                console.warn('⚠️ API returned success: false');
+                console.warn('âڑ ï¸ڈ API returned success: false');
             }
         } catch (error) {
-            console.error('❌ Failed to fetch votes:', error);
+            console.error('â‌Œ Failed to fetch votes:', error);
             // Use default values on error
             setPlayerVotes({});
             setVotedForId(null);
@@ -1677,10 +1680,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // Hooks for computed Impact must be unconditionally called (before any early returns)
     // Compute safe team goals context for the current user
-    const playerOnHomeTeamSafe = !!(match && user && (match.homeTeamUsers ?? []).some(p => p.id === user.id));
-    const playerOnAwayTeamSafe = !!(match && user && (match.awayTeamUsers ?? []).some(p => p.id === user.id));
+    const playerOnHomeTeamSafe = !!(match && currentUserId && (match.homeTeamUsers ?? []).some(p => String(p.id) === currentUserId));
+    const playerOnAwayTeamSafe = !!(match && currentUserId && (match.awayTeamUsers ?? []).some(p => String(p.id) === currentUserId));
     const isUserAssignedToTeam = playerOnHomeTeamSafe || playerOnAwayTeamSafe;
-    const teamGoalsSafe = (match && user)
+    const teamGoalsSafe = (match && currentUserId)
         ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
         : 0;
 
@@ -1717,10 +1720,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // For admin modal: compute impact for selected player using that player's team goals
     const adminSelectedTeamGoals = useMemo(() => {
         if (!match || !selectedPlayerForAdmin) return teamGoalsSafe;
-        const isHome = (match.homeTeamUsers ?? []).some(p => p.id === selectedPlayerForAdmin.id);
-        const isAway = (match.awayTeamUsers ?? []).some(p => p.id === selectedPlayerForAdmin.id);
+        const selectedId = String(selectedPlayerForAdmin.id || '');
+        const normalizedSelectedId = selectedId.startsWith('guest-') ? selectedId.slice(6) : selectedId;
+        const isHome = (match.homeTeamUsers ?? []).some(p => String(p.id) === selectedId);
+        const isAway = (match.awayTeamUsers ?? []).some(p => String(p.id) === selectedId);
+        const guestTeam = (match.guests || []).find(g => String(g.id) === normalizedSelectedId)?.team;
         if (isHome) return match.homeTeamGoals || 0;
         if (isAway) return match.awayTeamGoals || 0;
+        if (guestTeam === 'home') return match.homeTeamGoals || 0;
+        if (guestTeam === 'away') return match.awayTeamGoals || 0;
         return teamGoalsSafe;
     }, [selectedPlayerForAdmin, match, teamGoalsSafe]);
 
@@ -1772,7 +1780,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             toast.error('You must be assigned to a team to vote for Man of the Match.');
             return;
         }
-        if (playerId === user.id) {
+        if (String(playerId) === String(currentUserId)) {
             toast.error('You cannot vote for yourself as Man of the Match.');
             return;
         }
@@ -1798,10 +1806,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     });
                 }
                 
-                // 🆕 Trigger notification refresh for all players
+                // ًں†• Trigger notification refresh for all players
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('refresh-notifications'));
-                    console.log('🔔 Vote successful - notification refresh triggered');
+                    console.log('ًں”” Vote successful - notification refresh triggered');
                 }
             }
         } catch {
@@ -1863,14 +1871,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             }
                         });
                     }
-                    clearCacheByResource('stats', `${resolvedMatchId}_${user?.id}`);
+                    clearCacheByResource('stats', `${resolvedMatchId}_${currentUserId}`);
                 } else {
                     errors.push(statsData.message || 'Failed to save stats');
                 }
             }
 
             // 2. Save MOTM Vote (if user has voted)
-            if (votedForId && votedForId !== user?.id) {
+            if (votedForId && String(votedForId) !== String(currentUserId)) {
                 try {
                     const voteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/votes`, {
                         method: 'POST',
@@ -2035,18 +2043,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         match?.status === 'RESULT_PUBLISHED' ||
         match?.status === 'REVISION_REQUESTED';
     const isAdmin = useMemo(() => {
-        if (!user?.id || !league) return false;
-        const uid = String(user.id);
+        if (!currentUserId || !league) return false;
+        const uid = currentUserId;
         if (league.isAdmin === true) return true;
         if (league.adminId && String(league.adminId) === uid) return true;
         const admins = Array.isArray(league.administrators) ? league.administrators : [];
         const administered = Array.isArray(league.administeredLeagues) ? league.administeredLeagues : [];
         return [...admins, ...administered].some((a) => String(a?.id) === uid);
-    }, [league, user?.id]);
+    }, [league, currentUserId]);
 
     // NEW: captain role flags
-    const isHomeCaptain = !!(user && match && user.id === match.homeCaptainId);
-    const isAwayCaptain = !!(user && match && user.id === match.awayCaptainId);
+    const isHomeCaptain = !!(currentUserId && match && currentUserId === String(match.homeCaptainId || ''));
+    const isAwayCaptain = !!(currentUserId && match && currentUserId === String(match.awayCaptainId || ''));
     const isCaptainUser = isHomeCaptain || isAwayCaptain;
 
     // Helper to check if user can edit stats for a player
@@ -2063,81 +2071,93 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         return false;
     }, [user, match, isAdmin, isHomeCaptain, isAwayCaptain]);
 
-    const myTeamPlayers: User[] = useMemo(() => {
+    const myTeamPlayers: (User & { isGuest?: boolean })[] = useMemo(() => {
         if (!match) return [];
-        const team = isHomeCaptain ? match.homeTeamUsers : isAwayCaptain ? match.awayTeamUsers : [];
-        // Only real users, no guests
-        return (team ?? []) as User[];
+        const teamSide: 'home' | 'away' | null = isHomeCaptain ? 'home' : isAwayCaptain ? 'away' : null;
+        if (!teamSide) return [];
+
+        const teamUsers = (teamSide === 'home' ? match.homeTeamUsers : match.awayTeamUsers) ?? [];
+        const guestUsers = (match.guests || [])
+            .filter(g => g.team === teamSide)
+            .map(g => ({
+                id: `guest-${g.id}`,
+                guestId: g.id,
+                firstName: g.firstName,
+                lastName: g.lastName,
+                isGuest: true,
+            } as User & { isGuest: true }));
+
+        return [...teamUsers, ...guestUsers];
     }, [match, isHomeCaptain, isAwayCaptain]);
+
+    const captainPickCandidates = useMemo(
+        () => myTeamPlayers.filter(p => String(p.id) !== currentUserId),
+        [myTeamPlayers, currentUserId]
+    );
 
     const playerNameById = useCallback((id?: string | null) => {
         if (!id) return '';
-        const p = myTeamPlayers.find(u => u.id === id);
+        const p = myTeamPlayers.find(u => String(u.id) === String(id));
         return p ? `${p.firstName} ${p.lastName}` : '';
     }, [myTeamPlayers]);
 
     // NEW: Fetch existing stats for current user
     const fetchUserStats = useCallback(async () => {
-        if (!token || !resolvedMatchId || !user) return;
+        if (!token || !resolvedMatchId || !currentUserId) return;
         
-        console.log('📊 Fetching existing stats for user:', user.id);
+        console.log('ًں“ٹ Fetching existing stats for user:', currentUserId);
         
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats?playerId=${encodeURIComponent(currentUserId)}&_t=${Date.now()}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (!res.ok) {
-                console.warn('⚠️ Failed to fetch stats:', res.status);
+                console.warn('âڑ ï¸ڈ Failed to fetch stats:', res.status);
                 return;
             }
 
             const data = await res.json();
-            console.log('📊 Stats response:', data);
+            console.log('ًں“ٹ Stats response:', data);
             
-            if (data.success && Array.isArray(data.stats)) {
-                // Find stats for current user
-                const userStat = data.stats.find((s: any) => String(s.userId) === String(user.id));
-                
-                if (userStat) {
-                    console.log('✅ Found existing stats for user:', userStat);
-                    setStats({
-                        goals: userStat.goals || 0,
-                        assists: userStat.assists || 0,
-                        cleanSheets: userStat.cleanSheets || 0,
-                        penalties: userStat.penalties || 0,
-                        freeKicks: userStat.freeKicks || 0,
-                        defence: userStat.defence || 0,
-                        impact: userStat.impact || 0,
-                    });
-                    // Only show toast if user has actually submitted stats before
-                    if (userStat.goals > 0 || userStat.assists > 0 || userStat.cleanSheets > 0) {
-                        toast.success('Your previous stats have been loaded!');
-                    }
-                } else {
-                    console.log('ℹ️ No existing stats found for user');
+            const userStat = data?.success ? data?.stats : null;
+            if (userStat) {
+                console.log('âœ… Found existing stats for user:', userStat);
+                setStats({
+                    goals: userStat.goals || 0,
+                    assists: userStat.assists || 0,
+                    cleanSheets: userStat.cleanSheets || 0,
+                    penalties: userStat.penalties || 0,
+                    freeKicks: userStat.freeKicks || 0,
+                    defence: userStat.defence || 0,
+                    impact: userStat.impact || 0,
+                });
+                if (userStat.goals > 0 || userStat.assists > 0 || userStat.cleanSheets > 0) {
+                    toast.success('Your previous stats have been loaded!');
                 }
+            } else {
+                console.log('â„¹ï¸ڈ No existing stats found for user');
             }
         } catch (err) {
-            console.error('❌ Failed to fetch user stats:', err);
+            console.error('â‌Œ Failed to fetch user stats:', err);
         }
-    }, [token, resolvedMatchId, user]);
+    }, [token, resolvedMatchId, currentUserId]);
 
     // Call fetchUserStats when match or user changes
     useEffect(() => {
-        if (resolvedMatchId && token && user) {
+        if (resolvedMatchId && token && currentUserId) {
             fetchUserStats();
         }
-    }, [resolvedMatchId, token, user, fetchUserStats]);
+    }, [resolvedMatchId, token, currentUserId, fetchUserStats]);
 
     useEffect(() => {
         const loadPicks = async () => {
             if (!token || !resolvedMatchId) {
-                console.log('⏭️ Skipping captain picks load - missing token or matchId');
+                console.log('âڈ­ï¸ڈ Skipping captain picks load - missing token or matchId');
                 return;
             }
 
-            console.log('🔄 Loading captain picks for match:', resolvedMatchId);
+            console.log('ًں”„ Loading captain picks for match:', resolvedMatchId);
 
             // Determine which team the user is captain of
             const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
@@ -2149,13 +2169,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (raw) {
                     try {
                         const ls = JSON.parse(raw) as CaptainPicks;
-                        console.log('💾 Loaded captain picks from localStorage:', ls);
+                        console.log('ًں’¾ Loaded captain picks from localStorage:', ls);
                         setCaptainPicks({
                             defence: ls.defence || undefined,
                             influence: ls.influence || undefined,
                         });
                     } catch (err) {
-                        console.error('❌ Failed to parse localStorage picks:', err);
+                        console.error('â‌Œ Failed to parse localStorage picks:', err);
                     }
                 }
             }
@@ -2166,31 +2186,31 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                console.log('📡 Captain picks API response:', res.status);
+                console.log('ًں“، Captain picks API response:', res.status);
 
                 // Only disable API if endpoint doesn't exist (405 Method Not Allowed)
                 // 404 might just mean no picks saved yet, which is normal
                 if (res.status === 405) {
-                    console.warn('⚠️ Captain picks endpoint not implemented');
+                    console.warn('âڑ ï¸ڈ Captain picks endpoint not implemented');
                     setCaptainApiAvailable(false);
                     return;
                 }
 
                 if (!res.ok) {
-                    console.warn('⚠️ Failed to load captain picks:', res.status);
+                    console.warn('âڑ ï¸ڈ Failed to load captain picks:', res.status);
                     // Don't disable API, picks might just not exist yet
                     return;
                 }
 
                 setCaptainApiAvailable(true);
                 const data = await res.json();
-                console.log('🎯 Captain picks loaded from backend:', data);
+                console.log('ًںژ¯ Captain picks loaded from backend:', data);
                 
                 // Expecting shape like { home: { defence, influence }, away: { defence, influence } }
                 const picks = teamKey ? data?.[teamKey] : data?.picks;
                 
                 if (picks && typeof picks === 'object') {
-                    console.log('✅ Setting captain picks from backend:', picks);
+                    console.log('âœ… Setting captain picks from backend:', picks);
                     setCaptainPicks({
                         defence: picks.defence || undefined,
                         influence: picks.influence || undefined,
@@ -2202,13 +2222,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             defence: picks.defence || undefined,
                             influence: picks.influence || undefined,
                         }));
-                        console.log('💾 Synced captain picks to localStorage');
+                        console.log('ًں’¾ Synced captain picks to localStorage');
                     }
                 } else {
-                    console.log('ℹ️ No captain picks found for team:', teamKey);
+                    console.log('â„¹ï¸ڈ No captain picks found for team:', teamKey);
                 }
             } catch (err) {
-                console.error('❌ Failed to load captain picks:', err);
+                console.error('â‌Œ Failed to load captain picks:', err);
                 // keep local-only mode
                 setCaptainApiAvailable(false);
             }
@@ -2238,14 +2258,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const handleSelectPick = async (playerId: string, categoryOverride?: CaptainPickCategory) => {
         const category = categoryOverride ?? pickCategory;
         if (!category) return;
+        if (String(playerId) === currentUserId) {
+            toast.error('You cannot select yourself for captain bonus picks.');
+            return;
+        }
+        if (!captainPickCandidates.some(p => String(p.id) === String(playerId))) {
+            toast.error('Please select a valid player from your team.');
+            return;
+        }
 
-        console.log('🎯 Saving captain pick:', { category, playerId, resolvedMatchId });
+        console.log('ًںژ¯ Saving captain pick:', { category, playerId, resolvedMatchId });
 
         // Local update + localStorage persist
         const applyLocal = () => {
             setCaptainPicks(prev => {
                 const updated = { ...prev, [category]: playerId };
-                console.log('📝 Updated captain picks state:', updated);
+                console.log('ًں“‌ Updated captain picks state:', updated);
                 return updated;
             });
             
@@ -2254,13 +2282,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const key = `captain_picks_${resolvedMatchId}_${teamKey}`;
                 const next = { ...captainPicks, [category]: playerId };
                 localStorage.setItem(key, JSON.stringify(next));
-                console.log('💾 Saved to localStorage:', { key, pick: next });
+                console.log('ًں’¾ Saved to localStorage:', { key, pick: next });
             }
         };
 
         // If API was previously marked unavailable, avoid POST 404 entirely
         if (!captainApiAvailable) {
-            console.log('⚠️ Captain picks API not available, saving locally only');
+            console.log('âڑ ï¸ڈ Captain picks API not available, saving locally only');
             applyLocal();
             toast.success('Saved locally (captain picks API not enabled).');
             setIsPickDialogOpen(false);
@@ -2270,7 +2298,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
         setSavingPick(true);
         try {
-            console.log('📡 Sending captain pick to backend:', { category, playerId });
+            console.log('ًں“، Sending captain pick to backend:', { category, playerId });
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                 method: 'POST',
                 headers: {
@@ -2282,7 +2310,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             // If endpoint doesn't exist, mark as unavailable for future calls
             if (res.status === 404 || res.status === 405) {
-                console.error('❌ Captain picks endpoint not found:', res.status);
+                console.error('â‌Œ Captain picks endpoint not found:', res.status);
                 setCaptainApiAvailable(false);
                 applyLocal();
                 toast.error('Captain picks API not available. Saved locally.');
@@ -2291,12 +2319,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                console.error('❌ Failed to save captain pick:', res.status, errorData);
+                console.error('â‌Œ Failed to save captain pick:', res.status, errorData);
                 throw new Error(errorData.message || 'Failed to save pick');
             }
 
             const responseData = await res.json();
-            console.log('✅ Captain pick saved to backend:', responseData);
+            console.log('âœ… Captain pick saved to backend:', responseData);
 
             applyLocal();
             toast.success(`${category === 'defence' ? 'Defensive Impact' : '+ Mentality'} captain pick saved!`);
@@ -2305,7 +2333,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 err instanceof Error ? err.message :
                     typeof err === 'string' ? err :
                         'Failed to save pick';
-            console.error('❌ Error saving captain pick:', err);
+            console.error('â‌Œ Error saving captain pick:', err);
             toast.error(message);
         } finally {
             setSavingPick(false);
@@ -2391,7 +2419,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             const data = await response.json();
 
             if (data.success) {
-                // 🔄 Clear stats cache for this player to force fresh fetch
+                // ًں”„ Clear stats cache for this player to force fresh fetch
                 clearCacheByResource('stats', `${resolvedMatchId}_${selectedPlayerForAdmin.id}`);
                 
                 toast.success(`Stats added for ${selectedPlayerForAdmin.firstName} ${selectedPlayerForAdmin.lastName}`);
@@ -2467,7 +2495,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         {error ? (
                             <Alert severity="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{error}</Alert>
                         ) : (
-                            <Typography variant="body1" sx={{ color: '#E5E7EB', mb: 2 }}>Loading match details…</Typography>
+                            <Typography variant="body1" sx={{ color: '#E5E7EB', mb: 2 }}>Loading match detailsâ€¦</Typography>
                         )}
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 120 }}>
                             <CircularProgress sx={{ color: '#fff' }} />
@@ -2550,7 +2578,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const guestUsersHome: (User & { isGuest: true })[] = (match.guests || [])
         .filter(g => g.team === 'home')
         .map(g => ({
-            id: g.id, // keep id (used only as key) – not linking to player profile
+            id: `guest-${g.id}`,
+            guestId: g.id,
             firstName: g.firstName,
             lastName: g.lastName,
             // shirtNumber: g.shirtNumber,
@@ -2560,7 +2589,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const guestUsersAway: (User & { isGuest: true })[] = (match.guests || [])
         .filter(g => g.team === 'away')
         .map(g => ({
-            id: g.id,
+            id: `guest-${g.id}`,
+            guestId: g.id,
             firstName: g.firstName,
             lastName: g.lastName,
             // shirtNumber: g.shirtNumber,
@@ -2570,18 +2600,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const homePlayersAll: (User & { isGuest?: boolean })[] = [...(match?.homeTeamUsers ?? []), ...guestUsersHome];
     const awayPlayersAll: (User & { isGuest?: boolean })[] = [...(match?.awayTeamUsers ?? []), ...guestUsersAway];
 
-    // Players eligible for voting / dropdowns (exclude guests)
-    const allPlayersForVoting: User[] = [...homePlayersAll, ...awayPlayersAll].filter(
-        (p): p is User => !Object.prototype.hasOwnProperty.call(p, 'isGuest')
-    );
-
+    // Players eligible for voting / dropdowns (include guests)
+    const allPlayersForVoting: (User & { isGuest?: boolean })[] = [...homePlayersAll, ...awayPlayersAll];
     // Summary row selections
     const motmPlayer = votedForId ? allPlayersForVoting.find(p => p.id === votedForId) : undefined;
     const defensivePlayer = captainPicks.defence ? allPlayersForVoting.find(p => p.id === captainPicks.defence) : undefined;
     const mentalityPlayer = captainPicks.influence ? allPlayersForVoting.find(p => p.id === captainPicks.influence) : undefined;
     // Debug log to verify state after refresh and voting
     console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
-    console.log('🔍 All Players for Voting:', allPlayersForVoting.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, votes: playerVotes[p.id] || 0 })));
+    console.log('ًں”چ All Players for Voting:', allPlayersForVoting.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, votes: playerVotes[p.id] || 0 })));
 
     const content = (
         <Box sx={{ 
@@ -2876,7 +2903,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         displayEmpty: true,
                                         renderValue: (selected) => {
                                             const selectedPlayer = allPlayersForVoting.find(p => p.id === selected);
-                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select Man Of The Match Player';
+                                            return selectedPlayer
+                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                : 'Select Man Of The Match Player';
                                         },
                                         MenuProps: {
                                             PaperProps: {
@@ -2909,11 +2938,13 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 >
                                     {allPlayersForVoting.map((p) => {
                                         const selected = votedForId === p.id;
-                                        console.log(`🎯 Player ${p.firstName} ${p.lastName} (${p.id}):`, { selected, votedForId, playerVotesForThisPlayer: playerVotes[p.id] });
+                                        const isSelf = String(p.id) === currentUserId;
+                                        console.log(`ًںژ¯ Player ${p.firstName} ${p.lastName} (${p.id}):`, { selected, votedForId, playerVotesForThisPlayer: playerVotes[p.id] });
                                         return (
                                             <MenuItem 
                                                 key={p.id} 
                                                 value={p.id}
+                                                disabled={isSelf}
                                                 sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -2950,6 +2981,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {p.firstName} {p.lastName}
                                                 </Typography>
+                                                {p.isGuest && (
+                                                    <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
+                                                        (Guest)
+                                                    </Typography>
+                                                )}
                                                      {selected && (
                                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
                                                         <Check size={12} />
@@ -2978,7 +3014,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         displayEmpty: true,
                                         renderValue: (selected) => {
                                             const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
-                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select Defensive Impact Player';
+                                            return selectedPlayer
+                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                : 'Select Defensive Impact Player';
                                         },
                                         MenuProps: {
                                             PaperProps: {
@@ -3009,7 +3047,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& .MuiSvgIcon-root': { color: '#fff' },
                                     }}
                                 >
-                                    {myTeamPlayers.map((p) => {
+                                    {captainPickCandidates.map((p) => {
                                         const selected = captainPicks.defence === p.id;
                                         return (
                                             <MenuItem 
@@ -3049,6 +3087,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {p.firstName} {p.lastName}
                                                 </Typography>
+                                                {p.isGuest && (
+                                                    <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
+                                                        (Guest)
+                                                    </Typography>
+                                                )}
                                                 {selected && (
                                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
                                                         <Check size={12} />
@@ -3077,7 +3120,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         displayEmpty: true,
                                         renderValue: (selected) => {
                                             const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
-                                            return selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Select + Mentality Player';
+                                            return selectedPlayer
+                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                : 'Select + Mentality Player';
                                         },
                                         MenuProps: {
                                             PaperProps: {
@@ -3108,7 +3153,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& .MuiSvgIcon-root': { color: '#fff' },
                                     }}
                                 >
-                                    {myTeamPlayers.map((p) => {
+                                    {captainPickCandidates.map((p) => {
                                         const selected = captainPicks.influence === p.id;
                                         return (
                                             <MenuItem 
@@ -3148,6 +3193,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {p.firstName} {p.lastName}
                                                 </Typography>
+                                                {p.isGuest && (
+                                                    <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
+                                                        (Guest)
+                                                    </Typography>
+                                                )}
                                                 {selected && (
                                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
                                                         <Check size={12} />
@@ -3242,7 +3292,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        {motmPlayer ? `${motmPlayer.firstName} ${motmPlayer.lastName}` : 'Not selected'}
+                                        {motmPlayer ? `${motmPlayer.firstName} ${motmPlayer.lastName}${motmPlayer.isGuest ? ' (Guest)' : ''}` : 'Not selected'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -3291,7 +3341,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }}
                                     >
                                         {defensivePlayer
-                                            ? `${defensivePlayer.firstName} ${defensivePlayer.lastName}`
+                                            ? `${defensivePlayer.firstName} ${defensivePlayer.lastName}${defensivePlayer.isGuest ? ' (Guest)' : ''}`
                                             : 'Not selected'}
                                     </Typography>
                                 </Box>
@@ -3341,7 +3391,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }}
                                     >
                                         {mentalityPlayer
-                                            ? `${mentalityPlayer.firstName} ${mentalityPlayer.lastName}`
+                                            ? `${mentalityPlayer.firstName} ${mentalityPlayer.lastName}${mentalityPlayer.isGuest ? ' (Guest)' : ''}`
                                             : 'Not selected'}
                                     </Typography>
                                 </Box>
@@ -3383,7 +3433,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 </DialogTitle>
                 <DialogContent dividers sx={dialogContentSx}>
                     <Box sx={{ display: 'grid', gap: 1 }}>
-                        {myTeamPlayers.map(p => (
+                        {captainPickCandidates.map(p => (
                             <Button
                                 key={p.id}
                                 onClick={() => handleSelectPick(p.id)}
@@ -3396,10 +3446,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                                 }}
                             >
-                                {p.firstName} {p.lastName}
+                                {p.firstName} {p.lastName}{p.isGuest ? ' (Guest)' : ''}
                             </Button>
                         ))}
-                        {myTeamPlayers.length === 0 && (
+                        {captainPickCandidates.length === 0 && (
                             <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
                                 No players available.
                             </Typography>
@@ -3421,7 +3471,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     {leaguesLoading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <CircularProgress size={18} sx={{ color: '#fff' }} />
-                            <Typography sx={{ color: '#E5E7EB' }}>Loading leagues…</Typography>
+                            <Typography sx={{ color: '#E5E7EB' }}>Loading leaguesâ€¦</Typography>
                         </Box>
                     )}
                     {leaguesError && (
@@ -3543,7 +3593,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     {matchesLoading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <CircularProgress size={18} sx={{ color: '#fff' }} />
-                            <Typography sx={{ color: '#E5E7EB' }}>Loading matches…</Typography>
+                            <Typography sx={{ color: '#E5E7EB' }}>Loading matchesâ€¦</Typography>
                         </Box>
                     )}
                     {matchesError && (
@@ -3562,7 +3612,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         const mid = String(m.id || '');
                                         if (!lid || !mid) return;
 
-                                        console.log('🎯 Match selected:', {
+                                        console.log('ًںژ¯ Match selected:', {
                                             matchId: mid,
                                             leagueId: lid,
                                             teams: `${m.homeTeamName} vs ${m.awayTeamName}`
@@ -3596,7 +3646,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             {m.homeTeamName} vs {m.awayTeamName}
                                         </Typography>
                                         <Typography variant="body2" sx={{ opacity: 0.9, color: '#B0BEC5' }}>
-                                            {m.date ? new Date(m.date).toLocaleString() : 'Date: N/A'}{m.location ? ` • ${m.location}` : ''}
+                                            {m.date ? new Date(m.date).toLocaleString() : 'Date: N/A'}{m.location ? ` â€¢ ${m.location}` : ''}
                                         </Typography>
                                     </Box>
                                 </Button>

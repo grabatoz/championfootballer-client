@@ -253,8 +253,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         if (data?.success && Array.isArray(data.stats)) {
           const statsMap: Record<string, MatchStatLite> = {};
           data.stats.forEach((s: any) => {
-            const uid = String(s.userId || s.user?.id || '');
-            if (!uid) return;
+            const displayUid = String(s.displayUserId || s.userDisplayId || '');
+            const rawUid = String(s.userId || s.user?.id || '');
+            if (!displayUid && !rawUid) return;
             const entry: MatchStatLite = {
               goals: Number(s.goals) || 0,
               assists: Number(s.assists) || 0,
@@ -266,15 +267,48 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
               // Source XP strictly from match_statistics (xpAwarded/xp_awarded)
               xpAwarded: Number(s.xpAwarded ?? s.xp_awarded) || 0,
             };
-            // Map to both raw id and guest-prefixed id so both work
-            statsMap[uid] = entry;
-            statsMap[`guest-${uid}`] = entry;
+            // Canonical match row key (guest mirrors are returned as guest-<guestId>).
+            if (displayUid) statsMap[displayUid] = entry;
+            // Backward-compatible aliases for older backend responses.
+            if (rawUid) {
+              statsMap[rawUid] = entry;
+              statsMap[`guest-${rawUid}`] = entry;
+            }
           });
           setPerPlayerStats(statsMap);
         }
       } catch { /* ignore */ }
     })();
   }, [token, matchId, match]);
+
+  // Prefer canonical captain picks endpoint so guest picks are returned as guest-<id> display IDs.
+  useEffect(() => {
+    if (!token || !match?.id) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}/captain-picks?_t=${Date.now()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        if (!active || !data?.success) return;
+        setMatch(prev => {
+          if (!prev || prev.id !== match.id) return prev;
+          return {
+            ...prev,
+            homeDefensiveImpactId: data?.home?.defence ?? null,
+            awayDefensiveImpactId: data?.away?.defence ?? null,
+            homeMentalityId: data?.home?.influence ?? null,
+            awayMentalityId: data?.away?.influence ?? null,
+          };
+        });
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { active = false; };
+  }, [token, match?.id]);
 
   // Automatically select home team on load if match is loaded
   useEffect(() => {
@@ -324,13 +358,17 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   }, [matchId, fetchVotes]);
   const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
 
+  const toApiPlayerId = (playerId: string): string =>
+    String(playerId || '').startsWith('guest-') ? String(playerId).slice(6) : String(playerId);
+
   // Admin: open player stats editor
   const handleOpenPlayerEdit = async (player: User & { __team?: 'home' | 'away' }) => {
     if (!token || !matchId) return;
     setEditingPlayer(player);
     setEditStatsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${player.id}&_t=${Date.now()}`, {
+      const apiPlayerId = toApiPlayerId(player.id);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats?playerId=${apiPlayerId}&_t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -359,8 +397,11 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     if (!editingPlayer || !token || !matchId) return;
     setEditStatsSaving(true);
     try {
+      const apiPlayerId = toApiPlayerId(editingPlayer.id);
       // Compute contribution % to match backend/client formula
-      const isHome = (match?.homeTeamUsers ?? []).some(p => p.id === editingPlayer.id);
+      const isHome = editingPlayer.__team
+        ? editingPlayer.__team === 'home'
+        : (match?.homeTeamUsers ?? []).some(p => p.id === apiPlayerId);
       const teamGoals = isHome ? (match?.homeTeamGoals ?? 0) : (match?.awayTeamGoals ?? 0);
       const goalContribution = teamGoals > 0 ? (editStats.goals / teamGoals) * 100 : 0;
       const assistContribution = teamGoals > 0 ? (editStats.assists / teamGoals) * 50 : 0;
@@ -372,7 +413,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerId: editingPlayer.id,
+          playerId: apiPlayerId,
           ...editStats,
           defence: 0,
           penalties: 0,
