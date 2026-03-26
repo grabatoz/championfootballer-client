@@ -1487,7 +1487,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         {/* View toggle row: Home count | Table/Pitch buttons | Away count */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, mb: 1.5 }}>
           <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#00a77f' }}>
-            Home ({homePlayers.length + homeGuests.length})
+            {homeTeamName} ({homeTeamGoals ?? 0})
           </Typography>
           <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: 0.75, display: 'flex', gap: 1 }}>
             <Box
@@ -1520,7 +1520,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             </Box>
           </Box>
           <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#c95c1a' }}>
-            ({awayPlayers.length + awayGuests.length}) Away
+            {awayTeamName} ({awayTeamGoals ?? 0})
           </Typography>
         </Box>
         {/* Formation card */}
