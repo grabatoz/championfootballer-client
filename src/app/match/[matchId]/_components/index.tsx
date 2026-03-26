@@ -263,7 +263,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
               freeKicks: Number(s.freeKicks) || 0,
               defence: Number(s.defence) || 0,
               impact: Number(s.impact) || 0,
-              xpAwarded: Number(s.xpAwarded) || 0,
+              // Source XP strictly from match_statistics (xpAwarded/xp_awarded)
+              xpAwarded: Number(s.xpAwarded ?? s.xp_awarded) || 0,
             };
             // Map to both raw id and guest-prefixed id so both work
             statsMap[uid] = entry;
@@ -632,7 +633,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   ...guestPlayers
                 ];
 
-                // Always order table by highest to lowest points (XP first, with sensible fallbacks)
+                // Always order table by highest to lowest points using match_statistics XP.
                 const getStats = (player: PlayerWithTeam): Partial<MatchStatLite> => {
                   const embedded = (player.statistics?.[0] as Partial<MatchStatLite>) || {};
                   return perPlayerStats[player.id] || embedded || {};
@@ -640,13 +641,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
 
                 const getPoints = (player: PlayerWithTeam): number => {
                   const s = getStats(player);
-                  // Prefer xpAwarded when available; fall back to impact, then goals, then assists
-                  return (
-                    (typeof s.xpAwarded === 'number' ? s.xpAwarded : undefined) ??
-                    (typeof s.impact === 'number' ? s.impact : undefined) ??
-                    (typeof s.goals === 'number' ? s.goals : undefined) ??
-                    (typeof s.assists === 'number' ? s.assists : 0)
-                  );
+                  return typeof s.xpAwarded === 'number' ? s.xpAwarded : 0;
                 };
 
                 // Calculate DEF IMP and MENTALITY vote counts per player
@@ -952,7 +947,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         textAlign: 'center', 
                                         fontSize: { xs: 11, sm: 12, md: 14 },
                                         fontWeight: 700
-                                      }}>{stats.xpAwarded || stats.impact || 0}</Box>
+                                      }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
                                       </Box>
                                     </Box>
                                   ) : (
@@ -995,7 +990,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{stats.xpAwarded || stats.impact || 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
                                       </Box>
                                     </Link>
                                   )}
