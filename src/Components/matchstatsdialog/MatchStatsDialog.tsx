@@ -1684,22 +1684,24 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
         : 0;
 
-    // Compute Impact % based on weighted normalized metrics (image spec). Always defined.
+    // Compute Impact % to match backend/client-shared contribution formula.
     const computeImpactPercent = useCallback(
         (s: { goals: number; assists: number; cleanSheets: number; defence: number }, tGoals: number) => {
-            const safeMax = (n: number) => Math.max(1, n || 0);
-            const metrics = [
-                { value: s.goals, max: safeMax(tGoals), weight: 0.3 },
-                { value: s.assists, max: safeMax(tGoals), weight: 0.2 },
-                { value: s.cleanSheets, max: 1, weight: 0.1 },
-                { value: s.defence, max: 1, weight: 0.2 },
-                // MOTM votes weight (0.2) intentionally omitted
-            ];
-            const active = metrics.filter(m => m.max > 0);
-            const sumW = active.reduce((a, b) => a + b.weight, 0) || 1;
-            const score01 = active.reduce((acc, m) => acc + (Math.min(m.value, m.max) / m.max) * (m.weight / sumW), 0);
-            const percent = Math.max(0.10, Math.min(1, score01)) * 100; // clamp to [10%, 100%]
-            return Math.round(percent);
+            const safeGoals = Math.max(0, Number(s.goals) || 0);
+            const safeAssists = Math.max(0, Number(s.assists) || 0);
+            const safeCleanSheets = Math.max(0, Number(s.cleanSheets) || 0);
+            const safeDefence = Math.max(0, Number(s.defence) || 0);
+            const teamGoals = Math.max(0, Number(tGoals) || 0);
+
+            const goalContribution = teamGoals > 0 ? (safeGoals / teamGoals) * 100 : 0;
+            const assistContribution = teamGoals > 0 ? (safeAssists / teamGoals) * 50 : 0;
+            const cleanSheetContribution = safeCleanSheets > 0 ? 15 * safeCleanSheets : 0;
+            const defensiveContribution = safeDefence * 10;
+            const raw = goalContribution + assistContribution + cleanSheetContribution + defensiveContribution;
+
+            // Participation default when no contribution action exists.
+            if (raw <= 0) return 15;
+            return Math.max(0, Math.min(100, Math.round(raw)));
         },
         []
     );
@@ -3374,7 +3376,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             {/* --- NEW: Player selection dialog (team-restricted) --- */}
             <Dialog open={isPickDialogOpen} onClose={() => setIsPickDialogOpen(false)} fullWidth maxWidth="xs" PaperProps={{ sx: dialogPaperSx }}>
                 <DialogTitle sx={dialogTitleSx}>
-                    {pickCategory === 'defence' ? 'Select player for Defensive Impact' : 'Select player for Influence'}
+                    {pickCategory === 'defence' ? 'Select player for Defensive Impact' : 'Select player for + Mentality'}
                     <IconButton onClick={() => setIsPickDialogOpen(false)} size="small" sx={{ color: '#fff' }}>
                         <CloseIcon />
                     </IconButton>

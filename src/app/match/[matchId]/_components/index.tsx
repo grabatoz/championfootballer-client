@@ -359,11 +359,14 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     if (!editingPlayer || !token || !matchId) return;
     setEditStatsSaving(true);
     try {
-      // Compute impact based on team goals
+      // Compute contribution % to match backend/client formula
       const isHome = (match?.homeTeamUsers ?? []).some(p => p.id === editingPlayer.id);
       const teamGoals = isHome ? (match?.homeTeamGoals ?? 0) : (match?.awayTeamGoals ?? 0);
-      const total = editStats.goals + editStats.assists + editStats.cleanSheets;
-      const impact = teamGoals > 0 ? Math.round((total / teamGoals) * 100) : 0;
+      const goalContribution = teamGoals > 0 ? (editStats.goals / teamGoals) * 100 : 0;
+      const assistContribution = teamGoals > 0 ? (editStats.assists / teamGoals) * 50 : 0;
+      const cleanSheetContribution = editStats.cleanSheets > 0 ? 15 * editStats.cleanSheets : 0;
+      const rawContribution = goalContribution + assistContribution + cleanSheetContribution;
+      const impact = rawContribution > 0 ? Math.max(0, Math.min(100, Math.round(rawContribution))) : 15;
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/stats`, {
         method: 'POST',
