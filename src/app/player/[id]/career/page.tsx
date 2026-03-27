@@ -79,6 +79,7 @@ interface PlayerMatchStats {
   defence?: number;
   freeKicks?: number;
   penalties?: number;
+  xpAwarded?: number;
   result?: 'W' | 'L' | 'D';
 }
 
@@ -283,14 +284,41 @@ const StrengthRow = ({ title, you, diff, up, showComparison }: {
 // ---------- HELPERS ----------
 function calcPoints(ps: PlayerMatchStats | undefined): number {
   if (!ps) return 0;
-  return (ps.goals || 0) * 4
-    + (ps.assists || 0) * 3
-    + (ps.cleanSheets || 0) * 3
-    + (ps.motmVotes || 0) * 2
-    + (ps.impact || 0)
-    + (ps.defence || 0)
-    + (ps.freeKicks || 0) * 2
-    + (ps.penalties || 0) * 2;
+  // Canonical dashboard points = per-match XP already calculated by backend.
+  return typeof ps.xpAwarded === 'number' ? ps.xpAwarded : 0;
+}
+
+function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L' | 'D' | null {
+  const explicit = match.playerStats?.result || match.result || match.outcome;
+  if (explicit) {
+    const up = String(explicit).toUpperCase();
+    if (up === 'W' || up === 'WIN') return 'W';
+    if (up === 'D' || up === 'DRAW') return 'D';
+    if (up === 'L' || up === 'LOSS' || up === 'LOSE') return 'L';
+  }
+
+  if (match.homeTeamGoals != null && match.awayTeamGoals != null) {
+    const pid = String(playerId || '');
+    const isHomeFromList = (match.homeTeamUsers || []).some(u => String(u.id) === pid);
+    const isAwayFromList = (match.awayTeamUsers || []).some(u => String(u.id) === pid);
+    const isHome = isHomeFromList || (!isAwayFromList && String(match.homeTeamId || '') === pid);
+    const teamGoals = isHome ? Number(match.homeTeamGoals) : Number(match.awayTeamGoals);
+    const oppGoals = isHome ? Number(match.awayTeamGoals) : Number(match.homeTeamGoals);
+    if (teamGoals === oppGoals) return 'D';
+    return teamGoals > oppGoals ? 'W' : 'L';
+  }
+
+  if (match.team1Score != null && match.team2Score != null) {
+    const pid = String(playerId || '');
+    const isTeam1FromList = (match.team1Players || []).some(p => String(p.id) === pid);
+    const isTeam1 = isTeam1FromList || String(match.team1Id || '') === pid;
+    const teamGoals = isTeam1 ? Number(match.team1Score) : Number(match.team2Score);
+    const oppGoals = isTeam1 ? Number(match.team2Score) : Number(match.team1Score);
+    if (teamGoals === oppGoals) return 'D';
+    return teamGoals > oppGoals ? 'W' : 'L';
+  }
+
+  return null;
 }
 
 // ---------- COMPONENT ----------
@@ -729,7 +757,7 @@ export default function CareerPage() {
       value,
       scaled: Math.round((value / maxVal) * 100)
     }));
-  }, [filteredMatches]);
+  }, [filteredMatches, playerId]);
 
   // Compute top strengths as the most effective ways points are earned
   // We map player match stats into contribution buckets, then rank by scaled value
@@ -818,29 +846,15 @@ export default function CareerPage() {
         console.log('Sample playerStats fields:', arr[0].playerStats);
       }
       
-      // Method 1: Try using playerStats.result
-      let wins = count(arr, ps => ps.result === 'W');
-      let draws = count(arr, ps => ps.result === 'D'); 
-      let losses = count(arr, ps => ps.result === 'L');
-      
-      // Method 2: If no results, use sample calculation based on impact
-      if (wins === 0 && losses === 0 && draws === 0 && n > 0) {
-        // Create sample data based on impact scores
-        const avgImpact = n ? sum(arr, ps => ps.impact || 0) / n : 0;
-        if (avgImpact > 5) {
-          wins = Math.floor(n * 0.6); // High impact = more wins
-          losses = Math.floor(n * 0.25);
-          draws = n - wins - losses;
-        } else if (avgImpact > 3) {
-          wins = Math.floor(n * 0.45); // Medium impact = balanced
-          losses = Math.floor(n * 0.35);
-          draws = n - wins - losses;
-        } else {
-          wins = Math.floor(n * 0.3); // Low impact = fewer wins
-          losses = Math.floor(n * 0.5);
-          draws = n - wins - losses;
-        }
-      }
+      let wins = 0;
+      let draws = 0;
+      let losses = 0;
+      arr.forEach((m) => {
+        const result = resolveResultForPlayer(m, String(playerId || ''));
+        if (result === 'W') wins += 1;
+        else if (result === 'D') draws += 1;
+        else if (result === 'L') losses += 1;
+      });
 
       const winRate = n ? (wins / n) * 100 : 0;
       const motmVotes = sum(arr, ps => ps.motmVotes || 0);
@@ -849,13 +863,8 @@ export default function CareerPage() {
       const assists = sum(arr, ps => ps.assists || 0);
       const cleanSheets = sum(arr, ps => ps.cleanSheets || 0);
       
-      // Calculate Game Contribution Index as percentage
-      // Formula: Average contributions per match (goals, assists, clean sheets, MOTM votes)
-      // Each contribution is weighted and normalized to 0-100% scale
-      const totalContributions = goals + assists + cleanSheets + motmVotes;
-      const avgContributions = n ? (totalContributions / n) : 0; // Average per match
-      // Normalize: Assume max realistic is 5 contributions per match = 100%
-      const impactAvg = Math.min(100, (avgContributions / 5) * 100);
+      // Match Contribution Index from backend impact (already a 0-100 percentage per match).
+      const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
       
       // For xG/xA/xCS: count matches where player scored/assisted/kept clean sheet (at least once)
       const matchesWithGoals = count(arr, ps => (ps.goals || 0) > 0);
@@ -868,7 +877,7 @@ export default function CareerPage() {
     };
 
     return { last: agg(last10), prev: agg(prev10) };
-  }, [filteredMatches]);
+  }, [filteredMatches, playerId]);
 
   // Aggregated stats for current filters ("Your Stats") - ALL filtered matches
   const yourStats = useMemo(() => {
@@ -878,47 +887,12 @@ export default function CareerPage() {
 
     const n = arr.length || 0;
     let wins = 0, draws = 0, losses = 0;
-
-    // Calculate wins/losses from match scores
-    if (n > 0) {
-      arr.forEach(m => {
-        // Try homeTeamGoals/awayTeamGoals first (most common)
-        if (m.homeTeamGoals != null && m.awayTeamGoals != null) {
-          // Determine if player was on home or away team
-          const isHomePlayer = m.homeTeamUsers?.some((u: any) => String(u.id) === String(playerId));
-          
-          if (m.homeTeamGoals === m.awayTeamGoals) {
-            draws++;
-          } else if ((isHomePlayer && m.homeTeamGoals > m.awayTeamGoals) || (!isHomePlayer && m.awayTeamGoals > m.homeTeamGoals)) {
-            wins++;
-          } else {
-            losses++;
-          }
-          return;
-        }
-        
-        // Fallback to team1Score/team2Score
-        if (m.team1Score != null && m.team2Score != null) {
-          const isTeam1 = m.team1Players?.some(p => String(p.id) === String(playerId));
-          if (m.team1Score === m.team2Score) {
-            draws++;
-          } else if ((isTeam1 && m.team1Score > m.team2Score) || (!isTeam1 && m.team2Score > m.team1Score)) {
-            wins++;
-          } else {
-            losses++;
-          }
-          return;
-        }
-        
-        // Last resort: check result field if available
-        if (m.result) {
-          const r = String(m.result).toUpperCase();
-          if (r === 'W') wins++;
-          else if (r === 'D') draws++;
-          else if (r === 'L') losses++;
-        }
-      });
-    }
+    arr.forEach((m) => {
+      const result = resolveResultForPlayer(m, String(playerId || ''));
+      if (result === 'W') wins += 1;
+      else if (result === 'D') draws += 1;
+      else if (result === 'L') losses += 1;
+    });
     
     console.log('🏆 Win Rate Debug:', { total: n, wins, draws, losses, winRate: n ? (wins/n)*100 : 0 });
 
@@ -952,12 +926,8 @@ export default function CareerPage() {
       xCS: (matchesWithCleanSheets / Math.max(n, 1) * 100).toFixed(1) + '%'
     });
     
-    // Calculate Game Contribution Index as percentage
-    // Formula: Average contributions per match normalized to 0-100%
-    const totalContributions = goals + assists + cleanSheets + motmVotes;
-    const avgContributions = n ? (totalContributions / n) : 0;
-    // Normalize: Assume max realistic is 5 contributions per match = 100%
-    const impactAvg = Math.min(100, (avgContributions / 5) * 100);
+    // Match Contribution Index from backend impact (already a 0-100 percentage per match).
+    const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
     
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
@@ -1070,29 +1040,10 @@ export default function CareerPage() {
 
     const arr = winLossMatches;
     arr.forEach(match => {
-      // Prefer explicit per-player result
-      const r = match.playerStats?.result || match.result || match.outcome;
-      if (r) {
-        const up = String(r).toUpperCase();
-        if (up === 'W' || up === 'WIN') wins++;
-        else if (up === 'L' || up === 'LOSS' || up === 'LOSE') losses++;
-        else if (up === 'D' || up === 'DRAW') draws++;
-        return;
-      }
-      // Try team score comparisons
-      if (match.team1Score != null && match.team2Score != null) {
-        const isTeam1 = match.team1Players?.some(p => p.id === String(playerId)) || match.team1Id === String(playerId);
-        if (match.team1Score === match.team2Score) draws++;
-        else if ((isTeam1 && match.team1Score > match.team2Score) || (!isTeam1 && match.team2Score > match.team1Score)) wins++;
-        else losses++;
-        return;
-      }
-      if (match.homeTeamGoals != null && match.awayTeamGoals != null) {
-        const isHome = match.homeTeamId === String(playerId);
-        if (match.homeTeamGoals === match.awayTeamGoals) draws++;
-        else if ((isHome && match.homeTeamGoals > match.awayTeamGoals) || (!isHome && match.awayTeamGoals > match.homeTeamGoals)) wins++;
-        else losses++;
-      }
+      const result = resolveResultForPlayer(match, String(playerId || ''));
+      if (result === 'W') wins += 1;
+      else if (result === 'D') draws += 1;
+      else if (result === 'L') losses += 1;
     });
 
     const total = wins + losses + draws;

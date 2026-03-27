@@ -57,10 +57,10 @@ const BLUE_FILTER = 'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) b
 
 type TrophyAward = {
     leagueName: string;
-    winnerId: string;
+    winnerId?: string | null;
     winnerName?: string;
     winner?: string;
-    winner_id?: string;
+    winner_id?: string | null;
 };
 
 type AllTrophyAward = {
@@ -78,6 +78,9 @@ type LeagueMatch = {
     date: string;
     end?: string;
     location?: string;
+    homeTeamGoals?: number;
+    awayTeamGoals?: number;
+    result?: 'W' | 'D' | 'L' | string;
     playerStats?: {
         freeKicks: number;
         defence: number;
@@ -87,7 +90,13 @@ type LeagueMatch = {
         assists?: number;
         cleanSheets?: number;
         motmVotes?: number;
+        xpAwarded?: number;
+        result?: 'W' | 'D' | 'L' | string;
     };
+    homeTeamUsers?: Array<{ id: string }>;
+    awayTeamUsers?: Array<{ id: string }>;
+    homeTeam?: { players?: Array<{ id?: string; _id?: string }> };
+    awayTeam?: { players?: Array<{ id?: string; _id?: string }> };
 };
 
 type LeagueWithMatchesTyped = {
@@ -99,6 +108,38 @@ type LeagueWithMatchesTyped = {
 // Type guard to safely detect leagues that include matches
 function hasMatches(l: unknown): l is LeagueWithMatchesTyped {
     return typeof l === 'object' && l !== null && Array.isArray((l as { matches?: unknown }).matches);
+}
+
+function normalizeResult(input: unknown): 'W' | 'D' | 'L' | null {
+    const v = String(input ?? '').trim().toUpperCase();
+    if (v === 'W' || v === 'WIN') return 'W';
+    if (v === 'D' || v === 'DRAW') return 'D';
+    if (v === 'L' || v === 'LOSS' || v === 'LOSE') return 'L';
+    return null;
+}
+
+function resolveMatchResult(match: LeagueMatch, playerId?: string): 'W' | 'D' | 'L' | null {
+    const explicit = normalizeResult(match.playerStats?.result ?? match.result);
+    if (explicit) return explicit;
+
+    if (typeof match.homeTeamGoals !== 'number' || typeof match.awayTeamGoals !== 'number') {
+        return null;
+    }
+
+    const pid = String(playerId || '');
+    const isHomeByUsers = (match.homeTeamUsers || []).some(u => String(u.id) === pid);
+    const isAwayByUsers = (match.awayTeamUsers || []).some(u => String(u.id) === pid);
+    const isHomeByLegacy = (match.homeTeam?.players || []).some(p => String((p?.id ?? p?._id) || '') === pid);
+    const isAwayByLegacy = (match.awayTeam?.players || []).some(p => String((p?.id ?? p?._id) || '') === pid);
+
+    const isHome = isHomeByUsers || isHomeByLegacy;
+    const isAway = isAwayByUsers || isAwayByLegacy;
+    if (!isHome && !isAway) return null;
+
+    const teamGoals = isHome ? Number(match.homeTeamGoals) : Number(match.awayTeamGoals);
+    const oppGoals = isHome ? Number(match.awayTeamGoals) : Number(match.homeTeamGoals);
+    if (teamGoals === oppGoals) return 'D';
+    return teamGoals > oppGoals ? 'W' : 'L';
 }
 
 // AbortError type guard (replaces (err as any) usage)
@@ -174,22 +215,12 @@ function sumStatsFromMatches(matches: LeagueMatch[] = []): StatTotals {
     }, { ...emptyTotals });
 }
 
-// Calculate XP from stats (fallback approximation - assumes average win rate)
-// Note: This is only used if the backend API fails. The actual calculation uses match-by-match data.
-function calculateXP(stats: StatTotals): number {
-    // Rough approximation: assume 50% win rate for averaged multipliers
-    // Team bonus: ~18 per match (average of 30 win, 15 draw, 10 lose)
-    // Goals: 2.5 avg (between 3 win, 2 lose)
-    // Assists: 1.5 avg (between 2 win, 1 lose)
-    // Clean Sheets: 5 (flat)
-    // MOTM: 1.5 avg (between 2 win, 1 lose)
-    // Impact: Removed from new system
-    return (
-        stats.goals * 2.5 +
-        stats.assists * 1.5 +
-        stats.cleanSheets * 5 +
-        stats.motmVotes * 1.5
-    );
+// Canonical fallback XP: sum backend-provided per-match xpAwarded values.
+function sumXPAwardedFromMatches(matches: LeagueMatch[] = []): number {
+    return matches.reduce((acc, m) => {
+        const v = Number(m?.playerStats?.xpAwarded ?? 0);
+        return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
 }
 
 // XP Milestone calculation
@@ -202,13 +233,26 @@ type XPMilestone = {
 };
 
 const XP_MILESTONES: XPMilestone[] = [
-    { title: 'Rookie', minXP: 0, maxXP: 500, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Rising Star', minXP: 500, maxXP: 2500, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Baller', minXP: 2500, maxXP: 5000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Specialist', minXP: 5000, maxXP: 8000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Elite', minXP: 8000, maxXP: 11000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Champion Footballer', minXP: 11000, maxXP: 15000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'GOAT', minXP: 15000, maxXP: Infinity, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Rookie', minXP: 0, maxXP: 100, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Prospect', minXP: 100, maxXP: 250, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Rising Star', minXP: 250, maxXP: 500, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Skilled Player', minXP: 500, maxXP: 1000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Talented Player', minXP: 1000, maxXP: 2000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Chosen One', minXP: 2000, maxXP: 3000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Serial Winner', minXP: 3000, maxXP: 4000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Supreme Player', minXP: 4000, maxXP: 5000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Invincible', minXP: 5000, maxXP: 6000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Maestro', minXP: 6000, maxXP: 7000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Creme de la Creme', minXP: 7000, maxXP: 8000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Elite', minXP: 8000, maxXP: 9000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'World-Class', minXP: 9000, maxXP: 10000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'The Undisputed', minXP: 10000, maxXP: 12000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Icon', minXP: 12000, maxXP: 15000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Generational Talent', minXP: 15000, maxXP: 18000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Legend of the Game', minXP: 18000, maxXP: 22000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Football Royalty', minXP: 22000, maxXP: 25000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Hall of Famer', minXP: 25000, maxXP: 30000, color: '#000000', bgColor: '#FFFFFF' },
+    { title: 'Champion Footballer', minXP: 30000, maxXP: Infinity, color: '#000000', bgColor: '#FFFFFF' },
 ];
 
 function getXPMilestone(xp: number): { current: XPMilestone; next: XPMilestone | null; progress: number } {
@@ -225,8 +269,12 @@ function getXPMilestone(xp: number): { current: XPMilestone; next: XPMilestone |
     
     // Calculate progress percentage to next milestone
     const progressInCurrentLevel = xp - currentMilestone.minXP;
-    const totalLevelRange = currentMilestone.maxXP - currentMilestone.minXP;
-    const progress = Math.min(100, Math.round((progressInCurrentLevel / totalLevelRange) * 100));
+    const totalLevelRange = Number.isFinite(currentMilestone.maxXP)
+        ? Math.max(1, currentMilestone.maxXP - currentMilestone.minXP)
+        : 1;
+    const progress = nextMilestone
+        ? Math.min(100, Math.round((progressInCurrentLevel / totalLevelRange) * 100))
+        : 100;
     
     return { current: currentMilestone, next: nextMilestone, progress };
 }
@@ -634,10 +682,12 @@ export default function PlayerStatsPage() {
         Object.entries(data.trophies).forEach(([trophyKey, winners]) => {
             if (Array.isArray(winners)) {
                 (winners as TrophyAward[]).forEach((award: TrophyAward) => {
+                    const winnerIdRaw = award.winnerId ?? award.winner_id ?? null;
+                    if (!winnerIdRaw) return;
                     awards.push({
                         key: trophyKey,
                         leagueName: award.leagueName,
-                        winnerId: award.winnerId,
+                        winnerId: String(winnerIdRaw),
                         winnerName: award.winnerName || award.winner || award.winner_id || '',
                     });
                 });
@@ -768,26 +818,14 @@ export default function PlayerStatsPage() {
     // Calculate Win Ratio - Current League
     const currentWinRatio = useMemo(() => {
         if (currentLeagueMatches.length === 0) return 0;
-        const wins = currentLeagueMatches.filter(match => {
-            const m = match as any;
-            const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
-            const homeGoals = Number(m.homeTeamGoals || 0);
-            const awayGoals = Number(m.awayTeamGoals || 0);
-            return playerTeam === 'home' ? (homeGoals > awayGoals) : (awayGoals > homeGoals);
-        }).length;
+        const wins = currentLeagueMatches.filter(match => resolveMatchResult(match, playerId) === 'W').length;
         return Math.round((wins / currentLeagueMatches.length) * 100);
     }, [currentLeagueMatches, playerId]);
 
     // Calculate Win Ratio - Career (All Matches)
     const careerWinRatio = useMemo(() => {
         if (allMatches.length === 0) return 0;
-        const wins = allMatches.filter(match => {
-            const m = match as any;
-            const playerTeam = m.homeTeam?.players?.some((p: any) => p.id === playerId || p._id === playerId) ? 'home' : 'away';
-            const homeGoals = Number(m.homeTeamGoals || 0);
-            const awayGoals = Number(m.awayTeamGoals || 0);
-            return playerTeam === 'home' ? (homeGoals > awayGoals) : (awayGoals > homeGoals);
-        }).length;
+        const wins = allMatches.filter(match => resolveMatchResult(match, playerId) === 'W').length;
         return Math.round((wins / allMatches.length) * 100);
     }, [allMatches, playerId]);
 
@@ -796,9 +834,9 @@ export default function PlayerStatsPage() {
     const [xpLoading, setXpLoading] = useState<boolean>(false);
 
     const fallbackXP = useMemo(() => {
-        // old local calculation if API fails
-        return leagueId === 'all' ? calculateXP(accumulativeTotals) : calculateXP(currentLeagueTotals);
-    }, [leagueId, accumulativeTotals, currentLeagueTotals]);
+        const source = leagueId === 'all' ? allMatches : currentLeagueMatches;
+        return sumXPAwardedFromMatches(source);
+    }, [leagueId, allMatches, currentLeagueMatches]);
 
     useEffect(() => {
         if (!playerId) return;
@@ -1052,8 +1090,8 @@ export default function PlayerStatsPage() {
                 return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
             }).length;
 
-            // Calculate total XP for the season
-            const totalXP = calculateXP(totals) + (motmVotes * 50) + (defensiveImpact * 30);
+            // Canonical total XP from backend per-match xpAwarded
+            const totalXP = sumXPAwardedFromMatches(matches);
 
             // Get season info from state (fetched from API)
             const seasonInfo = seasons.find(s => s.id === seasonId);
@@ -2305,7 +2343,7 @@ export default function PlayerStatsPage() {
                                             { key: 'assists', label: 'Assists' },
                                             { key: 'motm', label: 'MOTM Votes' },
                                             { key: 'defensive', label: 'Cln Sht / Def' },
-                                            { key: 'totalXP', label: 'Win Ratio' }
+                                            { key: 'totalXP', label: 'Total XP' }
                                         ].map(tab => (
                                             <Box
                                                 key={tab.key}
