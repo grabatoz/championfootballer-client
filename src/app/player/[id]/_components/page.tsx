@@ -70,12 +70,20 @@ type AllTrophyAward = {
     winnerName: string;
 };
 
-type League = { id: string; name: string }
+type League = {
+    id: string;
+    name: string;
+    active?: boolean;
+    archived?: boolean;
+    status?: string;
+    maxGames?: number;
+}
 type LeagueMatch = {
     id: string;
     homeTeamName: string;
     awayTeamName: string;
     date: string;
+    status?: string;
     end?: string;
     location?: string;
     homeTeamGoals?: number;
@@ -103,11 +111,44 @@ type LeagueWithMatchesTyped = {
     id: string;
     name: string;
     matches?: LeagueMatch[];
+    active?: boolean;
+    archived?: boolean;
+    status?: string;
+    maxGames?: number;
+    computedStatus?: {
+        isComplete?: boolean;
+        isCompleted?: boolean;
+    };
 };
 
 // Type guard to safely detect leagues that include matches
 function hasMatches(l: unknown): l is LeagueWithMatchesTyped {
     return typeof l === 'object' && l !== null && Array.isArray((l as { matches?: unknown }).matches);
+}
+
+function isLeagueActiveForFilter(l: LeagueWithMatchesTyped): boolean {
+    if (!l) return false;
+
+    if (l.archived === true) return false;
+    if (l.active === false) return false;
+
+    const status = typeof l.status === 'string' ? l.status.toLowerCase() : '';
+    if (status === 'completed' || status === 'inactive' || status === 'archived') return false;
+
+    if (l.computedStatus?.isComplete === true || l.computedStatus?.isCompleted === true) return false;
+
+    const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
+    if (max > 0 && Array.isArray(l.matches)) {
+        const completedCount = l.matches.reduce((acc, m) => {
+            const st = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+            const endedByStatus = st === 'completed' || st === 'finished' || st === 'ended' || st === 'result_published' || st === 'result_uploaded';
+            const endedByEnd = Boolean(m.end);
+            return acc + (endedByStatus || endedByEnd ? 1 : 0);
+        }, 0);
+        if (completedCount >= max) return false;
+    }
+
+    return true;
 }
 
 function normalizeResult(input: unknown): 'W' | 'D' | 'L' | null {
@@ -353,12 +394,13 @@ export default function PlayerStatsPage() {
         
         // If year is 'all', return all leagues
         if (!year || year === 'all') {
-            return list.filter(l => hasMatches(l));
+            return list.filter(l => hasMatches(l) && isLeagueActiveForFilter(l));
         }
         
         // Otherwise filter by specific year
         return list.filter(l =>
             hasMatches(l) &&
+            isLeagueActiveForFilter(l) &&
             (l.matches || []).some(m => dayjs(m.date).year().toString() === year)
         );
     }, [data, year]);
@@ -652,7 +694,8 @@ export default function PlayerStatsPage() {
                         ...(d.user.leagues || []),
                         ...(d.user.administeredLeagues || []),
                     ] as League[];
-                    const unique = Array.from(new Map(userLeagues.map(l => [l.id, l])).values());
+                    const unique = Array.from(new Map(userLeagues.map(l => [l.id, l])).values())
+                        .filter((l) => isLeagueActiveForFilter(l as LeagueWithMatchesTyped));
                     setLeagues(unique);
                 }
             })

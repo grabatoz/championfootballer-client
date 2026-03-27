@@ -112,6 +112,7 @@ interface League {
     members?: User[];
     administrators?: { id: string }[];
     active?: boolean;
+    archived?: boolean;
     matches?: Match[];
     computedStatus?: LeagueComputedStatus;
     isLocked?: boolean;
@@ -196,6 +197,7 @@ export default function AllMatches() {
     const leagueIsCompleted = useCallback((l: League): boolean => {
         // Prefer backend-computed season-based completion status
         if (l?.computedStatus?.isCompleted === true) return true;
+        if (l?.archived === true) return true;
 
         // If there are any missing items (e.g., pending stats), do NOT treat as completed
         const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];

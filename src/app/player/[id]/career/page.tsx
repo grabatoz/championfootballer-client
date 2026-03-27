@@ -86,6 +86,8 @@ interface PlayerMatchStats {
 interface LeagueMatch {
   id: string;
   date: string;
+  status?: string;
+  end?: string;
   playerStats?: PlayerMatchStats;
   result?: 'W' | 'L' | 'D';
   outcome?: string;
@@ -118,11 +120,44 @@ interface SeasonInfo {
 
 interface LeagueWithMatches {
   id: string;
+  name?: string;
   matches?: LeagueMatch[];
+  active?: boolean;
+  archived?: boolean;
+  status?: string;
+  maxGames?: number;
+  computedStatus?: {
+    isComplete?: boolean;
+    isCompleted?: boolean;
+  };
 }
 interface PlayerStatsData {
   leagues?: LeagueWithMatches[];
 }
+
+const isLeagueActiveForFilter = (l: LeagueWithMatches): boolean => {
+  if (!l) return false;
+  if (l.archived === true) return false;
+  if (l.active === false) return false;
+
+  const status = typeof l.status === 'string' ? l.status.toLowerCase() : '';
+  if (status === 'completed' || status === 'inactive' || status === 'archived') return false;
+
+  if (l.computedStatus?.isComplete === true || l.computedStatus?.isCompleted === true) return false;
+
+  const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
+  if (max > 0 && Array.isArray(l.matches)) {
+    const completedCount = l.matches.reduce((acc, m) => {
+      const st = typeof m.status === 'string' ? m.status.toLowerCase() : '';
+      const endedByStatus = st === 'completed' || st === 'finished' || st === 'ended' || st === 'result_published' || st === 'result_uploaded';
+      const endedByEnd = Boolean(m.end);
+      return acc + (endedByStatus || endedByEnd ? 1 : 0);
+    }, 0);
+    if (completedCount >= max) return false;
+  }
+
+  return true;
+};
 
 // Helper to safely extract name without using any
 type MaybeNameObj = { name?: unknown };
@@ -380,11 +415,17 @@ export default function CareerPage() {
   // Extract available leagues from Redux state or data
   useEffect(() => {
     if (leaguesFromRedux && leaguesFromRedux.length > 0) {
-      setAvailableLeagues(leaguesFromRedux);
+      setAvailableLeagues(leaguesFromRedux.filter(isLeagueActiveForFilter));
     } else if (data?.leagues) {
-      setAvailableLeagues(data.leagues as LeagueWithMatches[]);
+      setAvailableLeagues((data.leagues as LeagueWithMatches[]).filter(isLeagueActiveForFilter));
     }
   }, [leaguesFromRedux, data]);
+
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === 'all') return;
+    const stillVisible = availableLeagues.some((l) => l.id === filters.leagueId);
+    if (!stillVisible) dispatch(setLeagueFilter('all'));
+  }, [availableLeagues, filters.leagueId, dispatch]);
 
   const loading = !data;
 

@@ -1659,22 +1659,71 @@ export default function LeagueDetailPage() {
     useEffect(() => {
         if (!leagueId || !token) return;
         setLeaderboardLoading(true);
-        
+
         const metrics = ['goals', 'assists', 'motm', 'impact', 'cleanSheet', 'contribution'];
-        const seasonParam = selectedSeasonId ? `&seasonId=${selectedSeasonId}` : '';
-        
+        const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard`;
+
+        const normalizeLeaderboardPlayers = (raw: unknown): Array<{ id: string; name: string; positionType: string; value: number }> => {
+            const rawPlayers = Array.isArray((raw as { players?: unknown[] })?.players)
+                ? (raw as { players: unknown[] }).players
+                : [];
+            const seen = new Set<string>();
+            return rawPlayers
+                .filter((p) => {
+                    const rec = (typeof p === 'object' && p !== null) ? p as { id?: string | number } : {};
+                    const pid = String(rec?.id ?? '').trim();
+                    if (!pid) return false;
+                    const lower = pid.toLowerCase();
+                    if (lower.startsWith('guest-') || lower.includes('guest_') || lower.includes('guest-')) return false;
+                    if (seen.has(pid)) return false;
+                    seen.add(pid);
+                    return true;
+                })
+                .slice(0, 5)
+                .map((p) => {
+                    const rec = (typeof p === 'object' && p !== null)
+                        ? p as { id?: string | number; name?: string; positionType?: string; value?: number | string }
+                        : {};
+                    return {
+                        id: String(rec.id ?? ''),
+                        name: String(rec.name ?? 'Unknown Player'),
+                        positionType: String(rec.positionType ?? 'Player'),
+                        value: Number(rec.value ?? 0),
+                    };
+                });
+        };
+
         Promise.all(
-            metrics.map(metric =>
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${metric}&leagueId=${leagueId}${seasonParam}`, {
+            metrics.map(async (metric) => {
+                const urlAll = `${baseUrl}?metric=${metric}&leagueId=${leagueId}&limit=5`;
+                const urlSeason = selectedSeasonId ? `${urlAll}&seasonId=${selectedSeasonId}` : urlAll;
+                const requestInit: RequestInit = {
                     credentials: 'include',
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                })
-                    .then(res => res.json())
-                    .then(data => ({ metric, players: data.players || [] }))
-                    .catch(() => ({ metric, players: [] }))
-            )
+                };
+
+                try {
+                    const primaryRes = await fetch(urlSeason, requestInit);
+                    const primaryJson = await primaryRes.json().catch(() => ({}));
+                    let players = normalizeLeaderboardPlayers(primaryJson);
+
+                    // If selected season is too sparse, fallback to all-seasons for better top-5 coverage
+                    if (selectedSeasonId && players.length <= 1) {
+                        const allRes = await fetch(urlAll, requestInit);
+                        const allJson = await allRes.json().catch(() => ({}));
+                        const allPlayers = normalizeLeaderboardPlayers(allJson);
+                        if (allPlayers.length > players.length) {
+                            players = allPlayers;
+                        }
+                    }
+
+                    return { metric, players };
+                } catch {
+                    return { metric, players: [] as Array<{ id: string; name: string; positionType: string; value: number }> };
+                }
+            })
         )
             .then(results => {
                 const dataByMetric: Record<string, Array<{ id: string; name: string; positionType: string; value: number }>> = {};

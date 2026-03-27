@@ -76,6 +76,7 @@ interface LeagueOption {
   status?: string;
   maxGames?: number;
   active?: boolean;
+  archived?: boolean;
   matches?: Match[];
   seasons?: Array<{id: string, name: string, seasonNumber?: number, isActive?: boolean}>;
   // Derived on client: whether the user is an admin of this league
@@ -133,6 +134,7 @@ const AllPlayersPage = () => {
   const leagueIsCompleted = useCallback((l: LeagueOption): boolean => {
     // Prefer backend-computed season-based completion status
     if ((l as any)?.computedStatus?.isCompleted === true) return true;
+    if (l?.archived === true) return true;
 
     const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
     if (missingArr.length > 0) return false;

@@ -74,6 +74,7 @@ interface League {
   status?: string;
   maxGames?: number;
   active?: boolean;
+  archived?: boolean;
   matches?: Match[];
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
@@ -268,6 +269,15 @@ const DreamTeamPage = () => {
   };
 
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+  const leagueIsCompleted = useCallback((l: League): boolean => {
+    if (l?.computedStatus?.isCompleted === true) return true;
+    if (l?.archived === true) return true;
+    if (l?.isComplete === true || l?.isCompleted === true || l?.isLocked === true) return true;
+    const status = (l?.status ?? '').toString().trim().toUpperCase();
+    if (status === 'COMPLETED' || status === 'FINISHED' || status === 'ENDED') return true;
+    if (l?.active === false) return true;
+    return false;
+  }, []);
 
   const fetchLeagues = useCallback(async () => {
     if (!token) return;
@@ -313,20 +323,23 @@ const DreamTeamPage = () => {
 
       const allLeagues = Array.from(uniqueLeaguesMap.values()) as League[];
 
+      // Show only active, non-completed, non-archived leagues
+      const activeLeagues = allLeagues.filter((l) => !leagueIsCompleted(l));
+
       // Sort alphabetically
-      allLeagues.sort((a, b) => {
+      activeLeagues.sort((a, b) => {
         const an = (a?.name ?? '').toString().trim().toLowerCase();
         const bn = (b?.name ?? '').toString().trim().toLowerCase();
         return an.localeCompare(bn) || String(a.id).localeCompare(String(b.id));
       });
 
-      setLeagues(allLeagues);
+      setLeagues(activeLeagues);
 
       // Auto-select preferred league
-      if (allLeagues.length > 0) {
+      if (activeLeagues.length > 0) {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-        const preferred = storedId ? allLeagues.find(l => l.id === storedId) : null;
-        setSelectedLeague(preferred ? preferred.id : allLeagues[0].id);
+        const preferred = storedId ? activeLeagues.find(l => l.id === storedId) : null;
+        setSelectedLeague(preferred ? preferred.id : activeLeagues[0].id);
       } else {
         setSelectedLeague('');
         setLoading(false);
@@ -335,7 +348,7 @@ const DreamTeamPage = () => {
       console.error('Error fetching leagues:', error);
       setLoading(false);
     }
-  }, [token]);
+  }, [token, leagueIsCompleted]);
 
   const fetchDreamTeam = useCallback(async (leagueId: string) => {
     setLoading(true);

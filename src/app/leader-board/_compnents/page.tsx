@@ -56,6 +56,7 @@ interface League {
   status?: string;
   maxGames?: number;
   active?: boolean;
+  archived?: boolean;
   matches?: Match[];
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
@@ -74,6 +75,7 @@ export default function LeaderBoardPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [registeredMemberIds, setRegisteredMemberIds] = useState<Set<string> | null>(null);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
@@ -84,6 +86,7 @@ export default function LeaderBoardPage() {
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
     // Prefer backend-computed season-based completion status
     if ((l as any)?.computedStatus?.isCompleted === true) return true;
+    if ((l as { archived?: boolean })?.archived === true) return true;
 
     // Check explicit completion flags
     if (l?.isComplete === true) return true;
@@ -142,8 +145,8 @@ export default function LeaderBoardPage() {
             } as League;
           });
 
-          // Filter out completed leagues
-          const activeLeagues = simpleLeagues.filter(l => !leagueIsCompleted(l));
+          // Show only active, non-completed, non-archived leagues
+          const activeLeagues = simpleLeagues.filter(l => !leagueIsCompleted(l) && l.archived !== true);
 
           // Sort alphabetically
           activeLeagues.sort((a, b) => {
@@ -169,11 +172,43 @@ export default function LeaderBoardPage() {
     })();
   }, [token, leagueIsCompleted]);
 
+  // Fetch registered league members to ensure guests are excluded from leaderboard
+  useEffect(() => {
+    if (!selectedLeague || !token) {
+      setRegisteredMemberIds(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}?_=${Date.now()}`, {
+          credentials: 'include',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await response.json().catch(() => ({}));
+        const members = Array.isArray(data?.league?.members) ? data.league.members : [];
+        const ids = new Set<string>(
+          members
+            .map((m: { id?: string | number }) => String(m?.id ?? '').trim())
+            .filter((id: string) => id.length > 0)
+        );
+        if (!cancelled) setRegisteredMemberIds(ids);
+      } catch {
+        if (!cancelled) setRegisteredMemberIds(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLeague, token]);
+
   // Fetch leaderboard when metric or league changes
   useEffect(() => {
-    if (!selectedLeague) return;
+    if (!selectedLeague || !token) return;
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${selectedLeague}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${selectedLeague}&limit=5`, {
       credentials: 'include',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -181,10 +216,39 @@ export default function LeaderBoardPage() {
     })
       .then(res => res.json())
       .then(data => {
-        setPlayers(data.players);
+        const rawPlayers = Array.isArray(data?.players) ? data.players : [];
+        const filteredPlayers: Player[] = rawPlayers.filter((p: Partial<Player>) => {
+          const pid = String(p?.id ?? '').trim();
+          if (!pid) return false;
+
+          // Always exclude guest-like ids
+          const lower = pid.toLowerCase();
+          const isGuestLike = lower.startsWith('guest-') || lower.includes('guest_') || lower.includes('guest-');
+          if (isGuestLike) return false;
+
+          // If we know registered members for this league, keep only those users
+          if (registeredMemberIds && registeredMemberIds.size > 0) {
+            return registeredMemberIds.has(pid);
+          }
+
+          return true;
+        }).map((p: Partial<Player>) => ({
+          id: String(p.id ?? ''),
+          name: String(p.name ?? 'Unknown Player'),
+          positionType: String(p.positionType ?? '-'),
+          profilePicture: p.profilePicture,
+          value: Number(p.value ?? 0),
+        }));
+
+        setPlayers(filteredPlayers);
+      })
+      .catch(() => {
+        setPlayers([]);
+      })
+      .finally(() => {
         setLoading(false);
       });
-  }, [selectedMetric, selectedLeague, token]);
+  }, [selectedMetric, selectedLeague, token, registeredMemberIds]);
 
   const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
     setLeaguesDropdownAnchor(event.currentTarget);
@@ -216,6 +280,8 @@ export default function LeaderBoardPage() {
     }
     return arr;
   }, [leagues, selectedLeague]);
+
+  const topPlayers = React.useMemo(() => players.slice(0, 5), [players]);
 
   const formatLeagueName = (name: string): string => {
     if (!name) return '';
@@ -406,11 +472,19 @@ export default function LeaderBoardPage() {
           </Menu>
         </Box>
       </Box>
-      <Typography variant="h5" sx={{ mb: 2 }}>Top Players</Typography>
+      <Typography variant="h5" sx={{ mb: 2 }}>Top 5 Players</Typography>
       {loading ? (
         <CircularProgress />
+      ) : !selectedLeague ? (
+        <Paper sx={{ p: 2, background: 'rgba(255,255,255,0.06)', color: 'white' }}>
+          <Typography variant="body1">No active leagues available for leaderboard.</Typography>
+        </Paper>
+      ) : topPlayers.length === 0 ? (
+        <Paper sx={{ p: 2, background: 'rgba(255,255,255,0.06)', color: 'white' }}>
+          <Typography variant="body1">No stats have been recorded for this league yet.</Typography>
+        </Paper>
       ) : (
-        players.map((player, idx) => {
+        topPlayers.map((player, idx) => {
           let badgeImg = null;
           if (idx === 0) badgeImg = FirstBadge;
           else if (idx === 1) badgeImg = SecondBadge;

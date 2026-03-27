@@ -106,6 +106,7 @@ interface League {
   isComplete?: boolean;
   isCompleted?: boolean;
   active?: boolean;
+  archived?: boolean;
   status?: string;
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
@@ -1446,6 +1447,7 @@ export default function GlobalTrophyRoom() {
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
     // Prefer backend-computed season-based completion status
     if (l?.computedStatus?.isCompleted === true) return true;
+    if (l?.archived === true) return true;
 
     const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
     if (missingArr.length > 0) return false;

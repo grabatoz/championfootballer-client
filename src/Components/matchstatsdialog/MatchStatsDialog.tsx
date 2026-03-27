@@ -173,6 +173,7 @@ interface League {
     adminId?: string;
     isAdmin?: boolean;
     active: boolean;
+    archived?: boolean;
     createdAt?: string;
     updatedAt?: string;
     matches?: Match[];
@@ -539,6 +540,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
                                 }, 0);
                                 completed = completedCount >= maxGames;
+                            }
+                            const archivedByDetail = getBool(leagueObj, 'archived') || ((l as unknown as Record<string, unknown>)?.['archived'] === true);
+                            if (archivedByDetail) {
+                                completed = true;
                             } else if (l.active === false) {
                                 completed = true;
                             }
@@ -571,7 +576,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         }
                     })
                 );
-                const visible = enriched.filter(e => !e.completed).map(e => e.league);
+                const visible = enriched
+                    .filter(e => !e.completed && e.league.active !== false && e.league.archived !== true)
+                    .map(e => e.league);
                 const sortedVisible = [...visible].sort((a, b) => {
                     const an = (a?.name ?? '').toString().trim().toLowerCase();
                     const bn = (b?.name ?? '').toString().trim().toLowerCase();
@@ -585,7 +592,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
             } catch {
                 // Fallback: show normalized list if enrichment fails
-                const sortedNormalized = [...normalized].sort((a, b) => {
+                const fallbackVisible = normalized.filter((l) => l.active !== false && l.archived !== true);
+                const sortedNormalized = [...fallbackVisible].sort((a, b) => {
                     const an = (a?.name ?? '').toString().trim().toLowerCase();
                     const bn = (b?.name ?? '').toString().trim().toLowerCase();
                     if (an < bn) return -1;
@@ -593,7 +601,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     return String(a.id).localeCompare(String(b.id));
                 });
                 setAvailableLeagues(sortedNormalized);
-                if (normalized.length === 0) {
+                if (fallbackVisible.length === 0) {
                     toast.error('No leagues found for your account.');
                 }
             }
