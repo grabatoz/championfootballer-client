@@ -312,7 +312,7 @@ export const authAPI = {
 
   checkAuth: async (): Promise<ApiResponse<User>> => {
     try {
-      const token = Cookies.get('token') || Cookies.get('auth_token');
+      const token = getAuthToken();
       
       console.log('🔍 checkAuth called:', {
         hasToken: !!token,
@@ -439,7 +439,7 @@ export const leagueAPI = {
 export const matchAPI = {
   getMatches: async (): Promise<ApiResponse<Match[]>> => {
     try {
-      const token = Cookies.get('token') || Cookies.get('auth_token');
+      const token = getAuthToken();
       
       if (!token || token === 'undefined' || token === 'null') {
         console.error('❌ getMatches: No valid token found');

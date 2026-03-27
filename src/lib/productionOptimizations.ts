@@ -30,11 +30,11 @@ export function prefetchCriticalEndpoints() {
   // Wait for page to be idle before prefetching
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
-      const criticalEndpoints = [
-        '/auth/data',
-        '/leagues',
-        '/matches',
-      ];
+      // NOTE:
+      // Do not prefetch protected API routes via <link rel="prefetch">.
+      // Link prefetch cannot attach Authorization headers, which causes noisy 401s
+      // for endpoints like /auth/data and /matches in production.
+      const criticalEndpoints: string[] = [];
 
       criticalEndpoints.forEach(endpoint => {
         const link = document.createElement('link');
@@ -45,7 +45,9 @@ export function prefetchCriticalEndpoints() {
         document.head.appendChild(link);
       });
 
+      if (criticalEndpoints.length > 0) {
       console.log('🚀 Prefetched critical endpoints');
+      }
     });
   }
 }
