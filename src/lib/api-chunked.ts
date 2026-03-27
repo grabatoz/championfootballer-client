@@ -10,6 +10,7 @@ import {
 } from './chunkCache';
 import { optimizedFetch } from './httpClient';
 import Cookies from 'js-cookie';
+import { getAuthToken } from './tokenManager';
 import type {
   ApiResponse,
   LoginCredentials,
@@ -103,15 +104,38 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = Cookies.get('token') || Cookies.get('auth_token');
-  
+  const token = getAuthToken();
+
+  const headers: Record<string, string> = {};
+  if (options.headers instanceof Headers) {
+    options.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (Array.isArray(options.headers)) {
+    for (const [key, value] of options.headers) {
+      headers[key] = value;
+    }
+  } else if (options.headers) {
+    Object.assign(headers, options.headers as Record<string, string>);
+  }
+
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' &&
+    typeof options.body === 'object' &&
+    options.body instanceof FormData;
+  const hasContentType = Object.keys(headers).some((h) => h.toLowerCase() === 'content-type');
+  if (hasBody && !isFormData && !hasContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await optimizedFetch(API_BASE_URL + endpoint, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {

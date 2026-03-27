@@ -46,8 +46,23 @@ export default function FetchAuthMonitor() {
           }
         }
 
-        // Detect existing Authorization
-        const hasAuth = Object.keys(headers).some(h => h.toLowerCase() === "authorization");
+        // Detect existing Authorization and treat invalid bearer values as missing.
+        const authHeaderKey = Object.keys(headers).find(h => h.toLowerCase() === "authorization");
+        const authHeaderValue = authHeaderKey ? String(headers[authHeaderKey] || "").trim() : "";
+        const bearer = authHeaderValue.toLowerCase().startsWith("bearer ")
+          ? authHeaderValue.slice(7).trim()
+          : "";
+        const hasValidAuth = !!(
+          authHeaderKey &&
+          bearer &&
+          bearer !== "undefined" &&
+          bearer !== "null" &&
+          bearer.split(".").length === 3
+        );
+        const hasAuth = hasValidAuth;
+        if (authHeaderKey && !hasValidAuth) {
+          delete headers[authHeaderKey];
+        }
 
         // Attempt to read token from cookies/localStorage if not present
         let token: string | undefined;

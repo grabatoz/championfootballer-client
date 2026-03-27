@@ -1,6 +1,6 @@
 // ULTRA-FAST HTTP CLIENT WITH CONNECTION POOLING & REQUEST OPTIMIZATION
 // Optimized for both local and production environments
-import Cookies from 'js-cookie';
+import { getAuthToken } from './tokenManager';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -90,33 +90,43 @@ export async function optimizedFetch(
   }
 
   const startTime = performance.now();
-  const token = Cookies.get('token') || Cookies.get('auth_token');
 
-  // Build optimized headers with production-specific settings
+  // Normalize provided headers first (supports Headers / tuples / plain object)
+  const normalizedHeaders: Record<string, string> = {};
+  if (options.headers instanceof Headers) {
+    options.headers.forEach((value, key) => {
+      normalizedHeaders[key] = value;
+    });
+  } else if (Array.isArray(options.headers)) {
+    for (const [key, value] of options.headers) {
+      normalizedHeaders[key] = value;
+    }
+  } else if (options.headers) {
+    Object.assign(normalizedHeaders, options.headers as Record<string, string>);
+  }
+
+  // Keep request headers CORS-safe for browser clients.
+  // Do NOT set transport-level headers like Connection/Keep-Alive/Accept-Encoding/Priority.
   const headers: Record<string, string> = {
-    'Accept': 'application/json',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Content-Type': 'application/json',
-    // Enable HTTP/2 and connection reuse
-    'Connection': 'keep-alive',
-    'Keep-Alive': 'timeout=120, max=100',
+    Accept: 'application/json',
+    ...normalizedHeaders,
   };
 
-  // Production-specific headers
-  if (IS_PRODUCTION) {
-    // Help with CDN caching
-    headers['Cache-Control'] = method === 'GET' ? 'public, max-age=60' : 'no-cache';
-    // Reduce latency with early hints
-    headers['Priority'] = 'u=1'; // High priority for API calls
+  const hasContentType = Object.keys(headers).some((h) => h.toLowerCase() === 'content-type');
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' &&
+    typeof options.body === 'object' &&
+    options.body instanceof FormData;
+
+  // Only set JSON content-type when there is a request body and caller didn't specify one.
+  if (hasBody && !isFormData && !hasContentType) {
+    headers['Content-Type'] = 'application/json';
   }
 
-  // Merge with provided headers
-  if (options.headers) {
-    Object.assign(headers, options.headers);
-  }
-
-  // Add auth token if available
-  if (token) {
+  const hasAuthorization = Object.keys(headers).some((h) => h.toLowerCase() === 'authorization');
+  const token = hasAuthorization ? null : getAuthToken();
+  if (!hasAuthorization && token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -124,12 +134,11 @@ export async function optimizedFetch(
   const fetchPromise = fetch(url, {
     ...options,
     headers,
-    credentials: 'include',
-    // Enable HTTP/2 keepalive where supported
-    keepalive: true,
-    // Always allow cross-origin requests to API base URL
-    mode: 'cors',
-    // Signal for abort control
+    credentials: options.credentials ?? 'include',
+    // Keepalive is useful for short background requests but can cause edge-case failures
+    // on some browsers for larger payloads; default to true only for GET.
+    keepalive: options.keepalive ?? method === 'GET',
+    mode: options.mode ?? 'cors',
     signal: options.signal,
   }) as Promise<Response>;
 

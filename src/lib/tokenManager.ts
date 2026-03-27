@@ -1,15 +1,15 @@
 /**
  * Token Manager - Ensures token is always available for API calls
- * Auto-recovers token from localStorage if cookies are cleared
+ * Auto-recovers token from localStorage/sessionStorage if cookies are cleared
  */
 
 import Cookies from 'js-cookie';
 
 export class TokenManager {
   private static instance: TokenManager;
-  
+
   private constructor() {}
-  
+
   static getInstance(): TokenManager {
     if (!TokenManager.instance) {
       TokenManager.instance = new TokenManager();
@@ -18,66 +18,79 @@ export class TokenManager {
   }
 
   /**
-   * Get valid token from cookies or recover from localStorage
+   * Get a valid JWT from cookies first, then storage recovery.
    */
   getToken(): string | null {
-    // Try cookies first (primary source)
-    let token: string | null = Cookies.get('token') || Cookies.get('auth_token') || null;
-    
-    // Validate token
-    if (token && token !== 'undefined' && token !== 'null' && this.isValidJWT(token)) {
-      return token;
+    const cookieCandidates = [Cookies.get('token'), Cookies.get('auth_token')];
+    for (const candidate of cookieCandidates) {
+      if (candidate && this.isValidJWT(candidate)) {
+        this.restoreToken(candidate);
+        return candidate;
+      }
     }
 
-    // Token missing or invalid - try to recover from localStorage
-    console.warn('⚠️ Token missing from cookies, attempting recovery...');
     const recoveredToken = this.recoverTokenFromStorage();
-    
     if (recoveredToken) {
-      console.log('✅ Token recovered and restored to cookies');
+      this.restoreToken(recoveredToken);
       return recoveredToken;
     }
 
-    console.error('❌ No valid token found anywhere');
     return null;
   }
 
   /**
-   * Validate JWT format
+   * Validate JWT format and check expiry when exp is present.
    */
   private isValidJWT(token: string): boolean {
     if (!token || typeof token !== 'string') return false;
+    if (token === 'undefined' || token === 'null') return false;
+
     const parts = token.split('.');
-    return parts.length === 3;
+    if (parts.length !== 3) return false;
+
+    try {
+      const payload = JSON.parse(atob(parts[1]));
+      const exp = Number(payload?.exp);
+      if (Number.isFinite(exp)) {
+        const now = Math.floor(Date.now() / 1000);
+        if (exp <= now) return false;
+      }
+    } catch {
+      // If decode fails, still allow structurally valid JWT.
+    }
+
+    return true;
   }
 
   /**
-   * Recover token from localStorage backup
+   * Recover token from common storage locations.
    */
   private recoverTokenFromStorage(): string | null {
     if (typeof window === 'undefined') return null;
 
     try {
-      // Try authData backup
+      const directToken =
+        localStorage.getItem('token') ||
+        localStorage.getItem('auth_token') ||
+        sessionStorage.getItem('token') ||
+        sessionStorage.getItem('auth_token');
+
+      if (directToken && this.isValidJWT(directToken)) {
+        return directToken;
+      }
+
       const authData = localStorage.getItem('authData');
       if (authData) {
         const parsed = JSON.parse(authData);
-        if (parsed.token && this.isValidJWT(parsed.token)) {
-          // Restore to cookies
-          Cookies.set('token', parsed.token, { expires: 365, path: '/', sameSite: 'lax' });
-          Cookies.set('auth_token', parsed.token, { expires: 365, path: '/', sameSite: 'lax' });
+        if (parsed?.token && this.isValidJWT(parsed.token)) {
           return parsed.token;
         }
       }
 
-      // Try sessionStorage backup
       const sessionData = sessionStorage.getItem('authData');
       if (sessionData) {
         const parsed = JSON.parse(sessionData);
-        if (parsed.token && this.isValidJWT(parsed.token)) {
-          // Restore to cookies
-          Cookies.set('token', parsed.token, { expires: 365, path: '/', sameSite: 'lax' });
-          Cookies.set('auth_token', parsed.token, { expires: 365, path: '/', sameSite: 'lax' });
+        if (parsed?.token && this.isValidJWT(parsed.token)) {
           return parsed.token;
         }
       }
@@ -89,7 +102,16 @@ export class TokenManager {
   }
 
   /**
-   * Check if user is authenticated
+   * Keep both cookie keys in sync.
+   */
+  private restoreToken(token: string): void {
+    if (!token || !this.isValidJWT(token)) return;
+    Cookies.set('token', token, { expires: 365, path: '/', sameSite: 'lax' });
+    Cookies.set('auth_token', token, { expires: 365, path: '/', sameSite: 'lax' });
+  }
+
+  /**
+   * Check if user is authenticated.
    */
   isAuthenticated(): boolean {
     const token = this.getToken();
@@ -97,7 +119,7 @@ export class TokenManager {
   }
 
   /**
-   * Clear all tokens (logout)
+   * Clear all tokens (logout).
    */
   clearToken(): void {
     Cookies.remove('token', { path: '/' });
@@ -108,7 +130,6 @@ export class TokenManager {
     localStorage.removeItem('user');
     localStorage.removeItem('userData');
     localStorage.removeItem('isAuthenticated');
-    console.log('🚪 All tokens cleared');
   }
 }
 

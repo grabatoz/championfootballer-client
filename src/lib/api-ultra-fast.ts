@@ -214,7 +214,17 @@ async function ultraFastFetch<T>(
     if (cached) {
       // Update in background (don't await)
       setTimeout(() => {
-        fetchAndCache<T>(endpoint, options, cacheKey).catch(err => 
+        const token = getAuthToken();
+        const requiresAuth = !endpoint.includes('/auth/login') &&
+                             !endpoint.includes('/auth/register') &&
+                             !endpoint.includes('/health') &&
+                             !endpoint.includes('/events');
+
+        // During early app bootstrap, auth state may not be hydrated yet.
+        // Skip background refresh quietly to avoid noisy production failures.
+        if (requiresAuth && !token) return;
+
+        fetchAndCache<T>(endpoint, options, cacheKey).catch(err =>
           console.error('Background update failed:', err)
         );
       }, 100);
@@ -246,11 +256,29 @@ async function fetchAndCache<T>(
     throw new Error('Authentication required - no valid token found');
   }
   
-  // Build headers object
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...options.headers as Record<string, string>,
-  };
+  // Build headers object safely from any RequestInit headers type
+  const headers: Record<string, string> = {};
+  if (options.headers instanceof Headers) {
+    options.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (Array.isArray(options.headers)) {
+    for (const [key, value] of options.headers) {
+      headers[key] = value;
+    }
+  } else if (options.headers) {
+    Object.assign(headers, options.headers as Record<string, string>);
+  }
+
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' &&
+    typeof options.body === 'object' &&
+    options.body instanceof FormData;
+  const hasContentType = Object.keys(headers).some((h) => h.toLowerCase() === 'content-type');
+  if (hasBody && !isFormData && !hasContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
   
   // Add Authorization header if token exists
   if (token) {
@@ -415,6 +443,10 @@ export const leagueAPI = {
     
     // If no cache, trigger background fetch (don't wait for it)
     if (!cached) {
+      const token = getAuthToken();
+      if (!token) {
+        return [];
+      }
       console.log('⚡ getAllInstant: No cache, triggering background fetch...');
       leagueAPI.getAll().catch(err => 
         console.error('❌ Background fetch failed:', err)
