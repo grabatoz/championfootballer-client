@@ -4,19 +4,30 @@
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Keep noisy performance logs disabled in production unless explicitly enabled.
+const ENABLE_PERF_LOGS = process.env.NEXT_PUBLIC_ENABLE_PERF_LOGS === 'true';
+
+function perfLog(...args: unknown[]) {
+  if (ENABLE_PERF_LOGS) console.log(...args);
+}
+
+function perfWarn(...args: unknown[]) {
+  if (ENABLE_PERF_LOGS) console.warn(...args);
+}
+
 // Service Worker for network requests (optional but recommended)
 export function registerServiceWorker() {
   if (!IS_PRODUCTION || typeof window === 'undefined') return;
-  
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       // Service worker for caching and offline support
       navigator.serviceWorker.register('/sw.js').then(
         registration => {
-          console.log('✅ ServiceWorker registered:', registration.scope);
+          perfLog('ServiceWorker registered:', registration.scope);
         },
         err => {
-          console.log('❌ ServiceWorker registration failed:', err);
+          perfWarn('ServiceWorker registration failed:', err);
         }
       );
     });
@@ -46,7 +57,7 @@ export function prefetchCriticalEndpoints() {
       });
 
       if (criticalEndpoints.length > 0) {
-      console.log('🚀 Prefetched critical endpoints');
+        perfLog('Prefetched critical endpoints');
       }
     });
   }
@@ -77,7 +88,7 @@ export async function productionFetch(
 
       // If server error, retry
       if (response.status >= 500 && i < retries) {
-        console.warn(`⚠️ Retry ${i + 1}/${retries} for ${url}`);
+        perfWarn(`Retry ${i + 1}/${retries} for ${url}`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
         continue;
       }
@@ -85,9 +96,9 @@ export async function productionFetch(
       return response;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error');
-      
+
       if (i < retries) {
-        console.warn(`⚠️ Network error, retry ${i + 1}/${retries} for ${url}`);
+        perfWarn(`Network error, retry ${i + 1}/${retries} for ${url}`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
@@ -108,11 +119,11 @@ export function setupPerformanceMonitoring() {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1] as PerformanceEntry & { renderTime?: number; loadTime?: number };
         const lcp = lastEntry.renderTime || lastEntry.loadTime || 0;
-        
+
         if (lcp > 2500) {
-          console.warn(`⚠️ Slow LCP detected: ${lcp.toFixed(0)}ms (target: <2500ms)`);
+          perfWarn(`Slow LCP detected: ${lcp.toFixed(0)}ms (target: <2500ms)`);
         } else {
-          console.log(`✅ Good LCP: ${lcp.toFixed(0)}ms`);
+          perfLog(`Good LCP: ${lcp.toFixed(0)}ms`);
         }
       });
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
@@ -123,7 +134,7 @@ export function setupPerformanceMonitoring() {
         entries.forEach((entry: PerformanceEntry & { processingStart?: number; startTime?: number }) => {
           const fid = entry.processingStart ? entry.processingStart - entry.startTime : 0;
           if (fid > 100) {
-            console.warn(`⚠️ Slow FID detected: ${fid.toFixed(0)}ms (target: <100ms)`);
+            perfWarn(`Slow FID detected: ${fid.toFixed(0)}ms (target: <100ms)`);
           }
         });
       });
@@ -138,15 +149,15 @@ export function setupPerformanceMonitoring() {
             clsScore += entry.value || 0;
           }
         });
-        
+
         if (clsScore > 0.1) {
-          console.warn(`⚠️ High CLS detected: ${clsScore.toFixed(3)} (target: <0.1)`);
+          perfWarn(`High CLS detected: ${clsScore.toFixed(3)} (target: <0.1)`);
         }
       });
       clsObserver.observe({ entryTypes: ['layout-shift'] });
 
     } catch (e) {
-      console.warn('Performance monitoring setup failed:', e);
+      perfWarn('Performance monitoring setup failed:', e);
     }
   }
 
@@ -156,15 +167,16 @@ export function setupPerformanceMonitoring() {
       const longTaskObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach(entry => {
-          if (entry.duration > 50) {
-            console.warn(`⚠️ Long task detected: ${entry.duration.toFixed(0)}ms`);
+          // Keep the signal meaningful; very small tasks are normal.
+          if (entry.duration > 150) {
+            perfWarn(`Long task detected: ${entry.duration.toFixed(0)}ms`);
           }
         });
       });
       longTaskObserver.observe({ entryTypes: ['longtask'] });
     } catch {
       // longtask not supported in all browsers
-      console.debug('Long task monitoring not supported');
+      if (ENABLE_PERF_LOGS) console.debug('Long task monitoring not supported');
     }
   }
 }
@@ -173,16 +185,16 @@ export function setupPerformanceMonitoring() {
 export function initProductionOptimizations() {
   if (!IS_PRODUCTION) return;
 
-  console.log('🚀 Initializing production optimizations...');
-  
+  perfLog('Initializing production optimizations...');
+
   // 1. Setup performance monitoring
   setupPerformanceMonitoring();
-  
+
   // 2. Prefetch critical endpoints
   prefetchCriticalEndpoints();
-  
+
   // 3. Register service worker (optional)
   // registerServiceWorker(); // Uncomment when sw.js is ready
-  
-  console.log('✅ Production optimizations initialized');
+
+  perfLog('Production optimizations initialized');
 }

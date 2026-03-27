@@ -2261,7 +2261,7 @@ function AllLeagues() {
           }}
             className='all-leagues-heading'
           >
-            MY LEAGUES
+            All LEAGUES
           </Typography>
           
           {/* Divider line below heading */}
@@ -2405,7 +2405,7 @@ function AllLeagues() {
                 }}
               >
                 <MenuItem value="uncompleted">Live Leagues</MenuItem>
-                <MenuItem value="completed">Complete Leagues</MenuItem>
+                <MenuItem value="completed">Completed Leagues</MenuItem>
               </TextField>
               
               <TextField 
