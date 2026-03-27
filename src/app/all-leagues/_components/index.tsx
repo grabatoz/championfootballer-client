@@ -221,6 +221,11 @@ function LeagueMembersDialog({
 
   const isAdmin = league.adminId === currentUserId
   const memberCount = league.members?.length || 0
+  const matchCount = league.matches?.length || 0
+  const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
+    || (league.administrators || []).find((a) => a.id === league.adminId)
+    || (league.administrators || [])[0]
+  const leagueAdminName = `${leagueAdmin?.firstName || ''} ${leagueAdmin?.lastName || ''}`.trim() || 'Not available'
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
     if (window.confirm(`Are you sure you want to remove ${memberName} from the league?`)) {
@@ -345,135 +350,192 @@ function LeagueMembersDialog({
           "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
         }}
       >
-        <List sx={{ py: 0 }}>
-          {(league.members || []).map((member, index) => {
-            const memberName = `${member.firstName} ${member.lastName}`
-            const isLeagueAdmin = member.id === league.adminId
-            const isCurrentUser = member.id === currentUserId
+        {isAdmin ? (
+          <List sx={{ py: 0 }}>
+            {(league.members || []).map((member, index) => {
+              const memberName = `${member.firstName} ${member.lastName}`
+              const isLeagueAdmin = member.id === league.adminId
+              const isCurrentUser = member.id === currentUserId
 
-            return (
-              <Fade in={true} timeout={300 + index * 100} key={member.id}>
-                <Box>
-                  <ListItem
-                    sx={{
-                      py: { xs: 2, sm: 2.5 },
-                      px: { xs: 2, sm: 3 },
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
-                      borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.06)",
-                      },
-                    }}
-                  >
-                    <ListItemAvatar sx={{ minWidth: 56 }}>
-                      <Box
-                        sx={{
-                          position: 'relative',
-                          width: { xs: 44, sm: 52 },
-                          height: { xs: 44, sm: 52 },
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          background: 'transparent',
-                          // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
-                          // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                        }}
-                      >
-                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+              return (
+                <Fade in={true} timeout={300 + index * 100} key={member.id}>
+                  <Box>
+                    <ListItem
+                      sx={{
+                        py: { xs: 2, sm: 2.5 },
+                        px: { xs: 2, sm: 3 },
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
+                        borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          bgcolor: "rgba(255,255,255,0.06)",
+                        },
+                      }}
+                    >
+                      <ListItemAvatar sx={{ minWidth: 56 }}>
                         <Box
                           sx={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#000',
-                            fontWeight: 800,
-                            fontSize: { xs: 14, sm: 16 },
-                            lineHeight: 1,
-                            textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                            position: 'relative',
+                            width: { xs: 44, sm: 52 },
+                            height: { xs: 44, sm: 52 },
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            background: 'transparent',
+                            // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
+                            // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                           }}
                         >
-                          {/* {member.shirtNumber || '0'} */}
-                        </Box>
-                      </Box>
-                    </ListItemAvatar>
-
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                          <Typography
+                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                          <Box
                             sx={{
-                              fontWeight: 600,
-                              color: "#E5E7EB",
-                              fontSize: { xs: 16, sm: 18 },
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#000',
+                              fontWeight: 800,
+                              fontSize: { xs: 14, sm: 16 },
+                              lineHeight: 1,
+                              textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                             }}
                           >
-                            {memberName}
-                          </Typography>
-                          {isCurrentUser && (
-                            <Chip
-                              label="You"
-                              size="small"
+                            {/* {member.shirtNumber || '0'} */}
+                          </Box>
+                        </Box>
+                      </ListItemAvatar>
+
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                            <Typography
                               sx={{
-                                bgcolor: "transparent",
-                                color: "#e56a16",
-                                border: '1px solid rgba(229,106,22,0.6)',
                                 fontWeight: 600,
-                                fontSize: 11,
-                                height: 20,
-                                borderRadius: '9999px',
+                                color: "#E5E7EB",
+                                fontSize: { xs: 16, sm: 18 },
                               }}
-                            />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
-                          <Typography
+                            >
+                              {memberName}
+                            </Typography>
+                            {isCurrentUser && (
+                              <Chip
+                                label="You"
+                                size="small"
+                                sx={{
+                                  bgcolor: "transparent",
+                                  color: "#e56a16",
+                                  border: '1px solid rgba(229,106,22,0.6)',
+                                  fontWeight: 600,
+                                  fontSize: 11,
+                                  height: 20,
+                                  borderRadius: '9999px',
+                                }}
+                              />
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                            {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
+                            <Typography
+                              sx={{
+                                color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
+                                fontWeight: 500,
+                                fontSize: { xs: 13, sm: 14 },
+                              }}
+                            >
+                              {isLeagueAdmin ? "League Admin" : "Member"}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+
+                      {isAdmin && member.id !== currentUserId && (
+                        <Tooltip title={`Remove ${memberName}`} arrow>
+                          <IconButton
+                            onClick={() => handleRemoveMember(member.id, memberName)}
                             sx={{
-                              color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
-                              fontWeight: 500,
-                              fontSize: { xs: 13, sm: 14 },
+                              color: "#ff6b6b",
+                              bgcolor: "rgba(255, 107, 107, 0.12)",
+                              "&:hover": {
+                                bgcolor: "rgba(255, 107, 107, 0.2)",
+                                transform: "scale(1.05)",
+                              },
+                              transition: "all 0.2s ease",
                             }}
                           >
-                            {isLeagueAdmin ? "League Admin" : "Member"}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-
-                    {isAdmin && member.id !== currentUserId && (
-                      <Tooltip title={`Remove ${memberName}`} arrow>
-                        <IconButton
-                          onClick={() => handleRemoveMember(member.id, memberName)}
-                          sx={{
-                            color: "#ff6b6b",
-                            bgcolor: "rgba(255, 107, 107, 0.12)",
-                            "&:hover": {
-                              bgcolor: "rgba(255, 107, 107, 0.2)",
-                              transform: "scale(1.05)",
-                            },
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          <Delete sx={{ fontSize: 20 }} />
-                        </IconButton>
-                      </Tooltip>
+                            <Delete sx={{ fontSize: 20 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </ListItem>
+                    {index < (league.members?.length || 0) - 1 && (
+                      <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
                     )}
-                  </ListItem>
-                  {index < (league.members?.length || 0) - 1 && (
-                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
-                  )}
+                  </Box>
+                </Fade>
+              )
+            })}
+          </List>
+        ) : (
+          <Box sx={{ p: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.08)',
+                bgcolor: 'rgba(255,255,255,0.03)',
+              }}
+            >
+              <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                League Admin
+              </Typography>
+              <Typography sx={{ color: '#E5E7EB', fontSize: 18, fontWeight: 700 }}>
+                {leagueAdminName}
+              </Typography>
+            </Box>
+
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    bgcolor: 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Total Players
+                  </Typography>
+                  <Typography sx={{ color: '#E5E7EB', fontSize: 20, fontWeight: 700 }}>
+                    {memberCount}
+                  </Typography>
                 </Box>
-              </Fade>
-            )
-          })}
-        </List>
+              </Grid>
+              <Grid item xs={6}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    bgcolor: 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Total Matches
+                  </Typography>
+                  <Typography sx={{ color: '#E5E7EB', fontSize: 20, fontWeight: 700 }}>
+                    {matchCount}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
       </DialogContent>
 
       {/* Footer */}
@@ -2480,7 +2542,7 @@ function AllLeagues() {
               textAlign: 'center',
               transition: 'all 0.3s ease'
             }}>
-              Complete Leagues
+              Completed Leagues
             </Typography>
             
             <Box 

@@ -1679,7 +1679,7 @@ export default function PlayerDashboard() {
             // backgroundColor: 'red',
           }}>
             <PlayerCard 
-              name={user?.firstName || ''}
+              name={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Player Name'}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
               height="100%"
@@ -1972,7 +1972,7 @@ export default function PlayerDashboard() {
             mt: { xs: 1 }
           }}>
             <PlayerCard
-              name={user?.firstName || ''}
+              name={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Player Name'}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
               stats={{

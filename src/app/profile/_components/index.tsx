@@ -237,6 +237,16 @@ const getErrorMessage = (e: unknown): string => {
   return "Failed to update profile. Please try again."
 }
 
+const buildPlayerDisplayName = (firstName?: string | null, lastName?: string | null): string => {
+  const fullName = [firstName, lastName]
+    .map((part) => (typeof part === "string" ? part.trim() : ""))
+    .filter(Boolean)
+    .join(" ")
+    .trim()
+
+  return fullName || "Player Name"
+}
+
 // Shape of possible API error objects (optional)
 // interface ApiError {
 //   message?: string
@@ -300,6 +310,7 @@ const PlayerProfileCard = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const router = useRouter()
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
+  const userDisplayName = buildPlayerDisplayName(user?.firstName, user?.lastName)
 
   // Playing styles per position type (3 options each; you can edit/rename later)
   const playingStylesMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
@@ -378,6 +389,11 @@ const PlayerProfileCard = () => {
       }
       if (lastName.trim().length > 20) {
         toast.error("Last name must be 20 characters or less")
+        setIsUpdating(false)
+        return
+      }
+      if (email.trim().length > 40) {
+        toast.error("Email must be 40 characters or less")
         setIsUpdating(false)
         return
       }
@@ -750,7 +766,7 @@ const PlayerProfileCard = () => {
                     lineHeight: 1.15,
                     textShadow: "0 2px 12px rgba(0,0,0,0.5)"
                   }}>
-                    {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
+                    {userDisplayName}
                   </Typography>
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim, mt: .5 }}>Age: <b style={{ color: themeColors.text }}>{user?.age || "-"}</b></Typography>
                   <Typography sx={{ fontSize: 13, color: themeColors.textDim, display: 'flex', gap: .5, wordBreak: 'break-word', flexWrap: 'wrap' }}>
@@ -936,7 +952,7 @@ const PlayerProfileCard = () => {
                     <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />
                   </Box>
                   <Typography sx={{ mt: 1.5, fontWeight: 400, fontSize: { xs: 16, sm: 20 }, color: '#fff', fontFamily: 'Woodford Bourne Pro', textAlign: 'center' }}>
-                    {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Player Name"}
+                    {userDisplayName}
                   </Typography>
                   {/* Removed bottom Upload button per request */}
                 </Box>
@@ -945,15 +961,15 @@ const PlayerProfileCard = () => {
                   <Grid container spacing={0.5}>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>First Name</Typography>
-                      <StyledTextField size="small" value={firstName} onChange={e => setFirstName(e.target.value)} fullWidth placeholder="First Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
+                      <StyledTextField size="small" value={firstName} onChange={e => setFirstName((e.target.value || "").slice(0, 20))} fullWidth placeholder="First Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Last Name</Typography>
-                      <StyledTextField size="small" value={lastName} onChange={e => setLastName(e.target.value)} fullWidth placeholder="Last Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
+                      <StyledTextField size="small" value={lastName} onChange={e => setLastName((e.target.value || "").slice(0, 20))} fullWidth placeholder="Last Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Email</Typography>
-                      <StyledTextField size="small" type="email" value={email} onChange={e => setEmail(e.target.value)} fullWidth placeholder="123@gmail.com" sx={{ mb: 1 }} />
+                      <StyledTextField size="small" type="email" value={email} onChange={e => setEmail((e.target.value || "").slice(0, 40))} fullWidth placeholder="123@gmail.com" inputProps={{ maxLength: 40 }} sx={{ mb: 1 }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Change Password</Typography>

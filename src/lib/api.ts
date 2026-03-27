@@ -1185,7 +1185,7 @@ function createLeaderboardPlayer(
 function toPlayerListItem(user: User): PlayersResponse['players'][number] {
   return {
     ...user,
-    name: (user.firstName && user.lastName) ? `${user.firstName} ${user.lastName}` : '',
+    name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
     profilePicture: normalizeProfilePicture(user.profilePicture),
     rating: (user as User & { rating?: number }).rating ?? 0,
   };

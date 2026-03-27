@@ -163,6 +163,10 @@ const PlayerCard = ({
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
   const { title, color } = levelInfo;
+  const displayCardName = (typeof name === 'string' ? name.trim() : '') || 'Player Name';
+  const normalizedFoot = typeof foot === 'string' ? foot.trim().toUpperCase() : '';
+  const footLabel = normalizedFoot === 'RIGHT' ? 'R' : normalizedFoot === 'LEFT' ? 'L' : (normalizedFoot || '-');
+  const isRightFoot = footLabel === 'R';
   // Pick the correct vector image based on color
   const Title = vectorMap[color] || vectorDefault;
   
@@ -547,9 +551,12 @@ const PlayerCard = ({
               alt="Foot"
               width={29}
               height={12}
-              style={{ filter: 'brightness(0) saturate(100%)' }}
+              style={{
+                filter: 'brightness(0) saturate(100%)',
+                transform: isRightFoot ? 'scaleX(-1)' : 'scaleX(1)',
+              }}
             />
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>{foot}</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>{footLabel}</Typography>
           </Box>
         </Box>
 
@@ -561,7 +568,7 @@ const PlayerCard = ({
             sx={{ textTransform: 'uppercase' }}
             color="#000"
           >
-            {name}
+            {displayCardName}
           </Typography>
           {/* <Typography fontSize="12px" fontWeight={'bold'} color="#000">{title}</Typography> */}
         </Box>

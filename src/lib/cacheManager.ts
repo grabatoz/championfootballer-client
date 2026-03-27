@@ -131,7 +131,7 @@ function toPlayerListItem(user: User): PlayersResponse['players'][number] {
     : 0;
   return {
     ...user,
-    name: (user.firstName && user.lastName) ? `${user.firstName} ${user.lastName}` : '',
+    name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
     profilePicture: normalizeProfilePicture(user.profilePicture),
     rating,
   };
