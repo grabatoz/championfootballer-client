@@ -36,7 +36,7 @@ import { useAuth } from '@/lib/hooks';
 import { playerAPI } from '@/lib/api';
 import FootballImg from '@/Components/images/football.png';
 import GoatImg from '@/Components/images/goat.png';
-import { BarChart } from '@mui/icons-material'; // Chart icon
+import { BarChart, DashboardCustomize } from '@mui/icons-material';
 import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
 
@@ -1934,6 +1934,7 @@ export default function PlayerStatsPage() {
                             <Box
                                 sx={{
                                     mt: 2,
+                                    // width: 248,
                                     display: 'flex',
                                     alignItems: 'stretch',
                                     borderRadius: 1,
@@ -1969,6 +1970,52 @@ export default function PlayerStatsPage() {
                                         textTransform: 'uppercase' 
                                     }}>
                                         Stats Over Season
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {/* Performance Dashboard button */}
+                            <Box
+                                sx={{
+                                    mt: 1.2,
+                                    // width: 196,
+                                    display: 'flex',
+                                    alignItems: 'stretch',
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    '&:hover .perf-icon-box': { bgcolor: '#008c6b' },
+                                    '&:hover .perf-text-box': { bgcolor: '#333' },
+                                    border: '1.5px solid #fff',
+                                }}
+                                  onClick={() => {
+                                    if (playerId) router.push(`/player/${playerId}/career`);
+                                }}
+                            >
+                                <Box className="perf-icon-box" sx={{
+                                    bgcolor: '#00a77f',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    px: 1.2,
+                                    py: 0.2
+                                }}>
+                                    <DashboardCustomize sx={{ color: '#fff', fontSize: 30 }} />
+                                </Box>
+                                <Box className="perf-text-box" sx={{
+                                    bgcolor: '#444',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    px: 0.3,
+                                    py: 0.8
+                                }}>
+                                    <Typography sx={{
+                                        color: '#fff',
+                                        fontWeight: 600,
+                                        fontSize: 10,
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        Performance Dashboard
                                     </Typography>
                                 </Box>
                             </Box>

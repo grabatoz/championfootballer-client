@@ -1389,8 +1389,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   onArchive();
                 }}
                 sx={{
-                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                  '&:hover': { background: 'linear-gradient(177deg, rgba(229,106,22,0.9) 26%, rgba(207,35,38,0.9) 100%)' },
+                  background: '#d32f2f',
+                  '&:hover': { background: '#ff0000' },
                 }}
               >
                 Archive League
@@ -1517,7 +1517,9 @@ function AllLeagues() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -1558,14 +1560,14 @@ function AllLeagues() {
     return completedCount >= max;
   };
 
-  // Apply filters: by completion tab, by year (createdAt) and by league name
-  // Archived leagues are always excluded from both Live and Complete views
+  // Apply filters: by completion, by year (createdAt) and by league name
+  // Archived leagues are always excluded from main list
   const filteredLeagues = useMemo(() => {
     const nonArchived = leagues.filter(l => !(l as any).archived);
-    const base = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
+    const byCompletion = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
     const byYear = selectedYear === 'all'
-      ? base
-      : base.filter(l => {
+      ? byCompletion
+      : byCompletion.filter(l => {
         const t = Date.parse(l.createdAt || '');
         if (!Number.isFinite(t)) return false;
         const y = new Date(t).getFullYear();
@@ -1576,6 +1578,18 @@ function AllLeagues() {
     if (!term) return byYear;
     return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
   }, [leagues, selectedYear, searchTerm, completionTab]);
+
+  // Show all filtered leagues, or only user-selected league
+  const leaguesToDisplay = useMemo(() => {
+    if (selectedLeagueId === 'all') return filteredLeagues;
+    return filteredLeagues.filter(l => String(l.id) === selectedLeagueId);
+  }, [filteredLeagues, selectedLeagueId]);
+
+  useEffect(() => {
+    if (selectedLeagueId === 'all') return;
+    const stillExists = filteredLeagues.some(l => String(l.id) === selectedLeagueId);
+    if (!stillExists) setSelectedLeagueId('all');
+  }, [filteredLeagues, selectedLeagueId]);
 
   // Archived leagues — always separate from the main list
   const archivedLeagues = useMemo(() => {
@@ -1737,6 +1751,44 @@ function AllLeagues() {
       fetchAllLeagues();
     }
   }, [token, fetchAllLeagues]);
+
+  const handlePermanentDeleteArchivedLeague = useCallback(async (league: LeagueWithStatus) => {
+    if (!token) return;
+    if (!window.confirm(`Permanently delete "${league.name}"? This cannot be undone.`)) return;
+
+    const leagueId = String(league.id);
+    setArchivedLeagueActionId(leagueId);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to delete league');
+
+      toast.success('League permanently deleted');
+      setLeagues(prev => prev.filter(l => l.id !== league.id));
+
+      if (selectedLeague && selectedLeague.id === league.id) {
+        setSelectedLeague(null);
+        setOpenMembers(false);
+      }
+      if (adminSettingsLeague && adminSettingsLeague.id === league.id) {
+        setAdminSettingsLeague(null);
+        setOpenAdminSettings(false);
+      }
+
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete league';
+      toast.error(msg);
+    } finally {
+      setArchivedLeagueActionId(null);
+    }
+  }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -2442,8 +2494,8 @@ function AllLeagues() {
             >
               <TextField 
                 select 
-                value={completionTab} 
-                onChange={(e) => setCompletionTab(e.target.value as 'completed' | 'uncompleted')}
+                value={selectedLeagueId} 
+                onChange={(e) => setSelectedLeagueId(e.target.value)}
                 size="small"
                 sx={{
                   minWidth: 150,
@@ -2466,8 +2518,12 @@ function AllLeagues() {
                   }
                 }}
               >
-                <MenuItem value="uncompleted">Live Leagues</MenuItem>
-                <MenuItem value="completed">Completed Leagues</MenuItem>
+                <MenuItem value="all">All Leagues</MenuItem>
+                {filteredLeagues.map((league) => (
+                  <MenuItem key={league.id} value={String(league.id)}>
+                    {league.name}
+                  </MenuItem>
+                ))}
               </TextField>
               
               <TextField 
@@ -2502,7 +2558,7 @@ function AllLeagues() {
               
               <Button 
                 variant="outlined" 
-                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setCompletionTab('uncompleted'); }} 
+                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setSelectedLeagueId('all'); setCompletionTab('uncompleted'); }} 
                 sx={{
                   color: 'white',
                   borderRadius: 6,
@@ -2599,7 +2655,7 @@ function AllLeagues() {
                 Create a new league or join an existing one to get started.
               </Typography>
             </Box>
-          ) : filteredLeagues.length === 0 ? (
+          ) : leaguesToDisplay.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>
                 No leagues found for selected filters
@@ -2609,7 +2665,7 @@ function AllLeagues() {
               </Typography>
             </Box>
           ) : (
-            filteredLeagues.map((league) => {
+            leaguesToDisplay.map((league) => {
               const isCompleted = isLeagueCompleted(league);
               return (
                 <Box
@@ -2978,7 +3034,9 @@ function AllLeagues() {
 
             {showArchived && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                {archivedLeagues.map((league) => (
+                {archivedLeagues.map((league) => {
+                  const actionLoading = archivedLeagueActionId === String(league.id);
+                  return (
                   <Box
                     key={league.id}
                     onClick={() => router.push(`/league/${league.id}`)}
@@ -3013,6 +3071,7 @@ function AllLeagues() {
                       <Button
                         size="small"
                         variant="contained"
+                        disabled={actionLoading}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
@@ -3041,6 +3100,26 @@ function AllLeagues() {
                         }}
                       >
                         Restore
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={actionLoading}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePermanentDeleteArchivedLeague(league);
+                        }}
+                        sx={{
+                          bgcolor: '#dc2626',
+                          '&:hover': { bgcolor: '#b91c1c' },
+                          fontSize: '11px',
+                          px: 1.5,
+                          py: 0.3,
+                          minWidth: 'auto',
+                          textTransform: 'none',
+                        }}
+                      >
+                        {actionLoading ? 'Deleting...' : 'Permanent Delete'}
                       </Button>
                     </Box>
 
@@ -3232,7 +3311,8 @@ function AllLeagues() {
                       </Grid>
                     </Grid>
                   </Box>
-                ))}
+                  );
+                })}
               </Box>
             )}
           </Box>
