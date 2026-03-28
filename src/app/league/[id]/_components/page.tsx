@@ -5503,8 +5503,13 @@ export default function LeagueDetailPage() {
                             }}>
                                 {(() => {
                                     const p = quickView.player as User & PlayerProfileLike;
+                                    const fullName = [p.firstName, p.lastName]
+                                        .map((part) => (typeof part === 'string' ? part.trim() : ''))
+                                        .filter(Boolean)
+                                        .join(' ')
+                                        .trim();
                                     const playerCardProps = {
-                                        name: p.firstName ?? '',
+                                        name: fullName,
                                         number: getShirtNumber(p),
                                         points: Number(quickView.xp ?? 0),
                                         stats: {
