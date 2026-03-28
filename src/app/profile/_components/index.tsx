@@ -238,13 +238,13 @@ const getErrorMessage = (e: unknown): string => {
 }
 
 const buildPlayerDisplayName = (firstName?: string | null, lastName?: string | null): string => {
-  const fullName = [firstName, lastName]
-    .map((part) => (typeof part === "string" ? part.trim() : ""))
-    .filter(Boolean)
-    .join(" ")
-    .trim()
+  const first = typeof firstName === "string" ? firstName.trim() : ""
+  const last = typeof lastName === "string" ? lastName.trim() : ""
+  const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : ""
 
-  return fullName || "Player Name"
+  if (first) return lastInitial ? `${first} ${lastInitial}` : first
+  if (lastInitial) return lastInitial
+  return "Player Name"
 }
 
 // Shape of possible API error objects (optional)

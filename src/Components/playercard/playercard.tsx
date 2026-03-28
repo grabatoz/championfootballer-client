@@ -164,7 +164,15 @@ const PlayerCard = ({
   // Find the level info based on points
   const levelInfo = getLevelInfo(points);
   const { title, color } = levelInfo;
-  const displayCardName = (typeof name === 'string' ? name.trim() : '') || 'Player Name';
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  const nameParts = normalizedName.split(/\s+/).filter(Boolean);
+  const firstNameOnly = nameParts[0] || '';
+  const lastInitial = nameParts.length > 1
+    ? nameParts[nameParts.length - 1].charAt(0).toUpperCase()
+    : '';
+  const displayCardName = firstNameOnly
+    ? (lastInitial ? `${firstNameOnly} ${lastInitial}.` : firstNameOnly)
+    : 'Player Name';
   const normalizedFoot = typeof foot === 'string' ? foot.trim().toUpperCase() : '';
   const footLabel = normalizedFoot === 'RIGHT' ? 'R' : normalizedFoot === 'LEFT' ? 'L' : (normalizedFoot || '-');
   const isRightFoot = footLabel === 'R';
