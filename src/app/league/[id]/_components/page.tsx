@@ -253,6 +253,9 @@ interface TableData {
     wins: number;
     draws: number;
     losses: number;
+    goalsFor: number;
+    goalsAgainst: number;
+    goalDifference: number;
     winPercentage: string;
     isAdmin?: boolean;
     profilePicture?: string | null;
@@ -1499,6 +1502,9 @@ export default function LeagueDetailPage() {
                 wins: 0,
                 draws: 0,
                 losses: 0,
+                goalsFor: 0,
+                goalsAgainst: 0,
+                goalDifference: 0,
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
@@ -1524,7 +1530,12 @@ export default function LeagueDetailPage() {
                         console.warn(`⚠️ Player ${p.firstName} ${p.lastName} played but not in filtered members!`);
                         return;
                     }
+                    const goalsFor = isHome ? Number(match.homeTeamGoals ?? 0) : Number(match.awayTeamGoals ?? 0);
+                    const goalsAgainst = isHome ? Number(match.awayTeamGoals ?? 0) : Number(match.homeTeamGoals ?? 0);
                     stats.played++;
+                    stats.goalsFor += goalsFor;
+                    stats.goalsAgainst += goalsAgainst;
+                    stats.goalDifference = stats.goalsFor - stats.goalsAgainst;
                     if ((isHome && homeWon) || (!isHome && awayWon)) stats.wins++;
                     else if (isDraw) stats.draws++;
                     else stats.losses++;
@@ -4589,7 +4600,9 @@ export default function LeagueDetailPage() {
                                                                 <div className="text-center text-foreground">{player.wins}</div>
                                                                 <div className="text-center text-foreground">{player.draws}</div>
                                                                 <div className="text-center text-foreground">{player.losses}</div>
-                                                                <div className="text-center text-foreground">-</div>
+                                                                <div className="text-center text-foreground">
+                                                                    {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
+                                                                </div>
                                                                 <div className="text-center text-foreground">{player.winPercentage}</div>
                                                                 <div className="text-center text-foreground font-bold">{xpPts}</div>
                                                             </div>
