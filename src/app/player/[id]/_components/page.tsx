@@ -39,6 +39,7 @@ import GoatImg from '@/Components/images/goat.png';
 import { BarChart, DashboardCustomize } from '@mui/icons-material';
 import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
+import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -872,42 +873,64 @@ export default function PlayerStatsPage() {
         return Math.round((wins / allMatches.length) * 100);
     }, [allMatches, playerId]);
 
-    // Backend-driven XP (totalXP) with safe fallback
+    // Fallback XP from already-loaded profile payload
+    const profileXPFallback = useMemo(() => {
+        const playerObj = (fullPlayerData?.player || {}) as Record<string, unknown>;
+        const rootObj = (fullPlayerData || {}) as Record<string, unknown>;
+        const raw =
+            playerObj.totalXP ??
+            playerObj.totalXp ??
+            playerObj.xp ??
+            rootObj.totalXP ??
+            rootObj.totalXp ??
+            rootObj.xp ??
+            0;
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }, [fullPlayerData]);
+
+    // Direct XP from player table by player id (/players/:id -> player.xp)
     const [xp, setXp] = useState<number>(0);
     const [xpLoading, setXpLoading] = useState<boolean>(false);
 
-    const fallbackXP = useMemo(() => {
-        const source = leagueId === 'all' ? allMatches : currentLeagueMatches;
-        return sumXPAwardedFromMatches(source);
-    }, [leagueId, allMatches, currentLeagueMatches]);
-
     useEffect(() => {
-        if (!playerId) return;
+        if (!playerId) {
+            setXp(profileXPFallback);
+            return;
+        }
+
         let cancelled = false;
-        const lid = leagueId || 'all';
-        const y = year || 'all';
         setXpLoading(true);
-        playerAPI
-            .getPlayerXP(String(playerId), String(lid), String(y))
-            .then((res) => {
-                if (cancelled) return;
-                if (res.success && res.data) {
-                    setXp(res.data.totalXP ?? 0);
-                } else {
-                    setXp(fallbackXP);
-                }
+
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(playerId))}`, {
+            credentials: 'include',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+            .then(async (res) => {
+                if (!res.ok) throw new Error('Failed to fetch player profile');
+                const json = (await res.json()) as Record<string, unknown>;
+                const playerObj = (json.player || json.data || {}) as Record<string, unknown>;
+                const raw =
+                    playerObj.xp ??
+                    playerObj.totalXP ??
+                    playerObj.totalXp ??
+                    json.xp ??
+                    json.totalXP ??
+                    profileXPFallback;
+                const parsed = Number(raw);
+                if (!cancelled) setXp(Number.isFinite(parsed) ? parsed : profileXPFallback);
             })
             .catch(() => {
-                if (cancelled) return;
-                setXp(fallbackXP);
+                if (!cancelled) setXp(profileXPFallback);
             })
             .finally(() => {
                 if (!cancelled) setXpLoading(false);
             });
+
         return () => {
             cancelled = true;
         };
-    }, [playerId, leagueId, year, fallbackXP]);
+    }, [playerId, token, profileXPFallback]);
 
     // Calculate current XP milestone
     const xpMilestone = useMemo(() => getXPMilestone(xp), [xp]);
@@ -1869,7 +1892,7 @@ export default function PlayerStatsPage() {
                                     <Typography sx={{ color: '#fff', fontSize: 16, fontWeight: 700, textTransform: 'uppercase' }}>
                                         {playerPositionType}
                                     </Typography>
-                                    <Box sx={{ color: TEAL_PRIMARY, fontSize: 35 }}>★</Box>
+                                    <Box sx={{ fontSize: 35 }}> <XPStarMilestoneCard height={35} width={35} xp={xp} /></Box>
                                 </Box>
                             </Box>
                         </Box>

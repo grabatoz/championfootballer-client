@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import CloseButton from '@/Components/CloseButton';
+import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // Badge images
 import HatTrickBadge from '@/Components/images/brown.png';
@@ -626,6 +627,15 @@ export default function RewardsPage() {
   // Compute badges
   const clientBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
   const myBadges: Badge[] = user ? mergeBadges(clientBadges, serverBadges) : [];
+  const myProfileXP = useMemo(() => {
+    const risingXP = myBadges.find((b) => b.id === 'rising_xp')?.xp;
+    const resolved =
+      (typeof risingXP === 'number' ? risingXP : undefined) ??
+      (typeof user?.xp === 'number' ? user.xp : undefined) ??
+      (typeof backendTotalXP === 'number' ? backendTotalXP : undefined) ??
+      0;
+    return Number.isFinite(Number(resolved)) ? Number(resolved) : 0;
+  }, [myBadges, user?.xp, backendTotalXP]);
   
   // Calculate total XP from all rewards
   const totalRewardsXP = myBadges.reduce((sum, badge) => sum + (badge.count * badge.xp), 0);
@@ -659,7 +669,7 @@ export default function RewardsPage() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-          <Typography sx={{ fontSize: { xs: '2rem', sm: '2.5rem' }, lineHeight: 1 }}>⭐</Typography>
+          <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
           <Typography
             variant="h4"
             sx={{
@@ -676,7 +686,7 @@ export default function RewardsPage() {
           >
             REWARDS
           </Typography>
-          <Typography sx={{ fontSize: { xs: '2rem', sm: '2.5rem' }, lineHeight: 1 }}>⭐</Typography>
+          <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
         </Box>
          <Box sx={{ height: 6, bgcolor: 'rgba(229,106,22,0.9)', mt: 7 }} />
       </Box>

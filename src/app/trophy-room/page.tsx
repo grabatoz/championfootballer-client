@@ -46,6 +46,7 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').th
   ssr: false
 });
 import LeagueIcon from '@/Components/images/league icon.png'
+import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // import { achievementsAPI } from '@/lib/api';
 
@@ -2116,6 +2117,15 @@ export default function GlobalTrophyRoom() {
   // Build My Achievements (badges) for the current user (use backend XP if provided)
   const clientBadges: Badge[] = user ? computeBadges(user, leagues, backendTotalXP) : [];
   const myBadges: Badge[] = user ? mergeBadges(clientBadges, serverBadges) : [];
+  const myProfileXP = useMemo(() => {
+    const risingXP = myBadges.find((b) => b.id === 'rising_xp')?.xp;
+    const resolved =
+      (typeof risingXP === 'number' ? risingXP : undefined) ??
+      (typeof user?.xp === 'number' ? user.xp : undefined) ??
+      (typeof backendTotalXP === 'number' ? backendTotalXP : undefined) ??
+      0;
+    return Number.isFinite(Number(resolved)) ? Number(resolved) : 0;
+  }, [myBadges, user?.xp, backendTotalXP]);
 
   // Total XP from badges (exclude Rising XP level box from this sum)
   // const totalBadgeXP = useMemo(
@@ -2823,7 +2833,7 @@ export default function GlobalTrophyRoom() {
                     py: 2,
                     background: '#1f1f1f',
                   }}>
-                    <Star fill="#3B82F6" color="#3B82F6" size={32} />
+                    <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
                     <Avatar
                       src={getProfileImage(user as any) || undefined}
                       alt={`${user?.firstName || ''} ${user?.lastName || ''}`}
@@ -2838,7 +2848,7 @@ export default function GlobalTrophyRoom() {
                     >
                       {!getProfileImage(user as any) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
                     </Avatar>
-                    <Star fill="#3B82F6" color="#3B82F6" size={32} />
+                   <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
                   </Box>
 
                   {/* Two Column Layout */}

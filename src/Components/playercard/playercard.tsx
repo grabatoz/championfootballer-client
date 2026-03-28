@@ -136,6 +136,7 @@ import vectorGold from '@/Components/images/golden.svg';
 import vectorBlack from '@/Components/images/goat.png';
 import vectorDefault from '@/Components/images/green.svg';
 import vectorImg from '@/Components/images/Vectorcard.png'
+import XPStarMilestoneCard from '../XPStarMilestoneCard';
 
 const vectorMap: Record<string, StaticImageData> = {
   Green: vectorGreen,
@@ -532,9 +533,10 @@ const PlayerCard = ({
         >
           {/* Star - LEFT */}
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 0.5 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#009371">
+          <XPStarMilestoneCard height={24} width={24} xp={points} />
+            {/* <svg width="24" height="24" viewBox="0 0 24 24" fill="#009371">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-            </svg>
+            </svg> */}
           </Box>
 
           {/* Position - CENTER */}
