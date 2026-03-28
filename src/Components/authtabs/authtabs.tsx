@@ -1340,7 +1340,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   />
                 }
                 label={
-                  <span className="text-black">
+                  <span className="text-black" style={{ color: 'black' }}>
                     I accept the{' '}
                     <Link href="/terms" style={{ color: 'black', textDecoration: 'underline' }}>
                       terms and conditions
