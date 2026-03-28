@@ -404,18 +404,50 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             maxGames: l.maxGames,
           } as LeagueWithComputed;
         });
-        setUserLeagues(minimalList);
+        const optimisticCreatedLeague: LeagueWithComputed | null = createdLeague?.id
+          ? {
+              id: String(createdLeague.id),
+              name: createdLeague.name,
+              image: createdLeague.image,
+              updatedAt: createdLeague.updatedAt,
+              createdAt: createdLeague.createdAt,
+              status: createdLeague.status,
+              active: createdLeague.active,
+              userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
+              maxGames: createdLeague.maxGames,
+            }
+          : null;
 
-        // Choose a sensible default quickly (based purely on recency for instant UX)
-        if (uniqueLeagues.length > 0) {
-          const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-          const preferred = storedId ? minimalList.find(l => String(l.id) === String(storedId)) || null : null;
-          if (preferred) {
-            setSelectedLeague(preferred);
-          } else {
-            const latest = [...minimalList].sort((a, b) => timeOf(b) - timeOf(a))[0];
-            setSelectedLeague(latest || null);
+        // Keep a freshly created league visible even if backend list is momentarily stale.
+        setUserLeagues(() => {
+          const map = new Map<string, LeagueWithComputed>(
+            minimalList.map((leagueItem) => [String(leagueItem.id), leagueItem])
+          );
+          if (optimisticCreatedLeague && !map.has(String(optimisticCreatedLeague.id))) {
+            map.set(String(optimisticCreatedLeague.id), optimisticCreatedLeague);
           }
+          return Array.from(map.values());
+        });
+
+        // Choose a sensible default quickly (based purely on recency for instant UX).
+        if (minimalList.length > 0 || optimisticCreatedLeague) {
+          const combinedList = optimisticCreatedLeague
+            ? [...minimalList, optimisticCreatedLeague]
+            : minimalList;
+
+          setSelectedLeague((prev) => {
+            if (prev) {
+              const existing = combinedList.find((leagueItem) => String(leagueItem.id) === String(prev.id));
+              if (existing) return existing;
+            }
+
+            const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
+            const preferred = storedId ? combinedList.find(l => String(l.id) === String(storedId)) || null : null;
+            if (preferred) return preferred;
+
+            const latest = [...combinedList].sort((a, b) => timeOf(b) - timeOf(a))[0];
+            return latest || null;
+          });
         }
 
         // 2) Enrich in the background per-league and update state incrementally
@@ -548,7 +580,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
     fetchUserLeagues();
     return () => aborter.abort();
-  }, [token, refreshKey, dispatch]);
+  }, [token, refreshKey, dispatch, createdLeague, currentUserId]);
 
   // Hydrate instantly from local cache to avoid delay on tab/page return
   useEffect(() => {

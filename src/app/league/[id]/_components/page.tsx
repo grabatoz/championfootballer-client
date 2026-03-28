@@ -285,6 +285,97 @@ export default function LeagueDetailPage() {
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [, setCheckedCommonLeague] = useState(false);
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
+    const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null;
+    const normalizeEntityId = (value: unknown): string => String(value ?? '').trim();
+    const toNumericValue = (value: unknown): number | null => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+        return null;
+    };
+    const normalizeXPMapPayload = useCallback((payload: unknown): Record<string, number> => {
+        const normalized: Record<string, number> = {};
+
+        const addEntry = (id: unknown, xpValue: unknown) => {
+            const key = normalizeEntityId(id);
+            if (!key) return;
+            const xpNum = toNumericValue(xpValue);
+            if (xpNum === null) return;
+            normalized[key] = xpNum;
+        };
+
+        const parseEntry = (entry: unknown) => {
+            if (!isRecord(entry)) return;
+            const idCandidate =
+                entry.userId ??
+                entry.user_id ??
+                entry.playerId ??
+                entry.player_id ??
+                entry.memberId ??
+                entry.member_id ??
+                entry.id;
+            const xpCandidate =
+                entry.xp ??
+                entry.totalXP ??
+                entry.total_xp ??
+                entry.points ??
+                entry.value;
+            addEntry(idCandidate, xpCandidate);
+        };
+
+        const parseCollection = (collection: unknown) => {
+            if (Array.isArray(collection)) {
+                collection.forEach(parseEntry);
+                return;
+            }
+            if (!isRecord(collection)) return;
+
+            // Shape: { "<userId>": 123 } OR { "<userId>": { xp: 123 } }
+            Object.entries(collection).forEach(([key, value]) => {
+                if (isRecord(value)) {
+                    const nestedXp =
+                        value.xp ??
+                        value.totalXP ??
+                        value.total_xp ??
+                        value.points ??
+                        value.value;
+                    addEntry(key, nestedXp);
+                } else {
+                    addEntry(key, value);
+                }
+            });
+        };
+
+        if (isRecord(payload)) {
+            const primary =
+                payload.xp ??
+                (isRecord(payload.data) ? payload.data.xp : undefined) ??
+                payload.data ??
+                payload.players ??
+                payload.rows ??
+                payload.items;
+
+            if (primary !== undefined) {
+                parseCollection(primary);
+            } else {
+                parseCollection(payload);
+            }
+        } else {
+            parseCollection(payload);
+        }
+
+        return normalized;
+    }, []);
+    const getLeagueXpForMember = useCallback((memberId: unknown, fallbackXp?: unknown): number => {
+        const key = normalizeEntityId(memberId);
+        const mapValue = key ? toNumericValue(userLeagueXP[key]) : null;
+        if (mapValue !== null) return mapValue;
+        const fallback = toNumericValue(fallbackXp);
+        return fallback ?? 0;
+    }, [userLeagueXP]);
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
     const [activeMatchId,] = React.useState<string | null>(null);
@@ -1026,10 +1117,9 @@ export default function LeagueDetailPage() {
                 const json = await res.json().catch(() => ({}));
                 console.log('📊 XP API response:', JSON.stringify(json));
                 if (json?.success === undefined || json?.success) {
-                    // Support either { xp } or { data: { xp } }
-                    const xpMap = json.xp || json.data?.xp || {};
-                    console.log('📊 XP map set to:', JSON.stringify(xpMap));
-                    setUserLeagueXP(xpMap as Record<string, number>);
+                    const xpMap = normalizeXPMapPayload(json);
+                    console.log('📊 XP map set to (normalized):', JSON.stringify(xpMap));
+                    setUserLeagueXP(xpMap);
                 } else {
                     console.log('📊 XP API returned success=false, using empty map');
                     setUserLeagueXP({});
@@ -1039,7 +1129,7 @@ export default function LeagueDetailPage() {
             }
         }
         fetchXP();
-    }, [league?.id, token, selectedSeasonId]);
+    }, [league?.id, token, selectedSeasonId, normalizeXPMapPayload]);
 
     // Fetch all leagues for dropdown
     useEffect(() => {
@@ -1383,10 +1473,17 @@ export default function LeagueDetailPage() {
                 
                 if (Array.isArray(membersUnknown) && membersUnknown.length > 0) {
                     // Use season members from backend
-                    console.log('🔍 Member IDs from season:', membersUnknown.map((m: any) => `${m.id}: ${m.firstName} ${m.lastName}`));
-                    const seasonMemberIds = new Set(membersUnknown.map((m: any) => m.id));
+                    console.log('🔍 Member IDs from season:', membersUnknown.map((m: unknown) => {
+                        const memberObj = m as Record<string, unknown>;
+                        return `${String(memberObj?.id ?? '')}: ${String(memberObj?.firstName ?? '')} ${String(memberObj?.lastName ?? '')}`;
+                    }));
+                    const seasonMemberIds = new Set(
+                        membersUnknown
+                            .map((m: unknown) => normalizeEntityId((m as Record<string, unknown>)?.id))
+                            .filter((id) => id !== '')
+                    );
                     console.log('🔍 All league members:', league.members.map(m => `${m.id}: ${m.firstName} ${m.lastName}`));
-                    filteredMembers = league.members.filter((member: User) => seasonMemberIds.has(member.id));
+                    filteredMembers = league.members.filter((member: User) => seasonMemberIds.has(normalizeEntityId(member.id)));
                     console.log('✅ Using season members from backend:', filteredMembers.length);
                     console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
                 }
@@ -1508,7 +1605,7 @@ export default function LeagueDetailPage() {
                 winPercentage: '0%',
                 isAdmin: member.id === adminId,
                 profilePicture: member.profilePicture || null,
-                xp: (userLeagueXP && userLeagueXP[member.id] != null) ? userLeagueXP[member.id] : 0,
+                xp: getLeagueXpForMember(member.id, member.xp),
                 motmCount: typeof motmCounts[member.id] === 'number' ? motmCounts[member.id] : 0,
             });
         });
@@ -2533,7 +2630,7 @@ export default function LeagueDetailPage() {
                     assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
                 },
                 skills,
-                xp: (userLeagueXP && userLeagueXP[playerId] != null) ? userLeagueXP[playerId] : 0,
+                xp: getLeagueXpForMember(playerId, player?.xp),
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(data.defensiveImpact ?? 0),
@@ -3195,8 +3292,8 @@ export default function LeagueDetailPage() {
                                             <div>
                                                 {league?.members && [...league.members]
                                                     .sort((a: User, b: User) => {
-                                                        const xpA = a?.xp ?? 0;
-                                                        const xpB = b?.xp ?? 0;
+                                                        const xpA = getLeagueXpForMember(a?.id, a?.xp);
+                                                        const xpB = getLeagueXpForMember(b?.id, b?.xp);
                                                         if (xpB !== xpA) return xpB - xpA;
                                                         const nameA = `${a?.firstName ?? ''} ${a?.lastName ?? ''}`.toLowerCase();
                                                         const nameB = `${b?.firstName ?? ''} ${b?.lastName ?? ''}`.toLowerCase();
@@ -3242,7 +3339,7 @@ export default function LeagueDetailPage() {
                                                                 </div>
 
                                                                 {/* XP Points */}
-                                                                <div className="text-center text-foreground font-bold">{member.xp ?? 0}</div>
+                                                                <div className="text-center text-foreground font-bold">{getLeagueXpForMember(member.id, member.xp)}</div>
                                                             </div>
                                                         );
                                                     })}
@@ -4327,7 +4424,7 @@ export default function LeagueDetailPage() {
                                                     // Map members with their XP and sort by XP (highest first)
                                                     const playersWithXP = leagueMembers.map(member => ({
                                                         ...member,
-                                                        xp: userLeagueXP[member.id] || 0
+                                                        xp: getLeagueXpForMember(member.id, member.xp)
                                                     })).sort((a, b) => b.xp - a.xp);
                                                     
                                                     // Take top 5 players based on XP
