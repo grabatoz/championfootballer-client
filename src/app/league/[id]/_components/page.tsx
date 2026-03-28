@@ -4482,10 +4482,12 @@ export default function LeagueDetailPage() {
                                                     </button>
                                                 </div>
                                                 <div className="col-start-10 col-span-2 justify-self-end">
-                                                    <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                     <Link href={`/league/${leagueId}/match`} passHref>
+                                                    <button  disabled={!league?.active} className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
                                                         {/* <Plus className="w-4 h-4 mr-2" /> */}
                                                         + New Match
                                                     </button>
+                                                    </Link>
                                                 </div>
                                             </div>
 
