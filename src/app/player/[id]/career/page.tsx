@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -1329,6 +1329,7 @@ export default function CareerPage() {
 
   // Preferred league from localStorage (persisted across pages)
   const [preferredLeagueId, setPreferredLeagueId] = useState<string | null>(null);
+  const preferredAppliedRef = useRef(false);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPreferredLeagueId(localStorage.getItem('preferredLeagueId'));
@@ -1339,6 +1340,19 @@ export default function CareerPage() {
     const league = availableLeagues.find(l => l.id === preferredLeagueId);
     return (league as LeagueWithMatches & { name?: string })?.name || null;
   }, [preferredLeagueId, availableLeagues]);
+
+  // If no league is passed in URL, auto-select preferredLeagueId on this page
+  useEffect(() => {
+    if (preferredAppliedRef.current) return;
+    if (urlLeagueId) return;
+    if (!preferredLeagueId) return;
+    const existsInAvailable = availableLeagues.some((l) => l.id === preferredLeagueId);
+    if (!existsInAvailable) return;
+    if (filters.leagueId !== preferredLeagueId) {
+      dispatch(setLeagueFilter(preferredLeagueId));
+    }
+    preferredAppliedRef.current = true;
+  }, [urlLeagueId, preferredLeagueId, filters.leagueId, availableLeagues, dispatch]);
 
   // Clear all filters
   const handleClearFilters = () => {

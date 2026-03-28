@@ -352,7 +352,16 @@ export default function PlayerStatsPage() {
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
     const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+    const [preferredLeagueId, setPreferredLeagueId] = useState<string | null>(null);
+    const [preferredLeagueLoaded, setPreferredLeagueLoaded] = useState(false);
     const filtersInitialized = useRef(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setPreferredLeagueId(localStorage.getItem('preferredLeagueId'));
+        }
+        setPreferredLeagueLoaded(true);
+    }, []);
     
     // Tab navigation state
     const [activeTab, setActiveTab] = useState('current');
@@ -1228,20 +1237,26 @@ export default function PlayerStatsPage() {
         return bestId || list[0]?.id;
     };
 
-    // On initial load, set default filters to 'all' if not already set
+    // On initial load, prefer preferredLeagueId; fallback to 'all'
     useEffect(() => {
-        if (!data || filtersInitialized.current) return;
+        if (!data || !preferredLeagueLoaded || filtersInitialized.current) return;
         
         // Only set defaults once on first load
         if (!year) {
             dispatch(setYearFilter('all'));
         }
-        if (!leagueId) {
-            dispatch(setLeagueFilter('all'));
+        const leaguesList = (data?.leagues || []) as LeagueWithMatchesTyped[];
+        const preferredIsValid = Boolean(
+            preferredLeagueId &&
+            leaguesList.some((l) => l.id === preferredLeagueId && isLeagueActiveForFilter(l))
+        );
+        const nextLeague = preferredIsValid ? String(preferredLeagueId) : (leagueId || 'all');
+        if (nextLeague !== leagueId) {
+            dispatch(setLeagueFilter(nextLeague));
         }
         
         filtersInitialized.current = true;
-    }, [data, year, leagueId, dispatch]);
+    }, [data, year, leagueId, preferredLeagueId, preferredLeagueLoaded, dispatch]);
 
     // Keep current league if still valid after year change; else reset to 'all'
     useEffect(() => {
