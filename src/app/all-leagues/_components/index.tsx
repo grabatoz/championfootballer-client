@@ -19,6 +19,7 @@ import share from '@/Components/images/share.png';
 import play from '@/Components/images/play .png';
 import setting from '@/Components/images/setting.png';
 import ShirtImg from '@/Components/images/shirtimg.png';
+import PlayerImg from '@/Components/images/playerimg.png';
 import { User, League, Match } from '@/types/user';
 import { useDispatch } from 'react-redux';
 import { joinLeague } from '@/lib/features/leagueSlice';
@@ -1249,6 +1250,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   const memberName = `${member.firstName} ${member.lastName}`.trim()
                   const isLeagueAdmin = isUserLeagueAdmin(member.id)
                   const isCurrentUser = member.id === currentUserId
+                  const memberAvatarSrc =
+                    typeof member.profilePicture === 'string' && member.profilePicture.trim().length > 0
+                      ? member.profilePicture.trim()
+                      : PlayerImg.src
                   return (
                     <Box key={member.id}>
                       <ListItem
@@ -1263,7 +1268,16 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                         }}
                       >
                         <ListItemAvatar>
-                          <Avatar sx={{ bgcolor: '#374151' }}>
+                          <Avatar
+                            src={memberAvatarSrc}
+                            imgProps={{
+                              onError: (e) => {
+                                const img = e.currentTarget as HTMLImageElement;
+                                if (img.src !== PlayerImg.src) img.src = PlayerImg.src;
+                              },
+                            }}
+                            sx={{ bgcolor: '#374151' }}
+                          >
                             {(member.firstName?.[0] || '?').toUpperCase()}
                           </Avatar>
                         </ListItemAvatar>
