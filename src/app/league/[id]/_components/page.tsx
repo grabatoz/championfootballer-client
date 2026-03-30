@@ -1910,18 +1910,20 @@ export default function LeagueDetailPage() {
                     seen.add(pid);
                     return true;
                 })
-                .slice(0, 5)
                 .map((p) => {
                     const rec = (typeof p === 'object' && p !== null)
                         ? p as { id?: string | number; name?: string; positionType?: string; value?: number | string }
                         : {};
+                    const valueNum = Number(rec.value ?? 0);
                     return {
                         id: String(rec.id ?? ''),
                         name: String(rec.name ?? 'Unknown Player'),
                         positionType: String(rec.positionType ?? 'Player'),
-                        value: Number(rec.value ?? 0),
+                        value: Number.isFinite(valueNum) ? valueNum : 0,
                     };
-                });
+                })
+                .filter((player) => player.value > 0)
+                .slice(0, 5);
         };
 
         Promise.all(
