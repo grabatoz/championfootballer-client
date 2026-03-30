@@ -2150,7 +2150,7 @@ export default function AllMatches() {
                                             overflow: 'hidden',
                                             background: '#222',
                                             border: '2px solid #fff',
-                                            '& .css-1i9wt8r-MuiCardContent-root:last-child': { pb: '0px !important' },
+                                            '& .MuiCardContent-root:last-child': { paddingBottom: 0 },
                                             '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)' },
                                         }}
                                     >
@@ -2166,7 +2166,7 @@ export default function AllMatches() {
                                             </Typography>
                                         </Box>
 
-                                        <CardContent sx={{ p: 0 }}>
+                                        <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
                                             {/* Result Banner */}
                                             <Box sx={{ py: 0.5, textAlign: 'center' }}>
                                                 <Typography sx={{ color: 'white', fontSize: '0.75rem', fontWeight: 400 }}>
@@ -2208,7 +2208,7 @@ export default function AllMatches() {
                                             {/* Bottom Info Panel */}
                                             <Box sx={{ display: 'flex' }}>
                                                 {/* Left Info Column */}
-                                                <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '105px' }}>
+                                                <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
@@ -2260,7 +2260,7 @@ export default function AllMatches() {
                                                     </Box>
 
                                                     {/* Action Buttons */}
-                                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, mt: 0.5 }}>
                                                         {(isAdmin || isMember) && (() => {
                                                             const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
                                                             const isDisabled =
@@ -2322,7 +2322,7 @@ export default function AllMatches() {
                                                 </Box>
 
                                                 {/* Right Admin Column */}
-                                                <Box sx={{ width: '95px', borderLeft: '2px solid #fff', p: 1, minHeight: '105px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+                                                <Box sx={{ width: '95px', borderLeft: '2px solid #fff', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     {isAdmin ? (
                                                         <>
                                                             <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}>For Admin Only</Typography>

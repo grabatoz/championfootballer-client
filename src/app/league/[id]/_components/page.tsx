@@ -3845,12 +3845,8 @@ export default function LeagueDetailPage() {
                                                                 overflow: 'hidden',
                                                                 background: '#222',
                                                                 border: '2px solid #fff',
-                                                                // '& .MuiCardContent-root': {
-                                                                //     pb: 0,
-                                                                //     mb: '-13px'
-                                                                // },
-                                                                '& .css-1i9wt8r-MuiCardContent-root:last-child':{
-                                                                    pb:'0px !important',
+                                                                '& .MuiCardContent-root:last-child': {
+                                                                    paddingBottom: 0
                                                                 },
                                                                 '&:hover': {
                                                                     transform: 'translateY(-2px)',
@@ -3905,7 +3901,7 @@ export default function LeagueDetailPage() {
                                                                 </Typography>
                                                             </Box>
 
-                                                            <CardContent sx={{ p: 0 }}>
+                                                            <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
                                                                 {/* Result Text Banner */}
                                                                 <Box sx={{
                                                                     // background: match.status === 'RESULT_UPLOADED' ? '#F59E0B' : '#333',
@@ -4059,8 +4055,8 @@ export default function LeagueDetailPage() {
                                                                         p: 1.5,
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
-                                                                        justifyContent: 'space-between',
-                                                                        minHeight: '105px',
+                                                                        justifyContent: 'flex-start',
+                                                                        gap: 1
                                                                     }}>
                                                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                                             {/* Date Row */}
@@ -4151,7 +4147,7 @@ export default function LeagueDetailPage() {
                                                                             justifyContent: 'center',
                                                                             alignItems: 'center',
                                                                             gap: 1,
-                                                                            // mt: 1.5
+                                                                            mt: 0.5
                                                                         }}>
                                                                             {/* Add Stats Button */}
                                                                             {(isAdmin || isMember) && (() => {
@@ -4272,8 +4268,6 @@ export default function LeagueDetailPage() {
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
                                                                         p: 1,
-                                                                        
-                                                                        minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'flex-start',
