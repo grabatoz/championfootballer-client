@@ -185,8 +185,15 @@ interface User {
     style?: string;
 }
 
+interface MatchGuest {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    team?: 'home' | 'away' | string;
+}
+
 interface Match {
-    manOfTheMatchVotes: {};
+    manOfTheMatchVotes?: Record<string, string | number>;
     homeTeamImage: string;
     awayTeamImage: string;
     id: string;
@@ -207,6 +214,8 @@ interface Match {
     active: boolean;
     archived?: boolean; // <-- NEW
     matchNumber?: number; // <-- Match index from backend
+    guests?: MatchGuest[];
+    guestPlayers?: MatchGuest[];
 }
 
 
@@ -247,6 +256,86 @@ const formatLocationForCard = (location?: string): string => {
     return normalized.length > LOCATION_PREVIEW_LIMIT
         ? `${normalized.slice(0, LOCATION_PREVIEW_LIMIT)}..`
         : normalized;
+};
+
+const normalizeId = (value: unknown): string => {
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
+};
+
+const comparableId = (value: unknown): string => {
+    const normalized = normalizeId(value);
+    return normalized.startsWith('guest-') ? normalized.slice(6) : normalized;
+};
+
+const formatPlayerName = (firstName?: string, lastName?: string): string => {
+    const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+    return fullName;
+};
+
+const getTopMotmPlayerName = (match: Match, fallbackPlayers: User[] = []): string | null => {
+    const votes = match.manOfTheMatchVotes;
+    if (!votes || typeof votes !== 'object') return null;
+
+    const voteEntries = Object.entries(votes as Record<string, unknown>);
+    if (voteEntries.length === 0) return null;
+
+    const voteCounts: Record<string, number> = {};
+    const valuesAreCounts = voteEntries.every(([, value]) => typeof value === 'number');
+
+    if (valuesAreCounts) {
+        voteEntries.forEach(([playerId, count]) => {
+            const normalizedId = normalizeId(playerId);
+            if (!normalizedId) return;
+            voteCounts[normalizedId] = (voteCounts[normalizedId] || 0) + Number(count || 0);
+        });
+    } else {
+        voteEntries.forEach(([, votedForId]) => {
+            const normalizedId = normalizeId(votedForId);
+            if (!normalizedId) return;
+            voteCounts[normalizedId] = (voteCounts[normalizedId] || 0) + 1;
+        });
+    }
+
+    let topPlayerId = '';
+    let maxVotes = 0;
+    Object.entries(voteCounts).forEach(([playerId, count]) => {
+        if (count > maxVotes) {
+            maxVotes = count;
+            topPlayerId = playerId;
+        }
+    });
+
+    if (!topPlayerId || maxVotes <= 0) return null;
+
+    const rawGuests = (match.guests && match.guests.length > 0 ? match.guests : match.guestPlayers) || [];
+    const guestUsers: User[] = rawGuests
+        .filter((guest) => normalizeId(guest.id) !== '')
+        .map((guest) => ({
+            id: `guest-${normalizeId(guest.id)}`,
+            firstName: guest.firstName || 'Guest',
+            lastName: guest.lastName || 'Player',
+            email: '',
+            positionType: undefined,
+            shirtNumber: undefined,
+            xp: 0,
+        }));
+
+    const allPlayers: User[] = [
+        ...(match.homeTeamUsers || []),
+        ...(match.awayTeamUsers || []),
+        ...fallbackPlayers,
+        ...guestUsers
+    ];
+    const winningPlayer = allPlayers.find((player) => {
+        const playerId = normalizeId(player.id);
+        if (!playerId) return false;
+        return playerId === topPlayerId || comparableId(playerId) === comparableId(topPlayerId);
+    });
+
+    if (!winningPlayer) return null;
+    const winnerName = formatPlayerName(winningPlayer.firstName, winningPlayer.lastName);
+    return winnerName || null;
 };
 
 
@@ -4097,53 +4186,35 @@ export default function LeagueDetailPage() {
                                                                         </Box>
 
                                                                         {/* MOTM Section */}
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' , mt:-6 }}>
-                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: -7.5 }}>
+                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minHeight: 52, gap: 0 }}>
                                                                                 <Image src={CardStar} alt="MOTM" width={34} height={34} />
                                                                                 {(() => {
-                                                                                    const votes = match.manOfTheMatchVotes || {};
-                                                                                    const voteCounts: Record<string, number> = {};
-                                                                                    
-                                                                                    if (typeof votes === 'object' && !Array.isArray(votes)) {
-                                                                                        Object.values(votes).forEach((playerId) => {
-                                                                                            if (playerId) {
-                                                                                                const playerIdStr = String(playerId);
-                                                                                                voteCounts[playerIdStr] = (voteCounts[playerIdStr] || 0) + 1;
-                                                                                            }
-                                                                                        });
-                                                                                    }
-                                                                                    
-                                                                                    let maxVotes = 0;
-                                                                                    let motmPlayerId = '';
-                                                                                    Object.entries(voteCounts).forEach(([playerId, count]) => {
-                                                                                        if (count > maxVotes) {
-                                                                                            maxVotes = count;
-                                                                                            motmPlayerId = playerId;
-                                                                                        }
-                                                                                    });
-                                                                                    
-                                                                                    if (motmPlayerId && maxVotes > 0) {
-                                                                                        const allPlayers = [...(match.homeTeamUsers || []), ...(match.awayTeamUsers || [])];
-                                                                                        const motmPlayer = allPlayers.find(p => String(p.id) === String(motmPlayerId));
-                                                                                        
-                                                                                        if (motmPlayer && motmPlayer.firstName && motmPlayer.lastName) {
-                                                                                            return (
-                                                                                                <>
-                                                                                                    <Typography sx={{ color: '#FFD700', fontSize: '0.6rem', fontWeight: 700, textAlign: 'center', mt: 0.5 }}>
-                                                                                                        {motmPlayer.firstName} {motmPlayer.lastName}
-                                                                                                    </Typography>
-                                                                                                    <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
-                                                                                                        Man Of The Match
-                                                                                                    </Typography>
-                                                                                                </>
-                                                                                            );
-                                                                                        }
-                                                                                    }
-                                                                                    
+                                                                                    const motmPlayerName = getTopMotmPlayerName(match, league?.members || []);
                                                                                     return (
-                                                                                        <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
-                                                                                            Man Of The Match
-                                                                                        </Typography>
+                                                                                        <>
+                                                                                            <Typography
+                                                                                                sx={{
+                                                                                                    color: motmPlayerName? '#FFD700' : '#ffff',
+                                                                                                    fontSize: '0.6rem',
+                                                                                                    fontWeight: 700,
+                                                                                                    textAlign: 'center',
+                                                                                                    mt: 0.5,
+                                                                                                    minHeight: '0.8rem',
+                                                                                                    lineHeight: 1.1,
+                                                                                                    maxWidth: '100px',
+                                                                                                    whiteSpace: 'nowrap',
+                                                                                                    overflow: 'hidden',
+                                                                                                    textOverflow: 'ellipsis',
+                                                                                                    visibility: motmPlayerName ? 'visible' : 'visible'
+                                                                                                }}
+                                                                                            >
+                                                                                                {motmPlayerName || 'Select the MOTM'}
+                                                                                            </Typography>
+                                                                                            <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
+                                                                                                Man Of The Match
+                                                                                            </Typography>
+                                                                                        </>
                                                                                     );
                                                                                 })()}
                                                                             </Box>
