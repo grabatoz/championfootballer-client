@@ -3416,8 +3416,10 @@ export default function LeagueDetailPage() {
                                                                 cursor: 'pointer',
                                                                 border: '2px solid #fff',
                                                                 '& .MuiCardContent-root': {
-                                                                    pb: 0,
-                                                                    mb: '-8px'
+                                                                    pb: 0
+                                                                },
+                                                                '& .MuiCardContent-root:last-child': {
+                                                                    pb: 0
                                                                 },
                                                                 '&:hover': {
                                                                     transform: 'translateY(-2px)',
@@ -3553,7 +3555,7 @@ export default function LeagueDetailPage() {
                                                                         p: 1.5,
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
-                                                                        justifyContent: 'center',
+                                                                        justifyContent: 'flex-start',
                                                                         gap: 1.5,
                                                                         // pl: 2,
                                                                         // pr: 2
@@ -3609,7 +3611,7 @@ export default function LeagueDetailPage() {
                                                                         {/* Availability Buttons */}
                                                                         {isMember && (
                                                                             <Box sx={{
-                                                                                display: 'flex', gap: 2, mb: 1
+                                                                                display: 'flex', gap: 2, mb: 0
                                                                                 //  mt: 1
                                                                             }}>
                                                                                 <Button
@@ -3675,7 +3677,6 @@ export default function LeagueDetailPage() {
                                                                         pl: 1,
                                                                         pr: 2,
                                                                         py: 1,
-                                                                        minHeight: '105px',
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'flex-start',
