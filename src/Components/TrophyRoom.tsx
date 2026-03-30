@@ -86,14 +86,14 @@ const BLUE_FILTER =
 const TROPHY_META: Array<Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>> = [
   { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#FFD700' },
   { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#C0C0C0' },
-  { title: "Ballon D'or", description: 'Player With The Most MOTM Awards', image: BaloonDImg, color: '#FFC107' },
+  { title: "Ballon D'or", description: 'Player With The Most MOTM Votes Received', image: BaloonDImg, color: '#FFC107' },
   { title: 'GOAT', description: 'Player With The Highest Win Ratio & Total MOTM Votes', image: GoatImg, color: '#F44336' },
   { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#FF9800' },
   { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#4CAF50' },
-  { title: 'Legendary Shield', description: 'Defender Or Goalkeeper With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
+  { title: 'Legendary Shield', description: 'Player With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#2196F3' },
   { title: 'The Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#607D8B' },
   // New
-  { title: 'Star Keeper', description: 'Goalkeeper with the most clean sheets (or fewest goals conceded)', image: StarKeeperImg, color: BLUE_HEX },
+  { title: 'Star Keeper', description: 'Goalkeeper With The Highest Number Of Clean Sheets', image: StarKeeperImg, color: BLUE_HEX },
 ];
 
 // Backward-compatibility title aliases

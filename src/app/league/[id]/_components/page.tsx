@@ -480,12 +480,22 @@ export default function LeagueDetailPage() {
 
     useEffect(() => {
         if (!token || !leagueId) return;
+        const seasonsUnknown = (league as unknown as { seasons?: unknown })?.seasons;
+        const hasSeasons = Array.isArray(seasonsUnknown) && seasonsUnknown.length > 0;
+        if (hasSeasons && !selectedSeasonId) return;
+
+        let cancelled = false;
         (async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${encodeURIComponent(leagueId)}`, {
+                const params = new URLSearchParams({ leagueId });
+                if (selectedSeasonId) {
+                    params.append('seasonId', selectedSeasonId);
+                }
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?${params.toString()}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = await res.json();
+                if (cancelled) return;
                 if (!res.ok || !data?.success || !Array.isArray(data?.trophyWinners)) {
                     setLeagueWinners({});
                     return;
@@ -499,10 +509,14 @@ export default function LeagueDetailPage() {
                     runnerUp: runnerUp != null ? String(runnerUp) : undefined,
                 });
             } catch {
+                if (cancelled) return;
                 setLeagueWinners({});
             }
         })();
-    }, [token, leagueId]);
+        return () => {
+            cancelled = true;
+        };
+    }, [token, leagueId, selectedSeasonId, league]);
 
     const checkCanHardDelete = useCallback(async (matchId: string) => {
         if (!token) return;
@@ -1652,12 +1666,24 @@ export default function LeagueDetailPage() {
             winPercentage: s.played ? `${Math.round((s.wins / s.played) * 100)}%` : '0%'
         }));
 
-        // Always order by highest to lowest XP points; tie-breakers: wins, draws, then fewer losses
+        // Rank exactly like league standings (to match League Champion/Runner-Up logic):
+        // 1) players who actually played come first
+        // 2) points (W*3 + D)
+        // 3) goal difference
+        // 4) goals for
+        // 5) wins
+        // 6) XP as final deterministic tie-break
         list.sort((a, b) => {
-            if ((b.xp ?? 0) !== (a.xp ?? 0)) return (b.xp ?? 0) - (a.xp ?? 0);
+            const aPlayed = a.played > 0 ? 1 : 0;
+            const bPlayed = b.played > 0 ? 1 : 0;
+            if (bPlayed !== aPlayed) return bPlayed - aPlayed;
+            const aPoints = a.wins * 3 + a.draws;
+            const bPoints = b.wins * 3 + b.draws;
+            if (bPoints !== aPoints) return bPoints - aPoints;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
             if (b.wins !== a.wins) return b.wins - a.wins;
-            if (b.draws !== a.draws) return b.draws - a.draws;
-            return a.losses - b.losses;
+            return (b.xp ?? 0) - (a.xp ?? 0);
         });
 
         console.log('   Final tableData length:', list.length);
