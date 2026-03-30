@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -11,7 +11,9 @@ import {
   MenuItem,
   Select,
   Tooltip,
-  IconButton
+  IconButton,
+  Dialog,
+  DialogContent
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import dayjs, { Dayjs } from 'dayjs';
@@ -20,7 +22,6 @@ import { useParams, useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import CloseButton from '@/Components/CloseButton';
 import mapImg from '@/Components/images/map.png';
 import Image from 'next/image';
 
@@ -175,6 +176,110 @@ interface League {
   active: boolean;
 }
 
+interface MapCandidate {
+  lat: number;
+  lng: number;
+  label: string;
+}
+
+interface LeafletPopup {
+  openPopup: () => void;
+}
+
+interface LeafletMap {
+  setView: (center: [number, number], zoom: number) => void;
+  invalidateSize: () => void;
+  off: (eventName: 'click') => void;
+  on: (
+    eventName: 'click',
+    handler: (event: { latlng: { lat: number; lng: number } }) => void
+  ) => void;
+  remove: () => void;
+}
+
+interface LeafletMarker {
+  addTo: (map: LeafletMap) => LeafletMarker;
+  remove: () => void;
+  bindPopup: (content: string) => LeafletPopup;
+}
+
+interface LeafletTileLayer {
+  addTo: (map: LeafletMap) => void;
+}
+
+interface LeafletApi {
+  map: (element: HTMLElement) => LeafletMap;
+  tileLayer: (urlTemplate: string, options: { maxZoom: number; attribution: string }) => LeafletTileLayer;
+  circleMarker: (
+    center: [number, number],
+    options: {
+      radius: number;
+      color: string;
+      fillColor: string;
+      fillOpacity: number;
+      weight: number;
+    }
+  ) => LeafletMarker;
+}
+
+declare global {
+  interface Window {
+    L?: LeafletApi;
+  }
+}
+
+const MAP_DEFAULT_CENTER = { lat: 24.8607, lng: 67.0011 }; // Karachi fallback
+const LEAFLET_CSS_HREF = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const LEAFLET_JS_SRC = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+let leafletLoadPromise: Promise<LeafletApi> | null = null;
+
+const ensureLeafletLoaded = async (): Promise<LeafletApi> => {
+  if (typeof window === 'undefined') {
+    throw new Error('Map can only load in browser.');
+  }
+  if (window.L) return window.L;
+
+  if (!document.querySelector('link[data-leaflet-css="true"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = LEAFLET_CSS_HREF;
+    link.setAttribute('data-leaflet-css', 'true');
+    document.head.appendChild(link);
+  }
+
+  if (!leafletLoadPromise) {
+    leafletLoadPromise = new Promise((resolve, reject) => {
+      const resolveLeaflet = () => {
+        if (window.L) {
+          resolve(window.L);
+        } else {
+          reject(new Error('Map library loaded but unavailable.'));
+        }
+      };
+
+      const existing = document.querySelector<HTMLScriptElement>('script[data-leaflet-js="true"]');
+      if (existing) {
+        existing.addEventListener('load', resolveLeaflet);
+        existing.addEventListener('error', () => reject(new Error('Failed to load map library.')));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = LEAFLET_JS_SRC;
+      script.async = true;
+      script.defer = true;
+      script.setAttribute('data-leaflet-js', 'true');
+      script.onload = resolveLeaflet;
+      script.onerror = () => reject(new Error('Failed to load map library.'));
+      document.body.appendChild(script);
+    });
+  }
+
+  return leafletLoadPromise;
+};
+
+const clampLocation = (value: string) => value.slice(0, 120);
+
 /* ================== HELPERS ================== */
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);          // 12‑hour clock (start time)
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
@@ -321,6 +426,228 @@ export default function ScheduleMatchPage() {
   const [durHours, setDurHours] = useState<number>(0);
   const [durMinutes, setDurMinutes] = useState<number>(0);
   const [location, setLocation] = useState<string>('');
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [mapSearch, setMapSearch] = useState('');
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapResults, setMapResults] = useState<MapCandidate[]>([]);
+  const [selectedMapPoint, setSelectedMapPoint] = useState<MapCandidate | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
+
+  const placeMapMarker = useCallback((lat: number, lng: number, label: string, zoom = 15) => {
+    if (!mapRef.current || !window.L) return;
+
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+
+    markerRef.current = window.L
+      .circleMarker([lat, lng], {
+        radius: 8,
+        color: '#e56a16',
+        fillColor: '#cf2326',
+        fillOpacity: 0.8,
+        weight: 2
+      })
+      .addTo(mapRef.current);
+
+    markerRef.current.bindPopup(label).openPopup();
+    mapRef.current.setView([lat, lng], zoom);
+  }, []);
+
+  const applyLocationFromMap = useCallback(
+    (candidate: MapCandidate, options?: { syncSearch?: boolean; zoom?: number }) => {
+      setSelectedMapPoint(candidate);
+      setLocation(clampLocation(candidate.label));
+      if (options?.syncSearch) {
+        setMapSearch(candidate.label);
+      }
+      placeMapMarker(candidate.lat, candidate.lng, candidate.label, options?.zoom ?? 15);
+    },
+    [placeMapMarker]
+  );
+
+  const searchMapLocations = useCallback(async (query: string): Promise<MapCandidate[]> => {
+    const q = query.trim();
+    if (!q) return [];
+
+    const url = new URL('https://nominatim.openstreetmap.org/search');
+    url.searchParams.set('q', q);
+    url.searchParams.set('format', 'jsonv2');
+    url.searchParams.set('limit', '6');
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error('Could not search location.');
+
+    const data = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+
+    return data
+      .map((item) => ({
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+        label: item.display_name
+      }))
+      .filter(
+        (item) =>
+          Number.isFinite(item.lat) &&
+          Number.isFinite(item.lng) &&
+          typeof item.label === 'string' &&
+          item.label.trim().length > 0
+      );
+  }, []);
+
+  const reverseLookupLocation = useCallback(async (lat: number, lng: number) => {
+    const url = new URL('https://nominatim.openstreetmap.org/reverse');
+    url.searchParams.set('lat', String(lat));
+    url.searchParams.set('lon', String(lng));
+    url.searchParams.set('format', 'jsonv2');
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error('Could not get address from selected point.');
+
+    const data = (await res.json()) as { display_name?: string };
+    return data.display_name?.trim() || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }, []);
+
+  const handleOpenMap = useCallback(() => {
+    setMapSearch(location.trim());
+    setMapError(null);
+    setMapResults([]);
+    setIsMapOpen(true);
+  }, [location]);
+
+  const handleMapSearch = useCallback(async () => {
+    const query = mapSearch.trim();
+    if (!query) {
+      setMapResults([]);
+      setMapError('Please type a location first.');
+      return;
+    }
+
+    setMapLoading(true);
+    setMapError(null);
+    try {
+      const results = await searchMapLocations(query);
+      setMapResults(results);
+
+      if (!results.length) {
+        setMapError('No location found. Try another search.');
+        return;
+      }
+
+      applyLocationFromMap(results[0], { zoom: 14 });
+    } catch (e: unknown) {
+      setMapError(e instanceof Error ? e.message : 'Unable to search location.');
+    } finally {
+      setMapLoading(false);
+    }
+  }, [applyLocationFromMap, mapSearch, searchMapLocations]);
+
+  const handleMapResultClick = useCallback(
+    (candidate: MapCandidate) => {
+      setMapError(null);
+      applyLocationFromMap(candidate, { syncSearch: true, zoom: 15 });
+    },
+    [applyLocationFromMap]
+  );
+
+  useEffect(() => {
+    if (!isMapOpen) return;
+    let cancelled = false;
+
+    const setupMap = async () => {
+      setMapLoading(true);
+      setMapError(null);
+
+      try {
+        const L = await ensureLeafletLoaded();
+        if (cancelled || !mapContainerRef.current) return;
+
+        if (!mapRef.current) {
+          mapRef.current = L.map(mapContainerRef.current);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(mapRef.current);
+        }
+
+        mapRef.current.invalidateSize();
+        window.setTimeout(() => {
+          mapRef.current?.invalidateSize();
+        }, 120);
+        mapRef.current.off('click');
+        mapRef.current.on('click', async (event: { latlng: { lat: number; lng: number } }) => {
+          const { lat, lng } = event.latlng;
+          setMapLoading(true);
+
+          try {
+            const label = await reverseLookupLocation(lat, lng);
+            handleMapResultClick({ lat, lng, label });
+          } catch {
+            handleMapResultClick({ lat, lng, label: `${lat.toFixed(5)}, ${lng.toFixed(5)}` });
+            setMapError('Point selected, but exact address lookup failed.');
+          } finally {
+            setMapLoading(false);
+          }
+        });
+
+        const typedLocation = location.trim();
+        if (selectedMapPoint) {
+          placeMapMarker(selectedMapPoint.lat, selectedMapPoint.lng, selectedMapPoint.label, 14);
+        } else if (typedLocation) {
+          const results = await searchMapLocations(typedLocation);
+          if (!cancelled && results.length > 0) {
+            setMapResults(results);
+            applyLocationFromMap(results[0], { zoom: 14 });
+          } else if (!cancelled) {
+            mapRef.current.setView([MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng], 6);
+          }
+        } else {
+          mapRef.current.setView([MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng], 6);
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setMapError(e instanceof Error ? e.message : 'Unable to load map right now.');
+        }
+      } finally {
+        if (!cancelled) {
+          setMapLoading(false);
+        }
+      }
+    };
+
+    setupMap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    applyLocationFromMap,
+    handleMapResultClick,
+    isMapOpen,
+    location,
+    placeMapMarker,
+    reverseLookupLocation,
+    searchMapLocations,
+    selectedMapPoint
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      markerRef.current = null;
+    };
+  }, []);
 
   const finishTime = useMemo(
     () => formatFinish(date, durHours, durMinutes, hour, minute, isPM),
@@ -925,7 +1252,10 @@ export default function ScheduleMatchPage() {
                     fullWidth
                     placeholder="e.g. County or State"
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    onChange={(e) => {
+                      setLocation(clampLocation(e.target.value));
+                      setSelectedMapPoint(null);
+                    }}
                     sx={{
                       ...textFieldStyles,
                       '& .MuiInputBase-input': { py: '12px' },
@@ -936,13 +1266,25 @@ export default function ScheduleMatchPage() {
                     }}
                     inputProps={{ maxLength: 120 }}
                   />
-                  <Image
-                    src={mapImg}
-                    alt="map"
-                    width={40}
-                    height={40}
-                    style={{ flexShrink: 0 }}
-                  />
+                  <IconButton
+                    onClick={handleOpenMap}
+                    sx={{
+                      p: 0.5,
+                      borderRadius: 2,
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: 'rgba(255,255,255,0.05)',
+                      '&:hover': { background: 'rgba(255,255,255,0.12)' }
+                    }}
+                    aria-label="Open map picker"
+                  >
+                    <Image
+                      src={mapImg}
+                      alt="map"
+                      width={40}
+                      height={40}
+                      style={{ flexShrink: 0 }}
+                    />
+                  </IconButton>
                 </Box>
                 <Box
                   sx={{
@@ -1009,6 +1351,152 @@ export default function ScheduleMatchPage() {
         {/* Bottom spacer */}
         <Box sx={{ pb: { xs: 8, md: 25 } }} />
       </Box>
+
+      <Dialog
+        open={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        keepMounted
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            bgcolor: '#1b1b1b',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.15)'
+          }
+        }}
+      >
+        <DialogContent sx={{ p: { xs: 2, md: 2.5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+            <Typography sx={{ fontSize: { xs: 18, md: 21 }, fontWeight: 600 }}>
+              Pick Match Location
+            </Typography>
+            <Button
+              onClick={() => setIsMapOpen(false)}
+              sx={{
+                minWidth: 90,
+                borderRadius: 2,
+                color: '#fff',
+                background: '#00a77f',
+                '&:hover': { background: '#008c6a' }
+              }}
+            >
+              Done
+            </Button>
+          </Box>
+
+          <Typography sx={{ mt: 0.8, color: THEME.TEXT_MUTED, fontSize: 13 }}>
+            Click anywhere on map, or search and select a place.
+          </Typography>
+
+          <Box sx={{ mt: 1.6, display: 'flex', gap: 1.2, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search city, stadium, area..."
+              value={mapSearch}
+              onChange={(e) => setMapSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleMapSearch();
+                }
+              }}
+              sx={{
+                ...textFieldStyles,
+                '& .MuiOutlinedInput-root': {
+                  ...textFieldStyles['& .MuiOutlinedInput-root'],
+                  background: '#262626'
+                }
+              }}
+            />
+            <Button
+              onClick={() => void handleMapSearch()}
+              disabled={mapLoading}
+              sx={{
+                minWidth: { xs: '100%', sm: 110 },
+                borderRadius: 2,
+                color: '#fff',
+                background: THEME.GRADIENT_MAIN,
+                '&:hover': { background: THEME.GRADIENT_HOVER },
+                '&.Mui-disabled': {
+                  color: '#cfcfcf',
+                  background: 'linear-gradient(135deg,#4b4b4b,#2b2b2b)'
+                }
+              }}
+            >
+              {mapLoading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Search'}
+            </Button>
+          </Box>
+
+          {mapError && (
+            <Typography sx={{ mt: 1, color: '#ff9e9e', fontSize: 13.5 }}>
+              {mapError}
+            </Typography>
+          )}
+
+          <Box
+            ref={mapContainerRef}
+            sx={{
+              mt: 1.4,
+              height: { xs: 300, md: 420 },
+              borderRadius: 2,
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: '#111'
+            }}
+          />
+
+          <Box
+            sx={{
+              mt: 1.2,
+              borderRadius: 2,
+              border: '1px solid rgba(255,255,255,0.12)',
+              maxHeight: 170,
+              overflowY: 'auto',
+              background: '#202020'
+            }}
+          >
+            {mapResults.length > 0 ? (
+              mapResults.map((candidate, index) => (
+                <Button
+                  key={`${candidate.lat}-${candidate.lng}-${index}`}
+                  fullWidth
+                  onClick={() => handleMapResultClick(candidate)}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    color: '#fff',
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 0,
+                    borderBottom:
+                      index === mapResults.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    '&:hover': { background: 'rgba(255,255,255,0.08)' }
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {candidate.label}
+                  </Typography>
+                </Button>
+              ))
+            ) : (
+              <Typography sx={{ px: 1.5, py: 1.2, fontSize: 13, color: THEME.TEXT_MUTED }}>
+                Search results will appear here.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
       <Toaster position="top-center" reverseOrder={false} />
     </>
   );
