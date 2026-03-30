@@ -1639,7 +1639,7 @@ export default function AllMatches() {
                 py: 0,
             }}
         >
-            <Container maxWidth={false} disableGutters>
+            <Container>
 
                 {/* <Button
                     startIcon={<ArrowLeft />}
@@ -1654,7 +1654,7 @@ export default function AllMatches() {
                 <Box sx={{
                     mb: { xs: 3, md: 5 },
                     bgcolor: 'black',
-                    px: { xs: 3, sm: 3, md: 14 },
+                    px: 0,
                     py: { xs: 2, md: 3 },
                     borderRadius: 0
                 }}>
@@ -2061,7 +2061,7 @@ export default function AllMatches() {
                 </Box>
                 {/* Match Cards */}
                 <Box sx={{
-                    px: { xs: 3, sm: 3, md: 14 },
+                    px: 0,
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                     gap: 3,
