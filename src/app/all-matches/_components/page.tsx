@@ -178,6 +178,15 @@ interface PlayerCardProps {
     profileImage?: string;
 }
 
+const LOCATION_PREVIEW_LIMIT = 45;
+const formatLocationForCard = (location?: string): string => {
+    if (!location) return '';
+    const normalized = location.trim();
+    return normalized.length > LOCATION_PREVIEW_LIMIT
+        ? `${normalized.slice(0, LOCATION_PREVIEW_LIMIT)}..`
+        : normalized;
+};
+
 export default function AllMatches() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
@@ -2223,7 +2232,7 @@ export default function AllMatches() {
                                                         {match.location ? (
                                                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '160px' }}>
                                                                 <Box sx={{ mt: 0.3, flexShrink: 0 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                                <Typography sx={{ color: '#ccc', fontSize: '0.6rem', lineHeight: 1.3, wordBreak: 'break-word' }}>{match.location}</Typography>
+                                                                <Typography sx={{ color: '#ccc', fontSize: '0.6rem', lineHeight: 1.3, wordBreak: 'break-word' }}>{formatLocationForCard(match.location)}</Typography>
                                                             </Box>
                                                         ) : (
                                                             <Box sx={{ height: '20px' }} />
@@ -2437,7 +2446,7 @@ export default function AllMatches() {
                                                 {match.location && (
                                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                                                         <Box sx={{ mt: 0.3 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                        <Typography sx={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.3 }}>{match.location}</Typography>
+                                                        <Typography sx={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.3 }}>{formatLocationForCard(match.location)}</Typography>
                                                     </Box>
                                                 )}
                                                 {isMember && (
