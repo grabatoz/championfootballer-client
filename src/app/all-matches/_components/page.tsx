@@ -2377,7 +2377,8 @@ export default function AllMatches() {
                                         background: '#222',
                                         cursor: 'pointer',
                                         border: '2px solid #fff',
-                                        '& .MuiCardContent-root': { pb: 0, mb: '-8px' },
+                                        '& .MuiCardContent-root': { pb: 0 },
+                                        '& .MuiCardContent-root:last-child': { pb: 0 },
                                         '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)' },
                                     }}
                                 >
@@ -2414,7 +2415,7 @@ export default function AllMatches() {
                                         {/* Bottom Info Panel */}
                                         <Box sx={{ display: 'flex' }}>
                                             {/* Left Info Column */}
-                                            <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1.5 }}>
+                                            <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1.5 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
                                                         <Image src={CalendarImg} alt="Date" width={16} height={16} />
@@ -2440,7 +2441,7 @@ export default function AllMatches() {
                                                     </Box>
                                                 )}
                                                 {isMember && (
-                                                    <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                                                    <Box sx={{ display: 'flex', gap: 2, mb: 0 }}>
                                                         <Button
                                                             variant="contained"
                                                             size="small"
@@ -2474,7 +2475,7 @@ export default function AllMatches() {
                                             </Box>
 
                                             {/* Right Admin Column */}
-                                            <Box sx={{ width: '95px', borderLeft: '2px solid #fff', pl: 1, pr: 2, py: 1, minHeight: '105px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
+                                            <Box sx={{ width: '95px', borderLeft: '2px solid #fff', pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
                                                 {isAdmin ? (
                                                     <>
                                                         <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>For Admin Only</Typography>
