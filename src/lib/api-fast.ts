@@ -41,6 +41,9 @@ import type {
 import { optimizedFetch } from './httpClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
 // import { ApiResponse, LoginCredentials, RegisterCredentials, CreateLeagueDTO, CreateMatchDTO, UpdateMatchDTO } from '@/types/api';
 // import { User, League, Match } from '@/types/user';
 // import Cookies from 'js-cookie';
@@ -106,29 +109,38 @@ const STORAGE_PREFIX = 'cf_cache_';
 
 // Load cache from localStorage on init
 if (typeof window !== 'undefined') {
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
+  if (NO_CACHE_MODE) {
+    Object.keys(localStorage).forEach((key) => {
       if (key.startsWith(STORAGE_PREFIX)) {
-        const item = localStorage.getItem(key);
-        if (item) {
-          const parsed = JSON.parse(item) as CacheItem<unknown>;
-          if (Date.now() < parsed.expires) {
-            const cacheKey = key.replace(STORAGE_PREFIX, '');
-            fastCache.set(cacheKey, parsed);
-          } else {
-            localStorage.removeItem(key);
-          }
-        }
+        localStorage.removeItem(key);
       }
     });
-    console.log(`💾 Loaded ${fastCache.size} cached items from storage`);
-  } catch (e) {
-    console.error('Failed to load cache from storage:', e);
+  } else {
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith(STORAGE_PREFIX)) {
+          const item = localStorage.getItem(key);
+          if (item) {
+            const parsed = JSON.parse(item) as CacheItem<unknown>;
+            if (Date.now() < parsed.expires) {
+              const cacheKey = key.replace(STORAGE_PREFIX, '');
+              fastCache.set(cacheKey, parsed);
+            } else {
+              localStorage.removeItem(key);
+            }
+          }
+        }
+      });
+      console.log(`💾 Loaded ${fastCache.size} cached items from storage`);
+    } catch (e) {
+      console.error('Failed to load cache from storage:', e);
+    }
   }
 }
 
 function getCache<T>(key: string): T | null {
+  if (NO_CACHE_MODE) return null;
   const cached = fastCache.get(key);
   if (cached && Date.now() < cached.expires) {
     console.log(`⚡ Cache HIT: ${key}`);
@@ -143,6 +155,7 @@ function getCache<T>(key: string): T | null {
 }
 
 function setCache<T>(key: string, data: T, minutes: number = 15): void {
+  if (NO_CACHE_MODE) return;
   const cacheItem = { 
     data, 
     expires: Date.now() + (minutes * 60 * 1000),
@@ -165,8 +178,9 @@ function setCache<T>(key: string, data: T, minutes: number = 15): void {
 // ULTRA FAST FETCH WITH BACKGROUND REFRESH - Using optimized HTTP client
 async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheKey?: string, cacheTTL: number = 15): Promise<T> {
   const isGetRequest = !options.method || options.method === 'GET';
+  const canUseCache = !NO_CACHE_MODE;
   
-  if (cacheKey && isGetRequest) {
+  if (cacheKey && isGetRequest && canUseCache) {
     const cached = getCache<T>(cacheKey);
     if (cached) {
       // Return cached data immediately, refresh in background
@@ -185,7 +199,7 @@ async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheK
   
   const data = await response.json();
   
-  if (cacheKey && isGetRequest) {
+  if (cacheKey && isGetRequest && canUseCache) {
     setCache(cacheKey, data, cacheTTL);
   }
   
@@ -195,6 +209,7 @@ async function quickFetch<T>(endpoint: string, options: RequestInit = {}, cacheK
 // Background refresh to keep cache fresh - Using optimized HTTP client
 const refreshTimers = new Map<string, NodeJS.Timeout>();
 function refreshInBackground(endpoint: string, options: RequestInit, cacheKey: string, ttl: number) {
+  if (NO_CACHE_MODE) return;
   // Prevent duplicate refresh timers
   if (refreshTimers.has(cacheKey)) return;
   

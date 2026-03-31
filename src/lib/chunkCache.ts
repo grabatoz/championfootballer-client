@@ -6,6 +6,9 @@ import { optimizedFetch } from './httpClient';
 import Cookies from 'js-cookie';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
 
 // Chunk configuration
 const CHUNK_SIZE = 20; // Items per chunk
@@ -112,6 +115,14 @@ class BackgroundUploader {
 
 const bgUploader = new BackgroundUploader();
 
+if (typeof window !== 'undefined' && NO_CACHE_MODE) {
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('chunk_')) {
+      localStorage.removeItem(key);
+    }
+  });
+}
+
 // Cache storage
 interface CacheChunk<T> {
   data: T[];
@@ -147,7 +158,7 @@ class ChunkCacheManager {
 
   // Load cache from localStorage
   private loadFromStorage<T>(key: string): CacheChunk<T> | null {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined' || NO_CACHE_MODE) return null;
     
     try {
       const stored = localStorage.getItem(`chunk_${key}`);
@@ -168,7 +179,7 @@ class ChunkCacheManager {
 
   // Save chunk to localStorage
   private saveToStorage<T>(key: string, chunk: CacheChunk<T>): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || NO_CACHE_MODE) return;
     
     try {
       localStorage.setItem(`chunk_${key}`, JSON.stringify(chunk));
@@ -179,6 +190,7 @@ class ChunkCacheManager {
 
   // Get a specific chunk
   getChunk<T>(resource: string, chunkIndex: number): T[] | null {
+    if (NO_CACHE_MODE) return null;
     const key = this.getChunkKey(resource, chunkIndex);
     let chunk = this.chunks.get(key) as CacheChunk<T> | undefined;
 
@@ -205,6 +217,7 @@ class ChunkCacheManager {
 
   // Set a specific chunk
   setChunk<T>(resource: string, chunkIndex: number, data: T[], totalChunks?: number): void {
+    if (NO_CACHE_MODE) return;
     const key = this.getChunkKey(resource, chunkIndex);
     const chunk: CacheChunk<T> = {
       data,
@@ -545,7 +558,7 @@ export async function fetchWithChunks<T>(
   const { forceRefresh = false, page = 0, limit = CHUNK_SIZE } = options;
   
   // Check cache first
-  if (!forceRefresh) {
+  if (!forceRefresh && !NO_CACHE_MODE) {
     const cached = chunkCache.getChunk<T>(resource, page);
     if (cached) {
       return cached;
@@ -586,7 +599,9 @@ export async function fetchWithChunks<T>(
     const totalChunks = Math.ceil(items.length / limit);
     
     // Cache the chunk
-    chunkCache.setChunk(resource, page, items, totalChunks);
+    if (!NO_CACHE_MODE) {
+      chunkCache.setChunk(resource, page, items, totalChunks);
+    }
     
     return items;
   } catch (error) {

@@ -11,6 +11,10 @@ interface FetchOptions extends RequestInit {
   skipCache?: boolean;
 }
 
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
+
 // ETag store to support conditional requests across navigations
 const ETAG_STORAGE_KEY = 'cf_etags';
 const etagMap = new Map<string, string>();
@@ -55,10 +59,13 @@ export async function optimizedFetch<T = unknown>(
   
   // Don't cache non-GET requests
   const method = fetchOptions.method?.toUpperCase() || 'GET';
-  const shouldCache = method === 'GET' && !skipCache;
+  const shouldCache = method === 'GET' && !skipCache && !NO_CACHE_MODE;
   
   if (!shouldCache) {
-    const response = await fetch(url, fetchOptions);
+    const response = await fetch(url, {
+      ...fetchOptions,
+      ...(NO_CACHE_MODE ? { cache: 'no-store' as RequestCache } : {}),
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

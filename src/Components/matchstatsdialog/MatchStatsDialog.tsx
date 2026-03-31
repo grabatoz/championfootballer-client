@@ -1606,8 +1606,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             console.log('ï؟½ï¸ڈ Clearing cache for fresh data...');
             const STORAGE_PREFIX = 'cf_cache_';
             Object.keys(localStorage).forEach(key => {
-                if (key.startsWith(STORAGE_PREFIX) &&
-                    (key.includes('league') || key.includes('match'))) {
+                if (
+                    (key.startsWith(STORAGE_PREFIX) && (key.includes('league') || key.includes('match'))) ||
+                    key.includes('cf_instant') ||
+                    key.startsWith('chunk_')
+                ) {
                     localStorage.removeItem(key);
                 }
             });

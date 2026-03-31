@@ -29,8 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			return res.status(r.status).json({ message: 'Upstream error', status: r.status, detail: text });
 		}
 
-		// Cache briefly at the edge/CDN if possible
-		res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+		// Disable caching to always return fresh data
+		res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
 		const data = await r.json();
 		return res.status(200).json(data);
 	} catch (err: unknown) {

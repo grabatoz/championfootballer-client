@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 31536000, // 1 year
+    minimumCacheTTL: 0,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
@@ -76,7 +76,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   
   // Generate static error pages
-  generateEtags: true,
+  generateEtags: false,
   
   // Output optimization
   output: 'standalone', // Optimize for deployment
@@ -159,8 +159,6 @@ const nextConfig: NextConfig = {
   
   // Headers for better performance and security
   async headers() {
-    const isDev = process.env.NODE_ENV !== 'production';
-    
     return [
       {
         source: '/:path*',
@@ -185,46 +183,39 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
-          // Disable caching in development for fresh changes
-          ...(isDev ? [{
+          {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          }] : []),
+          },
         ],
       },
-      // Cache static assets - only in production
+      // Disable cache for static assets too
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: isDev 
-              ? 'no-cache, no-store, must-revalidate' 
-              : 'public, max-age=31536000, immutable',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
         ],
       },
-      // Cache images - only in production
+      // Disable cache for public assets
       {
         source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: isDev 
-              ? 'no-cache, no-store, must-revalidate' 
-              : 'public, max-age=31536000, immutable',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
         ],
       },
-      // API route optimizations with stale-while-revalidate
+      // Disable cache for API routes
       {
         source: '/api/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: isDev 
-              ? 'no-store, no-cache, must-revalidate' 
-              : 'public, max-age=60, stale-while-revalidate=120',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
         ],
       },

@@ -55,22 +55,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-  const isDev = process.env.NODE_ENV !== 'production';
-  
   let apiHostname: string | null = null;
   try { apiHostname = new URL(apiUrl).hostname; } catch {}
   
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Disable caching in development mode */}
-        {isDev && (
-          <>
-            <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-            <meta httpEquiv="Pragma" content="no-cache" />
-            <meta httpEquiv="Expires" content="0" />
-          </>
-        )}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         {apiHostname && (
           <>
             <link rel="dns-prefetch" href={`//${apiHostname}`} />

@@ -765,9 +765,14 @@ export default function ScheduleMatchPage() {
         const keys = Object.keys(localStorage);
         let clearedCount = 0;
         keys.forEach((key) => {
-          // Clear match-specific caches but keep the updated league cache
-          if ((key.includes('match') && !key.includes('cf_instant')) || 
-              key.includes('cf_cache')) {
+          // Clear all match/league related caches to force fresh fetch
+          if (
+            key.includes('match') ||
+            key.includes('league') ||
+            key.includes('cf_cache') ||
+            key.includes('cf_instant') ||
+            key.startsWith('chunk_')
+          ) {
             localStorage.removeItem(key);
             clearedCount++;
           }

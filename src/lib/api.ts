@@ -1128,7 +1128,11 @@ export const achievementsAPI = {
 
 // --- LocalStorage Cache Utility ---
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
 export function getCache<T>(key: string): T | null {
+  if (NO_CACHE_MODE) return null;
   if (typeof window === 'undefined') return null;
   // 1. Try localStorage
   const cached = localStorage.getItem(key);
@@ -1154,6 +1158,7 @@ export function getCache<T>(key: string): T | null {
 }
 
 export function setCache<T>(key: string, data: T) {
+  if (NO_CACHE_MODE) return;
   if (typeof window === 'undefined') return;
   const value = JSON.stringify({ data, expiry: Date.now() + CACHE_TTL });
   localStorage.setItem(key, value);

@@ -13,6 +13,9 @@ import type {
 import { optimizedFetch } from './httpClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
 
 // Cache with instant retrieval
 interface InstantCache<T> {
@@ -39,7 +42,11 @@ const chunkedCache = new Map<string, ChunkedCache<unknown>>();
 
 // Load cache from localStorage synchronously on init
 if (typeof window !== 'undefined') {
-  try {
+  if (NO_CACHE_MODE) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY + '_chunked');
+  } else {
+    try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -64,15 +71,16 @@ if (typeof window !== 'undefined') {
       });
       console.log(`📦 Chunked cache loaded: ${chunkedCache.size} collections`);
     }
-  } catch (e) {
-    console.error('Cache load error:', e);
+    } catch (e) {
+      console.error('Cache load error:', e);
+    }
   }
 }
 
 // Save cache to localStorage (throttled)
 let saveTimeout: NodeJS.Timeout | null = null;
 function saveCache() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || NO_CACHE_MODE) return;
   
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
@@ -104,6 +112,7 @@ function saveCache() {
 
 // Get from cache instantly (synchronous)
 function getCacheInstant<T>(key: string): T | null {
+  if (NO_CACHE_MODE) return null;
   const cached = instantCache.get(key);
   if (cached && Date.now() < cached.expires) {
     console.log(`⚡ INSTANT HIT: ${key} (${Date.now() - cached.timestamp}ms old)`);
@@ -114,6 +123,7 @@ function getCacheInstant<T>(key: string): T | null {
 
 // Set cache
 function setCacheInstant<T>(key: string, data: T, ttl: number = CACHE_TTL) {
+  if (NO_CACHE_MODE) return;
   instantCache.set(key, {
     data,
     expires: Date.now() + ttl,
@@ -124,6 +134,7 @@ function setCacheInstant<T>(key: string, data: T, ttl: number = CACHE_TTL) {
 
 // Progressive chunk-based cache setters
 function setCacheChunked<T>(key: string, items: T[], ttl: number = CACHE_TTL) {
+  if (NO_CACHE_MODE) return;
   const chunks: T[][] = [];
   
   // Split into chunks
@@ -855,12 +866,19 @@ export function clearInstantCache(pattern?: string): void {
         instantCache.delete(key);
       }
     });
+    chunkedCache.forEach((_, key) => {
+      if (key.includes(pattern)) {
+        chunkedCache.delete(key);
+      }
+    });
   } else {
     instantCache.clear();
+    chunkedCache.clear();
   }
   
   if (typeof window !== 'undefined') {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY + '_chunked');
   }
   
   console.log(`🗑️ Cache cleared${pattern ? ` (pattern: ${pattern})` : ' (all)'}`);

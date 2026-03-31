@@ -16,6 +16,10 @@ type MutationDetail = {
   timestamp?: number;
 };
 
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
+
 function clearLocalStorageFamilies(resourceId?: string | null): void {
   if (typeof window === 'undefined') return;
 
@@ -41,6 +45,28 @@ function clearLocalStorageFamilies(resourceId?: string | null): void {
       if (resourceId && lower.includes(String(resourceId).toLowerCase())) {
         localStorage.removeItem(key);
       }
+    }
+  } catch {
+    // no-op
+  }
+}
+
+async function clearBrowserCaches(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((reg) => reg.unregister()));
+    }
+  } catch {
+    // no-op
+  }
+
+  try {
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
     }
   } catch {
     // no-op
@@ -90,6 +116,11 @@ function invalidateEverywhere(resourceType?: MutationDetail['resourceType'], res
 
 export default function GlobalCacheSync() {
   useEffect(() => {
+    if (NO_CACHE_MODE) {
+      invalidateEverywhere(undefined, null);
+      clearBrowserCaches().catch(() => undefined);
+    }
+
     const onMutation = (event: Event) => {
       const detail = (event as CustomEvent<MutationDetail>).detail || {};
       invalidateEverywhere(detail.resourceType, detail.resourceId || null);
@@ -136,4 +167,3 @@ export default function GlobalCacheSync() {
 
   return null;
 }
-

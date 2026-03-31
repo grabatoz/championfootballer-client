@@ -5,6 +5,9 @@ import { getAuthToken } from './tokenManager';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const IS_HTTPS = API_BASE_URL.startsWith('https://');
+const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
+  (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
+);
 
 // Production-specific optimizations
 const PRODUCTION_TIMEOUT = IS_HTTPS ? 15000 : 10000; // HTTPS may need more time for TLS
@@ -135,6 +138,7 @@ export async function optimizedFetch(
     ...options,
     headers,
     credentials: options.credentials ?? 'include',
+    cache: options.cache ?? (NO_CACHE_MODE ? 'no-store' : undefined),
     // Keepalive is useful for short background requests but can cause edge-case failures
     // on some browsers for larger payloads; default to true only for GET.
     keepalive: options.keepalive ?? method === 'GET',
