@@ -139,6 +139,9 @@ interface TrophyType {
   leagueName?: string;
   seasonId?: string;
   seasonName?: string;
+  awardedAt?: string;
+  updatedAt?: string;
+  createdAt?: string;
   imageSize?: { xs: number; sm: number; md: number };
 }
 
@@ -1303,6 +1306,79 @@ const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
   return 'SCHEDULED';
 };
 
+const toTimestampMs = (value: unknown): number | null => {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null;
+    return value < 1_000_000_000_000 ? value * 1000 : value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
+    }
+    const parsed = Date.parse(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const normalizeTimestampToISO = (value: unknown): string | undefined => {
+  const ms = toTimestampMs(value);
+  if (ms == null) return undefined;
+  return new Date(ms).toISOString();
+};
+
+const formatRelativeTime = (timestampMs: number, nowMs: number): string => {
+  const diffMs = Math.max(0, nowMs - timestampMs);
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+};
+
+const hasTrophyWinner = (t: Pick<TrophyType, 'winnerId' | 'winner'>): boolean => {
+  if (t.winnerId != null && String(t.winnerId).trim() !== '') return true;
+  const winnerText = typeof t.winner === 'string' ? t.winner.trim() : '';
+  return Boolean(winnerText && winnerText.toLowerCase() !== 'tbc');
+};
+
+const extractTrophyUpdatedMs = (t: TrophyType): number | null => {
+  const record = t as unknown as Record<string, unknown>;
+  const candidates: unknown[] = [
+    t.awardedAt,
+    t.updatedAt,
+    t.createdAt,
+    record.awardedOn,
+    record.awardDate,
+    record.wonAt,
+    record.winnerAssignedAt,
+    record.lastUpdatedAt,
+    record.updated_at,
+    record.created_at,
+    record.date,
+    record.timestamp,
+  ];
+
+  let latest: number | null = null;
+  for (const value of candidates) {
+    const ms = toTimestampMs(value);
+    if (ms != null && (latest == null || ms > latest)) {
+      latest = ms;
+    }
+  }
+  return latest;
+};
+
 const isInactiveOrArchivedStatus = (status: unknown): boolean => {
   const s = typeof status === 'string' ? status.trim().toLowerCase() : '';
   if (!s) return false;
@@ -1447,6 +1523,8 @@ export default function GlobalTrophyRoom() {
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [trophyLoading, setTrophyLoading] = useState(false); // separate loading for trophy re-fetches (season/league change)
+  const [apiLastUpdatedAt, setApiLastUpdatedAt] = useState<string | null>(null);
+  const [relativeNowMs, setRelativeNowMs] = useState<number>(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
     const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -1455,6 +1533,13 @@ export default function GlobalTrophyRoom() {
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setRelativeNowMs(Date.now());
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
@@ -1608,9 +1693,19 @@ export default function GlobalTrophyRoom() {
     leagueName?: string;
     seasonId?: string | number;
     seasonName?: string;
+    [key: string]: unknown;
   }>): TrophyType[] => {
     return items.map(it => {
       const meta = trophies.find(t => t.title === it.title);
+      const awardedAt = normalizeTimestampToISO(
+        it.awardedAt ?? it.awardedOn ?? it.awardDate ?? it.wonAt ?? it.winnerAssignedAt ?? it.date ?? it.timestamp
+      );
+      const updatedAt = normalizeTimestampToISO(
+        it.updatedAt ?? it.modifiedAt ?? it.lastUpdatedAt ?? it.updated_at
+      );
+      const createdAt = normalizeTimestampToISO(
+        it.createdAt ?? it.created_at
+      );
       return {
         title: it.title,
         description: meta?.description ?? '',
@@ -1622,10 +1717,12 @@ export default function GlobalTrophyRoom() {
         leagueName: it.leagueName,
         seasonId: it.seasonId != null ? String(it.seasonId) : undefined,
         seasonName: it.seasonName,
+        awardedAt,
+        updatedAt,
+        createdAt,
       };
     });
   };
-
 
   useEffect(() => {
     // PRIORITY 1: Fetch leagues FIRST (blocking), then render UI
@@ -1885,6 +1982,7 @@ export default function GlobalTrophyRoom() {
         if (!res.ok) {
           console.error('[TrophyRoom] /leagues/trophy-room failed:', res.status);
           setApiAllWinners([]);
+          setApiLastUpdatedAt(null);
           setError('Failed to load trophy room.');
           return;
         }
@@ -1895,16 +1993,19 @@ export default function GlobalTrophyRoom() {
           const trophiesWithMeta = Array.isArray(data.trophyWinners) ? attachTrophyMeta(data.trophyWinners) : [];
           console.log('[Trophy Room] ✅ Fetched trophies:', trophiesWithMeta.length, trophiesWithMeta);
           setApiAllWinners(trophiesWithMeta);
+          setApiLastUpdatedAt(typeof data.lastUpdatedAt === 'string' ? data.lastUpdatedAt : null);
           setBackendTotalXP(typeof data.backendTotalXP === 'number' ? data.backendTotalXP : undefined);
           setError(null);
         } else {
           console.error('[TrophyRoom] /leagues/trophy-room bad response', { status: res.status, data });
           setApiAllWinners([]);
+          setApiLastUpdatedAt(null);
           setError(data?.message || 'Failed to load trophy room.');
         }
       } catch (e) {
         console.error('[TrophyRoom] fetchWinners error', e);
         setApiAllWinners([]);
+        setApiLastUpdatedAt(null);
         setError('An error occurred while fetching trophy room.');
       } finally {
         setTrophyLoading(false);
@@ -2098,6 +2199,25 @@ export default function GlobalTrophyRoom() {
     }
     return { final, completedCount, max, statuses };
   }, [selectedLeague, selectedSeasonId]);
+
+  const lastUpdatedAtMs = useMemo(() => {
+    const winnerTrophies = trophiesToDisplayBase.filter((t) => hasTrophyWinner(t));
+    if (winnerTrophies.length === 0) return null;
+
+    const candidates: number[] = winnerTrophies
+      .map((trophy) => extractTrophyUpdatedMs(trophy))
+      .filter((ms): ms is number => typeof ms === 'number' && Number.isFinite(ms));
+
+    const topLevelMs = toTimestampMs(apiLastUpdatedAt);
+    if (topLevelMs != null) candidates.push(topLevelMs);
+
+    return candidates.length > 0 ? Math.max(...candidates) : null;
+  }, [trophiesToDisplayBase, apiLastUpdatedAt]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (lastUpdatedAtMs == null) return 'No trophy updates yet';
+    return formatRelativeTime(lastUpdatedAtMs, relativeNowMs);
+  }, [lastUpdatedAtMs, relativeNowMs]);
 
   // Helper to build placeholder trophies for a league (winners TBC)
   const buildPlaceholders = (league: League): TrophyType[] =>
@@ -2644,7 +2764,7 @@ export default function GlobalTrophyRoom() {
                     fontWeight: 400,
                     color: 'white'
                   }}>
-                    {selectedLeague ? countCompletedMatches(selectedLeague, selectedSeasonId) : 0}
+                    {lastUpdatedLabel}
                   </Typography>
                 </Box>
               </Box>
