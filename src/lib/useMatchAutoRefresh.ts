@@ -47,11 +47,15 @@ export function useCombinedMatchRefresh(
     window.addEventListener('match-created', handleMatchEvent);
     window.addEventListener('match-updated', handleMatchEvent);
     window.addEventListener('match-deleted', handleMatchEvent);
+    window.addEventListener('match-stats-updated', handleMatchEvent);
+    window.addEventListener('vote-updated', handleMatchEvent);
 
     return () => {
       window.removeEventListener('match-created', handleMatchEvent);
       window.removeEventListener('match-updated', handleMatchEvent);
       window.removeEventListener('match-deleted', handleMatchEvent);
+      window.removeEventListener('match-stats-updated', handleMatchEvent);
+      window.removeEventListener('vote-updated', handleMatchEvent);
     };
   }, [refreshCallback]);
 

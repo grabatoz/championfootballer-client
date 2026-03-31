@@ -466,12 +466,12 @@ export default function LeagueDetailPage() {
 
         return normalized;
     }, []);
-    const getLeagueXpForMember = useCallback((memberId: unknown, fallbackXp?: unknown): number => {
+    const getLeagueXpForMember = useCallback((memberId: unknown, _fallbackXp?: unknown): number => {
+        void _fallbackXp;
         const key = normalizeEntityId(memberId);
         const mapValue = key ? toNumericValue(userLeagueXP[key]) : null;
-        if (mapValue !== null) return mapValue;
-        const fallback = toNumericValue(fallbackXp);
-        return fallback ?? 0;
+        // League page must show league-specific XP only (from league XP map), not global profile XP.
+        return mapValue ?? 0;
     }, [userLeagueXP]);
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
@@ -1213,14 +1213,20 @@ export default function LeagueDetailPage() {
         }
     }, [token, leagueIsCompleted]);
 
-    // Fetch XP for all users in this league (from API) - refetch when season changes
+    // Fetch XP for all users in this league (from API)
+    // Also refetch when league details refresh so table XP does not stay stale.
     useEffect(() => {
         async function fetchXP() {
             if (!league?.id) return;
             try {
                 const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-                const seasonParam = selectedSeasonId ? `?seasonId=${encodeURIComponent(selectedSeasonId)}` : '';
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp${seasonParam}`, { headers });
+                const params = new URLSearchParams();
+                if (selectedSeasonId) params.append('seasonId', selectedSeasonId);
+                params.append('_t', String(Date.now())); // Cache-bust XP endpoint for immediate latest value.
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/xp?${params.toString()}`,
+                    { headers, cache: 'no-store' }
+                );
                 if (!res.ok) {
                     // Silently handle 404 - endpoint may not exist yet
                     console.warn(`XP endpoint returned ${res.status}, using empty map`);
@@ -1242,7 +1248,7 @@ export default function LeagueDetailPage() {
             }
         }
         fetchXP();
-    }, [league?.id, token, selectedSeasonId, normalizeXPMapPayload]);
+    }, [league?.id, league?.updatedAt, league?.matches, league?.members, token, selectedSeasonId, normalizeXPMapPayload]);
 
     // Fetch all leagues for dropdown
     useEffect(() => {
