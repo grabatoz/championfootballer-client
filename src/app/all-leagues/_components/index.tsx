@@ -1537,6 +1537,16 @@ function AllLeagues() {
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
+  const isLeagueAdminForCurrentUser = useCallback((league: LeagueWithStatus | League): boolean => {
+    const uid = String(user?.id || '');
+    if (!uid || !league) return false;
+    if (league.adminId && String(league.adminId) === uid) return true;
+    if (Array.isArray(league.administrators)) {
+      return league.administrators.some((admin) => String(admin?.id || '') === uid);
+    }
+    return false;
+  }, [user?.id]);
+
   // Fixed continuous list of years from 2000 up to current year + a few future years (calendar-like)
   const yearOptions = useMemo(() => {
     const START_YEAR = 2000;
@@ -3050,22 +3060,22 @@ function AllLeagues() {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
                 {archivedLeagues.map((league) => {
                   const actionLoading = archivedLeagueActionId === String(league.id);
+                  const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   return (
                   <Box
                     key={league.id}
-                    onClick={() => router.push(`/league/${league.id}`)}
                     sx={{
                       p: { xs: 3, md: 3 },
                       borderRadius: 3,
-                      cursor: 'pointer',
+                      cursor: 'not-allowed',
                       transition: 'all 0.3s ease',
                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                       position: 'relative',
                       minHeight: { xs: '140px', md: '160px' },
                       opacity: 0.75,
                       '&:hover': {
-                        opacity: 1,
-                        transform: 'translateY(-3px)',
+                        opacity: 0.75,
+                        transform: 'none',
                       }
                     }}
                   >
@@ -3082,59 +3092,63 @@ function AllLeagues() {
                       }}
                     >
                       <Chip label="Archived" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
-                      <Button
-                        size="small"
-                        variant="contained"
-                        disabled={actionLoading}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
-                          (async () => {
-                            try {
-                              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
-                                method: 'PATCH',
-                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ active: true }),
-                              });
-                              if (!res.ok) throw new Error('Failed');
-                              toast.success('League restored');
-                              setLeagues(prev => prev.map(l => l.id === league.id ? { ...l, active: true, archived: false } as typeof l : l));
-                              await fetchAllLeagues();
-                            } catch { toast.error('Failed to restore league'); }
-                          })();
-                        }}
-                        sx={{
-                          bgcolor: '#27ab83',
-                          '&:hover': { bgcolor: '#1e8463' },
-                          fontSize: '11px',
-                          px: 1.5,
-                          py: 0.3,
-                          minWidth: 'auto',
-                          textTransform: 'none',
-                        }}
-                      >
-                        Restore
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        disabled={actionLoading}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePermanentDeleteArchivedLeague(league);
-                        }}
-                        sx={{
-                          bgcolor: '#dc2626',
-                          '&:hover': { bgcolor: '#b91c1c' },
-                          fontSize: '11px',
-                          px: 1.5,
-                          py: 0.3,
-                          minWidth: 'auto',
-                          textTransform: 'none',
-                        }}
-                      >
-                        {actionLoading ? 'Deleting...' : 'Permanent Delete'}
-                      </Button>
+                      {canManageArchivedLeague && (
+                        <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={actionLoading}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
+                              (async () => {
+                                try {
+                                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
+                                    method: 'PATCH',
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ active: true }),
+                                  });
+                                  if (!res.ok) throw new Error('Failed');
+                                  toast.success('League restored');
+                                  setLeagues(prev => prev.map(l => l.id === league.id ? { ...l, active: true, archived: false } as typeof l : l));
+                                  await fetchAllLeagues();
+                                } catch { toast.error('Failed to restore league'); }
+                              })();
+                            }}
+                            sx={{
+                              bgcolor: '#27ab83',
+                              '&:hover': { bgcolor: '#1e8463' },
+                              fontSize: '11px',
+                              px: 1.5,
+                              py: 0.3,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                            }}
+                          >
+                            Restore
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={actionLoading}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePermanentDeleteArchivedLeague(league);
+                            }}
+                            sx={{
+                              bgcolor: '#dc2626',
+                              '&:hover': { bgcolor: '#b91c1c' },
+                              fontSize: '11px',
+                              px: 1.5,
+                              py: 0.3,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                            }}
+                          >
+                            {actionLoading ? 'Deleting...' : 'Permanent Delete'}
+                          </Button>
+                        </>
+                      )}
                     </Box>
 
                     {/* Grid Layout - 6/6 Split (same as live league card) */}
@@ -3298,12 +3312,8 @@ function AllLeagues() {
                                     justifyContent: 'flex-start', 
                                     alignItems: 'center', 
                                     height: '100%',
-                                    cursor: 'pointer',
+                                    cursor: 'not-allowed',
                                     mt: { xs: 1, md: 3 }
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/league/${league.id}`);
                                   }}
                                 >
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -3313,9 +3323,8 @@ function AllLeagues() {
                                       fontWeight: 'semi-bold',
                                       fontSize: { xs: '22px', md: '22px' }
                                     }}>
-                                      View
+                                      Archived
                                     </Typography>
-                                    <Image src={play} alt="Play" width={15} height={15} style={{ flexShrink: 0 }} />
                                   </Box>
                                 </Box>
                               </Grid>
