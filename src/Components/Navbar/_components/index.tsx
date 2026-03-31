@@ -1148,7 +1148,7 @@ export default function NavigationBar() {
         ids.map(async id => {
           try {
             // Adjust endpoint if your API differs
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${id}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${id}?includeMatches=0`, {
               headers: { Authorization: `Bearer ${token}` },
               cache: 'no-store'
             });
@@ -1915,7 +1915,7 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
   const getLeagueAdminUserId = async (leagueId: string): Promise<string | undefined> => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store'
       });

@@ -831,8 +831,12 @@ export default function LeagueDetailPage() {
             console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
 
             // 🔄 Add cache busting to force fresh data from backend
-            const cacheBuster = `?_t=${Date.now()}`;
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}${cacheBuster}`, {
+            const params = new URLSearchParams();
+            params.set('_t', String(Date.now()));
+            if (selectedSeasonId) {
+                params.set('seasonId', selectedSeasonId);
+            }
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -875,7 +879,7 @@ export default function LeagueDetailPage() {
             console.error('❌ Error fetching league details:', error);
             setError('Failed to fetch league details');
         }
-    }, [leagueId, token]);
+    }, [leagueId, token, selectedSeasonId]);
 
     // Fetch dream team data based on selected league and season
     const fetchDreamTeam = useCallback(async () => {

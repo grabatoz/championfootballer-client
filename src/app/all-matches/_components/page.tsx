@@ -413,7 +413,7 @@ export default function AllMatches() {
                                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                     cacheTTL: 300000 // 5 minutes
                                 }).catch(() => null),
-                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
                                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                     cacheTTL: 300000 // 5 minutes
                                 })
