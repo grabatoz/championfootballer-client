@@ -482,8 +482,10 @@ export default function AllMatches() {
                     })
                 );
 
-                // Filter out completed leagues (like home page)
-                const activeLeagues = detailedLeagues.filter(l => !leagueIsCompleted(l));
+                // Show only visible leagues (active + non-archived + not completed)
+                const activeLeagues = detailedLeagues.filter(
+                    (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+                );
 
                 // Sort alphabetically by name
                 activeLeagues.sort((a, b) => {
@@ -546,14 +548,23 @@ export default function AllMatches() {
                 setMatches(data.league.matches);
                 // Update the leagues array to include members for the selected league
                 setLeagues(prevLeagues => {
-                    const otherLeagues = prevLeagues.filter(l => l.id !== data.league.id);
-                    return [
-                        ...otherLeagues,
-                        {
-                            ...prevLeagues.find(l => l.id === data.league.id),
-                            ...data.league // this will include members, name, etc.
-                        }
-                    ];
+                    const mergedLeague = {
+                        ...prevLeagues.find((l) => String(l.id) === String(data.league.id)),
+                        ...data.league,
+                        id: String(data.league.id),
+                    } as League;
+
+                    // If league became inactive/archived/completed after refresh, remove it from selector.
+                    if (
+                        mergedLeague.active === false ||
+                        mergedLeague.archived === true ||
+                        leagueIsCompleted(mergedLeague)
+                    ) {
+                        return prevLeagues.filter((l) => String(l.id) !== String(mergedLeague.id));
+                    }
+
+                    const otherLeagues = prevLeagues.filter((l) => String(l.id) !== String(mergedLeague.id));
+                    return [...otherLeagues, mergedLeague];
                 });
             } else {
                 setMatches([]);
@@ -564,7 +575,7 @@ export default function AllMatches() {
         } finally {
             setLoading(false);
         }
-    }, [token, selectedLeague]);
+    }, [token, selectedLeague, leagueIsCompleted]);
 
     useEffect(() => {
         if (token) {

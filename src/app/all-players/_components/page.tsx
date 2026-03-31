@@ -327,8 +327,10 @@ const AllPlayersPage = () => {
           })
         );
 
-        // Filter out completed leagues
-        const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
+        // Show only visible leagues (active + non-archived + not completed)
+        const activeLeagues = enrichedLeagues.filter(
+          (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+        );
 
         // Sort alphabetically
         activeLeagues.sort((a, b) => {

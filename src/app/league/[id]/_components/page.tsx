@@ -1185,8 +1185,10 @@ export default function LeagueDetailPage() {
                     } as League;
                 });
 
-                // Filter out completed leagues
-                const activeLeagues = simpleLeagues.filter(l => !leagueIsCompleted(l));
+                // Show only visible leagues (active + non-archived + not completed)
+                const activeLeagues = simpleLeagues.filter(
+                    (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+                );
 
                 // Sort alphabetically by name
                 activeLeagues.sort((a, b) => {

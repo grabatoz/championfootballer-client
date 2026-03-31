@@ -176,6 +176,9 @@ interface BackendMatch {
 interface BackendLeague {
   id: string | number;
   name?: string;
+  status?: string;
+  active?: boolean;
+  archived?: boolean;
   members?: BackendUser[];
   matches?: BackendMatch[];
   maxGames?: number | string;
@@ -1300,6 +1303,12 @@ const normalizeMatchStatus = (s: string | undefined): Match['status'] => {
   return 'SCHEDULED';
 };
 
+const isInactiveOrArchivedStatus = (status: unknown): boolean => {
+  const s = typeof status === 'string' ? status.trim().toLowerCase() : '';
+  if (!s) return false;
+  return s.includes('archiv') || s.includes('inactiv') || s.includes('deactiv') || s === 'completed';
+};
+
 // Helper: normalize leagues from /auth/data (user.leagues + administeredLeagues)
 const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; adminIds: Set<string> } => {
   const adminLeaguesArr = (u?.administeredLeagues ?? u?.adminLeagues ?? []);
@@ -1358,6 +1367,9 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; admi
     maxGames: extractLeagueMaxGames(l),
     createdAt: l?.createdAt,
     updatedAt: l?.updatedAt,
+    status: typeof l?.status === 'string' ? l.status : undefined,
+    active: typeof l?.active === 'boolean' ? l.active : !isInactiveOrArchivedStatus(l?.status),
+    archived: typeof l?.archived === 'boolean' ? l.archived : isInactiveOrArchivedStatus(l?.status) && String(l?.status ?? '').toLowerCase().includes('archiv'),
     isAdmin: adminIds.has(String(l?.id ?? '')),
   }));
   
@@ -1491,6 +1503,7 @@ export default function GlobalTrophyRoom() {
     const s = sRaw.trim().toUpperCase();
     const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
     if (completionStatuses.has(s)) return true;
+    if (isInactiveOrArchivedStatus(sRaw)) return true;
     if (typeof l?.active === 'boolean' && l.active === false) return true;
     return false;
   }, []);
@@ -1650,8 +1663,10 @@ export default function GlobalTrophyRoom() {
             } as League;
           });
 
-          // Filter out completed leagues
-          const activeLeagues = enrichedLeagues.filter(l => !leagueIsCompleted(l));
+          // Show only visible leagues (active + non-archived + not completed)
+          const activeLeagues = enrichedLeagues.filter(
+            (l) => l.active !== false && l.archived !== true && !isInactiveOrArchivedStatus(l.status) && !leagueIsCompleted(l)
+          );
 
           // Sort alphabetically
           activeLeagues.sort((a, b) => {

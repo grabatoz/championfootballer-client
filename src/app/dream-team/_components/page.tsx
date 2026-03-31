@@ -323,8 +323,10 @@ const DreamTeamPage = () => {
 
       const allLeagues = Array.from(uniqueLeaguesMap.values()) as League[];
 
-      // Show only active, non-completed, non-archived leagues
-      const activeLeagues = allLeagues.filter((l) => !leagueIsCompleted(l));
+      // Show only visible leagues (active + non-archived + not completed)
+      const activeLeagues = allLeagues.filter(
+        (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+      );
 
       // Sort alphabetically
       activeLeagues.sort((a, b) => {

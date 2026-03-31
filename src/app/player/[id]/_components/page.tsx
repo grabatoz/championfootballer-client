@@ -133,8 +133,15 @@ function isLeagueActiveForFilter(l: LeagueWithMatchesTyped): boolean {
     if (l.archived === true) return false;
     if (l.active === false) return false;
 
-    const status = typeof l.status === 'string' ? l.status.toLowerCase() : '';
-    if (status === 'completed' || status === 'inactive' || status === 'archived') return false;
+    const status = typeof l.status === 'string' ? l.status.trim().toLowerCase() : '';
+    if (
+        status === 'completed' ||
+        status === 'inactive' ||
+        status === 'archived' ||
+        status.includes('archiv') ||
+        status.includes('inactiv') ||
+        status.includes('deactiv')
+    ) return false;
 
     if (l.computedStatus?.isComplete === true || l.computedStatus?.isCompleted === true) return false;
 
@@ -1278,10 +1285,11 @@ export default function PlayerStatsPage() {
         setYearDropdownOpen(false);
 
         // compute valid leagues for the selected year
-        const list = ((data?.leagues || []) as LeagueWithMatchesTyped[]).filter(l =>
-            val === 'all'
-                ? true
-                : hasMatches(l) && (l.matches || []).some(m => dayjs(m.date).year().toString() === val)
+        const list = ((data?.leagues || []) as LeagueWithMatchesTyped[]).filter((l) =>
+            isLeagueActiveForFilter(l) &&
+            (val === 'all'
+                ? hasMatches(l)
+                : hasMatches(l) && (l.matches || []).some(m => dayjs(m.date).year().toString() === val))
         );
 
         // preserve league if possible, else select latest league for that year (or 'all')
@@ -1305,8 +1313,8 @@ export default function PlayerStatsPage() {
 
     const currentLeagueName =
         leagueId && leagueId !== 'all'
-            ? data?.leagues?.find((l: LeagueWithMatchesTyped) => l.id === leagueId)?.name || 'Current League'
-            : data?.leagues?.[0]?.name || 'Current League';
+            ? leaguesForYear.find((l: LeagueWithMatchesTyped) => l.id === leagueId)?.name || 'Current League'
+            : leaguesForYear[0]?.name || 'Current League';
 
     const playerName = fullPlayerData?.player?.name || 'Player';
     // const playerShirt = fullPlayerData?.player?.shirtNo || '';

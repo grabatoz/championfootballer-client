@@ -99,6 +99,7 @@ type BasicLeague = {
   name?: string;
   status?: string;
   active?: boolean;
+  archived?: boolean;
   updatedAt?: string;
   createdAt?: string;
   image?: string;
@@ -119,6 +120,7 @@ type ApiLeague = {
   name?: string;
   status?: string;
   active?: boolean;
+  archived?: boolean;
   updatedAt?: string;
   createdAt?: string;
   image?: string;
@@ -395,6 +397,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             name: l.name,
             status: typeof l?.status === 'string' && l.status.trim() !== '' ? l.status : 'active',
             active: typeof l?.active === 'boolean' ? l.active : true,
+            archived: typeof l?.archived === 'boolean' ? l.archived : false,
             updatedAt: l.updatedAt,
             createdAt: l.createdAt,
             image: l.image,
@@ -413,6 +416,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               createdAt: createdLeague.createdAt,
               status: createdLeague.status,
               active: createdLeague.active,
+              archived: (createdLeague as unknown as { archived?: boolean }).archived,
               userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
               maxGames: createdLeague.maxGames,
             }
@@ -537,6 +541,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   ...enriched,
                   status: typeof enriched?.status === 'string' && enriched.status!.trim() !== '' ? enriched.status : 'active',
                   active: typeof enriched?.active === 'boolean' ? enriched.active : true,
+                  archived: typeof enriched?.archived === 'boolean' ? enriched.archived : false,
                 };
               });
               return arr;
@@ -595,6 +600,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         name: (l as unknown as { name?: string }).name,
         status: (l as unknown as { status?: string }).status || 'active',
         active: typeof (l as unknown as { active?: boolean }).active === 'boolean' ? (l as unknown as { active?: boolean }).active! : true,
+        archived: typeof (l as unknown as { archived?: boolean }).archived === 'boolean' ? (l as unknown as { archived?: boolean }).archived! : false,
         updatedAt: (l as unknown as { updatedAt?: string }).updatedAt,
         createdAt: (l as unknown as { createdAt?: string }).createdAt,
         image: (l as unknown as { image?: string }).image,
@@ -657,7 +663,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   useEffect(() => {
     try {
       if (!userLeagues?.length) return;
-      const visible = userLeagues.filter(l => !leagueIsCompleted(l));
+      const visible = userLeagues.filter(
+        (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+      );
       console.log('[Home] leagues total:', userLeagues.length, 'visible (not completed):', visible.length);
     } catch {}
   }, [userLeagues]);
@@ -667,7 +675,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     if (!userLeagues?.length) return [];
     // Only show ACTIVE & INCOMPLETE leagues in the dropdown
     // Inactive leagues (completed / archived / admin-deactivated) go to Leagues page
-    const visible = userLeagues.filter(l => l.active !== false && !(l as any).archived && !leagueIsCompleted(l));
+    const visible = userLeagues.filter(
+      (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+    );
     // Sort alphabetically by name (A -> Z)
     const arr = [...visible].sort((a, b) => {
       const an = (a?.name ?? '').toString().trim().toLowerCase();

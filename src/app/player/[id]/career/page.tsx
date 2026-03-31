@@ -140,8 +140,15 @@ const isLeagueActiveForFilter = (l: LeagueWithMatches): boolean => {
   if (l.archived === true) return false;
   if (l.active === false) return false;
 
-  const status = typeof l.status === 'string' ? l.status.toLowerCase() : '';
-  if (status === 'completed' || status === 'inactive' || status === 'archived') return false;
+  const status = typeof l.status === 'string' ? l.status.trim().toLowerCase() : '';
+  if (
+    status === 'completed' ||
+    status === 'inactive' ||
+    status === 'archived' ||
+    status.includes('archiv') ||
+    status.includes('inactiv') ||
+    status.includes('deactiv')
+  ) return false;
 
   if (l.computedStatus?.isComplete === true || l.computedStatus?.isCompleted === true) return false;
 
@@ -380,6 +387,7 @@ export default function CareerPage() {
     const effectiveYear = filters.year && filters.year !== 'all' ? String(filters.year) : String(fallbackYear);
     return list.filter(
       (l) =>
+        isLeagueActiveForFilter(l) &&
         Array.isArray(l.matches) &&
         (l.matches as LeagueMatch[]).some((m) => dayjs(m.date).year().toString() === effectiveYear)
     );
