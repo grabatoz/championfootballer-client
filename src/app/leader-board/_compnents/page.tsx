@@ -184,7 +184,7 @@ export default function LeaderBoardPage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}?_=${Date.now()}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}?includeMatches=0&_=${Date.now()}`, {
           credentials: 'include',
           headers: { 'Authorization': `Bearer ${token}` },
         });

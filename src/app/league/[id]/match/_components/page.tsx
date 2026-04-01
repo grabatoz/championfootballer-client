@@ -658,7 +658,7 @@ export default function ScheduleMatchPage() {
     if (!leagueId || !token) return;
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const json = await res.json();

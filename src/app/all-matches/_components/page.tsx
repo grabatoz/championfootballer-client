@@ -526,11 +526,12 @@ export default function AllMatches() {
 
 
     const fetchMatchesByLeague = useCallback(async (leagueId: string) => {
+        if (!token) return;
         setLoading(true);
         try {
             // 🔄 Force fresh data using cache buster and no-store (same approach as league page)
-            const cacheBuster = `?_t=${Date.now()}`;
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}${cacheBuster}`, {
+            const params = new URLSearchParams({ all: '1', _t: String(Date.now()) });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -544,38 +545,16 @@ export default function AllMatches() {
             }
 
             const data = await response.json();
-            if (data.success && data.league && data.league.matches) {
-                setMatches(data.league.matches);
-                // Update the leagues array to include members for the selected league
-                setLeagues(prevLeagues => {
-                    const mergedLeague = {
-                        ...prevLeagues.find((l) => String(l.id) === String(data.league.id)),
-                        ...data.league,
-                        id: String(data.league.id),
-                    } as League;
-
-                    // If league became inactive/archived/completed after refresh, remove it from selector.
-                    if (
-                        mergedLeague.active === false ||
-                        mergedLeague.archived === true ||
-                        leagueIsCompleted(mergedLeague)
-                    ) {
-                        return prevLeagues.filter((l) => String(l.id) !== String(mergedLeague.id));
-                    }
-
-                    const otherLeagues = prevLeagues.filter((l) => String(l.id) !== String(mergedLeague.id));
-                    return [...otherLeagues, mergedLeague];
-                });
-            } else {
-                setMatches([]);
-            }
+            const leagueMatches = Array.isArray(data?.matches) ? data.matches : [];
+            setMatches(leagueMatches);
+            setLeague(prev => prev ? { ...prev, matches: leagueMatches } : prev);
         } catch (e) {
             console.error('Failed to fetch matches by league:', e);
             setMatches([]);
         } finally {
             setLoading(false);
         }
-    }, [token, selectedLeague, leagueIsCompleted]);
+    }, [token]);
 
     useEffect(() => {
         if (token) {
@@ -623,6 +602,20 @@ export default function AllMatches() {
             setLoading(false);
         }
     }, [selectedLeague, token, fetchMatchesByLeague]);
+
+    // Keep selected league metadata in sync without refetching full league payload.
+    useEffect(() => {
+        if (selectedLeague === 'all') {
+            setLeague(null);
+            return;
+        }
+        const selected = leagues.find((l) => String(l.id) === String(selectedLeague));
+        if (!selected) {
+            setLeague(null);
+            return;
+        }
+        setLeague(prev => ({ ...selected, matches: prev?.matches ?? [] }));
+    }, [leagues, selectedLeague]);
 
     // Optimistically inject newly created match into current list (no wait)
     useEffect(() => {
@@ -763,45 +756,7 @@ export default function AllMatches() {
     // }, [selectedLeague, token]);
 
     
-        const fetchLeagueDetails = useCallback(async () => {
-            try {
-                console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
-    
-                // 🔄 Add cache busting to force fresh data from backend
-                const cacheBuster = `?_t=${Date.now()}`;
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}${cacheBuster}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-    
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-    
-                const data = await response.json();
-                console.log('✅ League details fetched successfully from API', data);
-                if (data.success) {
-                    console.log('✅ Fresh League Data Received:', data.league);
-                    console.log('✅ Total Matches:', data.league.matches?.length || 0);
-                    if (data.league.matches) {
-                        data.league.matches.forEach((match: Match, index: number) => {
-                            console.log(`  Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | Status: ${match.status}`);
-                        });
-                    }
-                    setLeague(data.league);
-                    console.log('✅ League state updated successfully');
-                } else {
-                    setError(data.message || 'Failed to fetch league details');
-                    console.error('❌ API Error:', data.message);
-                }
-            } catch (error) {
-                console.error('❌ Error fetching league details:', error);
-                setError('Failed to fetch league details');
-            }
-        }, [selectedLeague, token]);
-
+        
     const handleSaveStats = async () => {
         if (!activeMatchId || !token) return;
 
@@ -867,17 +822,11 @@ export default function AllMatches() {
 
 
     const getMatchGoals = () => {
-        if (!activeMatchId || !league) return 10; // Default fallback
-        const match = league.matches?.find(m => m.id === activeMatchId);
+        if (!activeMatchId) return 10; // Default fallback
+        const match = matches.find(m => m.id === activeMatchId);
         if (!match) return 10;
         return (match.homeTeamGoals || 0) + (match.awayTeamGoals || 0);
     };
-
-    useEffect(() => {
-        if (selectedLeague && token && selectedLeague !== 'all') {
-            fetchLeagueDetails();
-        }
-    }, [selectedLeague, token, fetchLeagueDetails]);
     const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
         if (!token) {
             setError('Please login to mark availability');
@@ -1231,8 +1180,9 @@ export default function AllMatches() {
             setUndoInfo({ match: { ...m, archived: true }, action: 'archive' });
             setToastMessage('Match archived successfully');
 
-            // Refresh league data to ensure sync
-            fetchLeagueDetails();
+            if (selectedLeague && selectedLeague !== 'all') {
+                fetchMatchesByLeague(selectedLeague);
+            }
 
         } catch (e) {
             console.error('Delete/Archive operation failed:', e);
@@ -1299,7 +1249,9 @@ export default function AllMatches() {
             setMatches(prev => prev.filter(mm => mm.id !== match.id));
 
             toast.success('Match permanently deleted');
-            fetchLeagueDetails();
+            if (selectedLeague && selectedLeague !== 'all') {
+                fetchMatchesByLeague(selectedLeague);
+            }
 
         } catch (error) {
             console.error('Permanent delete failed:', error);
@@ -1385,7 +1337,9 @@ export default function AllMatches() {
             setMatches(prev => prev.map(mm => mm.id === match.id ? { ...mm, archived: false } : mm));
 
             toast.success('Match restored successfully');
-            fetchLeagueDetails();
+            if (selectedLeague && selectedLeague !== 'all') {
+                fetchMatchesByLeague(selectedLeague);
+            }
 
         } catch (error) {
             console.error('Restore failed:', error);

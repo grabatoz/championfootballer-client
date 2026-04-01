@@ -367,51 +367,52 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // Prevent stale updates/races across parallel fetches
     const fetchNonceRef = useRef(0);
 
-    // Unified, fast match fetcher with endpoint fallbacks (in parallel) and client filtering
+    // Unified, fast match fetcher: prefer league-scoped endpoint, keep legacy fallback.
     const getMatchesForLeague = useCallback(async (leagueIdForList: string): Promise<Partial<Match>[]> => {
         if (!token || !leagueIdForList) return [];
 
         const headers = { Authorization: `Bearer ${token}` } as const;
-
-        // Fire endpoints in parallel; we'll pick the first non-empty result, else the first ok
-        const ep1 = fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(leagueIdForList)}`, { headers })
-            .then(async (r) => ({
-                ok: r.ok,
-                status: r.status,
-                data: r.ok ? await r.json().catch(() => ({} as MatchesResponse)) : null,
-            }))
-            .catch(() => ({ ok: false, status: 0, data: null }));
-
-        const ep2 = fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers })
-            .then(async (r) => ({
-                ok: r.ok,
-                status: r.status,
-                data: r.ok ? await r.json().catch(() => ({} as MatchesResponse)) : null,
-            }))
-            .catch(() => ({ ok: false, status: 0, data: null }));
-
-        const ep3 = fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueIdForList}/matches`, { headers })
-            .then(async (r) => ({
-                ok: r.ok && r.status !== 403,
-                status: r.status,
-                data: r.ok ? await r.json().catch(() => ({} as MatchesResponse)) : null,
-            }))
-            .catch(() => ({ ok: false, status: 0, data: null }));
-
-        const [r1, r2, r3] = await Promise.allSettled([ep1, ep2, ep3]).then((all) => all.map(a => (a.status === 'fulfilled' ? a.value : { ok: false, status: 0, data: null } as any)));
-
-        const collect = (resp: any) => {
-            if (!resp || !resp.ok || !resp.data) return [] as Partial<Match>[];
-            let arr: Partial<Match>[] = resp.data?.matches || resp.data?.data || resp.data?.leagueMatches || resp.data?.match || [];
-            if (Array.isArray(resp.data) && arr.length === 0) arr = resp.data;
-            return Array.isArray(arr) ? arr : [];
+        const collect = (data: unknown): Partial<Match>[] => {
+            if (!data || typeof data !== 'object') return [];
+            const rec = data as Record<string, unknown>;
+            let arr: unknown = rec.matches ?? rec.data ?? rec.leagueMatches ?? rec.match ?? [];
+            if (Array.isArray(data) && (!Array.isArray(arr) || arr.length === 0)) arr = data;
+            return Array.isArray(arr) ? (arr as Partial<Match>[]) : [];
         };
 
-        // Prefer first non-empty
-        const c1 = collect(r1);
-        const c2 = collect(r2);
-        const c3 = collect(r3);
-        let matches = c1.length ? c1 : c2.length ? c2 : c3;
+        let matches: Partial<Match>[] = [];
+        let primaryFailed = false;
+
+        try {
+            const primaryRes = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueIdForList)}/matches?all=1&includeArchived=1`,
+                { headers, cache: 'no-store' }
+            );
+            if (primaryRes.ok) {
+                const data = await primaryRes.json().catch(() => ({} as MatchesResponse));
+                matches = collect(data);
+            } else {
+                primaryFailed = true;
+            }
+        } catch {
+            primaryFailed = true;
+        }
+
+        // Legacy fallback for older deployments.
+        if (matches.length === 0 && primaryFailed) {
+            try {
+                const fallbackRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(leagueIdForList)}`,
+                    { headers, cache: 'no-store' }
+                );
+                if (fallbackRes.ok) {
+                    const data = await fallbackRes.json().catch(() => ({} as MatchesResponse));
+                    matches = collect(data);
+                }
+            } catch {
+                // no-op
+            }
+        }
 
         // Always filter by league id to be consistent
         const leagueIdStr = String(leagueIdForList);
@@ -713,17 +714,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 console.warn('MatchStatsDialog: match fetch failed, attempting league matches fallback', { status: matchResp.status, raw, attempt });
                 if (attempt < 1) {
                     // Fallback: fetch matches list for league and pick latest
-                    let mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(resolvedLeagueId)}`, { headers: { Authorization: `Bearer ${token}` } });
-                    if (mres.status === 404 || mres.status === 405) {
-                        mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
-                    }
-                    const mdata = await mres.json().catch(() => ({} as MatchesResponse));
-                    let matchesArr: Partial<Match>[] = mdata?.matches || mdata?.data || mdata?.leagueMatches || [];
-                    if (!Array.isArray(matchesArr)) matchesArr = [];
-                    const filtered = matchesArr.filter((m: Partial<Match>) => String(m?.leagueId ?? '') === String(resolvedLeagueId));
-                    const mWithDates = filtered.map(m => ({ m, ts: Date.parse((m.start || m.date || m.updatedAt || m.createdAt) as string || '') || 0, idNum: Number(m.id) || 0 }));
-                    mWithDates.sort((a, b) => b.ts - a.ts || b.idNum - a.idNum);
-                    const chosen = mWithDates[0]?.m || null;
+                    const sorted = await getMatchesForLeague(resolvedLeagueId);
+                    const chosen = sorted[0] || null;
                     if (chosen && String(chosen.id) !== resolvedMatchId) {
                         console.log('MatchStatsDialog: fallback picked match', { chosenId: String(chosen.id) });
                         setCurrentMatchId(String(chosen.id));
@@ -784,7 +776,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         } finally {
             if (!silent) setLoading(false);
         }
-    }, [resolvedLeagueId, resolvedMatchId, token]);
+    }, [resolvedLeagueId, resolvedMatchId, token, getMatchesForLeague]);
 
     useEffect(() => {
         if (resolvedLeagueId && resolvedMatchId && token) {
@@ -959,175 +951,29 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setSelectedLeagueIdForList(preferredId);
                 setSelectedLeagueNameForList(preferredLeague.name);
 
-                // CRITICAL FIX: Trigger the working fetchSelectedLeagueMatches after state is set
-                // This ensures we use the exact same logic that works when clicking the button
                 console.log('[MatchStats] Setting up preferred league and will fetch matches:', preferredId);
+                const sorted = await getMatchesForLeague(preferredId);
+                setSelectedLeagueMatches(sorted);
 
-                // Use a small delay to ensure React state updates, then fetch matches
-                // This mimics what happens when user clicks the button
-                await new Promise(resolve => setTimeout(resolve, 150));
-
-                // Now fetch matches using the EXACT same approach as fetchSelectedLeagueMatches
-                // which works when the button is clicked
-                const leagueIdForList = preferredId; // Use preferredId directly
-                let res: Response | null = null;
-                let matchesArr: Partial<Match>[] = [];
-
-                // EXACT same logic as fetchSelectedLeagueMatches - try all endpoints
-                try {
-                    res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(leagueIdForList)}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    if (res.ok) {
-                        const data = await res.json().catch(() => ({} as MatchesResponse));
-                        matchesArr = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                        if (Array.isArray(data) && matchesArr.length === 0) {
-                            matchesArr = data;
-                        }
-                        console.log('[MatchStats] Preferred: Endpoint 1 returned', matchesArr.length, 'matches');
-                    } else {
-                        console.log('[MatchStats] Preferred: Endpoint 1 status', res.status);
-                    }
-                } catch (e) {
-                    console.warn('[MatchStats] Preferred: Endpoint 1 failed', e);
-                }
-
-                // Try fallback endpoint if first failed or returned no matches
-                if (!res || !res.ok || matchesArr.length === 0) {
-                    try {
-                        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        if (res.ok) {
-                            const data = await res.json().catch(() => ({} as MatchesResponse));
-                            const allMatches = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                            if (Array.isArray(data) && allMatches.length === 0) {
-                                matchesArr = data;
-                            } else {
-                                matchesArr = allMatches;
-                            }
-                            console.log('[MatchStats] Preferred: Endpoint 2 returned', matchesArr.length, 'total matches (will filter)');
-                        } else {
-                            console.log('[MatchStats] Preferred: Endpoint 2 status', res.status);
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] Preferred: Endpoint 2 failed', e);
-                    }
-                }
-
-                // Try league-specific endpoint (skip if 403 - requires membership)
-                if ((!res || !res.ok || matchesArr.length === 0) && leagueIdForList) {
-                    try {
-                        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueIdForList}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        // Skip if 403 Forbidden - user doesn't have access to this league
-                        // This can happen if preferredLeagueId points to a league user is no longer a member of
-                        if (res.status === 403) {
-                            console.log('[MatchStats] Preferred: Endpoint 3 returned 403 - user may not have access, skipping');
-                            res = null; // Mark as failed so we don't process
-                        } else if (res.ok) {
-                            const data = await res.json().catch(() => ({} as MatchesResponse));
-                            matchesArr = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                            if (Array.isArray(data) && matchesArr.length === 0) {
-                                matchesArr = data;
-                            }
-                            console.log('[MatchStats] Preferred: Endpoint 3 returned', matchesArr.length, 'matches');
-                        } else {
-                            console.log('[MatchStats] Preferred: Endpoint 3 status', res.status);
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] Preferred: Endpoint 3 failed', e);
-                    }
-                }
-
-                if (!Array.isArray(matchesArr)) {
-                    matchesArr = [];
-                }
-
-                console.log('[MatchStats] Preferred: Total matches before filtering:', matchesArr.length, 'for league:', leagueIdForList);
-
-                // EXACT same filtering logic as fetchSelectedLeagueMatches
-                const filtered = matchesArr.filter((m: Partial<Match>) => {
-                    const matchLeagueId = String(m?.leagueId ?? '');
-                    const matchLeagueIdNum = matchLeagueId ? Number(matchLeagueId) : NaN;
-                    const leagueIdForListNum = Number(leagueIdForList);
-                    const matches = matchLeagueId === leagueIdForList ||
-                        (Number.isFinite(matchLeagueIdNum) && Number.isFinite(leagueIdForListNum) && matchLeagueIdNum === leagueIdForListNum) ||
-                        matchLeagueId === String(leagueIdForList);
-
-                    // Debug logging for first few matches
-                    if (matchesArr.indexOf(m) < 3) {
-                        console.debug('[MatchStats] Preferred: Match check', {
-                            matchId: m.id,
-                            matchLeagueId,
-                            preferredId: leagueIdForList,
-                            matches,
-                            matchLeagueIdType: typeof m?.leagueId
-                        });
-                    }
-
-                    return matches;
-                });
-
-                console.log('[MatchStats] Preferred: After filtering:', filtered.length, 'matches for league', leagueIdForList);
-
-                // CRITICAL: Store matches in state - this is what makes the button work!
-                setSelectedLeagueMatches(filtered);
-
-                // Sort and find latest (same as fetchSelectedLeagueMatches)
-                const toTime = (m: Partial<Match>): number => {
-                    const s = (m?.start || m?.date || m?.createdAt || m?.updatedAt) as string | undefined;
-                    if (s) {
-                        const t = new Date(s).getTime();
-                        if (!Number.isNaN(t)) return t;
-                    }
-                    const n = Number(m?.id);
-                    return Number.isFinite(n) ? n : 0;
-                };
-                const sorted = [...filtered].sort((a, b) => toTime(b) - toTime(a));
                 const latest = sorted[0] || null;
-
-                console.log('[MatchStats] Preferred: Selected latest match:', latest?.id, latest?.homeTeamName, 'vs', latest?.awayTeamName);
-
                 setCurrentLeagueId(preferredId);
                 if (latest && latest.id) {
-                    // Mark as applied only after successful match selection
                     preferredAppliedRef.current = preferredId;
-                    // Update toolbar label state
                     setSelectedMatchForList(latest || null);
                     setSelectedLeagueHasNoMatches(false);
                     setCurrentMatchId(String(latest.id));
-                    // Small delay to ensure state is set before fetching details
-                    await new Promise(resolve => setTimeout(resolve, 100));
                     await fetchLeagueAndMatchDetails(true);
                     setLoading(false);
                     return;
                 }
 
-                // If no match found, log detailed info for debugging
                 console.warn('[MatchStats] Preferred league has no matches:', {
                     preferredId,
-                    totalMatchesFetched: matchesArr.length,
-                    filteredMatches: filtered.length,
-                    allMatchLeagueIds: matchesArr.slice(0, 5).map((m: Partial<Match>) => ({
-                        id: m.id,
-                        leagueId: m.leagueId,
-                        leagueIdType: typeof m.leagueId,
-                        homeTeam: m.homeTeamName,
-                        awayTeam: m.awayTeamName
-                    }))
+                    totalMatchesFetched: sorted.length
                 });
-
-                // Set state to indicate no matches found
                 setSelectedMatchForList(null);
                 setSelectedLeagueHasNoMatches(true);
                 setCurrentMatchId('');
-
-                // Don't set the ref if no matches found - this allows retry on next dialog open
-                // This way, if matches are added later, we can try again
-                console.log('[MatchStats] Not setting preferredAppliedRef since no matches found - will retry on next open');
-
                 setLoading(false);
             } catch (e) {
                 console.warn('Preferred league auto-select failed', e);
@@ -1143,7 +989,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         applyPreferredLeague();
         // We intentionally run when token or open state changes; internal ref with league ID prevents duplicate fetches
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token, resolvedLeagueId, resolvedMatchId, open, initialLeagueId, initialMatchId]);
+    }, [token, resolvedLeagueId, resolvedMatchId, open, initialLeagueId, initialMatchId, getMatchesForLeague, fetchLeagueAndMatchDetails]);
 
     // Reset ref when dialog closes so next open gets fresh data
     useEffect(() => {
@@ -1202,95 +1048,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
 
                 console.log('[MatchStats] Fetching matches for league:', leagueId);
+                const sorted = await getMatchesForLeague(leagueId);
+                setSelectedLeagueMatches(sorted);
 
-                // Try multiple endpoints to fetch matches
-                let res: Response | null = null;
-                let matchesArr: Partial<Match>[] = [];
-
-                // Try 1: Query parameter endpoint
-                try {
-                    res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(leagueId)}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    console.log('[MatchStats] Matches endpoint response status:', res.status);
-
-                    if (res.ok) {
-                        const data = await res.json().catch(() => ({} as MatchesResponse));
-                        console.log('[MatchStats] Matches response data:', data);
-                        matchesArr = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                        if (Array.isArray(data) && matchesArr.length === 0) {
-                            matchesArr = data; // Sometimes API returns array directly
-                        }
-                    }
-                } catch (e) {
-                    console.warn('[MatchStats] Query param endpoint failed, trying fallback:', e);
-                }
-
-                // Try 2: All matches endpoint (if first failed or no matches found)
-                if (!res || !res.ok || matchesArr.length === 0) {
-                    try {
-                        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        console.log('[MatchStats] Fallback matches endpoint response status:', res.status);
-
-                        if (res.ok) {
-                            const data = await res.json().catch(() => ({} as MatchesResponse));
-                            matchesArr = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                            if (Array.isArray(data) && matchesArr.length === 0) {
-                                matchesArr = data;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] Fallback endpoint also failed:', e);
-                    }
-                }
-
-                // Try 3: League-specific matches endpoint
-                if ((!res || !res.ok || matchesArr.length === 0) && leagueId) {
-                    try {
-                        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        console.log('[MatchStats] League matches endpoint response status:', res.status);
-
-                        if (res.ok) {
-                            const data = await res.json().catch(() => ({} as MatchesResponse));
-                            matchesArr = data?.matches || data?.data || data?.leagueMatches || data?.match || [];
-                            if (Array.isArray(data) && matchesArr.length === 0) {
-                                matchesArr = data;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] League matches endpoint also failed:', e);
-                    }
-                }
-
-                if (!Array.isArray(matchesArr)) {
-                    console.warn('[MatchStats] Matches data is not an array:', matchesArr);
-                    matchesArr = [];
-                }
-
-                console.log('[MatchStats] Total matches fetched:', matchesArr.length);
-
-                // Filter matches by league ID (handle various ID formats)
-                const filtered = matchesArr.filter((m: Partial<Match>) => {
-                    const matchLeagueId = String(m?.leagueId ?? '');
-                    const matchLeagueIdNum = matchLeagueId ? Number(matchLeagueId) : NaN;
-                    const leagueIdNum = Number(leagueId);
-
-                    // Check exact string match or numeric match
-                    return matchLeagueId === leagueId ||
-                        (Number.isFinite(matchLeagueIdNum) && Number.isFinite(leagueIdNum) && matchLeagueIdNum === leagueIdNum) ||
-                        matchLeagueId === String(leagueId);
-                });
-
-                console.log('[MatchStats] Filtered matches for league:', filtered.length, 'leagueId:', leagueId);
-
-                // Store all matches for this league
-                setSelectedLeagueMatches(filtered);
-
-                if (!filtered.length) {
+                if (!sorted.length) {
                     console.warn('[MatchStats] No matches found for league:', leagueId);
                     setSelectedLeagueHasNoMatches(true);
                     setSelectedMatchForList(null);
@@ -1300,18 +1061,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     return;
                 }
 
-                // Pick latest by start date (fallback to createdAt/updatedAt/id)
-                const toTime = (m: Partial<Match>): number => {
-                    const s = (m?.start || m?.date || m?.createdAt || m?.updatedAt) as string | undefined;
-                    if (s) {
-                        const t = new Date(s).getTime();
-                        if (!Number.isNaN(t)) return t;
-                    }
-                    // Fallback: parse id if numeric
-                    const n = Number(m?.id);
-                    return Number.isFinite(n) ? n : 0;
-                };
-                const sorted = [...filtered].sort((a, b) => toTime(b) - toTime(a));
                 const latest = sorted[0] || null;
 
                 console.log('[MatchStats] Latest match selected:', latest?.id, latest?.homeTeamName, 'vs', latest?.awayTeamName);
@@ -1340,7 +1089,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setAutoSelectMatchLoading(false);
             }
         })();
-    }, [token, fetchLeagueAndMatchDetails]);
+    }, [token, fetchLeagueAndMatchDetails, getMatchesForLeague]);
 
     // Embedded mode: when opened from Navbar (no route ids), auto-select latest league and latest match
     useEffect(() => {
@@ -1431,85 +1180,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setSelectedLeagueIdForList(chosenLeagueId);
                 setSelectedLeagueNameForList(chosenLeague.name);
 
-                // Load matches for chosen league using improved fetching logic
                 console.log('[MatchStats] Embedded mode: fetching matches for league:', chosenLeagueId);
-                let mres: Response | null = null;
-                let matchesArr: Partial<Match>[] = [];
-
-                // Try multiple endpoints
-                try {
-                    mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches?leagueId=${encodeURIComponent(chosenLeagueId)}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    if (mres.ok) {
-                        const mdata = await mres.json().catch(() => ({} as MatchesResponse));
-                        matchesArr = mdata?.matches || mdata?.data || mdata?.leagueMatches || mdata?.match || [];
-                        if (Array.isArray(mdata) && matchesArr.length === 0) {
-                            matchesArr = mdata;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('[MatchStats] Embedded mode query param endpoint failed:', e);
-                }
-
-                if (!mres || !mres.ok || matchesArr.length === 0) {
-                    try {
-                        mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        if (mres.ok) {
-                            const mdata = await mres.json().catch(() => ({} as MatchesResponse));
-                            matchesArr = mdata?.matches || mdata?.data || mdata?.leagueMatches || mdata?.match || [];
-                            if (Array.isArray(mdata) && matchesArr.length === 0) {
-                                matchesArr = mdata;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] Embedded mode fallback endpoint failed:', e);
-                    }
-                }
-
-                if ((!mres || !mres.ok || matchesArr.length === 0) && chosenLeagueId) {
-                    try {
-                        mres = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${chosenLeagueId}/matches`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        if (mres.ok) {
-                            const mdata = await mres.json().catch(() => ({} as MatchesResponse));
-                            matchesArr = mdata?.matches || mdata?.data || mdata?.leagueMatches || mdata?.match || [];
-                            if (Array.isArray(mdata) && matchesArr.length === 0) {
-                                matchesArr = mdata;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[MatchStats] Embedded mode league matches endpoint failed:', e);
-                    }
-                }
-
-                if (!Array.isArray(matchesArr)) matchesArr = [];
-
-                // Filter matches by league ID (handle various ID formats)
-                const filtered = matchesArr.filter((m: Partial<Match>) => {
-                    const matchLeagueId = String(m?.leagueId ?? '');
-                    const matchLeagueIdNum = matchLeagueId ? Number(matchLeagueId) : NaN;
-                    const chosenLeagueIdNum = Number(chosenLeagueId);
-                    return matchLeagueId === chosenLeagueId ||
-                        (Number.isFinite(matchLeagueIdNum) && Number.isFinite(chosenLeagueIdNum) && matchLeagueIdNum === chosenLeagueIdNum) ||
-                        matchLeagueId === String(chosenLeagueId);
-                });
-
-                console.log('[MatchStats] Embedded mode: matches for league', { leagueId: chosenLeagueId, total: matchesArr.length, filtered: filtered.length });
-
-                const toTime = (m: Partial<Match>): number => {
-                    const s = (m?.start || m?.date || m?.createdAt || m?.updatedAt) as string | undefined;
-                    if (s) {
-                        const t = new Date(s).getTime();
-                        if (!Number.isNaN(t)) return t;
-                    }
-                    const n = Number(m?.id);
-                    return Number.isFinite(n) ? n : 0;
-                };
-                const sorted = [...filtered].sort((a, b) => toTime(b) - toTime(a));
+                const sorted = await getMatchesForLeague(chosenLeagueId);
+                setSelectedLeagueMatches(sorted);
                 const chosenMatch = sorted[0] || null;
                 if (!chosenMatch) {
                     console.log('MatchStatsDialog: no matches for chosen league');
@@ -1534,7 +1207,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
         };
         run();
-    }, [open, token, leagueId, matchId, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails, initialLeagueId, initialMatchId]);
+    }, [open, token, leagueId, matchId, resolvedLeagueId, resolvedMatchId, fetchLeagueAndMatchDetails, initialLeagueId, initialMatchId, getMatchesForLeague]);
 
     // CHANGED: do not toggle global loading; refetch silently and show local spinner on button
     const handleSaveDetails = async () => {

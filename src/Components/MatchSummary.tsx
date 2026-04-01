@@ -105,7 +105,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         return;
       }
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
