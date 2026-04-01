@@ -918,6 +918,60 @@ export default function ScheduleMatchPage() {
     }
   };
 
+  const selectMenuProps = {
+    anchorOrigin: { vertical: 'bottom' as const, horizontal: 'left' as const },
+    transformOrigin: { vertical: 'top' as const, horizontal: 'left' as const },
+    variant: 'menu' as const,
+    disableAutoFocusItem: true,
+    MenuListProps: {
+      sx: {
+        py: 0,
+        maxHeight: 260,
+        overflowY: 'auto',
+        bgcolor: '#424242',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255,255,255,0.28) #424242',
+        '&::-webkit-scrollbar': {
+          width: '6px'
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#424242'
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(255,255,255,0.28)',
+          borderRadius: '6px',
+          border: '1px solid #424242'
+        }
+      }
+    },
+    PaperProps: {
+      sx: {
+        mt: 0.25,
+        bgcolor: '#424242',
+        color: THEME.TEXT,
+        border: '1px solid rgba(255,255,255,0.45)',
+        boxShadow: '0 10px 24px rgba(0,0,0,0.35)',
+        overflow: 'hidden',
+        '& .MuiMenu-list': {
+          py: 0
+        },
+        '& .MuiMenuItem-root': {
+          minHeight: 38,
+          color: THEME.TEXT,
+          '&:hover': {
+            backgroundColor: 'rgba(255,255,255,0.08)'
+          }
+        },
+        '& .MuiMenuItem-root.Mui-selected': {
+          backgroundColor: 'rgba(229,106,22,0.28)'
+        },
+        '& .MuiMenuItem-root.Mui-selected:hover': {
+          backgroundColor: 'rgba(229,106,22,0.38)'
+        }
+      }
+    }
+  };
+
   return (
     <>
       <Box
@@ -1134,6 +1188,7 @@ export default function ScheduleMatchPage() {
                       setIsPM(period === 'PM');
                     }}
                     sx={selectStyles}
+                    MenuProps={selectMenuProps}
                   >
                     {/* AM: 12 AM, 1 AM, 2 AM, ... 11 AM */}
                     <MenuItem key="AM-12" value="12-AM">12 AM</MenuItem>
@@ -1163,6 +1218,7 @@ export default function ScheduleMatchPage() {
                       setMinute(Number(e.target.value))
                     }
                     sx={selectStyles}
+                    MenuProps={selectMenuProps}
                   >
                     {MINUTES.map((m) => (
                       <MenuItem value={m} key={m}>
@@ -1208,6 +1264,7 @@ export default function ScheduleMatchPage() {
                         setDurHours(Number(e.target.value))
                       }
                       sx={selectStyles}
+                      MenuProps={selectMenuProps}
                     >
                       {DURATION_HOURS.map((h) => (
                         <MenuItem key={h} value={h}>
@@ -1228,6 +1285,7 @@ export default function ScheduleMatchPage() {
                         setDurMinutes(Number(e.target.value))
                       }
                       sx={selectStyles}
+                      MenuProps={selectMenuProps}
                     >
                       {DURATION_MINUTES.map((m) => (
                         <MenuItem key={m} value={m}>

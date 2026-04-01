@@ -18,6 +18,11 @@ import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
@@ -876,7 +881,7 @@ function buildNotificationDisplay(
           </Typography>
         )}
         <Typography sx={{ fontSize: '11px', color: '#27ab83', fontWeight: 600, mt: 0.5 }}>
-          ✓ Your XP points are safe
+          Your XP points are safe
         </Typography>
       </Box>
     );
@@ -912,11 +917,27 @@ function buildNotificationDisplay(
 
   const dateLine = dateIso ? formatDateLine(dateIso) : '';
   const seeHref = getSeeHref(n.meta);
-  const hasAnyMeta = !!(leagueName || matchNo || dateLine);
+  const normalizeForCompare = (value: string) =>
+    String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const containsLine = (haystack: string, line: string) =>
+    normalizeForCompare(haystack).includes(normalizeForCompare(line));
+
+  const showLeagueMeta = !!leagueName && !containsLine(bodyText, `League: ${leagueName}`);
+  const showMatchMeta =
+    !!matchNo &&
+    !containsLine(bodyText, `Match: ${matchNo}`) &&
+    !containsLine(bodyText, `Match ${matchNo}`);
+  const showDateMeta = !!dateLine && !containsLine(bodyText, dateLine);
+  const hasAnyMeta = showLeagueMeta || showMatchMeta || showDateMeta;
 
   return {
     title,
-    plain: [bodyText, dateLine, leagueName, matchNo ? `Match ${matchNo}` : ''].filter(Boolean).join('\n'),
+    plain: [
+      bodyText,
+      showDateMeta ? dateLine : '',
+      showLeagueMeta ? leagueName : '',
+      showMatchMeta ? `Match ${matchNo}` : '',
+    ].filter(Boolean).join('\n'),
     node: (
       <Box>
         <Typography sx={{ color: '#444', fontSize: '13px', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
@@ -925,17 +946,17 @@ function buildNotificationDisplay(
 
         {hasAnyMeta && (
           <Box sx={{ mt: 0.75 }}>
-            {leagueName && (
+            {showLeagueMeta && (
               <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600 }}>
                 League: {leagueName}
               </Typography>
             )}
-            {matchNo && (
+            {showMatchMeta && (
               <Typography sx={{ fontSize: '12px', color: '#333', fontWeight: 600 }}>
                 Match: {matchNo}
               </Typography>
             )}
-            {dateLine && (
+            {showDateMeta && (
               <Typography sx={{ fontSize: '12px', color: '#555', fontWeight: 600 }}>
                 {dateLine}
               </Typography>
@@ -950,9 +971,10 @@ function buildNotificationDisplay(
               href={(matchId ? `/match/${matchId}` : '#')}
               size="small"
               variant="contained"
+              startIcon={<VisibilityOutlinedIcon sx={{ fontSize: 16 }} />}
               sx={{ textTransform: 'none', fontWeight: 700 }}
             >
-              See
+              See Details
             </Button>
           </Box>
         )}
@@ -2880,7 +2902,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         PaperProps={{
           elevation: 8,
           sx: {
-            width: { xs: 320, sm: 380 },
+            width: { xs: 'calc(100vw - 16px)', sm: 380 },
+            maxWidth: 380,
             maxHeight: 400,
             bgcolor: '#fff',
             boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
@@ -2892,89 +2915,132 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       >
         <Box
           sx={{
-            p: { xs: 1.25, sm: 2 },
+            p: { xs: 1.25, sm: 1.5 },
             borderBottom: '1px solid #e0e0e0',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: { xs: 0.5, sm: 1 },
-            flexWrap: 'nowrap'
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: { xs: 0.75, sm: 1 }
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, minWidth: 0, flexShrink: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: '#333',
-                fontSize: { xs: '0.9rem', sm: '1.25rem' },
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Notifications
-            </Typography>
-            {notifications.length > 0 && (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
               <Typography
-                component="span"
+                variant="h6"
                 sx={{
                   fontWeight: 700,
                   color: '#333',
-                  fontSize: { xs: '0.85rem', sm: '1.05rem' },
+                  fontSize: { xs: '1rem', sm: '1.2rem' },
                   lineHeight: 1.2,
                   whiteSpace: 'nowrap'
                 }}
               >
-                ({notifications.length})
+                Notifications
               </Typography>
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.2, sm: 1 }, flexShrink: 0, whiteSpace: 'nowrap' }}>
-            {/* REFRESH BUTTON */}
+              {notifications.length > 0 && (
+                <Box
+                  sx={{
+                    minWidth: 24,
+                    height: 24,
+                    px: 0.75,
+                    borderRadius: '999px',
+                    bgcolor: '#eaf1ff',
+                    color: '#1559c0',
+                    border: '1px solid #cfe0ff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: { xs: '0.82rem', sm: '0.88rem' },
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  {notifications.length}
+                </Box>
+              )}
+            </Box>
             <IconButton
+              onClick={handleNotificationClose}
+              size="small"
+              sx={{ color: '#666', p: { xs: 0.45, sm: 0.8 }, flexShrink: 0 }}
+            >
+              <CloseIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              flexWrap: 'wrap',
+              p: 0.5,
+              borderRadius: 1.5,
+              bgcolor: '#f7f9fc',
+              border: '1px solid #edf1f7'
+            }}
+          >
+            <Button
               onClick={handleRefreshNotifications}
               disabled={isRefreshing}
               size="small"
-              sx={{ 
+              startIcon={
+                <RefreshIcon
+                  sx={{
+                    fontSize: 16,
+                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '50%': { transform: 'rotate(360deg)' },
+                      '100%': { transform: 'rotate(0deg)' }
+                    }
+                  }}
+                />
+              }
+              sx={{
                 color: '#1976d2',
-                p: { xs: 0.35, sm: 0.8 },
-                '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' },
-                '&:disabled': { color: '#ccc' }
+                bgcolor: '#f5f9ff',
+                border: '1px solid #cfe0ff',
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: { xs: '11px', sm: '12px' },
+                minHeight: 30,
+                px: 1.25,
+                py: 0.35,
+                '&:hover': { bgcolor: '#eaf2ff' },
+                '&:disabled': { color: '#9bb7e6', borderColor: '#dbe8ff' }
               }}
               title="Refresh notifications"
             >
-              <RefreshIcon 
-                sx={{ 
-                  fontSize: { xs: 16, sm: 20 },
-                  animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                  '@keyframes spin': {
-                    '0%': { transform: 'rotate(0deg)' },
-                    '50%': { transform: 'rotate(360deg)' },
-                    '100%': { transform: 'rotate(0deg)' }
-                  }
-                }}
-              />
-            </IconButton>
-            
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+             
             {unreadCount > 0 && (
               <Button
                 onClick={markAllAsRead}
                 size="small"
-                sx={{ 
+                startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 15 }} />}
+                sx={{
                   color: '#1976d2',
-                  fontSize: { xs: '10px', sm: '12px' },
+                  bgcolor: '#fff',
+                  border: '1px solid #d9e6fb',
+                  borderRadius: 999,
+                  fontSize: { xs: '11px', sm: '12px' },
                   textTransform: 'none',
                   fontWeight: 600,
                   minWidth: 'auto',
-                  px: { xs: 0.4, sm: 1 },
-                  py: { xs: 0.2, sm: 0.4 },
-                  lineHeight: 1.1,
+                  minHeight: 30,
+                  px: 1.25,
+                  py: 0.35,
                   whiteSpace: 'nowrap',
-                  '&:hover': { bgcolor: 'rgba(25,118,210,0.04)' }
+                  '&:hover': { bgcolor: '#edf4ff' }
                 }}
               >
                 <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                  Mark all
+                  Mark read
                 </Box>
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
                   Mark all read
@@ -2986,29 +3052,32 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 onClick={clearAllNotifications}
                 size="small"
                 disabled={isClearingAll}
+                startIcon={!isClearingAll ? <HighlightOffIcon sx={{ fontSize: 15 }} /> : undefined}
                 sx={{
                   color: '#d32f2f',
-                  fontSize: { xs: '10px', sm: '12px' },
+                  bgcolor: '#fff',
+                  border: '1px solid #f0c4c4',
+                  borderRadius: 999,
+                  fontSize: { xs: '11px', sm: '12px' },
                   textTransform: 'none',
                   fontWeight: 600,
                   minWidth: 'auto',
-                  px: { xs: 0.4, sm: 1 },
-                  py: { xs: 0.2, sm: 0.4 },
-                  lineHeight: 1.1,
+                  minHeight: 30,
+                  px: 1.25,
+                  py: 0.35,
                   whiteSpace: 'nowrap',
-                  '&:hover': { bgcolor: 'rgba(211,47,47,0.06)' }
+                  '&:hover': { bgcolor: '#fff2f2' },
+                  '&:disabled': { color: '#c8a3a3', borderColor: '#f4dada' }
                 }}
               >
-                {isClearingAll ? 'Clearing...' : 'Clear all'}
+                {isClearingAll ? 'Clearing...' : (
+                  <Box component="span">
+                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Clear</Box>
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Clear all</Box>
+                  </Box>
+                )}
               </Button>
             )}
-            <IconButton
-              onClick={handleNotificationClose}
-              size="small"
-              sx={{ color: '#666', p: { xs: 0.35, sm: 0.8 } }}
-            >
-              <CloseIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
-            </IconButton>
           </Box>
         </Box>
 
@@ -3174,7 +3243,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                       >
                                         <Box sx={{
                                           px: 1, py: 0.4, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                          display: 'inline-flex', alignItems: 'center', gap: 0.3, transition: '0.2s',
+                                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, minWidth: 58, transition: '0.2s',
                                           bgcolor: selected === 'YES' ? '#0d7a33' : '#e6f9ed',
                                           color: selected === 'YES' ? '#fff' : '#0d7a33',
                                           borderColor: selected === 'YES' ? '#0d7a33' : '#a8e4bf',
@@ -3182,7 +3251,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                           opacity: saving && selected === 'YES' ? 0.7 : 1,
                                           whiteSpace: 'nowrap'
                                         }}>
-                                          ✅ Yes
+                                          <CheckCircleOutlineIcon sx={{ fontSize: 14 }} />
+                                          Yes
                                         </Box>
                                       </Box>
                                       <Box
@@ -3197,7 +3267,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                       >
                                         <Box sx={{
                                           px: 1, py: 0.4, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                          display: 'inline-flex', alignItems: 'center', gap: 0.3, transition: '0.2s',
+                                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, minWidth: 58, transition: '0.2s',
                                           bgcolor: selected === 'NO' ? '#c62828' : '#ffecef',
                                           color: selected === 'NO' ? '#fff' : '#c62828',
                                           borderColor: selected === 'NO' ? '#c62828' : '#f5b5c0',
@@ -3205,7 +3275,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                           opacity: saving && selected === 'NO' ? 0.7 : 1,
                                           whiteSpace: 'nowrap'
                                         }}>
-                                          ❌ No
+                                          <HighlightOffIcon sx={{ fontSize: 14 }} />
+                                          No
                                         </Box>
                                       </Box>
                                       <Button
@@ -3213,6 +3284,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                         href={`/match/${matchId}`}
                                         size="small"
                                         variant="text"
+                                        startIcon={<VisibilityOutlinedIcon sx={{ fontSize: 14 }} />}
                                         sx={{
                                           textTransform: 'none',
                                           fontWeight: 700,
@@ -3229,7 +3301,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                           }
                                         }}
                                       >
-                                        See details →
+                                        See Details
                                       </Button>
                                     </Box>
                                   </Box>
@@ -3246,27 +3318,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
                         {isResultConfirm && matchId && (
                           <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                            {/* >>> SHOW league, match index and date inside confirm panel */}
-                            {(confirmLeagueName || confirmMatchNo || confirmDateLine) && (
-                              <Box sx={{ width: '100%', mb: 0.5 }}>
-                                {confirmLeagueName && (
-                                  <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>
-                                    {/* League: {confirmLeagueName} */}
-                                  </Typography>
-                                )}
-                                {confirmMatchNo && (
-                                  <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>
-                                    Match: {confirmMatchNo}
-                                  </Typography>
-                                )}
-                                {confirmDateLine && (
-                                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#555' }}>
-                                    {confirmDateLine}
-                                  </Typography>
-                                )}
-                              </Box>
-                            )}
-                            {/* <<< END added header */}
                             <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>
                               Confirm result?
                             </Typography>
@@ -3280,13 +3331,14 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                               >
                                 <Box sx={{
                                   px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                  display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, minWidth: 58, transition: '0.2s',
                                   bgcolor: resultSelections[matchId] === 'YES' ? '#0d7a33' : '#e6f9ed',
                                   color: resultSelections[matchId] === 'YES' ? '#fff' : '#0d7a33',
                                   borderColor: resultSelections[matchId] === 'YES' ? '#0d7a33' : '#a8e4bf',
                                   boxShadow: resultSelections[matchId] === 'YES' ? '0 0 0 2px rgba(13,122,51,0.25)' : 'none',
                                 }}>
-                                  ✅ Yes
+                                  <CheckCircleOutlineIcon sx={{ fontSize: 14 }} />
+                                  Yes
                                 </Box>
                               </Box>
                               <Box
@@ -3298,13 +3350,14 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                               >
                                 <Box sx={{
                                   px: 1.2, py: 0.5, fontSize: '12px', fontWeight: 700, borderRadius: 1, border: '1px solid',
-                                  display: 'inline-flex', alignItems: 'center', gap: 0.5, transition: '0.2s',
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, minWidth: 58, transition: '0.2s',
                                   bgcolor: resultSelections[matchId] === 'NO' ? '#c62828' : '#ffecef',
                                   color: resultSelections[matchId] === 'NO' ? '#fff' : '#c62828',
                                   borderColor: resultSelections[matchId] === 'NO' ? '#c62828' : '#f5b5c0',
                                   boxShadow: resultSelections[matchId] === 'NO' ? '0 0 0 2px rgba(198,40,40,0.25)' : 'none',
                                 }}>
-                                  ❌ No
+                                  <HighlightOffIcon sx={{ fontSize: 14 }} />
+                                  No
                                 </Box>
                               </Box>
                             </Box>
@@ -3394,7 +3447,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             {/* Match Details Header */}
                             <Box sx={{ width: '100%' }}>
                               <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#E56A16', mb: 0.5 }}>
-                                ⏰ Match Has Ended!
+                                Match Has Ended!
                               </Typography>
                               
                               {/* Display notification body (contains teams and location) */}
@@ -3405,17 +3458,17 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                               {/* League and Match Number */}
                               {confirmLeagueName && (
                                 <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
-                                  🏆 League: {confirmLeagueName}
+                                  League: {confirmLeagueName}
                                 </Typography>
                               )}
                               {confirmMatchNo && (
                                 <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
-                                  ⚽ Match #{confirmMatchNo}
+                                  Match #{confirmMatchNo}
                                 </Typography>
                               )}
                               {confirmDateLine && (
                                 <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#666', mb: 1 }}>
-                                  📅 {confirmDateLine}
+                                  {confirmDateLine}
                                 </Typography>
                               )}
                             </Box>
@@ -3427,6 +3480,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                 href={`/match/${matchId}`}
                                 size="small"
                                 variant="contained"
+                                startIcon={<VisibilityOutlinedIcon sx={{ fontSize: 15 }} />}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (!notification.read) markAsRead(notification.id);
@@ -3445,7 +3499,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }
                                 }}
                               >
-                                📋 See Details
+                                See Details
                               </Button>
                               <Button
                                 onClick={(e) => {
@@ -3460,6 +3514,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                 }}
                                 size="small"
                                 variant="contained"
+                                startIcon={<BarChartOutlinedIcon sx={{ fontSize: 15 }} />}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -3474,7 +3529,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }
                                 }}
                               >
-                                ✨ Add Stats
+                                Add Stats
                               </Button>
                             </Box>
                           </Box>
@@ -3502,6 +3557,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                 href={`/match/${matchId}`}
                                 size="small"
                                 variant="contained"
+                                startIcon={<EmojiEventsOutlinedIcon sx={{ fontSize: 15 }} />}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (!notification.read) markAsRead(notification.id);
@@ -3520,7 +3576,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }
                                 }}
                               >
-                                🏆 View Match
+                                View Match
                               </Button>
                             </Box>
                           </Box>
@@ -3534,7 +3590,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             {/* Season Details */}
                             <Box sx={{ width: '100%' }}>
                               <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1976d2', mb: 0.5 }}>
-                                🎉 {notification.title}
+                                {notification.title}
                               </Typography>
                               
                               {/* Display notification body */}
@@ -3553,8 +3609,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }}
                                 >
                                   {seasonMeta.actionTaken === 'joined' 
-                                    ? '✓ You joined this season' 
-                                    : '✗ You declined this season'}
+                                    ? 'You joined this season' 
+                                    : 'You declined this season'}
                                 </Typography>
                               )}
                             </Box>
@@ -3569,6 +3625,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }}
                                   size="small"
                                   variant="contained"
+                                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 15 }} />}
                                   disabled={savingSeasonAction[notification.id]}
                                   sx={{
                                     textTransform: 'none',
@@ -3587,7 +3644,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                     }
                                   }}
                                 >
-                                  {savingSeasonAction[notification.id] ? 'Joining...' : '✓ Join Season'}
+                                  {savingSeasonAction[notification.id] ? 'Joining...' : 'Join Season'}
                                 </Button>
                                 <Button
                                   onClick={(e) => {
@@ -3596,6 +3653,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                   }}
                                   size="small"
                                   variant="outlined"
+                                  startIcon={<HighlightOffIcon sx={{ fontSize: 15 }} />}
                                   disabled={savingSeasonAction[notification.id]}
                                   sx={{
                                     textTransform: 'none',
@@ -3615,7 +3673,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                                     }
                                   }}
                                 >
-                                  {savingSeasonAction[notification.id] ? 'Processing...' : '✗ Decline'}
+                                  {savingSeasonAction[notification.id] ? 'Processing...' : 'Decline'}
                                 </Button>
                               </Box>
                             )}

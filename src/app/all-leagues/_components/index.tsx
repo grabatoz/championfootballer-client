@@ -2399,7 +2399,7 @@ function AllLeagues() {
           }}
             className='all-leagues-heading'
           >
-            All LEAGUES
+            LEAGUES
           </Typography>
           
           {/* Divider line below heading */}
