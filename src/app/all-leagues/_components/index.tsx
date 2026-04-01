@@ -1628,7 +1628,7 @@ function AllLeagues() {
 
     setIsJoining(true);
     try {
-      const payload: unknown = await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      const payload: unknown = await dispatch(joinLeague(inviteCode.trim().toUpperCase())).unwrap();
       const joined = normalizeLeagueFromPayload(payload);
 
       if (joined) {
@@ -2460,7 +2460,7 @@ function AllLeagues() {
                 <TextField 
                   placeholder="Enter invite code" 
                   value={inviteCode} 
-                  onChange={(e) => setInviteCode(e.target.value)} 
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())} 
                   size="small"
                   autoComplete="off" 
                   sx={{

@@ -1384,7 +1384,7 @@ export default function PlayerDashboard() {
 
     try {
       // Dispatch join and get the joined league payload
-      const payload: unknown = await dispatch(joinLeague(inviteCode.trim())).unwrap();
+      const payload: unknown = await dispatch(joinLeague(inviteCode.trim().toUpperCase())).unwrap();
 
       // Accept either a direct League object or a wrapped { league: League }
       let joined: League | undefined;
@@ -1882,7 +1882,7 @@ export default function PlayerDashboard() {
                   <TextField
                     placeholder="Enter invite code"
                     value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value)}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     size="small"
                     variant="outlined"
                     sx={{
@@ -2117,7 +2117,7 @@ export default function PlayerDashboard() {
               <TextField
                 placeholder="Enter invite code"
                 value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -2197,7 +2197,7 @@ export default function PlayerDashboard() {
               <TextField
                 placeholder="Enter invite code"
                 value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -2292,7 +2292,7 @@ export default function PlayerDashboard() {
           <TextField
             placeholder="Enter invite code"
             value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
             size="small"
             variant="outlined"
             sx={{
