@@ -22,6 +22,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheManager } from "@/lib/cacheManager"
+import toast from "react-hot-toast";
 
 interface User {
   id: string;
@@ -633,7 +634,17 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             </Box>
             {isAdmin && (
               <Box
-                onClick={() => setAdminEditMode(prev => !prev)}
+                onClick={() => {
+                  setAdminEditMode(prev => {
+                    const next = !prev;
+                    if (next) {
+                      toast("Click on any player to add stats", {
+                        id: "admin-edit-mode-hint",
+                      });
+                    }
+                    return next;
+                  });
+                }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -898,6 +909,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                   {adminEditMode ? (
                                     <Box
                                       onClick={() => handleOpenPlayerEdit(player)}
+                                      title="Click to edit player stats"
                                       sx={{ cursor: 'pointer' }}
                                     >
                                       <Box
@@ -907,14 +919,20 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           alignItems: 'center',
                                           columnGap: { xs: 2, sm: 2, md: 1.7 },
                                           p: { xs: 0.3, sm: 0.5, md: 0.75 },
-                                          background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
+                                          background: idx % 2 === 0
+                                            ? 'linear-gradient(90deg, rgba(229,106,22,0.22) 0%, #383838 40%)'
+                                            : 'linear-gradient(90deg, rgba(229,106,22,0.16) 0%, #2b2b2b 40%)',
                                           color: textColor,
                                           fontWeight,
                                           minHeight: { xs: 32, sm: 38, md: 44 },
                                           mb: { xs: 0.5, sm: 0.75 },
                                           borderRadius: 1,
+                                          border: '1px solid rgba(229,106,22,0.35)',
+                                          boxShadow: '0 0 0 1px rgba(229,106,22,0.12), 0 4px 10px rgba(0,0,0,0.15)',
                                           '&:hover': {
-                                            opacity: 0.85,
+                                            opacity: 0.95,
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 0 0 1px rgba(229,106,22,0.28), 0 8px 18px rgba(0,0,0,0.2)',
                                             transition: 'all 0.2s'
                                           }
                                         }}
