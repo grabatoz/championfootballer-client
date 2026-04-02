@@ -5591,15 +5591,40 @@ export default function LeagueDetailPage() {
                             </Box>
                             <Button
                                 variant="text"
+                                disableRipple
+                                disableFocusRipple
+                                onClick={() => {
+                                    const playerId = quickView.player?.id;
+                                    if (!playerId) return;
+                                    setOpenQuickView(false);
+                                    router.push(`/player/${playerId}`);
+                                }}
                                 sx={{
-                                    
+                                     
                                     color: '#1976d2',
                                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                     fontWeight: 600,
                                     textTransform: 'none',
+                                    textDecoration: 'underline',
+                                    textUnderlineOffset: '3px',
+                                    WebkitTapHighlightColor: 'transparent',
                                     padding: '4px 8px',
                                     minWidth: 'auto',
                                     '&:hover': {
+                                        backgroundColor: 'transparent',
+                                    },
+                                    '&:active': {
+                                        boxShadow: 'none',
+                                        backgroundColor: 'transparent',
+                                    },
+                                    '&:focus': {
+                                        boxShadow: 'none',
+                                        outline: 'none',
+                                        backgroundColor: 'transparent',
+                                    },
+                                    '&.Mui-focusVisible': {
+                                        boxShadow: 'none',
+                                        outline: 'none',
                                         backgroundColor: 'transparent',
                                     },
                                 }}

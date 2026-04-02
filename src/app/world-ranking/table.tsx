@@ -551,24 +551,21 @@ export default function WorldRankingTable() {
               <TableBody>
                 {filtered.map((p, idx) => {
                   const isMe = user?.id === p.id;
-                  const rowBg = isMe
-                    ? 'rgba(229,106,22,0.18)'
-                    : idx % 2 === 0 ? '#242424' : '#1e1e1e';
+                  const rowBg = idx % 2 === 0 ? '#242424' : '#1e1e1e';
                   return (
                     <TableRow
                       key={p.id}
                       ref={isMe ? userRowRef : undefined}
                       sx={{
                         bgcolor: rowBg,
-                        '&:hover': { bgcolor: isMe ? 'rgba(229,106,22,0.25)' : '#2c2c2c' },
+                        '&:hover': { bgcolor: '#2c2c2c' },
                         transition: 'background 0.15s',
-                        boxShadow: isMe ? 'inset 3px 0 0 #e56a16' : undefined,
                       }}
                     >
                       <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8 }}>
                         {p.rank}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: isMe ? 800 : 600, color: '#fff', fontSize: 14, py: 1.8 }}>
+                      <TableCell sx={{ fontWeight: 600, color: '#fff', fontSize: 14, py: 1.8 }}>
                         <Link href={`/player/${p.id}`} style={{ textDecoration: 'none', color: '#fff' }}>
                           {p.name}
                         </Link>
