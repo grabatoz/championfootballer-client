@@ -510,14 +510,14 @@ export default function PlayerStatsPage() {
     const fetchAbortRef = useRef<AbortController | null>(null);
     const lastFetchKeyRef = useRef<string>('');
 
-    const normalizePlayer = (p: RawPlayer): LeaguePlayer => ({
+    const normalizePlayer = useCallback((p: RawPlayer): LeaguePlayer => ({
         id: p.id || p._id || p.userId || '',
         firstName: p.firstName ?? p.fname,
         lastName: p.lastName ?? p.lname,
         name: p.name ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
         avatar: p.avatar ?? p.profilePicture ?? p.avatarUrl,
         position: p.position ?? p.positionType,
-    });
+    }), []);
 
     type TeammateAPIResponse = {
         success?: boolean;
@@ -528,9 +528,19 @@ export default function PlayerStatsPage() {
     const fetchTeammates = useCallback(async () => {
         if (!token) return;
         if (!playerId) return;
-        if (!leagueId) return;
+        const effectiveLeagueId = leagueId || 'all';
+        const effectiveYear = year || 'all';
+        const effectiveSeason = selectedSeason || 'all';
+        const leaguesFingerprint =
+            effectiveLeagueId === 'all'
+                ? (leaguesForYear || [])
+                    .map((l) => String(l.id))
+                    .sort()
+                    .join(',')
+                : effectiveLeagueId;
 
-        const fetchKey = `${playerId}_${leagueId}`;
+        // Include active filters in key so teammate cache doesn't go stale when filters change.
+        const fetchKey = `${playerId}_${effectiveLeagueId}_${effectiveYear}_${effectiveSeason}_${leaguesFingerprint}`;
         if (fetchKey === lastFetchKeyRef.current && teammates.length && searchTriggered) {
             // Already have data for this combination
             setShowTeammatePanel(true);
@@ -548,7 +558,7 @@ export default function PlayerStatsPage() {
             let list: RawPlayer[] | undefined;
 
             // Handle "All Leagues" case - aggregate from all leagues
-            if (leagueId === 'all') {
+            if (effectiveLeagueId === 'all') {
                 const allTeammates = new Map<string, RawPlayer>();
                 
                 // Get leagues for the selected year
@@ -594,7 +604,7 @@ export default function PlayerStatsPage() {
                 list = Array.from(allTeammates.values());
             } else {
                 // Single league case
-                const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${leagueId}/teammates`;
+                const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${effectiveLeagueId}/teammates`;
                 const res = await fetch(primaryUrl, {
                     credentials: 'include',
                     headers: { Authorization: `Bearer ${token}` },
@@ -617,7 +627,7 @@ export default function PlayerStatsPage() {
 
                 // Fallback: league players (admin/user listing)
                 if (!list) {
-                    const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/players`, {
+                    const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}/players`, {
                         credentials: 'include',
                         headers: { Authorization: `Bearer ${token}` },
                         signal: controller.signal
@@ -646,7 +656,7 @@ export default function PlayerStatsPage() {
         } finally {
             setTeammatesLoading(false);
         }
-    }, [token, playerId, leagueId, teammates.length, searchTriggered, leaguesForYear]);
+    }, [token, playerId, leagueId, year, selectedSeason, teammates.length, searchTriggered, leaguesForYear, normalizePlayer]);
 
     // Close panel on outside click / ESC
     useEffect(() => {
@@ -674,14 +684,14 @@ export default function PlayerStatsPage() {
         };
     }, []);
 
-    // Reset when league changes
+    // Reset teammate search cache whenever scope filters change.
     useEffect(() => {
         setTeammates([]);
         setSearch('');
         setSearchTriggered(false);
         lastFetchKeyRef.current = '';
         setShowTeammatePanel(false);
-    }, [leagueId]);
+    }, [leagueId, year, selectedSeason]);
 
     const filteredTeammates = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -1979,6 +1989,10 @@ export default function PlayerStatsPage() {
                                     setSearch('');
                                     setSelectedSeason('all');
                                     setSeasons([]);
+                                    setTeammates([]);
+                                    setSearchTriggered(false);
+                                    setShowTeammatePanel(false);
+                                    lastFetchKeyRef.current = '';
                                 }}
                                 style={{
                                     height: '39px',
