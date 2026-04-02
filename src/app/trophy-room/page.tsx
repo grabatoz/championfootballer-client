@@ -1865,6 +1865,9 @@ export default function GlobalTrophyRoom() {
     if (!filteredLeagues.length) return;
     if (selectedLeagueId && selectedLeagueId !== 'all' && filteredLeagues.some(l => l.id === selectedLeagueId)) return;
     setSelectedLeagueId(filteredLeagues[0].id);
+    // Keep season selection scoped per league when this auto-switch runs.
+    setSelectedSeasonId(undefined);
+    setLeagueSeasons([]);
   }, [filteredLeagues, selectedLeagueId]);
 
   // Get currently selected league
@@ -1884,22 +1887,29 @@ export default function GlobalTrophyRoom() {
     }
     
     const leagueId = selectedLeagueId;
+    const controller = new AbortController();
+    let isActive = true;
     
     const fetchSeasons = async () => {
       console.log('[Trophy Room] Fetching seasons for league:', leagueId);
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons?_=${Date.now()}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          }
         );
+        if (!isActive) return;
         
         if (!res.ok) {
           console.log('[Trophy Room] Seasons API not OK:', res.status);
-          setSeasonsChecked(true);
+          if (isActive) setSeasonsChecked(true);
           return;
         }
         
         const data = await res.json().catch(() => null);
+        if (!isActive) return;
         console.log('[Trophy Room] Seasons API response:', { status: res.status, data });
         
         if (data?.success && Array.isArray(data.seasons) && data.seasons.length > 0) {
