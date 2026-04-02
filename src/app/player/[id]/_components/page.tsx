@@ -1680,38 +1680,184 @@ export default function PlayerStatsPage() {
                         mx: 'auto',
                     }}>
                         {/* Search Input */}
-                        <TextField
-                            variant="outlined"
-                            placeholder="Search player name and hit enter..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                        <Box
+                            ref={searchWrapperRef}
                             sx={{
                                 width: { xs: '100%', md: '420px' },
                                 ml: { xs: 0, md: 0.8 },
-                                '& .MuiOutlinedInput-root': {
-                                    height: 42,
-                                    color: 'white',
-                                    backgroundColor: 'transparent',
-                                    borderRadius: '3px',
-                                    '& fieldset': { borderColor: '#e56a16', borderWidth: 1.5 },
-                                    '&:hover fieldset': { borderColor: '#e56a16' },
-                                    '&.Mui-focused fieldset': { borderColor: '#e56a16' }
-                                },
-                                '& .MuiInputBase-input': { 
-                                    color: 'white', 
-                                    fontSize: 16.5,
-                                    py: 0.5,
-                                    '&::placeholder': { color: '#fff', opacity: 1 }
-                                }
+                                position: 'relative',
+                                zIndex: 5,
                             }}
-                            InputProps={{
-                                startAdornment: (
-                                    <Box sx={{ mr: 3, ml: 0.5, display: 'flex', alignItems: 'center' }}>
-                                        <Image src={SearchIcon} alt="Search" width={25} height={25} />
-                                    </Box>
-                                ),
-                            }}
-                        />
+                        >
+                            <TextField
+                                variant="outlined"
+                                placeholder="Search player name and hit enter..."
+                                value={search}
+                                onFocus={() => {
+                                    setShowTeammatePanel(true);
+                                    if (!searchTriggered && !teammatesLoading) {
+                                        void fetchTeammates();
+                                    }
+                                }}
+                                onClick={() => {
+                                    setShowTeammatePanel(true);
+                                    if (!searchTriggered && !teammatesLoading) {
+                                        void fetchTeammates();
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    if (!showTeammatePanel) setShowTeammatePanel(true);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        if (!searchTriggered) void fetchTeammates();
+                                        setShowTeammatePanel(true);
+                                        return;
+                                    }
+                                    if (e.key === 'Escape') {
+                                        setShowTeammatePanel(false);
+                                    }
+                                }}
+                                sx={{
+                                    width: '100%',
+                                    '& .MuiOutlinedInput-root': {
+                                        height: 42,
+                                        color: 'white',
+                                        backgroundColor: 'transparent',
+                                        borderRadius: '3px',
+                                        '& fieldset': { borderColor: '#e56a16', borderWidth: 1.5 },
+                                        '&:hover fieldset': { borderColor: '#e56a16' },
+                                        '&.Mui-focused fieldset': { borderColor: '#e56a16' }
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        color: 'white',
+                                        fontSize: 16.5,
+                                        py: 0.5,
+                                        '&::placeholder': { color: '#fff', opacity: 1 }
+                                    }
+                                }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <Box sx={{ mr: 3, ml: 0.5, display: 'flex', alignItems: 'center' }}>
+                                            <Image src={SearchIcon} alt="Search" width={25} height={25} />
+                                        </Box>
+                                    ),
+                                }}
+                            />
+
+                            {showTeammatePanel && (
+                                <Paper
+                                    elevation={6}
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        mt: 0.8,
+                                        maxHeight: 320,
+                                        overflowY: 'auto',
+                                        borderRadius: 2,
+                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                        border: '1px solid rgba(255,255,255,0.25)',
+                                        p: 1.25,
+                                        '&::-webkit-scrollbar': { width: 6 },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            background: 'rgba(255,255,255,0.25)',
+                                            borderRadius: 3
+                                        },
+                                    }}
+                                >
+                                    <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 13, mb: 0.75 }}>
+                                        {leagueId === 'all' ? 'Players across selected leagues' : 'Players in selected league'}
+                                    </Typography>
+
+                                    {teammatesLoading ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                            <CircularProgress size={22} />
+                                        </Box>
+                                    ) : !searchTriggered ? (
+                                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                            Press Enter to search players you have played with.
+                                        </Typography>
+                                    ) : teammates.length === 0 ? (
+                                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                            No player data found for this filter.
+                                        </Typography>
+                                    ) : filteredTeammates.length === 0 ? (
+                                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                            This player name is not found in selected league filters.
+                                        </Typography>
+                                    ) : (
+                                        <Grid container spacing={0.75}>
+                                            {filteredTeammates.map((p) => {
+                                                const displayName =
+                                                    p.name ||
+                                                    `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() ||
+                                                    'Player';
+
+                                                return (
+                                                    <Grid item xs={12} key={p.id}>
+                                                        <Box
+                                                            onClick={() => {
+                                                                setShowTeammatePanel(false);
+                                                                router.push(`/player/${p.id}`);
+                                                            }}
+                                                            sx={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 1,
+                                                                p: 0.75,
+                                                                borderRadius: 1.5,
+                                                                cursor: 'pointer',
+                                                                bgcolor: 'rgba(255,255,255,0.07)',
+                                                                transition: 'background .2s',
+                                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' },
+                                                            }}
+                                                        >
+                                                            <Avatar
+                                                                src={p.avatar || '/assets/group451.png'}
+                                                                alt={displayName}
+                                                                sx={{
+                                                                    width: 34,
+                                                                    height: 34,
+                                                                    border: '1px solid rgba(255,255,255,0.25)',
+                                                                }}
+                                                            />
+
+                                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                                <Typography
+                                                                    noWrap
+                                                                    sx={{
+                                                                        color: '#E5E7EB',
+                                                                        fontWeight: 700,
+                                                                        fontSize: 13,
+                                                                        lineHeight: 1.15,
+                                                                    }}
+                                                                >
+                                                                    {displayName}
+                                                                </Typography>
+                                                                {p.position && (
+                                                                    <Typography
+                                                                        sx={{
+                                                                            color: '#9CA3AF',
+                                                                            fontSize: 11,
+                                                                            lineHeight: 1.1,
+                                                                        }}
+                                                                    >
+                                                                        {p.position}
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+                                                    </Grid>
+                                                );
+                                            })}
+                                        </Grid>
+                                    )}
+                                </Paper>
+                            )}
+                        </Box>
 
                         {/* Filter Buttons */}
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
