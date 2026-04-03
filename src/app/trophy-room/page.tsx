@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar, useTheme, useMediaQuery } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
 import BaloonDImg from '@/Components/images/baloond.png';
@@ -356,7 +356,7 @@ const TrophyCard = ({
         width: '100%',
         height: '100%',
         minHeight: dims.minHeight,
-        maxWidth: dims.maxWidth,
+        maxWidth: { xs: '100%', sm: dims.maxWidth.sm, md: dims.maxWidth.md },
         margin: '0 auto',
         textAlign: 'center',
         borderRadius: '6px',
@@ -1519,6 +1519,8 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; admi
 
 // --- Main Page Component ---
 export default function GlobalTrophyRoom() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [leagues, setLeagues] = useState<League[]>([]);
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -2432,7 +2434,7 @@ export default function GlobalTrophyRoom() {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      overflow: 'hidden',
+      overflowX: 'hidden',
     }}>
       {/* Full-Width Header Section */}
       <Box sx={{
@@ -2467,7 +2469,7 @@ export default function GlobalTrophyRoom() {
             {/* Trophy Icon + League Name / User Name + Dropdown */}
           <Box sx={{ 
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
+            flexDirection: 'row',
             alignItems: 'center',
             gap: { xs: 0.7, sm: 1.5 },
             mt: { xs: 1.5, sm: 4 },
@@ -2478,8 +2480,8 @@ export default function GlobalTrophyRoom() {
                 <Image
                   src={LeagueIcon}
                   alt="League Icon"
-                  width={49}
-                  height={49}
+                  width={isMobile ? 36 : 49}
+                  height={isMobile ? 36 : 49}
                   style={{ objectFit: 'contain', pointerEvents: 'none' }}
                 />
               )}
@@ -2512,7 +2514,7 @@ export default function GlobalTrophyRoom() {
                   sx={{
                     fontFamily: '"Woodford Bourne Pro" , sans-serif !important',
                                                                                  textTransform: 'uppercase',
-                                                                         fontSize: { xs: '1.55rem', sm: '50px' },
+                                                                         fontSize: { xs: '1.25rem', sm: '50px' },
                                                                          fontWeight: 'bold',
                                                                          lineHeight: 1.1,
                                                                          wordBreak: 'break-word',
@@ -2521,7 +2523,7 @@ export default function GlobalTrophyRoom() {
                                                                          whiteSpace: 'normal',
                                                                          flexShrink: 1,
                                                                          minWidth: 0,
-                                                                         maxWidth: { xs: '92vw', sm: 'none' },
+                                                                         maxWidth: { xs: filter !== 'my' ? '80vw' : '92vw', sm: 'none' },
                                                                          textAlign: 'center',
                                                                          color: 'white',
                                                                          backgroundColor: 'transparent',
@@ -2741,41 +2743,44 @@ export default function GlobalTrophyRoom() {
           >
             {/* Left side: Standings info - Hidden in My Achievements */}
             {filter !== 'my' && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0}}>
-                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                  <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    fontWeight: 600,
-                    color: 'white'
-                  }}>
+              <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'baseline', justifyContent: 'center', gap: 0.6, whiteSpace: 'nowrap' }}>
+                  <Typography sx={{ fontSize: '0.92rem', fontWeight: 600, color: 'white' }}>
                     Standings:
                   </Typography>
-                   {selectedLeague && (
-             <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1rem' },
-                    fontWeight: 300,
-                    color: 'white'
-                  }}>
-                 {selectedLeagueFlags?.final ? 'FINAL' : 'LIVE'}
-
+                  <Typography sx={{ fontSize: '0.92rem', fontWeight: 300, color: 'white' }}>
+                    {selectedLeagueFlags?.final ? 'FINAL' : 'LIVE'}
                   </Typography>
-            )}
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                  <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1rem' },
-                    fontWeight: 300,
-                    color: 'white'
-                  }}>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 300, color: 'rgba(255,255,255,0.7)' }}>
+                    |
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.92rem', fontWeight: 300, color: 'white' }}>
                     Last Updated:
                   </Typography>
-                  <Typography sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    fontWeight: 400,
-                    color: 'white'
-                  }}>
+                  <Typography sx={{ fontSize: '0.92rem', fontWeight: 400, color: 'white' }}>
                     {lastUpdatedLabel}
                   </Typography>
+                </Box>
+
+                <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', gap: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 600, color: 'white' }}>
+                      Standings:
+                    </Typography>
+                    {selectedLeague && (
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 300, color: 'white' }}>
+                        {selectedLeagueFlags?.final ? 'FINAL' : 'LIVE'}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                    <Typography sx={{ fontSize: '1rem', fontWeight: 300, color: 'white' }}>
+                      Last Updated:
+                    </Typography>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 400, color: 'white' }}>
+                      {lastUpdatedLabel}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
             )}
@@ -2783,7 +2788,8 @@ export default function GlobalTrophyRoom() {
             {/* Center: Navigation buttons */}
               <Box sx={{ 
                 display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' },
+                flexDirection: 'row',
+                flexWrap: { xs: 'nowrap', sm: 'nowrap' },
                 gap: { xs: 1, sm: 2 },
                 mt: { xs: 0.6, sm: 2 },
                 position: { xs: 'relative', sm: (filter === 'my' ? 'relative' : 'absolute') },
@@ -2795,16 +2801,16 @@ export default function GlobalTrophyRoom() {
               <Box
                 onClick={() => setFilter('all')}
                 sx={{
-                  px: { xs: 2, sm: 6, md: 7 },
+                  px: { xs: 1.5, sm: 6, md: 7 },
                   py: { xs: 0.3, sm: 0.4, md: 0.5 },
-                  fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.6rem' },
+                  fontSize: { xs: '0.82rem', sm: '1.1rem', md: '1.6rem' },
                   fontWeight: 600,
                   textTransform: 'none',
                   backgroundColor: filter === 'all' ? '#00a77f' : 'transparent',
                   color: 'white',
                   border: filter === 'all' ? 'none' : '2px solid white',
                   borderRadius: 1,
-                  width: { xs: '100%', sm: 'auto' },
+                  width: { xs: 'calc(50% - 4px)', sm: 'auto' },
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -2820,16 +2826,16 @@ export default function GlobalTrophyRoom() {
               <Box
                 onClick={() => setFilter('my')}
                 sx={{
-                  px: { xs: 2, sm: 3.5, md: 3 },
+                  px: { xs: 1.5, sm: 3.5, md: 3 },
                   py: { xs: 0.3, sm: 0.4, md: 0.5 },
-                  fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.8rem' },
+                  fontSize: { xs: '0.82rem', sm: '1.1rem', md: '1.8rem' },
                   fontWeight: 600,
                   textTransform: 'none',
                   backgroundColor: filter === 'my' ? '#14B8A6' : 'transparent',
                   color: 'white',
                   border: filter === 'my' ? 'none' : '1px solid white',
                   borderRadius: 1,
-                  width: { xs: '100%', sm: 'auto' },
+                  width: { xs: 'calc(50% - 4px)', sm: 'auto' },
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -2974,18 +2980,18 @@ export default function GlobalTrophyRoom() {
                     display: 'flex', 
                     justifyContent: 'center', 
                     alignItems: 'center',
-                    gap: 3,
-                    py: 2,
+                    gap: { xs: 1.5, sm: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     background: '#1f1f1f',
                   }}>
-                    <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
+                    <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
                     <Avatar
                       src={getProfileImage(user as any) || undefined}
                       alt={`${user?.firstName || ''} ${user?.lastName || ''}`}
                       sx={{
-                        width: 110,
-                        height: 110,
-                        fontSize: '2.5rem',
+                        width: { xs: 88, sm: 110 },
+                        height: { xs: 88, sm: 110 },
+                        fontSize: { xs: '2rem', sm: '2.5rem' },
                         fontWeight: 700,
                         bgcolor: '#fff',
                         color: '#fff',
@@ -2993,7 +2999,7 @@ export default function GlobalTrophyRoom() {
                     >
                       {!getProfileImage(user as any) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
                     </Avatar>
-                   <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
+                   <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
                   </Box>
 
                   {/* Two Column Layout */}
@@ -3026,8 +3032,8 @@ export default function GlobalTrophyRoom() {
                       {/* Dark Background with Trophies */}
                       <Box sx={{
                         bgcolor: '#1a1a1a',
-                        p: 3,
-                        minHeight: '400px',
+                        p: { xs: 1.5, sm: 3 },
+                        minHeight: { xs: 'auto', sm: '400px' },
                       }}>
                         {leagueRows.length === 0 ? (
                           <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
@@ -3038,11 +3044,11 @@ export default function GlobalTrophyRoom() {
                             <Box key={`league-row-${rowIdx}`}>
                               <Box sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                                gap: 2,
-                                pb: 3,
+                                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                gap: { xs: 1.2, sm: 2 },
+                                pb: { xs: 2, sm: 3 },
                                 borderBottom: rowIdx < leagueRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                                mb: rowIdx < leagueRows.length - 1 ? 3 : 0,
+                                mb: rowIdx < leagueRows.length - 1 ? { xs: 2, sm: 3 } : 0,
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
@@ -3061,9 +3067,9 @@ export default function GlobalTrophyRoom() {
                                   >
                                     <Box sx={{ 
                                       position: 'relative', 
-                                      width: 50, 
-                                      height: 50, 
-                                      mb: 1.5,
+                                      width: { xs: 40, sm: 50 }, 
+                                      height: { xs: 40, sm: 50 }, 
+                                      mb: { xs: 1, sm: 1.5 },
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -3071,8 +3077,8 @@ export default function GlobalTrophyRoom() {
                                       <Image
                                         src={trophy.image}
                                         alt={trophy.title}
-                                        width={50}
-                                        height={50}
+                                        width={isMobile ? 40 : 50}
+                                        height={isMobile ? 40 : 50}
                                         style={{ 
                                           objectFit: 'contain',
                                           maxWidth: '100%',
@@ -3081,7 +3087,7 @@ export default function GlobalTrophyRoom() {
                                       />
                                     </Box>
                                     <Typography sx={{
-                                      fontSize: '0.7rem',
+                                      fontSize: { xs: '0.62rem', sm: '0.7rem' },
                                       color: '#fff',
                                       fontWeight: 600,
                                       textAlign: 'center',
@@ -3122,8 +3128,8 @@ export default function GlobalTrophyRoom() {
                       {/* Dark Background with Trophies */}
                       <Box sx={{
                         bgcolor: '#1a1a1a',
-                        p: 3,
-                        minHeight: '400px',
+                        p: { xs: 1.5, sm: 3 },
+                        minHeight: { xs: 'auto', sm: '400px' },
                       }}>
                         {individualRows.length === 0 ? (
                           <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
@@ -3134,11 +3140,11 @@ export default function GlobalTrophyRoom() {
                             <Box key={`individual-row-${rowIdx}`}>
                               <Box sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                                gap: 2,
-                                pb: 3,
+                                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                gap: { xs: 1.2, sm: 2 },
+                                pb: { xs: 2, sm: 3 },
                                 borderBottom: rowIdx < individualRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                                mb: rowIdx < individualRows.length - 1 ? 3 : 0,
+                                mb: rowIdx < individualRows.length - 1 ? { xs: 2, sm: 3 } : 0,
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
@@ -3157,9 +3163,9 @@ export default function GlobalTrophyRoom() {
                                   >
                                     <Box sx={{ 
                                       position: 'relative', 
-                                      width: 50, 
-                                      height: 50, 
-                                      mb: 1.5,
+                                      width: { xs: 40, sm: 50 }, 
+                                      height: { xs: 40, sm: 50 }, 
+                                      mb: { xs: 1, sm: 1.5 },
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -3167,8 +3173,8 @@ export default function GlobalTrophyRoom() {
                                       <Image
                                         src={trophy.image}
                                         alt={trophy.title}
-                                        width={50}
-                                        height={50}
+                                        width={isMobile ? 40 : 50}
+                                        height={isMobile ? 40 : 50}
                                         style={{ 
                                           objectFit: 'contain',
                                           maxWidth: '100%',
@@ -3177,7 +3183,7 @@ export default function GlobalTrophyRoom() {
                                       />
                                     </Box>
                                     <Typography sx={{
-                                      fontSize: '0.7rem',
+                                      fontSize: { xs: '0.62rem', sm: '0.7rem' },
                                       color: '#fff',
                                       fontWeight: 600,
                                       textAlign: 'center',
@@ -3272,89 +3278,127 @@ export default function GlobalTrophyRoom() {
               <CircularProgress size={36} sx={{ color: '#E56A16' }} />
             </Box>
           )}
-          {/* Top Row - 3 Large Trophies */}
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, 
-            gap: { xs: 1, sm: 2, md: 1.5 }, 
-            justifyContent: 'center', 
-            alignItems: 'stretch',
-            mb: { xs: 1.2, sm: 3 },
-          }}>
-            {(() => {
-              const topTrophyTitles = ['League Champion', "Ballon D'or", 'Runner-Up'];
-              const displayTrophies = trophiesToDisplay.length > 0 
-                ? trophiesToDisplay.filter(t => topTrophyTitles.includes(t.title))
-                : topTrophies.map(t => ({
-                    ...t,
-                    winner: 'TBC',
-                    winnerId: null,
-                    leagueId: selectedLeague ? selectedLeague.id : undefined,
-                    leagueName: selectedLeague ? selectedLeague.name : undefined,
-                  }));
-              // Ensure proper order
-              return topTrophyTitles.map((title, index) => {
-                const trophy = displayTrophies.find(t => t.title === title) || {
-                  ...topTrophies.find(t => t.title === title)!,
-                  winner: 'TBC',
-                  winnerId: null,
-                  leagueId: selectedLeague ? selectedLeague.id : undefined,
-                  leagueName: selectedLeague ? selectedLeague.name : undefined,
-                };
-                return (
-                  <Box key={`top-${trophy.title}-${index}`} sx={{ height: '100%' }}>
-                    <TrophyCard
-                      {...trophy}
-                      isLarge={true}
-                      onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
-                    />
-                  </Box>
-                );
-              });
-            })()}
-          </Box>
+          {isMobile ? (
+            <Box sx={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 1,
+              justifyContent: 'center',
+              alignItems: 'stretch',
+              mb: 2.2,
+            }}>
+              {(() => {
+                const topTrophyTitles = ['League Champion', "Ballon D'or", 'Runner-Up'];
+                const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
+                const allOrderedTitles = [...topTrophyTitles, ...bottomTrophyTitles];
+                const allBaseTrophies = [...topTrophies, ...bottomTrophies];
 
-          {/* Bottom Row - 5 Smaller Trophies */}
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(5, 1fr)' }, 
-            gap: { xs: 1, sm: 2, md: 1.5 }, 
-            justifyContent: 'center', 
-            alignItems: 'stretch',
-            mb: { xs: 2.2, sm: 6, md: 8 },
-          }}>
-            {(() => {
-              const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
-              const displayTrophies = trophiesToDisplay.length > 0 
-                ? trophiesToDisplay.filter(t => bottomTrophyTitles.includes(t.title))
-                : bottomTrophies.map(t => ({
-                    ...t,
+                return allOrderedTitles.map((title, index) => {
+                  const trophy = trophiesToDisplay.find(t => t.title === title) || {
+                    ...allBaseTrophies.find(t => t.title === title)!,
                     winner: 'TBC',
                     winnerId: null,
                     leagueId: selectedLeague ? selectedLeague.id : undefined,
                     leagueName: selectedLeague ? selectedLeague.name : undefined,
-                  }));
-              // Ensure proper order
-              return bottomTrophyTitles.map((title, index) => {
-                const trophy = displayTrophies.find(t => t.title === title) || {
-                  ...bottomTrophies.find(t => t.title === title)!,
-                  winner: 'TBC',
-                  winnerId: null,
-                  leagueId: selectedLeague ? selectedLeague.id : undefined,
-                  leagueName: selectedLeague ? selectedLeague.name : undefined,
-                };
-                return (
-                  <Box key={`bottom-${trophy.title}-${index}`} sx={{ height: '100%' }}>
-                    <TrophyCard
-                      {...trophy}
-                      isLarge={false}
-                      onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
-                    />
-                  </Box>
-                );
-              });
-            })()}
-          </Box>
+                  };
+
+                  return (
+                    <Box key={`mobile-${trophy.title}-${index}`} sx={{ height: '100%' }}>
+                      <TrophyCard
+                        {...trophy}
+                        isLarge={true}
+                        onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                      />
+                    </Box>
+                  );
+                });
+              })()}
+            </Box>
+          ) : (
+            <>
+              {/* Top Row - 3 Large Trophies */}
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { sm: 'repeat(3, 1fr)' }, 
+                gap: { sm: 2, md: 1.5 }, 
+                justifyContent: 'center', 
+                alignItems: 'stretch',
+                mb: { sm: 3 },
+              }}>
+                {(() => {
+                  const topTrophyTitles = ['League Champion', "Ballon D'or", 'Runner-Up'];
+                  const displayTrophies = trophiesToDisplay.length > 0 
+                    ? trophiesToDisplay.filter(t => topTrophyTitles.includes(t.title))
+                    : topTrophies.map(t => ({
+                        ...t,
+                        winner: 'TBC',
+                        winnerId: null,
+                        leagueId: selectedLeague ? selectedLeague.id : undefined,
+                        leagueName: selectedLeague ? selectedLeague.name : undefined,
+                      }));
+                  return topTrophyTitles.map((title, index) => {
+                    const trophy = displayTrophies.find(t => t.title === title) || {
+                      ...topTrophies.find(t => t.title === title)!,
+                      winner: 'TBC',
+                      winnerId: null,
+                      leagueId: selectedLeague ? selectedLeague.id : undefined,
+                      leagueName: selectedLeague ? selectedLeague.name : undefined,
+                    };
+                    return (
+                      <Box key={`top-${trophy.title}-${index}`} sx={{ height: '100%' }}>
+                        <TrophyCard
+                          {...trophy}
+                          isLarge={true}
+                          onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                        />
+                      </Box>
+                    );
+                  });
+                })()}
+              </Box>
+
+              {/* Bottom Row - 5 Smaller Trophies */}
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, 
+                gap: { sm: 2, md: 1.5 }, 
+                justifyContent: 'center', 
+                alignItems: 'stretch',
+                mb: { sm: 6, md: 8 },
+              }}>
+                {(() => {
+                  const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
+                  const displayTrophies = trophiesToDisplay.length > 0 
+                    ? trophiesToDisplay.filter(t => bottomTrophyTitles.includes(t.title))
+                    : bottomTrophies.map(t => ({
+                        ...t,
+                        winner: 'TBC',
+                        winnerId: null,
+                        leagueId: selectedLeague ? selectedLeague.id : undefined,
+                        leagueName: selectedLeague ? selectedLeague.name : undefined,
+                      }));
+                  return bottomTrophyTitles.map((title, index) => {
+                    const trophy = displayTrophies.find(t => t.title === title) || {
+                      ...bottomTrophies.find(t => t.title === title)!,
+                      winner: 'TBC',
+                      winnerId: null,
+                      leagueId: selectedLeague ? selectedLeague.id : undefined,
+                      leagueName: selectedLeague ? selectedLeague.name : undefined,
+                    };
+                    return (
+                      <Box key={`bottom-${trophy.title}-${index}`} sx={{ height: '100%' }}>
+                        <TrophyCard
+                          {...trophy}
+                          isLarge={false}
+                          onButtonClick={trophy.winnerId && trophy.leagueId ? () => openPlayerQuickView(trophy) : undefined}
+                        />
+                      </Box>
+                    );
+                  });
+                })()}
+              </Box>
+            </>
+          )}
 
 
 
@@ -3375,18 +3419,19 @@ export default function GlobalTrophyRoom() {
     <Dialog
             open={openQuickView}
             onClose={() => setOpenQuickView(false)}
+            fullScreen={isMobile}
             fullWidth
             maxWidth="sm"
-            PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden', maxWidth: '500px' } }}
+            PaperProps={{ sx: { borderRadius: { xs: 0, sm: 2 }, overflow: 'hidden', maxWidth: '500px', m: { xs: 0, sm: 2 } } }}
           >
             <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 }, bgcolor: '#000', position: 'relative' }}>
-              <Image src={cflogo} alt="CF Logo" width={320} height={320} />
-              <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
+              <Image src={cflogo} alt="CF Logo" width={isMobile ? 210 : 320} height={isMobile ? 210 : 320} />
+              <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: { xs: 8, sm: 16 }, top: '50%', transform: 'translateY(-50%)' }}>
                 <CloseIcon />
               </IconButton>
             </DialogTitle>
             <Divider />
-            <DialogContent sx={{ py: { xs: 0.5, sm: 3 }, overflow: 'hidden', position: 'relative' }}>
+            <DialogContent sx={{ py: { xs: 0.5, sm: 3 }, overflowY: { xs: 'auto', sm: 'hidden' }, position: 'relative' }}>
               {quickView.player && (
                 <Box
                   sx={{
@@ -3395,7 +3440,7 @@ export default function GlobalTrophyRoom() {
                     gap: { xs: 1, sm: 0 },
                     alignItems: 'start',
                     justifyContent: 'center',
-                    height: '382px',
+                    height: { xs: 'auto', sm: '382px' },
                   }}
                 >
                   {/* Left: Stats Icons */}
