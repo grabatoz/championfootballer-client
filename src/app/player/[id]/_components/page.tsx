@@ -16,6 +16,8 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    useTheme,
+    useMediaQuery,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useParams, useRouter } from 'next/navigation';
@@ -50,7 +52,7 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
 // Colors & Gradients
 const DARK_BG = '#383838';
 const CARD_BG = '#272727';
-const TEAL_PRIMARY = '#339aff';
+const TEAL_PRIMARY = '#00a77f';
 const ORANGE_ACCENT = '#ff6b35';
 
 // Add the blue filter constant
@@ -334,6 +336,8 @@ export default function PlayerStatsPage() {
     const dispatch = useDispatch<AppDispatch>();
     const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
     const { token } = useAuth();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const { data, filters, loading: reduxLoading, error: reduxError } = useSelector((state: RootState) => state.playerStats);
     const { leagueId, year } = filters;
@@ -1589,10 +1593,10 @@ export default function PlayerStatsPage() {
     // Icon-style item now uses football.png with value centered, label below
     const StatItem = ({ label, value }: { label: string; value: number }) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <Typography sx={{ color: '#c8c8c8', fontSize: 19, fontWeight: 600}}>
+            <Typography sx={{ color: '#c8c8c8', fontSize: { xs: 15, sm: 17, md: 19 }, fontWeight: 600 }}>
                 {label}
             </Typography>
-            <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>
+            <Typography sx={{ color: '#ffffff', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700 }}>
                 {value ?? 0}
             </Typography>
         </Box>
@@ -1632,7 +1636,7 @@ export default function PlayerStatsPage() {
             <Box sx={{
                 mt: 0,
                 mb: 4,
-                width: '99.4vw',
+                width: '100vw',
                 position: 'relative',
                 left: '50%',
                 right: '50%',
@@ -1732,7 +1736,7 @@ export default function PlayerStatsPage() {
                                 sx={{
                                     width: '100%',
                                     '& .MuiOutlinedInput-root': {
-                                        height: 42,
+                                        height: { xs: 38, sm: 42 },
                                         color: 'white',
                                         backgroundColor: 'transparent',
                                         borderRadius: '3px',
@@ -1742,7 +1746,7 @@ export default function PlayerStatsPage() {
                                     },
                                     '& .MuiInputBase-input': {
                                         color: 'white',
-                                        fontSize: 16.5,
+                                        fontSize: { xs: 14, sm: 16.5 },
                                         py: 0.5,
                                         '&::placeholder': { color: '#fff', opacity: 1 }
                                     }
@@ -1880,17 +1884,17 @@ export default function PlayerStatsPage() {
                                 onMouseDown={() => setYearDropdownOpen(true)}
                                 onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
                                 style={{
-                                    height: '39px',
-                                    padding: '0 36px 0 12px',
-                                    marginLeft: '4px',
+                                    height: isMobile ? '34px' : '39px',
+                                    padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                                    marginLeft: isMobile ? '0px' : '4px',
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
                                     borderRadius: '24px',
-                                    fontSize: '17px',
+                                    fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    minWidth: '100px',
+                                    minWidth: isMobile ? '88px' : '100px',
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1913,17 +1917,17 @@ export default function PlayerStatsPage() {
                                 onMouseDown={() => setLeagueDropdownOpen(true)}
                                 onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
                                 style={{
-                                    height: '39px',
-                                    padding: '0 36px 0 12px',
-                                    marginLeft: '4px',
+                                    height: isMobile ? '34px' : '39px',
+                                    padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                                    marginLeft: isMobile ? '0px' : '4px',
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
                                     borderRadius: '24px',
-                                    fontSize: '17px',
+                                    fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    minWidth: '110px',
+                                    minWidth: isMobile ? '98px' : '110px',
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1954,17 +1958,17 @@ export default function PlayerStatsPage() {
                                 onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
                                 disabled={leagueId === 'all'}
                                 style={{
-                                    height: '39px',
-                                    padding: '0 36px 0 12px',
-                                    marginLeft: '4px',
+                                    height: isMobile ? '34px' : '39px',
+                                    padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                                    marginLeft: isMobile ? '0px' : '4px',
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
                                     borderRadius: '24px',
-                                    fontSize: '17px',
+                                    fontSize: isMobile ? '13px' : '17px',
                                     cursor: leagueId === 'all' ? 'not-allowed' : 'pointer',
                                     outline: 'none',
-                                    minWidth: '110px',
+                                    minWidth: isMobile ? '98px' : '110px',
                                     opacity: leagueId === 'all' ? 0.6 : 1,
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
@@ -1995,13 +1999,13 @@ export default function PlayerStatsPage() {
                                     lastFetchKeyRef.current = '';
                                 }}
                                 style={{
-                                    height: '39px',
-                                    padding: '0 17px',
+                                    height: isMobile ? '34px' : '39px',
+                                    padding: isMobile ? '0 13px' : '0 17px',
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '2px solid rgba(255,255,255,0.5)',
                                     borderRadius: '24px',
-                                    fontSize: '17px',
+                                    fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
                                     fontWeight: 600,
@@ -2014,7 +2018,7 @@ export default function PlayerStatsPage() {
                 </Paper>
             </Box>
          
-        <Container maxWidth={false} sx={{ bgcolor: '#383838', py: 3, px: { xs: 2, md: 3.5 }, maxWidth: 1165, mx: 'auto', borderRadius: 2, mb: 5 }}>
+        <Container maxWidth={false} sx={{ bgcolor: '#383838', py: { xs: 2.2, md: 3 }, px: { xs: 1.3, sm: 2, md: 3.5 }, maxWidth: 1165, mx: 'auto', borderRadius: 2, mb: 5 }}>
             {loading ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2  }}>
                     <CircularProgress sx={{ color: TEAL_PRIMARY }} />
@@ -2037,28 +2041,28 @@ export default function PlayerStatsPage() {
                     {/* Header: Player Profile */}
                     <Box sx={{ 
                         display: 'flex', 
-                        alignItems: 'center', 
+                        alignItems: { xs: 'stretch', md: 'center' }, 
                         justifyContent: 'space-between',
                         mb: 3,
-                        flexWrap: 'wrap',
-                        gap: 2
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: { xs: 2.2, md: 2 }
                     }}>
                         {/* Left: Avatar + Name + Position */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 1.3, sm: 2 }, width: { xs: '100%', md: 'auto' } }}>
                             <Avatar
                                 src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
                                 alt={playerName}
                                 sx={{
-                                    width: 125,
-                                    height: 125,
+                                    width: { xs: 84, sm: 102, md: 125 },
+                                    height: { xs: 84, sm: 102, md: 125 },
                                     // border: '3px solid ' + TEAL_PRIMARY,
                                 }}
                             />
-                            <Box sx={{ pt: 0 }}>
+                            <Box sx={{ pt: 0, minWidth: 0 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <Typography sx={{ 
                                         color: '#fff', 
-                                        fontSize: 27, 
+                                        fontSize: { xs: 20, sm: 24, md: 27 }, 
                                         fontFamily: '"Woodford Bourne Pro", sans-serif !important',
                                         fontWeight: 700,
                                         fontStyle: 'normal',
@@ -2066,163 +2070,184 @@ export default function PlayerStatsPage() {
                                         letterSpacing: '0%',
                                         verticalAlign: 'middle',
                                         textTransform: 'uppercase',
-                                        mt: 2
+                                        mt: { xs: 0.2, sm: 1.5, md: 2 },
+                                        wordBreak: 'break-word'
                                     }}>
                                         {playerName.toUpperCase()}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 'fit-content' }}>
-                                    <Typography sx={{ color: '#fff', fontSize: 16, fontWeight: 700, textTransform: 'uppercase' }}>
+                                    <Typography sx={{ color: '#fff', fontSize: { xs: 13, sm: 14, md: 16 }, fontWeight: 700, textTransform: 'uppercase' }}>
                                         {playerPositionType}
                                     </Typography>
-                                    <Box sx={{ fontSize: 35 }}> <XPStarMilestoneCard height={35} width={35} xp={xp} /></Box>
+                                    <Box sx={{ fontSize: isMobile ? 28 : 35 }}>
+                                        <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+                                    </Box>
                                 </Box>
                             </Box>
                         </Box>
 
                         {/* Right: XP + Badges */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-                            {/* Top row: XP + Milestone Title */}
-                            <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
-                                <Paper sx={{ 
-                                    bgcolor: '#383838', 
-                                    color: '#fff', 
-                                    px: 4.3, 
-                                    py: 0.1,
-                                    borderRadius: 0,
-                                    fontWeight: 400,
-                                    fontSize: 18,
-                                    border: '2px solid #fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    minWidth: 100,
-                                    justifyContent: 'center'
-                                }}>
-                                    {xpLoading ? '…' : xp.toLocaleString()}
-                                </Paper>
-                                <Paper sx={{ 
-                                    bgcolor: xpMilestone.current.bgColor, 
-                                    color: xpMilestone.current.color, 
-                                    pl: 1.5,
-                                    pr: 10,
-                                    py: 0.9,
-                                    borderRadius: 0,
-                                    fontWeight: 400,
-                                    fontSize: 16,
-                                    minWidth: 170,
-                                    transition: 'all 0.3s ease'
-                                }}>
-                                    {xpMilestone.current.title}
-                                </Paper>
-                            </Box>
-                            {/* Progress bar */}
-                            <Box sx={{ width: '100%', display: 'flex', height: 6, borderRadius: 0, overflow: 'hidden' , mt:1}}>
-                                <Box sx={{ 
-                                    bgcolor: xpMilestone.current.bgColor, 
-                                    width: `${xpMilestone.progress}%`, 
-                                    height: '100%',
-                                    transition: 'width 0.3s ease'
-                                }} />
-                                <Box sx={{ bgcolor: '#555', width: `${100 - xpMilestone.progress}%`, height: '100%' }} />
-                            </Box>
-                            {/* Next milestone info */}
-                            {xpMilestone.next && (
-                                <Typography sx={{ 
-                                    color: '#999', 
-                                    fontSize: 11, 
-                                    mt: 0.5,
-                                    fontWeight: 400 
-                                }}>
-                                    {xpMilestone.next.minXP - xp} XP to {xpMilestone.next.title}
-                                </Typography>
-                            )}
-                            {/* Stats Over Season button */}
-                            <Box
-                                sx={{
-                                    mt: 2,
-                                    // width: 248,
-                                    display: 'flex',
-                                    alignItems: 'stretch',
-                                    borderRadius: 1,
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    '&:hover .icon-box': { bgcolor: '#008c6b' },
-                                    '&:hover .text-box': { bgcolor: '#333' },
-                                    border: '1.5px solid #fff',
-                                }}
-                                onClick={() => setStatsModalOpen(true)}
-                            >
-                                <Box className="icon-box" sx={{ 
-                                    bgcolor: '#00a77f', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    px: 1.2,
-                                    py: 0.2
-                                }}>
-                                    <BarChart sx={{ color: '#fff', fontSize: 30 }} />
-                                </Box>
-                                <Box className="text-box" sx={{ 
-                                    bgcolor: '#444', 
-                                    display: 'flex', 
-                                    alignItems: 'center',
-                                    px: 1.3,
-                                    py: 0.8
-                                }}>
-                                    <Typography sx={{ 
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'stretch', md: 'flex-end' }, gap: 0, width: { xs: '100%', md: 'auto' } }}>
+                            <Box sx={{ width: { xs: '100%', md: 'fit-content' }, maxWidth: '100%' }}>
+                                {/* Top row: XP + Milestone Title */}
+                                <Box sx={{ display: 'flex', alignItems: 'stretch', gap: { xs: 1, md: 2 }, width: '100%' }}>
+                                    <Paper sx={{ 
+                                        bgcolor: '#383838', 
                                         color: '#fff', 
-                                        fontWeight: 600, 
-                                        fontSize: 12, 
-                                        textTransform: 'uppercase' 
+                                        px: { xs: 2.2, sm: 3.2, md: 4.3 }, 
+                                        py: 0.1,
+                                        borderRadius: 0,
+                                        fontWeight: 400,
+                                        fontSize: { xs: 14, sm: 16, md: 18 },
+                                        border: '2px solid #fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        minWidth: { xs: 84, sm: 95, md: 100 },
+                                        justifyContent: 'center'
                                     }}>
-                                        Stats Over Season
-                                    </Typography>
+                                        {xpLoading ? '...' : xp.toLocaleString()}
+                                    </Paper>
+                                    <Paper sx={{ 
+                                        bgcolor: xpMilestone.current.bgColor, 
+                                        color: xpMilestone.current.color, 
+                                        pl: { xs: 1, md: 1.5 },
+                                        pr: { xs: 2, sm: 4, md: 10 },
+                                        py: { xs: 0.6, md: 0.9 },
+                                        borderRadius: 0,
+                                        fontWeight: 400,
+                                        fontSize: { xs: 12, sm: 14, md: 16 },
+                                        minWidth: { xs: 120, sm: 140, md: 170 },
+                                        flex: { xs: 1, md: '0 0 auto' },
+                                        transition: 'all 0.3s ease'
+                                    }}>
+                                        {xpMilestone.current.title}
+                                    </Paper>
                                 </Box>
+                                {/* Progress bar */}
+                                <Box sx={{ width: '100%', display: 'flex', height: 6, borderRadius: 0, overflow: 'hidden', mt: 1 }}>
+                                    <Box sx={{ 
+                                        bgcolor: xpMilestone.current.bgColor, 
+                                        width: `${xpMilestone.progress}%`, 
+                                        height: '100%',
+                                        transition: 'width 0.3s ease'
+                                    }} />
+                                    <Box sx={{ bgcolor: '#555', width: `${100 - xpMilestone.progress}%`, height: '100%' }} />
+                                </Box>
+                                {/* Next milestone info */}
+                                {xpMilestone.next && (
+                                    <Typography sx={{ 
+                                        color: '#999', 
+                                        fontSize: 11, 
+                                        mt: 0.5,
+                                        fontWeight: 400 
+                                    }}>
+                                        {xpMilestone.next.minXP - xp} XP to {xpMilestone.next.title}
+                                    </Typography>
+                                )}
                             </Box>
-
-                            {/* Performance Dashboard button */}
                             <Box
                                 sx={{
-                                    mt: 1.2,
-                                    // width: 196,
+                                    mt: 1.8,
                                     display: 'flex',
-                                    alignItems: 'stretch',
-                                    borderRadius: 1,
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    '&:hover .perf-icon-box': { bgcolor: '#008c6b' },
-                                    '&:hover .perf-text-box': { bgcolor: '#333' },
-                                    border: '1.5px solid #fff',
-                                }}
-                                  onClick={() => {
-                                    if (playerId) router.push(`/player/${playerId}/career`);
+                                    flexWrap: 'nowrap',
+                                    justifyContent: 'center',
+                                    gap: 1,
+                                    width: { xs: '100%', md: 'auto' },
+                                    overflowX: { xs: 'auto', md: 'visible' },
+                                    pb: { xs: 0.5, md: 0 },
+                                    '&::-webkit-scrollbar': { height: 4 },
+                                    '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
                                 }}
                             >
-                                <Box className="perf-icon-box" sx={{
-                                    bgcolor: '#00a77f',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    px: 1.2,
-                                    py: 0.2
-                                }}>
-                                    <DashboardCustomize sx={{ color: '#fff', fontSize: 30 }} />
-                                </Box>
-                                <Box className="perf-text-box" sx={{
-                                    bgcolor: '#444',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    px: 0.3,
-                                    py: 0.8
-                                }}>
-                                    <Typography sx={{
-                                        color: '#fff',
-                                        fontWeight: 600,
-                                        fontSize: 10,
-                                        textTransform: 'uppercase'
+                                {/* Stats Over Season button */}
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'stretch',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        '&:hover .icon-box': { bgcolor: '#008c6b' },
+                                        '&:hover .text-box': { bgcolor: '#333' },
+                                        border: '1.5px solid #fff',
+                                        flex: '0 0 auto',
+                                    }}
+                                    onClick={() => setStatsModalOpen(true)}
+                                >
+                                    <Box className="icon-box" sx={{ 
+                                        bgcolor: '#00a77f', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        px: { xs: 0.9, md: 1.2 },
+                                        py: 0.2
                                     }}>
-                                        Performance Dashboard
-                                    </Typography>
+                                        <BarChart sx={{ color: '#fff', fontSize: { xs: 24, md: 30 } }} />
+                                    </Box>
+                                    <Box className="text-box" sx={{ 
+                                        bgcolor: '#444', 
+                                        display: 'flex', 
+                                        alignItems: 'center',
+                                        px: { xs: 1, md: 1.3 },
+                                        py: { xs: 0.65, md: 0.8 }
+                                    }}>
+                                        <Typography sx={{ 
+                                            color: '#fff', 
+                                            fontWeight: 600, 
+                                            fontSize: { xs: 10, sm: 11, md: 12 }, 
+                                            textTransform: 'uppercase',
+                                            whiteSpace: 'nowrap',
+                                        }}>
+                                            Stats Over Season
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Performance Dashboard button */}
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'stretch',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        '&:hover .perf-icon-box': { bgcolor: '#008c6b' },
+                                        '&:hover .perf-text-box': { bgcolor: '#333' },
+                                        border: '1.5px solid #fff',
+                                        flex: '0 0 auto',
+                                    }}
+                                    onClick={() => {
+                                        if (playerId) router.push(`/player/${playerId}/career`);
+                                    }}
+                                >
+                                    <Box className="perf-icon-box" sx={{
+                                        bgcolor: '#00a77f',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        px: { xs: 0.9, md: 1.2 },
+                                        py: 0.2
+                                    }}>
+                                        <DashboardCustomize sx={{ color: '#fff', fontSize: { xs: 24, md: 30 } }} />
+                                    </Box>
+                                    <Box className="perf-text-box" sx={{
+                                        bgcolor: '#444',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        px: { xs: 0.9, md: 1.2 },
+                                        py: { xs: 0.65, md: 0.8 }
+                                    }}>
+                                        <Typography sx={{
+                                            color: '#fff',
+                                            fontWeight: 600,
+                                            fontSize: { xs: 10, sm: 11, md: 12 },
+                                            textTransform: 'uppercase',
+                                            whiteSpace: 'nowrap',
+                                        }}>
+                                            Performance Dashboard
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             </Box>
                         </Box>
@@ -2232,10 +2257,12 @@ export default function PlayerStatsPage() {
                     <Box sx={{ 
                         mb: 4,
                         display: 'flex',
+                        flexWrap: 'nowrap',
                         justifyContent: 'space-between',
+                        alignItems: 'flex-end',
                         width: '100%',
-                        gap: 3,
-                        mt:7.5
+                        gap: { xs: 0.6, md: 3 },
+                        mt: { xs: 3.5, md: 7.5 },
                     }}>
                         {['current', 'career', 'trophies', 'rewards', 'history'].map(tab => (
                             <Box
@@ -2243,7 +2270,8 @@ export default function PlayerStatsPage() {
                                 onClick={() => setActiveTab(tab)}
                                 sx={{
                                     flex: 1,
-                                    textAlign: 'left',
+                                    minWidth: 0,
+                                    textAlign: 'center',
                                     cursor: 'pointer',
                                     pb: 1,
                                 }}
@@ -2253,19 +2281,21 @@ export default function PlayerStatsPage() {
                                     sx={{
                                         color: '#fff',
                                         fontWeight: 500,
-                                        fontSize: '26px !important',
+                                        fontSize: { xs: '11px !important', sm: '16px !important', md: '26px !important' },
                                         textTransform: 'capitalize',
-                                        lineHeight: 1.2,
+                                        lineHeight: 1.15,
+                                        whiteSpace: 'nowrap',
                                     }}
                                 >
-                                    {tab === 'current' ? 'Current' : tab === 'career' ? 'Career Stats' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                    {tab === 'current' ? 'Current' : tab === 'career' ? (isMobile ? 'Career' : 'Career Stats') : tab.charAt(0).toUpperCase() + tab.slice(1)}
                                 </Typography>
                                 {/* Underline Box */}
                                 <Box sx={{
-                                    width: '70%',
-                                    height: '6px',
+                                    width: { xs: '58%', md: '70%' },
+                                    height: { xs: '3px', md: '6px' },
                                     bgcolor: activeTab === tab ? '#00a77f' : '#555',
                                     mt: 1,
+                                    mx: 'auto',
                                 }} />
                             </Box>
                         ))}
@@ -2273,25 +2303,25 @@ export default function PlayerStatsPage() {
 
                     {/* Stats Row */}
                     <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'flex-start' }}>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="Matches" value={activeTab === 'career' ? allMatches.length : currentLeagueMatches.length} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="Goals" value={activeTab === 'career' ? accumulativeTotals.goals : currentLeagueTotals.goals} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="Assists" value={activeTab === 'career' ? accumulativeTotals.assists : currentLeagueTotals.assists} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="MOTM" value={activeTab === 'career' ? careerMotmVotesCount : motmVotesCount} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="Defensive" value={activeTab === 'career' ? careerDefensiveImpactCount : defensiveImpactCount} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={4} sm={4} md>
                             <StatItem label="Clean Sheet" value={activeTab === 'career' ? accumulativeTotals.cleanSheets : currentLeagueTotals.cleanSheets} />
                         </Grid>
-                        <Grid item xs={6} sm={4} md>
+                        <Grid item xs={12} sm={4} md>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
                                 <Typography sx={{ color: '#c8c8c8', fontSize: 19, fontWeight: 500 }}>
                                     Total xp
@@ -2536,16 +2566,17 @@ export default function PlayerStatsPage() {
                     <Dialog 
                         open={statsModalOpen} 
                         onClose={() => setStatsModalOpen(false)}
+                        fullScreen={isMobile}
                         maxWidth={false}
                         PaperProps={{
                             sx: {
                                 bgcolor: '#e8e4e0',
-                                borderRadius: '6px',
+                                borderRadius: { xs: 0, sm: '6px' },
                                 border: '2px solid #3a3a3a',
                                 overflow: 'hidden',
                                 width: '100%',
                                 maxWidth: '1020px',
-                                // m: 2,
+                                m: { xs: 0, sm: 2 },
                             }
                         }}
                     >
@@ -2554,46 +2585,46 @@ export default function PlayerStatsPage() {
                             bgcolor: '#d9d9d9', 
                             color: '#000', 
                             display: 'flex', 
-                            alignItems: 'center', 
+                            alignItems: { xs: 'flex-start', md: 'center' }, 
                             justifyContent: 'space-between',
-                            py: 1.5,
-                            px: 2,
-                            pr: 6,
+                            py: { xs: 1.25, md: 1.5 },
+                            px: { xs: 1.25, md: 2 },
+                            pr: { xs: 5.5, md: 6 },
                             minHeight: 'auto',
                             position: 'relative',
                         }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, justifyContent: 'space-between', maxWidth: 'calc(100% - 40px)' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Image src={TrofiiImg} alt="Trophy" width={30} height={30} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(17%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)' }} />
-                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: 22, textTransform: 'uppercase', letterSpacing: '1px', color: '#2d2d2d', whiteSpace: 'nowrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.8, md: 1.5 }, flex: 1, justifyContent: { xs: 'flex-start', md: 'space-between' }, maxWidth: 'calc(100% - 40px)', flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                    <Image src={TrofiiImg} alt="Trophy" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(17%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)' }} />
+                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' }, wordBreak: 'break-word' }}>
                                         {currentLeagueName}
                                     </Typography>
                                 </Box>
-                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5 }}>|</Typography>
-                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: 22, textTransform: 'uppercase', letterSpacing: '1px', color: '#2d2d2d', whiteSpace: 'nowrap' }}>
+                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5, display: { xs: 'none', md: 'block' } }}>|</Typography>
+                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' } }}>
                                     {selectedSeason && selectedSeason !== 'all' 
                                         ? 'SEASON STATS'
                                         : 'STATS OVER SEASONS'
                                     }
                                 </Typography>
-                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5 }}>|</Typography>
-                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: 22, textTransform: 'uppercase', letterSpacing: '1px', color: '#2d2d2d', whiteSpace: 'nowrap' }}>
+                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5, display: { xs: 'none', md: 'block' } }}>|</Typography>
+                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' }, wordBreak: 'break-word' }}>
                                     {playerName.toUpperCase()}
                                 </Typography>
                             </Box>
                             <IconButton 
                                 onClick={() => setStatsModalOpen(false)}
-                                sx={{ color: '#555',  bgcolor: '#e6e6e6', borderRadius: '3px', '&:hover': { color: '#000', bgcolor: '#e6e6e6' }, position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}
+                                sx={{ color: '#555',  bgcolor: '#e6e6e6', borderRadius: '3px', '&:hover': { color: '#000', bgcolor: '#e6e6e6' }, position: 'absolute', right: { xs: 6, md: 12 }, top: { xs: 6, md: '50%' }, transform: { xs: 'none', md: 'translateY(-50%)' } }}
                             >
-                                <CloseIcon sx={{ fontSize: 24 }} />
+                                <CloseIcon sx={{ fontSize: { xs: 20, md: 24 } }} />
                             </IconButton>
                         </DialogTitle>
 
                         <DialogContent sx={{ 
                             bgcolor: '#f2f2f2', 
-                            px: 5, 
-                            py: 4,
-                            maxHeight: '60vh',
+                            px: { xs: 1.25, sm: 2.5, md: 5 }, 
+                            py: { xs: 2, md: 4 },
+                            maxHeight: { xs: 'calc(100vh - 72px)', md: '60vh' },
                             overflowY: 'auto',
                             '&::-webkit-scrollbar': {
                                 width: '6px',
@@ -2629,10 +2660,14 @@ export default function PlayerStatsPage() {
                                     {/* Tabs */}
                                     <Box sx={{ 
                                         display: 'flex', 
-                                        justifyContent: 'space-between',
+                                        justifyContent: { xs: 'flex-start', md: 'space-between' },
                                         mb: 1, 
-                                        // borderBottom: '1px solid #c0bbb5',
-                                        pt: 6
+                                        pt: { xs: 2.5, md: 6 },
+                                        overflowX: 'auto',
+                                        gap: { xs: 1.2, md: 0 },
+                                        pb: 0.6,
+                                        '&::-webkit-scrollbar': { height: 4 },
+                                        '&::-webkit-scrollbar-thumb': { background: 'rgba(45,45,45,0.35)', borderRadius: 3 },
                                     }}>
                                         {[
                                             { key: 'goals', label: 'Goals' },
@@ -2645,23 +2680,23 @@ export default function PlayerStatsPage() {
                                                 key={tab.key}
                                                 onClick={() => setStatsModalTab(tab.key as any)}
                                                 sx={{
-                                                    flex: 1,
+                                                    flex: { xs: '0 0 auto', md: 1 },
                                                     display: 'flex',
                                                     justifyContent: 'start',
                                                     cursor: 'pointer',
-                                                    pb: 1.8,
+                                                    pb: { xs: 1.2, md: 1.8 },
                                                 }}
                                             >
                                                 <Box sx={{
-                                                    borderBottom: statsModalTab === tab.key ? `5px solid #00a77f` : '5px solid #c0bbb5',
+                                                    borderBottom: statsModalTab === tab.key ? `4px solid #00a77f` : '4px solid #c0bbb5',
                                                     transition: 'all 0.2s ease',
-                                                    minWidth: '150px',
+                                                    minWidth: { xs: '120px', md: '150px' },
                                                     textAlign: 'start',
                                                 }}>
                                                     <Typography sx={{ 
                                                         color: statsModalTab === tab.key ? '#2d2d2d' : '#888',
                                                         fontWeight: statsModalTab === tab.key ? 800 : 600,
-                                                        fontSize: 21,
+                                                        fontSize: { xs: 14, sm: 17, md: 21 },
                                                         whiteSpace: 'nowrap',
                                                         transition: 'color 0.2s ease'
                                                     }}>
@@ -2676,7 +2711,7 @@ export default function PlayerStatsPage() {
                                     <Box sx={{ 
                                         display: 'flex', 
                                         flexDirection: 'column', 
-                                        gap: 2,
+                                        gap: { xs: 1.2, md: 2 },
                                         borderLeft: '3px solid #999',
                                         borderBottom: '3px solid #999',
                                         pl: 0,
@@ -2700,12 +2735,12 @@ export default function PlayerStatsPage() {
                                                 const percentage = (value / maxValue) * 100;
 
                                                 return (
-                                                    <Box key={season.seasonId} sx={{ display: 'flex', alignItems: 'center', gap: 3, mx: 3 }}>
+                                                    <Box key={season.seasonId} sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.1, md: 3 }, mx: { xs: 1, md: 3 } }}>
                                                         {/* Bar */}
                                                         <Box sx={{ flex: 1 }}>
                                                             <Box sx={{ 
                                                                 bgcolor: 'transparent', 
-                                                                height: 42, 
+                                                                height: { xs: 34, md: 42 }, 
                                                                 position: 'relative',
                                                                 overflow: 'hidden'
                                                             }}>
@@ -2717,13 +2752,13 @@ export default function PlayerStatsPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'flex-end',
-                                                                    pr: 2.5
+                                                                    pr: { xs: 1.2, md: 2.5 }
                                                                 }}>
                                                                     {value > 0 && (
                                                                         <Typography sx={{ 
                                                                             color: '#fff', 
                                                                             fontWeight: 700, 
-                                                                            fontSize: 16 
+                                                                            fontSize: { xs: 12, md: 16 } 
                                                                         }}>
                                                                             {statsModalTab === 'totalXP' ? value.toLocaleString() : value}
                                                                         </Typography>
@@ -2733,7 +2768,7 @@ export default function PlayerStatsPage() {
                                                                     <Typography sx={{ 
                                                                         color: '#999', 
                                                                         fontWeight: 600, 
-                                                                        fontSize: 14,
+                                                                        fontSize: { xs: 12, md: 14 },
                                                                         position: 'absolute',
                                                                         left: 14,
                                                                         top: '50%',
@@ -2746,11 +2781,11 @@ export default function PlayerStatsPage() {
                                                         </Box>
                                                         
                                                         {/* Season Label */}
-                                                        <Box sx={{ minWidth: 145, textAlign: 'right' }}>
+                                                        <Box sx={{ minWidth: { xs: 98, sm: 110, md: 145 }, textAlign: 'right' }}>
                                                             <Typography sx={{ 
                                                                 color: '#2d2d2d', 
                                                                 fontWeight: 700, 
-                                                                fontSize: 14,
+                                                                fontSize: { xs: 11, md: 14 },
                                                                 textTransform: 'uppercase',
                                                                 lineHeight: 1.3,
                                                                 letterSpacing: '0.5px'
@@ -2759,7 +2794,7 @@ export default function PlayerStatsPage() {
                                                             </Typography>
                                                             <Typography sx={{ 
                                                                 color: '#666', 
-                                                                fontSize: 12,
+                                                                fontSize: { xs: 10, md: 12 },
                                                                 lineHeight: 1.3
                                                             }}>
                                                                 {season.isFinished 
