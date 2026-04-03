@@ -36,6 +36,7 @@ import {
     ListItem,
     ListItemAvatar,
     LinearProgress,
+    Slider,
     Stack,
     Avatar,
     useTheme,
@@ -370,6 +371,8 @@ export default function LeagueDetailPage() {
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
     const router = useRouter();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const leagueId = params?.id ? String(params.id) : '';
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -377,11 +380,33 @@ export default function LeagueDetailPage() {
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [section, setSection] = useState<'members' | 'matches' | 'dream-team' | 'results' | 'table' | 'leaderboard'>('table');
+    const tableScrollRef = React.useRef<HTMLDivElement | null>(null);
+    const [tableScrollPercent, setTableScrollPercent] = useState(0);
+    const [tableHasHorizontalOverflow, setTableHasHorizontalOverflow] = useState(false);
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [, setCheckedCommonLeague] = useState(false);
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
+    const syncTableHorizontalScroll = useCallback(() => {
+        const scrollEl = tableScrollRef.current;
+        if (!scrollEl) {
+            setTableHasHorizontalOverflow(false);
+            setTableScrollPercent(0);
+            return;
+        }
+        const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
+        setTableHasHorizontalOverflow(maxScrollLeft > 0);
+        setTableScrollPercent(maxScrollLeft > 0 ? (scrollEl.scrollLeft / maxScrollLeft) * 100 : 0);
+    }, []);
+    const handleTableSliderChange = useCallback((_event: Event, value: number | number[]) => {
+        const sliderValue = Array.isArray(value) ? value[0] : value;
+        const scrollEl = tableScrollRef.current;
+        if (!scrollEl) return;
+        const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
+        scrollEl.scrollLeft = (sliderValue / 100) * maxScrollLeft;
+        setTableScrollPercent(sliderValue);
+    }, []);
     const isRecord = (value: unknown): value is Record<string, unknown> =>
         typeof value === 'object' && value !== null;
     const normalizeEntityId = (value: unknown): string => String(value ?? '').trim();
@@ -1803,6 +1828,25 @@ export default function LeagueDetailPage() {
         // Recompute when filtered league or stats change
     }, [filteredLeague, filteredLeague?.id, filteredLeague?.members, filteredLeague?.matches, filteredLeague?.administrators, leagueWinners, userLeagueXP, motmCounts]);
 
+    useEffect(() => {
+        if (section !== 'table') return;
+        const scrollEl = tableScrollRef.current;
+        if (!scrollEl) return;
+
+        const handleScrollSync = () => {
+            syncTableHorizontalScroll();
+        };
+
+        syncTableHorizontalScroll();
+        scrollEl.addEventListener('scroll', handleScrollSync, { passive: true });
+        window.addEventListener('resize', handleScrollSync);
+
+        return () => {
+            scrollEl.removeEventListener('scroll', handleScrollSync);
+            window.removeEventListener('resize', handleScrollSync);
+        };
+    }, [section, tableData.length, filteredLeague?.showPoints, syncTableHorizontalScroll]);
+
     // Type for MOTM votes map: voterId -> votedForId
     type ManOfTheMatchVotes = Record<string, string | number>;
     const hasMotmVotes = (m: unknown): m is { manOfTheMatchVotes?: ManOfTheMatchVotes } =>
@@ -2167,11 +2211,12 @@ export default function LeagueDetailPage() {
                 onClose={onClose}
                 fullWidth
                 maxWidth="md" // Changed to md for more width
+                fullScreen={isMobile}
                 PaperProps={{
                     sx: {
                         bgcolor: 'rgba(15,15,15,0.95)',
                         color: '#E5E7EB',
-                        borderRadius: 3,
+                        borderRadius: isMobile ? 0 : 3,
                         border: '1px solid rgba(255,255,255,0.1)',
                         backdropFilter: 'blur(20px)',
                         boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
@@ -2186,7 +2231,8 @@ export default function LeagueDetailPage() {
                         color: '#E5E7EB',
                         background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                         borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        py: 2.5
+                        py: { xs: 2, sm: 2.5 },
+                        pr: { xs: 6, sm: 8 }
                     }}
                 >
                     Match Details
@@ -2208,18 +2254,19 @@ export default function LeagueDetailPage() {
                 <DialogContent sx={{ p: 0 }}>
                     {/* Match Header - Teams Side by Side */}
                     <Box sx={{
-                        p: 3,
+                        p: { xs: 2, sm: 3 },
                         background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
                         color: 'white'
                     }}>
                         {/* Teams in a row layout */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 }, flexDirection: { xs: 'column', sm: 'row' } }}>
                             {/* Home Team */}
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 2,
                                 flex: 1,
+                                width: { xs: '100%', sm: 'auto' },
                                 minWidth: 0 // Prevent overflow
                             }}>
                                 <Image
@@ -2259,6 +2306,7 @@ export default function LeagueDetailPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 2,
+                                justifyContent: 'center',
                                 flexShrink: 0
                             }}>
                                 {match.status === 'RESULT_PUBLISHED' || match.status === 'RESULT_PUBLISHED' && (
@@ -2302,6 +2350,7 @@ export default function LeagueDetailPage() {
                                 alignItems: 'center',
                                 gap: 2,
                                 flex: 1,
+                                width: { xs: '100%', sm: 'auto' },
                                 flexDirection: 'row-reverse', // Reverse order for visual balance
                                 minWidth: 0
                             }}>
@@ -2434,13 +2483,14 @@ export default function LeagueDetailPage() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions sx={{ p: 3, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <DialogActions sx={{ p: { xs: 2, sm: 3 }, gap: 1, borderTop: '1px solid rgba(255,255,255,0.1)', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' } }}>
                     <Button
                         onClick={onClose}
                         variant="outlined"
                         sx={{
                             color: '#E5E7EB',
                             borderColor: 'rgba(255,255,255,0.2)',
+                            width: { xs: '100%', sm: 'auto' },
                             '&:hover': {
                                 backgroundColor: 'rgba(255,255,255,0.05)',
                                 borderColor: 'rgba(255,255,255,0.3)'
@@ -2454,6 +2504,7 @@ export default function LeagueDetailPage() {
                             variant="contained"
                             sx={{
                                 backgroundColor: '#0388E3',
+                                width: { xs: '100%', sm: 'auto' },
                                 '&:hover': { backgroundColor: '#0369a1' }
                             }}
                         >
@@ -2820,7 +2871,7 @@ export default function LeagueDetailPage() {
                             mb: 4,
                             width: '100vw',
                             position: 'relative',
-                            left: '49.2%',
+                            left: '50%',
                             right: '50%',
                             marginLeft: '-50vw',
                             marginRight: '-50vw',
@@ -2871,7 +2922,7 @@ export default function LeagueDetailPage() {
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         gap: 0.5,
-                                        mt: 17,
+                                        mt: { xs: 10.5, sm: 12, md: 17 },
                                     }}>
                                         <Box sx={{
                                             display: 'flex',
@@ -2881,8 +2932,8 @@ export default function LeagueDetailPage() {
                                             <Image
                                                 src={LeagueIcon}
                                                 alt="League Icon"
-                                                width={56}
-                                                height={56}
+                                                width={isMobile ? 40 : 56}
+                                                height={isMobile ? 40 : 56}
                                                 style={{ objectFit: 'contain', pointerEvents: 'none' }}
                                             />
                                             {league ? (
@@ -2890,7 +2941,7 @@ export default function LeagueDetailPage() {
                                                     onClick={handleLeaguesDropdownOpen}
                                                     sx={{
                                                         textTransform: 'uppercase',
-                                                        fontSize: '50px',
+                                                        fontSize: { xs: '1.35rem', sm: '2rem', md: '3.125rem' },
                                                         fontWeight: 'bold',
                                                         lineHeight: 1.1,
                                                         wordBreak: 'break-word',
@@ -2905,7 +2956,7 @@ export default function LeagueDetailPage() {
                                                         borderRadius: 0,
                                                         px: 0,
                                                         py: 0,
-                                                        height: { xs: '32px', sm: 'auto' },
+                                                        height: 'auto',
                                                         '&:hover': {
                                                             backgroundColor: 'transparent',
                                                         },
@@ -2919,9 +2970,9 @@ export default function LeagueDetailPage() {
                                                             sx={{
                                                                 width: 0,
                                                                 height: 0,
-                                                                borderLeft: '10px solid transparent',
-                                                                borderRight: '10px solid transparent',
-                                                                borderTop: '16px solid #FFFFFF',
+                                                                borderLeft: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                                                                borderRight: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                                                                borderTop: { xs: '10px solid #FFFFFF', sm: '16px solid #FFFFFF' },
                                                                 display: 'inline-block',
                                                                 ml: 0.5
                                                             }}
@@ -3178,7 +3229,7 @@ export default function LeagueDetailPage() {
                                 </Box>
 
                                 {/* Orange divider under header */}
-                                <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 17 }} />
+                                <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: { xs: 10.5, sm: 12, md: 17 } }} />
 
                                 {/* Navigation Tabs - Pill style */}
                                 <Box
@@ -3186,9 +3237,13 @@ export default function LeagueDetailPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
+                                        width: '100%',
+                                        overflowX: { xs: 'visible', sm: 'auto' },
+                                        overflowY: 'hidden',
+                                        px: 1,
                                         // mx: 'aut90100o',
                                         mt: 2,
-                                   
+                                    
                                     }}
                                 >
                                     <ButtonGroup
@@ -3198,20 +3253,34 @@ export default function LeagueDetailPage() {
                                             // borderRadius: '12px',
                                             overflow: 'hidden',
                                             gap: 0,
+                                            width: { xs: '100%', sm: 'max-content' },
+                                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
                                             '& .MuiButtonGroup-grouped': {
                                                 borderColor: '#9CA3AF',
-                                                borderWidth: 3,
+                                                borderWidth: { xs: 2, sm: 3 },
                                                 textTransform: 'none',
                                                 fontWeight: 'normal',
-                                                px: { xs: 1.5, sm: 2.5, md: 4.5 },
+                                                px: { xs: 1, sm: 2.5, md: 4.5 },
                                                 py: 0.5,
-                                                minWidth: 'auto',
+                                                minWidth: { xs: '50%', sm: 'auto' },
+                                                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                                                textAlign: { xs: 'left', sm: 'center' },
+                                                justifyContent: { xs: 'flex-start', sm: 'center' },
+                                                lineHeight: 1.2,
+                                                minHeight: { xs: 42, sm: 'auto' },
                                             },
                                             '& .MuiButtonGroup-grouped:hover': {
                                                 borderColor: '#9CA3AF',
-                                                borderWidth: 3,
+                                                borderWidth: { xs: 2, sm: 3 },
                                                 // backgroundColor: '#c0bfbf',
                                                 // color: '#fff',
+                                            },
+                                            '& .MuiButton-startIcon': {
+                                                mr: { xs: 0.5, sm: 1 },
+                                            },
+                                            '& .MuiButton-startIcon img': {
+                                                width: { xs: '16px !important', sm: '24px !important' },
+                                                height: { xs: '16px !important', sm: '24px !important' },
                                             },
                                             '& .MuiButtonGroup-grouped:not(:last-of-type)': {
                                                 borderRightColor: '#9CA3AF',
@@ -3598,16 +3667,19 @@ export default function LeagueDetailPage() {
                                                                 <Box sx={{
                                                                     pl: 1,
                                                                     pr: 1,
+                                                                    py: 0,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
-                                                                    borderBottom: '2px solid #fff'
+                                                                    borderBottom: '2px solid #fff',
+                                                                    gap: 0
                                                                 }}>
                                                                     {/* Home Team */}
                                                                     <Box sx={{
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
+                                                                        minWidth: 0,
                                                                         // width: '30%'
                                                                     }}>
                                                                         <Image
@@ -3633,7 +3705,8 @@ export default function LeagueDetailPage() {
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
-                                                                        justifyContent: 'center'
+                                                                        justifyContent: 'center',
+                                                                        minWidth: 0
                                                                     }}>
                                                                         <Typography sx={{
                                                                             fontFamily: '"Oswald", sans-serif !important',
@@ -3661,6 +3734,7 @@ export default function LeagueDetailPage() {
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
+                                                                        minWidth: 0,
                                                                         // width: '30%'
                                                                     }}>
                                                                         <Image
@@ -3684,7 +3758,8 @@ export default function LeagueDetailPage() {
 
                                                                 {/* Bottom Info Panel */}
                                                                 <Box sx={{
-                                                                    display: 'flex'
+                                                                    display: 'flex',
+                                                                    flexDirection: 'row'
                                                                 }}>
                                                                     {/* Left Info Column */}
                                                                     <Box sx={{
@@ -3698,7 +3773,7 @@ export default function LeagueDetailPage() {
                                                                         // pr: 2
                                                                     }}>
                                                                         {/* Date Row */}
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', overflow: 'hidden' }}>
                                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
                                                                                 <Image src={CalendarImg} alt="Date" width={16} height={16} />
                                                                                 <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
@@ -3739,7 +3814,7 @@ export default function LeagueDetailPage() {
                                                                         {match.location && (
                                                                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                                                                                 <Box sx={{ mt: 0.3 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                                                <Typography sx={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.3 }}>
+                                                                                <Typography sx={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.3, wordBreak: 'break-word' }}>
                                                                                     {formatLocationForCard(match.location)}
                                                                                 </Typography>
                                                                             </Box>
@@ -3748,7 +3823,7 @@ export default function LeagueDetailPage() {
                                                                         {/* Availability Buttons */}
                                                                         {isMember && (
                                                                             <Box sx={{
-                                                                                display: 'flex', gap: 2, mb: 0
+                                                                                display: 'flex', gap: 1, mb: 0, flexWrap: 'nowrap'
                                                                                 //  mt: 1
                                                                             }}>
                                                                                 <Button
@@ -3765,8 +3840,8 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         fontWeight: 500,
                                                                                         fontSize: '0.9rem',
-                                                                                        py: 0.1,
-                                                                                        px: 1.5,
+                                                                                        py: 0.35,
+                                                                                        px: 1.25,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
                                                                                         boxShadow: isUserAvailable ? '0 0 12px 3px rgba(0, 175, 128, 0.7), 0 0 20px rgba(0, 255, 180, 0.4)' : 'none',
@@ -3791,8 +3866,8 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         fontWeight: 500,
                                                                                         fontSize: '0.9rem',
-                                                                                        py: 0.1,
-                                                                                        px: 1.5,
+                                                                                        py: 0.35,
+                                                                                        px: 1.25,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
                                                                                         boxShadow: !isUserAvailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
@@ -3811,6 +3886,7 @@ export default function LeagueDetailPage() {
                                                                     <Box sx={{
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
+                                                                        borderTop: 'none',
                                                                         pl: 1,
                                                                         pr: 2,
                                                                         py: 1,
@@ -4037,13 +4113,15 @@ export default function LeagueDetailPage() {
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
                                                                     borderBottom: '2px solid #fff',
-                                                                    mt:-3.5
+                                                                    mt: -3.5,
+                                                                    gap: 0
                                                                 }}>
                                                                     {/* Home Team */}
                                                                     <Box sx={{
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
+                                                                        minWidth: 0,
                                                                     }}>
                                                                         <Image
                                                                             src={match.homeTeamImage || HomeTeamImage}
@@ -4068,9 +4146,10 @@ export default function LeagueDetailPage() {
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
                                                                         justifyContent: 'center',
-                                                                        mt:1
+                                                                        mt: 1,
+                                                                        minWidth: 0
                                                                     }}>
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 , mt:2}}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
                                                                             {/* Home Goals with label below */}
                                                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                                                 <Typography sx={{
@@ -4137,6 +4216,7 @@ export default function LeagueDetailPage() {
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
                                                                         alignItems: 'center',
+                                                                        minWidth: 0,
                                                                     }}>
                                                                         <Image
                                                                             src={match.awayTeamImage || AwayTeamImage}
@@ -4158,7 +4238,8 @@ export default function LeagueDetailPage() {
 
                                                                 {/* Bottom Info Panel */}
                                                                 <Box sx={{
-                                                                    display: 'flex'
+                                                                    display: 'flex',
+                                                                    flexDirection: 'row'
                                                                 }}>
                                                                     {/* Left Info Column */}
                                                                     <Box sx={{
@@ -4171,7 +4252,7 @@ export default function LeagueDetailPage() {
                                                                     }}>
                                                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                                             {/* Date Row */}
-                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', overflow: 'hidden' }}>
                                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
                                                                                     <Image src={CalendarImg} alt="Date" width={16} height={16} />
                                                                                     <Typography sx={{ color: 'white', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
@@ -4236,11 +4317,12 @@ export default function LeagueDetailPage() {
 
                                                                         {/* Action Buttons */}
                                                                         <Box sx={{
-                                                                            display: 'flex',
-                                                                            justifyContent: 'center',
+                                                                            display: 'grid',
+                                                                            gridTemplateColumns: (isAdmin || isMember) ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))',
                                                                             alignItems: 'center',
                                                                             gap: 1,
-                                                                            mt: 0.5
+                                                                            mt: 0.5,
+                                                                            width: '100%'
                                                                         }}>
                                                                             {/* Add Stats Button */}
                                                                             {(isAdmin || isMember) && (() => {
@@ -4275,11 +4357,11 @@ export default function LeagueDetailPage() {
                                                                                             setMatchStatsOpen(true);
                                                                                         }
                                                                                     }}
-                                                                                    sx={{ cursor: 'pointer' }}
+                                                                                    sx={{ cursor: 'pointer', width: '100%' }}
                                                                                 >
                                                                                 <Button
                                                                                     size="small"
-                                                                                    startIcon={<Image src={ADDSTATS} alt="Add Stats" width={34} height={34} />}
+                                                                                    startIcon={<Image src={ADDSTATS} alt="Add Stats" width={22} height={22} />}
                                                                                     disabled={isDisabled && (isAdmin || !!isInMatch)}
                                                                                     sx={{
                                                                                         // backgroundColor: '#333',
@@ -4292,12 +4374,17 @@ export default function LeagueDetailPage() {
                                                                                         borderRadius: '50px',
                                                                                         border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                         whiteSpace: 'nowrap',
+                                                                                        width: '100%',
+                                                                                        minWidth: 0,
+                                                                                        justifyContent: 'center',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
                                                                                         '&:hover': { backgroundColor: '#444' },
                                                                                         '&.Mui-disabled': { color: 'white' },
-                                                                                        '& .MuiButton-startIcon': { mr: 0.4 }
+                                                                                        '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                     }}
                                                                                 >
-                                                                                   <span style={{ marginTop: '4px',  }}>Add Stats</span> 
+                                                                                   Add Stats
                                                                                 </Button>
                                                                                 </Box>
                                                                                 );
@@ -4311,7 +4398,7 @@ export default function LeagueDetailPage() {
                                                                                     setViewTeamMatch({ leagueId, matchId: match.id, matchNumber });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
-                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={34} height={34} />}
+                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={22} height={22} />}
                                                                                 sx={{
                                                                                     // backgroundColor: '#333',
                                                                                     color: 'white',
@@ -4322,19 +4409,23 @@ export default function LeagueDetailPage() {
                                                                                     borderRadius: '50px',
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                     whiteSpace: 'nowrap',
+                                                                                    width: '100%',
+                                                                                    minWidth: 0,
+                                                                                    justifyContent: 'center',
+                                                                                    overflow: 'hidden',
+                                                                                    textOverflow: 'ellipsis',
                                                                                     '&:hover': { backgroundColor: '#444' },
-                                                                                    '& .MuiButton-startIcon': { mr: 0.4 }
+                                                                                    '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                 }}
                                                                             >
-                                                                              
-                                                                                 <span style={{ marginTop: '4px',  }}> View Teams</span> 
+                                                                                View Teams
                                                                             </Button>
 
                                                                             {/* Results Button */}
                                                                             <Button
                                                                                 size="small"
                                                                                 onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
-                                                                                startIcon={<Image src={RESULTS} alt="Results" width={28} height={28} />}
+                                                                                startIcon={<Image src={RESULTS} alt="Results" width={22} height={22} />}
                                                                                 sx={{
                                                                                     // backgroundColor: '#333',
                                                                                     color: 'white',
@@ -4345,13 +4436,17 @@ export default function LeagueDetailPage() {
                                                                                     borderRadius: '50px',
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
                                                                                     whiteSpace: 'nowrap',
+                                                                                    width: '100%',
+                                                                                    minWidth: 0,
+                                                                                    justifyContent: 'center',
+                                                                                    overflow: 'hidden',
+                                                                                    textOverflow: 'ellipsis',
                                                                                     '&:hover': { backgroundColor: '#444' },
                                                                                     '&.Mui-disabled': { color: 'white' },
-                                                                                    '& .MuiButton-startIcon': { mr: 0.4 }
+                                                                                    '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                 }}
                                                                             >
-                                                                               <span style={{ marginTop: '4px',  }}>  Results</span>
-                                                                               
+                                                                                Results
                                                                             </Button>
                                                                         </Box>
                                                                     </Box>
@@ -4360,6 +4455,7 @@ export default function LeagueDetailPage() {
                                                                     <Box sx={{
                                                                         width: '95px',
                                                                         borderLeft: '2px solid #fff',
+                                                                        borderTop: 'none',
                                                                         p: 1,
                                                                         display: 'flex',
                                                                         flexDirection: 'column',
@@ -4685,8 +4781,29 @@ export default function LeagueDetailPage() {
                                             <h2 className="text-lg font-bold text-white">League Table</h2>
                                         </div> */}
 
-                                        <div className="w-full rounded-lg overflow-hidden league-table">
-                                            {/* Header Bar aligned to table grid */}
+                                        <Box
+                                            ref={tableScrollRef}
+                                            sx={{
+                                                width: '100%',
+                                                overflowX: 'auto',
+                                                overflowY: 'hidden',
+                                                WebkitOverflowScrolling: 'touch',
+                                                scrollbarWidth: 'thin',
+                                                '&::-webkit-scrollbar': {
+                                                    height: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    background: 'rgba(255,255,255,0.12)',
+                                                    borderRadius: '9999px',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    background: '#F97316',
+                                                    borderRadius: '9999px',
+                                                },
+                                            }}
+                                        >
+                                            <div className="min-w-[980px] rounded-lg overflow-hidden league-table">
+                                                {/* Header Bar aligned to table grid */}
                                             <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
                                                 <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
                                                     <span className="text-muted-foreground">Invites Players To</span>
@@ -4820,7 +4937,35 @@ export default function LeagueDetailPage() {
                                                         );
                                                     })}
                                             </div>
-                                        </div>
+                                            </div>
+                                        </Box>
+                                        {tableHasHorizontalOverflow && (
+                                            <Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 1, pb: 1.5 }}>
+                                                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', mb: 0.5 }}>
+                                                    Slide table left/right
+                                                </Typography>
+                                                <Slider
+                                                    value={tableScrollPercent}
+                                                    onChange={handleTableSliderChange}
+                                                    min={0}
+                                                    max={100}
+                                                    step={1}
+                                                    size="small"
+                                                    aria-label="Table horizontal scroll"
+                                                    sx={{
+                                                        color: '#F97316',
+                                                        px: 0.5,
+                                                        '& .MuiSlider-thumb': {
+                                                            width: 14,
+                                                            height: 14,
+                                                        },
+                                                        '& .MuiSlider-rail': {
+                                                            opacity: 0.35,
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
                                     </Card>
                                     {/* // ...existing code... */}
                                     {/* {league && (
@@ -5339,11 +5484,12 @@ export default function LeagueDetailPage() {
                             onClose={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
                             fullWidth
                             maxWidth="lg"
+                            fullScreen={isMobile}
                             PaperProps={{
                                 sx: {
                                     bgcolor: '#2b2b2b',
                                     backgroundImage: 'none',
-                                    borderRadius: 3,
+                                    borderRadius: { xs: 0, sm: 3 },
                                     maxHeight: '90vh',
                                     overflow: 'hidden',
                                     position: 'relative',
@@ -5368,7 +5514,7 @@ export default function LeagueDetailPage() {
             </Container>
 
 
-            <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
+            <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ fontWeight: 'bold' }}>
                     {matchDeleteChecking ? 'Checking match...' : 'Archive Match'}
                 </DialogTitle>
@@ -5384,8 +5530,8 @@ export default function LeagueDetailPage() {
                         </Typography>
                     )}
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}>
+                <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
+                    <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                         Cancel
                     </Button>
                     <Button
@@ -5393,6 +5539,7 @@ export default function LeagueDetailPage() {
                         variant="contained"
                         onClick={handleConfirmDeleteMatch}
                         disabled={matchDeleteChecking}
+                        sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
                         Archive Match
                     </Button>
@@ -5420,7 +5567,7 @@ export default function LeagueDetailPage() {
                         </Alert>
                     )}
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
                     <Button
                         variant="contained"
                         onClick={() => {
@@ -5429,6 +5576,7 @@ export default function LeagueDetailPage() {
                             setArchivedActionOpen(false);
                         }}
                         startIcon={<Undo2 size={16} />}
+                        sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
                         Undo
                     </Button>
@@ -5453,6 +5601,7 @@ export default function LeagueDetailPage() {
                                     tryHardDeleteFromDialog();
                                 }}
                                 startIcon={<Trash2 size={16} />}
+                                sx={{ width: { xs: '100%', sm: 'auto' } }}
                             >
                                 {archivedActionChecking ? 'Checking…' : 'Permanently Delete'}
                             </Button>
@@ -5462,7 +5611,13 @@ export default function LeagueDetailPage() {
                 </DialogActions>
             </Dialog>
             {/* // ...existing code... */}
-            <Dialog open={viewTeamOpen} onClose={() => setViewTeamOpen(false)} maxWidth={false} PaperProps={{ sx: { bgcolor: '#2b2b2b', width: '65%', maxWidth: '65%' } }}>
+            <Dialog
+                open={viewTeamOpen}
+                onClose={() => setViewTeamOpen(false)}
+                maxWidth={false}
+                fullScreen={isMobile}
+                PaperProps={{ sx: { bgcolor: '#2b2b2b', width: { xs: '100%', sm: '90%', md: '65%' }, maxWidth: { xs: '100%', sm: '90%', md: '65%' }, borderRadius: { xs: 0, sm: 2 } } }}
+            >
                 <DialogTitle sx={{
                     fontWeight: 'bold',
                     display: 'flex',
@@ -5473,10 +5628,10 @@ export default function LeagueDetailPage() {
                     py: 0.5,
                     minHeight: 0,
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>TEAMS</span>
-                        <span style={{ fontSize: '1.9rem' }}>&#9917;</span>
-                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.8rem' }}>MATCH {viewTeamMatch?.matchNumber ?? '-'}</span>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>TEAMS</span>
+                        <span style={{ fontSize: isMobile ? '1.1rem' : '1.9rem' }}>&#9917;</span>
+                        <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>MATCH {viewTeamMatch?.matchNumber ?? '-'}</span>
                     </Box>
                     <IconButton
                         onClick={() => setViewTeamOpen(false)}
@@ -5727,12 +5882,14 @@ export default function LeagueDetailPage() {
                 }}
                 maxWidth="lg"
                 fullWidth
+                fullScreen={isMobile}
                 PaperProps={{
                     sx: {
                         bgcolor: '#0a0a0a',
                         backgroundImage: 'none',
-                        width: '85%',
+                        width: { xs: '100%', md: '85%' },
                         maxHeight: '90vh',
+                        borderRadius: { xs: 0, sm: 2 },
                     }
                 }}
             >
@@ -5753,3 +5910,4 @@ export default function LeagueDetailPage() {
         </Box>
     );
 }
+
