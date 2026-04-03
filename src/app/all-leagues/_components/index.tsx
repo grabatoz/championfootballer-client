@@ -696,6 +696,8 @@ interface LeagueSettingsDialogProps {
 }
 
 function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged, onArchive, onUnarchive }: LeagueSettingsDialogProps) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [name, setName] = useState('')
   const [adminId, setAdminId] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -958,11 +960,12 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       onClose={onClose}
       fullWidth
       maxWidth="md"
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
           bgcolor: 'rgba(15,15,15,0.92)',
           color: '#E5E7EB',
-          borderRadius: 3,
+          borderRadius: isMobile ? 0 : 3,
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(10px)',
           boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
@@ -1332,8 +1335,17 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      <DialogActions
+        sx={{
+          p: { xs: 2, sm: 3 },
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.25,
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', md: 'auto' } }}>
           {currentUserId && (
             <Button
               variant="outlined"
@@ -1364,17 +1376,37 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 }
                 try { onClose() } catch { }
               }}
-              sx={{ borderColor: 'rgba(229,106,22,0.6)', color: '#e56a16', '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' } }}
+              sx={{
+                borderColor: 'rgba(229,106,22,0.6)',
+                color: '#e56a16',
+                width: { xs: '100%', md: 'auto' },
+                minHeight: { xs: 42, md: 'auto' },
+                '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' }
+              }}
             >
               Leave League
             </Button>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            display: { xs: 'grid', md: 'flex' },
+            gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'none' },
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
-            sx={{ borderColor: 'rgba(3,136,227,0.6)', color: '#0388E3', '&:hover': { borderColor: '#0388E3', bgcolor: 'rgba(3,136,227,0.08)' } }}
+            sx={{
+              borderColor: 'rgba(3,136,227,0.6)',
+              color: '#0388E3',
+              width: { xs: '100%', md: 'auto' },
+              minHeight: { xs: 42, md: 'auto' },
+              '&:hover': { borderColor: '#0388E3', bgcolor: 'rgba(3,136,227,0.08)' }
+            }}
           >
             Archived Matches
           </Button>
@@ -1388,6 +1420,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 }}
                 sx={{
                   bgcolor: '#27ab83',
+                  width: { xs: '100%', md: 'auto' },
+                  minHeight: { xs: 42, md: 'auto' },
                   '&:hover': { bgcolor: '#1e8463' },
                 }}
               >
@@ -1404,6 +1438,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 }}
                 sx={{
                   background: '#d32f2f',
+                  width: { xs: '100%', md: 'auto' },
+                  minHeight: { xs: 42, md: 'auto' },
                   '&:hover': { background: '#ff0000' },
                 }}
               >
@@ -1411,10 +1447,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               </Button>
             )
           )}
-          <Button onClick={handleUpdate} variant="contained" sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}>
+          <Button
+            onClick={handleUpdate}
+            variant="contained"
+            sx={{ bgcolor: '#27ab83', width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' }, '&:hover': { bgcolor: '#1e8463' } }}
+          >
             Update League
           </Button>
-          <Button variant="contained" color="error" onClick={onDelete}>
+          <Button variant="contained" color="error" onClick={onDelete} sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}>
             Delete League
           </Button>
         </Box>
@@ -1457,7 +1497,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                         px: 0,
                         py: 1.5,
                         display: 'flex',
-                        alignItems: 'center',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' },
                         justifyContent: 'space-between',
                         gap: 1.5,
                       }}
@@ -1470,13 +1511,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           {m.date ? new Date(m.date).toLocaleDateString() : 'No date'}
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                         <Button
                           size="small"
                           variant="contained"
                           disabled={loadingThis}
                           onClick={() => handleRestoreArchivedMatch(m.id)}
-                          sx={{ bgcolor: '#27ab83', '&:hover': { bgcolor: '#1e8463' } }}
+                          sx={{ bgcolor: '#27ab83', width: { xs: '100%', sm: 'auto' }, '&:hover': { bgcolor: '#1e8463' } }}
                         >
                           Restore
                         </Button>
@@ -1486,6 +1527,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           color="error"
                           disabled={loadingThis}
                           onClick={() => handlePermanentDeleteArchivedMatch(m.id)}
+                          sx={{ width: { xs: '100%', sm: 'auto' } }}
                         >
                           Delete Forever
                         </Button>
