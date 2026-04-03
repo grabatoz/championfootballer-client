@@ -755,7 +755,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           minWidth: 0,
           maxWidth: '100%',
           boxSizing: 'border-box',
-          fontSize: { xs: '1rem', sm: '1.1rem', md: '15px' },
+          fontSize: { xs: '0.95rem', sm: '1.05rem', md: '15px' },
           fontWeight: 'normal',
           textTransform: 'none',
           display: 'flex',
@@ -776,8 +776,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               setShowDropdown(true);
             }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
             {isFetching ? (
               <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
             ) : (
@@ -786,7 +786,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: '19px',
+                  fontSize: { xs: '16px', sm: '18px', md: '19px' },
                   fontWeight: 600,
                   lineHeight: '100%',
                   letterSpacing: '0%',
@@ -845,8 +845,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               color: 'white',
               cursor: 'pointer',
               borderRadius: '50%',
-              width: 40,
-              height: 40,
+              width: { xs: 34, md: 40 },
+              height: { xs: 34, md: 40 },
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -884,9 +884,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         <Box
           sx={{
             position: 'absolute',
-            top: selectedLeague?.userRole === 'ADMIN'
-              ? { xs: 'calc(100% - 2px)', md: 'calc(100% - 66px)' }
-              : 'calc(100% - 2px)',
+            top: 'calc(100% - 2px)',
             left: 0,
             width: '100%',
             maxWidth: '100%',
@@ -1014,31 +1012,30 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         disabled={isCreatingSeason || isFetching}
         onClick={handleCreateNewSeason}
            variant="contained"
-                  fullWidth
-                  startIcon={<span style={{ fontSize: '22px'}}>+</span>}
-                  sx={{
-                    bgcolor: '#7f7f7f',
-                    color: 'white',
-                    fontWeight: 600,
-                    mb: 1,
-                    mt: 1,
-                    
-                    borderRadius: 2,
-                    '&:hover': { bgcolor: '#686868' },
-                    width: '100%',
-                    maxWidth: 290,
-                    mx: 'auto',
-                    display: { xs: 'none', sm: 'none', md: 'flex' },
-                    justifyContent: 'space-between',
-                    px: 3,
-                    pr: 10,
-                    fontSize: '19px',
-                    minHeight: 48,
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
-                    lineHeight: '100%',
-                    letterSpacing: '0%',
-                    textTransform: 'capitalize',
-                  }}
+                   fullWidth
+                   startIcon={<span style={{ fontSize: '20px'}}>+</span>}
+                   sx={{
+                     bgcolor: '#7f7f7f',
+                     color: 'white',
+                     fontWeight: 600,
+                     mb: 1,
+                     mt: 1,
+                     
+                     borderRadius: 2,
+                     '&:hover': { bgcolor: '#686868' },
+                     width: '100%',
+                     maxWidth: { xs: '100%', md: 290 },
+                     mx: 'auto',
+                     display: 'flex',
+                     justifyContent: 'center',
+                     px: { xs: 2, md: 3 },
+                     fontSize: { xs: '15px', sm: '16px', md: '19px' },
+                     minHeight: { xs: 42, md: 48 },
+                     fontFamily: '"Woodford Bourne Pro", sans-serif',
+                     lineHeight: '100%',
+                     letterSpacing: '0%',
+                     textTransform: 'capitalize',
+                   }}
         >
             {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
         </Button>
@@ -1589,15 +1586,17 @@ export default function PlayerDashboard() {
         elevation={0}
         sx={{
           backgroundImage: `url(${dash.src})`,
-          backgroundSize: '100% 100%',
+          backgroundSize: { xs: 'cover', md: '100% 100%' },
+          backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
           borderRadius: 0,
           overflow: 'visible',
           p: { xs: 0, md: 3 },
           pt: { xs: 2, md: 4 },
           mb: 0,
-          minHeight: '143vh',
+          minHeight: '100vh',
           width: '100%',
+          overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-start',
@@ -1613,6 +1612,8 @@ export default function PlayerDashboard() {
           flexDirection: 'column', 
           alignItems: 'center', 
           mb: { xs: 2.5, md: 3 },
+          px: { xs: 1.5, sm: 2, md: 0 },
+          boxSizing: 'border-box',
           textAlign: 'center',
           color: 'white',
           zIndex: 10,
@@ -1643,18 +1644,18 @@ export default function PlayerDashboard() {
             {/* Row 1 */}
             <Box sx={{ 
               display: 'flex', 
-              flexWrap: 'nowrap', 
+              flexWrap: { xs: 'wrap', md: 'nowrap' }, 
               justifyContent: 'center', 
-              columnGap: { xs: 2, md: 3 },
-              rowGap: 0,
+              columnGap: { xs: 1.25, sm: 2, md: 3 },
+              rowGap: { xs: 0.4, md: 0 },
               fontFamily: '"Oswald", sans-serif',
-              fontSize: { xs: '12px', sm: '18px', md: '28px' },
+              fontSize: { xs: '12px', sm: '16px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',
-              lineHeight: '100%',
+              lineHeight: { xs: 1.15, md: '100%' },
               letterSpacing: '0%',
               textAlign: 'center',
-              whiteSpace: 'nowrap',
+              whiteSpace: { xs: 'normal', md: 'nowrap' },
             }}>
               <Box component="span" sx={{ color: '#ffff99' }}>
                 {statsLoading ? '...' : userStats.matchesPlayed} MATCH{userStats.matchesPlayed !== 1 ? 'ES' : ''} PLAYED
@@ -1670,18 +1671,18 @@ export default function PlayerDashboard() {
             {/* Row 2 */}
             <Box sx={{ 
               display: 'flex', 
-              flexWrap: 'nowrap', 
+              flexWrap: { xs: 'wrap', md: 'nowrap' }, 
               justifyContent: 'center', 
-              columnGap: { xs: 2, md: 3 },
-              rowGap: 0,
+              columnGap: { xs: 1.25, sm: 2, md: 3 },
+              rowGap: { xs: 0.4, md: 0 },
               fontFamily: '"Oswald", sans-serif',
-              fontSize: { xs: '12px', sm: '18px', md: '28px' },
+              fontSize: { xs: '12px', sm: '16px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',
-              lineHeight: '100%',
+              lineHeight: { xs: 1.15, md: '100%' },
               letterSpacing: '0%',
               textAlign: 'center',
-              whiteSpace: 'nowrap',
+              whiteSpace: { xs: 'normal', md: 'nowrap' },
             }}>
               <Box component="span" sx={{ color: '#ff9933' }}>
                 {statsLoading ? '...' : userStats.assists} ASSIST{userStats.assists !== 1 ? 'S' : ''}
@@ -1699,19 +1700,26 @@ export default function PlayerDashboard() {
         <Box sx={{
           display: 'flex',
           alignItems: { xs: 'stretch', md: 'stretch' },
+          gap: { xs: 1.25, sm: 1.5, md: 0 },
           // gap: { xs: 2, md: 1 },
           flexDirection: { xs: 'column', md: 'row' },
           // backgroundColor: 'black',
-          width: { xs: '100%', md: '620px' },
+          width: '100%',
+          maxWidth: { xs: '100%', sm: '620px' },
+          px: { xs: 1.25, sm: 2, md: 0 },
+          boxSizing: 'border-box',
           height: { xs: 'auto', md: '416px' },
-          overflow: { xs: 'visible', md: 'hidden' },
+          pb: { xs: 0.75, sm: 0.5, md: 0 },
+          overflow: 'visible',
           position: 'relative',
         }}>
           {/* Left Div - Player Card */}
           <Box sx={{
             flex: { xs: 'none', md: '0 0 300px' },
             width: { xs: '100%', md: '300px' },
-            height: { xs: '410px', sm: '410px', md: 'auto' },
+            maxWidth: { xs: 300, sm: 340, md: 300 },
+            height: { xs: '420px', sm: '430px', md: 'auto' },
+            minHeight: { xs: '420px', sm: '430px', md: 0 },
             display: 'flex',
             justifyContent: { xs: 'center', md: 'center' },
             mb: { xs: 2, md: 0 },
@@ -1745,8 +1753,9 @@ export default function PlayerDashboard() {
           <Box
             sx={{
               flex: { xs: 'none', md: '0 0 310px' },
-              maxWidth: { xs: '310px', md: '310px' },
-              width: { xs: '94%', sm: '96%', md: '310px' },
+              maxWidth: { xs: '100%', md: '310px' },
+              width: { xs: '100%', sm: '100%', md: '310px' },
+              minWidth: 0,
               display: 'flex',
               flexDirection: 'column',
               gap: 1,
@@ -1764,14 +1773,14 @@ export default function PlayerDashboard() {
             <Box
               sx={{
                 backgroundColor: '#fff',
-                p: { xs: 3, sm: 2, md: 1.6 },
+                p: { xs: 2, sm: 2, md: 1.6 },
                 mt: { xs: 0, md: 3 },
                 borderRadius: { xs: '20px', md: '12px' },
                 width: '100%',
                 minHeight: 'auto'
               }}
             >
-              <Box sx={{ display: 'inline-flex', gap: 1 }}>
+              <Box sx={{ display: 'inline-flex', gap: 1, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <Typography variant="h5" gutterBottom sx={{
                   fontWeight: '550',
                   fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' },
@@ -1792,7 +1801,7 @@ export default function PlayerDashboard() {
                   fontSize: { xs: '0.75rem', sm: '0.8rem' },
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
                   fontWeight: 400,
-                  whiteSpace: 'nowrap',
+                  whiteSpace: { xs: 'normal', md: 'nowrap' },
                 }}>
                   Your Current League In Which You Stand
                 </Typography>
@@ -1851,12 +1860,12 @@ export default function PlayerDashboard() {
                     borderRadius: 2,
                     '&:hover': { bgcolor: '#0388E3', boxShadow: '0 2px 8px rgba(25,118,210,0.2)' },
                     width: '100%',
-                    maxWidth: 290,
+                    maxWidth: { xs: '100%', md: 290 },
                     mx: 'auto',
                     display: 'flex',
-                    justifyContent: 'space-center',
-                    px: 3,
-                    fontSize: { xs: '16px', md: '19px' },
+                    justifyContent: 'center',
+                    px: { xs: 2.5, md: 3 },
+                    fontSize: { xs: '15px', md: '19px' },
                     minHeight: { xs: 42, md: 48 },
                     position: 'relative',
                     fontFamily: '"Woodford Bourne Pro", sans-serif',
@@ -1865,7 +1874,17 @@ export default function PlayerDashboard() {
                     textTransform: 'capitalize',
                   }}
                 >
-                  <span style={{ position: 'absolute', left: '22px', fontSize: '24px' }}>+</span>
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      left: { xs: 12, md: 16 },
+                      fontSize: { xs: '20px', md: '24px' },
+                      lineHeight: 1,
+                    }}
+                  >
+                    +
+                  </Box>
                   Create New League
                 </Button>
 
@@ -1873,10 +1892,12 @@ export default function PlayerDashboard() {
                 <Box sx={{
                   mx: 'auto',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: { xs: 1, sm: 0 },
                   justifyContent: 'center',
                   width: '100%',
-                  maxWidth: 290,
+                  maxWidth: { xs: '100%', md: 290 },
                   overflow: 'hidden'
                 }}>
                   <TextField
@@ -1887,18 +1908,19 @@ export default function PlayerDashboard() {
                     variant="outlined"
                     sx={{
                       backgroundColor: '#DEDCDC',
-                      borderRadius: '12px 0 0 12px',
+                      borderRadius: { xs: '12px', sm: '12px 0 0 12px' },
                       flex: 1,
-                      minWidth: 0,
+                      width: '100%',
+                      minWidth: { xs: '100%', sm: 0 },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': { border: 'none' },
                         '&:hover fieldset': { border: 'none' },
                         '&.Mui-focused fieldset': { border: 'none' }
                       },
                       '& .MuiInputBase-input': {
-                        height: '42px',
-                        padding: '0 12px',
-                        fontSize: '14px'
+                        height: { xs: 38, md: 42 },
+                        padding: { xs: '0 10px', md: '0 12px' },
+                        fontSize: { xs: '12px', md: '14px' }
                       }
                     }}
                   />
@@ -1906,12 +1928,13 @@ export default function PlayerDashboard() {
                     variant="contained"
                     sx={{ 
                       background: '#00A77F', 
-                      borderRadius: '0 12px 12px 0', 
+                      borderRadius: { xs: '12px', sm: '0 12px 12px 0' }, 
                       '&:hover': { background: '#00A77F' }, 
                       py: 0, 
-                      minWidth: 120, 
-                      height: 42, 
-                      fontSize: '14px', 
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 0, sm: 120 }, 
+                      height: { xs: 40, md: 42 }, 
+                      fontSize: { xs: '11px', sm: '12px', md: '14px' }, 
                       flexShrink: 0,
                       fontFamily: '"Woodford Bourne Pro", sans-serif',
                       fontWeight: 600,
@@ -1921,9 +1944,11 @@ export default function PlayerDashboard() {
                     }}
                     onClick={handleJoinLeague}
                     startIcon={
-                      <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-                        <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
-                      </svg>
+                      <Box sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>
+                        <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
+                          <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" />
+                        </svg>
+                      </Box>
                     }
                   >
                     Join League
@@ -1947,15 +1972,17 @@ export default function PlayerDashboard() {
                 fontWeight: 600,
                 letterSpacing: '0%',
                 lineHeight: '100%',
-                fontSize: '19px',
+                fontSize: { xs: '14px', sm: '16px', md: '19px' },
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
                 justifyContent: 'center',
+                px: { xs: 1.5, md: 2 },
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
                 boxShadow: '0 8px 24px -6px rgba(0,78,95,0.55)',
                 overflow: 'hidden',
-                maxWidth: 310,
-                height: 45,
+                maxWidth: { xs: '100%', md: 310 },
+                height: { xs: 42, md: 45 },
                 mx: 'auto',
                 fontFamily: '"Woodford Bourne Pro", sans-serif',
                 '&:before': {
