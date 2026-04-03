@@ -3484,7 +3484,27 @@ export default function LeagueDetailPage() {
                                             borderRadius: '3px',
                                         },
                                     }} className="text-white">
-                                        <div className="w-full rounded-lg overflow-hidden league-table">
+                                        <Box
+                                            sx={{
+                                                width: '100%',
+                                                overflowX: 'auto',
+                                                overflowY: 'hidden',
+                                                WebkitOverflowScrolling: 'touch',
+                                                scrollbarWidth: 'thin',
+                                                '&::-webkit-scrollbar': {
+                                                    height: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    background: 'rgba(255,255,255,0.12)',
+                                                    borderRadius: '9999px',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    background: '#F97316',
+                                                    borderRadius: '9999px',
+                                                },
+                                            }}
+                                        >
+                                            <div className="min-w-[760px] rounded-lg overflow-hidden league-table">
                                             {/* Table Header */}
                                             <div className="grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-6 py-4 bg-[#2b2b2b] border-b border-[#444] text-white">
                                                 <div className="text-left flex items-center gap-2 font-semibold text-sm uppercase tracking-wide">ALL POSITIONS <ChevronDown size={14} /></div>
@@ -3550,7 +3570,8 @@ export default function LeagueDetailPage() {
                                                         );
                                                     })}
                                             </div>
-                                        </div>
+                                            </div>
+                                        </Box>
                                     </Card>
                                 </div>
                             )}
