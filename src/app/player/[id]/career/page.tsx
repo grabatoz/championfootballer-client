@@ -30,7 +30,8 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
 import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '@/lib/useAuth';
 import CloseButton from '@/Components/CloseButton';
 // import api from '@/lib/api'; // Adjust the import based on your project structure
@@ -398,6 +399,8 @@ export default function CareerPage() {
   const searchParams = useSearchParams();
   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // ...existing code...
 
   // Get league and year from URL params (passed from player stats page)
@@ -1390,17 +1393,17 @@ export default function CareerPage() {
           <Box sx={{
             mt: 0,
             mb: 4,
-            width: '99.4vw',
+            width: '100vw',
+            maxWidth: '100vw',
             position: 'relative',
             left: '50%',
-            right: '50%',
-            marginLeft: '-50vw',
-            marginRight: '-50vw',
+            transform: 'translateX(-50%)',
+            overflow: 'hidden',
             background: '#0e0e0e',
           }}>
             <Paper sx={{
               px: 0,
-              py: { xs: 4, md: 1.1 },
+              py: { xs: 2.5, md: 1.1 },
               background: '#0e0e0e',
               color: 'white',
               boxShadow: 'none',
@@ -1411,6 +1414,7 @@ export default function CareerPage() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                px: { xs: 1.5, sm: 2.5, md: 0 },
                 // pt: { xs: 2, md: 2 },
                 pb: 2,
               }}>
@@ -1422,11 +1426,14 @@ export default function CareerPage() {
                     fontWeight: 400, 
                     fontStyle: 'normal',
                     color: '#fff', 
-                    fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3.3rem' }, 
+                    fontSize: { xs: '1.12rem', sm: '2rem', md: '3.3rem' }, 
                     textTransform: 'uppercase',
                     letterSpacing: '0rem',
-                    lineHeight: '100%',
+                    lineHeight: { xs: 1.12, md: 1 },
                     textAlign: 'center',
+                    maxWidth: { xs: '100%', sm: '96%', md: '100%' },
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
                   }}
                 >
                   {playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD'}
@@ -1434,38 +1441,51 @@ export default function CareerPage() {
               </Box>
 
               {/* Orange divider under header */}
-              <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 6.3 }} />
+              <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: { xs: 2.5, sm: 4, md: 6.3 } }} />
 
               {/* Filters Section */}
               <Box sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
+                flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'flex-end',
+                justifyContent: { xs: 'center', md: 'flex-end' },
                 gap: { xs: 2, md: 2 },
-                px: { xs: 3, md: 7 },
+                px: { xs: 1, md: 7 },
                 py: { xs: 1.5, md: 1.5 },
                 maxWidth: '1200px',
                 mx: 'auto',
               }}>
                 {/* Filter Buttons */}
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 0.5,
+                    flexWrap: { xs: 'nowrap', md: 'wrap' },
+                    justifyContent: 'center',
+                    width: { xs: '100%', md: 'auto' },
+                    overflowX: { xs: 'auto', md: 'visible' },
+                    '&::-webkit-scrollbar': { display: 'none' },
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                  }}
+                >
                   {/* Year Filter */}
                   <select
                     value={filters.year || 'all'}
                     onChange={(e) => dispatch(setYearFilter(e.target.value))}
                     style={{
-                      height: '39px',
-                      padding: '0 36px 0 12px',
-                      marginLeft: '4px',
+                      height: isMobile ? '34px' : '39px',
+                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
+                      marginLeft: isMobile ? '0px' : '4px',
                       backgroundColor: 'transparent',
                       color: '#fff',
                       border: '1.5px solid #e56a16',
                       borderRadius: '24px',
-                      fontSize: '17px',
+                      fontSize: isMobile ? '11px' : '17px',
                       cursor: 'pointer',
                       outline: 'none',
-                      minWidth: '100px',
+                      minWidth: isMobile ? '0' : '100px',
+                      width: isMobile ? '24%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1485,17 +1505,18 @@ export default function CareerPage() {
                     value={filters.leagueId || 'all'}
                     onChange={(e) => dispatch(setLeagueFilter(e.target.value))}
                     style={{
-                      height: '39px',
-                      padding: '0 36px 0 12px',
-                      marginLeft: '4px',
+                      height: isMobile ? '34px' : '39px',
+                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
+                      marginLeft: isMobile ? '0px' : '4px',
                       backgroundColor: 'transparent',
                       color: '#fff',
                       border: '1.5px solid #e56a16',
                       borderRadius: '24px',
-                      fontSize: '17px',
+                      fontSize: isMobile ? '11px' : '17px',
                       cursor: 'pointer',
                       outline: 'none',
-                      minWidth: '110px',
+                      minWidth: isMobile ? '0' : '110px',
+                      width: isMobile ? '24%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1517,17 +1538,18 @@ export default function CareerPage() {
                     value={seasonFilter}
                     onChange={(e) => setSeasonFilter(e.target.value)}
                     style={{
-                      height: '39px',
-                      padding: '0 36px 0 12px',
-                      marginLeft: '4px',
+                      height: isMobile ? '34px' : '39px',
+                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
+                      marginLeft: isMobile ? '0px' : '4px',
                       backgroundColor: 'transparent',
                       color: '#fff',
                       border: '1.5px solid #e56a16',
                       borderRadius: '24px',
-                      fontSize: '17px',
+                      fontSize: isMobile ? '11px' : '17px',
                       cursor: 'pointer',
                       outline: 'none',
-                      minWidth: '110px',
+                      minWidth: isMobile ? '0' : '110px',
+                      width: isMobile ? '24%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1548,16 +1570,18 @@ export default function CareerPage() {
                   <button
                     onClick={handleClearFilters}
                     style={{
-                      height: '39px',
-                      padding: '0 17px',
+                      height: isMobile ? '34px' : '39px',
+                      padding: isMobile ? '0 8px' : '0 17px',
                       backgroundColor: 'transparent',
                       color: '#fff',
                       border: '2px solid rgba(255,255,255,0.5)',
                       borderRadius: '24px',
-                      fontSize: '17px',
+                      fontSize: isMobile ? '11px' : '17px',
                       cursor: 'pointer',
                       outline: 'none',
                       fontWeight: 600,
+                      minWidth: isMobile ? '0' : 'auto',
+                      width: isMobile ? '24%' : 'auto',
                     }}
                   >
                     Clear
@@ -2080,14 +2104,14 @@ export default function CareerPage() {
                  
                   borderRadius: '8px 8px 0 0'
                 }}>
-                  <Typography sx={{ 
-                    fontSize: 16, 
-                    fontWeight: 'bold', 
-                    color: themeColors.text,
-                    pl: 5,
-                    pt:1,
-                    textTransform: 'uppercase'
-                  }}>
+	                  <Typography sx={{ 
+	                    fontSize: { xs: 14, md: 16 }, 
+	                    fontWeight: 'bold', 
+	                    color: themeColors.text,
+	                    pl: { xs: 1.5, md: 5 },
+	                    pt:1,
+	                    textTransform: 'uppercase'
+	                  }}>
                     IMPACT
                   </Typography>
                 </Box>
@@ -2097,22 +2121,22 @@ export default function CareerPage() {
                     {/* Tables Container */}
                     <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
                       {/* First Table - Expected Probabilities */}
-                      <Table
-                        size="small"
-                        sx={{
-                          mb: 2,
-                          width: '100%',
-                          tableLayout: 'fixed',
-                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
-                        }}
-                      >
-                        <TableHead>
-                          <TableRow sx={{ backgroundColor: '#202124' }}>
-                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected Per Match</TableCell>
-                          </TableRow>
-                        </TableHead>
+	                      <Table
+	                        size="small"
+	                        sx={{
+	                          mb: 2,
+	                          width: '100%',
+	                          tableLayout: 'fixed',
+	                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
+	                        }}
+	                      >
+	                        <TableHead>
+	                          <TableRow sx={{ backgroundColor: '#202124' }}>
+	                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+	                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+	                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Expected Per Match'}</TableCell>
+	                          </TableRow>
+	                        </TableHead>
                         <TableBody>
                           {(() => {
                             const current = yourStats;
@@ -2151,21 +2175,21 @@ export default function CareerPage() {
                       </Table>
 
                       {/* Second Table - Actual Stats */}
-                      <Table
-                        size="small"
-                        sx={{
-                          width: '100%',
-                          tableLayout: 'fixed',
-                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
-                        }}
-                      >
-                        <TableHead>
-                          <TableRow sx={{ backgroundColor: '#202124' }}>
-                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
-                          </TableRow>
-                        </TableHead>
+	                      <Table
+	                        size="small"
+	                        sx={{
+	                          width: '100%',
+	                          tableLayout: 'fixed',
+	                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
+	                        }}
+	                      >
+	                        <TableHead>
+	                          <TableRow sx={{ backgroundColor: '#202124' }}>
+	                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+	                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+	                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Avg' : 'From League Average'}</TableCell>
+	                          </TableRow>
+	                        </TableHead>
                         <TableBody>
                           {(() => {
                             const current = yourStats;
@@ -2250,7 +2274,7 @@ export default function CareerPage() {
                     fontSize: 14, 
                     fontWeight: 'bold', 
                     color: themeColors.text,
-                    pl: 5,
+                    pl: { xs: 1.5, md: 5 },
                     pt: 1,
                     textTransform: 'uppercase'
                   }}>
@@ -2266,14 +2290,14 @@ export default function CareerPage() {
                         sx={{
                           width: '100%',
                           tableLayout: 'fixed',
-                          '& .MuiTableCell-root:first-of-type': { pl: 5 },
+                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
                         }}
                       >
                         <TableHead>
                           <TableRow sx={{ backgroundColor: '#202124' }}>
-                            <TableCell sx={{ width: '55%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Your Stats</TableCell>
-                            <TableCell align="center" sx={{ width: '22.5%', fontSize: 11, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>From League Average</TableCell>
+                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Avg' : 'From League Average'}</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -2285,11 +2309,11 @@ export default function CareerPage() {
                             const up = pctDiff >= 0;
                             return (
                               <TableRow key={s.metric}>
-                                <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
-                                <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
+                                <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
+                                <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
                                 <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                    <Typography sx={{ fontSize: 11, color: up ? themeColors.success : themeColors.danger }}>
+                                    <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: up ? themeColors.success : themeColors.danger }}>
                                       {diff}
                                     </Typography>
                                     {up ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />}
@@ -2301,7 +2325,7 @@ export default function CareerPage() {
                         </TableBody>
                       </Table>
                       {topStrengthNote && (
-                        <Typography sx={{ fontSize: 11, mt: 1.5, pl: 5, color: themeColors.textDim }}>
+                        <Typography sx={{ fontSize: 11, mt: 1.5, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
                           {topStrengthNote}
                         </Typography>
                       )}
@@ -2323,7 +2347,7 @@ export default function CareerPage() {
                     fontSize: 14, 
                     fontWeight: 'bold', 
                     color: themeColors.text,
-                    pl: 5,
+                    pl: { xs: 1.5, md: 5 },
                     pt: 1,
                     textTransform: 'uppercase'
                   }}>
@@ -2332,7 +2356,7 @@ export default function CareerPage() {
                 </Box>
 
                 <Box sx={{ p: 2 }}>
-                  <Typography sx={{ fontSize: 12, pl: 5, color: themeColors.textDim }}>
+                  <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
                     {focusSuggestion}
                   </Typography>
                 </Box>
@@ -2345,8 +2369,10 @@ export default function CareerPage() {
                   fontWeight: 'bold', 
                   mb: 1, 
                   display: 'flex', 
+                  flexWrap: 'wrap',
                   alignItems: 'center', 
                   gap: 1, 
+                  lineHeight: 1.45,
                   color: themeColors.text 
                 }}>
                   You Play Best With
@@ -2371,8 +2397,10 @@ export default function CareerPage() {
                   fontSize: 13, 
                   fontWeight: 'bold', 
                   display: 'flex', 
+                  flexWrap: 'wrap',
                   alignItems: 'center', 
                   gap: 1, 
+                  lineHeight: 1.45,
                   color: themeColors.text 
                 }}>
                   Toughest Rival
