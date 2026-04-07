@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { Box, Typography, Paper, Button, CircularProgress, Alert } from '@mui/material';
+import PageHeader from '@/Components/PageHeader';
 import {
   Dialog,
   DialogTitle,
@@ -12,7 +13,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import CloseButton from '@/Components/CloseButton';
-import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // Badge images
 import HatTrickBadge from '@/Components/images/brown.png';
@@ -659,37 +659,7 @@ export default function RewardsPage() {
   return (
     <Box sx={{ minHeight: '160vh', backgroundColor: '#0E0E0E' }}>
       {/* Header */}
-      <Box
-        sx={{
-          position: 'relative',
-          background: '#0e0e0e',
-          py: { xs: 3, sm: 4 , md: 6 },
-          px: { xs: 0, sm: 0, md: 0 },
-          // borderBottom: '4px solid #FF6B00',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-          <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#fff',
-              fontWeight: 400,
-              textAlign: 'center',
-              fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.5rem' },
-              letterSpacing: '0%',
-              textTransform: 'uppercase',
-              fontFamily: 'Anton, sans-serif !important',
-              fontStyle: 'normal',
-              lineHeight: '100%',
-            }}
-          >
-            REWARDS
-          </Typography>
-          <XPStarMilestoneCard height={32} width={32} xp={myProfileXP} />
-        </Box>
-         <Box sx={{ height: 6, bgcolor: 'rgba(229,106,22,0.9)', mt: 7 }} />
-      </Box>
+      <PageHeader title="Rewards" sx={{ mb: { xs: 2, md: 3 } }} />
 
       <Box sx={{ px: { xs: 2, sm: 3, md: 5, lg: 11.2 }, pb: 4, mt: -0.5 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: { xs: 1, sm: 1.5, md: 1.2 }, rowGap: { xs: 2, sm: 3, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>

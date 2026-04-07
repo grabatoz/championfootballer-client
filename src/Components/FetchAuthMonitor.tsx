@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 /**
  * FetchAuthMonitor
@@ -13,13 +13,36 @@ export default function FetchAuthMonitor() {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
     if (!API_BASE) return; // nothing to do if base not defined
 
+    type AuthMonitorWindow = Window & {
+      __authFetchPatched?: boolean;
+      __missingMatchIds?: Record<string, number>;
+    };
+    const w = window as AuthMonitorWindow;
+
     const originalFetch: typeof window.fetch = window.fetch.bind(window);
 
     // Avoid double patching
-    if ((window as any).__authFetchPatched) return;
-    (window as any).__authFetchPatched = true;
+    if (w.__authFetchPatched) return;
+    w.__authFetchPatched = true;
 
     const debug = () => localStorage.getItem("DEBUG_AUTH_FETCH") === "true";
+
+    const missingMatchIds: Record<string, number> =
+      w.__missingMatchIds || {};
+    w.__missingMatchIds = missingMatchIds;
+    const MISSING_MATCH_TTL_MS = 5 * 60 * 1000;
+
+    const getDirectMatchId = (url: string): string | null => {
+      try {
+        const path = new URL(url).pathname;
+        const match = path.match(/^\/matches\/([a-f0-9-]+)$/i);
+        return match ? match[1] : null;
+      } catch {
+        const raw = url.replace(API_BASE, "");
+        const match = raw.match(/^\/matches\/([a-f0-9-]+)$/i);
+        return match ? match[1] : null;
+      }
+    };
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       try {
@@ -138,7 +161,27 @@ export default function FetchAuthMonitor() {
           }
         }
 
-        return originalFetch(input, finalInit);
+        const method = (finalInit.method || "GET").toUpperCase();
+        const matchId = method === "GET" ? getDirectMatchId(url) : null;
+        if (matchId) {
+          const lastMissing = missingMatchIds[matchId];
+          if (lastMissing && Date.now() - lastMissing < MISSING_MATCH_TTL_MS) {
+            if (debug()) {
+              console.warn("[FetchAuthMonitor] ⏭ Skipping known-missing match:", matchId);
+            }
+            return new Response(null, { status: 404, statusText: "Not Found" });
+          }
+        }
+
+        const res = await originalFetch(input, finalInit);
+        if (matchId) {
+          if (res.status === 404) {
+            missingMatchIds[matchId] = Date.now();
+          } else if (res.ok && missingMatchIds[matchId]) {
+            delete missingMatchIds[matchId];
+          }
+        }
+        return res;
       } catch (err) {
         if (debug()) console.error("[FetchAuthMonitor] Patch error, falling back", err);
         return originalFetch(input, init);

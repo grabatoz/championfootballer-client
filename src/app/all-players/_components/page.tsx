@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
+import PageHeader from '@/Components/PageHeader';
 import dynamic from 'next/dynamic';
 import {
   Container,
@@ -14,7 +15,6 @@ import {
   ListItemAvatar,
   // Avatar,
   ListItemText,
-  Paper,
   Box,
   CircularProgress,
   Divider,
@@ -606,56 +606,19 @@ const AllPlayersPage = () => {
         // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
       {/* Full-width Header Section */}
-      <Box sx={{
-        mt: 0,
-        mb: 4,
-        width: '100%',
-        background: '#0e0e0e',
-      }}>
-        <Paper sx={{
-          px: 0,
-          py: { xs: 4, md: 3.1 },
-          background: '#0e0e0e',
-          color: 'white',
-          boxShadow: 'none',
-        }}>
-          <Typography variant="h3" sx={{
-            color: 'white',
-            fontFamily: '"Oswald", sans-serif !important',
-            fontWeight: 700,
-            fontSize: { xs: '32px', sm: '42px', md: '55px' },
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '0px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            pt: { xs: 1, md: 2 },
-            pb: { xs: 3, md: 6 }
-          }}
-            className='all-players-heading'
-          >
-            PLAYERS
-          </Typography>
-          
-          {/* Divider line below heading */}
-          <Box sx={{ 
-            width: '100%',
-            height: '3px', 
-            background: '#e16419',
-            mb: { xs: 2, md: 2 }
-          }} />
-
-          {/* Search and Filters Section */}
-          <Box sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: { xs: 2, md: 3 },
-            px: { xs: 3, md: 3 },
-            py: { xs: 1.5, md: 1.3 },
-            maxWidth: '1200px',
-            mx: 'auto',
-         }}>
+      <PageHeader title="Players" sx={{ mb: 4 }}>
+        {/* Search and Filters Section */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: { xs: 2, md: 3 },
+          px: { xs: 3, md: 3 },
+          py: { xs: 1.5, md: 1.3 },
+          maxWidth: '1200px',
+          mx: 'auto',
+       }}>
             {/* Search Input */}
             <TextField
               variant="outlined"
@@ -851,9 +814,8 @@ const AllPlayersPage = () => {
                 Clear
               </button>
             </Box>
-          </Box>
-        </Paper>
-      </Box>
+        </Box>
+      </PageHeader>
 
       {/* Table Section */}
       <Container

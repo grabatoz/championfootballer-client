@@ -32,7 +32,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout, initializeFromStorage } from '@/lib/features/authSlice';
 import cflogo from '@/Components/images/champion football logo 3 (1).png';
@@ -1032,6 +1032,23 @@ export default function NavigationBar() {
 
   // ADD THIS (league name cache)
   const [leagueNames, setLeagueNames] = useState<Record<string,string>>({});
+  const missingMatchDetailIdsRef = useRef<Record<string, number>>({});
+
+  const isTemporarilyMissingMatch = (matchId: string): boolean => {
+    const last404At = missingMatchDetailIdsRef.current[matchId];
+    if (!last404At) return false;
+    return Date.now() - last404At < 5 * 60 * 1000;
+  };
+
+  const markMissingMatch = (matchId: string) => {
+    missingMatchDetailIdsRef.current[matchId] = Date.now();
+  };
+
+  const clearMissingMatch = (matchId: string) => {
+    if (missingMatchDetailIdsRef.current[matchId]) {
+      delete missingMatchDetailIdsRef.current[matchId];
+    }
+  };
 
   // Build per-league incremental match indices.
   // Uses backend matchNumber if present to sync sequence; otherwise increments.
@@ -1214,6 +1231,7 @@ export default function NavigationBar() {
       const meta: MatchMeta = (n.meta ?? {}) as MatchMeta;
       const matchId = getMatchId(meta);
       if (!matchId) continue;
+      if (isTemporarilyMissingMatch(String(matchId))) continue;
       const endMeta = meta.endTime || meta.end_time || meta.end || meta.finishTime || meta.finish_time;
       const cached = matchTimes[matchId];
       if (!endMeta && (!cached || !cached.end)) {
@@ -1233,8 +1251,12 @@ export default function NavigationBar() {
           });
           if (!res.ok) {
             console.log('⚠️ Match detail failed', id, res.status);
+            if (res.status === 404) {
+              markMissingMatch(id);
+            }
             return { id, start: undefined, end: undefined };
           }
+          clearMissingMatch(id);
           const data = await res.json();
           console.log('🛈 Match detail', id, data);
 
@@ -1297,6 +1319,7 @@ export default function NavigationBar() {
       const meta = (n.meta ?? {}) as MatchMeta;
       const mid = getMatchId(meta);
       if (!mid) continue;
+      if (isTemporarilyMissingMatch(String(mid))) continue;
       metaByMatchId[mid] = meta;
 
       const cached = matchMetaCache[mid];
@@ -1315,7 +1338,13 @@ export default function NavigationBar() {
             headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store'
           });
-          if (!res.ok) return { id, matchNumber: undefined, date: undefined, leagueName: undefined };
+          if (!res.ok) {
+            if (res.status === 404) {
+              markMissingMatch(id);
+            }
+            return { id, matchNumber: undefined, date: undefined, leagueName: undefined };
+          }
+          clearMissingMatch(id);
           const data = await res.json();
 
           const pick = (...keys: string[]) => {

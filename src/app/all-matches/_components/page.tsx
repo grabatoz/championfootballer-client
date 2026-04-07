@@ -3,6 +3,7 @@ import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, D
 import { Calendar, ChevronDown, Crown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
+import PageHeader from '@/Components/PageHeader';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import homeTeamIcon from '@/Components/images/matches.png';
@@ -1718,7 +1719,13 @@ export default function AllMatches() {
                     bgcolor: 'black',
                     px: 0,
                     py: { xs: 2, md: 3 },
-                    borderRadius: 0
+                    borderRadius: 0,
+                    width: '98.5vw',
+                    position: 'relative',
+                    left: '50.5%',
+                    right: '48%',
+                    marginLeft: '-50vw',
+                    marginRight: '-50vw'
                 }}>
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
                     <Typography variant="h3" sx={{
@@ -1741,10 +1748,7 @@ export default function AllMatches() {
 
                     <Box
                         sx={{
-                            width: '98.5vw',
-                            position: 'relative',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
+                            width: '100%',
                             height: '3px',
                             background: '#b75512',
                             mb: { xs: 2, md: 2.5 },

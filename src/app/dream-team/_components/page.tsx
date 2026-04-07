@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import CloseButton from '@/Components/CloseButton';
 import { optimizedFetch, invalidateCache } from '@/lib/utils/optimizedFetch';
+import PageHeader from '@/Components/PageHeader';
 
 
 interface Player {
@@ -391,95 +392,50 @@ const DreamTeamPage = () => {
     <Box sx={{ py: 4, p: 3, maxWidth: 1200, mx: 'auto' }}>
       {/* Close Button */}
       <CloseButton fallbackRoute="/dashboard" />
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row', // always row even on mobile
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 4,
-          gap: { xs: 2, md: 2 },
-          width: '100%',
-          flexWrap: 'nowrap'
-        }}
-      >
-        {/* Center: Dream Team Logo + Text */}
+      <PageHeader title="Dream Team" sx={{ mb: 4 }}>
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-            width: 'auto',
-            ml: 0,
-            flexShrink: 1,
+            display: 'flex',
+            justifyContent: { xs: 'center', sm: 'flex-end' },
+            px: { xs: 0, sm: 2, md: 6 },
+            pb: { xs: 1, sm: 1.5 },
           }}
         >
-          {/* <Image
-            src={dreamteam.src}
-            alt="Dream Team Logo"
-            height={80}
-            width={80}
-            style={{
-              display: "block",
-              objectFit: "contain"
-            }}
-          /> */}
-          <Typography
-            variant="h3"
-            component="h1"
+          <Button
+            onClick={handleLeaguesDropdownOpen}
+            endIcon={<ChevronDown size={20} />}
             sx={{
-              fontWeight: '600',
-              fontSize: { xs: 'clamp(1.8rem, 7.8vw, 2.4rem)', sm: '42px', md: '56px' },
-              lineHeight: 1,
-              color: "white",
-              textAlign: "center",
-              whiteSpace: "nowrap",
-              letterSpacing: { xs: '0px', sm: '0.5px' },
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              fontFamily: '"Oswald", sans-serif !important',
-
+              textTransform: 'uppercase',
+              fontSize: { xs: '0.85rem', sm: '1rem', md: '1.2rem' },
+              fontWeight: 'bold',
+              lineHeight: 1.15,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+              maxWidth: { xs: '80vw', sm: '50%', md: '340px' },
+              textAlign: 'right',
+              color: 'white',
+              backgroundColor: '#2B2B2B',
+              borderRadius: 2,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '&:hover': { backgroundColor: '#2B2B2B' },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 0.75,
+              flexShrink: 0,
             }}
           >
-            Dream Team
-          </Typography>
+            {loading
+              ? 'Loading...'
+              : noLeagues
+              ? 'No leagues found'
+              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+          </Button>
         </Box>
-
-        {/* League selector (always visible right) */}
-        <Button
-          onClick={handleLeaguesDropdownOpen}
-          endIcon={<ChevronDown size={20} />}
-          sx={{
-            textTransform: 'uppercase',
-            fontSize: { xs: '0.85rem', sm: '1rem', md: '1.2rem' },
-            fontWeight: 'bold',
-            lineHeight: 1.15,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            minWidth: 0,
-            maxWidth: { xs: '42vw', sm: '50%', md: '340px' },
-            textAlign: 'right',
-            color: 'white',
-            backgroundColor: '#2B2B2B',
-            borderRadius: 2,
-            px: { xs: 1.5, sm: 2 },
-            py: { xs: 0.75, sm: 1 },
-            '&:hover': { backgroundColor: '#2B2B2B' },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 0.75,
-            flexShrink: 0,
-          }}
-        >
-          {loading
-            ? 'Loading...'
-            : noLeagues
-            ? 'No leagues found'
-            : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
-        </Button>
-      </Box>
+      </PageHeader>
 
       {/* Shared dropdown menu */}
       <Menu

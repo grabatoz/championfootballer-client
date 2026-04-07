@@ -1646,7 +1646,7 @@ export default function PlayerStatsPage() {
             }}>
                 <Paper sx={{
                     px: 0,
-                    py: { xs: 4, md: 3.1 },
+                    py: { xs: 4, md: 3.5 },
                     background: '#0e0e0e',
                     color: 'white',
                     boxShadow: 'none',
@@ -1664,13 +1664,13 @@ export default function PlayerStatsPage() {
                             variant="h2" 
                             component="h1" 
                             sx={{ 
-                                fontWeight: 400, 
+                                fontWeight: 700, 
                                 color: '#fff', 
-                                fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' }, 
+                                fontSize: { xs: '32px', sm: '42px', md: '55px' }, 
                                 textTransform: 'uppercase',
                                 letterSpacing: 0,
                                 textAlign: 'center',
-                                fontFamily: '"Anton" , sans-serif !important ',
+                                fontFamily: '"Oswald", sans-serif !important',
                                 lineHeight: '100%',
                             }}
                         >

@@ -1422,14 +1422,14 @@ export default function CareerPage() {
                   variant="h2" 
                   component="h1" 
                   sx={{ 
-                    fontFamily: '"Anton", sans-serif !important',
-                    fontWeight: 400, 
+                    fontFamily: '"Oswald", sans-serif !important',
+                    fontWeight: 700, 
                     fontStyle: 'normal',
                     color: '#fff', 
-                    fontSize: { xs: '1.12rem', sm: '2rem', md: '3.3rem' }, 
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' }, 
                     textTransform: 'uppercase',
                     letterSpacing: '0rem',
-                    lineHeight: { xs: 1.12, md: 1 },
+                    lineHeight: { xs: 1.05, md: 1 },
                     textAlign: 'center',
                     maxWidth: { xs: '100%', sm: '96%', md: '100%' },
                     wordBreak: 'break-word',

@@ -2446,7 +2446,7 @@ export default function GlobalTrophyRoom() {
         
         <Paper sx={{
           px: { xs: 1.5, sm: 3, md: 4 },
-          py: 3,
+          py: 1.5,
           background: '#0e0e0e',
           color: 'white',
           borderRadius: 0,
@@ -2488,14 +2488,14 @@ export default function GlobalTrophyRoom() {
               {filter === 'my' ? (
                 <Typography
                   sx={{
-                    fontFamily: '"Anton" , sans-serif !important',
-                    fontWeight: 400,
+                    fontFamily: '"Oswald", sans-serif !important',
+                    fontWeight: 700,
                     fontStyle: 'normal',
                     lineHeight: '100%',
                     letterSpacing: '0%',
                     textAlign: 'center',
                     textTransform: 'uppercase',
-                    fontSize: { xs: '1.45rem', sm: '55px' },
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
                     wordBreak: 'break-word',
                     overflow: 'visible',
                     textOverflow: 'clip',
@@ -2512,10 +2512,10 @@ export default function GlobalTrophyRoom() {
                 <Button
                   onClick={handleLeaguesDropdownOpen}
                   sx={{
-                    fontFamily: '"Woodford Bourne Pro" , sans-serif !important',
-                                                                                 textTransform: 'uppercase',
-                                                                         fontSize: { xs: '1.25rem', sm: '50px' },
-                                                                         fontWeight: 'bold',
+                    fontFamily: '"Oswald", sans-serif !important',
+                                                                         textTransform: 'uppercase',
+                                                                         fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                                                                         fontWeight: 700,
                                                                          lineHeight: 1.1,
                                                                          wordBreak: 'break-word',
                                                                          overflow: 'visible',
@@ -2559,8 +2559,9 @@ export default function GlobalTrophyRoom() {
                 <Typography
                   sx={{
                     textTransform: 'uppercase',
-                    fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.8rem' },
-                    fontWeight: 'bold',
+                    fontFamily: '"Oswald", sans-serif !important',
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                    fontWeight: 700,
                     color: 'white',
                     lineHeight: 1,
                   }}
@@ -2715,7 +2716,7 @@ export default function GlobalTrophyRoom() {
 
           {/* Orange divider */}
           <Box sx={{ 
-            height: '3.5px', 
+            height: '3px', 
             bgcolor: '#E56A16', 
             width: { xs: '100%', sm: '100vw' },
             position: { xs: 'static', sm: 'relative' },
@@ -2724,7 +2725,7 @@ export default function GlobalTrophyRoom() {
             marginLeft: { xs: 0, sm: '-50vw' },
             marginRight: { xs: 0, sm: '-50vw' },
             mb: 0.8, 
-            mt: filter === 'my' ? 8 : 3.2 
+            mt: { xs: 3, sm: 3.2 }
           }} />
 
           {/* Standings info and Navigation Tabs */}

@@ -2871,7 +2871,7 @@ export default function LeagueDetailPage() {
                             mb: 4,
                             width: '100vw',
                             position: 'relative',
-                            left: '50%',
+                            left: '49.3%',
                             right: '50%',
                             marginLeft: '-50vw',
                             marginRight: '-50vw',
@@ -2886,7 +2886,7 @@ export default function LeagueDetailPage() {
                         )}
                             <Paper sx={{
                                 px: 0,
-                                py: { xs: 4, md: 3.1 },
+                                py: { xs: 4, md: 2 },
                                 background: '#0e0e0e',
                                 color: 'white',
                             }}>
@@ -2941,8 +2941,9 @@ export default function LeagueDetailPage() {
                                                     onClick={handleLeaguesDropdownOpen}
                                                     sx={{
                                                         textTransform: 'uppercase',
-                                                        fontSize: { xs: '1.35rem', sm: '2rem', md: '3.125rem' },
-                                                        fontWeight: 'bold',
+                                                        fontFamily: '"Oswald", sans-serif !important',
+                                                        fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                                                        fontWeight: 700,
                                                         lineHeight: 1.1,
                                                         wordBreak: 'break-word',
                                                         overflow: 'visible',
@@ -2985,8 +2986,9 @@ export default function LeagueDetailPage() {
                                                 <Typography
                                                     sx={{
                                                         textTransform: 'uppercase',
-                                                        fontSize: { xs: '0.6rem', sm: '1rem', md: '1.4rem' },
-                                                        fontWeight: 'bold',
+                                                        fontFamily: '"Oswald", sans-serif !important',
+                                                        fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                                                        fontWeight: 700,
                                                         color: 'white',
                                                     }}
                                                 >
