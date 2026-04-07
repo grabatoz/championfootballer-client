@@ -708,11 +708,12 @@ const PlayerProfileCard = () => {
     return (
       <Container maxWidth={false} disableGutters sx={{
         py: { xs: 2, sm: 4 },
-        px: { xs: 1.5, sm: 1 },
+        px: { xs: 1, sm: 2 },
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
         maxWidth: '100%',
+        overflowX: 'hidden',
         // background: "linear-gradient(177deg,rgba(0,167,127,0.15) 0%, rgba(0,167,127,0.15) 80%)",
         borderRadius: 4
       }}>
@@ -738,7 +739,7 @@ const PlayerProfileCard = () => {
               }}>
                 {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
-              <Box sx={{ width: 'calc(100% + 32px)', height: 3, background: '#fff', mx: -2, mb: 3, opacity: 0.4 }} />
+              <Box sx={{ width: '100%', height: 3, background: '#fff', mx: 0, mb: 3, opacity: 0.4 }} />
 
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'stretch' }, gap: 1.5, width: '100%', height: { xs: 'auto', sm: 180 } }}>
                 <Avatar
@@ -840,7 +841,7 @@ const PlayerProfileCard = () => {
                 </CardContent>
               </Card>
 
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 }, justifyContent: 'space-between', mt: 2.8 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'space-between', mt: 2.8 }}>
                 <Button
                   variant="contained"
                   size="small"
@@ -850,7 +851,7 @@ const PlayerProfileCard = () => {
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     px: 2.4,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: { xs: '48%', sm: 'auto' },
                     borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
@@ -865,7 +866,7 @@ const PlayerProfileCard = () => {
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     px: 2.4,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: { xs: '48%', sm: 'auto' },
                     borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
@@ -882,7 +883,17 @@ const PlayerProfileCard = () => {
   // ---------- STEP 2 ----------
   if (step === 2) {
     return (
-      <Container maxWidth={false} sx={{ py: { xs: 2, sm: 4 }, maxWidth: 1070 }}>
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{
+          py: { xs: 2, sm: 4 },
+          px: { xs: 1, sm: 2 },
+          maxWidth: 1070,
+          width: '100%',
+          overflowX: 'hidden',
+        }}
+      >
         <Fade in timeout={600}>
           <Box>
             <StyledPaper sx={{
@@ -901,7 +912,7 @@ const PlayerProfileCard = () => {
               }}>
                 {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
-              <Box sx={{ width: 'calc(100% + 48px)', height: 2, background: '#fff', mx: -3, mb: 3, opacity: 0.80 }} />
+              <Box sx={{ width: '100%', height: 2, background: '#fff', mx: 0, mb: 3, opacity: 0.80 }} />
 
               <Typography variant="h5" fontWeight={600} align="center" sx={{
                 mb: 2,
@@ -916,9 +927,9 @@ const PlayerProfileCard = () => {
 
               <Box sx={{
                 display: 'flex',
-                gap: 4,
+                gap: { xs: 2, md: 4 },
                 mb: 2,
-                px: { xs: 1.25, sm: 3, md: 6 },
+                px: { xs: 0.5, sm: 2, md: 6 },
                 flexDirection: { xs: 'column', md: 'row' }
               }}>
                 <Box sx={{
@@ -959,19 +970,19 @@ const PlayerProfileCard = () => {
 
                 <Box sx={{ flex: 1, pr: 0.5 }}>
                   <Grid container spacing={0.5}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={6} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>First Name</Typography>
                       <StyledTextField size="small" value={firstName} onChange={e => setFirstName((e.target.value || "").slice(0, 20))} fullWidth placeholder="First Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={6} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Last Name</Typography>
                       <StyledTextField size="small" value={lastName} onChange={e => setLastName((e.target.value || "").slice(0, 20))} fullWidth placeholder="Last Name" inputProps={{ maxLength: 20 }} sx={{ mb: 1 }} />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={6} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Email</Typography>
                       <StyledTextField size="small" type="email" value={email} onChange={e => setEmail((e.target.value || "").slice(0, 40))} fullWidth placeholder="123@gmail.com" inputProps={{ maxLength: 40 }} sx={{ mb: 1 }} />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={6} sm={6}>
                       <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Change Password</Typography>
                       <StyledTextField
                         size="small"
@@ -994,11 +1005,11 @@ const PlayerProfileCard = () => {
                       />
                     </Grid>
 
-                    <Grid container spacing={1} mt={0.5} ml={0.2}>
+                    <Grid container spacing={1} mt={0.5} ml={0} sx={{ width: '100%' }}>
                       {/* Simplified Country & City/State inputs */}
                       <Grid item xs={12}>
                         <Grid container spacing={1}>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Country/Region</Typography>
                             <StyledTextField
                               size="small"
@@ -1018,7 +1029,7 @@ const PlayerProfileCard = () => {
                               ))}
                             </StyledTextField>
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>City/State</Typography>
                             {country && countryCityMap[country] ? (
                               <StyledTextField
@@ -1053,7 +1064,7 @@ const PlayerProfileCard = () => {
                               />
                             )}
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Phone Number</Typography>
                             <StyledTextField
                               size="small"
@@ -1066,11 +1077,11 @@ const PlayerProfileCard = () => {
                               sx={{ mb: 1 }}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Age</Typography>
                             <StyledTextField size="small" type="number" value={age} onChange={e => setAge(e.target.value)} fullWidth placeholder="00" sx={{ mb: 1 }} />
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Gender</Typography>
                             <Card
                               sx={{
@@ -1105,7 +1116,7 @@ const PlayerProfileCard = () => {
                               </FormControl>
                             </Card>
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Preferred Foot</Typography>
                             <Card
                               sx={{
@@ -1149,7 +1160,7 @@ const PlayerProfileCard = () => {
 
               <Grid container spacing={3} justifyContent="space-between" sx={{ px: { xs: 1.25, sm: 3, md: 6 } }}>
                 <Grid item xs={12}>
-                  <Typography sx={{ mb: 0.8, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text, ml: { xs: 0, md: 'calc((100% - 900px) / 2)' }, maxWidth: 900, mx: 'auto' }}>Position Type</Typography>
+                  <Typography sx={{ mb: 0.8, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text, ml: 0, maxWidth: 900, mx: 'auto' }}>Position Type</Typography>
                   <Card sx={{
                     p: 2.2,
                     background: "#171717",
@@ -1185,7 +1196,8 @@ const PlayerProfileCard = () => {
                     background: "#171717",
                     border: `1px solid rgba(255,255,255,0.5)`,
                     borderRadius: 2,
-                    maxWidth: 400
+                    maxWidth: { xs: '100%', sm: 400 },
+                    width: '100%'
                   }}>
                     <FormControl component="fieldset">
                       <RadioGroup
@@ -1216,7 +1228,8 @@ const PlayerProfileCard = () => {
                     background: "#171717",
                     border: `1px solid rgba(255,255,255,0.5)`,
                     borderRadius: 2,
-                    maxWidth: 400
+                    maxWidth: { xs: '100%', sm: 400 },
+                    width: '100%'
                   }}>
                     <FormControl component="fieldset">
                       <RadioGroup value={style} onChange={e => setStyle(e.target.value)}>
@@ -1229,7 +1242,7 @@ const PlayerProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 0 }} justifyContent="space-between" sx={{ mt: 4, px: { xs: 1.25, sm: 3, md: 6 } }}>
+              <Stack direction="row" spacing={1} justifyContent="space-between" sx={{ mt: 4, px: { xs: 1.25, sm: 3, md: 6 } }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
@@ -1237,7 +1250,7 @@ const PlayerProfileCard = () => {
                   sx={{
                     borderRadius: 1,
                     px: 3,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: { xs: '48%', sm: 'auto' },
                     borderColor: themeColors.primary,
                     color: themeColors.text,
                     fontWeight: 600,
@@ -1251,7 +1264,7 @@ const PlayerProfileCard = () => {
                   sx={{
                     borderRadius: 1,
                     px: 3,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: { xs: '48%', sm: 'auto' },
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     '&:hover': { opacity: .9 }
@@ -1294,7 +1307,7 @@ const PlayerProfileCard = () => {
             <Modal open={cameraOpen} onClose={handleCloseCamera}>
               <Box sx={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                bgcolor: '#1f1f1f', color: '#fff', p: 2, borderRadius: 2, width: 460, maxWidth: '90vw',
+                bgcolor: '#1f1f1f', color: '#fff', p: 2, borderRadius: 2, width: 'min(460px, 92vw)', maxWidth: '92vw',
                 border: `1px solid ${themeColors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>Camera</Typography>
@@ -1325,7 +1338,17 @@ const PlayerProfileCard = () => {
     ]
 
     return (
-      <Container maxWidth={false} sx={{ py: { xs: 2, sm: 4 }, maxWidth: 1070 }}>
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{
+          py: { xs: 2, sm: 4 },
+          px: { xs: 1, sm: 2 },
+          maxWidth: 1070,
+          width: '100%',
+          overflowX: 'hidden',
+        }}
+      >
         <Fade in timeout={600}>
           <Box>
             <StyledPaper sx={{
@@ -1344,7 +1367,7 @@ const PlayerProfileCard = () => {
               }}>
                 {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
-              <Box sx={{ width: 'calc(100% + 48px)', height: 2, background: '#fff', mx: -3, mb: 3, opacity: 0.80 }} />
+              <Box sx={{ width: '100%', height: 2, background: '#fff', mx: 0, mb: 3, opacity: 0.80 }} />
 
               <Typography variant="h5" fontWeight={600} align="center" sx={{
                 mb: 2,
@@ -1357,7 +1380,7 @@ const PlayerProfileCard = () => {
                 SKILLS & ATTRIBUTES
               </Typography>
 
-              <Grid container spacing={3} sx={{ mt: 1, px: { xs: 1.25, sm: 3, md: 6 } }}>
+              <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mt: 1, px: { xs: 1, sm: 3, md: 6 } }}>
                 {skills.map(skill => {
                   const labelInfo = getSkillLabel(skill.value ?? 50)
                   const solidColor = labelInfo.color.replace('linear-gradient(90deg,', '').split(',')[0]
@@ -1455,7 +1478,7 @@ const PlayerProfileCard = () => {
               </Grid>
 
               <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="center" spacing={2} sx={{ mt: 5 }}>
+                <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}>
                   <Button
                     variant="outlined"
                     color="error"
@@ -1463,7 +1486,7 @@ const PlayerProfileCard = () => {
                     sx={{
                       borderRadius: 1,
                       px: 4,
-                      width: { xs: '100%', sm: 'auto' },
+                      width: { xs: '48%', sm: 'auto' },
                       fontWeight: 600,
                       borderColor: '#00a77f',
                       color: themeColors.text,
@@ -1478,7 +1501,7 @@ const PlayerProfileCard = () => {
                     sx={{
                       borderRadius: 1,
                       px: 5,
-                      width: { xs: '100%', sm: 'auto' },
+                      width: { xs: '48%', sm: 'auto' },
                       fontWeight: 700,
                       background: themeColors.primaryGradient,
                       '&:hover': { opacity: .9 }
@@ -1489,7 +1512,7 @@ const PlayerProfileCard = () => {
                 </Stack>
               </form>
 
-              <Stack direction="row" justifyContent="flex-start" sx={{ mt: 4, px: { xs: 1.25, sm: 3, md: 6 } }}>
+              <Stack direction="row" justifyContent="flex-start" sx={{ mt: 4, px: { xs: 1, sm: 3, md: 6 } }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
@@ -1497,7 +1520,7 @@ const PlayerProfileCard = () => {
                   sx={{
                     borderRadius: 1,
                     px: 3,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: 'auto',
                     borderColor: themeColors.primary,
                     color: themeColors.text,
                     fontWeight: 600,
