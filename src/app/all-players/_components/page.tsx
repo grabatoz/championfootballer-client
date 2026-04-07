@@ -19,6 +19,8 @@ import {
   CircularProgress,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
@@ -108,6 +110,8 @@ interface LeagueOption {
 // }
 
 const AllPlayersPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const dispatch = useDispatch<AppDispatch>();
   const { playedWithPlayers, leaguePlayers, loading, error } = useSelector((state: RootState) => state.user);
   const { token } = useSelector((state: RootState) => state.auth);
@@ -595,23 +599,17 @@ const AllPlayersPage = () => {
       <Box sx={{
         position: 'relative',
         minHeight: '100vh',
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        pl: 7.5,
-        pr: 7.5,
+        alignItems: 'stretch',
         // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
       {/* Full-width Header Section */}
       <Box sx={{
         mt: 0,
         mb: 4,
-        width: '100vw',
-        position: 'relative',
-        // left: '50%',
-        // right: '50%',
-        marginLeft: '-50vw',
-        marginRight: '-48.5vw',
+        width: '100%',
         background: '#0e0e0e',
       }}>
         <Paper sx={{
@@ -673,7 +671,7 @@ const AllPlayersPage = () => {
                 width: { xs: '100%', md: '440px' },
                 ml: { xs: 0, md: 0.8 },
                 '& .MuiOutlinedInput-root': {
-                  height: 42,
+                  height: { xs: 38, sm: 42 },
                   color: 'white',
                   backgroundColor: 'transparent',
                   borderRadius: '3px',
@@ -683,7 +681,7 @@ const AllPlayersPage = () => {
                 },
                 '& .MuiInputBase-input': { 
                   color: 'white', 
-                  fontSize: 16.5,
+                  fontSize: { xs: 14, sm: 16.5 },
                   py: 0.5,
                   fontFamily: '"Woodford Bourne Pro", sans-serif !important',
                   '&::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 }
@@ -712,17 +710,17 @@ const AllPlayersPage = () => {
                 onMouseDown={() => setYearDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
                 style={{
-                  height: '39px',
-                  padding: '0 36px 0 12px',
-                  marginLeft: '4px',
+                  height: isMobile ? '34px' : '39px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                  marginLeft: isMobile ? '0px' : '4px',
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
                   borderRadius: '24px',
-                  fontSize: '17px',
+                  fontSize: isMobile ? '13px' : '17px',
                   cursor: 'pointer',
                   outline: 'none',
-                  minWidth: '100px',
+                  minWidth: isMobile ? '90px' : '100px',
                   appearance: 'none',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
@@ -755,17 +753,17 @@ const AllPlayersPage = () => {
                 onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
                 disabled={noLeagues || filteredLeagues.length === 0}
                 style={{
-                  height: '39px',
-                  padding: '0 36px 0 12px',
-                  marginLeft: '4px',
+                  height: isMobile ? '34px' : '39px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                  marginLeft: isMobile ? '0px' : '4px',
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
                   borderRadius: '24px',
-                  fontSize: '17px',
+                  fontSize: isMobile ? '13px' : '17px',
                   cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  minWidth: '110px',
+                  minWidth: isMobile ? '98px' : '110px',
                   opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -798,17 +796,17 @@ const AllPlayersPage = () => {
                 onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
                 disabled={selectedLeague === 'all'}
                 style={{
-                  height: '39px',
-                  padding: '0 36px 0 12px',
-                  marginLeft: '4px',
+                  height: isMobile ? '34px' : '39px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
+                  marginLeft: isMobile ? '0px' : '4px',
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
                   borderRadius: '24px',
-                  fontSize: '17px',
+                  fontSize: isMobile ? '13px' : '17px',
                   cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  minWidth: '110px',
+                  minWidth: isMobile ? '98px' : '110px',
                   opacity: selectedLeague === 'all' ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -837,13 +835,13 @@ const AllPlayersPage = () => {
                   setSeasons([]);
                 }}
                 style={{
-                  height: '39px',
-                  padding: '0 17px',
+                  height: isMobile ? '34px' : '39px',
+                  padding: isMobile ? '0 13px' : '0 17px',
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '2px solid rgba(255,255,255,0.5)',
                   borderRadius: '24px',
-                  fontSize: '17px',
+                  fontSize: isMobile ? '13px' : '17px',
                   cursor: 'pointer',
                   outline: 'none',
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
@@ -858,7 +856,29 @@ const AllPlayersPage = () => {
       </Box>
 
       {/* Table Section */}
-      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 }, pb: 4 }}>
+      <Container
+        maxWidth={false}
+        sx={{
+          width: '100%',
+          px: { xs: 1, sm: 3, md: 7.5 },
+          pb: 4
+        }}
+      >
+        <Box
+          sx={{
+            width: '100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            '&::-webkit-scrollbar': { height: 4 },
+            '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
+          }}
+        >
+        <Box
+          sx={{
+            width: 'max-content',
+            minWidth: '100%',
+          }}
+        >
         {/* Table Header */}
         <Box sx={{ 
           display: 'flex', 
@@ -870,33 +890,33 @@ const AllPlayersPage = () => {
           borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}>
           {/* All Positions */}
-          <Box sx={{ minWidth: { xs: 120, sm: 180 }, display: 'flex', alignItems: 'center', mr: { xs: 4, sm: 6 } }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ minWidth: { xs: 152, sm: 180 }, display: 'flex', alignItems: 'center', mr: { xs: 1.2, sm: 6 } }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               ALL POSITIONS
             </Typography>
             <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10 }}>▼</Typography>
           </Box>
           
           {/* Playing Style */}
-          <Box sx={{ flex: 1, minWidth: { xs: 100, sm: 150 }, mr: { xs: 1, sm: 2 } }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ flex: { xs: '0 0 auto', sm: 1 }, minWidth: { xs: 90, sm: 150 }, mr: { xs: 0.5, sm: 2 }, display: 'block' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               PLAYING STYLE
             </Typography>
           </Box>
           
           {/* Spacer */}
-          <Box sx={{ flex: 1 }} />
+          <Box sx={{ flex: 1, display: 'none' }} />
           
           {/* View Stats */}
-          <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               VIEW STATS
             </Typography>
           </Box>
           
           {/* XP Points */}
-          <Box sx={{ minWidth: { xs: 80, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 12, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+          <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
+            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               <span style={{ textTransform: 'lowercase' }}>xp</span> POINTS
             </Typography>
           </Box>
@@ -926,7 +946,8 @@ const AllPlayersPage = () => {
         ) : (
           <Box sx={{
             flex: 1,
-            overflow: 'auto',
+            overflowY: 'auto',
+            overflowX: 'visible',
             backgroundColor: '#383838',
             borderRadius: '0 0 8px 8px',
             '&::-webkit-scrollbar': { display: 'none' },
@@ -974,7 +995,7 @@ const AllPlayersPage = () => {
                       }}
                     >
                       {/* Player Avatar */}
-                      <ListItemAvatar sx={{ minWidth: { xs: 48, sm: 60 } }}>
+                      <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                         <Box sx={{ 
                           position: 'relative', 
                           width: { xs: 38, sm: 42 }, 
@@ -997,10 +1018,10 @@ const AllPlayersPage = () => {
                       </ListItemAvatar>
                       
                       {/* Name and Position Column */}
-                      <Box sx={{ minWidth: { xs: 100, sm: 150 }, mr: { xs: 4, sm: 6 } }}>
+                      <Box sx={{ minWidth: { xs: 112, sm: 150 }, mr: { xs: 1.2, sm: 6 } }}>
                         <Typography sx={{ 
                           fontWeight: 600, 
-                          fontSize: { xs: 13, sm: 15 },
+                          fontSize: { xs: 12, sm: 15 },
                           color: '#fff',
                           lineHeight: 1.4,
                           fontFamily: '"Woodford Bourne Pro", sans-serif'
@@ -1019,10 +1040,10 @@ const AllPlayersPage = () => {
                       
                       {/* Playing Style Column */}
                       <Box sx={{ 
-                        flex: 1,
-                        minWidth: { xs: 60, sm: 120 }, 
-                        display: { xs: 'none', sm: 'block' },
-                        mr: { xs: 1, sm: 2 }
+                        flex: { xs: '0 0 auto', sm: 1 },
+                        minWidth: { xs: 90, sm: 120 }, 
+                        display: 'block',
+                        mr: { xs: 0.5, sm: 2 }
                       }}>
                         <Typography sx={{ 
                           fontSize: { xs: 11, sm: 13 },
@@ -1034,11 +1055,11 @@ const AllPlayersPage = () => {
                       </Box>
                       
                       {/* Spacer */}
-                      <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
+                      <Box sx={{ flex: 1, display: 'none' }} />
                       
                       {/* View Stats Icon */}
                       <Box sx={{ 
-                        minWidth: { xs: 60, sm: 120 }, 
+                        minWidth: { xs: 90, sm: 120 }, 
                         display: 'flex', 
                         justifyContent: 'center',
                         alignItems: 'center'
@@ -1046,20 +1067,20 @@ const AllPlayersPage = () => {
                         <Image 
                           src={TableGraphIcon} 
                           alt="View Stats" 
-                          width={30} 
-                          height={30} 
+                          width={isMobile ? 23 : 30} 
+                          height={isMobile ? 23 : 30} 
                           style={{ objectFit: 'contain' }}
                         />
                       </Box>
                       
                       {/* XP Points */}
                       <Box sx={{ 
-                        minWidth: { xs: 60, sm: 120 }, 
+                        minWidth: { xs: 90, sm: 120 }, 
                         textAlign: 'center'
                       }}>
                         <Typography sx={{ 
                           fontWeight: 'bold', 
-                          fontSize: { xs: 15, sm: 16 },
+                          fontSize: { xs: 13, sm: 16 },
                           color: '#fff',
                           fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
@@ -1073,6 +1094,8 @@ const AllPlayersPage = () => {
             </List>
           </Box>
         )}
+        </Box>
+        </Box>
       </Container>
       </Box>
     </>
