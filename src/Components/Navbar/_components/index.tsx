@@ -2874,9 +2874,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             right: 0,
             bottom: 0,
             zIndex: (theme) => theme.zIndex.appBar + 1,
-            background: '#ffffff',
-            borderTop: '1px solid #e5e7eb',
-            boxShadow: '0 -6px 20px rgba(0,0,0,0.12)',
+            background: 'linear-gradient(180deg, rgba(12,12,14,0.98) 0%, rgba(20,20,24,0.98) 100%)',
+            borderTop: '1px solid rgba(249,115,22,0.55)',
+            boxShadow: '0 -10px 24px rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(8px)',
             pb: 'max(env(safe-area-inset-bottom), 4px)',
           }}
         >
@@ -2905,9 +2906,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 py: 0.55,
                 borderRadius: 1.5,
                 textTransform: 'none',
-                color: active ? '#00a77f' : '#374151',
-                bgcolor: active ? 'rgba(0,167,127,0.10)' : 'transparent',
-                border: active ? '1px solid rgba(0,167,127,0.25)' : '1px solid transparent',
+                color: active ? '#10D3A8' : '#E5E7EB',
+                bgcolor: active ? 'rgba(16,185,129,0.22)' : 'transparent',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -2916,8 +2916,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 lineHeight: 1,
                 flex: '0 0 auto',
                 '&:hover': {
-                  bgcolor: active ? 'rgba(0,167,127,0.16)' : 'rgba(0,0,0,0.05)',
-                  borderColor: active ? 'rgba(0,167,127,0.35)' : 'transparent',
+                  bgcolor: active ? 'rgba(16,185,129,0.30)' : 'rgba(255,255,255,0.10)',
                 },
               } as const;
 
