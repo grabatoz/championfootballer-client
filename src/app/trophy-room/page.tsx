@@ -2523,7 +2523,7 @@ export default function GlobalTrophyRoom() {
                                                                          whiteSpace: 'normal',
                                                                          flexShrink: 1,
                                                                          minWidth: 0,
-                                                                         maxWidth: { xs: filter !== 'my' ? '80vw' : '92vw', sm: 'none' },
+                                                                         maxWidth: { xs: '80vw', sm: 'none' },
                                                                          textAlign: 'center',
                                                                          color: 'white',
                                                                          backgroundColor: 'transparent',
