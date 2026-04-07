@@ -8,7 +8,6 @@ import {
   Drawer,
   List,
   ListItem,
-  ListItemText,
   Badge,
   Popover,
   Divider,
@@ -23,6 +22,14 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
+import SportsSoccerOutlinedIcon from '@mui/icons-material/SportsSoccerOutlined';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
+import CardGiftcardOutlinedIcon from '@mui/icons-material/CardGiftcardOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
@@ -47,8 +54,6 @@ import leaguesetting from '@/Components/images/leaguesetting.png';
 import matchdetails from '@/Components/images/matchdetails.png';
 import palyerstats from '@/Components/images/palyerstats.png';
 import player from '@/Components/images/profile-user.png'
-import play from '@/Components/images/play.png'
-import gamification from '@/Components/images/gamification.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
 import React from 'react';
@@ -1924,10 +1929,6 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
   const handleProfileMenuClose = () => {
     setProfileMenuAnchor(null);
   };
-  const handleProfileClick = () => {
-    handleProfileMenuClose();
-    router.push('/profile');
-  };
   const handleSignOutClick = () => {
     handleProfileMenuClose();
     handleSignOut();
@@ -2425,7 +2426,72 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     { label: 'PLAYERS', href: '/all-players' },
   ];
 
-  const getNavHref = (label: string, fallbackHref: string): string => {
+  type MobileBottomItem = {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    href?: string;
+    resolveHrefLabel?: string;
+    onClick?: () => void;
+    isActive?: () => boolean;
+  };
+
+  const mobileBottomItems: MobileBottomItem[] = [
+    {
+      key: 'leagues',
+      label: 'Leagues',
+      icon: <GroupsOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/all-leagues',
+      isActive: () => isNavActive('LEAGUES', '/all-leagues'),
+    },
+    {
+      key: 'table',
+      label: 'Table',
+      icon: <TableChartOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/dream-team',
+      resolveHrefLabel: 'TABLE',
+      isActive: () => isNavActive('TABLE', '/dream-team'),
+    },
+    {
+      key: 'matches',
+      label: 'Matches',
+      icon: <SportsSoccerOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/all-matches',
+      isActive: () => isNavActive('MATCHES', '/all-matches'),
+    },
+    {
+      key: 'stats',
+      label: 'Stats',
+      icon: <QueryStatsOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/profile',
+      resolveHrefLabel: 'VIEW STATS',
+      isActive: () => isNavActive('VIEW STATS', '/profile'),
+    },
+    {
+      key: 'trophy',
+      label: 'Trophy',
+      icon: <WorkspacePremiumOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/trophy-room',
+      isActive: () => isNavActive('TROPHY ROOM', '/trophy-room'),
+    },
+    {
+      key: 'rewards',
+      label: 'Rewards',
+      icon: <CardGiftcardOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/rewards',
+      isActive: () => isNavActive('REWARDS', '/rewards'),
+    },
+    {
+      key: 'profile',
+      label: 'Profile',
+      icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/profile',
+      resolveHrefLabel: 'VIEW STATS',
+      isActive: () => isNavActive('VIEW STATS', '/profile'),
+    },
+  ];
+
+  function getNavHref(label: string, fallbackHref: string): string {
     if (label === 'TABLE') {
       if (typeof window === 'undefined') return fallbackHref;
       const preferredLeagueId =
@@ -2443,14 +2509,14 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     }
 
     return fallbackHref;
-  };
+  }
 
-  const isNavActive = (label: string, href: string): boolean => {
+  function isNavActive(label: string, href: string): boolean {
     if (!pathname) return false;
     if (label === 'TABLE') return pathname.startsWith('/league/');
     if (label === 'VIEW STATS') return pathname.startsWith('/player/') || pathname.startsWith('/profile');
     return pathname.startsWith(href);
-  };
+  }
 
   const [statsOpen, setStatsOpen] = useState(false);
   const [statsSubmitting, setStatsSubmitting] = useState(false);
@@ -2770,75 +2836,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
                   <MenuItem
-                    onClick={handleProfileClick}
-                    sx={{
-                      color: '#E5E7EB',
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      mx: 0.5,
-                      my: 0.25,
-                      py: 1.25,
-                      px: 1.5,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-1px)',
-                        background: '#00a77f',
-                        color: '#FFFFFF',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>Profile</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => { setHowToPlayOpen(true); handleProfileMenuClose(); }}
-                    sx={{
-                      color: '#E5E7EB',
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      mx: 0.5,
-                                           my: 0.25,
-                      py: 1.25,
-                      px: 1.5,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-1px)',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                        color: '#FFFFFF',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={play} alt="how to play" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>How to play</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => { setGameRulesOpen(true); handleProfileMenuClose(); }}
-                    sx={{
-                      color: '#E5E7EB',
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      mx: 0.5,
-                      my: 0.25,
-                      py: 1.25,
-                      px: 1.5,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-1px)',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                        color: '#FFFFFF',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Image src={gamification} alt="rules" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />
-                      <Box>Game rules</Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem
                     onClick={handleSignOutClick}
                     sx={{
                       color: '#F87171',
@@ -2867,6 +2864,96 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Box>
         </Toolbar>
       </AppBar>
+
+      {isAuthenticated && (
+        <Box
+          sx={{
+            display: { xs: 'block', lg: 'none' },
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: (theme) => theme.zIndex.appBar + 1,
+            background: '#ffffff',
+            borderTop: '1px solid #e5e7eb',
+            boxShadow: '0 -6px 20px rgba(0,0,0,0.12)',
+            pb: 'max(env(safe-area-inset-bottom), 4px)',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              width: '100%',
+              overflowX: 'auto',
+              px: 0.2,
+              pr: 'max(env(safe-area-inset-right), 44px)',
+              py: 0.4,
+              gap: 0.06,
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {mobileBottomItems.map((item) => {
+              const active = item.isActive?.() ?? false;
+
+              const buttonSx = {
+                minWidth: 60,
+                px: 0.5,
+                py: 0.55,
+                borderRadius: 1.5,
+                textTransform: 'none',
+                color: active ? '#00a77f' : '#374151',
+                bgcolor: active ? 'rgba(0,167,127,0.10)' : 'transparent',
+                border: active ? '1px solid rgba(0,167,127,0.25)' : '1px solid transparent',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.2,
+                lineHeight: 1,
+                flex: '0 0 auto',
+                '&:hover': {
+                  bgcolor: active ? 'rgba(0,167,127,0.16)' : 'rgba(0,0,0,0.05)',
+                  borderColor: active ? 'rgba(0,167,127,0.35)' : 'transparent',
+                },
+              } as const;
+
+              if (item.href) {
+                const targetHref = item.resolveHrefLabel
+                  ? getNavHref(item.resolveHrefLabel, item.href)
+                  : item.href;
+                return (
+                  <Button
+                    key={item.key}
+                    component={Link}
+                    href={targetHref}
+                    disableRipple
+                    sx={buttonSx}
+                  >
+                    {item.icon}
+                    <Box sx={{ fontSize: '9.5px', fontWeight: 700 }}>{item.label}</Box>
+                  </Button>
+                );
+              }
+
+              return (
+                <Button
+                  key={item.key}
+                  onClick={item.onClick}
+                  disableRipple
+                  sx={buttonSx}
+                >
+                  {item.icon}
+                  <Box sx={{ fontSize: '9.5px', fontWeight: 700 }}>{item.label}</Box>
+                </Button>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
 
       {/* Local popup driven by useState. It hosts a simplified stats dialog UI. */}
       <PlayMatchPagee
@@ -3719,88 +3806,130 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         onClose={() => setDrawerOpen(false)}
         sx={{ 
           '& .MuiDrawer-paper': {
-            width: 280,
-            background: '#686868',
-            boxShadow: 3,
-            mt:7
+            width: { xs: 248, sm: 280 },
+            top: { xs: 64, sm: 70 },
+            bottom: 'auto',
+            height: 'auto',
+            maxHeight: 'calc(100dvh - 78px)',
+            overflowY: 'auto',
+            background: 'linear-gradient(180deg, rgba(15,16,18,0.98) 0%, rgba(28,30,34,0.98) 100%)',
+            borderLeft: '1px solid rgba(255,255,255,0.10)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '0 0 0 14px',
+            boxShadow: '0 14px 36px rgba(0,0,0,0.45)',
           },
         }}
       >
-        <Box sx={{ mt: 2, px: 2 }}>
-          <List>
+        <Box sx={{ px: 1.25, py: 1.25 }}>
+          <List sx={{ p: 0 }}>
             {/* PROFILE BUTTON IN MOBILE DRAWER */}
             {isAuthenticated && (
-              <ListItem disablePadding>
-                <Button
-                  onClick={handleProfileMenuOpen}
-                  startIcon={<Image src={player} alt="profile" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />}
-                  fullWidth
-                  sx={{
-                    textTransform: 'none',
-                    fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    bgcolor: '#2B2B2B',
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1.25,
-                    fontSize: '14px',
-                    justifyContent: 'flex-start',
-                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.18)',
-                    mb: 1,
-                    transition: 'box-shadow 0.2s, transform 0.2s',
-                    '&:hover': {
-                      bgcolor: '#2B2B2B',
-                      color: '#fff',
-                      boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
-                      transform: 'translateY(-2px) scale(1.04)',
-                    },
-                    '& .MuiButton-startIcon': { marginRight: 1 },
-                  }}
-                >
-                  Profile
-                </Button>
-              </ListItem>
-                       )}
-            
-            {/* MOBILE NAVIGATION LINKS */}
-            {isAuthenticated && (
-              navItems.map(({ label, href }) => {
-                const active = isNavActive(label, href);
-                const targetHref = getNavHref(label, href);
-               
-                return (
-                  <ListItem key={href} disablePadding>
-                    <Button
-                     
-                      component={Link}
-                      href={targetHref}
-                      fullWidth
-                      onClick={() => setDrawerOpen(false)}
-                      disableRipple
-                      sx={{
-                        justifyContent: 'flex-start',
-                        px: 3,
-                        py: 1.5,
+              <>
+                <ListItem disablePadding>
+                  <Button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setHowToPlayOpen(true);
+                    }}
+                    startIcon={<VisibilityOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontWeight: 700,
+                      color: '#F3F4F6',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1,
+                      px: 1.75,
+                      py: 0.95,
+                      fontSize: '14px',
+                      justifyContent: 'flex-start',
+                      minHeight: 44,
+                      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
+                      mb: 0.75,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.10)',
                         color: '#fff',
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
-                       
-                        borderRadius: 1,
-                        mb: 0.5,
-                        '&:hover': { 
-                          background: 'rgba(255,255,255,0.12)',
-                          transform: 'translateX(4px)',
-                        },
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <ListItemText primary={label} sx={{ color: '#fff' }} />
-                    </Button>
-                  </ListItem>
-                );
-              })
+                        borderColor: 'rgba(255,255,255,0.22)',
+                      },
+                      '& .MuiButton-startIcon': { marginRight: 1 },
+                    }}
+                  >
+                    How to play
+                  </Button>
+                </ListItem>
+                <ListItem disablePadding>
+                  <Button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setGameRulesOpen(true);
+                    }}
+                    startIcon={<GavelOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontWeight: 700,
+                      color: '#F3F4F6',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1,
+                      px: 1.75,
+                      py: 0.95,
+                      fontSize: '14px',
+                      justifyContent: 'flex-start',
+                      minHeight: 44,
+                      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
+                      mb: 0.75,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.10)',
+                        color: '#fff',
+                        borderColor: 'rgba(255,255,255,0.22)',
+                      },
+                      '& .MuiButton-startIcon': { marginRight: 1 },
+                    }}
+                  >
+                    Game rules
+                  </Button>
+                </ListItem>
+                <ListItem disablePadding>
+                  <Button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      handleSignOutClick();
+                    }}
+                    startIcon={<Image src={logoutpic} alt="sign out" width={20} height={20} style={{ filter: 'brightness(0) invert(1)' }} />}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontWeight: 700,
+                      color: '#F87171',
+                      bgcolor: 'rgba(248,113,113,0.06)',
+                      border: '1px solid rgba(248,113,113,0.32)',
+                      borderRadius: 1,
+                      px: 1.75,
+                      py: 0.95,
+                      fontSize: '14px',
+                      justifyContent: 'flex-start',
+                      minHeight: 44,
+                      boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(248,113,113,0.14)',
+                        color: '#fca5a5',
+                        borderColor: 'rgba(248,113,113,0.48)',
+                      },
+                      '& .MuiButton-startIcon': { marginRight: 1 },
+                    }}
+                  >
+                    Sign out
+                  </Button>
+                </ListItem>
+              </>
             )}
           </List>
         </Box>
