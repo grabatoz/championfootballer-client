@@ -657,9 +657,14 @@ export default function RewardsPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '160vh', backgroundColor: '#0E0E0E' }}>
+    <Box sx={{ minHeight: '160vh', backgroundColor: '#0E0E0E', overflowX: 'hidden' }}>
       {/* Header */}
-      <PageHeader title="Rewards" sx={{ mb: { xs: 2, md: 3 } }} />
+      <PageHeader
+        title="Rewards"
+        fullBleed={false}
+        sx={{ mb: { xs: 2, md: 3 }, mx: 0 }}
+        dividerSx={{ width: '100%', marginLeft: 0, marginRight: 0 }}
+      />
 
       <Box sx={{ px: { xs: 2, sm: 3, md: 5, lg: 11.2 }, pb: 4, mt: -0.5 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: { xs: 1, sm: 1.5, md: 1.2 }, rowGap: { xs: 2, sm: 3, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>

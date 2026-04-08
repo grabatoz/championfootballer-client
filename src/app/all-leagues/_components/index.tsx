@@ -2446,17 +2446,13 @@ function AllLeagues() {
           
           {/* Divider line below heading */}
           <Box sx={{ 
-            width: 'calc(100% + 32px)',
-            marginLeft: '-16px',
-            marginRight: '-16px',
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
             height: '3px', 
             background: '#e16419',
             mb: { xs: 2, md: 2 },
-            '@media (min-width: 900px)': {
-              width: 'calc(100% + 48px)',
-              marginLeft: '-24px',
-              marginRight: '-24px'
-            }
           }} />
           
           {/* </Box> */}

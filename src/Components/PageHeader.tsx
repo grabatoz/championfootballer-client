@@ -26,7 +26,6 @@ const baseHeaderSx: SystemStyleObject<Theme> = {
   mb: { xs: 3, md: 5 },
   bgcolor: 'black',
   p: { xs: 2, md: 3 },
-  mx: { xs: -2, sm: -3, md: -3 },
 };
 
 const baseTitleSx: SystemStyleObject<Theme> = {
@@ -34,6 +33,7 @@ const baseTitleSx: SystemStyleObject<Theme> = {
   fontFamily: '"Oswald", sans-serif !important',
   fontWeight: 700,
   fontSize: { xs: '32px', sm: '42px', md: '55px' },
+  lineHeight: 1.1,
   textAlign: 'center',
   textTransform: 'uppercase',
   letterSpacing: '0px',
@@ -43,17 +43,12 @@ const baseTitleSx: SystemStyleObject<Theme> = {
 };
 
 const baseDividerSx: SystemStyleObject<Theme> = {
-  width: 'calc(100% + 32px)',
-  marginLeft: '-16px',
-  marginRight: '-16px',
+  width: '100%',
+  marginLeft: 0,
+  marginRight: 0,
   height: '3px',
   background: '#e16419',
   mb: { xs: 2, md: 2 },
-  '@media (min-width: 900px)': {
-    width: 'calc(100% + 48px)',
-    marginLeft: '-24px',
-    marginRight: '-24px',
-  },
 };
 
 export default function PageHeader({

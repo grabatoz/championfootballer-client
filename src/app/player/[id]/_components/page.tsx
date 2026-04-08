@@ -1636,12 +1636,12 @@ export default function PlayerStatsPage() {
             <Box sx={{
                 mt: 0,
                 mb: 4,
-                width: '100vw',
+                width: '99.4vw',
                 position: 'relative',
                 left: '50%',
                 right: '50%',
                 marginLeft: '-50vw',
-                marginRight: '-50vw',
+                marginRight: '-55vw',
                 background: '#0e0e0e',
             }}>
                 <Paper sx={{

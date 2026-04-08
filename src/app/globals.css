@@ -251,11 +251,11 @@ body {
 
 
 .all-leagues-heading {
-  font-family: 'Bebas Neue', sans-serif !important;
-  font-size: 58px; /* Adjust as needed */
-  /* color: #000000;  Match your blue color */
+  font-family: "Oswald", sans-serif !important;
+  font-size: clamp(32px, 6vw, 55px);
+  line-height: 1.1;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0px;
 }
 
 @theme inline {
