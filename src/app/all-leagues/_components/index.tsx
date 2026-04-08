@@ -2425,7 +2425,18 @@ function AllLeagues() {
           Back to Dashboard
         </Button> */}
         {/* Close Button */}
-        <Box sx={{ mb: { xs: 3, md: 5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2, sm: -3, md: -3 }, minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' } }}>
+        <Box
+          sx={{
+            mb: { xs: 3, md: 5 },
+            bgcolor: 'black',
+            p: { xs: 2, md: 3 },
+            minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
+        >
           {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
           <Typography variant="h3" sx={{
             color: 'white',

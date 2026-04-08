@@ -1388,7 +1388,7 @@ export default function CareerPage() {
           background: themeColors.surfaceBase,
         }}
       >
-        <Box sx={{ maxWidth: '100%', mx: 'auto' }}>
+        <Box sx={{ maxWidth: '100%', mx: 'auto', overflowX: 'hidden' }}>
           {/* Dark Header Section - Full Width */}
           <Box sx={{
             mt: 0,
@@ -1447,7 +1447,11 @@ export default function CareerPage() {
                 sx={{
                   height: 'var(--header-divider-height)',
                   bgcolor: 'var(--header-divider-color)',
-                  mt: { xs: 2, sm: 4, md: 6.3 }
+                  mt: { xs: 2, sm: 4, md: 6.3 },
+                  width: '100vw',
+                  position: 'relative',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                 }}
               />
 

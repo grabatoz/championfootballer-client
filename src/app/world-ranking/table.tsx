@@ -267,8 +267,11 @@ export default function WorldRankingTable() {
         mb: { xs: 3, md: 5 }, 
         bgcolor: '#0e0e0e', 
         p: { xs: 2, md: 3 }, 
-        mx: { xs: -2, sm: -3, md: -3 },
-        minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' }
+        minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+        width: '100vw',
+        position: 'relative',
+        left: '50%',
+        transform: 'translateX(-50%)',
       }}>
         <Typography sx={{
           fontFamily: '"Oswald", sans-serif !important',
@@ -288,17 +291,13 @@ export default function WorldRankingTable() {
         
         {/* Divider line below heading */}
         <Box sx={{ 
-          width: 'calc(100% + 32px)',
-          marginLeft: '-16px',
-          marginRight: '-16px',
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          transform: 'translateX(-50%)',
           height: 'var(--header-divider-height)', 
           background: 'var(--header-divider-color)',
           // mb: { xs: 2, md: 2 },
-          '@media (min-width: 900px)': {
-            width: 'calc(100% + 48px)',
-            marginLeft: '-24px',
-            marginRight: '-24px'
-          }
         }} />
       </Box>
 

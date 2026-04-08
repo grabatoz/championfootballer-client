@@ -1605,7 +1605,7 @@ export default function PlayerStatsPage() {
     const loading = reduxLoading || !data;
 
     return (
-        <Box sx={{ minHeight: '100vh', color: '#fff' }}>
+        <Box sx={{ minHeight: '100vh', color: '#fff', overflowX: 'hidden' }}>
             <style jsx global>{`
                 .filter-select-wrapper {
                     position: relative;
@@ -1636,12 +1636,10 @@ export default function PlayerStatsPage() {
             <Box sx={{
                 mt: 0,
                 mb: 4,
-                width: '99.4vw',
+                width: '100vw',
                 position: 'relative',
                 left: '50%',
-                right: '50%',
-                marginLeft: '-50vw',
-                marginRight: '-55vw',
+                transform: 'translateX(-50%)',
                 background: '#0e0e0e',
             }}>
                 <Paper sx={{
@@ -1684,7 +1682,11 @@ export default function PlayerStatsPage() {
                         sx={{
                             height: 'var(--header-divider-height)',
                             bgcolor: 'var(--header-divider-color)',
-                            mt: { xs: 2, md: 4.5 }
+                            mt: { xs: 2, md: 4.5 },
+                            width: '100vw',
+                            position: 'relative',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                         }}
                     />
 

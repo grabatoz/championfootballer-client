@@ -1707,6 +1707,7 @@ export default function AllMatches() {
                 // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
                 // backgroundColor:'white',
                 py: 0,
+                overflowX: 'hidden',
             }}
         >
             <Container>
@@ -1721,20 +1722,20 @@ export default function AllMatches() {
                 >
                     Back to Dashboard
                 </Button> */}
-                <Box sx={{
-                    mb: { xs: 3, md: 5 },
-                    bgcolor: 'black',
-                    px: 0,
-                    py: { xs: 2, md: 2.5 },
-                    borderRadius: 0,
-                    minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
-                    width: '98.5vw',
-                    position: 'relative',
-                    left: '50.5%',
-                    right: '48%',
-                    marginLeft: '-50vw',
-                    marginRight: '-50vw'
-                }}>
+                <Box
+                    sx={{
+                        mb: { xs: 3, md: 5 },
+                        bgcolor: 'black',
+                        px: 0,
+                        py: { xs: 2, md: 2.5 },
+                        borderRadius: 0,
+                        minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+                        width: '100vw',
+                        position: 'relative',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                    }}
+                >
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
                     <Typography variant="h3" sx={{
                         mb: { xs: 4, md: 4.5 },
@@ -1756,7 +1757,10 @@ export default function AllMatches() {
 
                     <Box
                         sx={{
-                            width: '100%',
+                            width: '100vw',
+                            position: 'relative',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             height: 'var(--header-divider-height)',
                             background: 'var(--header-divider-color)',
                             mb: { xs: 2, md: 2.5 },

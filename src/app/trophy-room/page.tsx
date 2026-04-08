@@ -2458,12 +2458,10 @@ export default function GlobalTrophyRoom() {
           color: 'white',
           borderRadius: 0,
           minHeight: { xs: 'var(--header-mobile-min-height)', sm: 'auto' },
-          width: { xs: '100%', sm: '100vw' },
-          position: { xs: 'static', sm: 'relative' },
-          left: { xs: 'auto', sm: '50%' },
-          right: { xs: 'auto', sm: '50%' },
-          marginLeft: { xs: 0, sm: '-50vw' },
-          marginRight: { xs: 0, sm: '-50vw' },
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          transform: 'translateX(-50%)',
         }}>
           {/* Centered League Name with Trophy Icon */}
           <Box sx={{ 
@@ -2739,12 +2737,10 @@ export default function GlobalTrophyRoom() {
           <Box sx={{ 
             height: 'var(--header-divider-height)', 
             bgcolor: 'var(--header-divider-color)', 
-            width: { xs: '100%', sm: '100vw' },
-            position: { xs: 'static', sm: 'relative' },
-            left: { xs: 'auto', sm: '50%' },
-            right: { xs: 'auto', sm: '50%' },
-            marginLeft: { xs: 0, sm: '-50vw' },
-            marginRight: { xs: 0, sm: '-50vw' },
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
             mb: 0.8, 
             mt: { xs: 3, sm: 3.2 }
           }} />

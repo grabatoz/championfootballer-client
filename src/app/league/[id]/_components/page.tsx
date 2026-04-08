@@ -2852,6 +2852,7 @@ export default function LeagueDetailPage() {
                 backgroundAttachment: 'fixed',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
+                overflowX: 'hidden',
             }}
         >
             {/* <Box sx={{ ml:5}}> */}
@@ -2878,10 +2879,8 @@ export default function LeagueDetailPage() {
                             mb: 4,
                             width: '100vw',
                             position: 'relative',
-                            left: '49.3%',
-                            right: '50%',
-                            marginLeft: '-50vw',
-                            marginRight: '-50vw',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             // height: '30vh',
                             background: '#0e0e0e',
                         }}>
@@ -3271,7 +3270,11 @@ export default function LeagueDetailPage() {
                                     sx={{
                                         height: 'var(--header-divider-height)',
                                         bgcolor: 'var(--header-divider-color)',
-                                        mt: { xs: 8, sm: 12, md: 17 }
+                                        mt: { xs: 8, sm: 12, md: 17 },
+                                        width: '100vw',
+                                        position: 'relative',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
                                     }}
                                 />
 

@@ -983,12 +983,25 @@ export default function ScheduleMatchPage() {
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
+          overflowX: 'hidden',
           // background:
           //   'radial-gradient(circle at 18% 14%, rgba(229,106,22,0.12) 0%, #050505 58%)'
         }}
       >
         {/* CREATE MATCH Header */}
-        <Box sx={{ mb: { xs: 1, md: 2 }, mt: { xs: -2.5, md: -5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2.5, sm: -3, md: -5 }, minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' } }}>
+        <Box
+          sx={{
+            mb: { xs: 1, md: 2 },
+            mt: { xs: -2.5, md: -5 },
+            bgcolor: 'black',
+            p: { xs: 2, md: 3 },
+            minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
+        >
           <Typography
             variant="h3"
             sx={{
