@@ -1727,6 +1727,7 @@ export default function AllMatches() {
                     px: 0,
                     py: { xs: 2, md: 2.5 },
                     borderRadius: 0,
+                    minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
                     width: '98.5vw',
                     position: 'relative',
                     left: '50.5%',

@@ -988,7 +988,7 @@ export default function ScheduleMatchPage() {
         }}
       >
         {/* CREATE MATCH Header */}
-        <Box sx={{ mb: { xs: 1, md: 2 }, mt: { xs: -2.5, md: -5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2.5, sm: -3, md: -5 } }}>
+        <Box sx={{ mb: { xs: 1, md: 2 }, mt: { xs: -2.5, md: -5 }, bgcolor: 'black', p: { xs: 2, md: 3 }, mx: { xs: -2.5, sm: -3, md: -5 }, minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' } }}>
           <Typography
             variant="h3"
             sx={{

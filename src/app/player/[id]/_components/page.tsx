@@ -1646,10 +1646,11 @@ export default function PlayerStatsPage() {
             }}>
                 <Paper sx={{
                     px: 0,
-                    py: { xs: 4, md: 3.5 },
+                    py: { xs: 2, md: 3.5 },
                     background: '#0e0e0e',
                     color: 'white',
                     boxShadow: 'none',
+                    minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
                 }}>
                     {/* Centered Title */}
                     <Box sx={{
@@ -1657,7 +1658,7 @@ export default function PlayerStatsPage() {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        pt: { xs: 2, md: 2 },
+                        pt: { xs: 1, md: 2 },
                         pb: 2,
                     }}>
                         <Typography 
@@ -1679,7 +1680,13 @@ export default function PlayerStatsPage() {
                     </Box>
 
                     {/* Orange divider under header */}
-                    <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: 4.5 }} />
+                    <Box
+                        sx={{
+                            height: 'var(--header-divider-height)',
+                            bgcolor: 'var(--header-divider-color)',
+                            mt: { xs: 2, md: 4.5 }
+                        }}
+                    />
 
                     {/* Search and Filters Section */}
                     <Box sx={{

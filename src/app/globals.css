@@ -20,6 +20,7 @@
   --font-woodford-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif;
   --header-divider-height: 3px;
   --header-divider-color: #e16419;
+  --header-mobile-min-height: 120px;
 }
 
 /* Woodford Bourne Pro - Thin (100) */

@@ -2457,6 +2457,7 @@ export default function GlobalTrophyRoom() {
           background: '#0e0e0e',
           color: 'white',
           borderRadius: 0,
+          minHeight: { xs: 'var(--header-mobile-min-height)', sm: 'auto' },
           width: { xs: '100%', sm: '100vw' },
           position: { xs: 'static', sm: 'relative' },
           left: { xs: 'auto', sm: '50%' },

@@ -26,6 +26,7 @@ const baseHeaderSx: SystemStyleObject<Theme> = {
   mb: { xs: 3, md: 5 },
   bgcolor: 'black',
   p: { xs: 2, md: 3 },
+  minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
 };
 
 const baseTitleSx: SystemStyleObject<Theme> = {

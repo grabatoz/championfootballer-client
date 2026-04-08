@@ -2893,9 +2893,10 @@ export default function LeagueDetailPage() {
                         )}
                             <Paper sx={{
                                 px: 0,
-                                py: { xs: 4, md: 2 },
+                                py: { xs: 2, md: 2 },
                                 background: '#0e0e0e',
                                 color: 'white',
+                                minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
                             }}>
                                 <Box
                                     sx={{
@@ -2929,7 +2930,7 @@ export default function LeagueDetailPage() {
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         gap: 0.5,
-                                        mt: { xs: 10.5, sm: 12, md: 17 },
+                                        mt: { xs: 8, sm: 12, md: 17 },
                                     }}>
                                         <Box sx={{
                                             display: 'flex',
@@ -3032,6 +3033,9 @@ export default function LeagueDetailPage() {
                                                     px: 1,
                                                     py: 0,
                                                     minHeight: 'auto',
+                                                    minWidth: 0,
+                                                    maxWidth: { xs: '78vw', sm: '60vw', md: '50vw' },
+                                                    overflow: 'hidden',
                                                     '&:hover': {
                                                         backgroundColor: 'rgba(255,255,255,0.05)',
                                                     },
@@ -3054,7 +3058,18 @@ export default function LeagueDetailPage() {
                                                     />
                                                 }
                                             >
-                                                {seasonLabel}
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        display: 'inline-block',
+                                                        maxWidth: { xs: '62vw', sm: '46vw', md: '40vw' },
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {seasonLabel}
+                                                </Box>
                                             </Button>
                                         )}
                                     </Box>
@@ -3252,7 +3267,13 @@ export default function LeagueDetailPage() {
                                 </Box>
 
                                 {/* Orange divider under header */}
-                                <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: { xs: 10.5, sm: 12, md: 17 } }} />
+                                <Box
+                                    sx={{
+                                        height: 'var(--header-divider-height)',
+                                        bgcolor: 'var(--header-divider-color)',
+                                        mt: { xs: 8, sm: 12, md: 17 }
+                                    }}
+                                />
 
                                 {/* Navigation Tabs - Pill style */}
                                 <Box

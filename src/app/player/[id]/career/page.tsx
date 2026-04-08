@@ -1403,10 +1403,11 @@ export default function CareerPage() {
           }}>
             <Paper sx={{
               px: 0,
-              py: { xs: 2.5, md: 1.1 },
+              py: { xs: 2, md: 1.1 },
               background: '#0e0e0e',
               color: 'white',
               boxShadow: 'none',
+              minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
             }}>
               {/* Centered Title */}
               <Box sx={{
@@ -1431,9 +1432,10 @@ export default function CareerPage() {
                     letterSpacing: '0rem',
                     lineHeight: { xs: 1.05, md: 1 },
                     textAlign: 'center',
-                    maxWidth: { xs: '100%', sm: '96%', md: '100%' },
-                    wordBreak: 'break-word',
-                    overflowWrap: 'anywhere',
+                    maxWidth: { xs: '92vw', sm: '88vw', md: '100%' },
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD'}
@@ -1441,7 +1443,13 @@ export default function CareerPage() {
               </Box>
 
               {/* Orange divider under header */}
-              <Box sx={{ height: 3, bgcolor: 'rgba(229,106,22,0.9)', mt: { xs: 2.5, sm: 4, md: 6.3 } }} />
+              <Box
+                sx={{
+                  height: 'var(--header-divider-height)',
+                  bgcolor: 'var(--header-divider-color)',
+                  mt: { xs: 2, sm: 4, md: 6.3 }
+                }}
+              />
 
               {/* Filters Section */}
               <Box sx={{
