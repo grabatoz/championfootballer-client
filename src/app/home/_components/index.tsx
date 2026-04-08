@@ -893,9 +893,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           sx={{
             position: 'absolute',
             top: 'calc(100% - 2px)',
-            left: 0,
-            width: '100%',
-            maxWidth: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: { xs: '92vw', sm: '100%' },
+            maxWidth: { xs: '92vw', sm: '100%' },
             maxHeight: 300,
             overflowY: 'auto',
             p: 0.5,

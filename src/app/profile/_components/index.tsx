@@ -112,6 +112,24 @@ const themeColors = {
   sliderTrack: "linear-gradient(90deg,#00a77f,#00a77f)"
 }
 
+const selectMenuProps = {
+  anchorOrigin: { vertical: "bottom", horizontal: "left" } as const,
+  transformOrigin: { vertical: "top", horizontal: "left" } as const,
+  variant: "menu" as const,
+  marginThreshold: 0,
+  PaperProps: {
+    sx: {
+      mt: 0,
+      maxHeight: { xs: 240, sm: 320 },
+      overflowY: "auto",
+      overscrollBehavior: "contain",
+      bgcolor: themeColors.surfaceAlt,
+      color: themeColors.text,
+      border: `1px solid ${themeColors.border}`,
+    },
+  },
+}
+
 // ===== Styled Components (re-skinned) =====
 const StyledPaper = styled(Paper)(() => ({
   background: themeColors.surfaceElevated,
@@ -1023,6 +1041,7 @@ const PlayerProfileCard = () => {
                               placeholder="Select country"
                               fullWidth
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
+                              SelectProps={{ MenuProps: selectMenuProps }}
                             >
                               {countryOptions.map(c => (
                                 <MenuItem key={c} value={c}>{c}</MenuItem>
@@ -1044,6 +1063,7 @@ const PlayerProfileCard = () => {
                                 placeholder="Select city"
                                 fullWidth
                                 sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
+                                SelectProps={{ MenuProps: selectMenuProps }}
                               >
                                 {countryCityMap[country].map(c => (
                                   <MenuItem key={c} value={c}>{c}</MenuItem>

@@ -13,6 +13,24 @@ const themeColors = {
   textDim: "rgba(255,255,255,0.72)",
 };
 
+const selectMenuProps = {
+  anchorOrigin: { vertical: 'bottom', horizontal: 'left' } as const,
+  transformOrigin: { vertical: 'top', horizontal: 'left' } as const,
+  variant: 'menu' as const,
+  marginThreshold: 0,
+  PaperProps: {
+    sx: {
+      mt: 0,
+      maxHeight: { xs: 240, sm: 320 },
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+      bgcolor: "#202225",
+      color: themeColors.text,
+      border: `1px solid ${themeColors.border}`,
+    }
+  }
+};
+
 const StyledTextField = styled(TextField)(() => ({
   '& .MuiOutlinedInput-root': {
     background: "#202225",
@@ -111,7 +129,7 @@ export default function CountryStateCitySelector({
             value={selectedCountryCode}
             onChange={(e) => handleCountryChange(e.target.value)}
             placeholder="Select Country"
-            SelectProps={{ displayEmpty: true }}
+            SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
             <MenuItem value="" disabled>Select Country</MenuItem>
             {countries.map(c => (
@@ -128,7 +146,7 @@ export default function CountryStateCitySelector({
             value={selectedStateCode}
             onChange={(e) => handleStateChange(e.target.value)}
             placeholder="Select State"
-            SelectProps={{ displayEmpty: true }}
+            SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
             <MenuItem value="" disabled>{states.length ? 'Select State' : 'No states available'}</MenuItem>
             {states.map(s => (
@@ -145,7 +163,7 @@ export default function CountryStateCitySelector({
             value={city}
             onChange={(e) => onCityChange(e.target.value)}
             placeholder="Select City"
-            SelectProps={{ displayEmpty: true }}
+            SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
             <MenuItem value="" disabled>Select City</MenuItem>
             {(cities ?? []).map(ci => (

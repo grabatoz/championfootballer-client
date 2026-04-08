@@ -85,6 +85,20 @@ const extractSuccessMessage = (r: unknown, fallback: string): string => {
   return fallback
 }
 
+const dropdownPaperBaseSx = {
+  mt: 0,
+  maxHeight: { xs: 240, sm: 300 },
+  overflowY: "auto",
+  overscrollBehavior: "contain" as const,
+}
+
+const dropdownMenuBaseProps = {
+  anchorOrigin: { vertical: "bottom", horizontal: "left" } as const,
+  transformOrigin: { vertical: "top", horizontal: "left" } as const,
+  variant: "menu" as const,
+  marginThreshold: 0,
+}
+
 // Helper to normalize User to UserProfile
 const normalizeUserForStorage = (user: User): UserProfile => {
   return {
@@ -1080,18 +1094,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                         variant="standard"
                         disableUnderline
                         MenuProps={{
-                          disablePortal: true,
-                          anchorOrigin: {
-                            vertical: 'bottom',
-                            horizontal: 'left',
-                          },
-                          transformOrigin: {
-                            vertical: 'top',
-                            horizontal: 'left',
-                          },
+                          ...dropdownMenuBaseProps,
                           PaperProps: {
                             sx: {
-                              maxHeight: 300,
+                              ...dropdownPaperBaseSx,
                               maxWidth: '300px',
                               marginLeft: '10px',
                             },
@@ -1225,6 +1231,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                     displayEmpty
                     input={<OutlinedInput notched={false} />}
                     sx={registerSelectSx}
+                    MenuProps={{
+                      ...dropdownMenuBaseProps,
+                      PaperProps: { sx: dropdownPaperBaseSx },
+                    }}
                     renderValue={(selected) => {
                       if (!selected) return <span style={{ color: '#757575' }}>Gender</span>
                       return selected === 'male' ? 'Male' : 'Female'
@@ -1272,6 +1282,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   }}
                   input={<OutlinedInput notched={false} />}
                   sx={registerSelectSx}
+                  MenuProps={{
+                    ...dropdownMenuBaseProps,
+                    PaperProps: { sx: dropdownPaperBaseSx },
+                  }}
                   required
                 >
                   <MenuItem value="" disabled>
@@ -1301,6 +1315,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                     }}
                     input={<OutlinedInput notched={false} />}
                     sx={registerSelectSx}
+                    MenuProps={{
+                      ...dropdownMenuBaseProps,
+                      PaperProps: { sx: dropdownPaperBaseSx },
+                    }}
                     required
                     disabled={!selectedCountryCode}
                   >

@@ -101,6 +101,20 @@ const normalizeMatch = (m: Partial<MatchWithGuests> | null | undefined): MatchWi
     };
 };
 
+const dropdownPaperBaseSx = {
+    mt: 0,
+    maxHeight: { xs: 240, sm: 320 },
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+};
+
+const dropdownMenuBaseProps = {
+    anchorOrigin: { vertical: 'bottom', horizontal: 'left' } as const,
+    transformOrigin: { vertical: 'top', horizontal: 'left' } as const,
+    variant: 'menu' as const,
+    marginThreshold: 0,
+};
+
 interface User {
     id: string;
     firstName: string;
@@ -2592,8 +2606,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 : 'Select Man Of The Match Player';
                                         },
                                         MenuProps: {
+                                            ...dropdownMenuBaseProps,
                                             PaperProps: {
                                                 sx: {
+                                                    ...dropdownPaperBaseSx,
                                                     bgcolor: 'black',
                                                     '& .MuiList-root': {
                                                         display: 'grid',
@@ -2703,8 +2719,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 : 'Select Defensive Impact Player';
                                         },
                                         MenuProps: {
+                                            ...dropdownMenuBaseProps,
                                             PaperProps: {
                                                 sx: {
+                                                    ...dropdownPaperBaseSx,
                                                     bgcolor: '#000',
                                                     '& .MuiList-root': {
                                                         display: 'grid',
@@ -2809,8 +2827,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 : 'Select + Mentality Player';
                                         },
                                         MenuProps: {
+                                            ...dropdownMenuBaseProps,
                                             PaperProps: {
                                                 sx: {
+                                                    ...dropdownPaperBaseSx,
                                                     bgcolor: '#000',
                                                     '& .MuiList-root': {
                                                         display: 'grid',

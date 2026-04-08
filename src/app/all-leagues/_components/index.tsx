@@ -99,6 +99,20 @@ const normalizeMatches = (v: unknown): Match[] => {
   });
 };
 
+const dropdownPaperBaseSx = {
+  mt: 0,
+  maxHeight: { xs: 240, sm: 320 },
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+};
+
+const dropdownMenuBaseProps = {
+  anchorOrigin: { vertical: 'bottom', horizontal: 'left' } as const,
+  transformOrigin: { vertical: 'top', horizontal: 'left' } as const,
+  variant: 'menu' as const,
+  marginThreshold: 0,
+};
+
 // Normalize unknown payload from API/thunk into a League object
 const normalizeLeagueFromPayload = (payload: unknown): League | null => {
   // Accept either direct League or wrapped { league: League }
@@ -1005,8 +1019,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                       '& .MuiSelect-icon': { color: '#E5E7EB' },
                     }}
                     MenuProps={{
+                      ...dropdownMenuBaseProps,
                       PaperProps: {
-                        sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                        sx: {
+                          ...dropdownPaperBaseSx,
+                          bgcolor: 'rgba(15,15,15,0.98)',
+                          color: '#E5E7EB',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                        },
                       },
                     }}
                   >
@@ -1039,8 +1059,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     '& .MuiSelect-icon': { color: '#E5E7EB' },
                   }}
                   MenuProps={{
+                    ...dropdownMenuBaseProps,
                     PaperProps: {
-                      sx: { bgcolor: 'rgba(15,15,15,0.98)', color: '#E5E7EB', border: '1px solid rgba(255,255,255,0.08)' },
+                      sx: {
+                        ...dropdownPaperBaseSx,
+                        bgcolor: 'rgba(15,15,15,0.98)',
+                        color: '#E5E7EB',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      },
                     },
                   }}
                 >
@@ -2585,8 +2611,9 @@ function AllLeagues() {
                 }}
                 SelectProps={{
                   MenuProps: {
+                    ...dropdownMenuBaseProps,
                     PaperProps: {
-                      sx: { bgcolor: '#1a1a1a', color: 'white' }
+                      sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
                     }
                   }
                 }}
@@ -2619,8 +2646,9 @@ function AllLeagues() {
                 }}
                 SelectProps={{
                   MenuProps: {
+                    ...dropdownMenuBaseProps,
                     PaperProps: {
-                      sx: { bgcolor: '#1a1a1a', color: 'white' }
+                      sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
                     }
                   }
                 }}

@@ -2851,6 +2851,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       p: 0.5,
                       mt: 1.5,
                       minWidth: 200,
+                      width: { xs: '92vw', sm: 'auto' },
+                      maxWidth: { xs: '92vw', sm: 'none' },
+                      left: { xs: '50% !important', sm: 'auto' },
+                      right: { xs: 'auto', sm: 'auto' },
+                      transform: { xs: 'translateX(-50%)', sm: 'none' },
                       bgcolor: 'rgba(15,15,15,0.92)',
                       color: '#E5E7EB',
                       borderRadius: 2.5,
@@ -2860,8 +2865,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       overflow: 'hidden',
                     },
                   }}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                 >
                   <MenuItem
                     onClick={handleSignOutClick}

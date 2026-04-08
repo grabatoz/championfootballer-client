@@ -1919,14 +1919,19 @@ export default function AllMatches() {
                                 anchorEl={leaguesDropdownAnchor}
                                 open={leaguesDropdownOpen}
                                 onClose={handleLeaguesDropdownClose}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                                 MenuListProps={{ sx: { p: 0 } }}
                                 PaperProps={{
                                     sx: {
                                         p: 0.5,
                                         mt: 1,
                                         minWidth: 240,
+                                        width: { xs: '92vw', sm: 'auto' },
+                                        maxWidth: { xs: '92vw', sm: 'none' },
+                                        left: { xs: '50% !important', sm: 'auto' },
+                                        right: { xs: 'auto', sm: 'auto' },
+                                        transform: { xs: 'translateX(-50%)', sm: 'none' },
                                         bgcolor: 'rgba(15,15,15,0.92)',
                                         color: '#E5E7EB',
                                         borderRadius: 2.5,
@@ -1934,10 +1939,14 @@ export default function AllMatches() {
                                         backdropFilter: 'blur(10px)',
                                         boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
                                         // Dynamic height: only grow to content, but allow scroll if content exceeds 320px
-                                        maxHeight: 320,
+                                        maxHeight: { xs: 260, sm: 320 },
                                         overflowY: 'auto',
                                         overflowX: 'hidden',
                                         overscrollBehavior: 'contain',
+                                        '& .MuiMenu-list': {
+                                          maxHeight: { xs: 260, sm: 320 },
+                                          overflowY: 'auto',
+                                        },
                                         // Themed scrollbars (only appear if needed)
                                         scrollbarWidth: 'thin',
                                         scrollbarColor: '#374151 #111827',

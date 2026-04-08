@@ -922,6 +922,7 @@ export default function ScheduleMatchPage() {
     anchorOrigin: { vertical: 'bottom' as const, horizontal: 'left' as const },
     transformOrigin: { vertical: 'top' as const, horizontal: 'left' as const },
     variant: 'menu' as const,
+    marginThreshold: 0,
     disableAutoFocusItem: true,
     MenuListProps: {
       sx: {
@@ -946,7 +947,7 @@ export default function ScheduleMatchPage() {
     },
     PaperProps: {
       sx: {
-        mt: 0.25,
+        mt: 0,
         bgcolor: '#424242',
         color: THEME.TEXT,
         border: '1px solid rgba(255,255,255,0.45)',

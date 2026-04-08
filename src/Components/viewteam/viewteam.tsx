@@ -1726,7 +1726,22 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         )}
 
         {/* Context Menu */}
-        <Menu open={Boolean(menuAnchor)} anchorEl={menuAnchor} onClose={closeMenu}>
+        <Menu
+          open={Boolean(menuAnchor)}
+          anchorEl={menuAnchor}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+          PaperProps={{
+            sx: {
+              width: { xs: '92vw', sm: 'auto' },
+              maxWidth: { xs: '92vw', sm: 'none' },
+              left: { xs: '50% !important', sm: 'auto' },
+              right: { xs: 'auto', sm: 'auto' },
+              transform: { xs: 'translateX(-50%)', sm: 'none' },
+            }
+          }}
+        >
           <MenuItem
             onClick={handleRemove}
             disabled={
