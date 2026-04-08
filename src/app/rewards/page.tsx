@@ -663,6 +663,10 @@ export default function RewardsPage() {
         title="Rewards"
         fullBleed={false}
         sx={{ mb: { xs: 2, md: 3 }, mx: 0 }}
+        titleSx={{
+          // Adjust this padding to move the divider line up/down
+          pb: { xs: 4, md: 8 }
+        }}
         dividerSx={{ width: '100%', marginLeft: 0, marginRight: 0 }}
       />
 
