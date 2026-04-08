@@ -477,7 +477,7 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
             <Box
               sx={{
                 position: 'absolute',
-                bottom: 8,
+                bottom: {xs:-3.5, sm:-3.5 , md:8},
                 left: '50%',
                 transform: 'translateX(-50%)',
                 background: 'transparent',
@@ -488,7 +488,7 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.8rem',
+                fontSize: {xs:'0.6rem',sm:'0.8rem',md:'0.8rem'},
                 fontWeight: 700,
               }}
             >
