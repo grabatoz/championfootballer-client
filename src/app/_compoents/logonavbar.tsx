@@ -35,8 +35,8 @@ function LogoNavbar() {
         <Box
           sx={{
             width: '100%',
-            height: '4px',
-            backgroundColor: '#e16419',
+            height: 'var(--header-divider-height)',
+            backgroundColor: 'var(--header-divider-color)',
            
           }}
         />

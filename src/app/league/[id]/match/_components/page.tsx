@@ -1025,8 +1025,8 @@ export default function ScheduleMatchPage() {
               position: 'relative',
               left: '50%',
               transform: 'translateX(-50%)',
-              height: '3px',
-              background: '#e16419',
+              height: 'var(--header-divider-height)',
+              background: 'var(--header-divider-color)',
               mb: { xs: 2, md: 2 },
             }}
           />

@@ -290,8 +290,8 @@ export default function WorldRankingTable() {
           width: 'calc(100% + 32px)',
           marginLeft: '-16px',
           marginRight: '-16px',
-          height: '3px', 
-          background: '#e56a16',
+          height: 'var(--header-divider-height)', 
+          background: 'var(--header-divider-color)',
           // mb: { xs: 2, md: 2 },
           '@media (min-width: 900px)': {
             width: 'calc(100% + 48px)',

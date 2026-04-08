@@ -2736,8 +2736,8 @@ export default function GlobalTrophyRoom() {
 
           {/* Orange divider */}
           <Box sx={{ 
-            height: '3px', 
-            bgcolor: '#E56A16', 
+            height: 'var(--header-divider-height)', 
+            bgcolor: 'var(--header-divider-color)', 
             width: { xs: '100%', sm: '100vw' },
             position: { xs: 'static', sm: 'relative' },
             left: { xs: 'auto', sm: '50%' },

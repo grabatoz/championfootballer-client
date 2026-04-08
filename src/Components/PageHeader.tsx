@@ -46,8 +46,8 @@ const baseDividerSx: SystemStyleObject<Theme> = {
   width: '100%',
   marginLeft: 0,
   marginRight: 0,
-  height: '3px',
-  background: '#e16419',
+  height: 'var(--header-divider-height)',
+  background: 'var(--header-divider-color)',
   mb: { xs: 2, md: 2 },
 };
 
@@ -74,8 +74,8 @@ export default function PageHeader({
     ? {
         width: 'auto',
         mx: { xs: -2, sm: -3, md: -3 },
-        height: '3px',
-        background: '#e16419',
+        height: 'var(--header-divider-height)',
+        background: 'var(--header-divider-color)',
         mb: { xs: 2, md: 2 },
       }
     : baseDividerSx;

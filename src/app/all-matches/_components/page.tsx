@@ -1725,7 +1725,7 @@ export default function AllMatches() {
                     mb: { xs: 3, md: 5 },
                     bgcolor: 'black',
                     px: 0,
-                    py: { xs: 2, md: 3 },
+                    py: { xs: 2, md: 2.5 },
                     borderRadius: 0,
                     width: '98.5vw',
                     position: 'relative',
@@ -1736,8 +1736,8 @@ export default function AllMatches() {
                 }}>
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
                     <Typography variant="h3" sx={{
-                        mb: { xs: 4, md: 6 },
-                        mt:{xs: 1.25, md: 4},
+                        mb: { xs: 4, md: 4.5 },
+                        mt:{xs: 1.25, md: 3},
                         color: 'white',
                         // fontFamily: 'Arial Black, Arial, sans-serif',
                         fontFamily: '"Oswald", sans-serif !important',
@@ -1756,8 +1756,8 @@ export default function AllMatches() {
                     <Box
                         sx={{
                             width: '100%',
-                            height: '3px',
-                            background: '#b75512',
+                            height: 'var(--header-divider-height)',
+                            background: 'var(--header-divider-color)',
                             mb: { xs: 2, md: 2.5 },
                         }}
                     />

@@ -18,6 +18,8 @@
   --background: #ffffff;
   --foreground: #171717;
   --font-woodford-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif;
+  --header-divider-height: 3px;
+  --header-divider-color: #e16419;
 }
 
 /* Woodford Bourne Pro - Thin (100) */
