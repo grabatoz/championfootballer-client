@@ -2075,6 +2075,13 @@ export default function LeagueDetailPage() {
         });
     };
 
+    const LEAGUE_NAME_MAX = 20;
+    const truncateLeagueName = (value: string): string => {
+        const trimmed = value.trim();
+        if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+        return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+    };
+
     const formatLeagueName = (name: string): string => {
         if (!name) return '';
 
@@ -2086,7 +2093,7 @@ export default function LeagueDetailPage() {
         const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
 
         // Return formatted name with initials in brackets
-        return `${capitalizedName}`;
+        return truncateLeagueName(`${capitalizedName}`);
     };
 
     const formatMatchName = (name: string): string => {
@@ -2945,12 +2952,13 @@ export default function LeagueDetailPage() {
                                                         fontSize: { xs: '32px', sm: '42px', md: '55px' },
                                                         fontWeight: 700,
                                                         lineHeight: 1.1,
-                                                        wordBreak: 'break-word',
-                                                        overflow: 'visible',
-                                                        textOverflow: 'clip',
-                                                        whiteSpace: 'normal',
+                                                        wordBreak: 'normal',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
                                                         flexShrink: 1,
                                                         minWidth: 0,
+                                                        maxWidth: { xs: '72vw', sm: '60vw', md: '50vw' },
                                                         textAlign: 'center',
                                                         color: 'white',
                                                         backgroundColor: 'transparent',
@@ -2963,6 +2971,7 @@ export default function LeagueDetailPage() {
                                                         },
                                                         display: 'flex',
                                                         alignItems: 'center',
+                                                        justifyContent: 'center',
                                                         gap: 0.5,
                                                     }}
                                                     endIcon={
@@ -2980,7 +2989,19 @@ export default function LeagueDetailPage() {
                                                         />
                                                     }
                                                 >
-                                                    {formatLeagueName(league.name)}
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            display: 'inline-block',
+                                                            maxWidth: { xs: '60vw', sm: '48vw', md: '42vw' },
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            verticalAlign: 'middle',
+                                                        }}
+                                                    >
+                                                        {formatLeagueName(league.name)}
+                                                    </Box>
                                                 </Button>
                                             ) : (
                                                 <Typography

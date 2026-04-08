@@ -1667,13 +1667,20 @@ export default function GlobalTrophyRoom() {
   };
 
   // Helper to format the league button label
+  const LEAGUE_NAME_MAX = 20;
+  const truncateLeagueName = (value: string): string => {
+    const trimmed = value.trim();
+    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+  };
+
   const formatLeagueName = (name: string): string => {
     if (!name) return '';
     const trimmed = String(name).trim();
     const words = trimmed.split(/\s+/);
     const initials = words.map(w => (w[0] || '').toUpperCase()).join('');
     const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-    return `${capitalized}`;
+    return truncateLeagueName(`${capitalized}`);
   };
 
   // Badge detail modal state
@@ -2517,13 +2524,13 @@ export default function GlobalTrophyRoom() {
                                                                          fontSize: { xs: '32px', sm: '42px', md: '55px' },
                                                                          fontWeight: 700,
                                                                          lineHeight: 1.1,
-                                                                         wordBreak: 'break-word',
-                                                                         overflow: 'visible',
-                                                                         textOverflow: 'clip',
-                                                                         whiteSpace: 'normal',
+                                                                         wordBreak: 'normal',
+                                                                         overflow: 'hidden',
+                                                                         textOverflow: 'ellipsis',
+                                                                         whiteSpace: 'nowrap',
                                                                          flexShrink: 1,
                                                                          minWidth: 0,
-                                                                         maxWidth: { xs: '80vw', sm: 'none' },
+                                                                         maxWidth: { xs: '80vw', sm: '70vw', md: '60vw' },
                                                                          textAlign: 'center',
                                                                          color: 'white',
                                                                          backgroundColor: 'transparent',
@@ -2536,6 +2543,7 @@ export default function GlobalTrophyRoom() {
                                                                          },
                                                                          display: 'flex',
                                                                          alignItems: 'center',
+                                                                         justifyContent: 'center',
                                                                          gap: 0.5,
                                                                      }}
                                                                      endIcon={
@@ -2553,7 +2561,19 @@ export default function GlobalTrophyRoom() {
                                                                              />
                                                                             }
                 >
-                  {formatLeagueName(selectedLeague.name)}
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-block',
+                      maxWidth: { xs: '68vw', sm: '58vw', md: '48vw' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {formatLeagueName(selectedLeague.name)}
+                  </Box>
                 </Button>
               ) : (
                 <Typography

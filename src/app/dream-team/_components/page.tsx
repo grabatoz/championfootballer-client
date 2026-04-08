@@ -185,11 +185,17 @@ const DreamTeamPage = () => {
     invalidateCache(/\/dream-team\?leagueId=/);
   }, []);
 
+  const LEAGUE_NAME_MAX = 20;
+  const truncateLeagueName = (value: string): string => {
+    const trimmed = value.trim();
+    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+  };
   const formatLeagueName = (name: string) => {
     if (!name) return '';
     const words = name.trim().split(/\s+/);
     const caps = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    return caps;
+    return truncateLeagueName(caps);
   };
 
   // Memoize sorted leagues
@@ -428,11 +434,22 @@ const DreamTeamPage = () => {
               flexShrink: 0,
             }}
           >
-            {loading
-              ? 'Loading...'
-              : noLeagues
-              ? 'No leagues found'
-              : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {loading
+                ? 'Loading...'
+                : noLeagues
+                ? 'No leagues found'
+                : formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')}
+            </Box>
           </Button>
         </Box>
       </PageHeader>

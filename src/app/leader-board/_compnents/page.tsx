@@ -285,11 +285,18 @@ export default function LeaderBoardPage() {
 
   const topPlayers = React.useMemo(() => players.slice(0, 5), [players]);
 
+  const LEAGUE_NAME_MAX = 20;
+  const truncateLeagueName = (value: string): string => {
+    const trimmed = value.trim();
+    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+  };
+
   const formatLeagueName = (name: string): string => {
     if (!name) return '';
     const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     const initials = name.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
-    return `${capitalizedName} (${initials})`;
+    return truncateLeagueName(`${capitalizedName} (${initials})`);
   };
 
   return (
@@ -359,6 +366,14 @@ export default function LeaderBoardPage() {
               px: { xs: 2, sm: 2.5 },
               py: { xs: 0.75, sm: 1 },
               minWidth: { xs: 190, sm: 240 },
+              maxWidth: { xs: '80vw', sm: 320 },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minHeight: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               '&.Mui-disabled': {
                 color: '#FFFFFF',
                 opacity: 1,
@@ -368,11 +383,22 @@ export default function LeaderBoardPage() {
               '&:hover': { backgroundColor: '#2B2B2B' },
             }}
           >
-            {leagues.length === 0
-              ? 'No leagues found'
-              : (selectedLeague
-                ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
-                : 'Select League')}
+            <Box
+              component="span"
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {leagues.length === 0
+                ? 'No leagues found'
+                : (selectedLeague
+                  ? formatLeagueName(leagues.find(l => l.id === selectedLeague)?.name || 'Select League')
+                  : 'Select League')}
+            </Box>
           </Button>
           <Menu
             anchorEl={leaguesDropdownAnchor}

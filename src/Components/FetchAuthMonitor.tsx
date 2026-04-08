@@ -13,6 +13,23 @@ export default function FetchAuthMonitor() {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
     if (!API_BASE) return; // nothing to do if base not defined
 
+    const normalizeBase = (value: string) => value.replace(/\/$/, "");
+    const getResolvedApiBase = () => {
+      try {
+        if (typeof window === "undefined") return API_BASE;
+        const baseUrl = new URL(API_BASE);
+        const currentHost = window.location.hostname;
+        const isLocalBase = ["localhost", "127.0.0.1", "0.0.0.0"].includes(baseUrl.hostname);
+        if (currentHost && isLocalBase && currentHost !== baseUrl.hostname) {
+          const port = baseUrl.port ? `:${baseUrl.port}` : "";
+          return `${baseUrl.protocol}//${currentHost}${port}`;
+        }
+      } catch {
+        // ignore malformed base
+      }
+      return API_BASE;
+    };
+
     type AuthMonitorWindow = Window & {
       __authFetchPatched?: boolean;
       __missingMatchIds?: Record<string, number>;
@@ -38,7 +55,8 @@ export default function FetchAuthMonitor() {
         const match = path.match(/^\/matches\/([a-f0-9-]+)$/i);
         return match ? match[1] : null;
       } catch {
-        const raw = url.replace(API_BASE, "");
+        const resolvedBase = getResolvedApiBase();
+        const raw = url.replace(API_BASE, "").replace(resolvedBase, "");
         const match = raw.match(/^\/matches\/([a-f0-9-]+)$/i);
         return match ? match[1] : null;
       }
@@ -47,8 +65,26 @@ export default function FetchAuthMonitor() {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       try {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
+        const resolvedBase = getResolvedApiBase();
+        const baseNormalized = normalizeBase(API_BASE);
+        const resolvedNormalized = normalizeBase(resolvedBase);
         const lower = url.toLowerCase();
-        const isApi = API_BASE && lower.startsWith(API_BASE.toLowerCase());
+        const isApi = (baseNormalized && lower.startsWith(baseNormalized.toLowerCase())) ||
+          (resolvedNormalized && lower.startsWith(resolvedNormalized.toLowerCase()));
+
+        const finalUrl = baseNormalized && resolvedNormalized && url.startsWith(baseNormalized)
+          ? `${resolvedNormalized}${url.slice(baseNormalized.length)}`
+          : url;
+        let finalInput: RequestInfo | URL = input;
+        if (finalUrl !== url) {
+          if (typeof input === "string") {
+            finalInput = finalUrl;
+          } else if (input instanceof URL) {
+            finalInput = new URL(finalUrl);
+          } else {
+            finalInput = new Request(finalUrl, input as Request);
+          }
+        }
 
         // Only patch API requests
         if (!isApi) {
@@ -173,7 +209,7 @@ export default function FetchAuthMonitor() {
           }
         }
 
-        const res = await originalFetch(input, finalInit);
+        const res = await originalFetch(finalInput, finalInit);
         if (matchId) {
           if (res.status === 404) {
             missingMatchIds[matchId] = Date.now();

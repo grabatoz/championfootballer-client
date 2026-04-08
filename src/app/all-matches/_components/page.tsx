@@ -936,6 +936,13 @@ export default function AllMatches() {
         setLeaguesDropdownAnchor(null);
     };
 
+    const LEAGUE_NAME_MAX = 20;
+    const truncateLeagueName = (value: string): string => {
+        const trimmed = value.trim();
+        if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+        return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+    };
+
     const formatLeagueName = (name: string): string => {
         if (!name) return '';
 
@@ -947,7 +954,7 @@ export default function AllMatches() {
         const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
 
         // Return formatted name with initials in brackets
-        return `${capitalizedName} (${initials})`;
+        return truncateLeagueName(`${capitalizedName} (${initials})`);
     };
 
     // Sort helper: prefer numeric match index descending, fallback to latest date
@@ -1851,10 +1858,10 @@ export default function AllMatches() {
                                     minHeight: { md: 48 },
                                     height: { md: 48 },
                                     lineHeight: 1.2,
-                                    wordBreak: { xs: 'normal', sm: 'break-word' },
+                                    wordBreak: 'normal',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    whiteSpace: { xs: 'nowrap', sm: 'wrap' },
+                                    whiteSpace: 'nowrap',
                                     flexShrink: 1,
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
@@ -1869,7 +1876,7 @@ export default function AllMatches() {
                                     },
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: { xs: 'space-between', sm: 'flex-start' },
+                                    justifyContent: 'space-between',
                                     gap: { xs: 0.5, sm: 1 },
                                     // Dynamic text color: grey when no leagues, white otherwise
                                     color: noLeagues ? '#fff' : 'white',
@@ -1884,13 +1891,24 @@ export default function AllMatches() {
                                 endIcon={<ChevronDown size={20} />}
                                 disabled={noLeagues}
                             >
-                                 {loading
-              ? 'Loading...'
-              : noLeagues
-              ? 'No leagues found'
-                                    : formatLeagueName(
-                                        leagues.find(l => l.id === selectedLeague)?.name || 'Select League'
-                                      )}
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {loading
+                  ? 'Loading...'
+                  : noLeagues
+                  ? 'No leagues found'
+                                        : formatLeagueName(
+                                            leagues.find(l => l.id === selectedLeague)?.name || 'Select League'
+                                          )}
+                                </Box>
                             </Button>
                             <Menu
                                 anchorEl={leaguesDropdownAnchor}

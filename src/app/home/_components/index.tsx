@@ -327,6 +327,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   };
 
   // Format league name function
+  const LEAGUE_NAME_MAX = 20;
+  const truncateLeagueName = (value: string): string => {
+    const trimmed = value.trim();
+    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
+    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+  };
+
   const formatLeagueName = (name: string | undefined | null) => {
     if (!name) return '';
     const words = name.split(' ');
@@ -334,6 +341,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     );
     return capitalizedWords.join(' ');
+  };
+  const formatLeagueNameShort = (name: string | undefined | null) => {
+    const formatted = formatLeagueName(name);
+    return formatted ? truncateLeagueName(formatted) : '';
   };
 
   // Fetch user's leagues (now optimized for instant initial render, enrichment runs in background)
@@ -800,7 +811,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               >
                 {isFetching
                   ? 'Loading…'
-                  : (selectedLeague?.name ? formatLeagueName(selectedLeague.name) : 'Select a league')}
+                  : (selectedLeague?.name ? formatLeagueNameShort(selectedLeague.name) : 'Select a league')}
               </Typography>
               {!isFetching && selectedLeague?.name && (
                 <Typography
