@@ -659,15 +659,30 @@ export default function RewardsPage() {
   return (
     <Box sx={{ minHeight: '160vh', backgroundColor: '#0E0E0E', overflowX: 'hidden' }}>
       {/* Header */}
-      <PageHeader
-        title="Rewards"
-        fullBleed={true}
-        sx={{ mb: { xs: 2, md: 3 }, mx: 0 }}
-        titleSx={{
-          // Adjust this padding to move the divider line up/down
-          pb: { xs: 4, md: 8 }
+      <Box
+        sx={{
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          transform: 'translateX(-50%)',
         }}
-      />
+      >
+        <PageHeader
+          title="Rewards"
+          fullBleed={false}
+          sx={{ mb: { xs: 2, md: 3 }, mx: 0 }}
+          titleSx={{
+            // Adjust this padding to move the divider line up/down
+            pb: { xs: 4, md: 8 }
+          }}
+          dividerSx={{
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
+        />
+      </Box>
 
       <Box sx={{ px: { xs: 2, sm: 3, md: 5, lg: 11.2 }, pb: 4, mt: -0.5 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: { xs: 1, sm: 1.5, md: 1.2 }, rowGap: { xs: 2, sm: 3, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
