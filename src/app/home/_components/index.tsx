@@ -327,24 +327,20 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   };
 
   // Format league name function
-  const LEAGUE_NAME_MAX = 20;
-  const truncateLeagueName = (value: string): string => {
-    const trimmed = value.trim();
-    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
-    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
-  };
-
   const formatLeagueName = (name: string | undefined | null) => {
-    if (!name) return '';
-    const words = name.split(' ');
-    const capitalizedWords = words.map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    );
-    return capitalizedWords.join(' ');
+    const trimmed = String(name ?? '').trim();
+    if (!trimmed) return '';
+    const words = trimmed.split(/\s+/);
+    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
   const formatLeagueNameShort = (name: string | undefined | null) => {
-    const formatted = formatLeagueName(name);
-    return formatted ? truncateLeagueName(formatted) : '';
+    return formatLeagueName(name);
+  };
+  const getLeagueLabelFontSize = (name?: string) => {
+    const len = String(name ?? '').trim().length;
+    if (len > 28) return { xs: '14px', sm: '16px', md: '17px' };
+    if (len > 22) return { xs: '15px', sm: '17px', md: '18px' };
+    return { xs: '16px', sm: '18px', md: '19px' };
   };
 
   // Fetch user's leagues (now optimized for instant initial render, enrichment runs in background)
@@ -797,15 +793,16 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: { xs: '16px', sm: '18px', md: '19px' },
+                  fontSize: getLeagueLabelFontSize(selectedLeague?.name),
                   fontWeight: 600,
                   lineHeight: '100%',
                   letterSpacing: '0%',
                   textTransform: 'capitalize',
                   maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                  textOverflow: 'clip',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >

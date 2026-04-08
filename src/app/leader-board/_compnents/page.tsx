@@ -285,18 +285,18 @@ export default function LeaderBoardPage() {
 
   const topPlayers = React.useMemo(() => players.slice(0, 5), [players]);
 
-  const LEAGUE_NAME_MAX = 20;
-  const truncateLeagueName = (value: string): string => {
-    const trimmed = value.trim();
-    if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
-    return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
+  const formatLeagueName = (name: string): string => {
+    const trimmed = String(name ?? '').trim();
+    if (!trimmed) return '';
+    const words = trimmed.split(/\s+/);
+    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   };
 
-  const formatLeagueName = (name: string): string => {
-    if (!name) return '';
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-    const initials = name.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
-    return truncateLeagueName(`${capitalizedName} (${initials})`);
+  const getLeagueLabelFontSize = (name?: string) => {
+    const len = String(name ?? '').trim().length;
+    if (len > 28) return { xs: '0.85rem', sm: '1rem' };
+    if (len > 22) return { xs: '0.9rem', sm: '1.05rem' };
+    return { xs: '0.95rem', sm: '1.1rem' };
   };
 
   return (
@@ -358,7 +358,7 @@ export default function LeaderBoardPage() {
             endIcon={<ChevronDown size={18} />}
             sx={{
               textTransform: 'uppercase',
-              fontSize: { xs: '0.9rem', sm: '1.05rem' },
+              fontSize: getLeagueLabelFontSize(leagues.find(l => l.id === selectedLeague)?.name),
               fontWeight: 'bold',
               color: 'white',
               backgroundColor: '#2B2B2B',
@@ -367,9 +367,9 @@ export default function LeaderBoardPage() {
               py: { xs: 0.75, sm: 1 },
               minWidth: { xs: 190, sm: 240 },
               maxWidth: { xs: '80vw', sm: 320 },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              overflow: 'visible',
+              textOverflow: 'clip',
+              whiteSpace: 'normal',
               minHeight: 0,
               display: 'flex',
               alignItems: 'center',
@@ -388,9 +388,10 @@ export default function LeaderBoardPage() {
               sx={{
                 flex: 1,
                 minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                overflow: 'visible',
+                textOverflow: 'clip',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
               }}
             >
               {leagues.length === 0

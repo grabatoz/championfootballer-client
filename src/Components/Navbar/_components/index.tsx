@@ -2515,8 +2515,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       label: 'Profile',
       icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
       href: '/profile',
-      resolveHrefLabel: 'VIEW STATS',
-      isActive: () => isNavActive('VIEW STATS', '/profile'),
+      isActive: () => pathname?.startsWith('/profile') ?? false,
     },
   ];
 
@@ -2910,44 +2909,41 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             pb: 'max(env(safe-area-inset-bottom), 4px)',
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'nowrap',
-              width: '100%',
-              overflowX: 'auto',
-              px: 0.2,
-              pr: 'max(env(safe-area-inset-right), 44px)',
-              py: 0.4,
-              gap: 0.06,
-              '&::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
-          >
-            {mobileBottomItems.map((item) => {
-              const active = item.isActive?.() ?? false;
+        <Box
+          sx={{
+            display: 'grid',
+            alignItems: 'center',
+            gridTemplateColumns: `repeat(${mobileBottomItems.length}, minmax(0, 1fr))`,
+            width: '100%',
+            overflowX: 'hidden',
+            px: 0.6,
+            pr: 'max(env(safe-area-inset-right), 8px)',
+            py: 0.4,
+            gap: 0.4,
+          }}
+        >
+          {mobileBottomItems.map((item) => {
+            const active = item.isActive?.() ?? false;
 
-              const buttonSx = {
-                minWidth: 60,
-                px: 0.5,
-                py: 0.55,
-                borderRadius: 1.5,
-                textTransform: 'none',
-                color: active ? '#10D3A8' : '#E5E7EB',
-                bgcolor: active ? 'rgba(16,185,129,0.22)' : 'transparent',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.2,
-                lineHeight: 1,
-                flex: '0 0 auto',
-                '&:hover': {
-                  bgcolor: active ? 'rgba(16,185,129,0.30)' : 'rgba(255,255,255,0.10)',
-                },
-              } as const;
+            const buttonSx = {
+              minWidth: 0,
+              width: '100%',
+              px: 0.2,
+              py: 0.55,
+              borderRadius: 1.5,
+              textTransform: 'none',
+              color: active ? '#10D3A8' : '#E5E7EB',
+              bgcolor: active ? 'rgba(16,185,129,0.22)' : 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.15,
+              lineHeight: 1,
+              '&:hover': {
+                bgcolor: active ? 'rgba(16,185,129,0.30)' : 'rgba(255,255,255,0.10)',
+              },
+            } as const;
 
               if (item.href) {
                 const targetHref = item.resolveHrefLabel
