@@ -1883,9 +1883,18 @@ export default function PlayerStatsPage() {
                         </Box>
 
                         {/* Filter Buttons */}
-                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(2, minmax(0, 1fr))' },
+                                gap: { xs: 1, sm: 1.2, md: 1.5 },
+                                width: '100%',
+                                maxWidth: { xs: 340, sm: 520, md: 520 },
+                                mx: 'auto',
+                            }}
+                        >
                             {/* Year Filter */}
-                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`}>
+                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
                             <select
                                 className="filter-select"
                                 value={year || 'all'}
@@ -1895,7 +1904,7 @@ export default function PlayerStatsPage() {
                                 style={{
                                     height: isMobile ? '34px' : '39px',
                                     padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                                    marginLeft: isMobile ? '0px' : '4px',
+                                    marginLeft: 0,
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
@@ -1903,7 +1912,7 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    minWidth: isMobile ? '88px' : '100px',
+                                    width: '100%',
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1918,7 +1927,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* League Filter */}
-                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`}>
+                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
                             <select
                                 className="filter-select"
                                 value={leagueId || 'all'}
@@ -1928,7 +1937,7 @@ export default function PlayerStatsPage() {
                                 style={{
                                     height: isMobile ? '34px' : '39px',
                                     padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                                    marginLeft: isMobile ? '0px' : '4px',
+                                    marginLeft: 0,
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
@@ -1936,7 +1945,7 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    minWidth: isMobile ? '98px' : '110px',
+                                    width: '100%',
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1951,7 +1960,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* Season Filter */}
-                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`}>
+                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
                             <select
                                 className="filter-select"
                                 value={selectedSeason}
@@ -1969,7 +1978,7 @@ export default function PlayerStatsPage() {
                                 style={{
                                     height: isMobile ? '34px' : '39px',
                                     padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                                    marginLeft: isMobile ? '0px' : '4px',
+                                    marginLeft: 0,
                                     backgroundColor: 'transparent',
                                     color: '#fff',
                                     border: '1.5px solid #e56a16',
@@ -1977,7 +1986,7 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: leagueId === 'all' ? 'not-allowed' : 'pointer',
                                     outline: 'none',
-                                    minWidth: isMobile ? '98px' : '110px',
+                                    width: '100%',
                                     opacity: leagueId === 'all' ? 0.6 : 1,
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
@@ -2018,6 +2027,7 @@ export default function PlayerStatsPage() {
                                     cursor: 'pointer',
                                     outline: 'none',
                                     fontWeight: 600,
+                                    width: '100%',
                                 }}
                             >
                                 Clear
