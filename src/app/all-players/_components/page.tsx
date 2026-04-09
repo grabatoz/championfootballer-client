@@ -209,9 +209,29 @@ const AllPlayersPage = () => {
         userLeagues.forEach(league => {
           const id = String((league as { id?: string | number }).id);
           if (!uniqueLeaguesMap.has(id)) {
-            uniqueLeaguesMap.set(id, league);
+        uniqueLeaguesMap.set(id, league);
+      }
+    });
+
+        // Fetch computed status for all leagues in one request (avoids GET /leagues/:id/status 405)
+        const statusMap = new Map<string, LeagueComputedStatus>();
+        try {
+          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData?.success && Array.isArray(statusData.leagues)) {
+              statusData.leagues.forEach((l: any) => {
+                const id = String(l?.id ?? '');
+                if (!id) return;
+                if (l?.computedStatus) {
+                  statusMap.set(id, l.computedStatus as LeagueComputedStatus);
+                }
+              });
+            }
           }
-        });
+        } catch { }
 
         // Enrich with computed status
         const enrichedLeagues = await Promise.all(
@@ -219,14 +239,9 @@ const AllPlayersPage = () => {
             try {
               const leagueId = String((league as { id?: string | number }).id);
               const isAdmin = adminIds.has(leagueId);
-              const [statusRes, detailsRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-              ]);
+              const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
 
               let matchesFromDetails: Match[] | undefined = undefined;
               let maxGamesFromDetails: number | undefined = undefined;
@@ -244,17 +259,17 @@ const AllPlayersPage = () => {
                 createdAt = leagueData?.league?.createdAt;
               }
 
-              if (statusRes.ok) {
-                const statusData = await statusRes.json();
-                const raw = (statusData?.status || {}) as Record<string, unknown>;
+              const statusFromUserLeagues = statusMap.get(leagueId);
+              if (statusFromUserLeagues) {
+                const raw = statusFromUserLeagues as Record<string, unknown>;
                 const toNum = (v: unknown): number | undefined => {
                   const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
                   return Number.isFinite(n) ? n : undefined;
                 };
-                const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed);
-                const maxGames = toNum(raw?.maxGames);
+                const matchesPlayed = toNum(raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed);
+                const maxGames = toNum(raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? raw?.totalMaxGames);
                 const locked = raw?.locked === true;
-                const isComplete = raw?.isComplete === true;
+                const isComplete = raw?.isComplete === true || raw?.isCompleted === true;
                 const missingRaw = raw?.missing as unknown;
                 const missing = Array.isArray(missingRaw) ? missingRaw : [];
                 const computed: LeagueComputedStatus = {

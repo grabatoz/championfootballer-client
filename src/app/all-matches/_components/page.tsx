@@ -404,23 +404,36 @@ export default function AllMatches() {
                     }
                 });
 
+                // Fetch computed status for all leagues in one request (avoids GET /leagues/:id/status 405)
+                const statusMap = new Map<string, LeagueComputedStatus>();
+                try {
+                    const statusPayload = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues`, {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        cacheTTL: 180000 // 3 minutes
+                    });
+                    if (statusPayload?.success && Array.isArray(statusPayload.leagues)) {
+                        statusPayload.leagues.forEach((l: any) => {
+                            const id = String(l?.id ?? '');
+                            if (!id) return;
+                            if (l?.computedStatus) {
+                                statusMap.set(id, l.computedStatus as LeagueComputedStatus);
+                            }
+                        });
+                    }
+                } catch { }
+
+
                 // Fetch detailed info for all leagues to get administrators, members, and computed status
                 const detailedLeagues = await Promise.all(
                     Array.from(uniqueLeaguesMap.values()).map(async (league) => {
                         try {
                             const leagueId = String((league as { id?: string | number }).id);
 
-                            // 🚀 Use optimizedFetch with 5-minute cache for league details
-                            const [statusRes, leagueResponse] = await Promise.all([
-                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, {
-                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                    cacheTTL: 300000 // 5 minutes
-                                }).catch(() => null),
-                                optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
-                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                    cacheTTL: 300000 // 5 minutes
-                                })
-                            ]);
+                            // Use optimizedFetch with 5-minute cache for league details
+                            const leagueResponse = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                cacheTTL: 300000 // 5 minutes
+                            });
 
                             let matchesFromDetails: Match[] | undefined = undefined;
                             let maxGamesFromDetails: number | undefined = undefined;
@@ -442,9 +455,9 @@ export default function AllMatches() {
                                     }
                             }
 
-                            // optimizedFetch returns JSON directly
-                            if (statusRes?.success || statusRes?.status) {
-                                const raw = (statusRes?.status || {}) as Record<string, unknown>;
+                            const statusFromUserLeagues = statusMap.get(leagueId);
+                            if (statusFromUserLeagues) {
+                                const raw = statusFromUserLeagues as Record<string, unknown>;
                                 const toNum = (v: unknown): number | undefined => {
                                     const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
                                     return Number.isFinite(n) ? n : undefined;
@@ -453,10 +466,10 @@ export default function AllMatches() {
                                     raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed
                                 );
                                 const maxGames = toNum(
-                                    raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames
+                                    raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? raw?.totalMaxGames
                                 );
                                 const locked = raw?.locked === true;
-                                const isComplete = raw?.isComplete === true;
+                                const isComplete = raw?.isComplete === true || raw?.isCompleted === true;
                                 const missingRaw = raw?.missing as unknown;
                                 const missing = Array.isArray(missingRaw) ? missingRaw : [];
                                 const computed: LeagueComputedStatus = {
