@@ -1707,6 +1707,7 @@ export default function AllMatches() {
                 // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
                 // backgroundColor:'white',
                 py: 0,
+                pb: { xs: '84px', sm: 0 },
                 overflowX: 'hidden',
             }}
         >
@@ -2077,9 +2078,9 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '12px', sm: '14px' },
-                                    minHeight: { md: 48 },
-                                    height: { md: 48 },
+                                    fontSize: { xs: '12.5px', sm: '14px' },
+                                    minHeight: { xs: 36, md: 48 },
+                                    height: { xs: 36, md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
                                     px: { xs: 0.35, sm: 1.5, md: 2.25 },
@@ -2105,9 +2106,9 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '12px', sm: '14px' },
-                                    minHeight: { md: 48 },
-                                    height: { md: 48 },
+                                    fontSize: { xs: '12.5px', sm: '14px' },
+                                    minHeight: { xs: 36, md: 48 },
+                                    height: { xs: 36, md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
                                     px: { xs: 0.35, sm: 1.5, md: 2.25 },
@@ -2134,9 +2135,9 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '12px', sm: '14px' },
-                                    minHeight: { md: 48 },
-                                    height: { md: 48 },
+                                    fontSize: { xs: '12.5px', sm: '14px' },
+                                    minHeight: { xs: 36, md: 48 },
+                                    height: { xs: 36, md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
                                     px: { xs: 0.35, sm: 1.5, md: 2.25 },
@@ -2282,40 +2283,40 @@ export default function AllMatches() {
                                             </Box>
 
                                             {/* Teams & Score */}
-                                            <Box sx={{ pl: 1, pr: 1, py: { xs: 0.75, sm: 1 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #fff', mt: { xs: -1.5, sm: -3.5 }, gap: { xs: 1, sm: 0 } }}>
+                                            <Box sx={{ pl: 1, pr: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #fff', mt: -3.5, gap: 0 }}>
                                                 {/* Home Team */}
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-                                                    <Image src={match.homeTeamImage || HomeTeamImage} alt={match.homeTeamName || 'Home'} width={isMobile ? 54 : 65} height={isMobile ? 54 : 65} style={{ objectFit: 'contain' }} />
-                                                    <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1.1rem' }, textAlign: 'center' }}>Home</Typography>
+                                                    <Image src={match.homeTeamImage || HomeTeamImage} alt={match.homeTeamName || 'Home'} width={65} height={65} style={{ objectFit: 'contain' }} />
+                                                    <Typography sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', textAlign: 'center' }}>Home</Typography>
                                                 </Box>
 
                                                 {/* Score Center */}
-                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: { xs: 0, sm: 1 }, minWidth: 0 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mt: { xs: 0.5, sm: 2 } }}>
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 1, minWidth: 0 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
                                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                            <Typography sx={{ fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' }, lineHeight: 1, color: 'white' }}>{homeGoals}</Typography>
+                                                            <Typography sx={{ fontWeight: 700, fontSize: '2.5rem', lineHeight: 1, color: 'white' }}>{homeGoals}</Typography>
                                                             <Typography sx={{ fontSize: '0.5rem', color: '#aaa' }}>Goal Score</Typography>
                                                         </Box>
-                                                        <Typography sx={{ fontFamily: '"Oswald", sans-serif !important', fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
+                                                        <Typography sx={{ fontFamily: '"Oswald", sans-serif !important', fontWeight: 600, fontSize: '1.5rem', lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
                                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                            <Typography sx={{ fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' }, lineHeight: 1, color: 'white' }}>{awayGoals}</Typography>
+                                                            <Typography sx={{ fontWeight: 700, fontSize: '2.5rem', lineHeight: 1, color: 'white' }}>{awayGoals}</Typography>
                                                             <Typography sx={{ fontSize: '0.5rem', color: '#aaa' }}>Goal Score</Typography>
                                                         </Box>
                                                     </Box>
-                                                    <Typography sx={{ color: '#ddd', fontSize: { xs: '0.75rem', sm: '0.85rem' }, textAlign: 'center', mt: 0.5 }}>{durationMinutes} Minutes Match</Typography>
+                                                    <Typography sx={{ color: '#ddd', fontSize: '0.85rem', textAlign: 'center', mt: 0.5 }}>{durationMinutes} Minutes Match</Typography>
                                                 </Box>
 
                                                 {/* Away Team */}
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-                                                    <Image src={match.awayTeamImage || AwayTeamImage} alt={match.awayTeamName || 'Away'} width={isMobile ? 54 : 65} height={isMobile ? 54 : 65} style={{ objectFit: 'contain' }} />
-                                                    <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1.1rem' }, textAlign: 'center' }}>Away</Typography>
+                                                    <Image src={match.awayTeamImage || AwayTeamImage} alt={match.awayTeamName || 'Away'} width={65} height={65} style={{ objectFit: 'contain' }} />
+                                                    <Typography sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', textAlign: 'center' }}>Away</Typography>
                                                 </Box>
                                             </Box>
 
                                             {/* Bottom Info Panel */}
-                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                                                 {/* Left Info Column */}
-                                                <Box sx={{ flex: 1, p: { xs: 1.25, sm: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+                                                <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', overflow: 'hidden' }}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
@@ -2328,9 +2329,9 @@ export default function AllMatches() {
                                                             </Box>
                                                         </Box>
                                                         {match.location ? (
-                                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: { xs: '100%', sm: '160px' } }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '160px' }}>
                                                                 <Box sx={{ mt: 0.3, flexShrink: 0 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                                <Typography sx={{ color: '#ccc', fontSize: { xs: '0.68rem', sm: '0.6rem' }, lineHeight: 1.3, wordBreak: 'break-word' }}>{formatLocationForCard(match.location)}</Typography>
+                                                                <Typography sx={{ color: '#ccc', fontSize: '0.6rem', lineHeight: 1.3, wordBreak: 'break-word' }}>{formatLocationForCard(match.location)}</Typography>
                                                             </Box>
                                                         ) : (
                                                             <Box sx={{ height: '20px' }} />
@@ -2338,7 +2339,7 @@ export default function AllMatches() {
                                                     </Box>
 
                                                     {/* MOTM */}
-                                                    <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, alignItems: 'flex-end', mt: { xs: 0.25, sm: -7.5 } }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: -7.5 }}>
                                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minHeight: 52, gap: 0 }}>
                                                             <Image src={CardStar} alt="MOTM" width={34} height={34} />
                                                             {(() => {
@@ -2415,9 +2416,9 @@ export default function AllMatches() {
                                                             >
                                                             <Button
                                                                 size="small"
-                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 18 : 22} height={isMobile ? 18 : 22} />}
+                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={22} height={22} />}
                                                                 disabled={isDisabled && (isAdmin || !!isInMatch)}
-                                                                sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 1 }, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                                sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                             >
                                                                 Add Stats
                                                             </Button>
@@ -2427,16 +2428,16 @@ export default function AllMatches() {
                                                         <Button
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
-                                                            startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 18 : 28} height={isMobile ? 18 : 22} />}
-                                                            sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 0.5 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            startIcon={<Image src={ViewTeamImg} alt="View Team" width={22} height={22} />}
+                                                            sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                         >
                                                             View Teams
                                                         </Button>
                                                         <Button
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
-                                                            startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 18 : 15} height={isMobile ? 18 : 22} />}
-                                                            sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 1 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            startIcon={<Image src={RESULTS} alt="Results" width={22} height={22} />}
+                                                            sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                         >
                                                             Results
                                                         </Button>
@@ -2444,7 +2445,7 @@ export default function AllMatches() {
                                                 </Box>
 
                                                 {/* Right Admin Column */}
-                                                <Box sx={{ width: { xs: '100%', sm: '95px' }, borderLeft: { xs: 'none', sm: '2px solid #fff' }, borderTop: { xs: '2px solid #fff', sm: 'none' }, p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+                                                <Box sx={{ width: '95px', borderLeft: '2px solid #fff', borderTop: 'none', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     {isAdmin ? (
                                                         <>
                                                             <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}>For Admin Only</Typography>
@@ -2466,10 +2467,10 @@ export default function AllMatches() {
                                                             <Button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    if (match.archived) { setArchivedActionMatch(match); setArchivedActionOpen(true); }
-                                                                    else { handleRequestDeleteMatch(match); }
-                                                                }}
-                                                                startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
+                                                                if (match.archived) { setArchivedActionMatch(match); setArchivedActionOpen(true); }
+                                                                else { handleRequestDeleteMatch(match); }
+                                                            }}
+                                                            startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
                                                                 sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
                                                             >
                                                                 {match.archived ? 'Restore' : 'Delete Match'}
@@ -2521,26 +2522,26 @@ export default function AllMatches() {
                                             {/* Home Team */}
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
                                                 <Image src={match.homeTeamImage || HomeTeamImage} alt={match.homeTeamName || 'Home'} width={isMobile ? 54 : 65} height={isMobile ? 54 : 65} style={{ objectFit: 'contain' }} />
-                                                <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1.1rem' }, textAlign: 'center' }}>Home</Typography>
+                                                <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.1rem' }, textAlign: 'center' }}>Home</Typography>
                                             </Box>
 
                                             {/* VS Center */}
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
                                                 <Typography sx={{ fontFamily: '"Oswald", sans-serif !important', fontWeight: 600, fontSize: { xs: '1.4rem', sm: '2rem' }, lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
-                                                <Typography sx={{ color: '#ddd', fontSize: { xs: '0.75rem', sm: '0.85rem' }, textAlign: 'center', mt: 1 }}>{durationMinutes} Minutes Match</Typography>
+                                                <Typography sx={{ color: '#ddd', fontSize: { xs: '0.8rem', sm: '0.85rem' }, textAlign: 'center', mt: 1 }}>{durationMinutes} Minutes Match</Typography>
                                             </Box>
 
                                             {/* Away Team */}
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
                                                 <Image src={match.awayTeamImage || AwayTeamImage} alt={match.awayTeamName || 'Away'} width={isMobile ? 54 : 65} height={isMobile ? 54 : 65} style={{ objectFit: 'contain' }} />
-                                                <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1.1rem' }, textAlign: 'center' }}>Away</Typography>
+                                                <Typography sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.1rem' }, textAlign: 'center' }}>Away</Typography>
                                             </Box>
                                         </Box>
 
                                         {/* Bottom Info Panel */}
-                                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
-                                            {/* Left Info Column */}
-                                            <Box sx={{ flex: 1, p: { xs: 1.25, sm: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1.5 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                                                {/* Left Info Column */}
+                                            <Box sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1.5 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', overflow: 'hidden' }}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
                                                         <Image src={CalendarImg} alt="Date" width={16} height={16} />
@@ -2562,7 +2563,7 @@ export default function AllMatches() {
                                                 {match.location && (
                                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                                                         <Box sx={{ mt: 0.3 }}><Image src={LocationImg} alt="Location" width={18} height={18} /></Box>
-                                                        <Typography sx={{ color: '#ccc', fontSize: { xs: '0.78rem', sm: '0.85rem' }, lineHeight: 1.3, wordBreak: 'break-word' }}>{formatLocationForCard(match.location)}</Typography>
+                                                        <Typography sx={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.3, wordBreak: 'break-word' }}>{formatLocationForCard(match.location)}</Typography>
                                                     </Box>
                                                 )}
                                                 {isMember && (
@@ -2600,7 +2601,7 @@ export default function AllMatches() {
                                             </Box>
 
                                             {/* Right Admin Column */}
-                                            <Box sx={{ width: { xs: '100%', sm: '95px' }, borderLeft: { xs: 'none', sm: '2px solid #fff' }, borderTop: { xs: '2px solid #fff', sm: 'none' }, pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
+                                            <Box sx={{ width: '95px', borderLeft: '2px solid #fff', borderTop: 'none', pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
                                                 {isAdmin ? (
                                                     <>
                                                         <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>For Admin Only</Typography>
