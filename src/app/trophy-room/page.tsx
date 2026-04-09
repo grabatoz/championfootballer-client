@@ -2625,16 +2625,14 @@ export default function GlobalTrophyRoom() {
             onClose={handleSeasonsDropdownClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+            marginThreshold={0}
             PaperProps={{
               sx: {
                 p: 0.5,
                 mt: 1,
                 minWidth: { xs: 170, sm: 200 },
-                width: { xs: '92vw', sm: 'auto' },
+                ml: { xs: -1.5, sm: -1.5 },
                 maxWidth: { xs: '92vw', sm: 'none' },
-                left: { xs: '50% !important', sm: 'auto' },
-                right: { xs: 'auto', sm: 'auto' },
-                transform: { xs: 'translateX(-50%)', sm: 'none' },
                 maxHeight: 320,
                 overflowY: 'auto',
                 bgcolor: 'rgba(15,15,15,0.92)',
@@ -2676,16 +2674,14 @@ export default function GlobalTrophyRoom() {
             onClose={handleLeaguesDropdownClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+            marginThreshold={0}
             PaperProps={{
               sx: {
                 p: 0.5,
                 mt: 1,
                 minWidth: { xs: 190, sm: 240 },
-                width: { xs: '92vw', sm: 'auto' },
+                ml: { xs: -1.5, sm: -1.5 },
                 maxWidth: { xs: '92vw', sm: 'none' },
-                left: { xs: '50% !important', sm: 'auto' },
-                right: { xs: 'auto', sm: 'auto' },
-                transform: { xs: 'translateX(-50%)', sm: 'none' },
                 maxHeight: 320,
                 overflowY: 'auto',
                 bgcolor: 'rgba(15,15,15,0.92)',
