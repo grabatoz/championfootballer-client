@@ -1867,9 +1867,8 @@ export default function AllMatches() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
-                                    minWidth: 0,
                                     width: { xs: '100%', sm: 'min(52vw, 420px)', md: 'auto' },
-                                    minWidth: { sm: 240, md: 260 },
+                                    minWidth: { xs: 0, sm: 240, md: 260 },
                                     textAlign: { xs: 'left', md: 'left' },
                                     // color: 'white',
                                     backgroundColor: '#2B2B2B',
@@ -2339,7 +2338,7 @@ export default function AllMatches() {
                                                     </Box>
 
                                                     {/* MOTM */}
-                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: -7.5 }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: { xs: -5, sm: -7.5 } }}>
                                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minHeight: 52, gap: 0 }}>
                                                             <Image src={CardStar} alt="MOTM" width={34} height={34} />
                                                             {(() => {
