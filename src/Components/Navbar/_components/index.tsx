@@ -2851,11 +2851,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       p: 0.5,
                       mt: 1.5,
                       minWidth: 200,
-                      width: { xs: '92vw', sm: 'auto' },
-                      maxWidth: { xs: '92vw', sm: 'none' },
-                      left: { xs: '50% !important', sm: 'auto' },
-                      right: { xs: 'auto', sm: 'auto' },
-                      transform: { xs: 'translateX(-50%)', sm: 'none' },
+                      width: { xs: '88vw', sm: 'auto' },
+                      maxWidth: { xs: '88vw', sm: 'none' },
                       bgcolor: 'rgba(15,15,15,0.92)',
                       color: '#E5E7EB',
                       borderRadius: 2.5,
@@ -2865,9 +2862,88 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       overflow: 'hidden',
                     },
                   }}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
+                  <MenuItem
+                    onClick={() => {
+                      handleProfileMenuClose();
+                      router.push('/profile');
+                    }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 700,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.1,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#FFFFFF',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonOutlineOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
+                      <Box>Profile</Box>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleProfileMenuClose();
+                      setHowToPlayOpen(true);
+                    }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 700,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.1,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#FFFFFF',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <VisibilityOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
+                      <Box>How to play</Box>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleProfileMenuClose();
+                      setGameRulesOpen(true);
+                    }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 700,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.1,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#FFFFFF',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GavelOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
+                      <Box>Game rules</Box>
+                    </Box>
+                  </MenuItem>
+                  <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.08)' }} />
                   <MenuItem
                     onClick={handleSignOutClick}
                     sx={{
