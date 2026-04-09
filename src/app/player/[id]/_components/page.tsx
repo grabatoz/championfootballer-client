@@ -38,7 +38,7 @@ import { useAuth } from '@/lib/hooks';
 import { playerAPI } from '@/lib/api';
 import FootballImg from '@/Components/images/football.png';
 import GoatImg from '@/Components/images/goat.png';
-import { BarChart, DashboardCustomize } from '@mui/icons-material';
+import { BarChart, SpaceDashboard } from '@mui/icons-material';
 import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
 import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
@@ -338,6 +338,7 @@ export default function PlayerStatsPage() {
     const { token } = useAuth();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
     const { data, filters, loading: reduxLoading, error: reduxError } = useSelector((state: RootState) => state.playerStats);
     const { leagueId, year } = filters;
@@ -1885,16 +1886,18 @@ export default function PlayerStatsPage() {
                         {/* Filter Buttons */}
                         <Box
                             sx={{
-                                display: 'grid',
-                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(2, minmax(0, 1fr))' },
-                                gap: { xs: 1, sm: 1.2, md: 1.5 },
-                                width: '100%',
-                                maxWidth: { xs: 340, sm: 520, md: 520 },
-                                mx: 'auto',
+                                display: { xs: 'grid', md: 'flex' },
+                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
+                                alignItems: 'center',
+                                justifyContent: { xs: 'stretch', md: 'flex-end' },
+                                gap: { xs: 1, sm: 1.2, md: 1 },
+                                width: { xs: '100%', md: 'auto' },
+                                maxWidth: { xs: 340, sm: 520, md: 'none' },
+                                mx: { xs: 'auto', md: 0 },
                             }}
                         >
                             {/* Year Filter */}
-                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
+                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'auto' : '100%' }}>
                             <select
                                 className="filter-select"
                                 value={year || 'all'}
@@ -1912,7 +1915,8 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    width: '100%',
+                                    width: isDesktop ? 'auto' : '100%',
+                                    minWidth: isDesktop ? '120px' : undefined,
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1927,7 +1931,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* League Filter */}
-                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
+                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'auto' : '100%' }}>
                             <select
                                 className="filter-select"
                                 value={leagueId || 'all'}
@@ -1945,7 +1949,8 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: 'pointer',
                                     outline: 'none',
-                                    width: '100%',
+                                    width: isDesktop ? 'auto' : '100%',
+                                    minWidth: isDesktop ? '130px' : undefined,
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
                                     MozAppearance: 'none',
@@ -1960,7 +1965,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* Season Filter */}
-                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: '100%' }}>
+                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'auto' : '100%' }}>
                             <select
                                 className="filter-select"
                                 value={selectedSeason}
@@ -1986,7 +1991,8 @@ export default function PlayerStatsPage() {
                                     fontSize: isMobile ? '13px' : '17px',
                                     cursor: leagueId === 'all' ? 'not-allowed' : 'pointer',
                                     outline: 'none',
-                                    width: '100%',
+                                    width: isDesktop ? 'auto' : '100%',
+                                    minWidth: isDesktop ? '130px' : undefined,
                                     opacity: leagueId === 'all' ? 0.6 : 1,
                                     appearance: 'none',
                                     WebkitAppearance: 'none',
@@ -2027,7 +2033,8 @@ export default function PlayerStatsPage() {
                                     cursor: 'pointer',
                                     outline: 'none',
                                     fontWeight: 600,
-                                    width: '100%',
+                                    width: isDesktop ? 'auto' : '100%',
+                                    minWidth: isDesktop ? '86px' : undefined,
                                 }}
                             >
                                 Clear
@@ -2168,15 +2175,12 @@ export default function PlayerStatsPage() {
                             <Box
                                 sx={{
                                     mt: 1.8,
-                                    display: 'flex',
-                                    flexWrap: 'nowrap',
-                                    justifyContent: 'center',
-                                    gap: 1,
-                                    width: { xs: '100%', md: 'auto' },
-                                    overflowX: { xs: 'auto', md: 'visible' },
-                                    pb: { xs: 0.5, md: 0 },
-                                    '&::-webkit-scrollbar': { height: 4 },
-                                    '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '0.9fr 1.1fr', sm: '0.85fr 1.15fr', md: 'repeat(2, minmax(0, 1fr))' },
+                                    // gap: { xs: 0.7, md: 0 },
+                                    width: '100%',
+                                    maxWidth: { xs: 520, md: 500 },
+                                    mx: 'auto',
                                 }}
                             >
                                 {/* Stats Over Season button */}
@@ -2187,10 +2191,20 @@ export default function PlayerStatsPage() {
                                         borderRadius: 1,
                                         overflow: 'hidden',
                                         cursor: 'pointer',
+                                        border: '1px solid rgba(255,255,255,0.4)',
+                                        boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                                        transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 10px 22px rgba(0,0,0,0.45)',
+                                            borderColor: 'rgba(255,255,255,0.65)',
+                                        },
                                         '&:hover .icon-box': { bgcolor: '#008c6b' },
-                                        '&:hover .text-box': { bgcolor: '#333' },
-                                        border: '1.5px solid #fff',
-                                        flex: '0 0 auto',
+                                        '&:hover .text-box': { bgcolor: '#2f2f2f' },
+                                        width: '78%',
+                                        minWidth: 0,
+                                        justifyContent: 'center',
+                                        ml:{sx:0,xs:0,md:6}
                                     }}
                                     onClick={() => setStatsModalOpen(true)}
                                 >
@@ -2199,24 +2213,29 @@ export default function PlayerStatsPage() {
                                         display: 'flex', 
                                         alignItems: 'center', 
                                         justifyContent: 'center',
-                                        px: { xs: 0.9, md: 1.2 },
-                                        py: 0.2
+                                        width: { xs: 38, sm: 40, md: 44 },
+                                        borderRight: '1px solid rgba(255,255,255,0.25)',
+                                        py: { xs: 0.55, md: 0.7 }
                                     }}>
-                                        <BarChart sx={{ color: '#fff', fontSize: { xs: 24, md: 30 } }} />
+                                        <BarChart sx={{ color: '#fff', fontSize: { xs: 20, md: 26 } }} />
                                     </Box>
                                     <Box className="text-box" sx={{ 
-                                        bgcolor: '#444', 
+                                        bgcolor: '#2b2b2b', 
                                         display: 'flex', 
                                         alignItems: 'center',
-                                        px: { xs: 1, md: 1.3 },
-                                        py: { xs: 0.65, md: 0.8 }
+                                        justifyContent: 'flex-start',
+                                        px: { xs: 0.6, md: 0.9 },
+                                        py: { xs: 0.55, md: 0.7 },
+                                        width: '100%',
                                     }}>
                                         <Typography sx={{ 
                                             color: '#fff', 
-                                            fontWeight: 600, 
-                                            fontSize: { xs: 10, sm: 11, md: 12 }, 
+                                            fontWeight: 700, 
+                                            fontSize: { xs: 9, sm: 10, md: 11.5 }, 
                                             textTransform: 'uppercase',
+                                            letterSpacing: 0.5,
                                             whiteSpace: 'nowrap',
+                                            textAlign: 'center',
                                         }}>
                                             Stats Over Season
                                         </Typography>
@@ -2231,10 +2250,21 @@ export default function PlayerStatsPage() {
                                         borderRadius: 1,
                                         overflow: 'hidden',
                                         cursor: 'pointer',
+                                        border: '1px solid rgba(255,255,255,0.4)',
+                                        boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                                        transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 10px 22px rgba(0,0,0,0.45)',
+                                            borderColor: 'rgba(255,255,255,0.65)',
+                                        },
                                         '&:hover .perf-icon-box': { bgcolor: '#008c6b' },
-                                        '&:hover .perf-text-box': { bgcolor: '#333' },
-                                        border: '1.5px solid #fff',
-                                        flex: '0 0 auto',
+                                        '&:hover .perf-text-box': { bgcolor: '#2f2f2f' },
+                                        width: '100%',
+                                        maxWidth: { xs: '100%', md: 238 },
+                                        minWidth: 0,
+                                        justifyContent: 'center',
+                                        justifySelf: { xs: 'stretch', md: 'start' },
                                     }}
                                     onClick={() => {
                                         if (playerId) router.push(`/player/${playerId}/career`);
@@ -2245,24 +2275,29 @@ export default function PlayerStatsPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        px: { xs: 0.9, md: 1.2 },
-                                        py: 0.2
+                                        width: { xs: 38, sm: 40, md: 44 },
+                                        borderRight: '1px solid rgba(255,255,255,0.25)',
+                                        py: { xs: 0.55, md: 0.7 }
                                     }}>
-                                        <DashboardCustomize sx={{ color: '#fff', fontSize: { xs: 24, md: 30 } }} />
+                                        <SpaceDashboard sx={{ color: '#fff', fontSize: { xs: 24, md: 26 } }} />
                                     </Box>
                                     <Box className="perf-text-box" sx={{
-                                        bgcolor: '#444',
+                                        bgcolor: '#2b2b2b',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        px: { xs: 0.9, md: 1.2 },
-                                        py: { xs: 0.65, md: 0.8 }
+                                        justifyContent: 'flex-start',
+                                        px: { xs: 0.6, md: 0.9 },
+                                        py: { xs: 0.55, md: 0.7 },
+                                        width: '100%',
                                     }}>
                                         <Typography sx={{
                                             color: '#fff',
-                                            fontWeight: 600,
-                                            fontSize: { xs: 10, sm: 11, md: 12 },
+                                            fontWeight: 700,
+                                            fontSize: { xs: 9.5, sm: 10.5, md: 11.5 },
                                             textTransform: 'uppercase',
+                                            letterSpacing: 0.5,
                                             whiteSpace: 'nowrap',
+                                            textAlign: 'center',
                                         }}>
                                             Performance Dashboard
                                         </Typography>
