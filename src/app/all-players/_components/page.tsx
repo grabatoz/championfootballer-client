@@ -618,10 +618,11 @@ const AllPlayersPage = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
+        overflowX: 'hidden',
         // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
       {/* Full-width Header Section */}
-      <PageHeader title="Players" sx={{ mb: 4 }}>
+      <PageHeader title="Players" fullBleed={false} sx={{ mb: 4 }}>
         {/* Search and Filters Section */}
         <Box sx={{
           display: 'flex',
@@ -698,7 +699,8 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: 'pointer',
                   outline: 'none',
-                  minWidth: isMobile ? '90px' : '100px',
+                  width: isMobile ? '112px' : 'auto',
+                  minWidth: isMobile ? '112px' : '100px',
                   appearance: 'none',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
@@ -741,7 +743,8 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  minWidth: isMobile ? '98px' : '110px',
+                  width: isMobile ? '112px' : 'auto',
+                  minWidth: isMobile ? '112px' : '110px',
                   opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -784,7 +787,8 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  minWidth: isMobile ? '98px' : '110px',
+                  width: isMobile ? '112px' : 'auto',
+                  minWidth: isMobile ? '112px' : '110px',
                   opacity: selectedLeague === 'all' ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -814,12 +818,14 @@ const AllPlayersPage = () => {
                 }}
                 style={{
                   height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 13px' : '0 17px',
+                  padding: isMobile ? '0 10px' : '0 17px',
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '2px solid rgba(255,255,255,0.5)',
                   borderRadius: '24px',
                   fontSize: isMobile ? '13px' : '17px',
+                  width: isMobile ? '112px' : 'auto',
+                  minWidth: isMobile ? '112px' : 'auto',
                   cursor: 'pointer',
                   outline: 'none',
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
